@@ -1,0 +1,13 @@
+[Unit]
+Description=A control system for SRS, to terraform the open-source video platform
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=/usr/local/lighthouse/softwares/nodejs/node/bin/node --title=srs-terraform /usr/local/lighthouse/softwares/srs-terraform/mgmt/index.js
+ExecStop=kill -9 $(pgrep srs-terraform)
+
+[Install]
+WantedBy=multi-user.target
+
