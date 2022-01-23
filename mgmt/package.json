@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node .",
-    "build": "cd ui && env PUBLIC_URL=/mgmt npm run build"
+    "build": "cd ui && env PUBLIC_URL=/mgmt npm run build",
+    "postinstall": "cd ui && npm install"
   },
   "author": "ossrs",
   "license": "MIT",

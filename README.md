@@ -4,15 +4,24 @@ A control panel for SRS, to terraform the open-source video platform
 
 ## Usage
 
+Install dependencies:
+
+```bash
+cd mgmt
+npm install
+```
+
 Build UI:
 
 ```bash
-npm build
+cd mgmt
+npm run build
 ```
 
 Run server with UI:
 
 ```bash
+cd mgmt
 npm start
 ```
 
@@ -20,16 +29,25 @@ Access the browser: http://localhost:2022/mgmt
 
 ## Development
 
+Install dependencies:
+
+```bash
+cd mgmt
+npm install
+```
+
 Run the backend:
 
 ```
+cd mgmt
 npm start
 ```
 
 Run the ui:
 
 ```
-cd ui && npm start
+cd mgmt/ui
+npm start
 ```
 
 Access the browser: http://localhost:3000
