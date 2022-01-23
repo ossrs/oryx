@@ -16,20 +16,35 @@ const BodyParser = require('koa-bodyparser');
 const serve = require('koa-static');
 const mount  = require('koa-mount');
 const releases = require('./releases');
+const auth = require('./auth');
+const utils = require('./utils');
 
 const app = new Koa();
+
+app.use(async (ctx, next) => {
+  try {
+    await next();
+  } catch (e) {
+    ctx.status = e.status || 500;
+    ctx.body = utils.asResponse(e.code || 1, {
+      message: e.message || e.err?.message || 'unknown error',
+    });
+    console.error(e);
+  }
+});
 
 app.use(Cors());
 app.use(BodyParser());
 
+const router = new Router();
+
 // Static file server for UI.
 app.use(mount('/mgmt', serve('./ui/build')));
-
-const router = new Router();
-releases.all(router);
 router.all('/', async (ctx) => {
   ctx.response.redirect('/mgmt/');
 });
+
+releases.handle(auth.handle(router));
 app.use(router.routes());
 
 const config = {

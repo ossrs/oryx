@@ -1,15 +1,13 @@
 'use strict';
 
 const pkg = require('./package.json');
+const utils = require('./utils');
 
-exports.all = (router) => {
+exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/versions', async (ctx) => {
-    ctx.body = {
-      code: 0,
-      data: {
-        version: pkg.version
-      }
-    };
+    ctx.body = utils.asResponse(0, {version: pkg.version});
   });
+
+  return router;
 };
 

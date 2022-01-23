@@ -1,12 +1,12 @@
 import React from "react";
 import Container from "react-bootstrap/Container";
+import axios from "axios";
 
 export default function Footer() {
   const [versions, setVersions] = React.useState();
   React.useEffect(() => {
-    fetch('/terraform/v1/mgmt/versions')
-      .then((res) => res.json())
-      .then(res => setVersions(res));
+    axios.get('/terraform/v1/mgmt/versions')
+      .then(res => setVersions(res.data));
   }, []);
 
   return (

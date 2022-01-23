@@ -1,14 +1,14 @@
 import React from 'react';
 import './App.css'
 import Container from "react-bootstrap/Container";
-// See https://react-bootstrap.github.io/components/navbar/
 import {Navbar, Nav} from 'react-bootstrap';
-// See https://reactrouter.com/docs/en/v6/getting-started/tutorial
 import { BrowserRouter, Routes, Link, Route } from "react-router-dom";
 import Footer from './Footer';
+import Login from './Login';
 import logo from './logo.svg';
+import axios from "axios";
 
-function MyNavbar() {
+function Navigator({initialized}) {
   return (
     <Navbar bg='light' variant='light'>
       <Container>
@@ -21,47 +21,61 @@ function MyNavbar() {
             alt="SRS Terraform"
           />
         </Navbar.Brand>
-        <Nav className="me-auto">
-          <Nav.Link as={Link} to='/'>Login</Nav.Link>
-          <Nav.Link as={Link} to='/system'>System</Nav.Link>
-          <Nav.Link as={Link} to='/components'>Components</Nav.Link>
-        </Nav>
+        {
+          initialized &&
+          <Nav className="me-auto">
+            <Nav.Link as={Link} to='/status'>Status</Nav.Link>
+            <Nav.Link as={Link} to='/system'>System</Nav.Link>
+            <Nav.Link as={Link} to='/software'>Software</Nav.Link>
+            <Nav.Link as={Link} to='/logout'>Logout</Nav.Link>
+          </Nav>
+        }
       </Container>
     </Navbar>
   );
 }
 
-function Navigator() {
-  return (
-    <BrowserRouter basename={window.PUBLIC_URL}>
-      <MyNavbar />
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="*" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/system" element={<System />} />
-        <Route path="/components" element={<Components />} />
-      </Routes>
-    </BrowserRouter>
-  );
-}
-
-function Login() {
-  return <Container>Login</Container>;
+function Status() {
+  return <Container>Status</Container>;
 }
 
 function System() {
   return <Container>System</Container>;
 }
 
-function Components() {
-  return <Container>Components</Container>;
+function Software() {
+  return <Container>Software</Container>;
+}
+
+function Logout() {
+  return <Container>Logout</Container>;
 }
 
 function App() {
+  const [initialized, setInitialized] = React.useState();
+
+  React.useEffect(() => {
+    console.log('xxx', initialized);
+    axios.get('/terraform/v1/mgmt/init').then(res => {
+      setInitialized(res.data.data.init);
+    }).catch(e => {
+      alert(e.response.data);
+      console.error(e);
+    });
+  }, []);
+
   return (
     <>
-      <Navigator />
+      <BrowserRouter basename={window.PUBLIC_URL}>
+        <Navigator initialized={initialized} />
+        <Routes>
+          <Route path="/" element={<Login initialized={initialized} onLoginSuccess={() => setInitialized(true)}/>}/>
+          <Route path="/status" element={<Status/>}/>
+          <Route path="/system" element={<System/>}/>
+          <Route path="/software" element={<Software/>}/>
+          <Route path="/logout" element={<Logout/>}/>
+        </Routes>
+      </BrowserRouter>
       <Footer />
     </>
   );
