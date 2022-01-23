@@ -22,10 +22,13 @@ const app = new Koa();
 app.use(Cors());
 app.use(BodyParser());
 
-const router = new Router();
+// Static file server for UI.
 app.use(mount('/mgmt', serve('./ui/build')));
-router.all('/terraform/v1/mgmt/versions', async (ctx) => {
-  releases.handle(ctx);
+
+const router = new Router();
+releases.all(router);
+router.all('/', async (ctx) => {
+  ctx.response.redirect('/mgmt/');
 });
 app.use(router.routes());
 

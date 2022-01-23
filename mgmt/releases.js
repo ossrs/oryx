@@ -2,11 +2,14 @@
 
 const pkg = require('./package.json');
 
-exports.handle = (ctx) => {
-  ctx.body = {
-    code: 0,
-    data: {
-      version: pkg.version
-    }
-  };
+exports.all = (router) => {
+  router.all('/terraform/v1/mgmt/versions', async (ctx) => {
+    ctx.body = {
+      code: 0,
+      data: {
+        version: pkg.version
+      }
+    };
+  });
 };
+
