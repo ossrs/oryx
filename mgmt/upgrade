@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+REALPATH=$(realpath $0)
+WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
+echo "Upgrade srs-terraform at $WORK_DIR"
+
+TARGET_TAG=$1
+echo "The TARGET_TAG=$TARGET_TAG"
+
+if [[ $TARGET_TAG == '' ]]; then
+  echo "Usage: $0 <branch|tag>"
+  echo "    branch|tag    The branch or tag to upgrade to."
+  echo "For example:"
+  echo "    $0 lighthouse"
+  exit 1
+fi
+
+cd $WORK_DIR &&
+git remote -v &&
+git branch -vva &&
+ls -lh
+if [[ $? -ne 0 ]]; then echo "Prepare upgrade failed"; exit 1; fi
+
+echo "Upgrade code files"
+git pull &&
+git checkout $TARGET_TAG &&
+git pull
+if [[ $? -ne 0 ]]; then echo "Upgrade codes failed"; exit 1; fi
+
+echo "Install updates"
+cd .. && make install
+if [[ $? -ne 0 ]]; then echo "Install updates failed"; exit 1; fi
+
+echo "Restart service"
+sudo systemctl daemon-reload &&
+sudo systemctl restart srs-terraform
+if [[ $? -ne 0 ]]; then echo "Restart service failed"; exit 1; fi
+

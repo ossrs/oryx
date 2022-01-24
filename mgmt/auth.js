@@ -12,7 +12,7 @@ exports.handle = (router) => {
       utils.saveConfig({...config, MGMT_PASSWORD: password});
       utils.loadConfig();
 
-      const {expire, expireAt, createAt, token} = createToken();
+      const {expire, expireAt, createAt, token} = utils.createToken();
       console.log(`init password ok, duration=${expire}, create=${createAt}, expire=${expireAt}, password=${'*'.repeat(password.length)}`);
       return ctx.body = utils.asResponse(0, {token, createAt, expireAt});
     }
