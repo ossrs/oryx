@@ -7,6 +7,7 @@ import Footer from './Footer';
 import Login from './Login';
 import Logout from './Logout';
 import Navigator from './Navigator';
+import Init from './Init';
 
 function Status() {
   return <Container>Status</Container>;
@@ -22,7 +23,7 @@ function Software() {
 
 function App() {
   const [initialized, setInitialized] = React.useState();
-  const [expire, setExpire] = React.useState();
+  const [tokenUpdated, setTokenUpdated] = React.useState();
 
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/init').then(res => {
@@ -33,24 +34,22 @@ function App() {
     });
   }, []);
 
-  const onLogin = () => {
-    setInitialized(true);
-    setExpire(!expire);
-  };
-  const onLogout = () => {
-    setExpire(!expire);
-  };
-
   return (
     <>
       <BrowserRouter basename={window.PUBLIC_URL}>
-        <Navigator initialized={initialized} expire={expire} />
+        <Navigator initialized={initialized} tokenUpdated={tokenUpdated} />
         <Routes>
-          <Route path="/" element={<Login initialized={initialized} onLogin={onLogin}/>}/>
-          <Route path="/status" element={<Status/>}/>
-          <Route path="/system" element={<System/>}/>
-          <Route path="/software" element={<Software/>}/>
-          <Route path="/logout" element={<Logout onLogout={onLogout} />}/>
+          {!initialized && <>
+            <Route path="*" element={<Init onInit={()=>setInitialized(true)} />}/>
+          </>}
+          {initialized && <>
+            <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
+            <Route path="/status" element={<Status/>}/>
+            <Route path="/system" element={<System/>}/>
+            <Route path="/software" element={<Software/>}/>
+            <Route path="/logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
+          </>}
         </Routes>
       </BrowserRouter>
       <Footer />

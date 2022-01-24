@@ -7,6 +7,7 @@ exports.sys = {
 exports.auth = {
   password: 200,
   token: 201,
+  init: 202,
 };
 
 exports.status = {

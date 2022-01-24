@@ -5,7 +5,7 @@ import axios from "axios";
 import {useNavigate} from "react-router-dom";
 import {Token, Tools} from './utils';
 
-export default function Login({initialized, onLogin}) {
+export default function Login({onLogin}) {
   const [token, setToken] = React.useState();
   const [verify, setVerify] = React.useState(false);
   const [plaintext, setPlaintext] = React.useState(false);
@@ -14,16 +14,14 @@ export default function Login({initialized, onLogin}) {
   const passwordRef = React.useRef();
   const plaintextRef = React.useRef();
 
-  // Load the token if page initialized or verify changed.
+  // Load the token if page verify changed.
   React.useEffect(() => {
-    if (initialized === undefined) return ;
-
-    console.log(`Login: Load token, initialized=${initialized}, verify=${verify}`);
     Token.load((data) => {
       if (!data || !data.token) return;
+      console.log(`Login: Load local storage, token is ${Tools.mask(data)}`);
       setToken(data);
     });
-  }, [initialized, verify]);
+  }, []);
 
   // Verify the token if token changed.
   React.useEffect(() => {
@@ -49,18 +47,10 @@ export default function Login({initialized, onLogin}) {
     navigate('/status');
   }, [token, verify]);
 
-  // Generate password if not initialized.
-  React.useEffect(() => {
-    if (initialized !== false) return;
-
-    setPassword(Math.random().toString(16).slice(-6));
-    setPlaintext(true);
-  }, [initialized]);
-
   // Focus to password input.
   React.useEffect(() => {
     plaintext ? plaintextRef.current?.focus() : passwordRef.current?.focus();
-  }, [initialized, plaintext]);
+  }, [plaintext]);
 
   // User click login button.
   const handleLogin = (e) => {
@@ -87,9 +77,7 @@ export default function Login({initialized, onLogin}) {
       <Container>
         <Form>
           <Form.Group className="mb-3" controlId="formBasicPassword">
-            <Form.Label>
-              {initialized ? '请输入密码' : '请设置初始密码'}
-            </Form.Label>
+            <Form.Label>请输入密码</Form.Label>
             {
               !plaintext &&
               <Form.Control type="password" placeholder="Password" ref={passwordRef} defaultValue={password}
@@ -101,18 +89,15 @@ export default function Login({initialized, onLogin}) {
                 onChange={(e) => setPassword(e.target.value)}/>
             }
             <Form.Text className="text-muted">
-              {!initialized ? '* 自动生成的初始管理员密码，你可以修改' : '* 若忘记密码，可登录机器查看文件 ~lighthouse/credentials.txt'}
+              * 若忘记密码，可登录机器查看文件 ~lighthouse/credentials.txt
             </Form.Text>
           </Form.Group>
-          {
-            initialized &&
-            <Form.Group className="mb-3" controlId="formBasicCheckbox">
-              <Form.Check type="checkbox" label="显示密码" defaultChecked={plaintext}
-                onClick={() => setPlaintext(!plaintext)}/>
-            </Form.Group>
-          }
+          <Form.Group className="mb-3" controlId="formBasicCheckbox">
+            <Form.Check type="checkbox" label="显示密码" defaultChecked={plaintext}
+              onClick={() => setPlaintext(!plaintext)}/>
+          </Form.Group>
           <Button variant="primary" type="submit" onClick={(e) => handleLogin(e)}>
-            {initialized ? '登录' : '设置管理员密码'}
+            登录
           </Button>
         </Form>
       </Container>
