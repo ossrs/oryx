@@ -3,15 +3,15 @@ import Container from "react-bootstrap/Container";
 import React from "react";
 import {Token, Errors} from "./utils";
 import axios from "axios";
-import {Card} from "react-bootstrap";
+import {Row, Col, Card, Button} from "react-bootstrap";
 import PopoverConfirmButton from './PopoverConfirmButton';
 
 export default function System() {
   const navigate = useNavigate();
   const [status, setStatus] = React.useState();
+  const [srs, setSRS] = React.useState();
   const [upgrading, setUpgrading] = React.useState();
 
-  // Verify the token if token changed.
   React.useEffect(() => {
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/status', {
@@ -28,7 +28,25 @@ export default function System() {
         alert(`服务器错误，${err.code}: ${err.data.message}`);
       }
     });
-  }, [upgrading]);
+  }, []);
+
+  React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/srs', {
+      ...token,
+    }).then(res => {
+      setSRS(res.data.data);
+      console.log(`SRS: Query ok, status=${JSON.stringify(res.data.data)}`);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  }, []);
 
   React.useEffect(() => {
     if (!upgrading) return;
@@ -48,30 +66,44 @@ export default function System() {
     });
   }, [upgrading]);
 
-  const handleClick = () => {
-    setUpgrading(true);
-  };
-
   return (
     <>
       <p></p>
       <Container>
-        <Card style={{ width: '18rem' }}>
-          <Card.Header>管理后台</Card.Header>
-          <Card.Body>
-            <Card.Title>当前版本</Card.Title>
-            <Card.Text>
-              {status?.version}
-            </Card.Text>
-            <PopoverConfirmButton upgrading={upgrading} handleClick={handleClick} text='升级管理后台'>
-                <p>
-                  升级管理后台，需要较长时间（1分钟左右），并且可能造成
-                  <span className='text-danger'><strong>系统不可用</strong></span>，
-                  确认继续升级么？
-                </p>
-            </PopoverConfirmButton>
-          </Card.Body>
-        </Card>
+        <Row>
+          <Col xs lg={3}>
+            <Card style={{ width: '18rem' }}>
+              <Card.Header>SRS Server</Card.Header>
+              <Card.Body>
+                <Card.Title>当前版本</Card.Title>
+                <Card.Text>
+                  {srs?.major} {srs?.container.State}
+                </Card.Text>
+                <Button className='disabled'>
+                  升级SRS服务器
+                </Button>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs lg={3}>
+            <Card style={{ width: '18rem' }}>
+              <Card.Header>管理后台</Card.Header>
+              <Card.Body>
+                <Card.Title>当前版本</Card.Title>
+                <Card.Text>
+                  {status?.version}
+                </Card.Text>
+                <PopoverConfirmButton upgrading={upgrading} handleClick={() => setUpgrading(true)} text='升级管理后台'>
+                  <p>
+                    升级管理后台，并且可能造成
+                    <span className='text-danger'><strong>系统不可用</strong></span>，
+                    确认继续升级么？
+                  </p>
+                </PopoverConfirmButton>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
       </Container>
     </>
   );

@@ -28,7 +28,7 @@ exports.handle = (router) => {
 
     const decoded = await utils.verifyToken(token);
     const {expire, expireAt, createAt, token2} = utils.createToken();
-    console.log(`login by token ok, decoded=${JSON.stringify(decoded)}, duration=${expire}, create=${createAt}, expire=${expireAt}, token=${'*'.repeat(token.length)}`);
+    console.log(`login by token ok, decoded=${JSON.stringify(decoded)}, duration=${expire}, create=${createAt}, expire=${expireAt}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {token:token2, createAt, expireAt});
   });
 

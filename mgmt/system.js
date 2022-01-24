@@ -3,13 +3,14 @@
 const utils = require('./utils');
 const pkg = require('./package.json');
 const { spawn } = require('child_process');
+const srs = require('./workers/srs');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/status', async (ctx) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(token);
 
-    console.log(`status ok, decoded=${JSON.stringify(decoded)}, token=${'*'.repeat(token.length)}`);
+    console.log(`status ok, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
       version: pkg.version,
     });
@@ -35,19 +36,19 @@ exports.handle = (router) => {
       });
     });
 
-    console.log(`upgrade ok, decoded=${JSON.stringify(decoded)}, token=${'*'.repeat(token.length)}`);
+    console.log(`upgrade ok, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
       version: pkg.version,
     });
   });
 
-  router.all('/terraform/v1/mgmt/software', async (ctx) => {
+  router.all('/terraform/v1/mgmt/srs', async (ctx) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(token);
 
-    console.log(`software ok, decoded=${JSON.stringify(decoded)}, token=${'*'.repeat(token.length)}`);
+    console.log(`srs ok, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
-      version: pkg.version,
+      ...srs.metadata,
     });
   });
 

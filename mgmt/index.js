@@ -18,7 +18,8 @@ const mount  = require('koa-mount');
 const releases = require('./releases');
 const auth = require('./auth');
 const utils = require('./utils');
-const status = require('./status');
+const system = require('./system');
+const threads = require('./threads');
 
 const app = new Koa();
 
@@ -46,7 +47,7 @@ router.all('/', async (ctx) => {
 });
 
 // For backend APIs.
-releases.handle(auth.handle(status.handle(router)));
+releases.handle(auth.handle(system.handle(router)));
 app.use(router.routes());
 
 // For react, static files server.
@@ -59,6 +60,9 @@ app.use(async (ctx, next) => {
   }
   await next();
 });
+
+// Start all workers threads.
+threads.run();
 
 const config = {
   port: process.env.PORT || 2022,
