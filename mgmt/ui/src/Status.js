@@ -69,7 +69,7 @@ export default function Status() {
                   disabled={upgrading}
                   onClick={!upgrading ? handleClick : null}
                 >
-                  {upgrading ? '升级中...' : '升级管理后台'}
+                  {upgrading ? '正在升级中...' : '升级管理后台'}
                 </Button>
               </div>
               <div className="col-12">
