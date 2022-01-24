@@ -8,10 +8,8 @@ import Login from './Login';
 import Logout from './Logout';
 import Navigator from './Navigator';
 import Init from './Init';
-
-function Status() {
-  return <Container>Status</Container>;
-}
+import {Token} from "./utils";
+import Status from "./Status";
 
 function System() {
   return <Container>System</Container>;
@@ -24,6 +22,7 @@ function Software() {
 function App() {
   const [initialized, setInitialized] = React.useState();
   const [tokenUpdated, setTokenUpdated] = React.useState();
+  const [token, setToken] = React.useState();
 
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/init').then(res => {
@@ -34,6 +33,12 @@ function App() {
     });
   }, []);
 
+  React.useEffect(() => {
+    Token.load((data) => {
+      setToken(data);
+    });
+  }, [tokenUpdated]);
+
   return (
     <>
       <BrowserRouter basename={window.PUBLIC_URL}>
@@ -42,8 +47,11 @@ function App() {
           {!initialized && <>
             <Route path="*" element={<Init onInit={()=>setInitialized(true)} />}/>
           </>}
-          {initialized && <>
-            <Route path="/" element={<Login />} />
+          {initialized && !token && <>
+            <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
+          </>}
+          {initialized && token && <>
+            <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
             <Route path="/login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
             <Route path="/status" element={<Status/>}/>
             <Route path="/system" element={<System/>}/>
