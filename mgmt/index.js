@@ -39,14 +39,22 @@ app.use(BodyParser());
 
 const router = new Router();
 
-// Static file server for UI.
+// For react, static files server.
 app.use(mount('/mgmt', serve('./ui/build')));
 router.all('/', async (ctx) => {
   ctx.response.redirect('/mgmt/');
 });
 
+// For backend APIs.
 releases.handle(auth.handle(status.handle(router)));
 app.use(router.routes());
+
+// For react, static files server.
+// See https://stackoverflow.com/a/52464577/17679565
+app.use((ctx, next) => {
+  ctx.type = 'html';
+  ctx.body = fs.readFileSync('./ui/build/index.html');
+});
 
 const config = {
   port: process.env.PORT || 2022,
