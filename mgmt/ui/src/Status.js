@@ -39,12 +39,10 @@ export default function Status() {
       setUpgrading(false);
       console.log(`Status: Upgrade ok, status=${JSON.stringify(res.data.data)}`);
     }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/logout');
+      if (e.response.status === 502) {
+        alert(`升级完成，请刷新页面`);
       } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
+        alert(`未知错误, ${e.message}`);
       }
     });
   }, [upgrading]);
@@ -71,7 +69,7 @@ export default function Status() {
                   disabled={upgrading}
                   onClick={!upgrading ? handleClick : null}
                 >
-                  {upgrading ? '正在升级中...' : '升级管理后台'}
+                  {upgrading ? '正在升级中, 请稍后刷新...' : '升级管理后台'}
                 </Button>
               </div>
               <div className="col-12">
