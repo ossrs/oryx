@@ -3,12 +3,13 @@ import Container from "react-bootstrap/Container";
 import React from "react";
 import {Token, Errors} from "./utils";
 import axios from "axios";
-import {Button, Spinner, Card} from "react-bootstrap";
+import {Button, Spinner, Card, OverlayTrigger, Popover} from "react-bootstrap";
 
 export default function System() {
   const navigate = useNavigate();
   const [status, setStatus] = React.useState();
   const [upgrading, setUpgrading] = React.useState();
+  const [showUpgrading, setShowUpgrading] = React.useState();
 
   // Verify the token if token changed.
   React.useEffect(() => {
@@ -51,6 +52,37 @@ export default function System() {
     setUpgrading(true);
   };
 
+  const popover = (
+    <Popover id="popover-basic">
+      <Popover.Header as="h3">Confirm</Popover.Header>
+      <Popover.Body>
+        <p>
+          升级管理后台，需要较长时间（1分钟左右），并且可能造成<span className='text-danger'><strong>系统不可用</strong></span>，
+          确认继续升级么？
+        </p>
+        <div className='row row-cols-lg-auto g-3 align-items-center'>
+          <div className="col-12">
+            <Button
+              variant="danger"
+              disabled={upgrading}
+              onClick={!upgrading ? handleClick : null}
+            >
+              确认升级
+            </Button>
+          </div>
+          <div className="col-12">
+            <Button
+              variant="primary"
+              onClick={() => setShowUpgrading(false)}
+            >
+              取消
+            </Button>
+          </div>
+        </div>
+      </Popover.Body>
+    </Popover>
+  );
+
   return (
     <>
       <p></p>
@@ -64,13 +96,11 @@ export default function System() {
             </Card.Text>
             <div className='row row-cols-lg-auto g-3 align-items-center'>
               <div className="col-12">
-                <Button
-                  variant="primary"
-                  disabled={upgrading}
-                  onClick={!upgrading ? handleClick : null}
-                >
-                  {upgrading ? '正在升级中...' : '升级管理后台'}
-                </Button>
+                <OverlayTrigger trigger="click" placement="right" overlay={popover} show={showUpgrading}>
+                  <Button variant="primary" onClick={() => setShowUpgrading(!showUpgrading)}>
+                    {upgrading ? '正在升级中...' : '升级管理后台'}
+                  </Button>
+                </OverlayTrigger>
               </div>
               <div className="col-12">
                 {upgrading && <Spinner animation="border" />}

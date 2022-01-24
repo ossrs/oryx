@@ -4,7 +4,6 @@ import './App.css'
 import {Navbar, Nav} from 'react-bootstrap';
 import {Link} from "react-router-dom";
 import logo from './logo.svg';
-import {Token} from "./utils";
 
 export default function Navigator({initialized, token}) {
   return (
