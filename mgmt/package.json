@@ -12,11 +12,13 @@
   "license": "MIT",
   "dependencies": {
     "dotenv": "^14.2.0",
+    "jsonwebtoken": "^8.5.1",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-mount": "^4.0.0",
     "koa-router": "^10.1.1",
     "koa-static": "^5.0.0",
-    "koa2-cors": "^2.0.6"
+    "koa2-cors": "^2.0.6",
+    "moment": "^2.29.1"
   }
 }

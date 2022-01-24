@@ -1,15 +1,22 @@
 import Container from "react-bootstrap/Container";
 import React from "react";
-import { Form, Button } from 'react-bootstrap';
+import {Form, Button} from 'react-bootstrap';
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import {useNavigate} from "react-router-dom";
+import {Token} from './utils';
 
-export default function Login({initialized, onLoginSuccess}) {
+export default function Login({initialized, onLogin}) {
   const [plaintext, setPlaintext] = React.useState(false);
   const [password, setPassword] = React.useState();
   const navigate = useNavigate();
   const passwordRef = React.useRef();
   const plaintextRef = React.useRef();
+
+  React.useEffect(() => {
+    Token.load((data) => {
+      if (data) navigate('/status');
+    });
+  }, [initialized]);
 
   React.useEffect(() => {
     if (initialized !== false) return;
@@ -21,13 +28,17 @@ export default function Login({initialized, onLoginSuccess}) {
     plaintext ? plaintextRef.current?.focus() : passwordRef.current?.focus();
   }, [plaintext]);
 
-  const onLogin = (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
     axios.post('/terraform/v1/mgmt/login', {
       password,
     }).then(res => {
-      console.log('login result is', res.data);
-      onLoginSuccess && onLoginSuccess();
+      const token = res.data.data;
+      const mask = `***${token.token.length}B***`;
+      console.log(`Login: OK, token is ${JSON.stringify({...token, token: mask})}`);
+      Token.save(token);
+
+      onLogin && onLogin();
       navigate('/status');
     }).catch(e => {
       const err = e.response.data;
@@ -65,7 +76,7 @@ export default function Login({initialized, onLoginSuccess}) {
                 onClick={() => setPlaintext(!plaintext)}/>
             </Form.Group>
           }
-          <Button variant="primary" type="submit" onClick={(e) => onLogin(e)}>
+          <Button variant="primary" type="submit" onClick={(e) => handleLogin(e)}>
             {initialized ? '登录' : '设置管理员密码'}
           </Button>
         </Form>

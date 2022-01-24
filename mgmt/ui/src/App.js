@@ -1,14 +1,23 @@
 import React from 'react';
-import './App.css'
 import Container from "react-bootstrap/Container";
+import axios from "axios";
+import './App.css'
 import {Navbar, Nav} from 'react-bootstrap';
-import { BrowserRouter, Routes, Link, Route } from "react-router-dom";
+import {BrowserRouter, Routes, Link, Route} from "react-router-dom";
 import Footer from './Footer';
 import Login from './Login';
+import Logout from './Logout';
 import logo from './logo.svg';
-import axios from "axios";
+import {Token} from "./utils";
 
-function Navigator({initialized}) {
+function Navigator({initialized, expire}) {
+  const [token, setToken] = React.useState();
+  React.useEffect(() => {
+    Token.load((data) => {
+      setToken(data);
+    });
+  }, [initialized, expire]);
+
   return (
     <Navbar bg='light' variant='light'>
       <Container>
@@ -27,7 +36,7 @@ function Navigator({initialized}) {
             <Nav.Link as={Link} to='/status'>Status</Nav.Link>
             <Nav.Link as={Link} to='/system'>System</Nav.Link>
             <Nav.Link as={Link} to='/software'>Software</Nav.Link>
-            <Nav.Link as={Link} to='/logout'>Logout</Nav.Link>
+            {token && <Nav.Link as={Link} to='/logout'>Logout</Nav.Link>}
           </Nav>
         }
       </Container>
@@ -47,15 +56,11 @@ function Software() {
   return <Container>Software</Container>;
 }
 
-function Logout() {
-  return <Container>Logout</Container>;
-}
-
 function App() {
   const [initialized, setInitialized] = React.useState();
+  const [expire, setExpire] = React.useState();
 
   React.useEffect(() => {
-    console.log('xxx', initialized);
     axios.get('/terraform/v1/mgmt/init').then(res => {
       setInitialized(res.data.data.init);
     }).catch(e => {
@@ -64,16 +69,24 @@ function App() {
     });
   }, []);
 
+  const onLogin = () => {
+    setInitialized(true);
+    setExpire(!expire);
+  };
+  const onLogout = () => {
+    setExpire(!expire);
+  };
+
   return (
     <>
       <BrowserRouter basename={window.PUBLIC_URL}>
-        <Navigator initialized={initialized} />
+        <Navigator initialized={initialized} expire={expire} />
         <Routes>
-          <Route path="/" element={<Login initialized={initialized} onLoginSuccess={() => setInitialized(true)}/>}/>
+          <Route path="/" element={<Login initialized={initialized} onLogin={onLogin}/>}/>
           <Route path="/status" element={<Status/>}/>
           <Route path="/system" element={<System/>}/>
           <Route path="/software" element={<Software/>}/>
-          <Route path="/logout" element={<Logout/>}/>
+          <Route path="/logout" element={<Logout onLogout={onLogout} />}/>
         </Routes>
       </BrowserRouter>
       <Footer />
