@@ -6,6 +6,7 @@ import {useNavigate} from "react-router-dom";
 import {Token, Tools} from './utils';
 
 export default function Login({initialized, onLogin}) {
+  const [token, setToken] = React.useState();
   const [verify, setVerify] = React.useState(false);
   const [plaintext, setPlaintext] = React.useState(false);
   const [password, setPassword] = React.useState();
@@ -13,26 +14,58 @@ export default function Login({initialized, onLogin}) {
   const passwordRef = React.useRef();
   const plaintextRef = React.useRef();
 
+  // Load the token if page initialized or verify changed.
   React.useEffect(() => {
+    if (initialized === undefined) return ;
+
+    console.log(`Login: Load token, initialized=${initialized}, verify=${verify}`);
     Token.load((data) => {
       if (!data || !data.token) return;
-      console.log(`Login: Done, token is ${Tools.mask(data)}`);
-      navigate('/status');
+      setToken(data);
     });
-  }, [initialized]);
+  }, [initialized, verify]);
 
+  // Verify the token if token changed.
+  React.useEffect(() => {
+    if (!token || !token.token) return;
+
+    console.log(`Login: Verify, token is ${Tools.mask(token)}`);
+    axios.post('/terraform/v1/mgmt/token', {
+      ...token,
+    }).then(res => {
+      setVerify(true);
+    }).catch(e => {
+      const err = e.response.data;
+      alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+    });
+  }, [token]);
+
+  // Redirect if token verify done.
+  React.useEffect(() => {
+    if (!token || !token.token) return;
+    if (verify !== true) return;
+
+    console.log(`Login: Done, verify=${verify}, token is ${Tools.mask(token)}`);
+    navigate('/status');
+  }, [token, verify]);
+
+  // Generate password if not initialized.
   React.useEffect(() => {
     if (initialized !== false) return;
+
     setPassword(Math.random().toString(16).slice(-6));
     setPlaintext(true);
   }, [initialized]);
 
+  // Focus to password input.
   React.useEffect(() => {
     plaintext ? plaintextRef.current?.focus() : passwordRef.current?.focus();
-  }, [plaintext]);
+  }, [initialized, plaintext]);
 
+  // User click login button.
   const handleLogin = (e) => {
     e.preventDefault();
+
     axios.post('/terraform/v1/mgmt/login', {
       password,
     }).then(res => {
