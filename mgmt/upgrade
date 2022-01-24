@@ -41,4 +41,9 @@ sudo systemctl daemon-reload &&
 sudo systemctl restart srs-terraform
 if [[ $? -ne 0 ]]; then echo "Restart service failed"; exit 1; fi
 
+echo "Change permissions for generated files"
+sudo chown -R lighthouse:lighthouse /usr/local/lighthouse/softwares &&
+sudo chown -R lighthouse:lighthouse /usr/local/srs-terraform
+if [[ $? -ne 0 ]]; then echo "Change owner failed"; exit 1; fi
+
 echo "Upgrade OK"
