@@ -33,8 +33,7 @@ fi
 # Try git stash first, ignore any error.
 git stash 2>>upgrade.error.log
 if [[ $? -ne 0 ]]; then
-  echo "Warning: git stash failed, lost changes, see $(pwd)/upgrade.error.log for details";
-  git status >>upgrade.error.log
+  echo "Warning: git stash failed, see upgrade.error.log for detail\n";
 fi
 
 echo "Upgrade code files"
