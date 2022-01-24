@@ -5,11 +5,64 @@ import {Token, Errors} from "./utils";
 import axios from "axios";
 import {Button, Spinner, Card, OverlayTrigger, Popover} from "react-bootstrap";
 
+function PopoverConfirmButton({upgrading, handleClick, text, children}) {
+  const [showUpgrading, setShowUpgrading] = React.useState();
+
+  const onHandleClick = () => {
+    setShowUpgrading(false);
+    handleClick();
+  };
+
+  const popover = (
+    <Popover id="popover-basic">
+      <Popover.Header as="h3">Confirm</Popover.Header>
+      <Popover.Body>
+        <p>
+          {children}
+        </p>
+        <div className='row row-cols-lg-auto g-3 align-items-center'>
+          <div className="col-12">
+            <Button
+              variant="danger"
+              disabled={upgrading}
+              onClick={!upgrading ? onHandleClick : null}
+            >
+              确认升级
+            </Button>
+          </div>
+          <div className="col-12">
+            <Button
+              variant="primary"
+              onClick={() => setShowUpgrading(false)}
+            >
+              取消
+            </Button>
+          </div>
+        </div>
+      </Popover.Body>
+    </Popover>
+  );
+
+  return (
+    <div className='row row-cols-lg-auto g-3 align-items-center'>
+      <div className="col-12">
+        <OverlayTrigger trigger="click" placement="right" overlay={popover} show={showUpgrading}>
+          <Button variant="primary" onClick={() => setShowUpgrading(!showUpgrading)}>
+            {upgrading ? '正在升级中...' : text}
+          </Button>
+        </OverlayTrigger>
+      </div>
+      <div className="col-12">
+        {upgrading && <Spinner animation="border" />}
+      </div>
+    </div>
+  );
+}
+
 export default function System() {
   const navigate = useNavigate();
   const [status, setStatus] = React.useState();
   const [upgrading, setUpgrading] = React.useState();
-  const [showUpgrading, setShowUpgrading] = React.useState();
 
   // Verify the token if token changed.
   React.useEffect(() => {
@@ -52,37 +105,6 @@ export default function System() {
     setUpgrading(true);
   };
 
-  const popover = (
-    <Popover id="popover-basic">
-      <Popover.Header as="h3">Confirm</Popover.Header>
-      <Popover.Body>
-        <p>
-          升级管理后台，需要较长时间（1分钟左右），并且可能造成<span className='text-danger'><strong>系统不可用</strong></span>，
-          确认继续升级么？
-        </p>
-        <div className='row row-cols-lg-auto g-3 align-items-center'>
-          <div className="col-12">
-            <Button
-              variant="danger"
-              disabled={upgrading}
-              onClick={!upgrading ? handleClick : null}
-            >
-              确认升级
-            </Button>
-          </div>
-          <div className="col-12">
-            <Button
-              variant="primary"
-              onClick={() => setShowUpgrading(false)}
-            >
-              取消
-            </Button>
-          </div>
-        </div>
-      </Popover.Body>
-    </Popover>
-  );
-
   return (
     <>
       <p></p>
@@ -94,18 +116,10 @@ export default function System() {
             <Card.Text>
               {status?.version}
             </Card.Text>
-            <div className='row row-cols-lg-auto g-3 align-items-center'>
-              <div className="col-12">
-                <OverlayTrigger trigger="click" placement="right" overlay={popover} show={showUpgrading}>
-                  <Button variant="primary" onClick={() => setShowUpgrading(!showUpgrading)}>
-                    {upgrading ? '正在升级中...' : '升级管理后台'}
-                  </Button>
-                </OverlayTrigger>
-              </div>
-              <div className="col-12">
-                {upgrading && <Spinner animation="border" />}
-              </div>
-            </div>
+            <PopoverConfirmButton upgrading={upgrading} handleClick={handleClick} text='升级管理后台'>
+                升级管理后台，需要较长时间（1分钟左右），并且可能造成<span className='text-danger'><strong>系统不可用</strong></span>，
+                确认继续升级么？
+            </PopoverConfirmButton>
           </Card.Body>
         </Card>
       </Container>
