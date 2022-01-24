@@ -51,9 +51,13 @@ app.use(router.routes());
 
 // For react, static files server.
 // See https://stackoverflow.com/a/52464577/17679565
-app.use((ctx, next) => {
-  ctx.type = 'html';
-  ctx.body = fs.readFileSync('./ui/build/index.html');
+app.use(async (ctx, next) => {
+  if (ctx.request.path.indexOf('/mgmt/') === 0) {
+    ctx.type = 'text/html';
+    ctx.body = fs.readFileSync('./ui/build/index.html');
+    return;
+  }
+  await next();
 });
 
 const config = {

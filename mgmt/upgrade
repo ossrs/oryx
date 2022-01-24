@@ -14,6 +14,8 @@ if [[ $TARGET_TAG != 'lighthouse' && $TAG_NAME == '' ]]; then
   echo "For example:"
   echo "    $0 lighthouse"
   echo "    $0 v1.2.3"
+  echo "Remark:"
+  echo "    The upgrade will reset all local changes by: git checkout ."
   exit 1
 fi
 
@@ -39,3 +41,4 @@ sudo systemctl daemon-reload &&
 sudo systemctl restart srs-terraform
 if [[ $? -ne 0 ]]; then echo "Restart service failed"; exit 1; fi
 
+echo "Upgrade OK"
