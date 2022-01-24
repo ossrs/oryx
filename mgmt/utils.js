@@ -34,6 +34,10 @@ exports.saveConfig = (config) => {
     const v = config[k];
     return `${k}=${v}`;
   });
+
+  // Append an empty line.
+  envVars.push('');
+
   fs.writeFileSync('.env', envVars.join(os.EOL));
   return config;
 };

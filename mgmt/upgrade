@@ -22,6 +22,7 @@ ls -lh
 if [[ $? -ne 0 ]]; then echo "Prepare upgrade failed"; exit 1; fi
 
 echo "Upgrade code files"
+git stash &&
 git pull &&
 git checkout $TARGET_TAG &&
 git pull
