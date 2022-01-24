@@ -14,3 +14,10 @@ export const Token = {
   },
 };
 
+export const Tools = {
+  mask(data) {
+    const mask = `***${data.token.length}B***`;
+    return JSON.stringify({...data, token: mask});
+  }
+};
+

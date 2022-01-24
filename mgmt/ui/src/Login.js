@@ -3,9 +3,10 @@ import React from "react";
 import {Form, Button} from 'react-bootstrap';
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
-import {Token} from './utils';
+import {Token, Tools} from './utils';
 
 export default function Login({initialized, onLogin}) {
+  const [verify, setVerify] = React.useState(false);
   const [plaintext, setPlaintext] = React.useState(false);
   const [password, setPassword] = React.useState();
   const navigate = useNavigate();
@@ -14,7 +15,9 @@ export default function Login({initialized, onLogin}) {
 
   React.useEffect(() => {
     Token.load((data) => {
-      if (data) navigate('/status');
+      if (!data || !data.token) return;
+      console.log(`Login: Done, token is ${Tools.mask(data)}`);
+      navigate('/status');
     });
   }, [initialized]);
 
@@ -33,10 +36,9 @@ export default function Login({initialized, onLogin}) {
     axios.post('/terraform/v1/mgmt/login', {
       password,
     }).then(res => {
-      const token = res.data.data;
-      const mask = `***${token.token.length}B***`;
-      console.log(`Login: OK, token is ${JSON.stringify({...token, token: mask})}`);
-      Token.save(token);
+      const data = res.data.data;
+      console.log(`Login: OK, token is ${Tools.mask(data)}`);
+      Token.save(data);
 
       onLogin && onLogin();
       navigate('/status');
