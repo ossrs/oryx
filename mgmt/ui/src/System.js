@@ -3,9 +3,9 @@ import Container from "react-bootstrap/Container";
 import React from "react";
 import {Token, Errors} from "./utils";
 import axios from "axios";
-import {Button, Spinner, Form, Row, Col, Card} from "react-bootstrap";
+import {Button, Spinner, Card} from "react-bootstrap";
 
-export default function Status() {
+export default function System() {
   const navigate = useNavigate();
   const [status, setStatus] = React.useState();
   const [upgrading, setUpgrading] = React.useState();
@@ -56,9 +56,9 @@ export default function Status() {
       <p></p>
       <Container>
         <Card style={{ width: '18rem' }}>
-          <Card.Header>System</Card.Header>
+          <Card.Header>管理后台</Card.Header>
           <Card.Body>
-            <Card.Title>Version</Card.Title>
+            <Card.Title>当前版本</Card.Title>
             <Card.Text>
               {status?.version}
             </Card.Text>

@@ -22,7 +22,7 @@ export default function Login({onLogin}) {
       ...token,
     }).then(res => {
       console.log(`Login: Done, token is ${Tools.mask(token)}`);
-      navigate('/status');
+      navigate('/system');
     }).catch(e => {
       const err = e.response.data;
       alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
@@ -46,7 +46,7 @@ export default function Login({onLogin}) {
       Token.save(data);
 
       onLogin && onLogin();
-      navigate('/status');
+      navigate('/system');
     }).catch(e => {
       const err = e.response.data;
       alert(`${err.code}: ${err.data.message}`);

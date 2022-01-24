@@ -9,8 +9,7 @@ import Logout from './Logout';
 import Navigator from './Navigator';
 import Init from './Init';
 import {Token} from "./utils";
-import Status from "./Status";
-import Software from "./Software";
+import System from "./System";
 
 function App() {
   const [initialized, setInitialized] = React.useState();
@@ -44,8 +43,7 @@ function App() {
           {initialized && token && <>
             <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
             <Route path="/login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
-            <Route path="/status" element={<Status/>}/>
-            <Route path="/software" element={<Software/>}/>
+            <Route path="/system" element={<System/>}/>
             <Route path="/logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
           </>}
         </Routes>

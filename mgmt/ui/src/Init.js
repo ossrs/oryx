@@ -25,7 +25,7 @@ export default function Init({onInit}) {
       console.log(`Init: OK, token is ${Tools.mask(data)}`);
       Token.save(data);
       onInit && onInit();
-      navigate('/status');
+      navigate('/system');
     }).catch(e => {
       const err = e.response.data;
       alert(`${err.code}: ${err.data.message}`);
