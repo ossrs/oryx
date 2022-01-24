@@ -5,13 +5,15 @@ WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
 echo "Upgrade srs-terraform at $WORK_DIR"
 
 TARGET_TAG=$1
-echo "The TARGET_TAG=$TARGET_TAG"
+TAG_NAME=$(echo $TARGET_TAG|grep '^v')
+echo "The TARGET_TAG=$TARGET_TAG TAG_NAME=$TAG_NAME"
 
-if [[ $TARGET_TAG == '' ]]; then
+if [[ $TARGET_TAG != 'lighthouse' && $TAG_NAME == '' ]]; then
   echo "Usage: $0 <branch|tag>"
   echo "    branch|tag    The branch or tag to upgrade to."
   echo "For example:"
   echo "    $0 lighthouse"
+  echo "    $0 v1.2.3"
   exit 1
 fi
 
