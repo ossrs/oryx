@@ -4,13 +4,12 @@ export const Token = {
   save(data) {
     localStorage.setItem(SRS_TERRAFORM_TOKEN, JSON.stringify(data));
   },
-  load(callback) {
+  load() {
     const info = localStorage.getItem(SRS_TERRAFORM_TOKEN);
-    callback && callback(JSON.parse(info));
+    return JSON.parse(info);
   },
-  remove(callback) {
+  remove() {
     localStorage.removeItem(SRS_TERRAFORM_TOKEN);
-    callback && callback();
   },
 };
 
@@ -19,5 +18,9 @@ export const Tools = {
     const mask = `***${data.token.length}B***`;
     return JSON.stringify({...data, token: mask});
   }
+};
+
+export const Errors = {
+  auth: 201, // Verify token failed.
 };
 

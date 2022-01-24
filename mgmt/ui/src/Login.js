@@ -6,46 +6,28 @@ import {useNavigate} from "react-router-dom";
 import {Token, Tools} from './utils';
 
 export default function Login({onLogin}) {
-  const [token, setToken] = React.useState();
-  const [verify, setVerify] = React.useState(false);
   const [plaintext, setPlaintext] = React.useState(false);
   const [password, setPassword] = React.useState();
   const navigate = useNavigate();
   const passwordRef = React.useRef();
   const plaintextRef = React.useRef();
 
-  // Load the token if page verify changed.
+  // Verify the token if exists.
   React.useEffect(() => {
-    Token.load((data) => {
-      if (!data || !data.token) return;
-      console.log(`Login: Load local storage, token is ${Tools.mask(data)}`);
-      setToken(data);
-    });
-  }, []);
-
-  // Verify the token if token changed.
-  React.useEffect(() => {
+    const token = Token.load();
     if (!token || !token.token) return;
 
     console.log(`Login: Verify, token is ${Tools.mask(token)}`);
     axios.post('/terraform/v1/mgmt/token', {
       ...token,
     }).then(res => {
-      setVerify(true);
+      console.log(`Login: Done, token is ${Tools.mask(token)}`);
+      navigate('/status');
     }).catch(e => {
       const err = e.response.data;
       alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
     });
-  }, [token]);
-
-  // Redirect if token verify done.
-  React.useEffect(() => {
-    if (!token || !token.token) return;
-    if (verify !== true) return;
-
-    console.log(`Login: Done, verify=${verify}, token is ${Tools.mask(token)}`);
-    navigate('/status');
-  }, [token, verify]);
+  }, []);
 
   // Focus to password input.
   React.useEffect(() => {

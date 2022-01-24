@@ -23,12 +23,8 @@ exports.handle = (router) => {
   });
 
   router.all('/terraform/v1/mgmt/token', async (ctx) => {
-    if (!process.env.MGMT_PASSWORD) throw utils.asError(errs.auth.init, errs.status.auth, 'not init');
-
     const {token} = ctx.request.body;
     if (!token) throw utils.asError(errs.sys.empty, errs.status.auth, 'no token');
-
-    if (!process.env.MGMT_PASSWORD) throw utils.asError(errs.auth.token, errs.status.auth, 'invalid token');
 
     const decoded = await utils.verifyToken(token);
     const {expire, expireAt, createAt, token2} = utils.createToken();

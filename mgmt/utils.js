@@ -5,6 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const moment = require('moment');
 const jwt = require('jsonwebtoken');
+const errs = require('./errs');
 
 exports.asResponse = (code, data) => {
   return {
@@ -54,6 +55,9 @@ exports.createToken = () => {
 
 exports.verifyToken = async (token) => {
   const utils = exports;
+
+  if (!token) throw utils.asError(errs.sys.empty, errs.status.auth, 'no token');
+  if (!process.env.MGMT_PASSWORD) throw utils.asError(errs.auth.init, errs.status.auth, 'not init');
 
   // Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
   return await new Promise((resolve, reject) => {

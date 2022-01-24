@@ -4,18 +4,18 @@ import React from "react";
 import {Token, Errors} from "./utils";
 import axios from "axios";
 
-export default function Status() {
+export default function Software() {
   const navigate = useNavigate();
   const [status, setStatus] = React.useState();
 
   // Verify the token if token changed.
   React.useEffect(() => {
     const token = Token.load();
-    axios.post('/terraform/v1/mgmt/status', {
+    axios.post('/terraform/v1/mgmt/software', {
       ...token,
     }).then(res => {
       setStatus(res.data.data);
-      console.log(`Status: Query ok, status=${JSON.stringify(res.data.data)}`);
+      console.log(`Status: Query ok, software=${JSON.stringify(res.data.data)}`);
     }).catch(e => {
       const err = e.response.data;
       if (err.code === Errors.auth) {

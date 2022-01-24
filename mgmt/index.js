@@ -18,6 +18,7 @@ const mount  = require('koa-mount');
 const releases = require('./releases');
 const auth = require('./auth');
 const utils = require('./utils');
+const status = require('./status');
 
 const app = new Koa();
 
@@ -44,7 +45,7 @@ router.all('/', async (ctx) => {
   ctx.response.redirect('/mgmt/');
 });
 
-releases.handle(auth.handle(router));
+releases.handle(auth.handle(status.handle(router)));
 app.use(router.routes());
 
 const config = {

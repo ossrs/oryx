@@ -10,14 +10,7 @@ import Navigator from './Navigator';
 import Init from './Init';
 import {Token} from "./utils";
 import Status from "./Status";
-
-function System() {
-  return <Container>System</Container>;
-}
-
-function Software() {
-  return <Container>Software</Container>;
-}
+import Software from "./Software";
 
 function App() {
   const [initialized, setInitialized] = React.useState();
@@ -34,15 +27,13 @@ function App() {
   }, []);
 
   React.useEffect(() => {
-    Token.load((data) => {
-      setToken(data);
-    });
+    setToken(Token.load());
   }, [tokenUpdated]);
 
   return (
     <>
       <BrowserRouter basename={window.PUBLIC_URL}>
-        <Navigator initialized={initialized} tokenUpdated={tokenUpdated} />
+        <Navigator initialized={initialized} token={token} />
         <Routes>
           {!initialized && <>
             <Route path="*" element={<Init onInit={()=>setInitialized(true)} />}/>
@@ -54,7 +45,6 @@ function App() {
             <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
             <Route path="/login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
             <Route path="/status" element={<Status/>}/>
-            <Route path="/system" element={<System/>}/>
             <Route path="/software" element={<Software/>}/>
             <Route path="/logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
           </>}

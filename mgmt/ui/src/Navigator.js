@@ -6,14 +6,7 @@ import {Link} from "react-router-dom";
 import logo from './logo.svg';
 import {Token} from "./utils";
 
-export default function Navigator({initialized, tokenUpdated}) {
-  const [token, setToken] = React.useState();
-  React.useEffect(() => {
-    Token.load((data) => {
-      setToken(data);
-    });
-  }, [initialized, tokenUpdated]);
-
+export default function Navigator({initialized, token}) {
   return (
     <Navbar bg='light' variant='light'>
       <Container>
@@ -31,7 +24,6 @@ export default function Navigator({initialized, tokenUpdated}) {
           <Nav className="me-auto">
             {token && <>
               <Nav.Link as={Link} to='/status'>Status</Nav.Link>
-              <Nav.Link as={Link} to='/system'>System</Nav.Link>
               <Nav.Link as={Link} to='/software'>Software</Nav.Link>
             </>}
             {!token && <Nav.Link as={Link} to='/login'>Login</Nav.Link>}

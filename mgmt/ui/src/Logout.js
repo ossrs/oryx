@@ -7,10 +7,9 @@ export default function Logout({onLogout}) {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    Token.remove(() => {
-      onLogout && onLogout();
-      navigate('/');
-    });
+    Token.remove();
+    onLogout && onLogout();
+    navigate('/');
   }, []);
 
   return <Container>Logout</Container>;
