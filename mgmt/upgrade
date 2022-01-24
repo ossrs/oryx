@@ -15,7 +15,7 @@ if [[ $TARGET_TAG != 'lighthouse' && $TAG_NAME == '' ]]; then
   echo "    $0 lighthouse"
   echo "    $0 v1.2.3"
   echo "Remark:"
-  echo "    The upgrade will reset all local changes by: git checkout ."
+  echo "    You will lost local changes by git checkout"
   exit 1
 fi
 
