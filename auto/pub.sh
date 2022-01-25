@@ -17,7 +17,7 @@ echo "publish version $VERSION as tag $TAG"
 
 cat mgmt/package.json |sed "s|\"version\":.*|\"version\":\"$VERSION\",|g" > tmp.json && mv tmp.json mgmt/package.json &&
 cat releases/package.json |sed "s|\"version\":.*|\"version\":\"$VERSION\",|g" > tmp.json && mv tmp.json releases/package.json &&
-cat releases/releases.js |sed "s|const\ latest\ =.*|const latest = '$VERSION';|g" > tmp.js && mv tmp.js releases/releases.js
+cat releases/releases.js |sed "s|const\ latest\ =.*|const latest = '$TAG';|g" > tmp.js && mv tmp.js releases/releases.js
 git ci -am "Release $VERSION as $TAG"
 
 git push

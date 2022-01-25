@@ -10,7 +10,7 @@ function buildVersion(q, version) {
   return {
     stable,
     latest,
-    api: pkg.version,
+    api: `v${pkg.version}`,
   };
 }
 
