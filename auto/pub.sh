@@ -29,5 +29,10 @@ git push
 git tag -d $TAG 2>/dev/null && git push origin :$TAG
 git tag $TAG
 git push origin $TAG
+
+git remote |grep -q gitee &&
+git push gitee &&
+git push gitee $TAG
+
 echo "publish $TAG ok"
 echo "    https://github.com/ossrs/srs-terraform/actions"
