@@ -14,8 +14,8 @@ echo "Last release is $RELEASE, revision is $REVISION, next is $NEXT"
 TAG="v1.0.$NEXT"
 echo "publish $TAG"
 
-cat mgmt/package.json |sed "s|\"version\":.*|\"version\":\"$TAG\",|g" > t.json
-mv t.json mgmt/package.json
+cat mgmt/package.json |sed "s|\"version\":.*|\"version\":\"$TAG\",|g" > t.json && mv t.json mgmt/package.json &&
+cat releases/package.json |sed "s|\"version\":.*|\"version\":\"$TAG\",|g" > t.json && mv t.json releases/package.json
 git ci -am "Release $TAG"
 
 git push

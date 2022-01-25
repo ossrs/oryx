@@ -1,4 +1,8 @@
 {
+  "name": "releases-api",
+  "version":"v1.0.10",
+  "description": "API for srs-terraform releases",
+  "main": "index.js",
   "dependencies": {
     "dotenv": "^10.0.0",
     "koa": "^2.13.4",

@@ -1,5 +1,7 @@
 'use strict';
 
+const pkg = require('./package.json');
+
 const stable = 'v1.0.10';
 const latest = 'v1.0.11';
 
@@ -8,6 +10,7 @@ function buildVersion(q, version) {
   return {
     stable,
     latest,
+    api: pkg.version,
   };
 }
 
