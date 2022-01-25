@@ -14,7 +14,10 @@ exports.handle = (router) => {
     console.log(`status ok, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
       version: pkg.version,
-      releases: releases.metadata,
+      releases: {
+        stable: releases.metadata.releases.stable,
+        latest: releases.metadata.releases.latest,
+      },
     });
   });
 
@@ -22,8 +25,8 @@ exports.handle = (router) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(token);
 
-    let target = releases.metadata.versions?.stable || 'lighthouse';
-    console.log(`Start upgrade to target=${target}, current=${pkg.version}, releases=${JSON.stringify(releases.metadata.versions)}`);
+    let target = releases.metadata.releases?.stable || 'lighthouse';
+    console.log(`Start upgrade to target=${target}, current=${pkg.version}, releases=${JSON.stringify(releases.metadata.releases)}`);
 
     await new Promise((resolve, reject) => {
       const child = spawn('bash', ['upgrade', target]);
@@ -52,7 +55,8 @@ exports.handle = (router) => {
 
     console.log(`srs ok, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
-      ...srs.metadata,
+      name: srs.metadata.name,
+      major: srs.metadata.major,
       container: {
         ID: srs.metadata.container.ID,
         State: srs.metadata.container.State,

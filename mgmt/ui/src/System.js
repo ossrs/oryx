@@ -90,8 +90,8 @@ export default function System() {
               <Card.Body>
                 <Card.Text>
                   Current: {status?.version} <br/>
-                  Stable: {status?.releases?.versions?.stable} <br/>
-                  Latest: {status?.releases?.versions?.latest}
+                  Stable: {status?.releases?.stable} <br/>
+                  Latest: {status?.releases?.latest}
                 </Card.Text>
                 <PopoverConfirmButton upgrading={upgrading} handleClick={() => setUpgrading(true)} text='升级管理后台'>
                   <p>
