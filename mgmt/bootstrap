@@ -6,5 +6,5 @@ echo "Run srs-terraform at $WORK_DIR"
 APP_ARGS=$@
 echo "Program args: $APP_ARGS"
 
-cd $WORK_DIR && node --title='srs-terraform listen 2022' index.js $APP_ARGS >trace.log 2>error.log
+cd $WORK_DIR && node --title='srs-terraform listen 2022' index.js $APP_ARGS
 
