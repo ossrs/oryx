@@ -28,7 +28,7 @@ export default function System() {
         alert(`服务器错误，${err.code}: ${err.data.message}`);
       }
     });
-  }, []);
+  }, [navigate]);
 
   React.useEffect(() => {
     const token = Token.load();
@@ -46,7 +46,7 @@ export default function System() {
         alert(`服务器错误，${err.code}: ${err.data.message}`);
       }
     });
-  }, []);
+  }, [navigate]);
 
   React.useEffect(() => {
     if (!upgrading) return;

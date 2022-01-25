@@ -10,7 +10,7 @@ export default function Logout({onLogout}) {
     Token.remove();
     onLogout && onLogout();
     navigate('/login');
-  }, []);
+  }, [navigate]);
 
   return <Container>Logout</Container>;
 }

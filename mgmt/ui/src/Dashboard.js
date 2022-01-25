@@ -1,5 +1,5 @@
 import {useNavigate} from "react-router-dom";
-import {Container, Tabs, Tab, Accordion, Form, Row, Col, Button} from "react-bootstrap";
+import {Container, Tabs, Tab, Accordion} from "react-bootstrap";
 import React from "react";
 import {Token, Errors} from "./utils";
 import axios from "axios";
@@ -28,7 +28,7 @@ export default function Dashboard() {
         alert(`服务器错误，${err.code}: ${err.data.message}`);
       }
     });
-  }, []);
+  }, [navigate]);
 
   React.useEffect(() => {
     // Build RTMP url.

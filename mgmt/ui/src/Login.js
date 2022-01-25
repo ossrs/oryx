@@ -27,7 +27,7 @@ export default function Login({onLogin}) {
       const err = e.response.data;
       alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
     });
-  }, []);
+  }, [navigate]);
 
   // Focus to password input.
   React.useEffect(() => {
