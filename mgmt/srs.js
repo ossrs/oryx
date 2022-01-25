@@ -31,29 +31,40 @@ async function _thread_main() {
 
 async function thread_main() {
   // Query the container from docker.
-  let container = await queryContainer();
-  if (container.ID) {
-    metadata.container = container;
-    console.log(`Thread #${metadata.name}: query ID=${container.ID}, State=${container.State}`);
+  let [all, running] = await queryContainer();
+  if (all && all.ID) {
+    metadata.container = all;
+    console.log(`Thread #${metadata.name}: query ID=${all.ID}, State=${all.State}, Status=${all.Status}`);
   }
 
   // Restart the SRS container.
-  if (!container.ID || container.State !== 'running') {
+  if (!all.ID || !running) {
     await startContainer();
 
-    container = await queryContainer();
-    metadata.container = container;
-    console.log(`Thread #${metadata.name}: create ID=${container.ID}, State=${container.State}`);
+    all = (await queryContainer())[0];
+    if (all && all.ID) metadata.container = all;
+    console.log(`Thread #${metadata.name}: create ID=${all.ID}, State=${all.State}, Status=${all.Status}`);
   }
 
   // Update the metadata to main thread.
   parentPort.postMessage({metadata});
 }
 
+// See https://docs.docker.com/config/formatting/
 async function queryContainer() {
-  // See https://docs.docker.com/config/formatting/
-  const {stdout} = await exec(`docker ps -a -f name=${metadata.name} --format '{{json .}}'`);
-  return stdout ? JSON.parse(stdout) : {};
+  let all, running;
+
+  if (true) {
+    const {stdout} = await exec(`docker ps -a -f name=${metadata.name} --format '{{json .}}'`);
+    all = stdout ? JSON.parse(stdout) : {};
+  }
+
+  if (true) {
+    const {stdout} = await exec(`docker ps -f name=${metadata.name} --format '{{json .}}'`);
+    running = stdout ? JSON.parse(stdout) : {};
+  }
+
+  return [all, running];
 }
 
 async function startContainer() {
@@ -67,7 +78,8 @@ async function startContainer() {
     ./objs/srs -c conf/lighthouse.conf`;
 
   // Only remove the container when got ID, to avoid fail for CentOS.
-  if (metadata.container.ID) {
+  const all = (await queryContainer())[0];
+  if (all && all.ID) {
     await exec(`docker rm -f ${metadata.name}`);
   }
 
