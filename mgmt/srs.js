@@ -66,7 +66,11 @@ async function startContainer() {
     registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:${metadata.major} \\
     ./objs/srs -c conf/lighthouse.conf`;
 
-  await exec(`docker rm -f ${metadata.name}`);
+  // Only remove the container when got ID, to avoid fail for CentOS.
+  if (metadata.container.ID) {
+    await exec(`docker rm -f ${metadata.name}`);
+  }
+
   await exec(`docker run ${dockerArgs}`);
   console.log(`Thread #${metadata.name}: docker run with ip=${privateIPv4.name}/${privateIPv4.address}, conf=${confFile}, docker run ${dockerArgs}`);
 }
