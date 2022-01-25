@@ -7,29 +7,32 @@ const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const errs = require('./errs');
 
-exports.asResponse = (code, data) => {
+const asResponse = (code, data) => {
   return {
     code,
     ... (data? {data} : {}),
   };
 };
+exports.asResponse = asResponse;
 
-exports.asError = (code, status, message) => {
+const asError = (code, status, message) => {
   return {
     code,
     status,
     err: new Error(message),
   };
 };
+exports.asError = asError;
 
-exports.loadConfig = () => {
+const loadConfig = () => {
   dotenv.config({path: '.env', override: true});
   return {
     MGMT_PASSWORD: process.env.MGMT_PASSWORD,
   };
 };
+exports.loadConfig = loadConfig;
 
-exports.saveConfig = (config) => {
+const saveConfig = (config) => {
   const envVars = Object.keys(config).map(k => {
     const v = config[k];
     return `${k}=${v}`;
@@ -41,8 +44,9 @@ exports.saveConfig = (config) => {
   fs.writeFileSync('.env', envVars.join(os.EOL));
   return config;
 };
+exports.saveConfig = saveConfig;
 
-exports.createToken = () => {
+const createToken = () => {
   const utils = exports;
 
   // Update the user info, @see https://www.npmjs.com/package/jsonwebtoken#usage
@@ -56,8 +60,9 @@ exports.createToken = () => {
 
   return {expire, expireAt, createAt, token};
 };
+exports.createToken = createToken;
 
-exports.verifyToken = async (token) => {
+const verifyToken = async (token) => {
   const utils = exports;
 
   if (!token) throw utils.asError(errs.sys.empty, errs.status.auth, 'no token');
@@ -73,7 +78,90 @@ exports.verifyToken = async (token) => {
     });
   });
 };
+exports.verifyToken = verifyToken;
 
 // MySQL日期字段格式化字符串 @see https://stackoverflow.com/a/27381633
 exports.MYSQL_DATETIME = 'YYYY-MM-DD HH:mm:ss';
+
+// The redis key.
+exports.SRS_SECRET_PUBLISH = 'SRS_SECRET_PUBLISH';
+
+/*
+The config SHOULD be config:Object for Redis db, with bellow fields:
+    {host, port, password}
+well, the password is optional, which might for redis without password.
+
+For example:
+    const config = {
+        redis: {
+            host: process.env.REDIS_HOST,
+            port: process.env.REDIS_PORT,
+            password: process.env.REDIS_PASSWORD,
+        }
+    };
+    const ioredis = require('ioredis');
+    const redis = require('utils').redis({config: config.redis, redis: ioredis});
+
+    const r0 = await redis.set('KEY', 'VALUE');
+ */
+const redis = ({config, redis}) => {
+  const connect = function () {
+    if (!redis) throw asError(errs.sys.empty, errs.status.sys, `redis required`);
+    if (!config) throw asError(errs.sys.empty, errs.status.sys, `config required`);
+    if (!config.host) throw asError(errs.sys.empty, errs.status.sys, `config.host required`);
+    if (!config.port) throw asError(errs.sys.empty, errs.status.sys, `config.port required`);
+
+    const dbConfig = {
+      port: config.port,
+      host: config.host,
+      family: 4,
+      db: 0,
+      password: config.password
+    };
+
+    const Redis = redis;
+    const client = new Redis(dbConfig);
+    return client;
+  };
+
+  const client = connect();
+  return {
+    del: async function (key) {
+      return await client.del(key);
+    },
+    // @see https://redis.io/commands/set
+    set: async function (key, value) {
+      return await client.set(key, value);
+    },
+    get: async function (key) {
+      return await client.get(key);
+    },
+    // @see https://redis.io/commands/hset
+    hset: async function (key, field, value) {
+      return await client.hset(key, field, value);
+    },
+    hget: async function (key, field) {
+      return await client.hget(key, field);
+    },
+    hdel: async function (key, field) {
+      return await client.hdel(key, field);
+    },
+    hscan: async function (key, cursor, match, count) {
+      return await client.hscan(key, cursor, 'MATCH', match, 'COUNT', count);
+    },
+    hkeys: async function (key) {
+      return await client.hkeys(key);
+    },
+    hgetall: async function (key) {
+      return await client.hgetall(key);
+    },
+    time: async function () {
+      return await client.time();
+    },
+    hlen: async function (key) {
+      return await client.hlen(key);
+    },
+  };
+};
+exports.redis = redis;
 

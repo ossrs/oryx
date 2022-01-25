@@ -84,11 +84,14 @@ app.use(async (ctx, next) => {
 
 // Proxy to SRS HTTP streaming, console and player.
 // See https://github.com/vagusX/koa-proxies
+app.use(proxy('/api/', {
+  target: 'http://127.0.0.1:1985/',
+}));
+app.use(proxy('/rtc/', {
+  target: 'http://127.0.0.1:1985/',
+}));
 app.use(proxy('/', {
   target: 'http://127.0.0.1:8080',
-  logs: (ctx, target) => {
-    console.log('%s - %s %s proxy to -> %s', new Date().toISOString(), ctx.req.method, ctx.req.oldPath, new URL(ctx.req.url, target))
-  },
 }));
 
 // Start all workers threads.

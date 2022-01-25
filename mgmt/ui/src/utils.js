@@ -21,6 +21,6 @@ export const Tools = {
 };
 
 export const Errors = {
-  auth: 201, // Verify token failed.
+  auth: 2001, // Verify token failed.
 };
 

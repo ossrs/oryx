@@ -10,13 +10,15 @@ export default function Dashboard() {
   const [rtmpStreamKey, setRtmpStreamKey] = React.useState();
   const [cnConsole, setCnConsole] = React.useState();
   const [cnPlayer, setCnPlayer] = React.useState();
+  const [secret, setSecret] = React.useState();
 
   React.useEffect(() => {
     const token = Token.load();
-    axios.post('/terraform/v1/mgmt/status', {
+    axios.post('/terraform/v1/mgmt/srs/secret', {
       ...token,
     }).then(res => {
-      console.log(`Status: Query ok, status=${JSON.stringify(res.data.data)}`);
+      setSecret(res.data.data);
+      console.log(`Status: Query ok, secret=${JSON.stringify(res.data.data)}`);
     }).catch(e => {
       const err = e.response.data;
       if (err.code === Errors.auth) {
@@ -32,33 +34,28 @@ export default function Dashboard() {
     // Build RTMP url.
     if (true) {
       setRtmpServer(`rtmp://${window.location.hostname}/live/`);
-      setRtmpStreamKey(`livestream`);
+      setRtmpStreamKey(secret ? `livestream?secret=${secret.publish}` : 'livestream');
     }
 
     // Build console url.
-    if (true) {
-      // If not 8080, user should proxy to the default port.
-      const query = parseInt(window.location.port) === 8080 ? `?port=1985` : '';
-      const cnUrl = `console/ng_index.html#/summaries${query}`;
-      setCnConsole(cnUrl);
-    }
+    setCnConsole('/console/ng_index.html#/summaries');
 
     // The player url.
     if (true) {
-      const prefix = `players/?schema=${window.location.protocol.replace(':', '')}`;
+      const schema = window.location.protocol.replace(':', '');
       const httpPort = window.location.port || (window.location.protocol === 'http:' ? 80 : 443);
-      // If not 8080, user should proxy both stream and API to the default port.
-      const query = parseInt(window.location.port) === 8080 ? '' : `&port=${httpPort}&api=${httpPort}`;
-      setCnPlayer(`${prefix}${query}`);
+      const stream = 'livestream.flv';
+      const query = `schema=${schema}&port=${httpPort}&api=${httpPort}&stream=${stream}`;
+      setCnPlayer(`/players/?${query}`);
     }
-  }, []);
+  }, [secret]);
 
   return (
     <>
       <p></p>
       <Container>
         <Tabs defaultActiveKey="live" id="uncontrolled-tab-example" className="mb-3">
-          <Tab eventKey="live" title="SRS控制台">
+          <Tab eventKey="live" title="直播间">
             <Accordion defaultActiveKey="0">
               <Accordion.Item eventKey="0">
                 <Accordion.Header>OBS推流</Accordion.Header>
@@ -99,7 +96,7 @@ export default function Dashboard() {
               </Accordion.Item>
             </Accordion>
           </Tab>
-          <Tab eventKey="source" title="音视频开发套件">
+          <Tab eventKey="source" title="源代码">
             <Accordion defaultActiveKey="0">
               <Accordion.Item eventKey="0">
                 <Accordion.Header>SRS</Accordion.Header>
