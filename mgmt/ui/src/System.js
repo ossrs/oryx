@@ -75,9 +75,8 @@ export default function System() {
             <Card style={{ width: '18rem' }}>
               <Card.Header>SRS Server</Card.Header>
               <Card.Body>
-                <Card.Title>当前版本</Card.Title>
                 <Card.Text>
-                  {srs?.major} {srs?.container.State || srs?.container.Status}
+                  {srs?.major} {srs?.container.State} {srs?.container.Status}
                 </Card.Text>
                 <Button className='disabled'>
                   升级SRS服务器
@@ -89,9 +88,10 @@ export default function System() {
             <Card style={{ width: '18rem' }}>
               <Card.Header>管理后台</Card.Header>
               <Card.Body>
-                <Card.Title>当前版本</Card.Title>
                 <Card.Text>
-                  {status?.version}
+                  Current: {status?.version} <br/>
+                  Stable: {status?.releases?.versions?.stable} <br/>
+                  Latest: {status?.releases?.versions?.latest}
                 </Card.Text>
                 <PopoverConfirmButton upgrading={upgrading} handleClick={() => setUpgrading(true)} text='升级管理后台'>
                   <p>

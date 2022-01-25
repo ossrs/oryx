@@ -9,7 +9,9 @@ const metadata = {
   name: 'srs-server',
   major: '4',
   container: {
-    id: null,
+    ID: null,
+    State: null,
+    Status: null,
   },
 };
 exports.metadata = metadata;

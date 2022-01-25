@@ -7,8 +7,11 @@ const axios = require('axios');
 const semver = require('semver');
 
 const metadata = {
-  name: 'releases',
-  versions: null,
+  name: 'mgmt-vers',
+  versions: {
+    stable: null,
+    latest: null,
+  },
 };
 exports.metadata = metadata;
 
@@ -23,11 +26,15 @@ async function _thread_main() {
     } catch (e) {
       console.error(`thread ${metadata.name} err`, e);
     }
-    await new Promise(resolve => setTimeout(resolve, 3600 * 100));
+    await new Promise(resolve => setTimeout(resolve, 3600 * 1000));
   }
 }
 
 async function thread_main() {
+  console.log(`Thread #${metadata.name}: current version=v${pkg.version}`);
+
+  // Wait for a while to request version.
+  await new Promise(resolve => setTimeout(resolve, 10 * 1000));
   console.log(`Thread #${metadata.name}: request by version=v${pkg.version}`);
 
   const {data} = await axios.get('http://api.ossrs.net/terraform/v1/releases', {
