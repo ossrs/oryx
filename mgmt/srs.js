@@ -34,11 +34,11 @@ async function thread_main() {
   let [all, running] = await queryContainer();
   if (all && all.ID) {
     metadata.container = all;
-    console.log(`Thread #${metadata.name}: query ID=${all.ID}, State=${all.State}, Status=${all.Status}`);
+    console.log(`Thread #${metadata.name}: query ID=${all.ID}, State=${all.State}, Status=${all.Status}, running=${running?.ID}`);
   }
 
   // Restart the SRS container.
-  if (!all || !all.ID || !running) {
+  if (!all || !all.ID || !running || !running.ID) {
     await startContainer();
 
     all = (await queryContainer())[0];
@@ -68,6 +68,8 @@ async function queryContainer() {
 }
 
 async function startContainer() {
+  console.log(`Thread #${metadata.name}: start container`);
+
   const privateIPv4 = await discoverPrivateIPv4();
   const confFile = `${process.cwd()}/containers/conf/srs.conf`;
   const dockerArgs = `-d -it --restart always --privileged --name ${metadata.name} \\
