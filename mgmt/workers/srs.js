@@ -39,7 +39,10 @@ async function thread_main() {
   // Restart the SRS container.
   if (!container.ID || container.State !== 'running') {
     await exec(`docker rm -f ${metadata.name}`);
-    await exec(`docker run -d -it --restart always --privileged --name ${metadata.name} -p 1935:1935 -p 1985:1985 -p 8080:8080 -p 8000:8000/udp registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:${metadata.major} ./objs/srs -c conf/docker.conf`);
+    await exec(`docker run -d -it --restart always --privileged --name ${metadata.name} \\
+      -p 1935:1935 -p 1985:1985 -p 8080:8080 -p 8000:8000/udp \\
+      registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:${metadata.major} \\
+      ./objs/srs -c conf/docker.conf`);
 
     let container = await queryContainer();
     metadata.container = container;

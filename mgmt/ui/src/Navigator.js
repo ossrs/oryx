@@ -22,11 +22,11 @@ export default function Navigator({initialized, token}) {
           initialized &&
           <Nav className="me-auto">
             {token && <>
-              <Nav.Link as={Link} to='/dashboard'>面板</Nav.Link>
-              <Nav.Link as={Link} to='/system'>组件</Nav.Link>
+              <Nav.Link as={Link} to='/dashboard'>Dashboard</Nav.Link>
+              <Nav.Link as={Link} to='/system'>Software</Nav.Link>
             </>}
-            {!token && <Nav.Link as={Link} to='/login'>登录</Nav.Link>}
-            {token && <Nav.Link as={Link} to='/logout'>退出</Nav.Link>}
+            {!token && <Nav.Link as={Link} to='/login'>Login</Nav.Link>}
+            {token && <Nav.Link as={Link} to='/logout'>Logout</Nav.Link>}
           </Nav>
         }
       </Container>

@@ -10,8 +10,10 @@ import Init from './Init';
 import {Token} from "./utils";
 import System from "./System";
 import Dashboard from "./Dashboard";
+import {Container} from "react-bootstrap";
 
 function App() {
+  const [loading, setLoading] = React.useState(true);
   const [initialized, setInitialized] = React.useState();
   const [tokenUpdated, setTokenUpdated] = React.useState();
   const [token, setToken] = React.useState();
@@ -22,6 +24,8 @@ function App() {
     }).catch(e => {
       alert(e.response.data);
       console.error(e);
+    }).finally(() => {
+      setLoading(false);
     });
   }, []);
 
@@ -31,24 +35,29 @@ function App() {
 
   return (
     <>
-      <BrowserRouter basename={window.PUBLIC_URL}>
-        <Navigator initialized={initialized} token={token} />
-        <Routes>
-          {!initialized && <>
-            <Route path="*" element={<Init onInit={()=>setInitialized(true)} />}/>
-          </>}
-          {initialized && !token && <>
-            <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
-          </>}
-          {initialized && token && <>
-            <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
-            <Route path="/login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
-            <Route path="/dashboard" element={<System/>}/>
-            <Route path="/system" element={<Dashboard/>}/>
-            <Route path="/logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
-          </>}
-        </Routes>
-      </BrowserRouter>
+      {loading && <>
+        <Container>Loading...</Container>
+      </>}
+      {!loading && <>
+        <BrowserRouter basename={window.PUBLIC_URL}>
+          <Navigator initialized={initialized} token={token} />
+          <Routes>
+            {!initialized && <>
+              <Route path="*" element={<Init onInit={()=>setInitialized(true)} />}/>
+            </>}
+            {initialized && !token && <>
+              <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
+            </>}
+            {initialized && token && <>
+              <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
+              <Route path="/login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
+              <Route path="/dashboard" element={<Dashboard/>}/>
+              <Route path="/system" element={<System/>}/>
+              <Route path="/logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
+            </>}
+          </Routes>
+        </BrowserRouter>
+      </>}
       <Footer />
     </>
   );
