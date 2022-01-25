@@ -108,6 +108,6 @@ const config = {
   port: process.env.PORT || 2022,
 }
 app.listen(config.port, () => {
-  console.log(`Server start on http://localhost:${config.port}`);
+  console.log(`Server start on http://localhost:${config.port}, cwd=${process.cwd()}`);
 });
 
