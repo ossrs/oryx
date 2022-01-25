@@ -37,10 +37,16 @@ if [[ $? -ne 0 ]]; then
 fi
 
 echo "Upgrade code files"
-git checkout . &&
-git pull &&
-git checkout $TARGET_TAG &&
-git pull
+if [[ $(git branch | sed -n '/\* /s///p') == $TARGET_TAG ]]; then
+  git checkout .
+else
+  git checkout -b $TARGET_TAG $TARGET_TAG
+fi
+if [[ $? -ne 0 ]]; then echo "Create branch $TARGET_TAG codes failed"; exit 1; fi
+
+if [[ $TAG_NAME == '' ]]; then
+  git pull
+fi
 if [[ $? -ne 0 ]]; then echo "Upgrade codes failed"; exit 1; fi
 
 echo "Install updates"
