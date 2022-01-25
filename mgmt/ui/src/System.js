@@ -77,7 +77,7 @@ export default function System() {
               <Card.Body>
                 <Card.Title>当前版本</Card.Title>
                 <Card.Text>
-                  {srs?.major} {srs?.container.State}
+                  {srs?.major} {srs?.container.State || srs?.container.Status}
                 </Card.Text>
                 <Button className='disabled'>
                   升级SRS服务器

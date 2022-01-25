@@ -2,7 +2,7 @@
 
 REALPATH=$(realpath $0)
 WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
-echo "Upgrade srs-terraform at $WORK_DIR"
+echo "Upgrade srs-terraform at $WORK_DIR from $0"
 
 TARGET_TAG=$1
 TAG_NAME=$(echo $TARGET_TAG|grep '^v')

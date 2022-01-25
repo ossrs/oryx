@@ -7,8 +7,6 @@ Wants=docker.service nginx.service redis.service
 Type=simple
 Restart=always
 ExecStart=/usr/local/srs-terraform/mgmt/bootstrap
-StandardOutput=/usr/local/srs-terraform/mgmt/trace.log
-StandardError=/usr/local/srs-terraform/mgmt/error.log
 KillSignal=SIGKILL
 
 [Install]

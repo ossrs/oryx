@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-WORK_DIR=$(cd $(dirname $0) && pwd)
-echo "Run srs-terraform at $WORK_DIR"
+REALPATH=$(realpath $0)
+WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
+echo "Run srs-terraform at $WORK_DIR from $0"
 
 APP_ARGS=$@
 echo "Program args: $APP_ARGS"
