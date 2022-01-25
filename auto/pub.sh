@@ -3,6 +3,7 @@
 REALPATH=$(realpath $0)
 WORK_DIR=$(cd $(dirname $REALPATH)/.. && pwd)
 echo "Run pub at $WORK_DIR from $0"
+cd $WORK_DIR
 
 git st |grep -q 'nothing to commit'
 if [[ $? -ne 0 ]]; then
