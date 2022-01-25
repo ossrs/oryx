@@ -42,7 +42,7 @@ app.use(async (ctx, next) => {
   }
 });
 
-// For backend APIs, with specified path.
+// For backend APIs, with specified path, by /terraform/v1/mgmt/
 if (true) {
   const router = new Router();
   releases.handle(auth.handle(system.handle(router)));
@@ -50,14 +50,20 @@ if (true) {
   app.use(router.routes());
 }
 
-// For react-router, can't match the files.
+// For source files like srs.tar.gz, by /terraform/v1/sources/
+app.use(mount('/terraform/v1/sources/', serve('./sources')));
+
+// For react-router, can't match the files, by /mgmt/
 // See https://stackoverflow.com/a/52464577/17679565
 app.use(async (ctx, next) => {
-  // The react-router should never with extensions, and without multiple path.
-  const isReactRouter = ctx.request.path.indexOf('/mgmt/') === 0
-    && ctx.request.path.indexOf('.') === -1
-    && ctx.request.path.match(/\//g).length === 2
-  if (isReactRouter) {
+  const isReactRouter = (path) => {
+    // The react-router should never with extensions, and without multiple path.
+    return path.indexOf('/mgmt/') === 0
+      && path.indexOf('.') === -1
+      && path.match(/\//g).length === 2;
+  };
+
+  if (isReactRouter(ctx.request.path)) {
     ctx.type = 'text/html';
     ctx.body = fs.readFileSync('./ui/build/index.html');
     return;
@@ -66,23 +72,24 @@ app.use(async (ctx, next) => {
   await next();
 });
 
-// For react, static files server.
-app.use(mount('/mgmt', serve('./ui/build')));
+// For react, static files server, by /mgmt/
+app.use(mount('/mgmt/', serve('./ui/build')));
 // For homepage, use mgmt.
 app.use(async (ctx, next) => {
-  if (ctx.request.path === '/') return ctx.response.redirect(['/mgmt/', ctx.request.querystring].filter(e => e).join('?'));
-  if (ctx.request.path === '/index.html') return ctx.response.redirect(['/mgmt/', ctx.request.querystring].filter(e => e).join('?'));
+  if (ctx.request.path === '/') return ctx.response.redirect('/mgmt/');
+  if (ctx.request.path === '/index.html') return ctx.response.redirect('/mgmt/');
   await next();
 });
 
-// Proxy for special path of SRS>
+// Proxy for special path of SRS, by /console or /players
 app.use(async (ctx, next) => {
-  if (ctx.request.path === '/console') return ctx.response.redirect(['/console/', ctx.request.querystring].filter(e => e).join('?'));
-  if (ctx.request.path === '/players') return ctx.response.redirect(['/players/', ctx.request.querystring].filter(e => e).join('?'));
+  const withQuery = (path) => [path, ctx.request.querystring].filter(e => e).join('?');
+  if (ctx.request.path === '/console') return ctx.response.redirect(withQuery('/console/'));
+  if (ctx.request.path === '/players') return ctx.response.redirect(withQuery('/players/'));
   await next();
 });
 
-// Proxy to SRS HTTP streaming, console and player.
+// Proxy to SRS HTTP streaming, console and player, by /api/, /rtc/, or /
 // See https://github.com/vagusX/koa-proxies
 app.use(proxy('/api/', {
   target: 'http://127.0.0.1:1985/',

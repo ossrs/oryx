@@ -101,6 +101,8 @@ export default function Dashboard() {
               <Accordion.Item eventKey="0">
                 <Accordion.Header>SRS</Accordion.Header>
                 <Accordion.Body>
+                  <div>点击下载SRS源码：<a href='/terraform/v1/sources/srs.tar.gz'>下载</a></div>
+                  <div>在云服务器编译SRS：</div>
                   <code>cd ~lighthouse/git/srs && ./configure && make</code>
                 </Accordion.Body>
               </Accordion.Item>
