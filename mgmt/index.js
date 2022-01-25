@@ -21,6 +21,7 @@ const auth = require('./auth');
 const utils = require('./utils');
 const system = require('./system');
 const threads = require('./threads');
+const hooks = require('./hooks');
 
 const app = new Koa();
 
@@ -45,6 +46,7 @@ app.use(async (ctx, next) => {
 if (true) {
   const router = new Router();
   releases.handle(auth.handle(system.handle(router)));
+  hooks.handle(router);
   app.use(router.routes());
 }
 

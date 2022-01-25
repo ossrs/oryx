@@ -1,11 +1,11 @@
 'use strict';
 
 const { Worker } = require("worker_threads");
-const srs = require('./workers/srs');
+const srs = require('./srs');
 
 exports.run = async () => {
   return new Promise((resolve, reject) => {
-    const worker = new Worker("./workers/srs.js");
+    const worker = new Worker("./srs.js");
     worker.on('message', (msg) => {
       srs.metadata = msg.metadata;
     });

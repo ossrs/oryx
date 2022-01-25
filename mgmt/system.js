@@ -3,7 +3,7 @@
 const utils = require('./utils');
 const pkg = require('./package.json');
 const { spawn } = require('child_process');
-const srs = require('./workers/srs');
+const srs = require('./srs');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/status', async (ctx) => {
