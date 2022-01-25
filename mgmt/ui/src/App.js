@@ -9,6 +9,7 @@ import Navigator from './Navigator';
 import Init from './Init';
 import {Token} from "./utils";
 import System from "./System";
+import Dashboard from "./Dashboard";
 
 function App() {
   const [initialized, setInitialized] = React.useState();
@@ -42,7 +43,8 @@ function App() {
           {initialized && token && <>
             <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
             <Route path="/login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
-            <Route path="/system" element={<System/>}/>
+            <Route path="/dashboard" element={<System/>}/>
+            <Route path="/system" element={<Dashboard/>}/>
             <Route path="/logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
           </>}
         </Routes>
