@@ -51,10 +51,10 @@ jobs:
 
       ################################################################
       # K8S
-      - name: Setup KUBCONFIG for Aliyun ACK
+      - name: Setup KUBECONFIG for Aliyun ACK
         run: |-
           KUBECONFIG=$RUNNER_TEMP/kubeconfig_$(date +%s)
-          echo "${{ secrets.KUBCONFIG }}" > $KUBECONFIG
+          echo "${{ secrets.KUBECONFIG }}" > $KUBECONFIG
           echo "KUBECONFIG=$KUBECONFIG" >> $GITHUB_ENV
       # K8S for terraform versions
       - name: Release terraform versions to Aliyun ACK
