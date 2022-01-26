@@ -13,7 +13,7 @@ exports.handle = (router) => {
 
     console.log(`status ok, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
-      version: pkg.version,
+      version: `v${pkg.version}`,
       releases: {
         stable: releases.metadata.releases.stable,
         latest: releases.metadata.releases.latest,
