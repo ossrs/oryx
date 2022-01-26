@@ -4,11 +4,11 @@ REALPATH=$(realpath $0)
 WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
 echo "Upgrade srs-terraform at $WORK_DIR from $0"
 
-TARGET_TAG=$1
-TAG_NAME=$(echo $TARGET_TAG|grep '^v')
-echo "The TARGET_TAG=$TARGET_TAG TAG_NAME=$TAG_NAME"
+TARGET_VERSION=$1
+TAG_NAME=$(echo $TARGET_VERSION|grep '^v')
+echo "The TARGET_VERSION=$TARGET_VERSION TAG_NAME=$TAG_NAME"
 
-if [[ $TARGET_TAG != 'lighthouse' && $TAG_NAME == '' ]]; then
+if [[ $TARGET_VERSION != 'lighthouse' && $TAG_NAME == '' ]]; then
   echo "Usage: $0 <branch|tag>"
   echo "    branch|tag    The branch or tag to upgrade to."
   echo "For example:"
@@ -37,14 +37,15 @@ if [[ $? -ne 0 ]]; then
 fi
 
 echo "Upgrade code files"
-if [[ $(git branch | sed -n '/\* /s///p') == $TARGET_TAG ]]; then
-  git checkout .
-else
-  git checkout -b $TARGET_TAG $TARGET_TAG
+git checkout . &&
+git fetch --all &&
+if [[ $(git branch | sed -n '/\* /s///p') != $TARGET_VERSION ]]; then
+  git checkout -b $TARGET_VERSION $TARGET_VERSION
 fi
-if [[ $? -ne 0 ]]; then echo "Create branch $TARGET_TAG codes failed"; exit 1; fi
+if [[ $? -ne 0 ]]; then echo "Create branch $TARGET_VERSION codes failed"; exit 1; fi
 
 if [[ $TAG_NAME == '' ]]; then
+  echo "Pull for branch $TARGET_VERSION"
   git pull
 fi
 if [[ $? -ne 0 ]]; then echo "Upgrade codes failed"; exit 1; fi
