@@ -172,7 +172,7 @@ export default function Dashboard() {
               <Accordion.Item eventKey="1">
                 <Accordion.Header>SRS/GB28181</Accordion.Header>
                 <Accordion.Body>
-                  <div>以[srs-gb28181](https://github.com/ossrs/srs-gb28181)为例：</div>
+                  <div>以<a href='https://github.com/ossrs/srs-gb28181'>srs-gb28181</a>为例：</div>
                   <div>1. 点击下载SRS源码：<a href='/terraform/v1/sources/srs.tar.gz'>下载</a></div>
                   <div>2. 在本机设置为srs-gb28181的源：</div>
                   <div><code>git remote set-url origin https://github.com/ossrs/srs-gb28181.git</code></div>
