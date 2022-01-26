@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
-REALPATH=$(realpath $0)
-WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
+if [[ $WORK_DIR == '' ]]; then
+  REALPATH=$(realpath $0)
+  WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
+fi
 echo "Upgrade srs-terraform at $WORK_DIR from $0"
 
-TARGET_VERSION=$1
+if [[ $TARGET_VERSION == '' ]]; then
+  TARGET_VERSION=$1
+fi
 TAG_NAME=$(echo $TARGET_VERSION|grep '^v')
 echo "The TARGET_VERSION=$TARGET_VERSION TAG_NAME=$TAG_NAME"
 
@@ -36,32 +40,39 @@ if [[ $? -ne 0 ]]; then
   echo "Warning: git stash failed, see upgrade.error.log for detail\n";
 fi
 
-echo "Upgrade code files"
-git checkout . &&
-git fetch --all &&
-if [[ $(git branch | sed -n '/\* /s///p') != $TARGET_VERSION ]]; then
+echo "Reset code files"
+git checkout . && git fetch --all
+if [[ $? -ne 0 ]]; then echo "Reset code files failed"; exit 1; fi
+
+echo "Create target branch"
+CURRENT_BRANCH=$(git branch |grep '*' |awk '{print $2}')
+if [[ $CURRENT_BRANCH != $TARGET_VERSION ]]; then
+  echo "Checkout $TARGET_VERSION for current is $CURRENT_BRANCH"
   git checkout -b $TARGET_VERSION $TARGET_VERSION
 fi
 if [[ $? -ne 0 ]]; then echo "Create branch $TARGET_VERSION codes failed"; exit 1; fi
 
-if [[ $TAG_NAME == '' ]]; then
+echo "Updage branch $TARGET_VERSION"
+if [[ $(git tag -l $TARGET_VERSION) == '' ]]; then
   echo "Pull for branch $TARGET_VERSION"
   git pull
 fi
 if [[ $? -ne 0 ]]; then echo "Upgrade codes failed"; exit 1; fi
 
-echo "Install updates"
+echo "Make and install updates"
 cd .. && make install
-if [[ $? -ne 0 ]]; then echo "Install updates failed"; exit 1; fi
+if [[ $? -ne 0 ]]; then echo "Make and install updates failed"; exit 1; fi
 
 echo "Restart service"
 sudo systemctl daemon-reload &&
 sudo systemctl restart srs-terraform
 if [[ $? -ne 0 ]]; then echo "Restart service failed"; exit 1; fi
 
-echo "Change permissions for generated files"
-sudo chown -R lighthouse:lighthouse /usr/local/lighthouse/softwares &&
-sudo chown -R lighthouse:lighthouse /usr/local/srs-terraform
-if [[ $? -ne 0 ]]; then echo "Change owner failed"; exit 1; fi
+if [[ $(id -un lighthouse 2>/dev/null) == 'lighthouse' ]]; then
+  echo "Change permissions for generated files"
+  sudo chown -R lighthouse:lighthouse /usr/local/lighthouse/softwares &&
+  sudo chown -R lighthouse:lighthouse /usr/local/srs-terraform
+  if [[ $? -ne 0 ]]; then echo "Change owner failed"; exit 1; fi
+fi
 
 echo "Upgrade OK"
