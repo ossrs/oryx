@@ -83,9 +83,11 @@ async function firstRun() {
     return;
   }
 
+  // To prevent boot again and again.
   await redis.set(consts.SRS_FIRST_BOOT_DONE, 1);
   console.log(`Thread #${metadata.releases.name}: boot start to setup`);
 
+  // Setup the publish secret for first run.
   let publish = await redis.get(consts.SRS_SECRET_PUBLISH);
   if (!publish) {
     publish = Math.random().toString(16).slice(-8);
@@ -94,6 +96,8 @@ async function firstRun() {
   }
 
   try {
+    // Because we already create the container, and cached the last SRS 4.0 image, also set the hosts for hooks by
+    // --add-host which is incorrect for new machine, so we must delete the container and restart it when first run.
     await exec(`docker rm -f ${metadata.srs.name}`);
     console.log(`Thread #${metadata.releases.name}: boot remove docker ${metadata.srs.name}`);
   } catch (e) {

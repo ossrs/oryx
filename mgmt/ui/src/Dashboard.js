@@ -164,7 +164,7 @@ export default function Dashboard() {
                   <div>LightHouse云服务器自带了SRS 4.0的源码，你可以选择：</div>
                   <div>1. 点击下载SRS源码：<a href='/terraform/v1/sources/srs.tar.gz'>下载</a></div>
                   <div>2. 直接在云服务器编译SRS：</div>
-                  <div><code>cd ~lighthouse/git/srs</code></div>
+                  <div><code>cd ~lighthouse/git/srs/trunk</code></div>
                   <div><code>git pull</code></div>
                   <div><code>./configure</code></div>
                   <div><code>make</code></div>
