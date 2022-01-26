@@ -46,6 +46,10 @@ async function thread_main() {
   metadata.releases = data;
   console.log(`Thread #${metadata.name}: request, version=v${pkg.version}, response=${JSON.stringify(data)}`);
 
+  // Update the metadata to main thread.
+  parentPort.postMessage({metadata});
+
+  // Try to upgrade terraform itself.
   if (metadata.releases && metadata.releases.stable && semver.lt(`v${pkg.version}`, metadata.releases.stable)) {
     console.log(`Thread #${metadata.name}: upgrade from v${pkg.version} to stable ${metadata.releases.stable}`);
 
@@ -64,8 +68,5 @@ async function thread_main() {
       });
     });
   }
-
-  // Update the metadata to main thread.
-  parentPort.postMessage({metadata});
 }
 
