@@ -92,10 +92,12 @@ app.use(async (ctx, next) => {
 // Proxy to SRS HTTP streaming, console and player, by /api/, /rtc/, or /
 // See https://github.com/vagusX/koa-proxies
 app.use(proxy('/api/', {
-  target: 'http://127.0.0.1:1985/',
+  target: 'http://127.0.0.1:1985/api/',
+  rewrite: path => path.replace(/^\/api\//, '/'),
 }));
 app.use(proxy('/rtc/', {
-  target: 'http://127.0.0.1:1985/',
+  target: 'http://127.0.0.1:1985/rtc/',
+  rewrite: path => path.replace(/^\/rtc\//, '/'),
 }));
 app.use(proxy('/', {
   target: 'http://127.0.0.1:8080',
