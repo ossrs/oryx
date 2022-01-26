@@ -7,6 +7,7 @@ exports.status = {
 
 exports.sys = {
   empty: 1000,
+  boot: 1001,
 };
 
 exports.auth = {

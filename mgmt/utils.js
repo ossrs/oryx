@@ -6,6 +6,7 @@ const os = require('os');
 const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const errs = require('./errs');
+const consts = require('./consts');
 
 const asResponse = (code, data) => {
   return {
@@ -47,12 +48,10 @@ const saveConfig = (config) => {
 exports.saveConfig = saveConfig;
 
 const createToken = () => {
-  const utils = exports;
-
   // Update the user info, @see https://www.npmjs.com/package/jsonwebtoken#usage
   const expire = moment.duration(1, 'years');
-  const createAt = moment.utc().format(utils.MYSQL_DATETIME);
-  const expireAt = moment.utc().add(expire).format(utils.MYSQL_DATETIME);
+  const createAt = moment.utc().format(consts.MYSQL_DATETIME);
+  const expireAt = moment.utc().add(expire).format(consts.MYSQL_DATETIME);
   const token = jwt.sign(
     {v: 1.0, t: createAt, d: expire},
     process.env.MGMT_PASSWORD, {expiresIn: expire.asSeconds()},
@@ -79,12 +78,6 @@ const verifyToken = async (token) => {
   });
 };
 exports.verifyToken = verifyToken;
-
-// MySQL日期字段格式化字符串 @see https://stackoverflow.com/a/27381633
-exports.MYSQL_DATETIME = 'YYYY-MM-DD HH:mm:ss';
-
-// The redis key.
-exports.SRS_SECRET_PUBLISH = 'SRS_SECRET_PUBLISH';
 
 /*
 The config SHOULD be config:Object for Redis db, with bellow fields:
