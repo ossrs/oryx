@@ -73,7 +73,7 @@ export default function System() {
         <Row>
           <Col xs lg={3}>
             <Card style={{ width: '18rem' }}>
-              <Card.Header>SRS Server</Card.Header>
+              <Card.Header>SRS服务器</Card.Header>
               <Card.Body>
                 <Card.Text>
                   {srs?.major} {srs?.container.State} {srs?.container.Status}
