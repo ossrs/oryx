@@ -18,7 +18,7 @@ async function threadMain() {
       console.error(`Thread #${metadata.srs.name}: err`, e);
       await new Promise(resolve => setTimeout(resolve, 300 * 1000));
     } finally {
-      await new Promise(resolve => setTimeout(resolve, 10 * 1000));
+      await new Promise(resolve => setTimeout(resolve, 3 * 1000));
     }
   }
 }
