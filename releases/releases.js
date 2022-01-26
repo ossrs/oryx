@@ -2,7 +2,7 @@
 
 const pkg = require('./package.json');
 
-const stable = 'v1.0.33';
+const stable = 'v1.0.35';
 const latest = 'v1.0.34';
 
 // Build the version and docker image url.

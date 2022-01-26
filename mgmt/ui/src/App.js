@@ -33,6 +33,11 @@ function App() {
     setToken(Token.load());
   }, [tokenUpdated]);
 
+  const onInit = (token) => {
+    setInitialized(true);
+    setTokenUpdated(true);
+  };
+
   return (
     <>
       {loading && <>
@@ -43,7 +48,7 @@ function App() {
           <Navigator initialized={initialized} token={token} />
           <Routes>
             {!initialized && <>
-              <Route path="*" element={<Init onInit={()=>setInitialized(true)} />}/>
+              <Route path="*" element={<Init onInit={onInit} />}/>
             </>}
             {initialized && !token && <>
               <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
