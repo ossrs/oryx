@@ -47,7 +47,7 @@ jobs:
         run: |
           docker tag ossrs/srs-terraform:releases-$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:releases-$SRS_TAG
           docker tag ossrs/srs-terraform:releases-$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:releases-$SRS_MAJOR
-          docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform-releases
+          docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform
 
       ################################################################
       # K8S
