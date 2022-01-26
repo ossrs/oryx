@@ -44,12 +44,20 @@ if [[ $? -ne 0 ]]; then echo "Reset code files failed"; exit 1; fi
 echo "Create target branch"
 CURRENT_BRANCH=$(git branch |grep '*' |awk '{print $2}')
 if [[ $CURRENT_BRANCH != $TARGET_VERSION ]]; then
-  echo "Checkout $TARGET_VERSION for current is $CURRENT_BRANCH"
-  git checkout -b $TARGET_VERSION $TARGET_VERSION
+  EXISTS_BRANCH=$(git branch --list $TARGET_VERSION |awk '{print $1}')
+  if [[ $EXISTS_BRANCH == $TARGET_VERSION ]]; then
+    echo "Checkout to $TARGET_VERSION for current is $CURRENT_BRANCH"
+    git checkout $TARGET_VERSION
+  else
+    echo "Checkout new $TARGET_VERSION for current is $CURRENT_BRANCH"
+    git checkout -b $TARGET_VERSION $TARGET_VERSION
+  fi
+else
+  echo "Already on branch $TARGET_VERSION"
 fi
 if [[ $? -ne 0 ]]; then echo "Create branch $TARGET_VERSION codes failed"; exit 1; fi
 
-echo "Updage branch $TARGET_VERSION"
+echo "Update branch $TARGET_VERSION"
 if [[ $(git tag -l $TARGET_VERSION) == '' ]]; then
   echo "Pull for branch $TARGET_VERSION"
   git pull
