@@ -1,19 +1,22 @@
-.PHONY: default build install run uninstall
+.PHONY: default build install run uninstall upgrade
 
 SRS_PREFIX=/usr/local/srs-terraform
 __REAL_INSTALL=$(DESTDIR)$(SRS_PREFIX)
 
 default: run
 
-run: build
+run:
 	@cd mgmt && npm start
 
 build:
 	@cd mgmt && npm install
-	@cd mgmt/ui && npm install && npm run build
 	@cd mgmt && npm run build
 
-install: build
+upgrade:
+	@cd mgmt && npm install
+	@cd mgmt && npm run upgrade
+
+install:
 	@mkdir -p $(__REAL_INSTALL)
 	@rm -rf $(__REAL_INSTALL)/mgmt
 	@ln -sf `pwd`/mgmt $(__REAL_INSTALL)/mgmt

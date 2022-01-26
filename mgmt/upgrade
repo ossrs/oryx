@@ -64,9 +64,13 @@ if [[ $(git tag -l $TARGET_VERSION) == '' ]]; then
 fi
 if [[ $? -ne 0 ]]; then echo "Upgrade codes failed"; exit 1; fi
 
-echo "Make and install updates"
-cd .. && make install
+echo "Make and upgrade updates"
+(cd .. && make upgrade)
 if [[ $? -ne 0 ]]; then echo "Make and install updates failed"; exit 1; fi
+
+echo "Switch to new version"
+(cd ui && mv build "build-$(date +%s)" && mv upgrade build)
+if [[ $? -ne 0 ]]; then echo "Switch to new version failed"; exit 1; fi
 
 # Change permissions before restart.
 if [[ $(id -un lighthouse 2>/dev/null) == 'lighthouse' ]]; then
