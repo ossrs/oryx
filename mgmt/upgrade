@@ -23,10 +23,7 @@ if [[ $TARGET_VERSION != 'lighthouse' && $TAG_NAME == '' ]]; then
   exit 1
 fi
 
-cd $WORK_DIR &&
-git remote -v &&
-git branch -vva &&
-ls -lh
+cd $WORK_DIR && git remote -v && git branch -vva && ls -lh
 if [[ $? -ne 0 ]]; then echo "Prepare upgrade failed"; exit 1; fi
 
 if [[ ! -d /usr/local/srs-terraform && $(uname -s) == 'Darwin' ]]; then
@@ -63,16 +60,16 @@ echo "Make and install updates"
 cd .. && make install
 if [[ $? -ne 0 ]]; then echo "Make and install updates failed"; exit 1; fi
 
-echo "Restart service"
-sudo systemctl daemon-reload &&
-sudo systemctl restart srs-terraform
-if [[ $? -ne 0 ]]; then echo "Restart service failed"; exit 1; fi
-
+# Change permissions before restart.
 if [[ $(id -un lighthouse 2>/dev/null) == 'lighthouse' ]]; then
   echo "Change permissions for generated files"
   sudo chown -R lighthouse:lighthouse /usr/local/lighthouse/softwares &&
   sudo chown -R lighthouse:lighthouse /usr/local/srs-terraform
   if [[ $? -ne 0 ]]; then echo "Change owner failed"; exit 1; fi
 fi
+
+echo "Restart service"
+sudo systemctl daemon-reload && sudo systemctl restart srs-terraform
+if [[ $? -ne 0 ]]; then echo "Restart service failed"; exit 1; fi
 
 echo "Upgrade OK"
