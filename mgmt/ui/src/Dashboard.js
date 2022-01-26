@@ -113,7 +113,7 @@ export default function Dashboard() {
                   <div>
                     3. FFmpeg推流命令：<br/>
                     <code>
-                      ffmpeg -re -i doc/source.flv -c copy -f flv {rtmpServer}{rtmpStreamKey}
+                      ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv {rtmpServer}{rtmpStreamKey}
                     </code>
                   </div>
                   <div>

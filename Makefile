@@ -10,10 +10,12 @@ run:
 
 build:
 	@cd mgmt && npm install
+	@cd mgmt/ui && npm install
 	@cd mgmt && npm run build
 
 upgrade:
 	@cd mgmt && npm install
+	@cd mgmt/ui && npm install
 	@cd mgmt && npm run upgrade
 
 install:
