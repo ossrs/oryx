@@ -8,6 +8,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [rtmpServer, setRtmpServer] = React.useState();
   const [rtmpStreamKey, setRtmpStreamKey] = React.useState();
+  const [flvUrl, setFlvUrl] = React.useState();
+  const [m3u8Url, setM3u8Url] = React.useState();
   const [cnConsole, setCnConsole] = React.useState();
   const [flvPlayer, setFlvPlayer] = React.useState();
   const [hlsPlayer, setHlsPlayer] = React.useState();
@@ -16,6 +18,8 @@ export default function Dashboard() {
   const [flvPlayer2, setFlvPlayer2] = React.useState();
   const [hlsPlayer2, setHlsPlayer2] = React.useState();
   const [rtcPlayer2, setRtcPlayer2] = React.useState();
+  const [flvUrl2, setFlvUrl2] = React.useState();
+  const [m3u8Url2, setM3u8Url2] = React.useState();
   const [secret, setSecret] = React.useState();
 
   React.useEffect(() => {
@@ -50,6 +54,8 @@ export default function Dashboard() {
     if (true) {
       const schema = window.location.protocol.replace(':', '');
       const httpPort = window.location.port || (window.location.protocol === 'http:' ? 80 : 443);
+      setFlvUrl(`${schema}://${window.location.hostname}/live/livestream.flv`);
+      setM3u8Url(`${schema}://${window.location.hostname}/live/livestream.m3u8`);
       setFlvPlayer(`/players/srs_player.html?schema=${schema}&port=${httpPort}&autostart=true&stream=livestream.flv`);
       setHlsPlayer(`/players/srs_player.html?schema=${schema}&port=${httpPort}&autostart=true&stream=livestream.m3u8`);
       setRtcPlayer(`/players/rtc_player.html?schema=${schema}&port=${httpPort}&api=${httpPort}&autostart=true&stream=livestream`);
@@ -58,6 +64,8 @@ export default function Dashboard() {
     // For WebRTC url.
     if (true) {
       const secretQuery = secret ? `&&secret=${secret.publish}` : '';
+      setFlvUrl2(`https://${window.location.hostname}/live/livestream.flv`);
+      setM3u8Url2(`https://${window.location.hostname}/live/livestream.m3u8`);
       setRtcPublisher(`/players/rtc_publisher.html?schema=https&port=443&api=443&autostart=true&stream=livestream${secretQuery}`);
       setFlvPlayer2(`/players/srs_player.html?schema=https&port=443&api=443&autostart=true&stream=livestream.flv`);
       setHlsPlayer2(`/players/srs_player.html?schema=https&port=443&api=443&autostart=true&stream=livestream.m3u8`);
@@ -91,8 +99,8 @@ export default function Dashboard() {
                   <div>
                     4. 请选择播放的流：
                     <ul>
-                      <li>播放<a href={flvPlayer}>HTTP-FLV流</a></li>
-                      <li>播放<a href={hlsPlayer}>HLS流</a></li>
+                      <li>播放<a href={flvPlayer}>HTTP-FLV流</a> <code>{flvUrl}</code></li>
+                      <li>播放<a href={hlsPlayer}>HLS流</a> <code>{m3u8Url}</code></li>
                       <li>播放<a href={rtcPlayer}>WebRTC流</a></li>
                     </ul>
                   </div>
@@ -119,8 +127,8 @@ export default function Dashboard() {
                   <div>
                     4. 请选择播放的流：
                     <ul>
-                      <li>播放<a href={flvPlayer}>HTTP-FLV流</a></li>
-                      <li>播放<a href={hlsPlayer}>HLS流</a></li>
+                      <li>播放<a href={flvPlayer}>HTTP-FLV流</a> <code>{flvUrl}</code></li>
+                      <li>播放<a href={hlsPlayer}>HLS流</a> <code>{m3u8Url}</code></li>
                       <li>播放<a href={rtcPlayer}>WebRTC流</a></li>
                     </ul>
                   </div>
@@ -144,8 +152,8 @@ export default function Dashboard() {
                   <div>
                     4. 请选择播放的流：
                     <ul>
-                      <li>播放<a href={flvPlayer2}>HTTP-FLV流</a></li>
-                      <li>播放<a href={hlsPlayer2}>HLS流</a></li>
+                      <li>播放<a href={flvPlayer2}>HTTP-FLV流</a> <code>{flvUrl2}</code></li>
+                      <li>播放<a href={hlsPlayer2}>HLS流</a> <code>{m3u8Url2}</code></li>
                       <li>播放<a href={rtcPlayer2}>WebRTC流</a></li>
                     </ul>
                   </div>

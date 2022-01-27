@@ -42,7 +42,8 @@ export default function Init({onInit}) {
             <Form.Control type="text" placeholder="Password" defaultValue={password}
               onChange={(e) => setPassword(e.target.value)}/>
             <Form.Text className="text-muted">
-              * 自动生成的初始管理员密码，可以修改
+              * 初始密码由程序随机生成，可以修改成更高强度的密码 <br/>
+              * 设置后若需要修改，可以修改文件 <code>vi ~lighthouse/credentials.txt</code> 并重启服务
             </Form.Text>
           </Form.Group>
           <Button variant="primary" type="submit" onClick={(e) => handleLogin(e)}>
