@@ -1,6 +1,6 @@
 {
   "name": "mgmt-api",
-  "version":"1.0.42",
+  "version":"1.0.43",
   "description": "API for srs-terraform mgmt",
   "main": "index.js",
   "scripts": {
