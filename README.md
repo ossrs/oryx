@@ -69,6 +69,7 @@ The features that we're developing:
 * [x] A mgmt support authentication and automatic updates.
 * [x] Run SRS in docker, query status by docker and SRS API.
 * [x] Support publish by RTMP/WebRTC, play by RTMP/HTTP-FLV/HLS/WebRTC.
+* [x] SRS container write containers/objs/srs.log for logging.
 * [ ] Run SRS hooks in docker, to callback by SRS server.
 * [ ] Support publish by SRT, play by RTMP/HTTP-FLV/HLS/WebRTC/SRT.
 * [ ] Collect logs of mgmt and containers together.
