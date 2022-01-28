@@ -4,6 +4,8 @@ const os = require('os');
 const { isMainThread, parentPort } = require("worker_threads");
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const fs = require('fs');
+const path = require('path');
 const metadata = require('./metadata');
 
 if (!isMainThread) {
@@ -69,11 +71,16 @@ exports.queryContainer = queryContainer;
 async function startContainer() {
   console.log(`Thread #${metadata.srs.name}: start container`);
 
+  // We must create the file, or docker will mount it as directory, see https://stackoverflow.com/a/44950494/17679565
+  const logFile = `${process.cwd()}/containers/objs/srs.log`;
+  if (!fs.existsSync(logFile)) fs.createWriteStream(logFile, {overwrite: false});
+
   const privateIPv4 = await discoverPrivateIPv4();
   const confFile = `${process.cwd()}/containers/conf/srs.conf`;
   const dockerArgs = `-d -it --restart always --privileged --name ${metadata.srs.name} \\
     --add-host=mgmt.srs.local:${privateIPv4.address} \\
     -v ${confFile}:/usr/local/srs/conf/lighthouse.conf \\
+    -v ${logFile}:/usr/local/srs/objs/srs.log \\
     -p 1935:1935 -p 1985:1985 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \\
     registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:${metadata.srs.major} \\
     ./objs/srs -c conf/lighthouse.conf`;
