@@ -5,7 +5,6 @@ const { isMainThread, parentPort } = require("worker_threads");
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const fs = require('fs');
-const path = require('path');
 const metadata = require('./metadata');
 
 if (!isMainThread) {

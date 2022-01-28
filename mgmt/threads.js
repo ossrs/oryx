@@ -2,7 +2,6 @@
 
 const { Worker } = require("worker_threads");
 const metadata = require('./metadata');
-const releases = require('./releases');
 
 exports.run = async () => {
   new Promise((resolve, reject) => {
