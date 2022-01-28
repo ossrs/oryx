@@ -71,7 +71,7 @@ export default function Login({onLogin}) {
                 onChange={(e) => setPassword(e.target.value)}/>
             }
             <Form.Text className="text-muted">
-              * 若忘记密码，可登录机器查看文件 ~lighthouse/credentials.txt
+              * 忘记密码？可登录机器执行 <code>cat ~lighthouse/credentials.txt</code>
             </Form.Text>
           </Form.Group>
           <Form.Group className="mb-3" controlId="formBasicCheckbox">
