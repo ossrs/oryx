@@ -142,12 +142,21 @@ export default function System() {
                 </Card.Text>
                 {
                   !enableUpgrading
-                  ? <Button className='disabled'>升级管理后台</Button>
-                  : <PopoverConfirmButton upgrading={upgrading} handleClick={() => setUpgrading(true)} text='升级管理后台'>
+                  ? <Button className='disabled'>升级</Button>
+                  : <PopoverConfirmButton upgrading={upgrading} handleClick={() => setUpgrading(true)} text='升级'>
                     <p>
                       升级管理后台，并且可能造成
                       <span className='text-danger'><strong>系统不可用</strong></span>，
                       确认继续升级么？
+                    </p>
+                  </PopoverConfirmButton>
+                } &nbsp;
+                {!enableUpgrading &&
+                  <PopoverConfirmButton handleClick={() => setEnableUpgrading(true)} text='开启强制升级' operator='开启强制升级'>
+                    <p>
+                      你目前已经是最新版本，
+                      <span className='text-warning'>没有必要强制升级</span>，
+                      确认继续强制升级么？
                     </p>
                   </PopoverConfirmButton>
                 }
