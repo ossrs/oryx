@@ -80,6 +80,17 @@ if [[ $(id -un lighthouse 2>/dev/null) == 'lighthouse' ]]; then
   if [[ $? -ne 0 ]]; then echo "Change owner failed"; exit 1; fi
 fi
 
+# Setup the UDP kernel options before restart
+# See https://www.jianshu.com/p/6d4a89359352
+# TODO: FIXME: REMOVE-NEXT-RELEASE: Setup the kernel options by the image itself.
+if [[ ! -d /usr/local/srs-terraform && $(uname -s) != 'Darwin' ]]; then
+    sudo sysctl net.core.rmem_max=16777216 &&
+    sudo sysctl net.core.rmem_default=16777216 &&
+    sudo sysctl net.core.wmem_max=16777216 &&
+    sudo sysctl net.core.wmem_default=16777216
+  if [[ $? -ne 0 ]]; then echo "Setup the UDP kernel options failed"; exit 1; fi
+fi
+
 echo "Restart service"
 sudo systemctl daemon-reload && sudo systemctl restart srs-terraform
 if [[ $? -ne 0 ]]; then echo "Restart service failed"; exit 1; fi
