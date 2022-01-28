@@ -54,6 +54,23 @@ Access the browser: http://localhost:3000
 
 ## Ports
 
-* [SRS ports](https://github.com/ossrs/srs/blob/develop/trunk/doc/Resources.md#ports) `tcp://1935`, `tcp://1985`, `tcp://8080`, `udp://8000`, `tcp://8088`, `tcp://1990`, `udp://8935`, `tcp://554`, `tcp://8936`, `udp://10080`, `udp://1989`.
-* SRS terraform mgmt port is `tcp://2022` that mount at `/mgmt`.
+The ports allocated:
+
+| Module | TCP Ports | UDP Ports | Notes |
+| ------ | --------- | --------- | ----- |
+| SRS | 1935, 1985, 8080,<br/> 8088, 1990, 554,<br/> 8936 | 8000, 8935, 10080,<br/> 1989 | See [SRS ports](https://github.com/ossrs/srs/blob/develop/trunk/doc/Resources.md#ports) |
+| mgmt | 2022 |  - | Mount at `/mgmt/` |
+| hooks | 2021 |  - | Mount at `/terraform/v1/hooks/` |
+
+## Features
+
+The features that we're developing:
+
+* [x] A mgmt support authentication and automatic updates.
+* [x] Run SRS in docker, query status by docker and SRS API.
+* [x] Support publish by RTMP/WebRTC, play by RTMP/HTTP-FLV/HLS/WebRTC.
+* [ ] Run SRS hooks in docker, to callback by SRS server.
+* [ ] Support publish by SRT, play by RTMP/HTTP-FLV/HLS/WebRTC/SRT.
+* [ ] Collect logs of mgmt and containers together.
+* [ ] Stop, restart and upgrade containers.
 

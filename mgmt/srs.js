@@ -64,6 +64,7 @@ async function queryContainer() {
 
   return [all, running];
 }
+exports.queryContainer = queryContainer;
 
 async function startContainer() {
   console.log(`Thread #${metadata.srs.name}: start container`);
@@ -73,7 +74,7 @@ async function startContainer() {
   const dockerArgs = `-d -it --restart always --privileged --name ${metadata.srs.name} \\
     --add-host=mgmt.srs.local:${privateIPv4.address} \\
     -v ${confFile}:/usr/local/srs/conf/lighthouse.conf \\
-    -p 1935:1935 -p 1985:1985 -p 8080:8080 -p 8000:8000/udp \\
+    -p 1935:1935 -p 1985:1985 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \\
     registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:${metadata.srs.major} \\
     ./objs/srs -c conf/lighthouse.conf`;
   console.log(`Thread #${metadata.srs.name}: docker run args ip=${privateIPv4.name}/${privateIPv4.address}, conf=${confFile}, docker run ${dockerArgs}`);

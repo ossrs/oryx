@@ -5,20 +5,28 @@ import {Token, Errors} from "./utils";
 import axios from "axios";
 import {Row, Col, Card, Button} from "react-bootstrap";
 import PopoverConfirmButton from './PopoverConfirmButton';
+const semver = require('semver');
 
 export default function System() {
   const navigate = useNavigate();
   const [status, setStatus] = React.useState();
   const [srs, setSRS] = React.useState();
   const [upgrading, setUpgrading] = React.useState();
+  const [enableUpgrading, setEnableUpgrading] = React.useState();
+  const [enableSrsOperators, setEnableSrsOperators] = React.useState();
+  const [restartSrs, setRestartSrs] = React.useState();
 
   React.useEffect(() => {
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/status', {
       ...token,
     }).then(res => {
-      setStatus(res.data.data);
-      console.log(`Status: Query ok, status=${JSON.stringify(res.data.data)}`);
+      const status = res.data.data;
+      if (status && status.releases && status.releases.latest) {
+        if (semver.lt(status.version, status.releases.latest)) setEnableUpgrading(true);
+      }
+      setStatus(status);
+      console.log(`Status: Query ok, status=${JSON.stringify(status)}`);
     }).catch(e => {
       const err = e.response.data;
       if (err.code === Errors.auth) {
@@ -31,12 +39,17 @@ export default function System() {
   }, [navigate]);
 
   React.useEffect(() => {
+    // We never update the status when restarting.
+    if (restartSrs === true) return;
+
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/srs', {
       ...token,
     }).then(res => {
-      setSRS(res.data.data);
-      console.log(`SRS: Query ok, status=${JSON.stringify(res.data.data)}`);
+      const status = res.data.data;
+      if (status) setEnableSrsOperators(true);
+      setSRS(status);
+      console.log(`SRS: Query ok, status=${JSON.stringify(status)}`);
     }).catch(e => {
       const err = e.response.data;
       if (err.code === Errors.auth) {
@@ -46,7 +59,28 @@ export default function System() {
         alert(`服务器错误，${err.code}: ${err.data.message}`);
       }
     });
-  }, [navigate]);
+  }, [navigate, restartSrs]);
+
+  React.useEffect(() => {
+    if (!restartSrs) return;
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/srs', {
+      ...token,
+      action: 'restart',
+    }).then(res => {
+      setRestartSrs(false);
+      console.log(`SRS: Restart ok`);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  }, [navigate, restartSrs]);
 
   React.useEffect(() => {
     if (!upgrading) return;
@@ -78,9 +112,22 @@ export default function System() {
                 <Card.Text>
                   {srs?.major} {srs?.container.State} {srs?.container.Status}
                 </Card.Text>
-                <Button className='disabled'>
-                  升级SRS服务器
-                </Button>
+                <div style={{display: 'inline-block'}}>
+                  {
+                    !enableSrsOperators
+                      ? <Button className='disabled'>重启</Button>
+                      : <PopoverConfirmButton upgrading={restartSrs} handleClick={() => setRestartSrs(true)} text='重启' operator='重启'>
+                        <p>
+                          重启SRS会造成
+                          <span className='text-danger'><strong>推拉流不可用</strong></span>，
+                          确认继续重启么？
+                        </p>
+                      </PopoverConfirmButton>
+                  } &nbsp;
+                  <Button className='disabled'>
+                    升级
+                  </Button>
+                </div>
               </Card.Body>
             </Card>
           </Col>
@@ -93,13 +140,17 @@ export default function System() {
                   Stable: {status?.releases?.stable} <br/>
                   Latest: {status?.releases?.latest}
                 </Card.Text>
-                <PopoverConfirmButton upgrading={upgrading} handleClick={() => setUpgrading(true)} text='升级管理后台'>
-                  <p>
-                    升级管理后台，并且可能造成
-                    <span className='text-danger'><strong>系统不可用</strong></span>，
-                    确认继续升级么？
-                  </p>
-                </PopoverConfirmButton>
+                {
+                  !enableUpgrading
+                  ? <Button className='disabled'>升级管理后台</Button>
+                  : <PopoverConfirmButton upgrading={upgrading} handleClick={() => setUpgrading(true)} text='升级管理后台'>
+                    <p>
+                      升级管理后台，并且可能造成
+                      <span className='text-danger'><strong>系统不可用</strong></span>，
+                      确认继续升级么？
+                    </p>
+                  </PopoverConfirmButton>
+                }
               </Card.Body>
             </Card>
           </Col>

@@ -1,12 +1,16 @@
 import React from "react";
 import {Button, Spinner, OverlayTrigger, Popover} from "react-bootstrap";
 
-export default function PopoverConfirmButton({upgrading, handleClick, text, children}) {
+export default function PopoverConfirmButton({upgrading, handleClick, operator, text, children}) {
   const [showUpgrading, setShowUpgrading] = React.useState();
 
   const onHandleClick = () => {
     setShowUpgrading(false);
     handleClick();
+  };
+
+  const filterByOperator = (msg) => {
+    return operator ? msg.replaceAll('升级', operator) : msg;
   };
 
   const popover = (
@@ -23,7 +27,7 @@ export default function PopoverConfirmButton({upgrading, handleClick, text, chil
               disabled={upgrading}
               onClick={!upgrading ? onHandleClick : null}
             >
-              确认升级
+              {filterByOperator('确认升级')}
             </Button>
           </div>
           <div className="col-12">
@@ -40,16 +44,14 @@ export default function PopoverConfirmButton({upgrading, handleClick, text, chil
   );
 
   return (
-    <div className='row row-cols-lg-auto g-3 align-items-center'>
+    <div className='row row-cols-lg-auto g-3 align-items-center' style={{display: 'inline-block'}}>
       <div className="col-12">
         <OverlayTrigger trigger="click" placement="right" overlay={popover} show={showUpgrading}>
           <Button variant="primary" onClick={() => setShowUpgrading(!showUpgrading)}>
-            {upgrading ? '正在升级中...' : text}
+            {upgrading ? filterByOperator('升级中...') : text}
           </Button>
-        </OverlayTrigger>
-      </div>
-      <div className="col-12">
-        {upgrading && <Spinner animation="border" />}
+        </OverlayTrigger> &nbsp;
+        {upgrading && <Spinner animation="border" style={{verticalAlign: 'middle'}} />}
       </div>
     </div>
   );
