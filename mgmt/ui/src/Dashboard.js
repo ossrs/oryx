@@ -87,7 +87,7 @@ export default function Dashboard() {
                     1. 先在防火墙开启<code>TCP/1935</code>端口
                   </div>
                   <div>
-                    2. 然后<a href="https://obsproject.com/download">下载OBS</a>并安装
+                    2. 然后<a href='https://obsproject.com/download' target='_blank'>下载OBS</a>并安装
                   </div>
                   <div>
                     3. 在OBS输入：
@@ -99,9 +99,9 @@ export default function Dashboard() {
                   <div>
                     4. 请选择播放的流：
                     <ul>
-                      <li>播放<a href={flvPlayer}>HTTP-FLV流</a> <code>{flvUrl}</code></li>
-                      <li>播放<a href={hlsPlayer}>HLS流</a> <code>{m3u8Url}</code></li>
-                      <li>播放<a href={rtcPlayer}>WebRTC流</a></li>
+                      <li>播放<a href={flvPlayer} target='_blank'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
+                      <li>播放<a href={hlsPlayer} target='_blank'>HLS流</a> <code>{m3u8Url}</code></li>
+                      <li>播放<a href={rtcPlayer} target='_blank'>WebRTC流</a></li>
                     </ul>
                   </div>
                   <div>
@@ -116,7 +116,7 @@ export default function Dashboard() {
                     1. 先在防火墙开启<code>TCP/1935</code>端口
                   </div>
                   <div>
-                    2. 然后<a href="https://ffmpeg.org/download.html">下载FFmpeg</a>
+                    2. 然后<a href='https://ffmpeg.org/download.html' target='_blank'>下载FFmpeg</a>
                   </div>
                   <div>
                     3. FFmpeg推流命令：<br/>
@@ -127,9 +127,9 @@ export default function Dashboard() {
                   <div>
                     4. 请选择播放的流：
                     <ul>
-                      <li>播放<a href={flvPlayer}>HTTP-FLV流</a> <code>{flvUrl}</code></li>
-                      <li>播放<a href={hlsPlayer}>HLS流</a> <code>{m3u8Url}</code></li>
-                      <li>播放<a href={rtcPlayer}>WebRTC流</a></li>
+                      <li>播放<a href={flvPlayer} target='_blank'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
+                      <li>播放<a href={hlsPlayer} target='_blank'>HLS流</a> <code>{m3u8Url}</code></li>
+                      <li>播放<a href={rtcPlayer} target='_blank'>WebRTC流</a></li>
                     </ul>
                   </div>
                   <div>
@@ -147,14 +147,14 @@ export default function Dashboard() {
                     2. 请使用<code>https</code>访问管理后台。若使用自签名证书，请点页面空白处然后敲<code>thisisunsafe</code>
                   </div>
                   <div>
-                    3. 打开页面推<a href={rtcPublisher}>WebRTC流</a>。注意先停止掉FFmpeg/OBS推流。
+                    3. 打开页面推<a href={rtcPublisher} target='_blank'>WebRTC流</a>。注意先停止掉FFmpeg/OBS推流。
                   </div>
                   <div>
                     4. 请选择播放的流：
                     <ul>
-                      <li>播放<a href={flvPlayer2}>HTTP-FLV流</a> <code>{flvUrl2}</code></li>
-                      <li>播放<a href={hlsPlayer2}>HLS流</a> <code>{m3u8Url2}</code></li>
-                      <li>播放<a href={rtcPlayer2}>WebRTC流</a></li>
+                      <li>播放<a href={flvPlayer2} target='_blank'>HTTP-FLV流</a> <code>{flvUrl2}</code></li>
+                      <li>播放<a href={hlsPlayer2} target='_blank'>HLS流</a> <code>{m3u8Url2}</code></li>
+                      <li>播放<a href={rtcPlayer2} target='_blank'>WebRTC流</a></li>
                     </ul>
                   </div>
                   <div>
@@ -181,7 +181,7 @@ export default function Dashboard() {
               <Accordion.Item eventKey="1">
                 <Accordion.Header>SRS/GB28181</Accordion.Header>
                 <Accordion.Body>
-                  <div>以<a href='https://github.com/ossrs/srs-gb28181'>srs-gb28181</a>为例：</div>
+                  <div>以<a href='https://github.com/ossrs/srs-gb28181' target='_blank'>srs-gb28181</a>为例：</div>
                   <div>1. 点击下载SRS源码：<a href='/terraform/v1/sources/srs.tar.gz'>下载</a></div>
                   <div>2. 在本机设置为srs-gb28181的源：</div>
                   <div><code>git remote set-url origin https://github.com/ossrs/srs-gb28181.git</code></div>
