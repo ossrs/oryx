@@ -244,7 +244,15 @@ export default function Dashboard() {
                         ffplay -fflags nobuffer -flags low_delay -i '{srtPlayUrl}'
                       </code>
                     </li>
-                    <li>画面出来较慢，请稍安勿躁</li>
+                    <li>SRT流画面出来较慢，请稍安勿躁</li>
+                    <li>
+                      也可以快速预览其他格式的流，注意延迟比直接播放SRT流会高很多：<br/>
+                      <ul>
+                        <li>播放<a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
+                        <li>播放<a href={hlsPlayer} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url}</code></li>
+                        <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
+                      </ul>
+                    </li>
                   </ol>
                   <p>若需要测量延迟请参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-benchmark' target='_blank' rel='noreferrer'>这里</a></p>
                 </Accordion.Body>
@@ -307,7 +315,15 @@ export default function Dashboard() {
                         ffplay -fflags nobuffer -flags low_delay -i '{srtPlayUrl}'
                       </code>
                     </li>
-                    <li>画面出来较慢，请稍安勿躁</li>
+                    <li>SRT流画面出来较慢，请稍安勿躁</li>
+                    <li>
+                      也可以快速预览其他格式的流，注意延迟比直接播放SRT流会高很多：<br/>
+                      <ul>
+                        <li>播放<a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
+                        <li>播放<a href={hlsPlayer} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url}</code></li>
+                        <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
+                      </ul>
+                    </li>
                   </ol>
                   <p>若需要测量延迟请参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-benchmark' target='_blank' rel='noreferrer'>这里</a></p>
                 </Accordion.Body>
