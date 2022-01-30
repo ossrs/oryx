@@ -205,7 +205,15 @@ export default function Dashboard() {
                       <code>ping {window.location.hostname}</code>
                     </li>
                     <li>
-                      请关注网络质量，推荐使用网线，网络丢包不能超过<code>10%</code>
+                      请关注网络质量，推荐使用网线和专线接入服务器，网络丢包不能超过<code>10%</code>
+                    </li>
+                    <li>
+                      不建议使用WiFi，信号强度很好噪声很低时，偶然RTT和丢包也会比较大，若只能WiFi：<br/>
+                      <ul>
+                        <li>请先用<a href='https://www.intuitibits.com/products/wifiexplorer/' target='_blank' rel='noreferrer'>WiFi Explorer</a>确认信号良好</li>
+                        <li>不要有任何屏障，比如和WiFi不要有水泥墙，不要太远距离</li>
+                        <li>不要使用共享的WiFi，避免干扰</li>
+                      </ul>
                     </li>
                     <li>
                       请关注电脑的CPU使用率，不能超过<code>80%</code>
@@ -251,7 +259,15 @@ export default function Dashboard() {
                       <code>ping {window.location.hostname}</code>
                     </li>
                     <li>
-                      请关注网络质量，推荐使用网线，网络丢包不能超过<code>10%</code>
+                      请关注网络质量，推荐使用网线和专线接入服务器，网络丢包不能超过<code>10%</code>
+                    </li>
+                    <li>
+                      不建议使用WiFi，信号强度很好噪声很低时，偶然RTT和丢包也会比较大，若只能WiFi：<br/>
+                      <ul>
+                        <li>请先用<a href='https://www.intuitibits.com/products/wifiexplorer/' target='_blank' rel='noreferrer'>WiFi Explorer</a>确认信号良好</li>
+                        <li>不要有任何屏障，比如和WiFi不要有水泥墙，不要太远距离</li>
+                        <li>不要使用共享的WiFi，避免干扰</li>
+                      </ul>
                     </li>
                     <li>
                       请关注电脑的CPU使用率，不能超过<code>80%</code>
