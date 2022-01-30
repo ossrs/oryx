@@ -138,7 +138,7 @@ export default function System() {
                 <Card.Text>
                   Current: {status?.version} <br/>
                   Stable: {status?.releases?.stable} <br/>
-                  Latest: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank'>{status?.releases?.latest}</a>
+                  Latest: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
                 </Card.Text>
                 {
                   !enableUpgrading

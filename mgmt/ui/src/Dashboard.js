@@ -85,7 +85,7 @@ export default function Dashboard() {
     <>
       <p></p>
       <Container>
-        <Tabs defaultActiveKey="srt" id="uncontrolled-tab-example" className="mb-3">
+        <Tabs defaultActiveKey="live" id="uncontrolled-tab-example" className="mb-3">
           <Tab eventKey="live" title="私人直播间">
             <Accordion defaultActiveKey="1">
               <Accordion.Item eventKey="0">
@@ -109,7 +109,7 @@ export default function Dashboard() {
                   <p>操作步骤：</p>
                   <ol>
                     <li>在防火墙开启<code>TCP/1935</code>端口</li>
-                    <li>请从<a href='https://obsproject.com/download' target='_blank'>下载OBS</a>并安装</li>
+                    <li>请从<a href='https://obsproject.com/download' target='_blank' rel='noreferrer'>下载OBS</a>并安装</li>
                     <li>
                       在OBS输入：
                       <ul>
@@ -120,9 +120,9 @@ export default function Dashboard() {
                     <li>
                       请选择播放的流：
                       <ul>
-                        <li>播放<a href={flvPlayer} target='_blank'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
-                        <li>播放<a href={hlsPlayer} target='_blank'>HLS流</a> <code>{m3u8Url}</code></li>
-                        <li>播放<a href={rtcPlayer} target='_blank'>WebRTC流</a></li>
+                        <li>播放<a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
+                        <li>播放<a href={hlsPlayer} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url}</code></li>
+                        <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
                       </ul>
                     </li>
                     <li>可选，点击进入<a id="cnConsole" href={cnConsole}>SRS控制台</a>查看流信息</li>
@@ -135,7 +135,7 @@ export default function Dashboard() {
                   <p>操作步骤：</p>
                   <ol>
                     <li>先在防火墙开启<code>TCP/1935</code>端口</li>
-                    <li>请<a href='https://ffmpeg.org/download.html' target='_blank'>下载FFmpeg</a>工具</li>
+                    <li>请<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>下载FFmpeg</a>工具</li>
                     <li>
                       FFmpeg推流命令：<br/>
                       <code>
@@ -145,9 +145,9 @@ export default function Dashboard() {
                     <li>
                       请选择播放的流：
                       <ul>
-                        <li>播放<a href={flvPlayer} target='_blank'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
-                        <li>播放<a href={hlsPlayer} target='_blank'>HLS流</a> <code>{m3u8Url}</code></li>
-                        <li>播放<a href={rtcPlayer} target='_blank'>WebRTC流</a></li>
+                        <li>播放<a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
+                        <li>播放<a href={hlsPlayer} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url}</code></li>
+                        <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
                       </ul>
                     </li>
                     <li>可选，点击进入<a id="cnConsole" href={cnConsole}>SRS控制台</a>查看流信息</li>
@@ -161,13 +161,13 @@ export default function Dashboard() {
                   <ol>
                     <li>先在防火墙开启<code>UDP/8000</code>端口</li>
                     <li>请使用<code>https</code>访问管理后台。若使用自签名证书，请点页面空白处然后敲<code>thisisunsafe</code></li>
-                    <li>打开页面推<a href={rtcPublisher} target='_blank'>WebRTC流</a>。注意先停止掉FFmpeg/OBS推流。</li>
+                    <li>打开页面推<a href={rtcPublisher} target='_blank' rel='noreferrer'>WebRTC流</a>。注意先停止掉FFmpeg/OBS推流。</li>
                     <li>
                       请选择播放的流：
                       <ul>
-                        <li>播放<a href={flvPlayer2} target='_blank'>HTTP-FLV流</a> <code>{flvUrl2}</code></li>
-                        <li>播放<a href={hlsPlayer2} target='_blank'>HLS流</a> <code>{m3u8Url2}</code></li>
-                        <li>播放<a href={rtcPlayer2} target='_blank'>WebRTC流</a></li>
+                        <li>播放<a href={flvPlayer2} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl2}</code></li>
+                        <li>播放<a href={hlsPlayer2} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url2}</code></li>
+                        <li>播放<a href={rtcPlayer2} target='_blank' rel='noreferrer'>WebRTC流</a></li>
                       </ul>
                     </li>
                     <li>可选，点击进入<a id="cnConsole" href={cnConsole}>SRS控制台</a>查看流信息</li>
@@ -189,9 +189,9 @@ export default function Dashboard() {
                   </ul>
                   <p>使用说明：</p>
                   <ul>
-                    <li>延迟和每个环节都相关，我们在这个后台简化了配置，具体可以参考<a href='https://github.com/ossrs/srs/issues/1147#lagging' target='_blank'>这里</a>。 </li>
-                    <li>推荐使用<a href='http://www.sinsam.com/' target='_blank'>芯象直播(Windows)</a>推流，其次是<a href='https://obsproject.com/download' target='_blank'>OBS</a>和vmix</li>
-                    <li>推荐使用<a href='https://ffmpeg.org/download.html' target='_blank'>ffplay</a>播放，其次是vmix，<a href='http://www.sinsam.com/' target='_blank'>芯象直播(Windows)</a></li>
+                    <li>延迟和每个环节都相关，我们在这个后台简化了配置，具体可以参考<a href='https://github.com/ossrs/srs/issues/1147#lagging' target='_blank' rel='noreferrer'>这里</a>。 </li>
+                    <li>推荐使用<a href='http://www.sinsam.com/' target='_blank' rel='noreferrer'>芯象直播(Windows)</a>推流，其次是<a href='https://obsproject.com/download' target='_blank' rel='noreferrer'>OBS</a>和vmix</li>
+                    <li>推荐使用<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>ffplay</a>播放，其次是vmix，<a href='http://www.sinsam.com/' target='_blank' rel='noreferrer'>芯象直播(Windows)</a></li>
                   </ul>
                 </Accordion.Body>
               </Accordion.Item>
@@ -213,7 +213,7 @@ export default function Dashboard() {
                   </ol>
                   <p><strong>推流操作步骤：</strong></p>
                   <ol>
-                    <li>下载<a href='http://www.sinsam.com/' target='_blank'>芯象直播Windows版</a>，注意一定要<code>Windows版</code>，若你是Mac请用其他方案</li>
+                    <li>下载<a href='http://www.sinsam.com/' target='_blank' rel='noreferrer'>芯象直播Windows版</a>，注意一定要<code>Windows版</code>，若你是Mac请用其他方案</li>
                     <li>
                       配置芯象推流，可以参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-encoder'>链接</a>：
                       <ol>
@@ -229,7 +229,7 @@ export default function Dashboard() {
                   </ol>
                   <p><strong>播放操作步骤：</strong></p>
                   <ol>
-                    <li>下载<a href='https://ffmpeg.org/download.html' target='_blank'>ffplay</a>，FFmpeg自带的低延迟播放器</li>
+                    <li>下载<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>ffplay</a>，FFmpeg自带的低延迟播放器</li>
                     <li>
                       执行命令：<br/>
                       <code>
@@ -238,7 +238,7 @@ export default function Dashboard() {
                     </li>
                     <li>画面出来较慢，请稍安勿躁</li>
                   </ol>
-                  <p>若需要测量延迟请参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-benchmark' target='_blank'>这里</a></p>
+                  <p>若需要测量延迟请参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-benchmark' target='_blank' rel='noreferrer'>这里</a></p>
                 </Accordion.Body>
               </Accordion.Item>
               <Accordion.Item eventKey="2">
@@ -259,7 +259,7 @@ export default function Dashboard() {
                   </ol>
                   <p><strong>推流操作步骤：</strong></p>
                   <ol>
-                    <li>请从<a href='https://obsproject.com/download' target='_blank'>下载OBS</a>并安装</li>
+                    <li>请从<a href='https://obsproject.com/download' target='_blank' rel='noreferrer'>下载OBS</a>并安装</li>
                     <li>
                       配置OBS推流，可以参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-encoder'>链接</a>：
                       <ol>
@@ -284,7 +284,7 @@ export default function Dashboard() {
                   </ol>
                   <p><strong>播放操作步骤：</strong></p>
                   <ol>
-                    <li>下载<a href='https://ffmpeg.org/download.html' target='_blank'>ffplay</a>，FFmpeg自带的低延迟播放器</li>
+                    <li>下载<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>ffplay</a>，FFmpeg自带的低延迟播放器</li>
                     <li>
                       执行命令：<br/>
                       <code>
@@ -293,7 +293,7 @@ export default function Dashboard() {
                     </li>
                     <li>画面出来较慢，请稍安勿躁</li>
                   </ol>
-                  <p>若需要测量延迟请参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-benchmark' target='_blank'>这里</a></p>
+                  <p>若需要测量延迟请参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-benchmark' target='_blank' rel='noreferrer'>这里</a></p>
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>
@@ -315,7 +315,7 @@ export default function Dashboard() {
               <Accordion.Item eventKey="1">
                 <Accordion.Header>SRS/GB28181</Accordion.Header>
                 <Accordion.Body>
-                  <div>以<a href='https://github.com/ossrs/srs-gb28181' target='_blank'>srs-gb28181</a>为例：</div>
+                  <div>以<a href='https://github.com/ossrs/srs-gb28181' target='_blank' rel='noreferrer'>srs-gb28181</a>为例：</div>
                   <div>1. 点击下载SRS源码：<a href='/terraform/v1/sources/srs.tar.gz'>下载</a></div>
                   <div>2. 在本机设置为srs-gb28181的源：</div>
                   <div><code>git remote set-url origin https://github.com/ossrs/srs-gb28181.git</code></div>
