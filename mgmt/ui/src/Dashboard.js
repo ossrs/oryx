@@ -56,7 +56,7 @@ export default function Dashboard() {
     }
 
     // Build console url.
-    setCnConsole('/console/ng_index.html#/summaries');
+    setCnConsole(`/console/ng_index.html#/summaries?port=${window.location.port}&http=${window.location.port}`);
 
     // The player url.
     if (true) {
