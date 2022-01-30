@@ -27,7 +27,7 @@ export default function PopoverConfirmButton({upgrading, handleClick, operator, 
               disabled={upgrading}
               onClick={!upgrading ? onHandleClick : null}
             >
-              {filterByOperator('确认升级')}
+              确认
             </Button>
           </div>
           <div className="col-12">

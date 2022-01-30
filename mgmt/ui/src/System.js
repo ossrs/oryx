@@ -136,9 +136,9 @@ export default function System() {
               <Card.Header>管理后台</Card.Header>
               <Card.Body>
                 <Card.Text>
-                  Current: {status?.version} <br/>
-                  Stable: {status?.releases?.stable} <br/>
-                  Latest: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
+                  你的版本: {status?.version} <br/>
+                  稳定版本: {status?.releases?.stable} <br/>
+                  最新版本: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
                 </Card.Text>
                 {
                   !enableUpgrading
