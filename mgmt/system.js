@@ -6,6 +6,7 @@ const { spawn } = require('child_process');
 const metadata = require('./metadata');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const axios = require('axios');
 const srs = require('./srs');
 
 exports.handle = (router) => {
@@ -27,8 +28,16 @@ exports.handle = (router) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(token);
 
-    let target = metadata.releases?.stable || 'lighthouse';
-    console.log(`Start upgrade to target=${target}, current=${pkg.version}, releases=${JSON.stringify(metadata.releases)}`);
+    const {data: releases} = await axios.get('http://api.ossrs.net/terraform/v1/releases', {
+      params: {
+        version: `v${pkg.version}`,
+        ts: new Date().getTime(),
+      }
+    });
+    metadata.releases = releases;
+
+    let target = releases?.latest || 'lighthouse';
+    console.log(`Start upgrade to target=${target}, current=${pkg.version}, releases=${JSON.stringify(releases)}`);
 
     await new Promise((resolve, reject) => {
       const child = spawn('bash', ['upgrade', target]);

@@ -35,7 +35,7 @@ async function doThreadMain() {
   console.log(`Thread #${metadata.releases.name}: query current version=v${pkg.version}`);
 
   // Wait for a while to request version.
-  await new Promise(resolve => setTimeout(resolve, 5 * 1000));
+  await new Promise(resolve => setTimeout(resolve, 1 * 1000));
   console.log(`Thread #${metadata.releases.name}: query request by version=v${pkg.version}`);
 
   const {data} = await axios.get('http://api.ossrs.net/terraform/v1/releases', {
