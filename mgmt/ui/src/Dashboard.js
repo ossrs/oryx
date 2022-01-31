@@ -51,8 +51,9 @@ export default function Dashboard() {
 
     // Build SRT url.
     if (true) {
-      setSrtPublishUrl(`srt://${window.location.hostname}:10080?streamid=#!::h=live/livestream?secret=${secret?.publish},m=publish`);
-      setSrtPlayUrl(`srt://${window.location.hostname}:10080?streamid=#!::h=live/livestream?secret=${secret?.publish},m=request&latency=20`);
+      const secretQuery = secret ? `?secret=${secret.publish}` : '';
+      setSrtPublishUrl(`srt://${window.location.hostname}:10080?streamid=#!::h=live/livestream${secretQuery},m=publish`);
+      setSrtPlayUrl(`srt://${window.location.hostname}:10080?streamid=#!::h=live/livestream${secretQuery},m=request&latency=20`);
     }
 
     // Build console url.
@@ -239,7 +240,13 @@ export default function Dashboard() {
                   <ol>
                     <li>下载<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>ffplay</a>，FFmpeg自带的低延迟播放器</li>
                     <li>
-                      执行命令：<br/>
+                      Windows，执行命令：<br/>
+                      <code>
+                        ffplay -fflags nobuffer -flags low_delay -i "{srtPlayUrl}"
+                      </code>
+                    </li>
+                    <li>
+                      Mac或Linux，执行命令：<br/>
                       <code>
                         ffplay -fflags nobuffer -flags low_delay -i '{srtPlayUrl}'
                       </code>
@@ -310,7 +317,13 @@ export default function Dashboard() {
                   <ol>
                     <li>下载<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>ffplay</a>，FFmpeg自带的低延迟播放器</li>
                     <li>
-                      执行命令：<br/>
+                      Windows，执行命令：<br/>
+                      <code>
+                        ffplay -fflags nobuffer -flags low_delay -i "{srtPlayUrl}"
+                      </code>
+                    </li>
+                    <li>
+                      Mac或Linux，执行命令：<br/>
                       <code>
                         ffplay -fflags nobuffer -flags low_delay -i '{srtPlayUrl}'
                       </code>
