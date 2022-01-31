@@ -12,7 +12,7 @@ fi
 TAG_NAME=$(echo $TARGET_VERSION|grep '^v')
 echo "The TARGET_VERSION=$TARGET_VERSION TAG_NAME=$TAG_NAME"
 
-if [[ $TARGET_VERSION != 'lighthouse' && $TAG_NAME == '' ]]; then
+if [[ $TARGET_VERSION == '' && $TAG_NAME == '' ]]; then
   echo "Usage: $0 <branch|tag>"
   echo "    branch|tag    The branch or tag to upgrade to."
   echo "For example:"
@@ -50,7 +50,11 @@ if [[ $CURRENT_BRANCH != $TARGET_VERSION ]]; then
     git checkout $TARGET_VERSION
   else
     echo "Checkout new $TARGET_VERSION for current is $CURRENT_BRANCH"
-    git checkout -b $TARGET_VERSION $TARGET_VERSION
+    if [[ $TAG_NAME != '' ]]; then
+      git checkout -b $TARGET_VERSION $TARGET_VERSION
+    else
+      git checkout -b $TARGET_VERSION origin/$TARGET_VERSION
+    fi
   fi
 else
   echo "Already on branch $TARGET_VERSION"
@@ -63,6 +67,10 @@ if [[ $(git tag -l $TARGET_VERSION) == '' ]]; then
   git pull
 fi
 if [[ $? -ne 0 ]]; then echo "Upgrade codes failed"; exit 1; fi
+
+# Got the latest script and upgrade.
+echo "Start living upgrade" && sudo bash upgrade_living
+if [[ $? -ne 0 ]]; then echo "Living upgrade failed"; exit 1; fi
 
 echo "Make and upgrade updates"
 (cd .. && make upgrade)
@@ -78,17 +86,6 @@ if [[ $(id -un lighthouse 2>/dev/null) == 'lighthouse' ]]; then
   sudo chown -R lighthouse:lighthouse /usr/local/lighthouse/softwares &&
   sudo chown -R lighthouse:lighthouse /usr/local/srs-terraform
   if [[ $? -ne 0 ]]; then echo "Change owner failed"; exit 1; fi
-fi
-
-# Setup the UDP kernel options before restart
-# See https://www.jianshu.com/p/6d4a89359352
-# TODO: FIXME: REMOVE-NEXT-RELEASE: Setup the kernel options by the image itself.
-if [[ $(uname -s) != 'Darwin' ]]; then
-    sudo sysctl net.core.rmem_max=16777216 &&
-    sudo sysctl net.core.rmem_default=16777216 &&
-    sudo sysctl net.core.wmem_max=16777216 &&
-    sudo sysctl net.core.wmem_default=16777216
-  if [[ $? -ne 0 ]]; then echo "Setup the UDP kernel options failed"; exit 1; fi
 fi
 
 echo "Restart service"
