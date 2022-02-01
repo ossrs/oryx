@@ -78,13 +78,15 @@ async function doThreadMain() {
 
 async function firstRun() {
   const r0 = await redis.get(consts.SRS_FIRST_BOOT_DONE);
-  if (r0) {
+  await redis.set(consts.SRS_FIRST_BOOT_DONE, r0 ? r0 + 1 : 1);
+
+  // We do the first run for the first N times.
+  if (r0 >= 2) {
     console.log(`Thread #${metadata.releases.name}: boot already done, r0=${r0}`);
     return;
   }
 
   // To prevent boot again and again.
-  await redis.set(consts.SRS_FIRST_BOOT_DONE, 1);
   console.log(`Thread #${metadata.releases.name}: boot start to setup`);
 
   // Setup the publish secret for first run.
