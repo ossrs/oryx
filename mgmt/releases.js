@@ -81,6 +81,8 @@ async function firstRun() {
   await redis.set(consts.SRS_FIRST_BOOT_DONE, r0 ? r0 + 1 : 1);
 
   // We do the first run for the first N times.
+  // 1. The first time, for the startup version in image, to init the whole system.
+  // 2. The second time, upgraded to stable version, to do additional init, such as change container args.
   if (r0 >= 2) {
     console.log(`Thread #${metadata.releases.name}: boot already done, r0=${r0}`);
     return;
