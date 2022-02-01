@@ -18,3 +18,20 @@ exports.releases = {
   },
 };
 
+exports.market = {
+  hooks: {
+    name: 'srs-hooks',
+    image: 'registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:hooks-1',
+    port: 2021,
+    releases: {
+      stable: null,
+      latest: null,
+    },
+    container: {
+      ID: null,
+      State: null,
+      Status: null,
+    },
+  },
+};
+

@@ -1,5 +1,14 @@
 'use strict';
 
+// For mgmt, it's ok to connect to localhost.
+const config = {
+  redis:{
+    host: 'localhost',
+    port: 6379,
+    password: '',
+  },
+};
+
 const { isMainThread, parentPort } = require("worker_threads");
 const { spawn } = require('child_process');
 const pkg = require('./package.json');
@@ -8,7 +17,7 @@ const semver = require('semver');
 const utils = require('./utils');
 const consts = require('./consts');
 const ioredis = require('ioredis');
-const redis = utils.redis({config: consts.redis, redis: ioredis});
+const redis = utils.redis({config: config.redis, redis: ioredis});
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const metadata = require('./metadata');
@@ -38,7 +47,8 @@ async function doThreadMain() {
   await new Promise(resolve => setTimeout(resolve, 1 * 1000));
   console.log(`Thread #${metadata.releases.name}: query request by version=v${pkg.version}`);
 
-  const {data} = await axios.get('http://api.ossrs.net/terraform/v1/releases', {
+  const releaseServer = process.env.NODE_ENV === 'development' ? `http://localhost:${consts.config.port}` : 'http://api.ossrs.net';
+  const {data} = await axios.get(`${releaseServer}/terraform/v1/releases`, {
     params: {
       version: `v${pkg.version}`,
       ts: new Date().getTime(),
@@ -90,14 +100,6 @@ async function firstRun() {
 
   // To prevent boot again and again.
   console.log(`Thread #${metadata.releases.name}: boot start to setup`);
-
-  // Setup the publish secret for first run.
-  let publish = await redis.get(consts.SRS_SECRET_PUBLISH);
-  if (!publish) {
-    publish = Math.random().toString(16).slice(-8);
-    const r0 = await redis.set(consts.SRS_SECRET_PUBLISH, publish);
-    console.log(`Thread #${metadata.releases.name}: boot create secret, key=${consts.SRS_SECRET_PUBLISH}, value=${'*'.repeat(publish.length)}, r0=${r0}`);
-  }
 
   try {
     // Because we already create the container, and cached the last SRS 4.0 image, also set the hosts for hooks by

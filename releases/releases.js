@@ -58,32 +58,36 @@ function filterHeaders(event) {
   });
 }
 
-exports.handle = (ctx) => {
-  // Filter the querystring.
-  let {q, version} = filterVersion({
-    queryString: ctx.request.query
+exports.handle = (router) => {
+  router.all('/terraform/v1/releases', async (ctx) => {
+    // Filter the querystring.
+    let {q, version} = filterVersion({
+      queryString: ctx.request.query
+    });
+
+    // Parse headers to lower case.
+    filterHeaders({
+      headers: ctx.headers,
+    });
+    console.log(`api q=${JSON.stringify(q)}, headers=${JSON.stringify(ctx.headers)}`);
+
+    // Build response.
+    let res = buildVersion(q, version);
+    buildFeatures(q, version, res);
+
+    // See GetOriginalClientIP of https://github.com/winlinvip/http-gif-sls-writer/blob/master/main.go
+    q.rip = getOriginalClientIP(q, ctx.headers, ctx.request.ip);
+    q.fwd = ctx.headers['x-forwarded-for'];
+
+    // Add the feed back address.
+    if (q.feedback) {
+      res.addr = {rip: q.rip, fwd: q.fwd};
+    }
+
+    console.log(`srs-terraform id=${q.id}, version=${version}, eip=${q.eip}, rip=${q.rip}, fwd=${q.fwd}, res=${JSON.stringify(res)}`);
+    ctx.body = res;
   });
 
-  // Parse headers to lower case.
-  filterHeaders({
-    headers: ctx.headers,
-  });
-  console.log(`api q=${JSON.stringify(q)}, headers=${JSON.stringify(ctx.headers)}`);
-
-  // Build response.
-  let res = buildVersion(q, version);
-  buildFeatures(q, version, res);
-
-  // See GetOriginalClientIP of https://github.com/winlinvip/http-gif-sls-writer/blob/master/main.go
-  q.rip = getOriginalClientIP(q, ctx.headers, ctx.request.ip);
-  q.fwd = ctx.headers['x-forwarded-for'];
-
-  // Add the feed back address.
-  if (q.feedback) {
-    res.addr = {rip: q.rip, fwd: q.fwd};
-  }
-
-  console.log(`srs-terraform id=${q.id}, version=${version}, eip=${q.eip}, rip=${q.rip}, fwd=${q.fwd}, res=${JSON.stringify(res)}`);
-  ctx.body = res;
+  return router;
 };
 

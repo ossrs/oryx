@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="mgmt-docker" type="js.build_tools.npm">
+    <package-json value="$PROJECT_DIR$/mgmt/package.json" />
+    <command value="run" />
+    <scripts>
+      <script value="docker" />
+    </scripts>
+    <node-interpreter value="project" />
+    <envs />
+    <method v="2" />
+  </configuration>
+</component>

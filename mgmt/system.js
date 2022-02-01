@@ -8,6 +8,7 @@ const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const axios = require('axios');
 const srs = require('./srs');
+const consts = require('./consts');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/status', async (ctx) => {
@@ -28,7 +29,8 @@ exports.handle = (router) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(token);
 
-    const {data: releases} = await axios.get('http://api.ossrs.net/terraform/v1/releases', {
+    const releaseServer = process.env.NODE_ENV === 'development' ? `http://localhost:${consts.config.port}` : 'http://api.ossrs.net';
+    const {data: releases} = await axios.get(`${releaseServer}/terraform/v1/releases`, {
       params: {
         version: `v${pkg.version}`,
         ts: new Date().getTime(),
@@ -81,11 +83,25 @@ exports.handle = (router) => {
     console.log(`srs ok, action=${action} decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
       name: metadata.srs.name,
-      major: metadata.srs.major,
       container: {
         ID: metadata.srs.container.ID,
         State: metadata.srs.container.State,
         Status: metadata.srs.container.Status,
+      },
+    });
+  });
+
+  router.all('/terraform/v1/mgmt/hooks', async (ctx) => {
+    const {token, action} = ctx.request.body;
+    const decoded = await utils.verifyToken(token);
+
+    console.log(`srs ok, action=${action} decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0, {
+      name: metadata.market.hooks.name,
+      container: {
+        ID: metadata.market.hooks.container.ID,
+        State: metadata.market.hooks.container.State,
+        Status: metadata.market.hooks.container.Status,
       },
     });
   });

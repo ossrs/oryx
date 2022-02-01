@@ -26,7 +26,7 @@ export default function Dashboard() {
 
   React.useEffect(() => {
     const token = Token.load();
-    axios.post('/terraform/v1/mgmt/srs/secret', {
+    axios.post('/terraform/v1/hooks/srs/secret', {
       ...token,
     }).then(res => {
       setSecret(res.data.data);
@@ -109,7 +109,7 @@ export default function Dashboard() {
                 <Accordion.Body>
                   <p>操作步骤：</p>
                   <ol>
-                    <li>在防火墙开启<code>TCP/1935</code>端口</li>
+                    <li>在服务器防火墙开启<code>TCP/1935</code>端口</li>
                     <li>请从<a href='https://obsproject.com/download' target='_blank' rel='noreferrer'>下载OBS</a>并安装</li>
                     <li>
                       在OBS输入：
@@ -160,7 +160,7 @@ export default function Dashboard() {
                 <Accordion.Body>
                   <p>操作步骤：</p>
                   <ol>
-                    <li>先在防火墙开启<code>UDP/8000</code>端口</li>
+                    <li>先在服务器防火墙开启<code>UDP/8000</code>端口</li>
                     <li>请使用<code>https</code>访问管理后台。若使用自签名证书，请点页面空白处然后敲<code>thisisunsafe</code></li>
                     <li>打开页面推<a href={rtcPublisher} target='_blank' rel='noreferrer'>WebRTC流</a>。注意先停止掉FFmpeg/OBS推流。</li>
                     <li>
@@ -222,6 +222,7 @@ export default function Dashboard() {
                   </ol>
                   <p><strong>推流操作步骤：</strong></p>
                   <ol>
+                    <li>先在服务器防火墙开启<code>UDP/10080</code>端口</li>
                     <li>下载<a href='http://www.sinsam.com/' target='_blank' rel='noreferrer'>芯象直播Windows版</a>，注意一定要<code>Windows版</code>，若你是Mac请用其他方案</li>
                     <li>
                       配置芯象推流，可以参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-encoder'>链接</a>：
@@ -290,6 +291,7 @@ export default function Dashboard() {
                   </ol>
                   <p><strong>推流操作步骤：</strong></p>
                   <ol>
+                    <li>先在服务器防火墙开启<code>UDP/10080</code>端口</li>
                     <li>请从<a href='https://obsproject.com/download' target='_blank' rel='noreferrer'>下载OBS</a>并安装</li>
                     <li>
                       配置OBS推流，可以参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-encoder'>链接</a>：

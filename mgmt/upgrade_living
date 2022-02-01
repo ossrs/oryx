@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# This is scripts run after code is updated, so it's living as the target version not the previous old version,
+# it allows one roundtrip upgrade.
+
 # We must setup the redis to listen at lo and eth0, to allow containers to access it.
 # Note that should never listen at * for security reason.
 PIPV4=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
@@ -58,6 +61,45 @@ if [[ $(uname -s) != 'Darwin' ]]; then
   sysctl net.core.wmem_default=16777216
   if [[ $? -ne 0 ]]; then echo "Setup the UDP kernel options failed"; exit 1; fi
 fi
+
+echo "Update the docker containers."
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs:4
+if [[ $? -ne 0 ]]; then echo "Update the containers failed"; exit 1; fi
+
+# Remove the containers if need upgrade
+#   update_containers image
+#   update_containers registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:4
+function update_containers() {
+  IMAGE=$1
+  echo "Update containers for IMAGE=$IMAGE"
+
+  # We must store the container images ID before pull, which will change it.
+  IMAGE_IDS=$(docker ps -a | grep $IMAGE | awk '{print $1}')
+  echo "The containers for $IMAGE is $IMAGE_IDS"
+
+  docker pull $IMAGE
+  if [[ $? -ne 0 ]]; then echo "Update the image $IMAGE failed"; exit 1; fi
+
+  for IMAGE_ID in $IMAGE_IDS; do
+    LATEST=$(docker inspect --format "{{.Id}}" $IMAGE)
+    RUNNING=$(docker inspect --format "{{.Image}}" $IMAGE_ID)
+    NAME=$(docker inspect --format '{{.Name}}' $IMAGE_ID |sed 's|/||g')
+    echo "Check $NAME RUNNING=$RUNNING, LATEST=$LATEST"
+
+    if [[ $RUNNING != $LATEST ]]; then
+      echo "Upgrade container $NAME from $RUNNING to $LATEST"
+      docker rm -f $NAME
+    fi
+  done
+}
+
+# Update the containers before restart. Note that the containers are normally started by previous mgmt, with the
+# upgraded image. So we only upgrade the images for all containers, and it's the responsibility for mgmt to restart the
+# container if need to change the startup arguments.
+update_containers registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:4 &&
+update_containers registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:hooks-1
+if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
 
 echo "Make and upgrade updates"
 (cd .. && make upgrade)

@@ -1,0 +1,26 @@
+name: "Mirror node containers"
+
+on:
+  # See https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow
+  workflow_dispatch:
+
+jobs:
+  docker:
+    name: releases-by-docker
+    runs-on: ubuntu-20.04
+
+    steps:
+      # Aliyun ACR
+      - name: Login Aliyun docker hub
+        uses: aliyun/acr-login@v1
+        with:
+          login-server: https://registry.cn-hangzhou.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
+      - name: Push to Aliyun docker hub
+        run: |
+          docker pull node:slim
+          docker tag node:slim registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim
+          docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/node
+          echo "Release ok, please see:"
+          echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/node/images"

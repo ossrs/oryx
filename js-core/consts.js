@@ -5,10 +5,4 @@ exports.MYSQL_DATETIME = 'YYYY-MM-DD HH:mm:ss';
 
 // The redis key.
 exports.SRS_SECRET_PUBLISH = 'SRS_SECRET_PUBLISH';
-exports.SRS_FIRST_BOOT_DONE = 'SRS_FIRST_BOOT_DONE';
-
-// Local config.
-exports.config = {
-  port: process.env.PORT || 2022,
-};
 

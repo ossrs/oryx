@@ -1,5 +1,6 @@
 'use strict';
 
+const os = require('os');
 const { isMainThread, parentPort } = require("worker_threads");
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
@@ -16,7 +17,7 @@ async function threadMain() {
     try {
       await doThreadMain();
     } catch (e) {
-      console.error(`Thread #${metadata.srs.name}: err`, e);
+      console.error(`Thread #market: err`, e);
       await new Promise(resolve => setTimeout(resolve, 300 * 1000));
     } finally {
       await new Promise(resolve => setTimeout(resolve, 3 * 1000));
@@ -28,8 +29,8 @@ async function doThreadMain() {
   // Query the container from docker.
   let [all, running] = await queryContainer();
   if (all && all.ID) {
-    metadata.srs.container = all;
-    console.log(`Thread #${metadata.srs.name}: query ID=${all.ID}, State=${all.State}, Status=${all.Status}, running=${running?.ID}`);
+    metadata.market.hooks.container = all;
+    console.log(`Thread #market: query ID=${all.ID}, State=${all.State}, Status=${all.Status}, running=${running?.ID}`);
   }
 
   // Restart the SRS container.
@@ -37,14 +38,14 @@ async function doThreadMain() {
     await startContainer();
 
     all = (await queryContainer())[0];
-    if (all && all.ID) metadata.srs.container = all;
-    console.log(`Thread #${metadata.srs.name}: create ID=${all.ID}, State=${all.State}, Status=${all.Status}`);
+    if (all && all.ID) metadata.market.hooks.container = all;
+    console.log(`Thread #market: create ID=${all.ID}, State=${all.State}, Status=${all.Status}`);
   }
 
   // Update the metadata to main thread.
   parentPort.postMessage({
     metadata:{
-      srs: metadata.srs,
+      hooks: metadata.market.hooks,
     },
   });
 }
@@ -54,12 +55,12 @@ async function queryContainer() {
   let all, running;
 
   if (true) {
-    const {stdout} = await exec(`docker ps -a -f name=${metadata.srs.name} --format '{{json .}}'`);
+    const {stdout} = await exec(`docker ps -a -f name=${metadata.market.hooks.name} --format '{{json .}}'`);
     all = stdout ? JSON.parse(stdout) : {};
   }
 
   if (true) {
-    const {stdout} = await exec(`docker ps -f name=${metadata.srs.name} --format '{{json .}}'`);
+    const {stdout} = await exec(`docker ps -f name=${metadata.market.hooks.name} --format '{{json .}}'`);
     running = stdout ? JSON.parse(stdout) : {};
   }
 
@@ -68,27 +69,26 @@ async function queryContainer() {
 exports.queryContainer = queryContainer;
 
 async function startContainer() {
-  console.log(`Thread #${metadata.srs.name}: start container`);
+  console.log(`Thread #market: start container`);
 
   const privateIPv4 = await utils.discoverPrivateIPv4();
-  const confFile = `${process.cwd()}/containers/conf/srs.conf`;
-  const image = process.env.NODE_ENV === 'development' ? 'ossrs/srs' : 'ossrs/lighthouse';
-  const dockerArgs = `-d -it --restart always --privileged --name ${metadata.srs.name} \\
+  const envFile = `${process.cwd()}/.env`;
+  const dockerArgs = `-d --restart always --privileged -it --name ${metadata.market.hooks.name} \\
     --add-host=mgmt.srs.local:${privateIPv4.address} \\
-    -v ${confFile}:/usr/local/srs/conf/lighthouse.conf \\
-    -p 1935:1935 -p 1985:1985 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \\
-    --log-driver json-file --log-opt max-size=3g --log-opt max-file=3 \\
-    registry.cn-hangzhou.aliyuncs.com/${image}:${metadata.srs.major} \\
-    ./objs/srs -c conf/lighthouse.conf`;
-  console.log(`Thread #${metadata.srs.name}: docker run args ip=${privateIPv4.name}/${privateIPv4.address}, conf=${confFile}, docker run ${dockerArgs}`);
+    -v ${envFile}:/srs-terraform/hooks/.env \\
+    -p ${metadata.market.hooks.port}:${metadata.market.hooks.port} \\
+    --log-driver json-file --log-opt max-size=1g --log-opt max-file=3 \\
+    ${metadata.market.hooks.image} \\
+    node .`;
+  console.log(`Thread #market: docker run args ip=${privateIPv4.name}/${privateIPv4.address}, docker run ${dockerArgs}`);
 
   // Only remove the container when got ID, to avoid fail for CentOS.
   const all = (await queryContainer())[0];
   if (all && all.ID) {
-    await exec(`docker rm -f ${metadata.srs.name}`);
-    console.log(`Thread #${metadata.srs.name}: docker run remove ID=${all.ID}`);
+    await exec(`docker rm -f ${metadata.market.hooks.name}`);
+    console.log(`Thread #market: docker run remove ID=${all.ID}`);
   }
 
   await exec(`docker run ${dockerArgs}`);
-  console.log(`Thread #${metadata.srs.name}: docker run ok`);
+  console.log(`Thread #market: docker run ok`);
 }

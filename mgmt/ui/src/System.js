@@ -11,6 +11,7 @@ export default function System() {
   const navigate = useNavigate();
   const [status, setStatus] = React.useState();
   const [srs, setSRS] = React.useState();
+  const [hooks, setHooks] = React.useState();
   const [upgrading, setUpgrading] = React.useState();
   const [enableUpgrading, setEnableUpgrading] = React.useState();
   const [enableSrsOperators, setEnableSrsOperators] = React.useState();
@@ -83,6 +84,25 @@ export default function System() {
   }, [navigate, restartSrs]);
 
   React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/hooks', {
+      ...token,
+    }).then(res => {
+      const status = res.data.data;
+      setHooks(status);
+      console.log(`Hooks: Query ok, status=${JSON.stringify(status)}`);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  }, [navigate]);
+
+  React.useEffect(() => {
     if (!upgrading) return;
 
     const token = Token.load();
@@ -110,7 +130,9 @@ export default function System() {
               <Card.Header>SRS服务器</Card.Header>
               <Card.Body>
                 <Card.Text>
-                  {srs?.major} {srs?.container.State} {srs?.container.Status}
+                  容器名：{srs?.name} <br/>
+                  容器ID：{srs?.container?.ID} <br/>
+                  状态：{srs?.container.State} {srs?.container.Status}
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
                   {
@@ -124,6 +146,26 @@ export default function System() {
                         </p>
                       </PopoverConfirmButton>
                   } &nbsp;
+                  <Button className='disabled'>
+                    升级
+                  </Button>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs lg={3}>
+            <Card style={{ width: '18rem' }}>
+              <Card.Header>SRS回调</Card.Header>
+              <Card.Body>
+                <Card.Text>
+                  容器名：{hooks?.name} <br/>
+                  容器ID：{hooks?.container?.ID} <br/>
+                  状态：{hooks?.container.State} {hooks?.container.Status}
+                </Card.Text>
+                <div style={{display: 'inline-block'}}>
+                  <Button className='disabled'>
+                    重启
+                  </Button> &nbsp;
                   <Button className='disabled'>
                     升级
                   </Button>
@@ -152,7 +194,7 @@ export default function System() {
                   </PopoverConfirmButton>
                 } &nbsp;
                 {!enableUpgrading &&
-                  <PopoverConfirmButton handleClick={() => setEnableUpgrading(true)} text='开启强制升级' operator='开启强制升级'>
+                  <PopoverConfirmButton handleClick={() => setEnableUpgrading(true)} text='强制升级' operator='开启强制升级'>
                     <p>
                       你目前已经是最新版本，
                       <span className='text-warning'>没有必要强制升级</span>，

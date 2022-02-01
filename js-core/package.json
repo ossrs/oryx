@@ -1,0 +1,6 @@
+{
+  "name": "js-core",
+  "version": "1.0.0",
+  "description": "The shared core module for nodejs",
+  "main": "index.js"
+}

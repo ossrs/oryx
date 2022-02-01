@@ -1,7 +1,9 @@
-FROM node:slim
+FROM registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim
 
-COPY releases /releases
-RUN cd /releases && npm i
+COPY js-core /srs-terraform/js-core
+COPY releases /srs-terraform/releases
+RUN cd /srs-terraform/releases && npm i
 
-WORKDIR /releases
+ENV PORT 9000
+WORKDIR /srs-terraform/releases
 CMD ["node", "."]

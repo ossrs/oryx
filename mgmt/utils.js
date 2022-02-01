@@ -158,3 +158,39 @@ const redis = ({config, redis}) => {
 };
 exports.redis = redis;
 
+// Discover the private ip of machine.
+let privateIPv4 = null;
+async function discoverPrivateIPv4() {
+  if (privateIPv4) return privateIPv4;
+
+  const networks = {};
+
+  const networkInterfaces = os.networkInterfaces();
+  Object.keys(networkInterfaces).map(name => {
+    for (const network of networkInterfaces[name]) {
+      if (network.family === 'IPv4' && !network.internal) {
+        networks[name] = {...network, name};
+      }
+    }
+  });
+  console.log(`discover ip networks=${JSON.stringify(networks)}`);
+
+  if (!Object.keys(networks).length) {
+    throw new Error(`no private address from ${JSON.stringify(networkInterfaces)}`);
+  }
+
+  // Default to the first one.
+  privateIPv4 = networks[Object.keys(networks)[0]];
+
+  // Best match the en or eth network, for example, eth0 or en0.
+  Object.keys(networks).map(e => {
+    if (e.indexOf('en') === 0 || e.indexOf('eth') === 0) {
+      privateIPv4 = networks[e];
+    }
+  });
+  console.log(`discover ip privateIPv4=${JSON.stringify(privateIPv4)}`);
+
+  return privateIPv4;
+}
+exports.discoverPrivateIPv4 = discoverPrivateIPv4;
+

@@ -1,9 +1,9 @@
-name: "Release version management"
+name: "Release hooks for SRS"
 
 on:
   push:
     tags:
-      - releases-v1*
+      - hooks-v1*
 
 jobs:
   docker:
@@ -20,8 +20,8 @@ jobs:
       # Build
       # The github.ref is, for example, refs/tags/v1.0.52
       # Generate variables like:
-      #   SRS_TAG=releases-v1.0.52
-      #   SRS_MAJOR=releases-1
+      #   SRS_TAG=hooks-v1.0.52
+      #   SRS_MAJOR=hooks-1
       # @see https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Generate varaiables
         run: |
@@ -33,7 +33,7 @@ jobs:
       - name: Build SRS docker image
         run: |
           echo "Release ossrs/srs-terraform:$SRS_TAG"
-          docker build --tag ossrs/srs-terraform:$SRS_TAG -f releases/Dockerfile .
+          docker build --tag ossrs/srs-terraform:$SRS_TAG -f hooks/Dockerfile .
 
       ################################################################
       # Aliyun ACR
@@ -50,16 +50,3 @@ jobs:
           docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/srs-terraform/images"
-
-      ################################################################
-      # K8S
-      - name: Setup KUBECONFIG for Aliyun ACK
-        run: |-
-          KUBECONFIG=$RUNNER_TEMP/kubeconfig_$(date +%s)
-          echo "${{ secrets.KUBECONFIG }}" > $KUBECONFIG
-          echo "KUBECONFIG=$KUBECONFIG" >> $GITHUB_ENV
-      # K8S for terraform versions
-      - name: Release terraform versions to Aliyun ACK
-        run: |-
-          kubectl set image deploy/srs-terraform-deploy releases=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:$SRS_TAG
-          kubectl describe deploy/srs-terraform-deploy
