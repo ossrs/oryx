@@ -7,7 +7,7 @@ const metadata = require('./metadata');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const axios = require('axios');
-const srs = require('./srs');
+const market = require('./market');
 const consts = require('./consts');
 
 exports.handle = (router) => {
@@ -68,12 +68,12 @@ exports.handle = (router) => {
 
     if (action === 'restart') {
       // We must rm the container to get a new ID.
-      await exec(`docker rm -f ${metadata.srs.name}`);
+      await exec(`docker rm -f ${metadata.market.srs.name}`);
 
-      const previousContainerID = metadata.srs.container.ID;
+      const previousContainerID = metadata.market.srs.container.ID;
       for (let i = 0; i < 20; i++) {
         // Wait util running and got another container ID.
-        const [all, running] = await srs.queryContainer();
+        const [all, running] = await market.queryContainer(metadata.market.srs.name);
         // Please note that we don't update the metadata of SRS, client must request the updated status.
         if (all && all.ID && running && running.ID && running.ID !== previousContainerID) break;
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -82,11 +82,11 @@ exports.handle = (router) => {
 
     console.log(`srs ok, action=${action} decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
-      name: metadata.srs.name,
+      name: metadata.market.srs.name,
       container: {
-        ID: metadata.srs.container.ID,
-        State: metadata.srs.container.State,
-        Status: metadata.srs.container.Status,
+        ID: metadata.market.srs.container.ID,
+        State: metadata.market.srs.container.State,
+        Status: metadata.market.srs.container.Status,
       },
     });
   });

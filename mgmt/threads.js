@@ -25,24 +25,12 @@ exports.run = async () => {
   }
 
   new Promise((resolve, reject) => {
-    const worker = new Worker("./srs.js");
-    worker.on('message', (msg) => {
-      metadata.srs = msg.metadata.srs;
-    });
-    worker.on('error', reject);
-    worker.on('exit', (code) => {
-      console.log(`thread #${metadata.srs.name}: exit with ${code}`);
-      if (code !== 0) {
-        return reject(new Error(`Worker #${metadata.srs.name}: stopped with exit code ${code}`));
-      }
-      resolve();
-    });
-  });
-
-  new Promise((resolve, reject) => {
     const worker = new Worker("./market.js");
     worker.on('message', (msg) => {
-      metadata.market.hooks = msg.metadata.hooks;
+      Object.keys(msg.metadata).map(e => {
+        metadata.market[e].container = msg.metadata[e];
+      });
+      //console.log(`update metadata by ${JSON.stringify(msg)} to ${JSON.stringify(metadata)}`);
     });
     worker.on('error', reject);
     worker.on('exit', (code) => {

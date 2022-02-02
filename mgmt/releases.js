@@ -104,10 +104,10 @@ async function firstRun() {
   try {
     // Because we already create the container, and cached the last SRS 4.0 image, also set the hosts for hooks by
     // --add-host which is incorrect for new machine, so we must delete the container and restart it when first run.
-    await exec(`docker rm -f ${metadata.srs.name}`);
-    console.log(`Thread #${metadata.releases.name}: boot remove docker ${metadata.srs.name}`);
+    await exec(`docker rm -f ${metadata.market.srs.name}`);
+    console.log(`Thread #${metadata.releases.name}: boot remove docker ${metadata.market.srs.name}`);
   } catch (e) {
-    console.log(`Thread #${metadata.releases.name}: boot ignore rm docker ${metadata.srs.name} error ${e.message}`);
+    console.log(`Thread #${metadata.releases.name}: boot ignore rm docker ${metadata.market.srs.name} error ${e.message}`);
   }
 
   console.log(`Thread #${metadata.releases.name}: boot done`);
