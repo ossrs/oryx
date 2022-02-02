@@ -136,7 +136,8 @@ router.all('/terraform/v1/mgmt/versions', async (ctx) => {
 app.use(router.routes());
 
 ///////////////////////////////////////////////////////////////////////////////////////////
+console.log(`Run with cwd=${process.cwd()}, USE_DOCKER=${process.env.USE_DOCKER}`);
 app.listen(consts.config.port, () => {
-  console.log(`Server start on http://localhost:${consts.config.port}, cwd=${process.cwd()}`);
+  console.log(`Server start on http://localhost:${consts.config.port}`);
 });
 

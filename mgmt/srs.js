@@ -72,7 +72,7 @@ async function startContainer() {
 
   const privateIPv4 = await utils.discoverPrivateIPv4();
   const confFile = `${process.cwd()}/containers/conf/srs.conf`;
-  const image = process.env.NODE_ENV === 'development' ? 'ossrs/srs' : 'ossrs/lighthouse';
+  const image = (process.env.NODE_ENV === 'development' || process.env.SRS_DOCKER === 'srs') ? 'ossrs/srs' : 'ossrs/lighthouse';
   const dockerArgs = `-d -it --restart always --privileged --name ${metadata.srs.name} \\
     --add-host=mgmt.srs.local:${privateIPv4.address} \\
     -v ${confFile}:/usr/local/srs/conf/lighthouse.conf \\
