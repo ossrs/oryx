@@ -21,9 +21,6 @@ const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const metadata = require('./metadata');
 
-// The redis key we used.
-const SRS_FIRST_BOOT_DONE = 'SRS_FIRST_BOOT_DONE';
-
 if (!isMainThread) {
   threadMain();
 }
@@ -43,9 +40,8 @@ async function threadMain() {
 async function doThreadMain() {
   await firstRun();
 
-  console.log(`Thread #${metadata.releases.name}: query current version=v${pkg.version}`);
-
   // Wait for a while to request version.
+  console.log(`Thread #${metadata.releases.name}: query current version=v${pkg.version}`);
   await new Promise(resolve => setTimeout(resolve, 1 * 1000));
   console.log(`Thread #${metadata.releases.name}: query request by version=v${pkg.version}`);
 
@@ -90,19 +86,27 @@ async function doThreadMain() {
 }
 
 async function firstRun() {
-  const r0 = await redis.get(SRS_FIRST_BOOT_DONE);
-  await redis.set(SRS_FIRST_BOOT_DONE, r0 ? parseInt(r0) + 1 : 1);
+  // For each init stage changed, we could use a different redis key, to identify this special init workflow.
+  // However, keep in mind that previous defined workflow always be executed, so these operations should be idempotent.
+  // History:
+  //    SRS_FIRST_BOOT_DONE, For release 4.1, to restart srs.
+  //    SRS_FIRST_BOOT_DONE_v1, For current release, to restart srs, exec upgrade_prepare.
+  const SRS_FIRST_BOOT_DONE = 'SRS_FIRST_BOOT_DONE_v1';
 
-  // We do the first run for the first N times.
-  // 1. The first time, for the startup version in image, to init the whole system.
-  // 2. The second time, upgraded to stable version, to do additional init, such as change container args.
-  if (parseInt(r0) >= 2) {
+  // Run once, record in redis.
+  const r0 = await redis.get(SRS_FIRST_BOOT_DONE);
+  await redis.set(SRS_FIRST_BOOT_DONE, 1);
+  if (r0) {
     console.log(`Thread #${metadata.releases.name}: boot already done, r0=${r0}`);
-    return;
+    return false;
   }
 
   // To prevent boot again and again.
-  console.log(`Thread #${metadata.releases.name}: boot start to setup`);
+  console.log(`Thread #${metadata.releases.name}: boot start to setup, v=${SRS_FIRST_BOOT_DONE}, r0=${r0}`);
+
+  // For the second time, we prepare the os, for previous version which does not run the upgrade living.
+  console.log(`Thread #${metadata.releases.name}: Prepare OS for first run, r0=${r0}`);
+  await exec(`bash upgrade_prepare`);
 
   try {
     // Because we already create the container, and cached the last SRS 4.0 image, also set the hosts for hooks by
@@ -114,5 +118,6 @@ async function firstRun() {
   }
 
   console.log(`Thread #${metadata.releases.name}: boot done`);
+  return true;
 }
 

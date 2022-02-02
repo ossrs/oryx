@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+
+# Prepare the system, this could run again and again.
+
+# Ignore darwin
+if [[ ! -d /usr/local/srs-terraform && $(uname -s) == 'Darwin' ]]; then
+  echo "Directly finish upgrade for macOS development"
+  sleep 3; exit 0;
+fi
+
+# We must setup the redis to listen at lo and eth0, to allow containers to access it.
+# Note that should never listen at * for security reason.
+if [[ -f /etc/redis.conf ]]; then
+  PIPV4=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
+  if [[ $PIPV4 == '' ]]; then echo 'No private IP of eth0'; exit 1; fi
+  # Replace the bind for redis.
+  sed -i "s/^bind 127.0.0.1.*$/bind 127.0.0.1 $PIPV4/g" /etc/redis.conf && grep '^bind 127.0.0.1' /etc/redis.conf &&
+  systemctl restart redis && systemctl status redis &&
+  echo "Change redis to listen at lo and eth0=$PIPV4"
+  if [[ $? -ne 0 ]]; then echo "Listen at eth0=$PIPV4 for redis failed"; exit 1; fi
+fi
+
+# Update the sysctl
+#   update_sysctl config value empty-line-prefix description
+#   update_sysctl net.ipv4.ip_forward 1 0 "# Controls IP packet forwarding"
+function update_sysctl() {
+    SYSCTL_KEY=$1 && SYSCTL_VALUE=$2 && SYSCTL_EMPTY_LINE=$3 && SYSCTL_COMMENTS=$4
+    echo "Update with sysctl $SYSCTL_KEY=$SYSCTL_VALUE, empty-line=$SYSCTL_EMPTY_LINE, comment=$SYSCTL_COMMENTS"
+
+    grep -q "^${SYSCTL_KEY}[ ]*=" /etc/sysctl.conf
+    if [[ $? == 0 ]]; then
+      sed -i "s/^${SYSCTL_KEY}[ ]*=.*$/${SYSCTL_KEY} = ${SYSCTL_VALUE}/g" /etc/sysctl.conf
+    else
+      if [[ $SYSCTL_EMPTY_LINE == 1 ]]; then echo '' >> /etc/sysctl.conf; fi &&
+      if [[ $SYSCTL_COMMENTS != '' ]]; then echo "$SYSCTL_COMMENTS" >> /etc/sysctl.conf; fi &&
+      echo "${SYSCTL_KEY} = ${SYSCTL_VALUE}" >> /etc/sysctl.conf
+    fi
+    if [[ $? -ne 0 ]]; then echo "Failed to sysctl $SYSCTL_KEY = $SYSCTL_VALUE $SYSCTL_COMMENTS"; exit 1; fi
+
+    RESULT=$(grep "^${SYSCTL_KEY}[ ]*=" /etc/sysctl.conf)
+    echo "Update done: ${RESULT}"
+}
+
+# Setup the UDP kernel options before restart
+# See https://www.jianshu.com/p/6d4a89359352
+# TODO: FIXME: REMOVE-NEXT-RELEASE: Setup the kernel options by the image itself.
+if [[ $(uname -s) != 'Darwin' ]]; then
+  # 允许网络转发，Docker依赖这个配置
+  # See https://stackoverflow.com/a/41453306/17679565
+  update_sysctl net.ipv4.ip_forward 1 1 "# Controls IP packet forwarding"
+  if [[ $? -ne 0 ]]; then echo "Setup the network forward failed"; exit 1; fi
+
+  # Setup the UDP kernel buffer.
+  # See https://www.jianshu.com/p/6d4a89359352
+  update_sysctl net.core.rmem_max 16777216 1 "# For RTC/SRT over UDP"
+  update_sysctl net.core.rmem_default 16777216
+  update_sysctl net.core.wmem_max 16777216
+  update_sysctl net.core.wmem_default 16777216
+  if [[ $? -ne 0 ]]; then echo "Setup the UDP kernel options failed"; exit 1; fi
+fi
+
+# Setup the UDP kernel options for this session.
+# See https://www.jianshu.com/p/6d4a89359352
+if [[ $(uname -s) != 'Darwin' ]]; then
+  sysctl net.core.rmem_max=16777216 &&
+  sysctl net.core.rmem_default=16777216 &&
+  sysctl net.core.wmem_max=16777216 &&
+  sysctl net.core.wmem_default=16777216
+  if [[ $? -ne 0 ]]; then echo "Setup the UDP kernel options failed"; exit 1; fi
+fi
+
+echo "Update the docker containers."
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs:4
+if [[ $? -ne 0 ]]; then echo "Update the containers failed"; exit 1; fi
+
+# Remove the containers if need upgrade
+#   update_containers image
+#   update_containers registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:4
+function update_containers() {
+  IMAGE=$1
+  echo "Update containers for IMAGE=$IMAGE"
+
+  # We must store the container images ID before pull, which will change it.
+  IMAGE_IDS=$(docker ps -a | grep $IMAGE | awk '{print $1}')
+  echo "The containers for $IMAGE is $IMAGE_IDS"
+
+  docker pull $IMAGE
+  if [[ $? -ne 0 ]]; then echo "Update the image $IMAGE failed"; exit 1; fi
+
+  for IMAGE_ID in $IMAGE_IDS; do
+    LATEST=$(docker inspect --format "{{.Id}}" $IMAGE)
+    RUNNING=$(docker inspect --format "{{.Image}}" $IMAGE_ID)
+    NAME=$(docker inspect --format '{{.Name}}' $IMAGE_ID |sed 's|/||g')
+    echo "Check $NAME RUNNING=$RUNNING, LATEST=$LATEST"
+
+    if [[ $RUNNING != $LATEST ]]; then
+      echo "Upgrade container $NAME from $RUNNING to $LATEST"
+      docker rm -f $NAME
+    fi
+  done
+}
+
+# Update the containers before restart. Note that the containers are normally started by previous mgmt, with the
+# upgraded image. So we only upgrade the images for all containers, and it's the responsibility for mgmt to restart the
+# container if need to change the startup arguments.
+update_containers registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:4 &&
+update_containers registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:hooks-1
+if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
+
+# Install the certbot for automatic HTTPS by letsencrypt
+yum install -y certbot
+if [[ $? -ne 0 ]]; then echo "Install certbot failed"; exit 1; fi
+

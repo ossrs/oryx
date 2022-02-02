@@ -76,6 +76,12 @@ app.use(proxy('/players/', withLogs({target: 'http://127.0.0.1:8080/'})));
 // For source files like srs.tar.gz, by /terraform/v1/sources/
 app.use(mount('/terraform/v1/sources/', serve('./sources')));
 
+// For automatic HTTPS by letsencrypt, for certbot to verify the domain.
+// Note that should never create the directory .well-known/acme-challenge/ because it's auto created by certbot.
+// See https://eff-certbot.readthedocs.io/en/stable/using.html#webroot
+// See https://github.com/ossrs/srs/issues/2864#issuecomment-1027944527
+app.use(mount('/.well-known/acme-challenge/', serve('./letsencrypt/.well-known/acme-challenge/')));
+
 // For react-router, can't match the files, by /mgmt/
 // See https://stackoverflow.com/a/52464577/17679565
 app.use(async (ctx, next) => {

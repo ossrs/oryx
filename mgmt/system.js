@@ -38,6 +38,10 @@ exports.handle = (router) => {
     if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
     if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
 
+    // Remove the ssl file, because it might link to other file.
+    await exec(`rm -f /etc/nginx/ssl/nginx.key /etc/nginx/ssl/nginx.crt`);
+
+    // Write the ssl key and cert, and reload nginx when ready.
     fs.writeFileSync('/etc/nginx/ssl/nginx.key', key);
     fs.writeFileSync('/etc/nginx/ssl/nginx.crt', crt);
     await exec(`systemctl reload nginx.service`);
