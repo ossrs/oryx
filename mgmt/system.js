@@ -9,6 +9,8 @@ const exec = util.promisify(require('child_process').exec);
 const axios = require('axios');
 const market = require('./market');
 const consts = require('./consts');
+const fs = require('fs');
+const errs = require('js-core/errs');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/status', async (ctx) => {
@@ -23,6 +25,24 @@ exports.handle = (router) => {
         latest: metadata.releases.releases?.latest,
       },
     });
+  });
+
+  router.all('/terraform/v1/mgmt/ssl', async (ctx) => {
+    const {token, key, crt} = ctx.request.body;
+    const decoded = await utils.verifyToken(token);
+
+    if (!key) throw utils.asError(errs.sys.empty, errs.status.args, 'no key');
+    if (!crt) throw utils.asError(errs.sys.empty, errs.status.args, 'no crt');
+
+    if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
+    if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
+
+    fs.writeFileSync('/etc/nginx/ssl/nginx.key', key);
+    fs.writeFileSync('/etc/nginx/ssl/nginx.crt', crt);
+    await exec(`systemctl reload nginx.service`);
+
+    console.log(`ssl ok, key=${key.length}B, crt=${crt.length}B, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0);
   });
 
   router.all('/terraform/v1/mgmt/upgrade', async (ctx) => {

@@ -1,6 +1,6 @@
 {
   "name": "mgmt-api",
-  "version":"1.0.60",
+  "version": "1.0.60",
   "description": "API for srs-terraform mgmt",
   "main": "index.js",
   "scripts": {
@@ -16,6 +16,7 @@
     "axios": "^0.25.0",
     "dotenv": "^14.2.0",
     "ioredis": "^4.28.3",
+    "js-core": "file:../js-core",
     "jsonwebtoken": "^8.5.1",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",

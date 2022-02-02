@@ -3,6 +3,7 @@
 // HTTP Status code.
 exports.status = {
   auth: 401,
+  args: 422, // See https://stackoverflow.com/a/42171674/17679565
   sys: 500,
 };
 
@@ -12,6 +13,8 @@ exports.sys = {
   empty: 1000,
   // System is booting, not available.
   boot: 1001,
+  // System ssl error.
+  ssl: 1002,
 };
 
 // Error codes for auth.

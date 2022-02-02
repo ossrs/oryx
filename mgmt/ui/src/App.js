@@ -11,6 +11,7 @@ import {Token} from "./utils";
 import System from "./System";
 import Dashboard from "./Dashboard";
 import {Container} from "react-bootstrap";
+import Config from "./Config";
 
 function App() {
   const [loading, setLoading] = React.useState(true);
@@ -57,6 +58,7 @@ function App() {
               <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
               <Route path="/login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
               <Route path="/dashboard" element={<Dashboard/>}/>
+              <Route path="/config" element={<Config/>}/>
               <Route path="/system" element={<System/>}/>
               <Route path="/logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
             </>}
