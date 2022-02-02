@@ -239,6 +239,7 @@ export default function Dashboard() {
                   </ol>
                   <p><strong>播放操作步骤：</strong></p>
                   <ol>
+                    <li>SRT流播放地址：<br/><code>{srtPlayUrl}</code></li>
                     <li>下载<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>ffplay</a>，FFmpeg自带的低延迟播放器</li>
                     <li>
                       Windows，执行命令：<br/>
@@ -317,6 +318,7 @@ export default function Dashboard() {
                   </ol>
                   <p><strong>播放操作步骤：</strong></p>
                   <ol>
+                    <li>SRT流播放地址：<br/><code>{srtPlayUrl}</code></li>
                     <li>下载<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>ffplay</a>，FFmpeg自带的低延迟播放器</li>
                     <li>
                       Windows，执行命令：<br/>
