@@ -1,7 +1,7 @@
 'use strict';
 
 const utils = require('./utils');
-const errs = require('./errs');
+const errs = require('js-core/errs');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/init', async (ctx) => {

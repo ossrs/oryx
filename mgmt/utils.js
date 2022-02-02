@@ -5,7 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const moment = require('moment');
 const jwt = require('jsonwebtoken');
-const errs = require('./errs');
+const errs = require('js-core/errs');
 const consts = require('./consts');
 
 const asResponse = (code, data) => {
