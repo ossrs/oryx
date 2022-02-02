@@ -66,27 +66,7 @@ export default function Config() {
       <Container>
         <Accordion defaultActiveKey="0">
           <Accordion.Item eventKey="0">
-            <Accordion.Header>HTTPS配置</Accordion.Header>
-            <Accordion.Body>
-              <Form>
-                <Form.Group className="mb-3">
-                  <Form.Label>密钥(KEY)</Form.Label>
-                  <Form.Text> * Nginx格式的SSL密钥，例如 your-domain.com.key</Form.Text>
-                  <Form.Control as="textarea" rows={5} defaultValue={key} onChange={(e) => setKey(e.target.value)} />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>证书(PEM格式)</Form.Label>
-                  <Form.Text> * Nginx格式的SSL证书，例如 your-domain.com.pem</Form.Text>
-                  <Form.Control as="textarea" rows={5} defaultValue={crt} onChange={(e) => setCrt(e.target.value)} />
-                </Form.Group>
-                <Button variant="primary" type="submit" onClick={(e) => updateSSL(e)}>
-                  更新证书
-                </Button>
-              </Form>
-            </Accordion.Body>
-          </Accordion.Item>
-          <Accordion.Item eventKey="1">
-            <Accordion.Header>Let's Encrypt</Accordion.Header>
+            <Accordion.Header>HTTPS: Let's Encrypt</Accordion.Header>
             <Accordion.Body>
               <Form>
                 <Form.Group className="mb-3">
@@ -96,6 +76,26 @@ export default function Config() {
                 </Form.Group>
                 <Button variant="primary" type="submit" onClick={(e) => requestLetsEncrypt(e)}>
                   申请证书
+                </Button>
+              </Form>
+            </Accordion.Body>
+          </Accordion.Item>
+          <Accordion.Item eventKey="1">
+            <Accordion.Header>HTTPS: 上传证书</Accordion.Header>
+            <Accordion.Body>
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>密钥(KEY)</Form.Label>
+                  <Form.Text> * Nginx格式的SSL密钥内容，例如 your-domain.com.key</Form.Text>
+                  <Form.Control as="textarea" rows={5} defaultValue={key} onChange={(e) => setKey(e.target.value)} />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>证书(PEM格式)</Form.Label>
+                  <Form.Text> * Nginx格式的SSL证书内容，例如 your-domain.com.pem</Form.Text>
+                  <Form.Control as="textarea" rows={5} defaultValue={crt} onChange={(e) => setCrt(e.target.value)} />
+                </Form.Group>
+                <Button variant="primary" type="submit" onClick={(e) => updateSSL(e)}>
+                  更新证书
                 </Button>
               </Form>
             </Accordion.Body>
