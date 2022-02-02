@@ -1,6 +1,5 @@
 'use strict';
 
-const consts = require('./consts');
 const errs = require('./errs');
 
 const asResponse = (code, data) => {
@@ -19,20 +18,6 @@ const asError = (code, status, message) => {
   };
 };
 exports.asError = asError;
-
-const createToken = (moment, jwt) => {
-  // Update the user info, @see https://www.npmjs.com/package/jsonwebtoken#usage
-  const expire = moment.duration(1, 'years');
-  const createAt = moment.utc().format(consts.MYSQL_DATETIME);
-  const expireAt = moment.utc().add(expire).format(consts.MYSQL_DATETIME);
-  const token = jwt.sign(
-    {v: 1.0, t: createAt, d: expire},
-    process.env.MGMT_PASSWORD, {expiresIn: expire.asSeconds()},
-  );
-
-  return {expire, expireAt, createAt, token};
-};
-exports.createToken = createToken;
 
 const verifyToken = async (jwt, token) => {
   const utils = exports;

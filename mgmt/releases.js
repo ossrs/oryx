@@ -14,13 +14,15 @@ const { spawn } = require('child_process');
 const pkg = require('./package.json');
 const axios = require('axios');
 const semver = require('semver');
-const utils = require('./utils');
 const consts = require('./consts');
 const ioredis = require('ioredis');
-const redis = utils.redis({config: config.redis, redis: ioredis});
+const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const metadata = require('./metadata');
+
+// The redis key we used.
+const SRS_FIRST_BOOT_DONE = 'SRS_FIRST_BOOT_DONE';
 
 if (!isMainThread) {
   threadMain();
@@ -47,6 +49,7 @@ async function doThreadMain() {
   await new Promise(resolve => setTimeout(resolve, 1 * 1000));
   console.log(`Thread #${metadata.releases.name}: query request by version=v${pkg.version}`);
 
+  // For development, request the releases from itself which proxy to the releases service.
   const releaseServer = process.env.NODE_ENV === 'development' ? `http://localhost:${consts.config.port}` : 'http://api.ossrs.net';
   const {data} = await axios.get(`${releaseServer}/terraform/v1/releases`, {
     params: {
@@ -87,8 +90,8 @@ async function doThreadMain() {
 }
 
 async function firstRun() {
-  const r0 = await redis.get(consts.SRS_FIRST_BOOT_DONE);
-  await redis.set(consts.SRS_FIRST_BOOT_DONE, r0 ? parseInt(r0) + 1 : 1);
+  const r0 = await redis.get(SRS_FIRST_BOOT_DONE);
+  await redis.set(SRS_FIRST_BOOT_DONE, r0 ? parseInt(r0) + 1 : 1);
 
   // We do the first run for the first N times.
   // 1. The first time, for the startup version in image, to init the whole system.

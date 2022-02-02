@@ -1,6 +1,6 @@
 'use strict';
 
-const utils = require('./utils');
+const utils = require('js-core/utils');
 const pkg = require('./package.json');
 const { spawn } = require('child_process');
 const metadata = require('./metadata');
@@ -11,11 +11,12 @@ const market = require('./market');
 const consts = require('./consts');
 const fs = require('fs');
 const errs = require('js-core/errs');
+const jwt = require('jsonwebtoken');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/status', async (ctx) => {
     const {token} = ctx.request.body;
-    const decoded = await utils.verifyToken(token);
+    const decoded = await utils.verifyToken(jwt, token);
 
     console.log(`status ok, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
@@ -29,7 +30,7 @@ exports.handle = (router) => {
 
   router.all('/terraform/v1/mgmt/ssl', async (ctx) => {
     const {token, key, crt} = ctx.request.body;
-    const decoded = await utils.verifyToken(token);
+    const decoded = await utils.verifyToken(jwt, token);
 
     if (!key) throw utils.asError(errs.sys.empty, errs.status.args, 'no key');
     if (!crt) throw utils.asError(errs.sys.empty, errs.status.args, 'no crt');
@@ -47,7 +48,7 @@ exports.handle = (router) => {
 
   router.all('/terraform/v1/mgmt/upgrade', async (ctx) => {
     const {token} = ctx.request.body;
-    const decoded = await utils.verifyToken(token);
+    const decoded = await utils.verifyToken(jwt, token);
 
     const releaseServer = process.env.NODE_ENV === 'development' ? `http://localhost:${consts.config.port}` : 'http://api.ossrs.net';
     const {data: releases} = await axios.get(`${releaseServer}/terraform/v1/releases`, {
@@ -84,7 +85,7 @@ exports.handle = (router) => {
 
   router.all('/terraform/v1/mgmt/srs', async (ctx) => {
     const {token, action} = ctx.request.body;
-    const decoded = await utils.verifyToken(token);
+    const decoded = await utils.verifyToken(jwt, token);
 
     if (action === 'restart') {
       // We must rm the container to get a new ID.
@@ -113,7 +114,7 @@ exports.handle = (router) => {
 
   router.all('/terraform/v1/mgmt/hooks', async (ctx) => {
     const {token, action} = ctx.request.body;
-    const decoded = await utils.verifyToken(token);
+    const decoded = await utils.verifyToken(jwt, token);
 
     console.log(`srs ok, action=${action} decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {

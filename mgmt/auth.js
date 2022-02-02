@@ -1,18 +1,59 @@
 'use strict';
 
-const utils = require('./utils');
+const os = require('os');
+const fs = require('fs');
+const dotenv = require('dotenv');
+const utils = require('js-core/utils');
 const errs = require('js-core/errs');
+const moment = require('moment');
+const jwt = require('jsonwebtoken');
+
+// MySQL日期字段格式化字符串 @see https://stackoverflow.com/a/27381633
+const MYSQL_DATETIME = 'YYYY-MM-DD HH:mm:ss';
+
+function loadConfig() {
+  dotenv.config({path: '.env', override: true});
+  return {
+    MGMT_PASSWORD: process.env.MGMT_PASSWORD,
+  };
+}
+
+function saveConfig(config) {
+  const envVars = Object.keys(config).map(k => {
+    const v = config[k];
+    return `${k}=${v}`;
+  });
+
+  // Append an empty line.
+  envVars.push('');
+
+  fs.writeFileSync('.env', envVars.join(os.EOL));
+  return config;
+}
+
+function createToken(moment, jwt) {
+  // Update the user info, @see https://www.npmjs.com/package/jsonwebtoken#usage
+  const expire = moment.duration(1, 'years');
+  const createAt = moment.utc().format(MYSQL_DATETIME);
+  const expireAt = moment.utc().add(expire).format(MYSQL_DATETIME);
+  const token = jwt.sign(
+    {v: 1.0, t: createAt, d: expire},
+    process.env.MGMT_PASSWORD, {expiresIn: expire.asSeconds()},
+  );
+
+  return {expire, expireAt, createAt, token};
+}
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/init', async (ctx) => {
     const {password} = ctx.request.body;
     if (!process.env.MGMT_PASSWORD && password) {
       console.log(`init mgmt password ${'*'.repeat(password.length)} ok`);
-      const config = utils.loadConfig();
-      utils.saveConfig({...config, MGMT_PASSWORD: password});
-      utils.loadConfig();
+      const config = loadConfig();
+      saveConfig({...config, MGMT_PASSWORD: password});
+      loadConfig();
 
-      const {expire, expireAt, createAt, token} = utils.createToken();
+      const {expire, expireAt, createAt, token} = createToken(moment, jwt);
       console.log(`init password ok, duration=${expire}, create=${createAt}, expire=${expireAt}, password=${'*'.repeat(password.length)}`);
       return ctx.body = utils.asResponse(0, {token, createAt, expireAt});
     }
@@ -26,8 +67,8 @@ exports.handle = (router) => {
     const {token} = ctx.request.body;
     if (!token) throw utils.asError(errs.sys.empty, errs.status.auth, 'no token');
 
-    const decoded = await utils.verifyToken(token);
-    const {expire, expireAt, createAt, token2} = utils.createToken();
+    const decoded = await utils.verifyToken(jwt, token);
+    const {expire, expireAt, createAt, token2} = createToken(moment, jwt);
     console.log(`login by token ok, decoded=${JSON.stringify(decoded)}, duration=${expire}, create=${createAt}, expire=${expireAt}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {token:token2, createAt, expireAt});
   });
@@ -41,7 +82,7 @@ exports.handle = (router) => {
     if (password !== process.env.MGMT_PASSWORD)
       throw utils.asError(errs.auth.password, errs.status.auth, 'invalid password');
 
-    const {expire, expireAt, createAt, token} = utils.createToken();
+    const {expire, expireAt, createAt, token} = createToken(moment, jwt);
     console.log(`login by password ok, duration=${expire}, create=${createAt}, expire=${expireAt}, password=${'*'.repeat(password.length)}`);
     ctx.body = utils.asResponse(0, {token, createAt, expireAt});
   });
