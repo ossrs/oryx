@@ -8,6 +8,7 @@ export default function Config() {
   const navigate = useNavigate();
   const [key, setKey] = React.useState();
   const [crt, setCrt] = React.useState();
+  const [domain, setDomain] = React.useState();
 
   const updateSSL = (e) => {
     e.preventDefault();
@@ -23,6 +24,31 @@ export default function Config() {
     }).then(res => {
       alert(`SSL证书更新成功`);
       console.log(`SSL: Update ok`);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  };
+
+  const requestLetsEncrypt = (e) => {
+    e.preventDefault();
+
+    if (!domain) {
+      alert('请输入你域名');
+      return;
+    }
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/letsencrypt', {
+      ...token, domain,
+    }).then(res => {
+      alert(`Let's Encrypt SSL证书更新成功`);
+      console.log(`SSL: Let's Encrypt SSL ok`);
     }).catch(e => {
       const err = e.response.data;
       if (err.code === Errors.auth) {
@@ -55,6 +81,21 @@ export default function Config() {
                 </Form.Group>
                 <Button variant="primary" type="submit" onClick={(e) => updateSSL(e)}>
                   更新证书
+                </Button>
+              </Form>
+            </Accordion.Body>
+          </Accordion.Item>
+          <Accordion.Item eventKey="1">
+            <Accordion.Header>Let's Encrypt</Accordion.Header>
+            <Accordion.Body>
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>域名</Form.Label>
+                  <Form.Text> * 你的域名，请先解析到本服务器的公网IP，例如 your-domain.com</Form.Text>
+                  <Form.Control as="input" defaultValue={domain} onChange={(e) => setDomain(e.target.value)} />
+                </Form.Group>
+                <Button variant="primary" type="submit" onClick={(e) => requestLetsEncrypt(e)}>
+                  申请证书
                 </Button>
               </Form>
             </Accordion.Body>

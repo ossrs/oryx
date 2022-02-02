@@ -11,9 +11,21 @@ exports.run = async () => {
     });
     worker.on('error', reject);
     worker.on('exit', (code) => {
-      console.log(`thread #${metadata.releases.name}: exit with ${code}`);
+      console.log(`thread #releases: exit with ${code}`);
       if (code !== 0) {
-        return reject(new Error(`Worker #${metadata.releases.name}: stopped with exit code ${code}`));
+        return reject(new Error(`Worker #releases: stopped with exit code ${code}`));
+      }
+      resolve();
+    });
+  });
+
+  new Promise((resolve, reject) => {
+    const worker = new Worker("./crontab.js");
+    worker.on('error', reject);
+    worker.on('exit', (code) => {
+      console.log(`thread #crontab: exit with ${code}`);
+      if (code !== 0) {
+        return reject(new Error(`Worker #crontab: stopped with exit code ${code}`));
       }
       resolve();
     });

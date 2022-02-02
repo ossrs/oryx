@@ -1,7 +1,7 @@
 'use strict';
 
 exports.releases = {
-  name: 'mgmt-vers',
+  name: 'releases',
   releases: {
     stable: null,
     latest: null,

@@ -34,7 +34,6 @@ exports.handle = (router) => {
 
     if (!key) throw utils.asError(errs.sys.empty, errs.status.args, 'no key');
     if (!crt) throw utils.asError(errs.sys.empty, errs.status.args, 'no crt');
-
     if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
     if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
 
@@ -47,6 +46,35 @@ exports.handle = (router) => {
     await exec(`systemctl reload nginx.service`);
 
     console.log(`ssl ok, key=${key.length}B, crt=${crt.length}B, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0);
+  });
+
+  router.all('/terraform/v1/mgmt/letsencrypt', async (ctx) => {
+    const {token, domain} = ctx.request.body;
+    const decoded = await utils.verifyToken(jwt, token);
+
+    if (!domain) throw utils.asError(errs.sys.empty, errs.status.args, 'no domain');
+    if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
+    if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
+
+    await exec(`certbot certonly --webroot -w /usr/local/srs-terraform/mgmt/letsencrypt/ \\
+      -d ${domain} --register-unsafely-without-email --agree-tos --preferred-challenges http \\
+      --quiet`);
+    console.log(`certbot request ssl ok`);
+
+    const keyFile = `/etc/letsencrypt/live/${domain}/privkey.pem`;
+    if (!fs.existsSync(keyFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue key file ${keyFile}`);
+
+    const crtFile = `/etc/letsencrypt/live/${domain}/cert.pem`;
+    if (!fs.existsSync(crtFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue crt file ${crtFile}`);
+
+    // Remove the ssl file, because it might link to other file.
+    await exec(`rm -f /etc/nginx/ssl/nginx.key /etc/nginx/ssl/nginx.crt`);
+    await exec(`ln -sf ${keyFile} /etc/nginx/ssl/nginx.key`);
+    await exec(`ln -sf ${crtFile} /etc/nginx/ssl/nginx.crt`);
+    await exec(`systemctl reload nginx.service`);
+
+    console.log(`let's encrypt ok, domain=${domain}, key=${keyFile}, crt=${crtFile}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0);
   });
 
