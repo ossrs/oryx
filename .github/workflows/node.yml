@@ -12,9 +12,9 @@ jobs:
     steps:
       # Aliyun ACR
       - name: Login Aliyun docker hub
-        uses: aliyun/acr-login@v1
+        uses: docker/login-action@v1
         with:
-          login-server: https://registry.cn-hangzhou.aliyuncs.com
+          registry: registry.cn-hangzhou.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
           password: "${{ secrets.ACR_PASSWORD }}"
       - name: Push to Aliyun docker hub
@@ -24,3 +24,18 @@ jobs:
           docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/node
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/node/images"
+
+      # Tencent TCR
+      - name: Login Tencent docker hub
+        uses: docker/login-action@v1
+        with:
+          registry: ccr.ccs.tencentyun.com
+          username: "${{ secrets.TCR_USERNAME }}"
+          password: "${{ secrets.TCR_PASSWORD }}"
+      - name: Push to Tencent docker hub
+        run: |
+          docker pull node:slim
+          docker tag node:slim ccr.ccs.tencentyun.com/ossrs/node:slim
+          docker push --all-tags ccr.ccs.tencentyun.com/ossrs/node
+          echo "Release ok, please see:"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/node/1"
