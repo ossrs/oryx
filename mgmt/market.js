@@ -78,18 +78,23 @@ exports.queryContainer = queryContainer;
 async function startContainer(conf) {
   console.log(`Thread #market: start container`);
 
+  const evalValue = (e, defaults) => {
+    if (!e) return defaults || '';
+    if (typeof(e) === 'function') return e();
+    return e;
+  };
+
   const privateIPv4 = await discoverPrivateIPv4();
-  const tcpPorts = conf.tcpPorts ? conf.tcpPorts.map(e => `-p ${e}:${e}/tcp`).join(' ') : '';
-  const udpPorts = conf.udpPorts ? conf.udpPorts.map(e => `-p ${e}:${e}/udp`).join(' ') : '';
-  const image = typeof(conf.image) === 'function' ? conf.image() : conf.image;
-  const command = conf.command || '';
-  const dockerArgs = `-d --restart always --privileged -it --name ${conf.name} \\
+  const tcpPorts = evalValue(conf.tcpPorts, []).map(e => `-p ${e}:${e}/tcp`).join(' ');
+  const udpPorts = evalValue(conf.udpPorts, []).map(e => `-p ${e}:${e}/udp`).join(' ');
+  const volumes = evalValue(conf.volumes, []).map(e => `-v "${e}"`).join(' ');
+  const dockerArgs = `-d --restart always --privileged -it --name ${evalValue(conf.name)} \\
     --add-host=mgmt.srs.local:${privateIPv4.address} \\
     ${tcpPorts} ${udpPorts} \\
-    ${conf.logConfig} \\
-    ${conf.extras} \\
-    ${image} \\
-    ${command}`;
+    ${evalValue(conf.logConfig)} \\
+    ${volumes} ${evalValue(conf.extras)} \\
+    ${evalValue(conf.image)} \\
+    ${evalValue(conf.command)}`;
   console.log(`Thread #market: docker run args ip=${privateIPv4.name}/${privateIPv4.address}, docker run ${dockerArgs}`);
 
   // Only remove the container when got ID, to avoid fail for CentOS.

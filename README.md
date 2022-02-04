@@ -80,15 +80,32 @@ Platform:
 * `/terraform/v1/mgmt/login` System auth with password.
 * `/terraform/v1/mgmt/ssl` Config the system SSL config.
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
+* `/terraform/v1/mgmt/container` Query and upgrade SRS container.
 
 Releases:
 
 * `/terraform/v1/releases` Version management for all components.
-* `/terraform/v1/mgmt/srs` SRS: Query and upgrade SRS container.
-* `/terraform/v1/mgmt/hooks` Hooks: Query the hooks container.
 
 Market:
 
 * `/terraform/v1/hooks/srs/verify` Hooks: Verify the stream request URL of SRS.
 * `/terraform/v1/hooks/srs/secret` Hooks: Query the secret to generate stream URL.
+
+## Depends
+
+The software we depend on:
+
+* Docker, `yum install -y docker`
+* Redis, `yum install -y redis`
+* Nginx, `yum install -y nginx`
+  * SSL: `/etc/nginx/ssl`
+* [Certbot](https://github.com/ossrs/srs/issues/2864#lets-encrypt), `yum install -y certbot`
+  * Verify webroot: `mgmt/letsencrypt/.well-known/acme-challenge/`
+* [SRS](https://github.com/ossrs/srs), `docker --name srs-server`
+  * Config: `mgmt/containers/conf/srs.conf`
+* [srs-hooks](https://github.com/ossrs/srs-terraform/tree/lighthouse/hooks), `docker --name srs-hooks`
+* [Prometheus](https://github.com/prometheus/prometheus#install), `docker --name prometheus`
+  * Config: `mgmt/containers/conf/prometheus.yml`
+  * Data directory: `mgmt/containers/data/prometheus`
+* [NodeExporter](https://github.com/prometheus/node_exporter), `docker --name node-exporter`
 

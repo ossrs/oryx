@@ -107,3 +107,4 @@ dist
 mgmt/sources/*.gz
 tmp.js
 tmp.json
+mgmt/containers/data/prometheus/*

@@ -21,6 +21,11 @@ async function threadMain() {
 }
 
 async function doThreadMain() {
+  if (process.platform === 'darwin') {
+    console.log('Thread #crontab: ignore for Darwin');
+    return;
+  }
+
   console.log(`Thread #crontab: auto renew the Let's Encrypt ssl`);
   const {stdout} = await exec(`bash letsencrypt/crontab_renew`);
   console.log(`Thread #crontab: renew ssl ${stdout}`);

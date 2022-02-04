@@ -12,6 +12,8 @@ export default function System() {
   const [status, setStatus] = React.useState();
   const [srs, setSRS] = React.useState();
   const [hooks, setHooks] = React.useState();
+  const [prometheus, setPrometheus] = React.useState();
+  const [nodeExporter, setNodeExporter] = React.useState();
   const [upgrading, setUpgrading] = React.useState();
   const [enableUpgrading, setEnableUpgrading] = React.useState();
   const [enableSrsOperators, setEnableSrsOperators] = React.useState();
@@ -44,8 +46,8 @@ export default function System() {
     if (restartSrs === true) return;
 
     const token = Token.load();
-    axios.post('/terraform/v1/mgmt/srs', {
-      ...token,
+    axios.post('/terraform/v1/mgmt/container', {
+      ...token, name: 'srs', action: 'query',
     }).then(res => {
       const status = res.data.data;
       if (status) setEnableSrsOperators(true);
@@ -66,9 +68,8 @@ export default function System() {
     if (!restartSrs) return;
 
     const token = Token.load();
-    axios.post('/terraform/v1/mgmt/srs', {
-      ...token,
-      action: 'restart',
+    axios.post('/terraform/v1/mgmt/container', {
+      ...token, name: 'srs', action: 'restart',
     }).then(res => {
       setRestartSrs(false);
       console.log(`SRS: Restart ok`);
@@ -85,12 +86,50 @@ export default function System() {
 
   React.useEffect(() => {
     const token = Token.load();
-    axios.post('/terraform/v1/mgmt/hooks', {
-      ...token,
+    axios.post('/terraform/v1/mgmt/container', {
+      ...token, name: 'hooks', action: 'query',
     }).then(res => {
       const status = res.data.data;
       setHooks(status);
       console.log(`Hooks: Query ok, status=${JSON.stringify(status)}`);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  }, [navigate]);
+
+  React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/container', {
+      ...token, name: 'prometheus', action: 'query',
+    }).then(res => {
+      const status = res.data.data;
+      setPrometheus(status);
+      console.log(`Prometheus: Query ok, status=${JSON.stringify(status)}`);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  }, [navigate]);
+
+  React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/container', {
+      ...token, name: 'node_exporter', action: 'query',
+    }).then(res => {
+      const status = res.data.data;
+      setNodeExporter(status);
+      console.log(`NodeExporter: Query ok, status=${JSON.stringify(status)}`);
     }).catch(e => {
       const err = e.response.data;
       if (err.code === Errors.auth) {
@@ -161,6 +200,46 @@ export default function System() {
                   容器名：{hooks?.name} <br/>
                   容器ID：{hooks?.container?.ID} <br/>
                   状态：{hooks?.container.State} {hooks?.container.Status}
+                </Card.Text>
+                <div style={{display: 'inline-block'}}>
+                  <Button className='disabled'>
+                    重启
+                  </Button> &nbsp;
+                  <Button className='disabled'>
+                    升级
+                  </Button>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs lg={3}>
+            <Card style={{ width: '18rem' }}>
+              <Card.Header>Prometheus监控</Card.Header>
+              <Card.Body>
+                <Card.Text>
+                  容器名：{prometheus?.name} <br/>
+                  容器ID：{prometheus?.container?.ID} <br/>
+                  状态：{prometheus?.container.State} {prometheus?.container.Status}
+                </Card.Text>
+                <div style={{display: 'inline-block'}}>
+                  <Button className='disabled'>
+                    重启
+                  </Button> &nbsp;
+                  <Button className='disabled'>
+                    升级
+                  </Button>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs lg={3}>
+            <Card style={{ width: '18rem' }}>
+              <Card.Header>NodeExporter(节点监控)</Card.Header>
+              <Card.Body>
+                <Card.Text>
+                  容器名：{nodeExporter?.name} <br/>
+                  容器ID：{nodeExporter?.container?.ID} <br/>
+                  状态：{nodeExporter?.container.State} {nodeExporter?.container.Status}
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
                   <Button className='disabled'>

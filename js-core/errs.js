@@ -4,6 +4,7 @@
 exports.status = {
   auth: 401,
   args: 422, // See https://stackoverflow.com/a/42171674/17679565
+  not: 404,
   sys: 500,
 };
 
@@ -15,6 +16,10 @@ exports.sys = {
   boot: 1001,
   // System ssl error.
   ssl: 1002,
+  // Resource not found.
+  resource: 1003,
+  // Arguments is invalid.
+  invalid: 1004,
 };
 
 // Error codes for auth.

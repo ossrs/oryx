@@ -8,6 +8,8 @@ exports.releases = {
   },
 };
 
+const isDarwin = process.platform === 'darwin';
+
 exports.market = {
   srs: {
     name: 'srs-server',
@@ -21,6 +23,7 @@ exports.market = {
     udpPorts: [8000, 10080],
     command: './objs/srs -c conf/lighthouse.conf',
     logConfig: '--log-driver json-file --log-opt max-size=3g --log-opt max-file=3',
+    volumes: [],
     extras: `-v ${process.cwd()}/containers/conf/srs.conf:/usr/local/srs/conf/lighthouse.conf`,
     container: {
       ID: null,
@@ -35,7 +38,41 @@ exports.market = {
     udpPorts: [],
     command: 'node .',
     logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
+    volumes: [],
     extras: `-v ${process.cwd()}/.env:/srs-terraform/hooks/.env`,
+    container: {
+      ID: null,
+      State: null,
+      Status: null,
+    },
+  },
+  prometheus: {
+    name: 'prometheus',
+    image: 'ccr.ccs.tencentyun.com/ossrs/prometheus',
+    tcpPorts: [9090],
+    udpPorts: [],
+    command: '',
+    logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
+    volumes: [
+      `${process.cwd()}/containers/conf/prometheus.yml:/etc/prometheus/prometheus.yml`,
+      `${process.cwd()}/containers/data/prometheus:/prometheus`,
+    ],
+    extras: isDarwin ? '' : '--user root',
+    container: {
+      ID: null,
+      State: null,
+      Status: null,
+    },
+  },
+  node_exporter: {
+    name: 'node-exporter',
+    image: 'ccr.ccs.tencentyun.com/ossrs/node-exporter',
+    tcpPorts: () => isDarwin ? [9100] : [],
+    udpPorts: [],
+    command: () => isDarwin ? '' : '--path.rootfs=/host',
+    logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
+    volumes: isDarwin ? [] : ['/:/host:ro,rslave'],
+    extras: () => isDarwin ? '' : '--net=host --pid=host',
     container: {
       ID: null,
       State: null,
