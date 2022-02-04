@@ -37,6 +37,14 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/prometheus/images"
 
+      - name: Mirror to ACR for oliver006/redis_exporter
+        run: |
+          docker pull oliver006/redis_exporter
+          docker tag oliver006/redis_exporter registry.cn-hangzhou.aliyuncs.com/ossrs/redis_exporter
+          docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/redis_exporter
+          echo "Release ok, please see:"
+          echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/redis_exporter/images"
+
       ################################################################################################
       ################################################################################################
       ################################################################################################
@@ -63,3 +71,11 @@ jobs:
           docker push --all-tags ccr.ccs.tencentyun.com/ossrs/prometheus
           echo "Release ok, please see:"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/prometheus/1"
+
+      - name: Mirror to TCR for oliver006/redis_exporter
+        run: |
+          docker pull oliver006/redis_exporter
+          docker tag oliver006/redis_exporter ccr.ccs.tencentyun.com/ossrs/redis_exporter
+          docker push --all-tags ccr.ccs.tencentyun.com/ossrs/redis_exporter
+          echo "Release ok, please see:"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/redis_exporter/1"
