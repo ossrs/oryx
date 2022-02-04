@@ -1,6 +1,7 @@
-name: "Mirror node containers"
+name: "Mirror docker containers"
 
 on:
+  push:
   # See https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow
   workflow_dispatch:
 
@@ -10,6 +11,9 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      ################################################################################################
+      ################################################################################################
+      ################################################################################################
       # Aliyun ACR
       - name: Login Aliyun docker hub
         uses: docker/login-action@v1
@@ -17,7 +21,8 @@ jobs:
           registry: registry.cn-hangzhou.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
           password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Push to Aliyun docker hub
+
+      - name: Mirror to ACR for node:slim
         run: |
           docker pull node:slim
           docker tag node:slim registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim
@@ -25,6 +30,9 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/node/images"
 
+      ################################################################################################
+      ################################################################################################
+      ################################################################################################
       # Tencent TCR
       - name: Login Tencent docker hub
         uses: docker/login-action@v1
@@ -32,7 +40,8 @@ jobs:
           registry: ccr.ccs.tencentyun.com
           username: "${{ secrets.TCR_USERNAME }}"
           password: "${{ secrets.TCR_PASSWORD }}"
-      - name: Push to Tencent docker hub
+
+      - name: Mirror to TCR for node:slim
         run: |
           docker pull node:slim
           docker tag node:slim ccr.ccs.tencentyun.com/ossrs/node:slim

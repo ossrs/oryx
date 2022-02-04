@@ -70,13 +70,13 @@ if [[ $(uname -s) != 'Darwin' ]]; then
 fi
 
 echo "Update the docker containers."
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim &&
+docker pull ccr.ccs.tencentyun.com/ossrs/node:slim &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs:4
 if [[ $? -ne 0 ]]; then echo "Update the containers failed"; exit 1; fi
 
 # Remove the containers if need upgrade
 #   update_containers image
-#   update_containers registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:4
+#   update_containers ccr.ccs.tencentyun.com/ossrs/lighthouse:4
 function update_containers() {
   IMAGE=$1
   echo "Update containers for IMAGE=$IMAGE"
@@ -105,7 +105,7 @@ function update_containers() {
 # upgraded image. So we only upgrade the images for all containers, and it's the responsibility for mgmt to restart the
 # container if need to change the startup arguments.
 update_containers registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:4 &&
-update_containers registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:hooks-1
+update_containers ccr.ccs.tencentyun.com/ossrs/srs-terraform:hooks-1
 if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
 
 # Install the certbot for automatic HTTPS by letsencrypt
