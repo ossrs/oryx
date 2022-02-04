@@ -45,6 +45,14 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/redis_exporter/images"
 
+      - name: Mirror to ACR for prom/node-exporter
+        run: |
+          docker pull prom/node-exporter
+          docker tag prom/node-exporter registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter
+          docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter
+          echo "Release ok, please see:"
+          echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/node-exporter/images"
+
       ################################################################################################
       ################################################################################################
       ################################################################################################
@@ -79,3 +87,11 @@ jobs:
           docker push --all-tags ccr.ccs.tencentyun.com/ossrs/redis_exporter
           echo "Release ok, please see:"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/redis_exporter/1"
+
+      - name: Mirror to TCR for prom/node-exporter
+        run: |
+          docker pull prom/node-exporter
+          docker tag prom/node-exporter ccr.ccs.tencentyun.com/ossrs/node-exporter
+          docker push --all-tags ccr.ccs.tencentyun.com/ossrs/node-exporter
+          echo "Release ok, please see:"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/node-exporter/1"

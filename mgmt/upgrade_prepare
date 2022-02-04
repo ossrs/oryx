@@ -8,11 +8,14 @@ if [[ ! -d /usr/local/srs-terraform && $(uname -s) == 'Darwin' ]]; then
   sleep 3; exit 0;
 fi
 
+# Detect the private IPv4 address.
+PIPV4=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
+if [[ $PIPV4 == '' ]]; then echo 'No private IP of eth0'; exit 1; fi
+echo "PrivateIPv4 is $PIPV4"
+
 # We must setup the redis to listen at lo and eth0, to allow containers to access it.
 # Note that should never listen at * for security reason.
 if [[ -f /etc/redis.conf ]]; then
-  PIPV4=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
-  if [[ $PIPV4 == '' ]]; then echo 'No private IP of eth0'; exit 1; fi
   # Replace the bind for redis.
   sed -i "s/^bind 127.0.0.1.*$/bind 127.0.0.1 $PIPV4/g" /etc/redis.conf && grep '^bind 127.0.0.1' /etc/redis.conf &&
   systemctl restart redis && systemctl status redis &&
@@ -71,25 +74,28 @@ fi
 
 echo "Update the docker containers."
 docker pull ccr.ccs.tencentyun.com/ossrs/node:slim &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs:4
+docker pull ccr.ccs.tencentyun.com/ossrs/srs:4 &&
+docker pull ccr.ccs.tencentyun.com/ossrs/prometheus &&
+docker pull ccr.ccs.tencentyun.com/ossrs/redis_exporter &&
+docker pull ccr.ccs.tencentyun.com/ossrs/node-exporter
 if [[ $? -ne 0 ]]; then echo "Update the containers failed"; exit 1; fi
 
 # Remove the containers if need upgrade
-#   update_containers image
-#   update_containers ccr.ccs.tencentyun.com/ossrs/lighthouse:4
+#   update_containers registry image
+#   update_containers ccr.ccs.tencentyun.com ossrs/lighthouse:4
 function update_containers() {
-  IMAGE=$1
-  echo "Update containers for IMAGE=$IMAGE"
+  REGISTRY=$1 && IMAGE=$2
+  echo "Update containers for REGISTRY=$REGISTRY IMAGE=$IMAGE"
 
   # We must store the container images ID before pull, which will change it.
   IMAGE_IDS=$(docker ps -a | grep $IMAGE | awk '{print $1}')
-  echo "The containers for $IMAGE is $IMAGE_IDS"
+  echo "The containers for $REGISTRY/$IMAGE is $IMAGE_IDS"
 
-  docker pull $IMAGE
-  if [[ $? -ne 0 ]]; then echo "Update the image $IMAGE failed"; exit 1; fi
+  docker pull $REGISTRY/$IMAGE
+  if [[ $? -ne 0 ]]; then echo "Update the image $REGISTRY/$IMAGE failed"; exit 1; fi
 
   for IMAGE_ID in $IMAGE_IDS; do
-    LATEST=$(docker inspect --format "{{.Id}}" $IMAGE)
+    LATEST=$(docker inspect --format "{{.Id}}" $REGISTRY/$IMAGE)
     RUNNING=$(docker inspect --format "{{.Image}}" $IMAGE_ID)
     NAME=$(docker inspect --format '{{.Name}}' $IMAGE_ID |sed 's|/||g')
     echo "Check $NAME RUNNING=$RUNNING, LATEST=$LATEST"
@@ -104,8 +110,8 @@ function update_containers() {
 # Update the containers before restart. Note that the containers are normally started by previous mgmt, with the
 # upgraded image. So we only upgrade the images for all containers, and it's the responsibility for mgmt to restart the
 # container if need to change the startup arguments.
-update_containers registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:4 &&
-update_containers ccr.ccs.tencentyun.com/ossrs/srs-terraform:hooks-1
+update_containers ccr.ccs.tencentyun.com ossrs/lighthouse:4 &&
+update_containers ccr.ccs.tencentyun.com ossrs/srs-terraform:hooks-1
 if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
 
 # Install the certbot for automatic HTTPS by letsencrypt

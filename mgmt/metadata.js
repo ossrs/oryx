@@ -15,7 +15,7 @@ exports.market = {
       let image = 'ossrs/lighthouse';
       if (process.env.NODE_ENV === 'development') image = 'ossrs/srs';
       if (process.env.SRS_DOCKER === 'srs') image = 'ossrs/srs';
-      return `registry.cn-hangzhou.aliyuncs.com/${image}:4`;
+      return `ccr.ccs.tencentyun.com/${image}:4`;
     },
     tcpPorts: [1935, 1985, 8080],
     udpPorts: [8000, 10080],
@@ -30,7 +30,7 @@ exports.market = {
   },
   hooks: {
     name: 'srs-hooks',
-    image: 'registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:hooks-1',
+    image: 'ccr.ccs.tencentyun.com/ossrs/srs-terraform:hooks-1',
     tcpPorts: [2021],
     udpPorts: [],
     command: 'node .',
