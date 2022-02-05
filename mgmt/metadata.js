@@ -23,8 +23,8 @@ exports.market = {
     udpPorts: [8000, 10080],
     command: ['./objs/srs -c conf/lighthouse.conf'],
     logConfig: '--log-driver json-file --log-opt max-size=3g --log-opt max-file=3',
-    volumes: [],
-    extras: `-v ${process.cwd()}/containers/conf/srs.conf:/usr/local/srs/conf/lighthouse.conf`,
+    volumes: [`${process.cwd()}/containers/conf/srs.conf:/usr/local/srs/conf/lighthouse.conf`],
+    extras: [],
     container: {
       ID: null,
       State: null,
@@ -38,8 +38,8 @@ exports.market = {
     udpPorts: [],
     command: ['node .'],
     logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
-    volumes: [],
-    extras: `-v ${process.cwd()}/.env:/srs-terraform/hooks/.env`,
+    volumes: [`${process.cwd()}/.env:/srs-terraform/hooks/.env`],
+    extras: [],
     container: {
       ID: null,
       State: null,
@@ -61,7 +61,7 @@ exports.market = {
       `${process.cwd()}/containers/conf/prometheus.yml:/etc/prometheus/prometheus.yml`,
       `${process.cwd()}/containers/data/prometheus:/prometheus`,
     ],
-    extras: isDarwin ? '' : '--user root',
+    extras: isDarwin ? [] : ['--user=root'],
     container: {
       ID: null,
       State: null,
@@ -76,7 +76,7 @@ exports.market = {
     command: () => isDarwin ? [] : ['--path.rootfs=/host'],
     logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
     volumes: isDarwin ? [] : ['/:/host:ro,rslave'],
-    extras: () => isDarwin ? '' : '--net=host --pid=host',
+    extras: () => isDarwin ? [] : ['--net=host', '--pid=host'],
     container: {
       ID: null,
       State: null,
