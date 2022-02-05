@@ -15,5 +15,6 @@ module.exports = function(app) {
   app.use('/*/*.(flv|m3u8|ts|aac|mp3)', withLogs({target: 'http://127.0.0.1:8080/'}));
   app.use('/console/', withLogs({target: 'http://127.0.0.1:8080/'}));
   app.use('/players/', withLogs({target: 'http://127.0.0.1:8080/'}));
+  app.use('/prometheus/', withLogs({target: 'http://127.0.0.1:9090/'}));
 };
 

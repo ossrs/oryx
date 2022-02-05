@@ -53,6 +53,10 @@ function withLogs(options) {
 // For version management.
 app.use(proxy('/terraform/v1/releases', withLogs({target: 'http://127.0.0.1:2023/'})));
 
+// For prometheus.
+// TODO: FIXME: Do authentication for api.
+app.use(proxy('/prometheus', withLogs({target: 'http://127.0.0.1:9090/'})));
+
 // For registered modules, by /terraform/v1/hooks/
 app.use(proxy('/terraform/v1/hooks/', withLogs({target: 'http://127.0.0.1:2021/'})));
 // Compatible with old APIs, to work with running SRS wihtout restart them.
@@ -64,6 +68,7 @@ app.use(proxy('/terraform/v1/mgmt/srs/hooks', withLogs({
 
 // Proxy to SRS HTTP streaming, console and player, by /api/, /rtc/, /live/, /console/, /players/
 // See https://github.com/vagusX/koa-proxies
+// TODO: FIXME: Do authentication for api.
 app.use(proxy('/api/', withLogs({target: 'http://127.0.0.1:1985/'})));
 app.use(proxy('/rtc/', withLogs({target: 'http://127.0.0.1:1985/'})));
 app.use(proxy('/*/*.(flv|m3u8|ts|aac|mp3)', withLogs({target: 'http://127.0.0.1:8080/'})));

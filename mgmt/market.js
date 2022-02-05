@@ -88,13 +88,14 @@ async function startContainer(conf) {
   const tcpPorts = evalValue(conf.tcpPorts, []).map(e => `-p ${e}:${e}/tcp`).join(' ');
   const udpPorts = evalValue(conf.udpPorts, []).map(e => `-p ${e}:${e}/udp`).join(' ');
   const volumes = evalValue(conf.volumes, []).map(e => `-v "${e}"`).join(' ');
+  const command = evalValue(conf.command).join(' ');
   const dockerArgs = `-d --restart always --privileged -it --name ${evalValue(conf.name)} \\
     --add-host=mgmt.srs.local:${privateIPv4.address} \\
     ${tcpPorts} ${udpPorts} \\
     ${evalValue(conf.logConfig)} \\
     ${volumes} ${evalValue(conf.extras)} \\
     ${evalValue(conf.image)} \\
-    ${evalValue(conf.command)}`;
+    ${command}`;
   console.log(`Thread #market: docker run args ip=${privateIPv4.name}/${privateIPv4.address}, docker run ${dockerArgs}`);
 
   // Only remove the container when got ID, to avoid fail for CentOS.
