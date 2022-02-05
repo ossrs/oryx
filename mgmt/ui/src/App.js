@@ -9,9 +9,10 @@ import Navigator from './Navigator';
 import Init from './Init';
 import {Token} from "./utils";
 import System from "./System";
-import Dashboard from "./Dashboard";
+import Scenario from "./Scenario";
 import {Container} from "react-bootstrap";
 import Config from "./Config";
+import Dashboard from './Dashboard';
 
 function App() {
   const [loading, setLoading] = React.useState(true);
@@ -58,6 +59,7 @@ function App() {
               <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
               <Route path="/login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
               <Route path="/dashboard" element={<Dashboard/>}/>
+              <Route path="/scenario" element={<Scenario/>}/>
               <Route path="/config" element={<Config/>}/>
               <Route path="/system" element={<System/>}/>
               <Route path="/logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>

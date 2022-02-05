@@ -22,7 +22,8 @@ export default function Navigator({initialized, token}) {
           initialized &&
           <Nav className="me-auto">
             {token && <>
-              <Nav.Link as={Link} to='/dashboard'>应用场景</Nav.Link>
+              <Nav.Link as={Link} to='/dashboard'>仪表盘</Nav.Link>
+              <Nav.Link as={Link} to='/scenario'>应用场景</Nav.Link>
               <Nav.Link as={Link} to='/config'>系统配置</Nav.Link>
               <Nav.Link as={Link} to='/system'>组件管理</Nav.Link>
             </>}
