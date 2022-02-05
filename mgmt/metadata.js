@@ -21,7 +21,7 @@ exports.market = {
     },
     tcpPorts: [1935, 1985, 8080],
     udpPorts: [8000, 10080],
-    command: './objs/srs -c conf/lighthouse.conf',
+    command: ['./objs/srs -c conf/lighthouse.conf'],
     logConfig: '--log-driver json-file --log-opt max-size=3g --log-opt max-file=3',
     volumes: [],
     extras: `-v ${process.cwd()}/containers/conf/srs.conf:/usr/local/srs/conf/lighthouse.conf`,
