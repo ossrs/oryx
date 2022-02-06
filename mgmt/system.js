@@ -57,15 +57,24 @@ exports.handle = (router) => {
     if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
     if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
 
-    await exec(`certbot certonly --webroot -w /usr/local/srs-terraform/mgmt/letsencrypt/ \\
+    // We run always with "-n Run non-interactively"
+    // Note that it's started by nodejs, so never use '-it' or failed for 'the input device is not a TTY'.
+    const dockerArgs = `docker run --rm --name certbot-certonly \\
+      -v "${process.cwd()}/containers/etc/letsencrypt:/etc/letsencrypt" \\
+      -v "${process.cwd()}/containers/var/lib/letsencrypt:/var/lib/letsencrypt" \\
+      -v "${process.cwd()}/containers/var/log/letsencrypt:/var/log/letsencrypt" \\
+      -v "${process.cwd()}/containers/www:/www" \\
+      ccr.ccs.tencentyun.com/ossrs/certbot \\
+      certonly --webroot -w /www \\
       -d ${domain} --register-unsafely-without-email --agree-tos --preferred-challenges http \\
-      --quiet`);
-    console.log(`certbot request ssl ok`);
+      -n`;
+    await exec(dockerArgs);
+    console.log(`certbot request ssl ok ${dockerArgs}`);
 
-    const keyFile = `/etc/letsencrypt/live/${domain}/privkey.pem`;
+    const keyFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domain}/privkey.pem`;
     if (!fs.existsSync(keyFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue key file ${keyFile}`);
 
-    const crtFile = `/etc/letsencrypt/live/${domain}/cert.pem`;
+    const crtFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domain}/cert.pem`;
     if (!fs.existsSync(crtFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue crt file ${crtFile}`);
 
     // Remove the ssl file, because it might link to other file.

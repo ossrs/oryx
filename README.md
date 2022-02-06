@@ -60,7 +60,7 @@ The features that we're developing:
 * [x] A mgmt support authentication and automatic updates.
 * [x] Run SRS in docker, query status by docker and SRS API.
 * [x] Support publish by RTMP/WebRTC, play by RTMP/HTTP-FLV/HLS/WebRTC.
-* [x] SRS container write containers/objs/srs.log for logging.
+* [x] SRS container use docker logs `json-file` and rotate for logging.
 * [x] Support high-resolution and realtime(200~500ms) live streaming by SRT.
 * [x] Run SRS hooks in docker, to callback by SRS server.
 * [ ] Support publish by SRT, play by RTMP/HTTP-FLV/HLS/WebRTC/SRT.
@@ -99,7 +99,7 @@ The software we depend on:
 * Redis, `yum install -y redis`
 * Nginx, `yum install -y nginx`
   * SSL: `/etc/nginx/ssl`
-* [Certbot](https://github.com/ossrs/srs/issues/2864#lets-encrypt), `yum install -y certbot`
+* [Certbot](https://github.com/ossrs/srs/issues/2864#lets-encrypt), `docker --name certbot`
   * Verify webroot: `mgmt/letsencrypt/.well-known/acme-challenge/`
 * [SRS](https://github.com/ossrs/srs), `docker --name srs-server`
   * Config: `mgmt/containers/conf/srs.conf`

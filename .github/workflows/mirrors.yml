@@ -53,6 +53,14 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/node-exporter/images"
 
+      - name: Mirror to ACR for certbot/certbot
+        run: |
+          docker pull certbot/certbot
+          docker tag certbot/certbot registry.cn-hangzhou.aliyuncs.com/ossrs/certbot
+          docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/certbot
+          echo "Release ok, please see:"
+          echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/certbot/images"
+
       ################################################################################################
       ################################################################################################
       ################################################################################################
@@ -95,3 +103,11 @@ jobs:
           docker push --all-tags ccr.ccs.tencentyun.com/ossrs/node-exporter
           echo "Release ok, please see:"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/node-exporter/1"
+
+      - name: Mirror to TCR for certbot/certbot
+        run: |
+          docker pull certbot/certbot
+          docker tag certbot/certbot ccr.ccs.tencentyun.com/ossrs/certbot
+          docker push --all-tags ccr.ccs.tencentyun.com/ossrs/certbot
+          echo "Release ok, please see:"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/certbot/1"

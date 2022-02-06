@@ -85,7 +85,7 @@ app.use(mount('/terraform/v1/sources/', serve('./sources')));
 // Note that should never create the directory .well-known/acme-challenge/ because it's auto created by certbot.
 // See https://eff-certbot.readthedocs.io/en/stable/using.html#webroot
 // See https://github.com/ossrs/srs/issues/2864#issuecomment-1027944527
-app.use(mount('/.well-known/acme-challenge/', serve('./letsencrypt/.well-known/acme-challenge/')));
+app.use(mount('/.well-known/acme-challenge/', serve('./containers/www/.well-known/acme-challenge/')));
 
 // For react-router, can't match the files, by /mgmt/
 // See https://stackoverflow.com/a/52464577/17679565

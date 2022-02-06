@@ -27,7 +27,7 @@ async function doThreadMain() {
   }
 
   console.log(`Thread #crontab: auto renew the Let's Encrypt ssl`);
-  const {stdout} = await exec(`bash letsencrypt/crontab_renew`);
+  const {stdout} = await exec(`bash containers/bin/letsencrypt_renew`);
   console.log(`Thread #crontab: renew ssl ${stdout}`);
 }
 

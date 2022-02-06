@@ -77,7 +77,8 @@ docker pull ccr.ccs.tencentyun.com/ossrs/node:slim &&
 docker pull ccr.ccs.tencentyun.com/ossrs/srs:4 &&
 docker pull ccr.ccs.tencentyun.com/ossrs/prometheus &&
 docker pull ccr.ccs.tencentyun.com/ossrs/redis_exporter &&
-docker pull ccr.ccs.tencentyun.com/ossrs/node-exporter
+docker pull ccr.ccs.tencentyun.com/ossrs/node-exporter &&
+docker pull ccr.ccs.tencentyun.com/ossrs/certbot
 if [[ $? -ne 0 ]]; then echo "Update the containers failed"; exit 1; fi
 
 # Remove the containers if need upgrade
@@ -114,7 +115,10 @@ update_containers ccr.ccs.tencentyun.com ossrs/lighthouse:4 &&
 update_containers ccr.ccs.tencentyun.com ossrs/srs-terraform:hooks-1
 if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
 
-# Install the certbot for automatic HTTPS by letsencrypt
-yum install -y certbot
-if [[ $? -ne 0 ]]; then echo "Install certbot failed"; exit 1; fi
+# Setup git alias to make it convenient.
+git config --global alias.co checkout &&
+git config --global alias.br branch &&
+git config --global alias.ci commit &&
+git config --global alias.st status
+if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
 

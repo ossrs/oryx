@@ -90,7 +90,8 @@ async function startContainer(conf) {
   const volumes = evalValue(conf.volumes, []).map(e => `-v "${e}"`).join(' ');
   const command = evalValue(conf.command, []).join(' ');
   const extras = evalValue(conf.extras, []).join(' ');
-  const dockerArgs = `-d --restart always --privileged -it --name ${evalValue(conf.name)} \\
+  // Note that it's started by nodejs, so never use '-it'.
+  const dockerArgs = `-d --restart always --privileged --name ${evalValue(conf.name)} \\
     --add-host=mgmt.srs.local:${privateIPv4.address} \\
     ${tcpPorts} ${udpPorts} \\
     ${evalValue(conf.logConfig)} \\
