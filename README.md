@@ -104,6 +104,7 @@ The software we depend on:
   * SSL: `/etc/nginx/ssl`
 * [Certbot](https://github.com/ossrs/srs/issues/2864#lets-encrypt), `docker --name certbot`
   * Verify webroot: `mgmt/containers/www/.well-known/acme-challenge/`
+  * Cert files: `mgmt/containers/etc/letsencrypt/live/`
 * [SRS](https://github.com/ossrs/srs), `docker --name srs-server`
   * Config: `mgmt/containers/conf/srs.conf`
 * [srs-hooks](https://github.com/ossrs/srs-terraform/tree/lighthouse/hooks), `docker --name srs-hooks`

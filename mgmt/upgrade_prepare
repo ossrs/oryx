@@ -122,3 +122,8 @@ git config --global alias.ci commit &&
 git config --global alias.st status
 if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
 
+# Install the services that depends on.
+yum install -y git gcc-c++ gdb make docker redis nginx &&
+systemctl enable docker nginx redis
+if [[ $? -ne 0 ]]; then echo "Install dependencies failed"; exit 1; fi
+
