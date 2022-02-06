@@ -161,11 +161,10 @@ export default function System() {
 
   return (
     <>
-      <p></p>
       <Container>
         <Row>
           <Col xs lg={3}>
-            <Card style={{ width: '18rem' }}>
+            <Card style={{ width: '18rem', marginTop: '16px' }}>
               <Card.Header>SRS服务器</Card.Header>
               <Card.Body>
                 <Card.Text>
@@ -193,7 +192,7 @@ export default function System() {
             </Card>
           </Col>
           <Col xs lg={3}>
-            <Card style={{ width: '18rem' }}>
+            <Card style={{ width: '18rem', marginTop: '16px' }}>
               <Card.Header>SRS回调</Card.Header>
               <Card.Body>
                 <Card.Text>
@@ -213,7 +212,7 @@ export default function System() {
             </Card>
           </Col>
           <Col xs lg={3}>
-            <Card style={{ width: '18rem' }}>
+            <Card style={{ width: '18rem', marginTop: '16px' }}>
               <Card.Header>Prometheus监控</Card.Header>
               <Card.Body>
                 <Card.Text>
@@ -233,7 +232,7 @@ export default function System() {
             </Card>
           </Col>
           <Col xs lg={3}>
-            <Card style={{ width: '18rem' }}>
+            <Card style={{ width: '18rem', marginTop: '16px' }}>
               <Card.Header>NodeExporter(节点监控)</Card.Header>
               <Card.Body>
                 <Card.Text>
@@ -253,7 +252,7 @@ export default function System() {
             </Card>
           </Col>
           <Col xs lg={3}>
-            <Card style={{ width: '18rem' }}>
+            <Card style={{ width: '18rem', marginTop: '16px' }}>
               <Card.Header>管理后台</Card.Header>
               <Card.Body>
                 <Card.Text>
