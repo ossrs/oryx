@@ -1,5 +1,14 @@
 'use strict';
 
+// For mgmt, it's ok to connect to localhost.
+const config = {
+  redis:{
+    host: 'localhost',
+    port: 6379,
+    password: '',
+  },
+};
+
 const utils = require('js-core/utils');
 const pkg = require('./package.json');
 const { spawn } = require('child_process');
@@ -12,19 +21,23 @@ const consts = require('./consts');
 const fs = require('fs');
 const errs = require('js-core/errs');
 const jwt = require('jsonwebtoken');
+const ioredis = require('ioredis');
+const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/status', async (ctx) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(jwt, token);
 
-    console.log(`status ok, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    const upgrading = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
+    console.log(`status ok, upgrading=${upgrading}, releases=${JSON.stringify(metadata.upgrade.releases)}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
       version: `v${pkg.version}`,
       releases: {
         stable: metadata.upgrade.releases?.stable,
         latest: metadata.upgrade.releases?.latest,
       },
+      upgrading,
     });
   });
 
@@ -100,8 +113,19 @@ exports.handle = (router) => {
     });
     metadata.upgrade.releases = releases;
 
-    let target = releases?.latest || 'lighthouse';
-    console.log(`Start upgrade to target=${target}, current=${pkg.version}, releases=${JSON.stringify(releases)}`);
+    const target = releases?.latest || 'lighthouse';
+    const upgradingMessage = `upgrade to target=${target}, current=${pkg.version}, releases=${JSON.stringify(releases)}`;
+    console.log(`Start ${upgradingMessage}`);
+
+    const r0 = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
+    if (r0) {
+      const r1 = await redis.hget(consts.SRS_UPGRADING, 'desc');
+      throw utils.asError(errs.sys.upgrading, errs.status.sys, `already upgrading ${r0}, ${r1}`);
+    }
+
+    // Set the upgrading to avoid others.
+    await redis.hset(consts.SRS_UPGRADING, 'upgrading', 1);
+    await redis.hset(consts.SRS_UPGRADING, 'desc', `${upgradingMessage}`);
 
     await new Promise((resolve, reject) => {
       const child = spawn('bash', ['upgrade', target]);

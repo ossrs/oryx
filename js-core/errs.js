@@ -20,6 +20,8 @@ exports.sys = {
   resource: 1003,
   // Arguments is invalid.
   invalid: 1004,
+  // In upgrading.
+  upgrading: 1005,
 };
 
 // Error codes for auth.

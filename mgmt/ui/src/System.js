@@ -15,6 +15,7 @@ export default function System() {
   const [prometheus, setPrometheus] = React.useState();
   const [nodeExporter, setNodeExporter] = React.useState();
   const [upgrading, setUpgrading] = React.useState();
+  const [alreadyUpgrading, setAlreadyUpgrading] = React.useState();
   const [enableUpgrading, setEnableUpgrading] = React.useState();
   const [enableSrsOperators, setEnableSrsOperators] = React.useState();
   const [restartSrs, setRestartSrs] = React.useState();
@@ -28,6 +29,7 @@ export default function System() {
       if (status && status.releases && status.releases.latest) {
         if (semver.lt(status.version, status.releases.latest)) setEnableUpgrading(true);
       }
+      if (status.upgrading) setAlreadyUpgrading(true);
       setStatus(status);
       console.log(`Status: Query ok, status=${JSON.stringify(status)}`);
     }).catch(e => {
@@ -142,7 +144,7 @@ export default function System() {
   }, [navigate]);
 
   React.useEffect(() => {
-    if (!upgrading) return;
+    if (!upgrading || alreadyUpgrading) return;
 
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/upgrade', {
@@ -256,7 +258,7 @@ export default function System() {
               <Card.Header>管理后台</Card.Header>
               <Card.Body>
                 <Card.Text>
-                  你的版本: {status?.version} <br/>
+                  你的版本: {status?.version} {alreadyUpgrading && '升级中...'} <br/>
                   稳定版本: {status?.releases?.stable} <br/>
                   最新版本: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
                 </Card.Text>

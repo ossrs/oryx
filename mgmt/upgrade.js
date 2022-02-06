@@ -66,7 +66,19 @@ async function doThreadMain() {
   // Try to upgrade terraform itself.
   const higherStable = semver.lt(`v${pkg.version}`, metadata.upgrade.releases.stable);
   if (metadata.upgrade.releases && metadata.upgrade.releases.stable && higherStable) {
-    console.log(`Thread #${metadata.upgrade.name}: upgrade from v${pkg.version} to stable ${metadata.upgrade.releases.stable}`);
+    const upgradingMessage = `upgrade from v${pkg.version} to stable ${metadata.upgrade.releases.stable}`;
+    console.log(`Thread #${metadata.upgrade.name}: ${upgradingMessage}`);
+
+    const r0 = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
+    if (r0) {
+      const r1 = await redis.hget(consts.SRS_UPGRADING, 'desc');
+      console.log(`Thread #${metadata.upgrade.name}: already upgrading r0=${r0} ${r1}`);
+      return;
+    }
+
+    // Set the upgrading to avoid others.
+    await redis.hset(consts.SRS_UPGRADING, 'upgrading', 1);
+    await redis.hset(consts.SRS_UPGRADING, 'desc', `${upgradingMessage}`);
 
     await new Promise((resolve, reject) => {
       const child = spawn('bash', ['upgrade', metadata.upgrade.releases.stable]);
@@ -86,6 +98,14 @@ async function doThreadMain() {
 }
 
 async function firstRun() {
+  // When restart, reset the upgrading.
+  const r1 = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
+  if (r1) {
+    const r2 = await redis.hget(consts.SRS_UPGRADING, 'desc');
+    const r3 = await redis.del(consts.SRS_UPGRADING);
+    console.log(`Thread #${metadata.upgrade.name}: reset upgrading for r1=${r1}, r2=${r2}, r3=${r3}`);
+  }
+
   // For each init stage changed, we could use a different redis key, to identify this special init workflow.
   // However, keep in mind that previous defined workflow always be executed, so these operations should be idempotent.
   // History:

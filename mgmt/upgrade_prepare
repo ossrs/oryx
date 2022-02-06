@@ -111,11 +111,13 @@ function update_containers() {
 # Update the containers before restart. Note that the containers are normally started by previous mgmt, with the
 # upgraded image. So we only upgrade the images for all containers, and it's the responsibility for mgmt to restart the
 # container if need to change the startup arguments.
+echo "Upgrading all containers by images" &&
 update_containers ccr.ccs.tencentyun.com ossrs/lighthouse:4 &&
 update_containers ccr.ccs.tencentyun.com ossrs/srs-terraform:hooks-1
 if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
 
 # Setup git alias to make it convenient.
+echo "Setup git alias to make it more convenient" &&
 git config --local alias.co checkout &&
 git config --local alias.br branch &&
 git config --local alias.ci commit &&
