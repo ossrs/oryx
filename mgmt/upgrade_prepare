@@ -116,11 +116,11 @@ update_containers ccr.ccs.tencentyun.com ossrs/srs-terraform:hooks-1
 if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
 
 # Setup git alias to make it convenient.
-git config --global alias.co checkout &&
-git config --global alias.br branch &&
-git config --global alias.ci commit &&
-git config --global alias.st status
-if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
+git config --local alias.co checkout &&
+git config --local alias.br branch &&
+git config --local alias.ci commit &&
+git config --local alias.st status
+if [[ $? -ne 0 ]]; then echo "Warning: Setup git alias failed"; exit 1; fi
 
 # Install the services that depends on.
 yum install -y git gcc-c++ gdb make docker redis nginx &&
