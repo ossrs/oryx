@@ -3,10 +3,11 @@
 SRS_PREFIX=/usr/local/srs-terraform
 __REAL_INSTALL=$(DESTDIR)$(SRS_PREFIX)
 
-default: run
-
-run:
-	@cd mgmt && npm start
+default:
+	@echo "Usage: make build|install|upgrade"
+	@echo "		build 		Build the project, npm install and build the ui"
+	@echo "		install 	Copy files for installer"
+	@echo "		upgrade 	Build for upgrade"
 
 build:
 	@cd mgmt && npm install
