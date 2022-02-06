@@ -5,15 +5,15 @@ const metadata = require('./metadata');
 
 exports.run = async () => {
   new Promise((resolve, reject) => {
-    const worker = new Worker("./releases.js");
+    const worker = new Worker("./upgrade.js");
     worker.on('message', (msg) => {
-      metadata.releases = msg.metadata.releases;
+      metadata.upgrade = msg.metadata.upgrade;
     });
     worker.on('error', reject);
     worker.on('exit', (code) => {
-      console.log(`thread #releases: exit with ${code}`);
+      console.log(`Thread #upgrade: exit with ${code}`);
       if (code !== 0) {
-        return reject(new Error(`Worker #releases: stopped with exit code ${code}`));
+        return reject(new Error(`Thread #upgrade: stopped with exit code ${code}`));
       }
       resolve();
     });
@@ -23,9 +23,9 @@ exports.run = async () => {
     const worker = new Worker("./crontab.js");
     worker.on('error', reject);
     worker.on('exit', (code) => {
-      console.log(`thread #crontab: exit with ${code}`);
+      console.log(`Thread #crontab: exit with ${code}`);
       if (code !== 0) {
-        return reject(new Error(`Worker #crontab: stopped with exit code ${code}`));
+        return reject(new Error(`Thread #crontab: stopped with exit code ${code}`));
       }
       resolve();
     });
@@ -46,9 +46,9 @@ exports.run = async () => {
     });
     worker.on('error', reject);
     worker.on('exit', (code) => {
-      console.log(`thread #market: exit with ${code}`);
+      console.log(`Thread #market: exit with ${code}`);
       if (code !== 0) {
-        return reject(new Error(`Worker #market: stopped with exit code ${code}`));
+        return reject(new Error(`Thread #market: stopped with exit code ${code}`));
       }
       resolve();
     });

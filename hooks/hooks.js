@@ -56,7 +56,7 @@ async function init() {
   if (!publish) {
     publish = Math.random().toString(16).slice(-8);
     const r0 = await redis.set(SRS_SECRET_PUBLISH, publish);
-    console.log(`Thread #${metadata.releases.name}: boot create secret, key=${SRS_SECRET_PUBLISH}, value=${'*'.repeat(publish.length)}, r0=${r0}`);
+    console.log(`hooks create secret, key=${SRS_SECRET_PUBLISH}, value=${'*'.repeat(publish.length)}, r0=${r0}`);
   }
 }
 

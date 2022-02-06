@@ -1,7 +1,7 @@
 'use strict';
 
-exports.releases = {
-  name: 'releases',
+exports.upgrade = {
+  name: 'upgrade',
   releases: {
     stable: null,
     latest: null,

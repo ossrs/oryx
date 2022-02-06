@@ -22,8 +22,8 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0, {
       version: `v${pkg.version}`,
       releases: {
-        stable: metadata.releases.releases?.stable,
-        latest: metadata.releases.releases?.latest,
+        stable: metadata.upgrade.releases?.stable,
+        latest: metadata.upgrade.releases?.latest,
       },
     });
   });
@@ -98,7 +98,7 @@ exports.handle = (router) => {
         ts: new Date().getTime(),
       }
     });
-    metadata.releases.releases = releases;
+    metadata.upgrade.releases = releases;
 
     let target = releases?.latest || 'lighthouse';
     console.log(`Start upgrade to target=${target}, current=${pkg.version}, releases=${JSON.stringify(releases)}`);
