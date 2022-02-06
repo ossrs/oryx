@@ -7,6 +7,10 @@ const utils = require('js-core/utils');
 const errs = require('js-core/errs');
 const moment = require('moment');
 const jwt = require('jsonwebtoken');
+const util = require('util');
+const exec = util.promisify(require('child_process').exec);
+const metadata = require('./metadata');
+const market = require('./market');
 
 // MySQL日期字段格式化字符串 @see https://stackoverflow.com/a/27381633
 const MYSQL_DATETIME = 'YYYY-MM-DD HH:mm:ss';
@@ -52,6 +56,18 @@ exports.handle = (router) => {
       const config = loadConfig();
       saveConfig({...config, MGMT_PASSWORD: password});
       loadConfig();
+
+      // We must restart the hooks, which depends on the .env
+      await exec(`docker rm -f ${metadata.market.hooks.name}`);
+      const previousContainerID = metadata.market.hooks.container.ID;
+      for (let i = 0; i < 60; i++) {
+        // Wait util running and got another container ID.
+        const [all, running] = await market.queryContainer(metadata.market.hooks.name);
+        // Please note that we don't update the metadata of SRS, client must request the updated status.
+        if (all && all.ID && running && running.ID && running.ID !== previousContainerID) break;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      console.log(`restart ${metadata.market.hooks.name} ${metadata.market.hooks.container.ID} when .env updated`);
 
       const {expire, expireAt, createAt, token} = createToken(moment, jwt);
       console.log(`init password ok, duration=${expire}, create=${createAt}, expire=${expireAt}, password=${'*'.repeat(password.length)}`);

@@ -7,6 +7,7 @@ import {useNavigate} from "react-router-dom";
 
 export default function Init({onInit}) {
   const [password, setPassword] = React.useState();
+  const [initializing, setInitializeing] = React.useState();
   const navigate = useNavigate();
 
   // Generate password if not initialized.
@@ -17,6 +18,9 @@ export default function Init({onInit}) {
   // User click login button.
   const handleLogin = (e) => {
     e.preventDefault();
+
+    if (initializing) return;
+    setInitializeing(true);
 
     axios.post('/terraform/v1/mgmt/init', {
       password,
@@ -46,7 +50,7 @@ export default function Init({onInit}) {
               * 设置后若需要修改，可以修改文件 <code>vi ~lighthouse/credentials.txt</code> 并重启服务
             </Form.Text>
           </Form.Group>
-          <Button variant="primary" type="submit" onClick={(e) => handleLogin(e)}>
+          <Button variant="primary" type="submit" className={initializing && "disabled"} onClick={(e) => handleLogin(e)}>
             设置管理员密码
           </Button>
         </Form>
