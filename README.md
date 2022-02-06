@@ -52,6 +52,8 @@ The ports allocated:
 | releases | 2023 |  - | Mount at `/terraform/v1/releases` |
 | mgmt | 2022 |  - | Mount at `/mgmt/` and `/terraform/v1/mgmt/` |
 | hooks | 2021 |  - | Mount at `/terraform/v1/hooks/` |
+| prometheus | 9090 | - | Mount at `/prometheus` |
+| node-exporter | 9100 | - | - |
 
 ## Features
 
@@ -90,6 +92,7 @@ Market:
 
 * `/terraform/v1/hooks/srs/verify` Hooks: Verify the stream request URL of SRS.
 * `/terraform/v1/hooks/srs/secret` Hooks: Query the secret to generate stream URL.
+* `/prometheus` Prometheus: Time-series database and monitor.
 
 ## Depends
 
@@ -100,7 +103,7 @@ The software we depend on:
 * Nginx, `yum install -y nginx`
   * SSL: `/etc/nginx/ssl`
 * [Certbot](https://github.com/ossrs/srs/issues/2864#lets-encrypt), `docker --name certbot`
-  * Verify webroot: `mgmt/letsencrypt/.well-known/acme-challenge/`
+  * Verify webroot: `mgmt/containers/www/.well-known/acme-challenge/`
 * [SRS](https://github.com/ossrs/srs), `docker --name srs-server`
   * Config: `mgmt/containers/conf/srs.conf`
 * [srs-hooks](https://github.com/ossrs/srs-terraform/tree/lighthouse/hooks), `docker --name srs-hooks`
