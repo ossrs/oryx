@@ -10,7 +10,7 @@ export default function Dashboard() {
   const [promQL, setPromQL] = React.useState();
 
   React.useEffect(() => {
-    const query = '(1 - min by(mode) (rate(node_cpu_seconds_total{mode="idle"}[300s]))) * 100';
+    const query = '(1 - min by(mode) (rate(node_cpu_seconds_total{mode="idle"}[10s]))) * 100';
     const queryEscaped = querystring.stringify({
       "g0.expr": query,
       "g0.tab": 0,
