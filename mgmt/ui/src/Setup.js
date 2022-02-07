@@ -5,7 +5,7 @@ import axios from "axios";
 import {Token, Tools} from "./utils";
 import {useNavigate} from "react-router-dom";
 
-export default function Init({onInit}) {
+export default function Setup({onInit}) {
   const [password, setPassword] = React.useState();
   const [initializing, setInitializeing] = React.useState();
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ export default function Init({onInit}) {
               onChange={(e) => setPassword(e.target.value)}/>
             <Form.Text className="text-muted">
               * 初始密码由程序随机生成，可以修改成更高强度的密码 <br/>
-              * 设置后若需要修改，可以修改文件 <code>vi ~lighthouse/credentials.txt</code> 并重启服务
+              * 若忘记密码，可登录机器执行 <code>cat ~lighthouse/credentials.txt</code>
             </Form.Text>
           </Form.Group>
           <Button variant="primary" type="submit" className={initializing && "disabled"} onClick={(e) => handleLogin(e)}>

@@ -6,7 +6,7 @@ import Footer from './Footer';
 import Login from './Login';
 import Logout from './Logout';
 import Navigator from './Navigator';
-import Init from './Init';
+import Setup from './Setup';
 import {Token} from "./utils";
 import System from "./System";
 import Scenario from "./Scenario";
@@ -50,7 +50,7 @@ function App() {
           <Navigator initialized={initialized} token={token} />
           <Routes>
             {!initialized && <>
-              <Route path="*" element={<Init onInit={onInit} />}/>
+              <Route path="*" element={<Setup onInit={onInit} />}/>
             </>}
             {initialized && !token && <>
               <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
