@@ -159,7 +159,7 @@ export default function System() {
         alert(`未知错误, ${e.message}`);
       }
     });
-  }, [upgrading]);
+  }, [upgrading, alreadyUpgrading]);
 
   return (
     <>

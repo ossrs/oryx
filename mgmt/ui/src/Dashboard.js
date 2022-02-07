@@ -2,7 +2,7 @@ import React from "react";
 import {Container, Tabs, Tab, Accordion} from "react-bootstrap";
 import moment from "moment";
 import axios from 'axios';
-import {XAxis, Tooltip, CartesianGrid, Legend, AreaChart, YAxis, Area} from "recharts";
+import {XAxis, Tooltip, CartesianGrid, AreaChart, YAxis, Area} from "recharts";
 import querystring from "querystring";
 
 export default function Dashboard() {
@@ -73,7 +73,7 @@ export default function Dashboard() {
                     <Tooltip />
                     <Area type="monotone" dataKey="cpu" stroke="#82ca9d" fillOpacity={1} fill="url(#colorCpu)" />
                   </AreaChart>
-                  <a href={promQL} target='_blank'>Show in Prometheus</a>
+                  <a href={promQL} target='_blank' rel='noreferrer'>Show in Prometheus</a>
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>

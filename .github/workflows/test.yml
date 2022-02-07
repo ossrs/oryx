@@ -25,6 +25,11 @@ jobs:
             releases/package-lock.json
             hooks/package-lock.json
 
+      - name: Install depends
+        run: |
+          cd mgmt && npm install &&
+          cd ui && npm install
+
       - name: Install and build mgmt
         run: |
-          cd mgmt && npm install && npm run build
+          cd mgmt && npm run build
