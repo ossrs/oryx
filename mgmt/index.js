@@ -131,8 +131,16 @@ if (true) {
   reactFiles['/mgmt/index.html'].maxAge = 0;
 }
 
+// For /favicon.ico
 // For homepage from root, use mgmt.
 app.use(async (ctx, next) => {
+  if (ctx.request.path === '/favicon.ico') {
+    ctx.type = 'image/x-icon';
+    ctx.set('Cache-Control', 'public, max-age=31536000');
+    ctx.body = fs.readFileSync('./ui/build/favicon.ico');
+    return;
+  }
+
   if (ctx.request.path === '/') return ctx.response.redirect('/mgmt/');
   if (ctx.request.path === '/index.html') return ctx.response.redirect('/mgmt/');
   await next();
