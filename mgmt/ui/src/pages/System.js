@@ -3,7 +3,7 @@ import Container from "react-bootstrap/Container";
 import React from "react";
 import {Token, Errors} from "../utils";
 import axios from "axios";
-import {Row, Col, Card, Button} from "react-bootstrap";
+import {Row, Col, Card, Button, Form} from "react-bootstrap";
 import PopoverConfirmButton from '../components/PopoverConfirmButton';
 const semver = require('semver');
 
@@ -43,69 +43,17 @@ export default function System() {
 
   React.useEffect(() => {
     const token = Token.load();
-    axios.post('/terraform/v1/mgmt/container', {
-      ...token, name: 'srs', action: 'query',
+    axios.post('/terraform/v1/mgmt/containers', {
+      ...token, action: 'query',
     }).then(res => {
-      const status = res.data.data;
-      setSRS(status);
-      console.log(`SRS: Query ok, status=${JSON.stringify(status)}`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
-  }, [navigate]);
-
-  React.useEffect(() => {
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/container', {
-      ...token, name: 'hooks', action: 'query',
-    }).then(res => {
-      const status = res.data.data;
-      setHooks(status);
-      console.log(`Hooks: Query ok, status=${JSON.stringify(status)}`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
-  }, [navigate]);
-
-  React.useEffect(() => {
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/container', {
-      ...token, name: 'prometheus', action: 'query',
-    }).then(res => {
-      const status = res.data.data;
-      setPrometheus(status);
-      console.log(`Prometheus: Query ok, status=${JSON.stringify(status)}`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
-  }, [navigate]);
-
-  React.useEffect(() => {
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/container', {
-      ...token, name: 'node_exporter', action: 'query',
-    }).then(res => {
-      const status = res.data.data;
-      setNodeExporter(status);
-      console.log(`NodeExporter: Query ok, status=${JSON.stringify(status)}`);
+      const containers = res.data.data;
+      containers.map(container => {
+        if (container.name === 'srs-server') setSRS(container);
+        if (container.name === 'srs-hooks') setHooks(container);
+        if (container.name === 'prometheus') setPrometheus(container);
+        if (container.name === 'node-exporter') setNodeExporter(container);
+      });
+      console.log(`SRS: Query ok, status=${JSON.stringify(containers)}`);
     }).catch(e => {
       const err = e.response.data;
       if (err.code === Errors.auth) {
@@ -223,10 +171,18 @@ export default function System() {
             <Card style={{ width: '18rem', marginTop: '16px' }}>
               <Card.Header>管理后台</Card.Header>
               <Card.Body>
-                <Card.Text>
+                <Card.Text as={Col}>
                   你的版本: {status?.version} {alreadyUpgrading && '升级中...'} <br/>
-                  稳定版本: {status?.releases?.stable} <br/>
+                  稳定版本: {status?.releases?.stable} &nbsp;
+                  <Form.Check
+                    type='switch'
+                    defaultChecked={false}
+                    label='自动升级'
+                    style={{display: 'inline-block'}}
+                    title='是否自动升级到稳定版本'
+                  /> <br/>
                   最新版本: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
+                  <p></p>
                 </Card.Text>
                 {
                   !enableUpgrading

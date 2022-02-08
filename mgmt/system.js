@@ -148,28 +148,34 @@ exports.handle = (router) => {
     });
   });
 
-  router.all('/terraform/v1/mgmt/container', async (ctx) => {
+  router.all('/terraform/v1/mgmt/containers', async (ctx) => {
     const {token, action, name} = ctx.request.body;
     const decoded = await utils.verifyToken(jwt, token);
 
     if (!action) throw utils.asError(errs.sys.empty, errs.status.args, `no param action`);
-    if (!name) throw utils.asError(errs.sys.empty, errs.status.args, `no param name`);
-
-    const container = metadata.market[name];
-    if (!container) throw utils.asError(errs.sys.resource, errs.status.not, `no container --name=${name}`);
 
     const validActions = ['query'];
     if (!validActions.includes(action)) throw utils.asError(errs.sys.invalid, errs.status.args, `invalid action ${action}, should be ${validActions}`);
 
-    console.log(`srs ok, action=${action}, name=${name}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
-    ctx.body = utils.asResponse(0, {
-      name: container.name,
-      container: {
-        ID: container.container.ID,
-        State: container.container.State,
-        Status: container.container.Status,
-      },
+    const containers = [];
+    Object.keys(metadata.market).map(k => {
+      if (name && k !== name) return;
+
+      const container = metadata.market[k];
+      if (!container) throw utils.asError(errs.sys.resource, errs.status.not, `no container --name=${k}`);
+
+      containers.push({
+        name: container.name,
+        container: {
+          ID: container.container.ID,
+          State: container.container.State,
+          Status: container.container.Status,
+        },
+      });
     });
+
+    console.log(`srs ok, action=${action}, name=${name}, containers=${containers.length}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0, containers);
   });
 
   router.all('/terraform/v1/mgmt/hooks', async (ctx) => {
