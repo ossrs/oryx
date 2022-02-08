@@ -158,22 +158,8 @@ exports.handle = (router) => {
     const container = metadata.market[name];
     if (!container) throw utils.asError(errs.sys.resource, errs.status.not, `no container --name=${name}`);
 
-    const validActions = ['query', 'restart'];
+    const validActions = ['query'];
     if (!validActions.includes(action)) throw utils.asError(errs.sys.invalid, errs.status.args, `invalid action ${action}, should be ${validActions}`);
-
-    if (action === 'restart') {
-      // We must rm the container to get a new ID.
-      await exec(`docker rm -f ${container.name}`);
-
-      const previousContainerID = container.container.ID;
-      for (let i = 0; i < 20; i++) {
-        // Wait util running and got another container ID.
-        const [all, running] = await market.queryContainer(container.name);
-        // Please note that we don't update the metadata of SRS, client must request the updated status.
-        if (all && all.ID && running && running.ID && running.ID !== previousContainerID) break;
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-    }
 
     console.log(`srs ok, action=${action}, name=${name}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {

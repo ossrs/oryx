@@ -17,8 +17,6 @@ export default function System() {
   const [upgrading, setUpgrading] = React.useState();
   const [alreadyUpgrading, setAlreadyUpgrading] = React.useState();
   const [enableUpgrading, setEnableUpgrading] = React.useState();
-  const [enableSrsOperators, setEnableSrsOperators] = React.useState();
-  const [restartSrs, setRestartSrs] = React.useState();
 
   React.useEffect(() => {
     const token = Token.load();
@@ -44,15 +42,11 @@ export default function System() {
   }, [navigate]);
 
   React.useEffect(() => {
-    // We never update the status when restarting.
-    if (restartSrs === true) return;
-
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/container', {
       ...token, name: 'srs', action: 'query',
     }).then(res => {
       const status = res.data.data;
-      if (status) setEnableSrsOperators(true);
       setSRS(status);
       console.log(`SRS: Query ok, status=${JSON.stringify(status)}`);
     }).catch(e => {
@@ -64,27 +58,7 @@ export default function System() {
         alert(`服务器错误，${err.code}: ${err.data.message}`);
       }
     });
-  }, [navigate, restartSrs]);
-
-  React.useEffect(() => {
-    if (!restartSrs) return;
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/container', {
-      ...token, name: 'srs', action: 'restart',
-    }).then(res => {
-      setRestartSrs(false);
-      console.log(`SRS: Restart ok`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
-  }, [navigate, restartSrs]);
+  }, [navigate]);
 
   React.useEffect(() => {
     const token = Token.load();
@@ -175,17 +149,9 @@ export default function System() {
                   状态：{srs?.container.State} {srs?.container.Status}
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
-                  {
-                    !enableSrsOperators
-                      ? <Button className='disabled'>重启</Button>
-                      : <PopoverConfirmButton upgrading={restartSrs} handleClick={() => setRestartSrs(true)} text='重启' operator='重启'>
-                        <p>
-                          重启SRS会造成
-                          <span className='text-danger'><strong>推拉流不可用</strong></span>，
-                          确认继续重启么？
-                        </p>
-                      </PopoverConfirmButton>
-                  } &nbsp;
+                  <Button className='disabled'>
+                    重启
+                  </Button> &nbsp;
                   <Button className='disabled'>
                     升级
                   </Button>
