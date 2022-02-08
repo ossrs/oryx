@@ -57,12 +57,12 @@ function App() {
             </>}
             {initialized && token && <>
               <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
-              <Route path="/login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
-              <Route path="/dashboard" element={<Dashboard/>}/>
-              <Route path="/scenario" element={<Scenario/>}/>
-              <Route path="/config" element={<Config/>}/>
-              <Route path="/system" element={<System/>}/>
-              <Route path="/logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
+              <Route path="/routers-login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
+              <Route path="/routers-dashboard" element={<Dashboard/>}/>
+              <Route path="/routers-scenario" element={<Scenario/>}/>
+              <Route path="/routers-config" element={<Config/>}/>
+              <Route path="/routers-system" element={<System/>}/>
+              <Route path="/routers-logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
             </>}
           </Routes>
         </BrowserRouter>

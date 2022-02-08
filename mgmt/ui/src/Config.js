@@ -28,7 +28,7 @@ export default function Config() {
       const err = e.response.data;
       if (err.code === Errors.auth) {
         alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/logout');
+        navigate('/routers-logout');
       } else {
         alert(`服务器错误，${err.code}: ${err.data.message}`);
       }
@@ -53,7 +53,7 @@ export default function Config() {
       const err = e.response.data;
       if (err.code === Errors.auth) {
         alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/logout');
+        navigate('/routers-logout');
       } else {
         alert(`服务器错误，${err.code}: ${err.data.message}`);
       }

@@ -23,6 +23,7 @@ const system = require('./system');
 const threads = require('./threads');
 const consts = require('./consts');
 const pkg = require('./package.json');
+const staticCache = require('koa-static-cache');
 
 // Start all workers threads first.
 threads.run();
@@ -40,12 +41,8 @@ function withLogs(options) {
   return {
     ...options,
     logs: (ctx, target) => {
-      console.log('%s - %s %s proxy to -> %s',
-        new Date().toISOString(),
-        ctx.req.method,
-        ctx.req.oldPath,
-        new URL(ctx.req.url, target),
-      );
+      const r = new URL(ctx.req.url, target);
+      console.log('%s - %s %s proxy to -> %s', new Date().toISOString(), ctx.req.method, ctx.req.oldPath, r);
     },
   };
 }
@@ -87,18 +84,24 @@ app.use(mount('/terraform/v1/sources/', serve('./sources')));
 // See https://github.com/ossrs/srs/issues/2864#issuecomment-1027944527
 app.use(mount('/.well-known/acme-challenge/', serve('./containers/www/.well-known/acme-challenge/')));
 
-// For react-router, can't match the files, by /mgmt/
-// See https://stackoverflow.com/a/52464577/17679565
+// For react-router pages, by /mgmt/routers-*
 app.use(async (ctx, next) => {
-  const isReactRouter = (path) => {
-    // The react-router should never with extensions, and without multiple path.
-    return path.indexOf('/mgmt/') === 0
-      && path.indexOf('.') === -1
-      && path.match(/\//g).length === 2;
-  };
+  // Compatible with old react routes.
+  // TODO: FIXME: Remove it in next large release.
+  const isPreviousReactRoutes = [
+    '/mgmt/login',
+    '/mgmt/dashboard',
+    '/mgmt/scenario',
+    '/mgmt/config',
+    '/mgmt/system',
+    '/mgmt/logout',
+  ].includes(ctx.request.path);
 
-  if (isReactRouter(ctx.request.path)) {
+  // Directly serve the react routes by index.html
+  // See https://stackoverflow.com/a/52464577/17679565
+  if (isPreviousReactRoutes || ctx.request.path.indexOf('/mgmt/routers-') === 0) {
     ctx.type = 'text/html';
+    ctx.set('Cache-Control', 'public, max-age=0');
     ctx.body = fs.readFileSync('./ui/build/index.html');
     return;
   }
@@ -107,8 +110,28 @@ app.use(async (ctx, next) => {
 });
 
 // For react, static files server, by /mgmt/
-app.use(mount('/mgmt/', serve('./ui/build')));
-// For homepage, use mgmt.
+if (true) {
+  const reactFiles = {};
+
+  app.use(staticCache(path.join(__dirname, 'ui/build'), {
+    // Cache for a year for it never changes.
+    maxAge: 365 * 24 * 3600,
+    // It's important to set to dynamic, because the js might changed.
+    dynamic: true,
+    // If not set, NOT FOUND.
+    alias: {
+      '/mgmt/': '/mgmt/index.html',
+    },
+    // The baseUrl for react.
+    prefix: '/mgmt/',
+  }, reactFiles));
+
+  // Disable the index.html cache, because need to load the correct latest js files,
+  // see https://github.com/koajs/static-cache#editing-the-files-object
+  reactFiles['/mgmt/index.html'].maxAge = 0;
+}
+
+// For homepage from root, use mgmt.
 app.use(async (ctx, next) => {
   if (ctx.request.path === '/') return ctx.response.redirect('/mgmt/');
   if (ctx.request.path === '/index.html') return ctx.response.redirect('/mgmt/');

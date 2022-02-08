@@ -1,6 +1,6 @@
 {
   "name": "mgmt-api",
-  "version":"1.0.74",
+  "version": "1.0.74",
   "description": "API for srs-terraform mgmt",
   "main": "index.js",
   "scripts": {
@@ -23,6 +23,7 @@
     "koa-proxies": "^0.12.1",
     "koa-router": "^10.1.1",
     "koa-static": "^5.0.0",
+    "koa-static-cache": "^5.1.4",
     "koa2-cors": "^2.0.6",
     "moment": "^2.29.1",
     "semver": "^7.3.5"

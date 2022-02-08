@@ -9,7 +9,7 @@ export default function Logout({onLogout}) {
   React.useEffect(() => {
     Token.remove();
     onLogout && onLogout();
-    navigate('/login');
+    navigate('/routers-login');
   }, [navigate, onLogout]);
 
   return <Container>Logout</Container>;
