@@ -1,6 +1,6 @@
 import React from "react";
 import {Accordion, Container, Form, Button} from "react-bootstrap";
-import {Errors, Token} from "./utils";
+import {Errors, Token} from "../utils";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
 

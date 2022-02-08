@@ -2,17 +2,17 @@ import React from 'react';
 import axios from "axios";
 import './App.css'
 import {BrowserRouter, Routes, Route} from "react-router-dom";
-import Footer from './Footer';
-import Login from './Login';
-import Logout from './Logout';
-import Navigator from './Navigator';
-import Setup from './Setup';
+import Footer from './pages/Footer';
+import Login from './pages/Login';
+import Logout from './pages/Logout';
+import Navigator from './pages/Navigator';
+import Setup from './pages/Setup';
 import {Token} from "./utils";
-import System from "./System";
-import Scenario from "./Scenario";
+import System from "./pages/System";
+import Scenario from "./pages/Scenario";
 import {Container} from "react-bootstrap";
-import Config from "./Config";
-import Dashboard from './Dashboard';
+import Config from "./pages/Config";
+import Dashboard from './pages/Dashboard';
 
 function App() {
   const [loading, setLoading] = React.useState(true);

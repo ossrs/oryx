@@ -1,9 +1,8 @@
 import React from 'react';
 import Container from "react-bootstrap/Container";
-import './App.css'
 import {Navbar, Nav} from 'react-bootstrap';
 import {Link} from "react-router-dom";
-import logo from './logo.svg';
+import logo from '../resources/logo.svg';
 
 export default function Navigator({initialized, token}) {
   return (

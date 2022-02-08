@@ -3,7 +3,7 @@ import React from "react";
 import {Form, Button} from 'react-bootstrap';
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
-import {Token, Tools} from './utils';
+import {Token, Tools} from '../utils';
 
 export default function Login({onLogin}) {
   const [plaintext, setPlaintext] = React.useState(false);

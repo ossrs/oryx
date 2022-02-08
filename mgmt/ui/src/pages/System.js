@@ -1,10 +1,10 @@
 import {useNavigate} from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import React from "react";
-import {Token, Errors} from "./utils";
+import {Token, Errors} from "../utils";
 import axios from "axios";
 import {Row, Col, Card, Button} from "react-bootstrap";
-import PopoverConfirmButton from './PopoverConfirmButton';
+import PopoverConfirmButton from '../components/PopoverConfirmButton';
 const semver = require('semver');
 
 export default function System() {

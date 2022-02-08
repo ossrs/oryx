@@ -2,7 +2,7 @@ import Container from "react-bootstrap/Container";
 import {Button, Form} from "react-bootstrap";
 import React from "react";
 import axios from "axios";
-import {Token, Tools} from "./utils";
+import {Token, Tools} from "../utils";
 import {useNavigate} from "react-router-dom";
 
 export default function Setup({onInit}) {
