@@ -42,6 +42,24 @@ export default function System() {
   }, [navigate]);
 
   React.useEffect(() => {
+    if (!upgrading || alreadyUpgrading) return;
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/upgrade', {
+      ...token,
+    }).then(res => {
+      setUpgrading(false);
+      console.log(`Status: Upgrade ok, status=${JSON.stringify(res.data.data)}`);
+    }).catch(e => {
+      if (e.response.status === 502) {
+        alert(`升级完成，请刷新页面`);
+      } else {
+        alert(`未知错误, ${e.message}`);
+      }
+    });
+  }, [upgrading, alreadyUpgrading]);
+
+  React.useEffect(() => {
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/containers', {
       ...token, action: 'query',
@@ -64,24 +82,6 @@ export default function System() {
       }
     });
   }, [navigate]);
-
-  React.useEffect(() => {
-    if (!upgrading || alreadyUpgrading) return;
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/upgrade', {
-      ...token,
-    }).then(res => {
-      setUpgrading(false);
-      console.log(`Status: Upgrade ok, status=${JSON.stringify(res.data.data)}`);
-    }).catch(e => {
-      if (e.response.status === 502) {
-        alert(`升级完成，请刷新页面`);
-      } else {
-        alert(`未知错误, ${e.message}`);
-      }
-    });
-  }, [upgrading, alreadyUpgrading]);
 
   return (
     <>

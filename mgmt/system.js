@@ -41,65 +41,6 @@ exports.handle = (router) => {
     });
   });
 
-  router.all('/terraform/v1/mgmt/ssl', async (ctx) => {
-    const {token, key, crt} = ctx.request.body;
-    const decoded = await utils.verifyToken(jwt, token);
-
-    if (!key) throw utils.asError(errs.sys.empty, errs.status.args, 'no key');
-    if (!crt) throw utils.asError(errs.sys.empty, errs.status.args, 'no crt');
-    if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
-    if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
-
-    // Remove the ssl file, because it might link to other file.
-    await exec(`rm -f /etc/nginx/ssl/nginx.key /etc/nginx/ssl/nginx.crt`);
-
-    // Write the ssl key and cert, and reload nginx when ready.
-    fs.writeFileSync('/etc/nginx/ssl/nginx.key', key);
-    fs.writeFileSync('/etc/nginx/ssl/nginx.crt', crt);
-    await exec(`systemctl reload nginx.service`);
-
-    console.log(`ssl ok, key=${key.length}B, crt=${crt.length}B, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
-    ctx.body = utils.asResponse(0);
-  });
-
-  router.all('/terraform/v1/mgmt/letsencrypt', async (ctx) => {
-    const {token, domain} = ctx.request.body;
-    const decoded = await utils.verifyToken(jwt, token);
-
-    if (!domain) throw utils.asError(errs.sys.empty, errs.status.args, 'no domain');
-    if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
-    if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
-
-    // We run always with "-n Run non-interactively"
-    // Note that it's started by nodejs, so never use '-it' or failed for 'the input device is not a TTY'.
-    const dockerArgs = `docker run --rm --name certbot-certonly \\
-      -v "${process.cwd()}/containers/etc/letsencrypt:/etc/letsencrypt" \\
-      -v "${process.cwd()}/containers/var/lib/letsencrypt:/var/lib/letsencrypt" \\
-      -v "${process.cwd()}/containers/var/log/letsencrypt:/var/log/letsencrypt" \\
-      -v "${process.cwd()}/containers/www:/www" \\
-      ccr.ccs.tencentyun.com/ossrs/certbot \\
-      certonly --webroot -w /www \\
-      -d ${domain} --register-unsafely-without-email --agree-tos --preferred-challenges http \\
-      -n`;
-    await exec(dockerArgs);
-    console.log(`certbot request ssl ok ${dockerArgs}`);
-
-    const keyFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domain}/privkey.pem`;
-    if (!fs.existsSync(keyFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue key file ${keyFile}`);
-
-    const crtFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domain}/cert.pem`;
-    if (!fs.existsSync(crtFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue crt file ${crtFile}`);
-
-    // Remove the ssl file, because it might link to other file.
-    await exec(`rm -f /etc/nginx/ssl/nginx.key /etc/nginx/ssl/nginx.crt`);
-    await exec(`ln -sf ${keyFile} /etc/nginx/ssl/nginx.key`);
-    await exec(`ln -sf ${crtFile} /etc/nginx/ssl/nginx.crt`);
-    await exec(`systemctl reload nginx.service`);
-
-    console.log(`let's encrypt ok, domain=${domain}, key=${keyFile}, crt=${crtFile}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
-    ctx.body = utils.asResponse(0);
-  });
-
   router.all('/terraform/v1/mgmt/upgrade', async (ctx) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(jwt, token);
@@ -178,19 +119,63 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0, containers);
   });
 
-  router.all('/terraform/v1/mgmt/hooks', async (ctx) => {
-    const {token, action} = ctx.request.body;
+  router.all('/terraform/v1/mgmt/ssl', async (ctx) => {
+    const {token, key, crt} = ctx.request.body;
     const decoded = await utils.verifyToken(jwt, token);
 
-    console.log(`srs ok, action=${action} decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
-    ctx.body = utils.asResponse(0, {
-      name: metadata.market.hooks.name,
-      container: {
-        ID: metadata.market.hooks.container.ID,
-        State: metadata.market.hooks.container.State,
-        Status: metadata.market.hooks.container.Status,
-      },
-    });
+    if (!key) throw utils.asError(errs.sys.empty, errs.status.args, 'no key');
+    if (!crt) throw utils.asError(errs.sys.empty, errs.status.args, 'no crt');
+    if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
+    if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
+
+    // Remove the ssl file, because it might link to other file.
+    await exec(`rm -f /etc/nginx/ssl/nginx.key /etc/nginx/ssl/nginx.crt`);
+
+    // Write the ssl key and cert, and reload nginx when ready.
+    fs.writeFileSync('/etc/nginx/ssl/nginx.key', key);
+    fs.writeFileSync('/etc/nginx/ssl/nginx.crt', crt);
+    await exec(`systemctl reload nginx.service`);
+
+    console.log(`ssl ok, key=${key.length}B, crt=${crt.length}B, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0);
+  });
+
+  router.all('/terraform/v1/mgmt/letsencrypt', async (ctx) => {
+    const {token, domain} = ctx.request.body;
+    const decoded = await utils.verifyToken(jwt, token);
+
+    if (!domain) throw utils.asError(errs.sys.empty, errs.status.args, 'no domain');
+    if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
+    if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
+
+    // We run always with "-n Run non-interactively"
+    // Note that it's started by nodejs, so never use '-it' or failed for 'the input device is not a TTY'.
+    const dockerArgs = `docker run --rm --name certbot-certonly \\
+      -v "${process.cwd()}/containers/etc/letsencrypt:/etc/letsencrypt" \\
+      -v "${process.cwd()}/containers/var/lib/letsencrypt:/var/lib/letsencrypt" \\
+      -v "${process.cwd()}/containers/var/log/letsencrypt:/var/log/letsencrypt" \\
+      -v "${process.cwd()}/containers/www:/www" \\
+      ccr.ccs.tencentyun.com/ossrs/certbot \\
+      certonly --webroot -w /www \\
+      -d ${domain} --register-unsafely-without-email --agree-tos --preferred-challenges http \\
+      -n`;
+    await exec(dockerArgs);
+    console.log(`certbot request ssl ok ${dockerArgs}`);
+
+    const keyFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domain}/privkey.pem`;
+    if (!fs.existsSync(keyFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue key file ${keyFile}`);
+
+    const crtFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domain}/cert.pem`;
+    if (!fs.existsSync(crtFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue crt file ${crtFile}`);
+
+    // Remove the ssl file, because it might link to other file.
+    await exec(`rm -f /etc/nginx/ssl/nginx.key /etc/nginx/ssl/nginx.crt`);
+    await exec(`ln -sf ${keyFile} /etc/nginx/ssl/nginx.key`);
+    await exec(`ln -sf ${crtFile} /etc/nginx/ssl/nginx.crt`);
+    await exec(`systemctl reload nginx.service`);
+
+    console.log(`let's encrypt ok, domain=${domain}, key=${keyFile}, crt=${crtFile}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0);
   });
 
   return router;
