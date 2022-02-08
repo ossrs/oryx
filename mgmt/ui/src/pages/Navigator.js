@@ -24,6 +24,7 @@ export default function Navigator({initialized, token}) {
               <Nav.Link as={Link} to='/routers-dashboard'>仪表盘</Nav.Link>
               <Nav.Link as={Link} to='/routers-scenario'>应用场景</Nav.Link>
               <Nav.Link as={Link} to='/routers-config'>系统配置</Nav.Link>
+              <Nav.Link as={Link} to='/routers-contact'>专享群</Nav.Link>
               <Nav.Link as={Link} to='/routers-system'>组件管理</Nav.Link>
             </>}
             {!token && <Nav.Link as={Link} to='/routers-login'>登录</Nav.Link>}

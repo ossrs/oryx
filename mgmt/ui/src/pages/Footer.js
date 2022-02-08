@@ -13,7 +13,7 @@ export default function Footer() {
     <Container>
       <p></p>
       <p className="text-center">
-        <a href='https://github.com/ossrs/srs-terraform'>
+        <a href='https://github.com/ossrs/srs-terraform' target='_blank' rel='noreferrer'>
           &copy;ossrs mgmt/{versions?.data?.version}
         </a>
       </p>
