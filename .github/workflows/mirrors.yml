@@ -72,7 +72,7 @@ jobs:
           username: "${{ secrets.TCR_USERNAME }}"
           password: "${{ secrets.TCR_PASSWORD }}"
 
-      - name: Mirror to TCR for node:slim
+      - name: Mirror to TCR Beijing for node:slim
         run: |
           docker pull node:slim
           docker tag node:slim ccr.ccs.tencentyun.com/ossrs/node:slim
@@ -80,7 +80,7 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/node/1"
 
-      - name: Mirror to TCR for prom/prometheus
+      - name: Mirror to TCR Beijing for prom/prometheus
         run: |
           docker pull prom/prometheus
           docker tag prom/prometheus ccr.ccs.tencentyun.com/ossrs/prometheus
@@ -88,7 +88,7 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/prometheus/1"
 
-      - name: Mirror to TCR for oliver006/redis_exporter
+      - name: Mirror to TCR Beijing for oliver006/redis_exporter
         run: |
           docker pull oliver006/redis_exporter
           docker tag oliver006/redis_exporter ccr.ccs.tencentyun.com/ossrs/redis_exporter
@@ -96,7 +96,7 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/redis_exporter/1"
 
-      - name: Mirror to TCR for prom/node-exporter
+      - name: Mirror to TCR Beijing for prom/node-exporter
         run: |
           docker pull prom/node-exporter
           docker tag prom/node-exporter ccr.ccs.tencentyun.com/ossrs/node-exporter
@@ -104,7 +104,7 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/node-exporter/1"
 
-      - name: Mirror to TCR for certbot/certbot
+      - name: Mirror to TCR Beijing for certbot/certbot
         run: |
           docker pull certbot/certbot
           docker tag certbot/certbot ccr.ccs.tencentyun.com/ossrs/certbot
@@ -123,7 +123,7 @@ jobs:
           username: "${{ secrets.TCR_USERNAME }}"
           password: "${{ secrets.TCR_PASSWORD }}"
 
-      - name: Mirror to TCR for node:slim
+      - name: Mirror to TCR Singapore for node:slim
         run: |
           docker pull node:slim
           docker tag node:slim sgccr.ccs.tencentyun.com/ossrs/node:slim
@@ -131,7 +131,7 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/node/1"
 
-      - name: Mirror to TCR for prom/prometheus
+      - name: Mirror to TCR Singapore for prom/prometheus
         run: |
           docker pull prom/prometheus
           docker tag prom/prometheus sgccr.ccs.tencentyun.com/ossrs/prometheus
@@ -139,7 +139,7 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/prometheus/1"
 
-      - name: Mirror to TCR for oliver006/redis_exporter
+      - name: Mirror to TCR Singapore for oliver006/redis_exporter
         run: |
           docker pull oliver006/redis_exporter
           docker tag oliver006/redis_exporter sgccr.ccs.tencentyun.com/ossrs/redis_exporter
@@ -147,7 +147,7 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/redis_exporter/1"
 
-      - name: Mirror to TCR for prom/node-exporter
+      - name: Mirror to TCR Singapore for prom/node-exporter
         run: |
           docker pull prom/node-exporter
           docker tag prom/node-exporter sgccr.ccs.tencentyun.com/ossrs/node-exporter
@@ -155,7 +155,7 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/node-exporter/1"
 
-      - name: Mirror to TCR for certbot/certbot
+      - name: Mirror to TCR Singapore for certbot/certbot
         run: |
           docker pull certbot/certbot
           docker tag certbot/certbot sgccr.ccs.tencentyun.com/ossrs/certbot
