@@ -94,6 +94,7 @@ export default function System() {
     if (!alreadyUpgrading) return;
     const timer = setInterval(() => {
       if (ref.current.progress <= 0) return;
+      if (ref.current.progress === 1) setUpgradeDone(false);
       if (((ref.current.progress - 1) % 10) === 0) setRefreshState(!refreshState);
       setProgress(ref.current.progress - 1);
     }, 1000);
