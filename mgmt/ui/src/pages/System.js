@@ -84,7 +84,9 @@ export default function System() {
     }).catch(e => {
       console.log('ignore any error during upgrade', e);
     }).finally(() => {
-      setRefreshState(!refreshState);
+      setTimeout(() => {
+        setRefreshState(!refreshState);
+      }, 5000);
     });
   };
 
