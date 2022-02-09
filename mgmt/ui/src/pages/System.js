@@ -57,13 +57,11 @@ export default function System() {
 
       console.log(`Status: Query ok, status=${JSON.stringify(status)}`);
     }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
+      console.log('ignore any error during status', e);
+    }).finally(() => {
+      setTimeout(() => {
+        setRefreshState(!refreshState);
+      }, 5000);
     });
   }, [navigate, userToggleStrategy, startUpgrading, refreshState]);
 
@@ -71,10 +69,10 @@ export default function System() {
     if (alreadyUpgrading) return;
 
     setTimeout(() => {
-      setProgress(120);
-      setStartUpgrading(true);
       setUpgradeDone(false);
-    }, 1000);
+      setStartUpgrading(true);
+      setProgress(120);
+    }, 800);
 
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/upgrade', {
