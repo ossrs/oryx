@@ -34,17 +34,27 @@ export default function System() {
       ...token,
     }).then(res => {
       const status = res.data.data;
+
+      // Normally state.
+      setAlreadyUpgrading(status.upgrading);
+      setStrategyAutoUpgrade(status.strategy === 'auto');
+      setStatus(status);
+
+      // Whether enable upgrade.
       if (status && status.releases && status.releases.latest) {
         setEnableUpgrading(status.upgrading || semver.lt(status.version, status.releases.latest));
       }
-      setAlreadyUpgrading(status.upgrading);
+
+      // If upgradeDone is false, we're in the upgrading progress, so it's done when upgrading changed to false.
       if (upgradeDone === false && !status.upgrading) setUpgradeDone(true);
-      if (status.upgrading) {
+
+      // If state not set, but already upgrading, it's restore from the previous state.
+      if (status.upgrading && upgradeDone === undefined && enableUpgrading === undefined && startUpgrading === undefined) {
+        setUpgradeDone(false);
         setEnableUpgrading(true);
         setStartUpgrading(true);
       }
-      setStrategyAutoUpgrade(status.strategy === 'auto');
-      setStatus(status);
+
       console.log(`Status: Query ok, status=${JSON.stringify(status)}`);
     }).catch(e => {
       const err = e.response.data;
