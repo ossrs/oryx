@@ -8,6 +8,10 @@ if [[ ! -d /usr/local/srs-terraform && $(uname -s) == 'Darwin' ]]; then
   sleep 3; exit 0;
 fi
 
+# Initialize the REGION and SOURCE, try to load from param 1.
+if [[ $REGION == '' ]]; then REGION=$1; fi
+. upgrade_region
+
 # Detect the private IPv4 address.
 PIPV4=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
 if [[ $PIPV4 == '' ]]; then echo 'No private IP of eth0'; exit 1; fi

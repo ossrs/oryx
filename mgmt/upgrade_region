@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# Init the REGION and SOURCE.
+
+# Ignore darwin
+if [[ ! -d /usr/local/srs-terraform && $(uname -s) == 'Darwin' ]]; then
+  echo "Directly finish upgrade for macOS development"
+  sleep 3; exit 0;
+fi
+
+# Get the metadata of machine.
+if [[ $REGION == '' ]]; then REGION=$(cat .env |grep REGION |awk -F '=' '{print $2}'); fi
+if [[ $REGION == '' ]]; then REGION=$(curl http://metadata.tencentyun.com/latest/meta-data/placement/region 2>/dev/null); fi
+if [[ $? -ne 0 ]]; then echo "Failed to get region $REGION"; exit 1; fi
+
+# See https://cloud.tencent.com/document/product/213/6091
+# See https://stackoverflow.com/a/2172367/17679565
+SOURCE=GITHUB
+if [[ $REGION == ap-guangzhou* || $REGION == ap-shanghai* || $REGION == ap-nanjing* || $REGION == ap-beijing*
+  || $REGION == ap-chengdu* || $REGION == ap-chongqing* ]]; then
+  SOURCE=GITEE
+fi
+echo "LightHouse REGION=$REGION, SOURCE=$SOURCE"
+
+# Switch the remote for git
+if [[ $SOURCE == GITHUB ]]; then
+  echo "Change origin to github https://github.com/ossrs/srs-terraform.git"
+  git remote set-url origin https://github.com/ossrs/srs-terraform.git
+else
+  echo "Change origin to gitee https://gitee.com/ossrs/srs-terraform.git"
+  git remote set-url origin https://gitee.com/ossrs/srs-terraform.git
+fi
+
