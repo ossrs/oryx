@@ -175,12 +175,13 @@ exports.handle = (router) => {
 
     // We run always with "-n Run non-interactively"
     // Note that it's started by nodejs, so never use '-it' or failed for 'the input device is not a TTY'.
+    const registry = await metadata.registry();
     const dockerArgs = `docker run --rm --name certbot-certonly \\
       -v "${process.cwd()}/containers/etc/letsencrypt:/etc/letsencrypt" \\
       -v "${process.cwd()}/containers/var/lib/letsencrypt:/var/lib/letsencrypt" \\
       -v "${process.cwd()}/containers/var/log/letsencrypt:/var/log/letsencrypt" \\
       -v "${process.cwd()}/containers/www:/www" \\
-      ccr.ccs.tencentyun.com/ossrs/certbot \\
+      ${registry}/ossrs/certbot \\
       certonly --webroot -w /www \\
       -d ${domain} --register-unsafely-without-email --agree-tos --preferred-challenges http \\
       -n`;

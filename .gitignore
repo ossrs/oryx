@@ -110,3 +110,5 @@ tmp.json
 mgmt/containers/data/prometheus/*
 mgmt/containers/etc/letsencrypt/*
 mgmt/containers/var/lib/letsencrypt/*
+mgmt/containers/var/log/letsencrypt/*
+
