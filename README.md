@@ -78,6 +78,7 @@ Platform:
 * `/terraform/v1/mgmt/init` Whether mgmt initialized.
 * `/terraform/v1/mgmt/status` Query the version of mgmt.
 * `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
+* `/terraform/v1/mgmt/strategy` Toggle the upgrade strategy.
 * `/terraform/v1/mgmt/token` System auth with token.
 * `/terraform/v1/mgmt/login` System auth with password.
 * `/terraform/v1/mgmt/ssl` Config the system SSL config.

@@ -17,6 +17,8 @@ export default function System() {
   const [upgrading, setUpgrading] = React.useState();
   const [alreadyUpgrading, setAlreadyUpgrading] = React.useState();
   const [enableUpgrading, setEnableUpgrading] = React.useState();
+  const [strategyAuto, setStrategyAuto] = React.useState();
+  const [strategyChanged, setStrategyChanged] = React.useState();
 
   React.useEffect(() => {
     const token = Token.load();
@@ -28,6 +30,7 @@ export default function System() {
         if (semver.lt(status.version, status.releases.latest)) setEnableUpgrading(true);
       }
       if (status.upgrading) setAlreadyUpgrading(true);
+      setStrategyAuto(status.strategy === 'auto');
       setStatus(status);
       console.log(`Status: Query ok, status=${JSON.stringify(status)}`);
     }).catch(e => {
@@ -39,7 +42,7 @@ export default function System() {
         alert(`服务器错误，${err.code}: ${err.data.message}`);
       }
     });
-  }, [navigate]);
+  }, [navigate, strategyChanged]);
 
   React.useEffect(() => {
     if (!upgrading || alreadyUpgrading) return;
@@ -58,6 +61,25 @@ export default function System() {
       }
     });
   }, [upgrading, alreadyUpgrading]);
+
+  const handleStrategyChange = () => {
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/strategy', {
+      ...token,
+    }).then(res => {
+      const status = res.data.data;
+      setStrategyChanged(!strategyChanged);
+      console.log(`Strategy: Change ok, status=${JSON.stringify(status)}`);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/routers-logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  };
 
   React.useEffect(() => {
     const token = Token.load();
@@ -176,11 +198,13 @@ export default function System() {
                   稳定版本: {status?.releases?.stable} &nbsp;
                   <Form.Check
                     type='switch'
-                    defaultChecked={false}
                     label='自动升级'
                     style={{display: 'inline-block'}}
                     title='是否自动升级到稳定版本'
-                  /> <br/>
+                    defaultChecked={strategyAuto}
+                    onClick={handleStrategyChange}
+                  />
+                  <br/>
                   最新版本: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
                   <p></p>
                 </Card.Text>

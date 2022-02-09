@@ -16,13 +16,24 @@ const metadata = require('./metadata');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const axios = require('axios');
-const market = require('./market');
 const consts = require('./consts');
 const fs = require('fs');
 const errs = require('js-core/errs');
 const jwt = require('jsonwebtoken');
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
+const moment = require('moment');
+
+async function queryLatestVersion() {
+  const releaseServer = process.env.NODE_ENV === 'development' ? `http://localhost:${consts.config.port}` : 'http://api.ossrs.net';
+  const {data: releases} = await axios.get(`${releaseServer}/terraform/v1/releases`, {
+    params: {
+      version: `v${pkg.version}`,
+      ts: new Date().getTime(),
+    }
+  });
+  return releases;
+}
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/status', async (ctx) => {
@@ -30,7 +41,9 @@ exports.handle = (router) => {
     const decoded = await utils.verifyToken(jwt, token);
 
     const upgrading = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
-    console.log(`status ok, upgrading=${upgrading}, releases=${JSON.stringify(metadata.upgrade.releases)}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    const r0 = await redis.hget(consts.SRS_UPGRADE_STRATEGY, 'strategy');
+    const strategy = r0 || 'auto';
+    console.log(`status ok, upgrading=${upgrading}, strategy=${strategy}, releases=${JSON.stringify(metadata.upgrade.releases)}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
       version: `v${pkg.version}`,
       releases: {
@@ -38,20 +51,32 @@ exports.handle = (router) => {
         latest: metadata.upgrade.releases?.latest,
       },
       upgrading,
+      strategy,
     });
+  });
+
+  router.all('/terraform/v1/mgmt/strategy', async (ctx) => {
+    const {token} = ctx.request.body;
+    const decoded = await utils.verifyToken(jwt, token);
+
+    const releases = await queryLatestVersion();
+    metadata.upgrade.releases = releases;
+
+    const upgrading = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
+    const r0 = await redis.hget(consts.SRS_UPGRADE_STRATEGY, 'strategy');
+    const strategy = r0 || 'auto';
+    const newStrategy = strategy === 'auto' ? 'manual' : 'auto';
+    const r1 = await redis.hset(consts.SRS_UPGRADE_STRATEGY, 'strategy', newStrategy);
+    const r2 = await redis.hset(consts.SRS_UPGRADE_STRATEGY, 'desc', `${moment().format()} changed, upgrading=${upgrading}, r0=${r0}/${strategy}, r1=${r1}/${newStrategy}`);
+    console.log(`status ok, upgrading=${upgrading}, r0=${r0}/${strategy}, r1=${r1}/${newStrategy}, r2=${r2}, releases=${JSON.stringify(metadata.upgrade.releases)}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0);
   });
 
   router.all('/terraform/v1/mgmt/upgrade', async (ctx) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(jwt, token);
 
-    const releaseServer = process.env.NODE_ENV === 'development' ? `http://localhost:${consts.config.port}` : 'http://api.ossrs.net';
-    const {data: releases} = await axios.get(`${releaseServer}/terraform/v1/releases`, {
-      params: {
-        version: `v${pkg.version}`,
-        ts: new Date().getTime(),
-      }
-    });
+    const releases = await queryLatestVersion();
     metadata.upgrade.releases = releases;
 
     const target = releases?.latest || 'lighthouse';

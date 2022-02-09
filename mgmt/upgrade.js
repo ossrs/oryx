@@ -76,6 +76,14 @@ async function doThreadMain() {
       return;
     }
 
+    const r2 = await redis.hget(consts.SRS_UPGRADE_STRATEGY, 'strategy');
+    const strategy = r2 || 'auto';
+    if (strategy !== 'auto') {
+      const r3 = await redis.hget(consts.SRS_UPGRADE_STRATEGY, 'desc');
+      console.log(`Thread #${metadata.upgrade.name}: ignore for strategy=${r2}/${strategy} ${r3}`);
+      return;
+    }
+
     // Set the upgrading to avoid others.
     await redis.hset(consts.SRS_UPGRADING, 'upgrading', 1);
     await redis.hset(consts.SRS_UPGRADING, 'desc', `${upgradingMessage}`);
