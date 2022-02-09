@@ -26,7 +26,8 @@ export default function System() {
 
   React.useEffect(() => {
     ref.current.progress = progress;
-  }, [progress]);
+    ref.current.refreshState = refreshState;
+  }, [progress, refreshState]);
 
   React.useEffect(() => {
     const token = Token.load();
@@ -60,7 +61,7 @@ export default function System() {
       console.log('ignore any error during status', e);
     }).finally(() => {
       setTimeout(() => {
-        setRefreshState(!refreshState);
+        setRefreshState(!ref.current.refreshState);
       }, 5000);
     });
   }, [navigate, userToggleStrategy, startUpgrading, refreshState]);
@@ -83,7 +84,7 @@ export default function System() {
       console.log('ignore any error during upgrade', e);
     }).finally(() => {
       setTimeout(() => {
-        setRefreshState(!refreshState);
+        setRefreshState(!ref.current.refreshState);
       }, 5000);
     });
   };
@@ -93,7 +94,7 @@ export default function System() {
     const timer = setInterval(() => {
       if (ref.current.progress <= 0) return;
       if (ref.current.progress === 1) setUpgradeDone(false);
-      if (((ref.current.progress - 1) % 10) === 0) setRefreshState(!refreshState);
+      if (((ref.current.progress - 1) % 10) === 0) setRefreshState(!ref.current.refreshState);
       setProgress(ref.current.progress - 1);
     }, 1000);
     return () => clearInterval(timer);
