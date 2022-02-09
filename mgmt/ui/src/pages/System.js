@@ -96,6 +96,7 @@ export default function System() {
         if (container.name === 'srs-hooks') setHooks(container);
         if (container.name === 'prometheus') setPrometheus(container);
         if (container.name === 'node-exporter') setNodeExporter(container);
+        return null;
       });
       console.log(`SRS: Query ok, status=${JSON.stringify(containers)}`);
     }).catch(e => {
