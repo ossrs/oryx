@@ -17,8 +17,8 @@ export default function System() {
   const [upgrading, setUpgrading] = React.useState();
   const [alreadyUpgrading, setAlreadyUpgrading] = React.useState();
   const [enableUpgrading, setEnableUpgrading] = React.useState();
-  const [strategyAuto, setStrategyAuto] = React.useState();
-  const [strategyChanged, setStrategyChanged] = React.useState();
+  const [strategyAutoUpgrade, setStrategyAutoUpgrade] = React.useState();
+  const [userToggleStrategy, setUserToggleStrategy] = React.useState();
 
   React.useEffect(() => {
     const token = Token.load();
@@ -30,7 +30,7 @@ export default function System() {
         if (semver.lt(status.version, status.releases.latest)) setEnableUpgrading(true);
       }
       if (status.upgrading) setAlreadyUpgrading(true);
-      setStrategyAuto(status.strategy === 'auto');
+      setStrategyAutoUpgrade(status.strategy === 'auto');
       setStatus(status);
       console.log(`Status: Query ok, status=${JSON.stringify(status)}`);
     }).catch(e => {
@@ -42,7 +42,7 @@ export default function System() {
         alert(`服务器错误，${err.code}: ${err.data.message}`);
       }
     });
-  }, [navigate, strategyChanged]);
+  }, [navigate, userToggleStrategy]);
 
   React.useEffect(() => {
     if (!upgrading || alreadyUpgrading) return;
@@ -63,7 +63,7 @@ export default function System() {
   }, [upgrading, alreadyUpgrading]);
 
   const handleStrategyChange = (e) => {
-    if (strategyAuto && !window.confirm(`关闭自动更新，将无法及时修复缺陷。\n是否确认关闭?`)) {
+    if (strategyAutoUpgrade && !window.confirm(`关闭自动更新，将无法及时修复缺陷。\n是否确认关闭?`)) {
       e.preventDefault();
       return;
     }
@@ -72,7 +72,7 @@ export default function System() {
     axios.post('/terraform/v1/mgmt/strategy', {
       ...token,
     }).then(res => {
-      setStrategyChanged(!strategyChanged);
+      setUserToggleStrategy(!userToggleStrategy);
       console.log(`Strategy: Change ok`);
     }).catch(e => {
       const err = e.response.data;
@@ -207,7 +207,7 @@ export default function System() {
                     style={{display: 'inline-block'}}
                     title='是否自动更新到稳定版本'
                     disabled={true}
-                    defaultChecked={strategyAuto}
+                    defaultChecked={strategyAutoUpgrade}
                     onClick={(e) => handleStrategyChange(e)}
                   />
                   <br/>
