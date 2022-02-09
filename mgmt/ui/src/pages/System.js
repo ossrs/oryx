@@ -64,7 +64,7 @@ export default function System() {
       setProgress(120);
       setStartUpgrading(true);
       setUpgradeDone(false);
-    }, 0);
+    }, 1000);
 
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/upgrade', {
