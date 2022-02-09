@@ -91,7 +91,7 @@ export default function System() {
       ...token, action: 'query',
     }).then(res => {
       const containers = res.data.data;
-      containers.map(container => {
+      containers.filter(container => {
         if (container.name === 'srs-server') setSRS(container);
         if (container.name === 'srs-hooks') setHooks(container);
         if (container.name === 'prometheus') setPrometheus(container);
