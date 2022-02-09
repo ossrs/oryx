@@ -63,7 +63,7 @@ export default function System() {
   }, [upgrading, alreadyUpgrading]);
 
   const handleStrategyChange = (e) => {
-    if (strategyAuto && !window.confirm(`关闭自动更新到稳定版本，将导致无法同步稳定的缺陷修复。\n是否确认关闭?`)) {
+    if (strategyAuto && !window.confirm(`关闭自动更新，将无法及时修复缺陷。\n是否确认关闭?`)) {
       e.preventDefault();
       return;
     }
@@ -202,9 +202,9 @@ export default function System() {
                   稳定版本: {status?.releases?.stable} &nbsp;
                   <Form.Check
                     type='switch'
-                    label='自动升级'
+                    label='自动更新'
                     style={{display: 'inline-block'}}
-                    title='是否自动升级到稳定版本'
+                    title='是否自动更新到稳定版本'
                     defaultChecked={strategyAuto}
                     onClick={(e) => handleStrategyChange(e)}
                   />
