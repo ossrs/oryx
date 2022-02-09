@@ -75,7 +75,7 @@ async function doThreadMain() {
     console.log(`Thread #${metadata.upgrade.name}: ${upgradingMessage}`);
 
     const r0 = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
-    if (r0) {
+    if (r0 === "1") {
       const r1 = await redis.hget(consts.SRS_UPGRADING, 'desc');
       console.log(`Thread #${metadata.upgrade.name}: already upgrading r0=${r0} ${r1}`);
       return;

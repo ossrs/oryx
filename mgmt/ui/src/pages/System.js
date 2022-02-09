@@ -14,11 +14,19 @@ export default function System() {
   const [hooks, setHooks] = React.useState();
   const [prometheus, setPrometheus] = React.useState();
   const [nodeExporter, setNodeExporter] = React.useState();
-  const [upgrading, setUpgrading] = React.useState();
+  const [startUpgrading, setStartUpgrading] = React.useState();
   const [alreadyUpgrading, setAlreadyUpgrading] = React.useState();
   const [enableUpgrading, setEnableUpgrading] = React.useState();
   const [strategyAutoUpgrade, setStrategyAutoUpgrade] = React.useState();
   const [userToggleStrategy, setUserToggleStrategy] = React.useState();
+  const [refreshState, setRefreshState] = React.useState();
+  const [upgradeDone, setUpgradeDone] = React.useState();
+  const [progress, setProgress] = React.useState(120);
+  const ref = React.useRef({});
+
+  React.useEffect(() => {
+    ref.current.progress = progress;
+  }, [progress]);
 
   React.useEffect(() => {
     const token = Token.load();
@@ -27,9 +35,10 @@ export default function System() {
     }).then(res => {
       const status = res.data.data;
       if (status && status.releases && status.releases.latest) {
-        if (semver.lt(status.version, status.releases.latest)) setEnableUpgrading(true);
+        setEnableUpgrading(status.upgrading || semver.lt(status.version, status.releases.latest));
       }
-      if (status.upgrading) setAlreadyUpgrading(true);
+      setAlreadyUpgrading(status.upgrading);
+      if (upgradeDone === false && !status.upgrading) setUpgradeDone(true);
       setStrategyAutoUpgrade(status.strategy === 'auto');
       setStatus(status);
       console.log(`Status: Query ok, status=${JSON.stringify(status)}`);
@@ -42,25 +51,43 @@ export default function System() {
         alert(`服务器错误，${err.code}: ${err.data.message}`);
       }
     });
-  }, [navigate, userToggleStrategy]);
+  }, [navigate, userToggleStrategy, startUpgrading, refreshState]);
 
-  React.useEffect(() => {
-    if (!upgrading || alreadyUpgrading) return;
+  const handleStartUpgrade = () => {
+    if (alreadyUpgrading) return;
+
+    setTimeout(() => {
+      setProgress(120);
+      setStartUpgrading(true);
+      setUpgradeDone(false);
+    }, 0);
 
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/upgrade', {
       ...token,
     }).then(res => {
-      setUpgrading(false);
-      console.log(`Status: Upgrade ok, status=${JSON.stringify(res.data.data)}`);
+      console.log(`upgrade ok, ${JSON.stringify(res.data.data)}`);
     }).catch(e => {
-      if (e.response.status === 502) {
-        alert(`升级完成，请刷新页面`);
-      } else {
-        alert(`未知错误, ${e.message}`);
-      }
+      console.log('ignore any error during upgrade', e);
+    }).finally(() => {
+      setStartUpgrading(false);
     });
-  }, [upgrading, alreadyUpgrading]);
+  };
+
+  React.useEffect(() => {
+    if (!alreadyUpgrading) return;
+    const timer = setInterval(() => {
+      if (ref.current.progress <= 0) return;
+      if (((ref.current.progress - 1) % 10) === 0) setRefreshState(!refreshState);
+      setProgress(ref.current.progress - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [alreadyUpgrading]);
+
+  React.useEffect(() => {
+    if (!upgradeDone) return;
+    alert('升级成功，请刷新页面');
+  }, [upgradeDone]);
 
   const handleStrategyChange = (e) => {
     if (strategyAutoUpgrade && !window.confirm(`关闭自动更新，将无法及时修复缺陷。\n是否确认关闭?`)) {
@@ -217,7 +244,7 @@ export default function System() {
                 {
                   !enableUpgrading
                   ? <Button className='disabled'>升级</Button>
-                  : <UpgradeConfirmButton upgrading={upgrading} handleClick={() => setUpgrading(true)} text='升级'>
+                  : <UpgradeConfirmButton upgrading={startUpgrading} handleClick={handleStartUpgrade} text='升级' progress={`${progress}s`}>
                     <p>
                       升级管理后台，并且可能造成
                       <span className='text-danger'><strong>系统不可用</strong></span>，

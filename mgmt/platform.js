@@ -1,5 +1,7 @@
 'use strict';
 
+const axios = require('axios');
+
 exports.isDarwin = process.platform === 'darwin';
 
 // We must mark these fields as async, to notice user not to use it before it initialized.
@@ -18,7 +20,7 @@ exports.init = async () => {
   const region = await discoverRegion();
   conf.region = region;
 
-  const registry = await discoverRegistry();
+  const registry = await discoverRegistry(region);
   conf.registry = registry;
 
   console.log(`Initialize region=${region}, registry=${registry}, isDarwin=${isDarwin}`);
@@ -38,7 +40,7 @@ async function discoverRegion() {
   return data;
 }
 
-async function discoverRegistry() {
+async function discoverRegistry(region) {
   if (exports.isDarwin) {
     return 'ccr.ccs.tencentyun.com';
   }

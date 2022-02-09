@@ -50,7 +50,7 @@ exports.handle = (router) => {
         stable: metadata.upgrade.releases?.stable,
         latest: metadata.upgrade.releases?.latest,
       },
-      upgrading,
+      upgrading: upgrading === "1",
       strategy,
     });
   });
@@ -84,7 +84,7 @@ exports.handle = (router) => {
     console.log(`Start ${upgradingMessage}`);
 
     const r0 = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
-    if (r0) {
+    if (r0 === "1") {
       const r1 = await redis.hget(consts.SRS_UPGRADING, 'desc');
       throw utils.asError(errs.sys.upgrading, errs.status.sys, `already upgrading ${r0}, ${r1}`);
     }
@@ -93,20 +93,25 @@ exports.handle = (router) => {
     await redis.hset(consts.SRS_UPGRADING, 'upgrading', 1);
     await redis.hset(consts.SRS_UPGRADING, 'desc', `${upgradingMessage}`);
 
-    await new Promise((resolve, reject) => {
-      const child = spawn('bash', ['upgrade', target]);
-      child.stdout.on('data', (chunk) => {
-        console.log(chunk.toString());
+    try {
+      await new Promise((resolve, reject) => {
+        const child = spawn('bash', ['upgrade', target]);
+        child.stdout.on('data', (chunk) => {
+          console.log(chunk.toString());
+        });
+        child.stderr.on('data', (chunk) => {
+          console.log(chunk.toString());
+        });
+        child.on('close', (code) => {
+          console.log(`upgrading exited with code ${code}`);
+          if (code !== 0) return reject(code);
+          resolve();
+        });
       });
-      child.stderr.on('data', (chunk) => {
-        console.log(chunk.toString());
-      });
-      child.on('close', (code) => {
-        console.log(`upgrading exited with code ${code}`);
-        if (code !== 0) return reject(code);
-        resolve();
-      });
-    });
+    } finally {
+      // Upgrade done.
+      await redis.hset(consts.SRS_UPGRADING, 'upgrading', 0);
+    }
 
     console.log(`upgrade ok, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
