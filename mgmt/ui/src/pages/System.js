@@ -39,6 +39,10 @@ export default function System() {
       }
       setAlreadyUpgrading(status.upgrading);
       if (upgradeDone === false && !status.upgrading) setUpgradeDone(true);
+      if (status.upgrading) {
+        setEnableUpgrading(true);
+        setStartUpgrading(true);
+      }
       setStrategyAutoUpgrade(status.strategy === 'auto');
       setStatus(status);
       console.log(`Status: Query ok, status=${JSON.stringify(status)}`);
