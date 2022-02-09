@@ -9,7 +9,8 @@ if [[ ! -d /usr/local/srs-terraform && $(uname -s) == 'Darwin' ]]; then
 fi
 
 # Initialize the REGION and SOURCE, try to load from param 1.
-# Note that we MUST load the REGION and SOURCE again, because nodejs executes this directly.
+# Note that we MUST load the REGION and SOURCE again, because nodejs executes this directly, and the region list might
+# changed after the image is created.
 if [[ $REGION == '' ]]; then REGION=$1; fi
 . upgrade_region
 
