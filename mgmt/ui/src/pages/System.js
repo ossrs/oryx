@@ -205,6 +205,7 @@ export default function System() {
                     label='自动更新'
                     style={{display: 'inline-block'}}
                     title='是否自动更新到稳定版本'
+                    disabled={true}
                     defaultChecked={strategyAuto}
                     onClick={(e) => handleStrategyChange(e)}
                   />
