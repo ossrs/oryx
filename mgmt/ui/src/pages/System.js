@@ -4,7 +4,7 @@ import React from "react";
 import {Token, Errors} from "../utils";
 import axios from "axios";
 import {Row, Col, Card, Button, Form} from "react-bootstrap";
-import PopoverConfirmButton from '../components/PopoverConfirmButton';
+import UpgradeConfirmButton from '../components/UpgradeConfirmButton';
 const semver = require('semver');
 
 export default function System() {
@@ -211,22 +211,22 @@ export default function System() {
                 {
                   !enableUpgrading
                   ? <Button className='disabled'>升级</Button>
-                  : <PopoverConfirmButton upgrading={upgrading} handleClick={() => setUpgrading(true)} text='升级'>
+                  : <UpgradeConfirmButton upgrading={upgrading} handleClick={() => setUpgrading(true)} text='升级'>
                     <p>
                       升级管理后台，并且可能造成
                       <span className='text-danger'><strong>系统不可用</strong></span>，
                       确认继续升级么？
                     </p>
-                  </PopoverConfirmButton>
+                  </UpgradeConfirmButton>
                 } &nbsp;
                 {!enableUpgrading &&
-                  <PopoverConfirmButton handleClick={() => setEnableUpgrading(true)} text='强制升级' operator='开启强制升级'>
+                  <UpgradeConfirmButton handleClick={() => setEnableUpgrading(true)} text='强制升级' operator='开启强制升级'>
                     <p>
                       你目前已经是最新版本，
                       <span className='text-warning'>没有必要强制升级</span>，
                       确认继续强制升级么？
                     </p>
-                  </PopoverConfirmButton>
+                  </UpgradeConfirmButton>
                 }
               </Card.Body>
             </Card>
