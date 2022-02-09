@@ -5,12 +5,17 @@ const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const metadata = require('./metadata');
 const os = require('os');
+const platform = require('./platform');
 
 if (!isMainThread) {
   threadMain();
 }
 
 async function threadMain() {
+  // We must initialize the thread first.
+  const {region, registry} = await platform.init();
+  console.log(`Thread #market: initialize region=${region}, registry=${registry}`);
+
   while (true) {
     try {
       await doThreadMain();
@@ -90,13 +95,15 @@ async function startContainer(conf) {
   const volumes = evalValue(conf.volumes, []).map(e => `-v "${e}"`).join(' ');
   const command = evalValue(conf.command, []).join(' ');
   const extras = evalValue(conf.extras, []).join(' ');
+  // The image depends on the registry, which is discovered by platform.
+  const image = await conf.image();
   // Note that it's started by nodejs, so never use '-it'.
   const dockerArgs = `-d --restart always --privileged --name ${evalValue(conf.name)} \\
     --add-host=mgmt.srs.local:${privateIPv4.address} \\
     ${tcpPorts} ${udpPorts} \\
     ${evalValue(conf.logConfig)} \\
     ${volumes} ${extras} \\
-    ${evalValue(conf.image)} \\
+    ${image} \\
     ${command}`;
   console.log(`Thread #market: docker run args ip=${privateIPv4.name}/${privateIPv4.address}, docker run ${dockerArgs}`);
 

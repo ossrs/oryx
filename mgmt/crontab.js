@@ -3,12 +3,17 @@
 const { isMainThread } = require("worker_threads");
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const platform = require('./platform');
 
 if (!isMainThread) {
   threadMain();
 }
 
 async function threadMain() {
+  // We must initialize the thread first.
+  const {region, registry} = await platform.init();
+  console.log(`Thread #crontab: initialize region=${region}, registry=${registry}`);
+
   while (true) {
     try {
       await doThreadMain();

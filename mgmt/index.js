@@ -25,6 +25,7 @@ const consts = require('./consts');
 const pkg = require('./package.json');
 const staticCache = require('koa-static-cache');
 const metadata = require('./metadata');
+const platform = require('./platform');
 
 // Start all workers threads first.
 threads.run();
@@ -180,8 +181,7 @@ app.use(router.routes());
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 const run = async () => {
-  const region = await metadata.region();
-  const registry = await metadata.registry();
+  const {region, registry} = await platform.init();
   console.log(`Run with cwd=${process.cwd()}, USE_DOCKER=${process.env.USE_DOCKER}, region=${region}, registry=${registry}`);
   app.listen(consts.config.port, () => {
     console.log(`Server start on http://localhost:${consts.config.port}`);

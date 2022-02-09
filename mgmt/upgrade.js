@@ -20,12 +20,17 @@ const redis = require('js-core/redis').create({config: config.redis, redis: iore
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const metadata = require('./metadata');
+const platform = require('./platform');
 
 if (!isMainThread) {
   threadMain();
 }
 
 async function threadMain() {
+  // We must initialize the thread first.
+  const {region, registry} = await platform.init();
+  console.log(`Thread #${metadata.upgrade.name}: initialize region=${region}, registry=${registry}`);
+
   while (true) {
     try {
       await doThreadMain();
