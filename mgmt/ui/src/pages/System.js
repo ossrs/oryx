@@ -62,14 +62,18 @@ export default function System() {
     });
   }, [upgrading, alreadyUpgrading]);
 
-  const handleStrategyChange = () => {
+  const handleStrategyChange = (e) => {
+    if (strategyAuto && !window.confirm(`关闭自动更新到稳定版本，将导致无法同步稳定的缺陷修复。\n是否确认关闭?`)) {
+      e.preventDefault();
+      return;
+    }
+
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/strategy', {
       ...token,
     }).then(res => {
-      const status = res.data.data;
       setStrategyChanged(!strategyChanged);
-      console.log(`Strategy: Change ok, status=${JSON.stringify(status)}`);
+      console.log(`Strategy: Change ok`);
     }).catch(e => {
       const err = e.response.data;
       if (err.code === Errors.auth) {
@@ -202,7 +206,7 @@ export default function System() {
                     style={{display: 'inline-block'}}
                     title='是否自动升级到稳定版本'
                     defaultChecked={strategyAuto}
-                    onClick={handleStrategyChange}
+                    onClick={(e) => handleStrategyChange(e)}
                   />
                   <br/>
                   最新版本: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
