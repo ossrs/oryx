@@ -57,7 +57,10 @@ export default function Dashboard() {
     }
 
     // Build console url.
-    setCnConsole(`/console/ng_index.html#/summaries?port=${window.location.port}&http=${window.location.port}`);
+    if (true) {
+      const httpPort = window.location.port || (window.location.protocol === 'http:' ? 80 : 443);
+      setCnConsole(`/console/ng_index.html#/summaries?port=${httpPort}&http=${httpPort}`);
+    }
 
     // The player url.
     if (true) {
