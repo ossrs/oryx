@@ -93,7 +93,7 @@ export default function Config() {
     <>
       <p></p>
       <Container>
-        <Accordion defaultActiveKey="2">
+        <Accordion defaultActiveKey="0">
           <Accordion.Item eventKey="0">
             <Accordion.Header>HTTPS: Let's Encrypt</Accordion.Header>
             <Accordion.Body>
@@ -138,7 +138,7 @@ export default function Config() {
                 <Form.Group className="mb-3">
                   <Form.Label>公钥</Form.Label>
                   <Form.Text> * 平台管理员的公钥</Form.Text>
-                  <Form.Control as="textarea" rows={5} defaultValue={platformPublicKey} readOnly={true} />
+                  <Form.Control as="textarea" rows={2} defaultValue={platformPublicKey} readOnly={true} />
                 </Form.Group>
                 <Button variant="primary" type="submit" onClick={(e) => enablePlatformAccess(e, true)}>
                   授权访问
