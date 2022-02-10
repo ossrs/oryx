@@ -1,4 +1,4 @@
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useSearchParams} from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import React from "react";
 import {Token, Errors} from "../utils";
@@ -6,6 +6,7 @@ import axios from "axios";
 import {Row, Col, Card, Button, Form} from "react-bootstrap";
 import UpgradeConfirmButton from '../components/UpgradeConfirmButton';
 const semver = require('semver');
+const moment = require('moment');
 
 export default function System() {
   const navigate = useNavigate();
@@ -23,6 +24,11 @@ export default function System() {
   const [upgradeDone, setUpgradeDone] = React.useState();
   const [progress, setProgress] = React.useState(120);
   const ref = React.useRef({});
+  const [searchParams] = useSearchParams();
+
+  React.useEffect(() => {
+    console.log(`?allow-force=true|false, current=${searchParams.get('allow-force')}, Whether allow force to upgrade, even it's the latest version`);
+  }, []);
 
   React.useEffect(() => {
     ref.current.progress = progress;
@@ -43,7 +49,9 @@ export default function System() {
 
       // Whether enable upgrade.
       if (status && status.releases && status.releases.latest) {
-        setEnableUpgrading(status.upgrading || semver.lt(status.version, status.releases.latest));
+        const allowForce = searchParams.get('allow-force') === 'true';
+        const hasNewVersion = semver.lt(status.version, status.releases.latest);
+        setEnableUpgrading(allowForce || status.upgrading || hasNewVersion);
       }
 
       // If upgradeDone is false, we're in the upgrading progress, so it's done when upgrading changed to false.
@@ -56,7 +64,7 @@ export default function System() {
         setStartUpgrading(true);
       }
 
-      console.log(`Status: Query ok, status=${JSON.stringify(status)}`);
+      console.log(`${moment().format()}: Status: Query ok, status=${JSON.stringify(status)}`);
     }).catch(e => {
       console.log('ignore any error during status', e);
     }).finally(() => {
@@ -257,26 +265,13 @@ export default function System() {
                   最新版本: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
                   <p></p>
                 </Card.Text>
-                {
-                  !enableUpgrading
-                  ? <Button className='disabled'>升级</Button>
-                  : <UpgradeConfirmButton upgrading={startUpgrading} handleClick={handleStartUpgrade} text='升级' progress={`${progress}s`}>
-                    <p>
-                      升级管理后台，并且可能造成
-                      <span className='text-danger'><strong>系统不可用</strong></span>，
-                      确认继续升级么？
-                    </p>
-                  </UpgradeConfirmButton>
-                } &nbsp;
-                {!enableUpgrading &&
-                  <UpgradeConfirmButton handleClick={() => setEnableUpgrading(true)} text='强制升级' operator='开启强制升级'>
-                    <p>
-                      你目前已经是最新版本，
-                      <span className='text-warning'>没有必要强制升级</span>，
-                      确认继续强制升级么？
-                    </p>
-                  </UpgradeConfirmButton>
-                }
+                <UpgradeConfirmButton disabled={!enableUpgrading} upgrading={startUpgrading} handleClick={handleStartUpgrade} text='升级' progress={`${progress}s`}>
+                  <p>
+                    升级管理后台，并且可能造成
+                    <span className='text-danger'><strong>系统不可用</strong></span>，
+                    确认继续升级么？
+                  </p>
+                </UpgradeConfirmButton>
               </Card.Body>
             </Card>
           </Col>

@@ -1,7 +1,7 @@
 import React from "react";
 import {Button, Spinner, OverlayTrigger, Popover} from "react-bootstrap";
 
-export default function PopoverConfirmButton({upgrading, handleClick, operator, text, progress, children}) {
+export default function PopoverConfirmButton({upgrading, handleClick, operator, text, progress, disabled, children}) {
   const [showUpgrading, setShowUpgrading] = React.useState();
 
   const onHandleClick = () => {
@@ -47,7 +47,7 @@ export default function PopoverConfirmButton({upgrading, handleClick, operator, 
     <div className='row row-cols-lg-auto g-3 align-items-center' style={{display: 'inline-block'}}>
       <div className="col-12">
         <OverlayTrigger trigger="click" placement="right" overlay={popover} show={showUpgrading}>
-          <Button variant="primary" onClick={() => setShowUpgrading(!showUpgrading)}>
+          <Button variant="primary" onClick={() => setShowUpgrading(!showUpgrading)} disabled={disabled}>
             {upgrading ? filterByOperator('升级中...') : text}
           </Button>
         </OverlayTrigger> &nbsp;
