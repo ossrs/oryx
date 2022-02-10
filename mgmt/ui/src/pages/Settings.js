@@ -63,7 +63,7 @@ export default function Config() {
 
   const tutorials = (
     <TutorialsButton prefixLine={true} tutorials={[
-      {author: '陈小龙', title: '陈小龙：云SRS如何一键HTTPS', link: 'https://www.bilibili.com/video/BV1tZ4y1R7qp/'},
+      {author: '程晓龙', title: '程晓龙：云SRS如何一键HTTPS', link: 'https://www.bilibili.com/video/BV1tZ4y1R7qp/'},
     ]} />
   );
 
