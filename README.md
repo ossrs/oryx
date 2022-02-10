@@ -85,6 +85,7 @@ Platform:
 * `/terraform/v1/mgmt/pubkey` Update the access for platform administrator pubkey.
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
 * `/terraform/v1/mgmt/containers` Query and upgrade SRS container.
+* `/terraform/v1/mgmt/bilibili` Query the video information.
 
 Releases:
 

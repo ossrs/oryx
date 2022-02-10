@@ -219,6 +219,22 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0);
   });
 
+  router.all('/terraform/v1/mgmt/bilibili', async (ctx) => {
+    const {token, bvid} = ctx.request.body;
+    const decoded = await utils.verifyToken(jwt, token);
+
+    if (!bvid) throw utils.asError(errs.sys.empty, errs.status.args, 'no bvid');
+
+    const res = await new Promise((resolve, reject) => {
+      axios.get(`https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`).then(res => {
+        resolve(res.data.data);
+      }).catch(err => reject);
+    });
+
+    console.log(`bilibili query ok, bvid=${bvid}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0, res);
+  });
+
   return router;
 };
 

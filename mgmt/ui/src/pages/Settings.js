@@ -1,9 +1,9 @@
 import React from "react";
-import {Accordion, Container, Form, Button, Toast} from "react-bootstrap";
-import {Errors, Token} from "../utils";
+import {Accordion, Container, Form, Button} from "react-bootstrap";
+import {Errors, Token, PlatformPublicKey} from "../utils";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
-import TutorialsButton from '../components/TutorialsButton';
+import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
 
 export default function Config() {
   const navigate = useNavigate();
@@ -11,7 +11,9 @@ export default function Config() {
   const [crt, setCrt] = React.useState();
   const [domain, setDomain] = React.useState();
 
-  const platformPublicKey = `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC1c+ZAfJ93/qJ3bYp3SuVaMqYMniMCjNnFf20asK+oM7HJqFbBe/VZM2/Z2UkDHZiOqiArb1RLjYQeUFbUmPj2A5cCE8IPaeu28thbOdEC6wTztnAOdVzQBkBPytZiVR8DUUAzgz0tLoXB4nXGXQDntTgXoL/Rzn59BQIa7BzLlLnKc4TCn+LPpsOOmDPnnvjjJXpBKTY/rRTYvvgCUCQ/clSfBsgfQgP1p0nVRlH3FoZaJS4QRdzFVRKJtCytC1NwtgVNwRxpqYsJos9YW+yw+X/K5w7JAjG0v+9TycIzl5/Wd7R3zHMENe2uYx7XayksLc1ZLfgBD1/gldYd6l5VCcgHZJWKVsur8dNwvs0yWj3y9iOi1Lx+J8gLkMSqNouHVV2nVvSILoeWHaadd1+3ghuXKmbvauYI6mYai/T12vnEcxZ1yc6rVah8oy+vNwmpcKj2lixExrNW8JrhjLUU/Rlzla89es8JAZNfQDy7+ZOU1UGt//QqGZaiC8VhtV0= video@MB0`;
+  const sslTutorials = useTutorials([
+    {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
+  ]);
 
   const enablePlatformAccess = (e, enabled) => {
     e.preventDefault();
@@ -83,12 +85,6 @@ export default function Config() {
     });
   };
 
-  const tutorials = (
-    <TutorialsButton prefixLine={true} tutorials={[
-      {author: '程晓龙', title: '程晓龙：云SRS如何一键HTTPS', link: 'https://www.bilibili.com/video/BV1tZ4y1R7qp/'},
-    ]} />
-  );
-
   return (
     <>
       <p></p>
@@ -106,7 +102,7 @@ export default function Config() {
                 <Button variant="primary" type="submit" onClick={(e) => requestLetsEncrypt(e)}>
                   申请证书
                 </Button> &nbsp;
-                {tutorials}
+                <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
               </Form>
             </Accordion.Body>
           </Accordion.Item>
@@ -127,7 +123,7 @@ export default function Config() {
                 <Button variant="primary" type="submit" onClick={(e) => updateSSL(e)}>
                   更新证书
                 </Button> &nbsp;
-                {tutorials}
+                <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
               </Form>
             </Accordion.Body>
           </Accordion.Item>
@@ -138,7 +134,7 @@ export default function Config() {
                 <Form.Group className="mb-3">
                   <Form.Label>公钥</Form.Label>
                   <Form.Text> * 平台管理员的公钥</Form.Text>
-                  <Form.Control as="textarea" rows={2} defaultValue={platformPublicKey} readOnly={true} />
+                  <Form.Control as="textarea" rows={2} defaultValue={PlatformPublicKey} readOnly={true} />
                 </Form.Group>
                 <Button variant="primary" type="submit" onClick={(e) => enablePlatformAccess(e, true)}>
                   授权访问

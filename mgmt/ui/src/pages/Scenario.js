@@ -3,7 +3,7 @@ import {Container, Tabs, Tab, Accordion, Form} from "react-bootstrap";
 import React from "react";
 import {Token, Errors} from "../utils";
 import axios from "axios";
-import TutorialsButton from "../components/TutorialsButton";
+import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -24,6 +24,10 @@ export default function Dashboard() {
   const [flvUrl2, setFlvUrl2] = React.useState();
   const [m3u8Url2, setM3u8Url2] = React.useState();
   const [secret, setSecret] = React.useState();
+
+  const srtTutorials = useTutorials([
+    {author: '崔国栋', id: 'BV1aS4y1G7iG'},
+  ]);
 
   React.useEffect(() => {
     const token = Token.load();
@@ -85,12 +89,6 @@ export default function Dashboard() {
       setRtcPlayer2(`/players/rtc_player.html?schema=https&port=443&api=443&autostart=true&stream=livestream`);
     }
   }, [secret]);
-
-  const srtTutorials = (
-    <TutorialsButton tutorials={[
-      {author: '崔国栋', title: '崔国栋：体验云SRS的SRT低延迟直播', link: 'https://www.bilibili.com/video/BV1aS4y1G7iG/'},
-    ]} />
-  );
 
   return (
     <>
@@ -193,7 +191,7 @@ export default function Dashboard() {
                 <Accordion.Header>场景介绍</Accordion.Header>
                 <Accordion.Body>
                   <div>
-                    超清实时直播{srtTutorials}，指码率很高（测试过2~8Mbps），延迟很低（200~500ms）且无累计延迟的直播。
+                    超清实时直播<TutorialsButton prefixLine={true} tutorials={srtTutorials} />，指码率很高（测试过2~8Mbps），延迟很低（200~500ms）且无累计延迟的直播。
                     <p></p>
                   </div>
                   <p>可应用的具体场景包括：</p>
@@ -214,7 +212,7 @@ export default function Dashboard() {
                 <Accordion.Body>
                   <div>
                     <p style={{display: 'inline-block'}}><strong>前提：</strong></p>
-                    {srtTutorials}
+                    <TutorialsButton prefixLine={true} tutorials={srtTutorials} />
                   </div>
                   <ol>
                     <li>
@@ -287,7 +285,7 @@ export default function Dashboard() {
                 <Accordion.Body>
                   <div>
                     <p style={{display: 'inline-block'}}><strong>前提：</strong></p>
-                    {srtTutorials}
+                    <TutorialsButton prefixLine={true} tutorials={srtTutorials} />
                   </div>
                   <ol>
                     <li>
