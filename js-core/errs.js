@@ -22,6 +22,8 @@ exports.sys = {
   invalid: 1004,
   // In upgrading.
   upgrading: 1005,
+  // For platform admin pubkey.
+  pubkey: 1006,
 };
 
 // Error codes for auth.

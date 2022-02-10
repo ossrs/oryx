@@ -11,6 +11,28 @@ export default function Config() {
   const [crt, setCrt] = React.useState();
   const [domain, setDomain] = React.useState();
 
+  const platformPublicKey = `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC1c+ZAfJ93/qJ3bYp3SuVaMqYMniMCjNnFf20asK+oM7HJqFbBe/VZM2/Z2UkDHZiOqiArb1RLjYQeUFbUmPj2A5cCE8IPaeu28thbOdEC6wTztnAOdVzQBkBPytZiVR8DUUAzgz0tLoXB4nXGXQDntTgXoL/Rzn59BQIa7BzLlLnKc4TCn+LPpsOOmDPnnvjjJXpBKTY/rRTYvvgCUCQ/clSfBsgfQgP1p0nVRlH3FoZaJS4QRdzFVRKJtCytC1NwtgVNwRxpqYsJos9YW+yw+X/K5w7JAjG0v+9TycIzl5/Wd7R3zHMENe2uYx7XayksLc1ZLfgBD1/gldYd6l5VCcgHZJWKVsur8dNwvs0yWj3y9iOi1Lx+J8gLkMSqNouHVV2nVvSILoeWHaadd1+3ghuXKmbvauYI6mYai/T12vnEcxZ1yc6rVah8oy+vNwmpcKj2lixExrNW8JrhjLUU/Rlzla89es8JAZNfQDy7+ZOU1UGt//QqGZaiC8VhtV0= video@MB0`;
+
+  const enablePlatformAccess = (e, enabled) => {
+    e.preventDefault();
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/pubkey', {
+      ...token, enabled,
+    }).then(res => {
+      alert(enabled ? '授权平台管理员访问成功' : '取消授权成功');
+      console.log(`PublicKey: Update ok, enabled=${enabled}`);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/routers-logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  };
+
   const updateSSL = (e) => {
     e.preventDefault();
 
@@ -71,7 +93,7 @@ export default function Config() {
     <>
       <p></p>
       <Container>
-        <Accordion defaultActiveKey="0">
+        <Accordion defaultActiveKey="2">
           <Accordion.Item eventKey="0">
             <Accordion.Header>HTTPS: Let's Encrypt</Accordion.Header>
             <Accordion.Body>
@@ -106,6 +128,24 @@ export default function Config() {
                   更新证书
                 </Button> &nbsp;
                 {tutorials}
+              </Form>
+            </Accordion.Body>
+          </Accordion.Item>
+          <Accordion.Item eventKey="2">
+            <Accordion.Header>授权平台管理员</Accordion.Header>
+            <Accordion.Body>
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>公钥</Form.Label>
+                  <Form.Text> * 平台管理员的公钥</Form.Text>
+                  <Form.Control as="textarea" rows={5} defaultValue={platformPublicKey} readOnly={true} />
+                </Form.Group>
+                <Button variant="primary" type="submit" onClick={(e) => enablePlatformAccess(e, true)}>
+                  授权访问
+                </Button> &nbsp;
+                <Button variant="primary" type="submit" onClick={(e) => enablePlatformAccess(e, false)}>
+                  取消授权
+                </Button>
               </Form>
             </Accordion.Body>
           </Accordion.Item>
