@@ -1,4 +1,4 @@
-import {useNavigate, useSearchParams} from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import React from "react";
 import {Token, Errors} from "../utils";
@@ -17,18 +17,13 @@ export default function System() {
   const [nodeExporter, setNodeExporter] = React.useState();
   const [startUpgrading, setStartUpgrading] = React.useState();
   const [alreadyUpgrading, setAlreadyUpgrading] = React.useState();
-  const [enableUpgrading, setEnableUpgrading] = React.useState();
+  const [availableRelease, setAvailableRelease] = React.useState();
   const [strategyAutoUpgrade, setStrategyAutoUpgrade] = React.useState();
   const [userToggleStrategy, setUserToggleStrategy] = React.useState();
   const [refreshState, setRefreshState] = React.useState();
   const [upgradeDone, setUpgradeDone] = React.useState();
   const [progress, setProgress] = React.useState(120);
   const ref = React.useRef({});
-  const [searchParams] = useSearchParams();
-
-  React.useEffect(() => {
-    console.log(`?allow-force=true|false, current=${searchParams.get('allow-force')}, Whether allow force to upgrade, even it's the latest version`);
-  }, []);
 
   React.useEffect(() => {
     ref.current.progress = progress;
@@ -49,18 +44,17 @@ export default function System() {
 
       // Whether enable upgrade.
       if (status && status.releases && status.releases.latest) {
-        const allowForce = searchParams.get('allow-force') === 'true';
         const hasNewVersion = semver.lt(status.version, status.releases.latest);
-        setEnableUpgrading(allowForce || status.upgrading || hasNewVersion);
+        setAvailableRelease(status.upgrading || hasNewVersion);
       }
 
       // If upgradeDone is false, we're in the upgrading progress, so it's done when upgrading changed to false.
       if (upgradeDone === false && !status.upgrading) setUpgradeDone(true);
 
       // If state not set, but already upgrading, it's restore from the previous state.
-      if (status.upgrading && upgradeDone === undefined && enableUpgrading === undefined && startUpgrading === undefined) {
+      if (status.upgrading && upgradeDone === undefined && availableRelease === undefined && startUpgrading === undefined) {
         setUpgradeDone(false);
-        setEnableUpgrading(true);
+        setAvailableRelease(true);
         setStartUpgrading(true);
       }
 
@@ -265,7 +259,13 @@ export default function System() {
                   最新版本: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
                   <p></p>
                 </Card.Text>
-                <UpgradeConfirmButton disabled={!enableUpgrading} upgrading={startUpgrading} handleClick={handleStartUpgrade} text='升级' progress={`${progress}s`}>
+                <UpgradeConfirmButton
+                  availableRelease={availableRelease}
+                  upgrading={alreadyUpgrading}
+                  progress={`${progress}s`}
+                  onClick={handleStartUpgrade}
+                  text='升级'
+                >
                   <p>
                     升级管理后台，并且可能造成
                     <span className='text-danger'><strong>系统不可用</strong></span>，

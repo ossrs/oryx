@@ -1,12 +1,25 @@
 import React from "react";
 import {Button, Spinner, OverlayTrigger, Popover} from "react-bootstrap";
+import {useSearchParams} from "react-router-dom";
 
-export default function PopoverConfirmButton({upgrading, handleClick, operator, text, progress, disabled, children}) {
-  const [showUpgrading, setShowUpgrading] = React.useState();
+export default function PopoverConfirmButton({onClick, availableRelease, upgrading, progress, operator, text, children}) {
+  const [startUpgrade, setStartUpgrade] = React.useState();
+  const [disabled, setDisabled] = React.useState(true);
+  const [searchParams] = useSearchParams();
+
+  React.useEffect(() => {
+    const allowForceUpgrade = searchParams.get('allow-force') === 'true';
+    setDisabled(upgrading || (!availableRelease && !allowForceUpgrade));
+  }, [availableRelease, upgrading]);
+
+  React.useEffect(() => {
+    const allowForceUpgrade = searchParams.get('allow-force') === 'true';
+    console.log(`?allow-force=true|false, current=${allowForceUpgrade}, Whether allow force to upgrade, even it's the latest version`);
+  }, []);
 
   const onHandleClick = () => {
-    setShowUpgrading(false);
-    handleClick();
+    setStartUpgrade(false);
+    onClick && onClick();
   };
 
   const filterByOperator = (msg) => {
@@ -24,8 +37,8 @@ export default function PopoverConfirmButton({upgrading, handleClick, operator, 
           <div className="col-12">
             <Button
               variant="danger"
-              disabled={upgrading}
-              onClick={!upgrading ? onHandleClick : null}
+              disabled={disabled}
+              onClick={!disabled ? onHandleClick : null}
             >
               确认
             </Button>
@@ -33,7 +46,7 @@ export default function PopoverConfirmButton({upgrading, handleClick, operator, 
           <div className="col-12">
             <Button
               variant="primary"
-              onClick={() => setShowUpgrading(false)}
+              onClick={() => setStartUpgrade(false)}
             >
               取消
             </Button>
@@ -46,8 +59,8 @@ export default function PopoverConfirmButton({upgrading, handleClick, operator, 
   return (
     <div className='row row-cols-lg-auto g-3 align-items-center' style={{display: 'inline-block'}}>
       <div className="col-12">
-        <OverlayTrigger trigger="click" placement="right" overlay={popover} show={showUpgrading}>
-          <Button variant="primary" onClick={() => setShowUpgrading(!showUpgrading)} disabled={disabled}>
+        <OverlayTrigger trigger="click" placement="right" overlay={popover} show={startUpgrade}>
+          <Button variant="primary" onClick={() => setStartUpgrade(!startUpgrade)} disabled={disabled}>
             {upgrading ? filterByOperator('升级中...') : text}
           </Button>
         </OverlayTrigger> &nbsp;
