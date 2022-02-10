@@ -11,7 +11,7 @@ import {Token} from "./utils";
 import System from "./pages/System";
 import Scenario from "./pages/Scenario";
 import {Container} from "react-bootstrap";
-import Config from "./pages/Config";
+import Settings from "./pages/Settings";
 import Dashboard from './pages/Dashboard';
 import Contact from "./pages/Contact";
 
@@ -61,7 +61,7 @@ function App() {
               <Route path="/routers-login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
               <Route path="/routers-dashboard" element={<Dashboard/>}/>
               <Route path="/routers-scenario" element={<Scenario/>}/>
-              <Route path="/routers-config" element={<Config/>}/>
+              <Route path="/routers-settings" element={<Settings/>}/>
               <Route path="/routers-contact" element={<Contact/>}/>
               <Route path="/routers-system" element={<System/>}/>
               <Route path="/routers-logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>

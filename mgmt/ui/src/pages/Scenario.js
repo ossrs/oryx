@@ -1,8 +1,9 @@
 import {useNavigate} from "react-router-dom";
-import {Container, Tabs, Tab, Accordion} from "react-bootstrap";
+import {Container, Tabs, Tab, Accordion, Form} from "react-bootstrap";
 import React from "react";
 import {Token, Errors} from "../utils";
 import axios from "axios";
+import TutorialsButton from "../components/TutorialsButton";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -84,6 +85,12 @@ export default function Dashboard() {
       setRtcPlayer2(`/players/rtc_player.html?schema=https&port=443&api=443&autostart=true&stream=livestream`);
     }
   }, [secret]);
+
+  const srtTutorials = (
+    <TutorialsButton tutorials={[
+      {author: '崔国栋', title: '崔国栋：体验云SRS的SRT低延迟直播', link: 'https://www.bilibili.com/video/BV1aS4y1G7iG/'},
+    ]} />
+  );
 
   return (
     <>
@@ -185,7 +192,10 @@ export default function Dashboard() {
               <Accordion.Item eventKey="0">
                 <Accordion.Header>场景介绍</Accordion.Header>
                 <Accordion.Body>
-                  <p>超清实时直播，指码率很高（测试过2~8Mbps），延迟很低（200~500ms）且无累计延迟的直播。</p>
+                  <div>
+                    超清实时直播{srtTutorials}，指码率很高（测试过2~8Mbps），延迟很低（200~500ms）且无累计延迟的直播。
+                    <p></p>
+                  </div>
                   <p>可应用的具体场景包括：</p>
                   <ul>
                     <li>超高清视频会议，使用专业导播台，把直播流投屏到大屏，注意需要专门的硬件做降噪和回声消除</li>
@@ -202,7 +212,10 @@ export default function Dashboard() {
               <Accordion.Item eventKey="1">
                 <Accordion.Header>芯象推流+ffplay播放 ~= 230ms延迟</Accordion.Header>
                 <Accordion.Body>
-                  <p><strong>前提：</strong></p>
+                  <div>
+                    <p style={{display: 'inline-block'}}><strong>前提：</strong></p>
+                    {srtTutorials}
+                  </div>
                   <ol>
                     <li>
                       请检查网络延迟，RTT必须在<code>60ms</code>之内，请执行命令：<br/>
@@ -272,7 +285,10 @@ export default function Dashboard() {
               <Accordion.Item eventKey="2">
                 <Accordion.Header>OBS推流+ffplay播放 ~= 300ms延迟</Accordion.Header>
                 <Accordion.Body>
-                  <p><strong>前提：</strong></p>
+                  <div>
+                    <p style={{display: 'inline-block'}}><strong>前提：</strong></p>
+                    {srtTutorials}
+                  </div>
                   <ol>
                     <li>
                       请检查网络延迟，RTT必须在<code>60ms</code>之内，请执行命令：<br/>

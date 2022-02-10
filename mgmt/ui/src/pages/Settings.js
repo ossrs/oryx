@@ -1,8 +1,9 @@
 import React from "react";
-import {Accordion, Container, Form, Button} from "react-bootstrap";
+import {Accordion, Container, Form, Button, Toast} from "react-bootstrap";
 import {Errors, Token} from "../utils";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
+import TutorialsButton from '../components/TutorialsButton';
 
 export default function Config() {
   const navigate = useNavigate();
@@ -60,6 +61,12 @@ export default function Config() {
     });
   };
 
+  const tutorials = (
+    <TutorialsButton prefixLine={true} tutorials={[
+      {author: '陈小龙', title: '陈小龙：云SRS如何一键HTTPS', link: 'https://www.bilibili.com/video/BV1tZ4y1R7qp/'},
+    ]} />
+  );
+
   return (
     <>
       <p></p>
@@ -76,7 +83,8 @@ export default function Config() {
                 </Form.Group>
                 <Button variant="primary" type="submit" onClick={(e) => requestLetsEncrypt(e)}>
                   申请证书
-                </Button>
+                </Button> &nbsp;
+                {tutorials}
               </Form>
             </Accordion.Body>
           </Accordion.Item>
@@ -96,7 +104,8 @@ export default function Config() {
                 </Form.Group>
                 <Button variant="primary" type="submit" onClick={(e) => updateSSL(e)}>
                   更新证书
-                </Button>
+                </Button> &nbsp;
+                {tutorials}
               </Form>
             </Accordion.Body>
           </Accordion.Item>
