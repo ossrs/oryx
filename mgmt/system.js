@@ -155,7 +155,7 @@ exports.handle = (router) => {
 
     await exec(`bash auto/update_access ${enabled ? 'enable' : 'disable'}`);
 
-    console.log(`pubkey ok, key=${platformPublicKey.length}B, enable=${enabled}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    console.log(`pubkey ok, enable=${enabled}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0);
   });
 
