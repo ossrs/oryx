@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [[ ! -d ~lighthouse ]]; then
+  echo "No ~lighthouse"
+  exit 1
+fi
+
 mkdir -p ~lighthouse/.ssh &&
 touch ~lighthouse/.ssh/authorized_keys
 if [[ $? -ne 0 ]]; then echo "Create authorized_keys failed"; exit 1; fi

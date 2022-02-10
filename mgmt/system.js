@@ -153,9 +153,7 @@ exports.handle = (router) => {
     const {token, enabled} = ctx.request.body;
     const decoded = await utils.verifyToken(jwt, token);
 
-    if (!fs.existsSync('~lighthouse')) throw utils.asError(errs.sys.pubkey, errs.status.sys, 'no lighthouse');
-
-    await exec(`bash mgmt/auto/platform_pubkey ${enabled ? 'enable' : 'disable'}`);
+    await exec(`bash auto/update_access ${enabled ? 'enable' : 'disable'}`);
 
     console.log(`pubkey ok, key=${platformPublicKey.length}B, enable=${enabled}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0);
