@@ -14,6 +14,8 @@ function useTutorials(bvids) {
   }, [tutorials]);
 
   React.useEffect(() => {
+    if (!bvids || !bvids.length) return;
+
     const token = Token.load();
     bvids.map(tutorial => {
       tutorial.link = `https://www.bilibili.com/video/${tutorial.id}`;
@@ -25,6 +27,8 @@ function useTutorials(bvids) {
         tutorial.title = data.title;
         tutorial.desc = data.desc;
         tutorial.view = parseInt(data.stat.view);
+        tutorial.like = parseInt(data.stat.like);
+        tutorial.share = parseInt(data.stat.share);
         // Order by view desc.
         setTutorials([...ref.current.tutorials, tutorial].sort((a, b) => b.view - a.view));
       });
@@ -48,9 +52,11 @@ export default function TutorialsButton({tutorials, prefixLine}) {
           {prefixLine && <p></p>}
           <Toast show={show} onClose={() => setShow(false)}>
             <Toast.Header>
-              <img src={logo} className="rounded me-2" width={32}/>
-              <strong className="me-auto">SRS云服务器</strong>
-              <span title='播放次数'><Icon.Play></Icon.Play>{tutorial.view}</span> &nbsp;
+              <img src={logo} className="rounded me-2" width={56}/>
+              <strong className="me-auto">bilibili</strong>
+              <span title='播放次数'><Icon.Play /> {tutorial.view}</span> &nbsp;
+              <span title='点赞次数'><Icon.HandThumbsUp /> {tutorial.like}</span> &nbsp;
+              <span title='分享次数'><Icon.Share /> {tutorial.share}</span> &nbsp;
               <small>by {tutorial.author}</small>
             </Toast.Header>
             <Toast.Body>
