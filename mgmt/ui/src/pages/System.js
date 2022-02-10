@@ -26,8 +26,10 @@ export default function System() {
   const [progress, setProgress] = React.useState(120);
 
   React.useEffect(() => {
+    ref.current.startingUpgrade = startingUpgrade;
     ref.current.progress = progress;
-  }, [progress]);
+    ref.current.upgradeDone = upgradeDone;
+  }, [startingUpgrade, progress, upgradeDone]);
 
   React.useEffect(() => {
     const refreshMgmtStatus = () => {
@@ -48,18 +50,18 @@ export default function System() {
         }
 
         // If upgradeDone is false, we're in the upgrading progress, so it's done when upgrading changed to false.
-        if (upgradeDone === false && !status.upgrading && ref.current.progress < 120) {
+        if (ref.current.upgradeDone === false && !status.upgrading && ref.current.progress < 120) {
           setStartingUpgrade(false);
           setUpgradeDone(true);
         }
 
         // If state not set, but already upgrading, it's restore from the previous state.
-        if (status.upgrading && upgradeDone === undefined && startingUpgrade === undefined) {
+        if (status.upgrading && ref.current.upgradeDone === undefined && ref.current.startingUpgrade === undefined) {
           setStartingUpgrade(true);
           setUpgradeDone(false);
         }
 
-        console.log(`${moment().format()}: Status: Query ok, status=${JSON.stringify(status)}`);
+        console.log(`${moment().format()}: Status: Query ok, startingUpgrade=${ref.current.startingUpgrade}, upgradeDone=${ref.current.upgradeDone}, status=${JSON.stringify(status)}`);
       }).catch(e => {
         console.log('ignore any error during status', e);
       });
@@ -91,7 +93,7 @@ export default function System() {
     if (!isUpgrading) return;
     const timer = setInterval(() => {
       if (ref.current.progress <= 0) return;
-      if (ref.current.progress === 1) setUpgradeDone(true);
+      if (ref.current.progress <= 10) setUpgradeDone(true);
       setProgress(ref.current.progress - 1);
     }, 1000);
     return () => clearInterval(timer);
