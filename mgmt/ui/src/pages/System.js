@@ -15,67 +15,67 @@ export default function System() {
   const [hooks, setHooks] = React.useState();
   const [prometheus, setPrometheus] = React.useState();
   const [nodeExporter, setNodeExporter] = React.useState();
-  const [startUpgrading, setStartUpgrading] = React.useState();
-  const [alreadyUpgrading, setAlreadyUpgrading] = React.useState();
-  const [availableRelease, setAvailableRelease] = React.useState();
   const [strategyAutoUpgrade, setStrategyAutoUpgrade] = React.useState();
   const [userToggleStrategy, setUserToggleStrategy] = React.useState();
-  const [refreshState, setRefreshState] = React.useState();
+  const ref = React.useRef({});
+
+  const [startingUpgrade, setStartingUpgrade] = React.useState();
+  const [isUpgrading, setIsUpgrading] = React.useState();
+  const [releaseAvailable, setReleaseAvailable] = React.useState();
   const [upgradeDone, setUpgradeDone] = React.useState();
   const [progress, setProgress] = React.useState(120);
-  const ref = React.useRef({});
 
   React.useEffect(() => {
     ref.current.progress = progress;
-    ref.current.refreshState = refreshState;
-  }, [progress, refreshState]);
+  }, [progress]);
 
   React.useEffect(() => {
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/status', {
-      ...token,
-    }).then(res => {
-      const status = res.data.data;
+    const refreshMgmtStatus = () => {
+      const token = Token.load();
+      axios.post('/terraform/v1/mgmt/status', {
+        ...token,
+      }).then(res => {
+        const status = res.data.data;
 
-      // Normally state.
-      setAlreadyUpgrading(status.upgrading);
-      setStrategyAutoUpgrade(status.strategy === 'auto');
-      setStatus(status);
+        // Normally state.
+        setIsUpgrading(status.upgrading);
+        setStrategyAutoUpgrade(status.strategy === 'auto');
+        setStatus(status);
 
-      // Whether enable upgrade.
-      if (status && status.releases && status.releases.latest) {
-        const hasNewVersion = semver.lt(status.version, status.releases.latest);
-        setAvailableRelease(status.upgrading || hasNewVersion);
-      }
+        // Whether upgrade is available.
+        if (status && status.releases && status.releases.latest) {
+          setReleaseAvailable(semver.lt(status.version, status.releases.latest));
+        }
 
-      // If upgradeDone is false, we're in the upgrading progress, so it's done when upgrading changed to false.
-      if (upgradeDone === false && !status.upgrading) setUpgradeDone(true);
+        // If upgradeDone is false, we're in the upgrading progress, so it's done when upgrading changed to false.
+        if (upgradeDone === false && !status.upgrading && ref.current.progress < 120) {
+          setStartingUpgrade(false);
+          setUpgradeDone(true);
+        }
 
-      // If state not set, but already upgrading, it's restore from the previous state.
-      if (status.upgrading && upgradeDone === undefined && availableRelease === undefined && startUpgrading === undefined) {
-        setUpgradeDone(false);
-        setAvailableRelease(true);
-        setStartUpgrading(true);
-      }
+        // If state not set, but already upgrading, it's restore from the previous state.
+        if (status.upgrading && upgradeDone === undefined && startingUpgrade === undefined) {
+          setStartingUpgrade(true);
+          setUpgradeDone(false);
+        }
 
-      console.log(`${moment().format()}: Status: Query ok, status=${JSON.stringify(status)}`);
-    }).catch(e => {
-      console.log('ignore any error during status', e);
-    }).finally(() => {
-      setTimeout(() => {
-        setRefreshState(!ref.current.refreshState);
-      }, 5000);
-    });
-  }, [navigate, userToggleStrategy, startUpgrading, refreshState]);
+        console.log(`${moment().format()}: Status: Query ok, status=${JSON.stringify(status)}`);
+      }).catch(e => {
+        console.log('ignore any error during status', e);
+      });
+    };
+
+    refreshMgmtStatus();
+    const timer = setInterval(() => refreshMgmtStatus(), 5000);
+    return () => clearInterval(timer);
+  }, [startingUpgrade]);
 
   const handleStartUpgrade = () => {
-    if (alreadyUpgrading) return;
+    if (isUpgrading) return;
 
-    setTimeout(() => {
-      setUpgradeDone(false);
-      setStartUpgrading(true);
-      setProgress(120);
-    }, 800);
+    setUpgradeDone(false);
+    setStartingUpgrade(true);
+    setProgress(120);
 
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/upgrade', {
@@ -84,23 +84,18 @@ export default function System() {
       console.log(`upgrade ok, ${JSON.stringify(res.data.data)}`);
     }).catch(e => {
       console.log('ignore any error during upgrade', e);
-    }).finally(() => {
-      setTimeout(() => {
-        setRefreshState(!ref.current.refreshState);
-      }, 5000);
     });
   };
 
   React.useEffect(() => {
-    if (!alreadyUpgrading) return;
+    if (!isUpgrading) return;
     const timer = setInterval(() => {
       if (ref.current.progress <= 0) return;
-      if (ref.current.progress === 1) setUpgradeDone(false);
-      if (((ref.current.progress - 1) % 10) === 0) setRefreshState(!ref.current.refreshState);
+      if (ref.current.progress === 1) setUpgradeDone(true);
       setProgress(ref.current.progress - 1);
     }, 1000);
     return () => clearInterval(timer);
-  }, [alreadyUpgrading]);
+  }, [isUpgrading]);
 
   React.useEffect(() => {
     if (!upgradeDone) return;
@@ -244,7 +239,7 @@ export default function System() {
               <Card.Header>管理后台</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
-                  你的版本: {status?.version} {alreadyUpgrading && '升级中...'} <br/>
+                  你的版本: {status?.version} {(startingUpgrade || isUpgrading) && '升级中...'} <br/>
                   稳定版本: {status?.releases?.stable} &nbsp;
                   <Form.Check
                     type='switch'
@@ -260,8 +255,8 @@ export default function System() {
                   <p></p>
                 </Card.Text>
                 <UpgradeConfirmButton
-                  availableRelease={availableRelease}
-                  upgrading={alreadyUpgrading}
+                  releaseAvailable={releaseAvailable}
+                  upgrading={startingUpgrade || isUpgrading}
                   progress={`${progress}s`}
                   onClick={handleStartUpgrade}
                   text='升级'

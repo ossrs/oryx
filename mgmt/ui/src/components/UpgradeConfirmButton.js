@@ -2,15 +2,15 @@ import React from "react";
 import {Button, Spinner, OverlayTrigger, Popover} from "react-bootstrap";
 import {useSearchParams} from "react-router-dom";
 
-export default function PopoverConfirmButton({onClick, availableRelease, upgrading, progress, operator, text, children}) {
+export default function PopoverConfirmButton({onClick, releaseAvailable, upgrading, progress, text, children}) {
   const [startUpgrade, setStartUpgrade] = React.useState();
   const [disabled, setDisabled] = React.useState(true);
   const [searchParams] = useSearchParams();
 
   React.useEffect(() => {
     const allowForceUpgrade = searchParams.get('allow-force') === 'true';
-    setDisabled(upgrading || (!availableRelease && !allowForceUpgrade));
-  }, [availableRelease, upgrading]);
+    setDisabled(upgrading || (!releaseAvailable && !allowForceUpgrade));
+  }, [releaseAvailable, upgrading]);
 
   React.useEffect(() => {
     const allowForceUpgrade = searchParams.get('allow-force') === 'true';
@@ -20,10 +20,6 @@ export default function PopoverConfirmButton({onClick, availableRelease, upgradi
   const onHandleClick = () => {
     setStartUpgrade(false);
     onClick && onClick();
-  };
-
-  const filterByOperator = (msg) => {
-    return operator ? msg.replaceAll('升级', operator) : msg;
   };
 
   const popover = (
@@ -61,7 +57,7 @@ export default function PopoverConfirmButton({onClick, availableRelease, upgradi
       <div className="col-12">
         <OverlayTrigger trigger="click" placement="right" overlay={popover} show={startUpgrade}>
           <Button variant="primary" onClick={() => setStartUpgrade(!startUpgrade)} disabled={disabled}>
-            {upgrading ? filterByOperator('升级中...') : text}
+            {upgrading ? '升级中...' : text}
           </Button>
         </OverlayTrigger> &nbsp;
         {upgrading && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />} &nbsp;
