@@ -10,6 +10,7 @@ fi
 
 # Get the metadata of machine.
 if [[ $REGION == '' ]]; then REGION=$(cat .env |grep REGION |awk -F '=' '{print $2}'); fi
+if [[ $REGION == '' ]]; then REGION=$(cat ../.env |grep REGION |awk -F '=' '{print $2}'); fi
 if [[ $REGION == '' ]]; then REGION=$(curl http://metadata.tencentyun.com/latest/meta-data/placement/region 2>/dev/null); fi
 if [[ $? -ne 0 ]]; then echo "Failed to get region $REGION"; exit 1; fi
 

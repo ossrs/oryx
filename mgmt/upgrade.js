@@ -139,7 +139,7 @@ async function firstRun() {
 
   // For the second time, we prepare the os, for previous version which does not run the upgrade living.
   console.log(`Thread #${metadata.upgrade.name}: Prepare OS for first run, r0=${r0}`);
-  await exec(`bash upgrade_prepare`);
+  await exec(`bash auto/upgrade_prepare`);
 
   try {
     // Because we already create the container, and cached the last SRS 4.0 image, also set the hosts for hooks by

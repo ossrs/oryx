@@ -10,7 +10,7 @@ if [[ ! -d /usr/local/srs-terraform && $(uname -s) == 'Darwin' ]]; then
 fi
 
 # Prepare the OS again.
-bash upgrade_prepare "$@"
+bash auto/upgrade_prepare "$@"
 if [[ $? -ne 0 ]]; then echo "Prepare OS failed"; exit 1; fi
 
 MEM_TOTAL=$(grep MemTotal /proc/meminfo |awk '{print $2}')

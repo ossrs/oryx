@@ -12,7 +12,7 @@ fi
 # Note that we MUST load the REGION and SOURCE again, because nodejs executes this directly, and the region list might
 # changed after the image is created.
 if [[ $REGION == '' ]]; then REGION=$1; fi
-. upgrade_region
+. auto/upgrade_region
 
 # Detect the private IPv4 address.
 PIPV4=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
