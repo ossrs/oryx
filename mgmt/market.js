@@ -106,7 +106,7 @@ async function startContainer(conf) {
     ${tcpPorts} ${udpPorts} \\
     ${evalValue(conf.logConfig)} \\
     ${volumes} ${extras} \\
-    --env SRS_REGION=${region} --env SRS_SOURCE=${source} --env SRS_MGMT=${pkg.version} \\
+    --env SRS_REGION=${region} --env SRS_SOURCE=${source} --env SRS_MGMT=v${pkg.version} \\
     ${image} \\
     ${command}`;
   console.log(`Thread #market: docker run args ip=${privateIPv4.name}/${privateIPv4.address}, docker run ${dockerArgs}`);
