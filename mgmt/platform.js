@@ -5,9 +5,12 @@ const axios = require('axios');
 exports.isDarwin = process.platform === 'darwin';
 
 // We must mark these fields as async, to notice user not to use it before it initialized.
-const conf = {region: null, registry: null};
+const conf = {region: null, source: null, registry: null};
 exports.region = async () => {
   return conf.region;
+};
+exports.source = async () => {
+  return conf.source;
 };
 exports.registry = async () => {
   return conf.registry;
@@ -20,10 +23,13 @@ exports.init = async () => {
   const region = await discoverRegion();
   conf.region = region;
 
-  const registry = await discoverRegistry(region);
+  const source = await discoverSource(region);
+  conf.source = source;
+
+  const registry = (source === 'github') ? 'sgccr.ccs.tencentyun.com' : 'ccr.ccs.tencentyun.com';
   conf.registry = registry;
 
-  console.log(`Initialize region=${region}, registry=${registry}, isDarwin=${isDarwin}`);
+  console.log(`Initialize region=${region}, source=${source}, registry=${registry}, isDarwin=${isDarwin}`);
   return {region, registry, isDarwin};
 };
 
@@ -40,17 +46,17 @@ async function discoverRegion() {
   return data;
 }
 
-async function discoverRegistry(region) {
+async function discoverSource(region) {
   if (exports.isDarwin) {
-    return 'ccr.ccs.tencentyun.com';
+    return 'gitee';
   }
 
-  let registry = 'sgccr.ccs.tencentyun.com';
+  let source = 'github';
   ['ap-guangzhou', 'ap-shanghai', 'ap-nanjing', 'ap-beijing', 'ap-chengdu', 'ap-chongqing'].filter(v => {
-    if (region.startsWith(v)) registry = 'ccr.ccs.tencentyun.com';
+    if (region.startsWith(v)) source = 'gitee';
     return null;
   });
 
-  return registry;
+  return source;
 }
 

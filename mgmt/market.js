@@ -6,6 +6,7 @@ const exec = util.promisify(require('child_process').exec);
 const metadata = require('./metadata');
 const os = require('os');
 const platform = require('./platform');
+const pkg = require('./package.json');
 
 if (!isMainThread) {
   threadMain();
@@ -97,12 +98,15 @@ async function startContainer(conf) {
   const extras = evalValue(conf.extras, []).join(' ');
   // The image depends on the registry, which is discovered by platform.
   const image = await conf.image();
+  const region = await platform.region();
+  const source = await platform.source();
   // Note that it's started by nodejs, so never use '-it'.
   const dockerArgs = `-d --restart always --privileged --name ${evalValue(conf.name)} \\
     --add-host=mgmt.srs.local:${privateIPv4.address} \\
     ${tcpPorts} ${udpPorts} \\
     ${evalValue(conf.logConfig)} \\
     ${volumes} ${extras} \\
+    --env SRS_REGION=${region} --env SRS_SOURCE=${source} --env SRS_MGMT=${pkg.version} \\
     ${image} \\
     ${command}`;
   console.log(`Thread #market: docker run args ip=${privateIPv4.name}/${privateIPv4.address}, docker run ${dockerArgs}`);
