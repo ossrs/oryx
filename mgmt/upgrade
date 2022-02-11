@@ -72,6 +72,7 @@ fi
 if [[ $? -ne 0 ]]; then echo "Upgrade codes failed"; exit 1; fi
 
 # Got the latest script and upgrade.
+# Remark: Never change the scripts path of upgrade_living here, because both old and new code depends on it.
 echo "Start living upgrade" && bash upgrade_living $REGION $SOURCE
 if [[ $? -ne 0 ]]; then echo "Living upgrade failed"; exit 1; fi
 
