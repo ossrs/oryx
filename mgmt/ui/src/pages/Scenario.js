@@ -28,6 +28,9 @@ export default function Dashboard() {
   const srtTutorials = useTutorials([
     {author: '崔国栋', id: 'BV1aS4y1G7iG'},
   ]);
+  const movieTutorials = useTutorials([
+    {author: '徐光磊', id: 'BV1RS4y1G7tb'},
+  ]);
 
   React.useEffect(() => {
     const token = Token.load();
@@ -100,7 +103,10 @@ export default function Dashboard() {
               <Accordion.Item eventKey="0">
                 <Accordion.Header>场景介绍</Accordion.Header>
                 <Accordion.Body>
-                  <p>私人直播间，公网可以直接使用的直播间，带鉴权只有自己能推流。</p>
+                  <div>
+                    私人直播间<TutorialsButton prefixLine={true} tutorials={movieTutorials} />，公网可以直接使用的直播间，带鉴权只有自己能推流。
+                    <p></p>
+                  </div>
                   <p>可应用的具体场景包括：</p>
                   <ul>
                     <li>一起看电影，异地恋的情侣，或者三五个好朋友，一起看看自己喜欢的电影</li>
@@ -115,7 +121,10 @@ export default function Dashboard() {
               <Accordion.Item eventKey="1">
                 <Accordion.Header>OBS推流</Accordion.Header>
                 <Accordion.Body>
-                  <p>操作步骤：</p>
+                  <div>
+                    <p style={{display: 'inline-block'}}><strong>操作步骤：</strong></p>
+                    <TutorialsButton prefixLine={false} tutorials={movieTutorials} />
+                  </div>
                   <ol>
                     <li>在服务器防火墙开启<code>TCP/1935</code>端口</li>
                     <li>请从<a href='https://obsproject.com/download' target='_blank' rel='noreferrer'>下载OBS</a>并安装</li>
@@ -141,7 +150,10 @@ export default function Dashboard() {
               <Accordion.Item eventKey="2">
                 <Accordion.Header>FFmpeg推流</Accordion.Header>
                 <Accordion.Body>
-                  <p>操作步骤：</p>
+                  <div>
+                    <p style={{display: 'inline-block'}}><strong>操作步骤：</strong></p>
+                    <TutorialsButton prefixLine={false} tutorials={movieTutorials} />
+                  </div>
                   <ol>
                     <li>先在防火墙开启<code>TCP/1935</code>端口</li>
                     <li>请<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>下载FFmpeg</a>工具</li>
@@ -166,7 +178,10 @@ export default function Dashboard() {
               <Accordion.Item eventKey="3">
                 <Accordion.Header>WebRTC推流</Accordion.Header>
                 <Accordion.Body>
-                  <p>操作步骤：</p>
+                  <div>
+                    <p style={{display: 'inline-block'}}><strong>操作步骤：</strong></p>
+                    <TutorialsButton prefixLine={false} tutorials={movieTutorials} />
+                  </div>
                   <ol>
                     <li>先在服务器防火墙开启<code>UDP/8000</code>端口</li>
                     <li>请使用<code>https</code>访问管理后台。若使用自签名证书，请点页面空白处然后敲<code>thisisunsafe</code></li>
@@ -212,7 +227,7 @@ export default function Dashboard() {
                 <Accordion.Body>
                   <div>
                     <p style={{display: 'inline-block'}}><strong>前提：</strong></p>
-                    <TutorialsButton prefixLine={true} tutorials={srtTutorials} />
+                    <TutorialsButton prefixLine={false} tutorials={srtTutorials} />
                   </div>
                   <ol>
                     <li>
@@ -285,7 +300,7 @@ export default function Dashboard() {
                 <Accordion.Body>
                   <div>
                     <p style={{display: 'inline-block'}}><strong>前提：</strong></p>
-                    <TutorialsButton prefixLine={true} tutorials={srtTutorials} />
+                    <TutorialsButton prefixLine={false} tutorials={srtTutorials} />
                   </div>
                   <ol>
                     <li>
