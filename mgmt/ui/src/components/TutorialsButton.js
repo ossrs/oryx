@@ -47,9 +47,9 @@ export default function TutorialsButton({tutorials, prefixLine}) {
       <div role='button' style={{display: 'inline-block'}}>
         <Icon.PatchQuestion onClick={() => setShow(!show)} />
       </div>
+      {show && prefixLine && <p></p>}
       {show && tutorials.map((tutorial, index) => (
         <div key={index}>
-          {prefixLine && <p></p>}
           <Toast show={show} onClose={() => setShow(false)}>
             <Toast.Header>
               <img src={logo} className="rounded me-2" width={56}/>
@@ -65,9 +65,9 @@ export default function TutorialsButton({tutorials, prefixLine}) {
               </a>
             </Toast.Body>
           </Toast>
+          <p></p>
         </div>
       ))}
-      {show && <p></p>}
     </>
   );
 }
