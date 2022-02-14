@@ -17,7 +17,7 @@ const Cors = require('koa2-cors');
 const BodyParser = require('koa-bodyparser');
 const serve = require('koa-static');
 const mount  = require('koa-mount');
-const auth = require('./auth');
+const token = require('./token');
 const utils = require('js-core/utils');
 const system = require('./system');
 const threads = require('./threads');
@@ -171,7 +171,7 @@ app.use(async (ctx, next) => {
 // For backend APIs, with specified path, by /terraform/v1/mgmt/
 const router = new Router();
 
-auth.handle(system.handle(router));
+token.handle(system.handle(router));
 
 router.all('/terraform/v1/mgmt/versions', async (ctx) => {
   ctx.body = utils.asResponse(0, {version: pkg.version});
