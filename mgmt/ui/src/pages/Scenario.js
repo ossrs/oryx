@@ -1,5 +1,5 @@
 import {useNavigate} from "react-router-dom";
-import {Container, Tabs, Tab, Accordion, Form} from "react-bootstrap";
+import {Container, Tabs, Tab, Accordion} from "react-bootstrap";
 import React from "react";
 import {Token, Errors} from "../utils";
 import axios from "axios";

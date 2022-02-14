@@ -34,7 +34,7 @@ function useTutorials(bvids) {
       });
       return null;
     });
-  }, []);
+  }, [bvids]);
 
   return tutorials;
 }
@@ -52,7 +52,7 @@ export default function TutorialsButton({tutorials, prefixLine}) {
         <div key={index}>
           <Toast show={show} onClose={() => setShow(false)}>
             <Toast.Header>
-              <img src={logo} className="rounded me-2" width={56}/>
+              <img src={logo} className="rounded me-2" width={56} alt=''/>
               <strong className="me-auto">bilibili</strong>
               <span title='播放次数'><Icon.Play /> {tutorial.view}</span> &nbsp;
               <span title='点赞次数'><Icon.HandThumbsUp /> {tutorial.like}</span> &nbsp;

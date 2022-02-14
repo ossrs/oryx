@@ -10,12 +10,12 @@ export default function PopoverConfirmButton({onClick, releaseAvailable, upgradi
   React.useEffect(() => {
     const allowForceUpgrade = searchParams.get('allow-force') === 'true';
     setDisabled(upgrading || (!releaseAvailable && !allowForceUpgrade));
-  }, [releaseAvailable, upgrading]);
+  }, [releaseAvailable, upgrading, searchParams]);
 
   React.useEffect(() => {
     const allowForceUpgrade = searchParams.get('allow-force') === 'true';
     console.log(`?allow-force=true|false, current=${allowForceUpgrade}, Whether allow force to upgrade, even it's the latest version`);
-  }, []);
+  }, [searchParams]);
 
   const onHandleClick = () => {
     setStartUpgrade(false);
