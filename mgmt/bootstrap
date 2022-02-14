@@ -7,5 +7,13 @@ echo "Run srs-terraform at $WORK_DIR from $0"
 APP_ARGS=$@
 echo "Program args: $APP_ARGS"
 
-cd $WORK_DIR && env NODE_ENV=production node --title='srs-terraform listen 2022' index.js $APP_ARGS
+# Do everything at the same work directory.
+cd $WORK_DIR
+
+# Execute script for each run.
+bash auto/foreach_run
+if [[ $? -ne 0 ]]; then echo "Execute for each run script failed"; exit 1; fi
+
+# Start the application server.
+env NODE_ENV=production node --title='srs-terraform listen 2022' index.js $APP_ARGS
 

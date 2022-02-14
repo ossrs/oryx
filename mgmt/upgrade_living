@@ -13,14 +13,7 @@ fi
 bash auto/upgrade_prepare "$@"
 if [[ $? -ne 0 ]]; then echo "Prepare OS failed"; exit 1; fi
 
-MEM_TOTAL=$(grep MemTotal /proc/meminfo |awk '{print $2}')
-# If memory smaller than 1GB, disable GENERATE_SOURCEMAP to avoid OOM, please see
-# https://create-react-app.dev/docs/advanced-configuration/
-if [[ MEM_TOTAL -lt 1048576 ]]; then
-  export GENERATE_SOURCEMAP=false
-fi
-
-echo "Make and upgrade updates, MEM_TOTAL=$MEM_TOTAL, GENERATE_SOURCEMAP=$GENERATE_SOURCEMAP"
+echo "Make and upgrade updates"
 (cd .. && make upgrade)
 if [[ $? -ne 0 ]]; then echo "Make and install updates failed"; exit 1; fi
 

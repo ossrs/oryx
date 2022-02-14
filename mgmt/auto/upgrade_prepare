@@ -139,3 +139,7 @@ if [[ $? -ne 0 ]]; then echo "Warning: Setup git alias failed"; exit 1; fi
 yum install -y git gcc-c++ gdb make tree dstat
 if [[ $? -ne 0 ]]; then echo "Install dependencies failed"; exit 1; fi
 
+# Execute script for each run.
+bash auto/foreach_run
+if [[ $? -ne 0 ]]; then echo "Execute for each run script failed"; exit 1; fi
+

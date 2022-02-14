@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# If memory smaller than 2GB, create swap to avoid OOM, please see
+# https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-18-04
+#
+# Note that another solution is to disable GENERATE_SOURCEMAP to avoid OOM, but it doesn't work sometimes, please see
+# https://create-react-app.dev/docs/advanced-configuration/
+#
+# Disable swap by: swapoff /srs-swapfile
+MEM_TOTAL=$(grep MemTotal /proc/meminfo |awk '{print $2}')
+if [[ MEM_TOTAL -lt 2097152 ]]; then
+  swapon --show |grep "/srs-swapfile"
+  if [[ $? -ne 0 ]]; then
+    rm -rf /srs-swapfile && fallocate -l 1G /srs-swapfile && chmod 600 /srs-swapfile && ls -lh /srs-swapfile &&
+    mkswap /srs-swapfile && swapon /srs-swapfile && echo "Create swap /srs-swapfile for MEM_TOTAL=$MEM_TOTAL"
+  fi
+fi
+if [[ $? -ne 0 ]]; then echo "Create swap failed"; exit 1; fi
+
