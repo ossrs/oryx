@@ -23,6 +23,7 @@ echo "publish version $VERSION as tag $TAG"
 cat package.json |sed "s|\"version\":.*|\"version\":\"$VERSION\",|g" > tmp.json && mv tmp.json package.json &&
 bash ../releases/update.sh &&
 git ci -am "Update version to $TAG"
+if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
 git push
 git tag -d $TAG 2>/dev/null && git push origin :$TAG
