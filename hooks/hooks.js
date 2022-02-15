@@ -36,6 +36,9 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0);
   });
 
+  // Compatible with previous mgmt.
+  router.redirect('/terraform/v1/hooks/srs/secret', '/terraform/v1/hooks/srs/secret/query');
+
   router.all('/terraform/v1/hooks/srs/secret/query', async (ctx) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(jwt, token);
