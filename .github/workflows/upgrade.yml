@@ -104,3 +104,103 @@ jobs:
           TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
           echo "Upgrade to latest $TARGET"
           ./mgmt/upgrade $TARGET
+
+  test-release-4-2-stable:
+    name: Upgrading to stable from release 4.2
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          # See https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
+          fetch-depth: 0
+
+      # See https://github.com/actions/setup-node
+      - name: Setup the npm node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'npm'
+          cache-dependency-path: |
+            mgmt/package-lock.json
+            mgmt/ui/package-lock.json
+
+      - name: Start Redis for mgmt
+        uses: supercharge/redis-github-action@1.4.0
+        with:
+          redis-version: 4
+          redis-port: 6379
+
+      - name: Setup the service
+        run: |
+          sudo ln -sf $(pwd) /usr/local/srs-terraform
+          sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
+          sudo systemctl enable srs-terraform
+
+          echo "Disable docker for test"
+          echo "USE_DOCKER=false" >> $GITHUB_ENV
+          echo "SRS_DOCKER=srs" >> $GITHUB_ENV
+
+      - name: Upgrade to stable
+        run: |
+          echo "Reset to release 4.2 at v1.0.98"
+          git reset --hard v1.0.98
+
+          (cd mgmt && npm install)
+          (cd mgmt/ui && npm install)
+          (cd mgmt && npm run build)
+
+          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          echo "Upgrade to stable $TARGET"
+          ./mgmt/upgrade $TARGET
+
+  test-release-4-2-latest:
+    name: Upgrading latest from release 4.2
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          # See https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
+          fetch-depth: 0
+
+      # See https://github.com/actions/setup-node
+      - name: Setup the npm node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'npm'
+          cache-dependency-path: |
+            mgmt/package-lock.json
+            mgmt/ui/package-lock.json
+
+      - name: Start Redis for mgmt
+        uses: supercharge/redis-github-action@1.4.0
+        with:
+          redis-version: 4
+          redis-port: 6379
+
+      - name: Setup the service
+        run: |
+          sudo ln -sf $(pwd) /usr/local/srs-terraform
+          sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
+          sudo systemctl enable srs-terraform
+
+          echo "Disable docker for test"
+          echo "USE_DOCKER=false" >> $GITHUB_ENV
+          echo "SRS_DOCKER=srs" >> $GITHUB_ENV
+
+      - name: Upgrade to latest
+        run: |
+          echo "Reset to release 4.2 at v1.0.98"
+          git reset --hard v1.0.98
+
+          (cd mgmt && npm install)
+          (cd mgmt/ui && npm install)
+          (cd mgmt && npm run build)
+
+          TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
+          echo "Upgrade to latest $TARGET"
+          ./mgmt/upgrade $TARGET
