@@ -36,10 +36,7 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0);
   });
 
-  // Compatible with previous mgmt.
-  router.redirect('/terraform/v1/hooks/srs/secret', '/terraform/v1/hooks/srs/secret/query');
-
-  router.all('/terraform/v1/hooks/srs/secret/query', async (ctx) => {
+  const handleSecretQuery = async (ctx) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(jwt, token);
 
@@ -48,7 +45,10 @@ exports.handle = (router) => {
 
     console.log(`srs secret ok, key=${SRS_SECRET_PUBLISH}, value=${'*'.repeat(publish.length)}, decoded=${JSON.stringify(decoded)}`);
     ctx.body = utils.asResponse(0, {publish});
-  });
+  };
+  // Compatible with previous mgmt.
+  router.all('/terraform/v1/hooks/srs/secret', handleSecretQuery);
+  router.all('/terraform/v1/hooks/srs/secret/query', handleSecretQuery);
 
   router.all('/terraform/v1/hooks/srs/secret/update', async (ctx) => {
     const { token, secret} = ctx.request.body;
