@@ -94,7 +94,8 @@ Releases:
 Market:
 
 * `/terraform/v1/hooks/srs/verify` Hooks: Verify the stream request URL of SRS.
-* `/terraform/v1/hooks/srs/secret` Hooks: Query the secret to generate stream URL.
+* `/terraform/v1/hooks/srs/secret/query` Hooks: Query the secret to generate stream URL.
+* `/terraform/v1/hooks/srs/secret/update` Hooks: Update the secret to generate stream URL.
 * `/prometheus` Prometheus: Time-series database and monitor.
 
 ## Depends
