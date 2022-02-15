@@ -21,6 +21,7 @@ TAG="hooks-v$VERSION"
 echo "publish version $VERSION as tag $TAG"
 
 cat package.json |sed "s|\"version\":.*|\"version\":\"$VERSION\",|g" > tmp.json && mv tmp.json package.json &&
+bash ../releases/update.sh &&
 git ci -am "Update version to $TAG"
 
 git push
@@ -36,5 +37,5 @@ echo "publish $TAG ok"
 echo "    https://github.com/ossrs/srs-terraform/actions?query=branch%3A$TAG"
 
 echo "now, update the releases"
-bash ../releases/auto/pub.sh
+bash ../releases/auto/tag.sh
 

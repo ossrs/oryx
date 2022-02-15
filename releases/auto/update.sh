@@ -20,17 +20,5 @@ VERSION="1.0.$NEXT"
 TAG="releases-v$VERSION"
 echo "publish version $VERSION as tag $TAG"
 
-cat package.json |sed "s|\"version\":.*|\"version\":\"$VERSION\",|g" > tmp.json && mv tmp.json package.json &&
-git ci -am "Update version to $TAG"
-
-git push
-git tag -d $TAG 2>/dev/null && git push origin :$TAG
-git tag $TAG
-git push origin $TAG
-
-git remote |grep -q gitee &&
-git push gitee &&
-git push gitee $TAG
-
-echo "publish $TAG ok"
-echo "    https://github.com/ossrs/srs-terraform/actions?query=branch%3A$TAG"
+cat package.json |sed "s|\"version\":.*|\"version\":\"$VERSION\",|g" > tmp.json && mv tmp.json package.json
+echo "Update version ok"
