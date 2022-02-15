@@ -25,7 +25,7 @@ if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
 cat package.json |sed "s|\"version\":.*|\"version\":\"$VERSION\",|g" > tmp.json && mv tmp.json package.json &&
 cat ../releases/releases.js |sed "s|const\ latest\ =.*|const latest = 'v$VERSION';|g" > tmp.js && mv tmp.js ../releases/releases.js &&
-bash ../releases/update.sh &&
+bash ../releases/auto/update.sh &&
 git ci -am "Update mgmt version to $TAG"
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
