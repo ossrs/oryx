@@ -10,6 +10,7 @@ export default function Config() {
   const [key, setKey] = React.useState();
   const [crt, setCrt] = React.useState();
   const [domain, setDomain] = React.useState();
+  const [secret, setSecret] = React.useState();
 
   const sslTutorials = useTutorials([
     {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
@@ -85,6 +86,31 @@ export default function Config() {
     });
   };
 
+  const updateSecret = (e) => {
+    e.preventDefault();
+
+    if (!secret) {
+      alert('请输入密钥');
+      return;
+    }
+
+    const token = Token.load();
+    axios.post('/terraform/v1/hooks/srs/secret/update', {
+      ...token, secret,
+    }).then(res => {
+      alert(`推流密钥更新成功`);
+      console.log(`Secret: Update ok`);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/routers-logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  };
+
   return (
     <>
       <p></p>
@@ -142,6 +168,21 @@ export default function Config() {
                 <Button variant="primary" type="submit" onClick={(e) => enablePlatformAccess(e, false)}>
                   取消授权
                 </Button>
+              </Form>
+            </Accordion.Body>
+          </Accordion.Item>
+          <Accordion.Item eventKey="3">
+            <Accordion.Header>更新推流密钥</Accordion.Header>
+            <Accordion.Body>
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>密钥</Form.Label>
+                  <Form.Text> * 推流鉴权的密钥</Form.Text>
+                  <Form.Control as="input" defaultValue={secret} onChange={(e) => setSecret(e.target.value)}/>
+                </Form.Group>
+                <Button variant="primary" type="submit" onClick={(e) => updateSecret(e, true)}>
+                  更新
+                </Button> &nbsp;
               </Form>
             </Accordion.Body>
           </Accordion.Item>

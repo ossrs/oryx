@@ -47,6 +47,18 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0, {publish});
   });
 
+  router.all('/terraform/v1/hooks/srs/secret/update', async (ctx) => {
+    const { token, secret} = ctx.request.body;
+    await utils.verifyToken(jwt, token);
+
+    if (!secret) throw utils.asError(errs.sys.empty, errs.status.args, 'no secret');
+
+    const r0 = await redis.set(SRS_SECRET_PUBLISH, secret);
+
+    console.log(`hooks update secret, key=${SRS_SECRET_PUBLISH}, value=${'*'.repeat(secret.length)}, r0=${r0}`);
+    ctx.body = utils.asResponse(0, {});
+  });
+
   return router;
 };
 
