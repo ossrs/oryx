@@ -172,7 +172,7 @@ export default function Config() {
             </Accordion.Body>
           </Accordion.Item>
           <Accordion.Item eventKey="3">
-            <Accordion.Header>更新推流密钥</Accordion.Header>
+            <Accordion.Header>更新流密钥</Accordion.Header>
             <Accordion.Body>
               <Form>
                 <Form.Group className="mb-3">
