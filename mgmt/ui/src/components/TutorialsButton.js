@@ -34,7 +34,7 @@ function useTutorials(bvids) {
       });
       return null;
     });
-  }, [bvids]);
+  }, []);
 
   return tutorials;
 }
