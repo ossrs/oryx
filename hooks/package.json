@@ -1,6 +1,6 @@
 {
   "name": "hooks",
-  "version":"1.0.17",
+  "version":"1.0.18",
   "description": "Hooks for srs-terraform modules",
   "main": "index.js",
   "scripts": {
