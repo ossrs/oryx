@@ -144,8 +144,8 @@ jobs:
 
       - name: Upgrade to stable
         run: |
-          echo "Reset to release 4.2 at v1.0.98"
-          git reset --hard v1.0.98
+          echo "Reset to release 4.2 at v1.0.102"
+          git reset --hard v1.0.102
 
           (cd mgmt && npm install)
           (cd mgmt/ui && npm install)
@@ -194,8 +194,8 @@ jobs:
 
       - name: Upgrade to latest
         run: |
-          echo "Reset to release 4.2 at v1.0.98"
-          git reset --hard v1.0.98
+          echo "Reset to release 4.2 at v1.0.102"
+          git reset --hard v1.0.102
 
           (cd mgmt && npm install)
           (cd mgmt/ui && npm install)
