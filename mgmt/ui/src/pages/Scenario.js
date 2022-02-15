@@ -25,13 +25,13 @@ export default function Dashboard() {
   const [m3u8Url2, setM3u8Url2] = React.useState();
   const [secret, setSecret] = React.useState();
 
-  const srtTutorials = useTutorials([
+  const srtTutorials = useTutorials(React.useRef([
     {author: '崔国栋', id: 'BV1aS4y1G7iG'},
     {author: '马景瑞', id: 'BV1c341177e7'},
-  ]);
-  const movieTutorials = useTutorials([
+  ]));
+  const movieTutorials = useTutorials(React.useRef([
     {author: '徐光磊', id: 'BV1RS4y1G7tb'},
-  ]);
+  ]));
 
   React.useEffect(() => {
     const token = Token.load();

@@ -5,7 +5,21 @@ import * as Icon from 'react-bootstrap-icons';
 import {Token} from "../utils";
 import axios from "axios";
 
-function useTutorials(bvids) {
+/**
+ * Fetch the video tutorials from bilibili, for example:
+ * @param bvidsRef The ref for video id of bilibili, must be a ref to avoid duplicated loading.
+ * @returns A state of tutorials.
+ *
+ * For example:
+      const sslTutorials = useTutorials(React.useRef([
+        {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
+      ]));
+ * Then, use the state in TutorialsButton:
+      return <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
+ */
+function useTutorials(bvidsRef) {
+  const bvids = bvidsRef.current;
+
   const [tutorials, setTutorials] = React.useState([]);
   const ref = React.useRef({});
 
@@ -34,12 +48,13 @@ function useTutorials(bvids) {
       });
       return null;
     });
-  }, []);
+  }, [bvids]);
 
   return tutorials;
 }
 
-export default function TutorialsButton({tutorials, prefixLine}) {
+// The tutorials button, the props tutorials is a array, create by useTutorials.
+function TutorialsButton({tutorials, prefixLine}) {
   const [show, setShow] = React.useState(false);
 
   return (

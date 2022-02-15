@@ -12,9 +12,9 @@ export default function Config() {
   const [domain, setDomain] = React.useState();
   const [secret, setSecret] = React.useState();
 
-  const sslTutorials = useTutorials([
+  const sslTutorials = useTutorials(React.useRef([
     {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
-  ]);
+  ]));
 
   const enablePlatformAccess = (e, enabled) => {
     e.preventDefault();
