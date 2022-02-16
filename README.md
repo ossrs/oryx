@@ -117,3 +117,15 @@ The software we depend on:
   * Data directory: `mgmt/containers/data/prometheus`
 * [NodeExporter](https://github.com/prometheus/node_exporter), `docker --name node-exporter`
 
+## Upgrade Workflow
+
+When upgrading automatically or manually by user:
+
+* `bash upgrade` for each upgrade.
+
+When system start, check the flag `SRS_FIRST_BOOT_DONE` in redis, if not set:
+
+* `bash auto/upgrade_prepare` do upgrade for previous images.
+
+They are not mutually exclusive.
+
