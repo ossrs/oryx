@@ -34,7 +34,7 @@ async function threadMain() {
       await doThreadMain();
     } catch (e) {
       console.error(`Thread #market: err`, e);
-      await new Promise(resolve => setTimeout(resolve, 300 * 1000));
+      await new Promise(resolve => setTimeout(resolve, 30 * 1000));
     } finally {
       await new Promise(resolve => setTimeout(resolve, 3 * 1000));
     }
