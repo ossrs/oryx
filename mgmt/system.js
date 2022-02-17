@@ -23,6 +23,7 @@ const jwt = require('jsonwebtoken');
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const moment = require('moment');
+const platform = require('./platform');
 
 async function queryLatestVersion() {
   const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'http://api.ossrs.net';
@@ -204,7 +205,7 @@ exports.handle = (router) => {
 
     // We run always with "-n Run non-interactively"
     // Note that it's started by nodejs, so never use '-it' or failed for 'the input device is not a TTY'.
-    const registry = await metadata.registry();
+    const registry = await platform.registry();
     const dockerArgs = `docker run --rm --name certbot-certonly \\
       -v "${process.cwd()}/containers/etc/letsencrypt:/etc/letsencrypt" \\
       -v "${process.cwd()}/containers/var/lib/letsencrypt:/var/lib/letsencrypt" \\
