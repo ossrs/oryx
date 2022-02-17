@@ -25,7 +25,7 @@ const redis = require('js-core/redis').create({config: config.redis, redis: iore
 const moment = require('moment');
 
 async function queryLatestVersion() {
-  const releaseServer = process.env.NODE_ENV === 'development' ? `http://localhost:${consts.config.port}` : 'http://api.ossrs.net';
+  const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'http://api.ossrs.net';
   const {data: releases} = await axios.get(`${releaseServer}/terraform/v1/releases`, {
     params: {
       version: `v${pkg.version}`,
@@ -120,30 +120,44 @@ exports.handle = (router) => {
   });
 
   router.all('/terraform/v1/mgmt/containers', async (ctx) => {
-    const {token, action, name} = ctx.request.body;
+    const {token, action, name, enabled} = ctx.request.body;
     const decoded = await utils.verifyToken(jwt, token);
 
     if (!action) throw utils.asError(errs.sys.empty, errs.status.args, `no param action`);
 
-    const validActions = ['query'];
+    const validActions = ['query', 'enabled'];
     if (!validActions.includes(action)) throw utils.asError(errs.sys.invalid, errs.status.args, `invalid action ${action}, should be ${validActions}`);
 
+    if (action === 'enabled') {
+      if (!name) throw utils.asError(errs.sys.empty, errs.status.args, `no param name`);
+      if (enabled !== true && enabled !== false) throw utils.asError(errs.sys.empty, errs.status.args, `no param enabled`);
+      const r0 = await redis.hset(consts.SRS_CONTAINER_DISABLED, name, !enabled);
+      if (!enabled && name) await exec(`docker rm -f ${name}`);
+      console.log(`srs ok, action=${action}, name=${name}, enabled=${enabled}, r0=${r0}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+      return ctx.body = utils.asResponse(0);
+    }
+
+    // Query containers
     const containers = [];
-    Object.keys(metadata.market).map(k => {
+    for (const k in metadata.market) {
       if (name && k !== name) return;
 
       const container = metadata.market[k];
       if (!container) throw utils.asError(errs.sys.resource, errs.status.not, `no container --name=${k}`);
 
+      // Query container enabled status from redis.
+      const disabled = await redis.hget(consts.SRS_CONTAINER_DISABLED, container.name);
+
       containers.push({
         name: container.name,
+        enabled: disabled !== 'true',
         container: {
           ID: container.container.ID,
           State: container.container.State,
           Status: container.container.Status,
         },
       });
-    });
+    }
 
     console.log(`srs ok, action=${action}, name=${name}, containers=${containers.length}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, containers);

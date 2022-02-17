@@ -5,9 +5,9 @@ __REAL_INSTALL=$(DESTDIR)$(SRS_PREFIX)
 
 default:
 	@echo "Usage: make build|install|upgrade"
-	@echo "		build 		Build the project, npm install and build the ui"
-	@echo "		install 	Copy files for installer"
-	@echo "		upgrade 	Build for upgrade"
+	@echo "     build       Build the project, npm install and build the ui"
+	@echo "     install     Copy files for installer"
+	@echo "     upgrade     Build for upgrade"
 
 build:
 	@cd mgmt && npm install

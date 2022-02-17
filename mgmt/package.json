@@ -4,8 +4,7 @@
   "description": "API for srs-terraform mgmt",
   "main": "index.js",
   "scripts": {
-    "start": "env NODE_ENV=development USE_DOCKER=false node .",
-    "docker": "env NODE_ENV=development USE_DOCKER=true node .",
+    "start": "env NODE_ENV=development node .",
     "build": "cd ui && env PUBLIC_URL=/mgmt npm run build",
     "upgrade": "cd ui && env BUILD_PATH=./upgrade PUBLIC_URL=/mgmt npm run build"
   },

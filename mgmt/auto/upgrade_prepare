@@ -124,7 +124,8 @@ echo "Detect REGISTRY=$REGISTRY"
 # container if need to change the startup arguments.
 echo "Upgrading all containers by images" &&
 update_containers $REGISTRY ossrs/lighthouse:4 &&
-update_containers $REGISTRY ossrs/srs-terraform:hooks-1
+update_containers $REGISTRY ossrs/srs-terraform:hooks-1 &&
+update_containers $REGISTRY ossrs/srs-terraform:tencent-1
 if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
 
 # Setup git alias to make it convenient.

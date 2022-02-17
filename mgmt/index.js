@@ -24,7 +24,6 @@ const threads = require('./threads');
 const consts = require('./consts');
 const pkg = require('./package.json');
 const staticCache = require('koa-static-cache');
-const metadata = require('./metadata');
 const platform = require('./platform');
 
 // Start all workers threads first.
@@ -64,6 +63,9 @@ app.use(proxy('/terraform/v1/mgmt/srs/hooks', withLogs({
   target: 'http://127.0.0.1:2021/',
   rewrite: path => path.replace('/terraform/v1/mgmt/srs/hooks', '/terraform/v1/hooks/srs/verify'),
 })));
+
+// For registered modules, by /terraform/v1/tencent/
+app.use(proxy('/terraform/v1/tencent/', withLogs({target: 'http://127.0.0.1:2020/'})));
 
 // Proxy to SRS HTTP streaming, console and player, by /api/, /rtc/, /live/, /console/, /players/
 // See https://github.com/vagusX/koa-proxies
@@ -182,7 +184,7 @@ app.use(router.routes());
 ///////////////////////////////////////////////////////////////////////////////////////////
 const run = async () => {
   const {region, registry} = await platform.init();
-  console.log(`Run with cwd=${process.cwd()}, USE_DOCKER=${process.env.USE_DOCKER}, region=${region}, registry=${registry}`);
+  console.log(`Run with cwd=${process.cwd()}, region=${region}, registry=${registry}`);
   app.listen(consts.config.port, () => {
     console.log(`Server start on http://localhost:${consts.config.port}`);
   });

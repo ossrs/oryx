@@ -51,7 +51,7 @@ async function doThreadMain() {
   console.log(`Thread #${metadata.upgrade.name}: query request by version=v${pkg.version}`);
 
   // For development, request the releases from itself which proxy to the releases service.
-  const releaseServer = process.env.NODE_ENV === 'development' ? `http://localhost:${consts.config.port}` : 'http://api.ossrs.net';
+  const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'http://api.ossrs.net';
   const {data} = await axios.get(`${releaseServer}/terraform/v1/releases`, {
     params: {
       version: `v${pkg.version}`,

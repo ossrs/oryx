@@ -1,5 +1,14 @@
 'use strict';
 
+// For mgmt, it's ok to connect to localhost.
+const config = {
+  redis:{
+    host: 'localhost',
+    port: 6379,
+    password: '',
+  },
+};
+
 const { isMainThread, parentPort } = require("worker_threads");
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
@@ -7,6 +16,9 @@ const metadata = require('./metadata');
 const os = require('os');
 const platform = require('./platform');
 const pkg = require('./package.json');
+const ioredis = require('ioredis');
+const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
+const consts = require('./consts');
 
 if (!isMainThread) {
   threadMain();
@@ -34,6 +46,9 @@ async function doThreadMain() {
     const conf = metadata.market[e];
     const container = await doContainerMain(conf);
 
+    // Ignore if not running.
+    if (!container) continue;
+
     // Update the metadata to main thread.
     const msg = {metadata: {}};
     msg.metadata[e] = container;
@@ -53,6 +68,13 @@ async function doContainerMain(conf) {
 
   // Restart the SRS container.
   if (!all || !all.ID || !running || !running.ID) {
+    // Query container enabled status from redis.
+    const disabled = await redis.hget(consts.SRS_CONTAINER_DISABLED, conf.name);
+    if (disabled === 'true') {
+      console.log(`Thread #market: container ${conf.name} disable`);
+      return container;
+    }
+
     await startContainer(conf);
 
     all = (await queryContainer(conf.name))[0];
