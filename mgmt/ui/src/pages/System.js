@@ -298,6 +298,13 @@ function MgmtUpgradeButton({onStatus}) {
   const [upgradeDone, setUpgradeDone] = React.useState();
   const [progress, setProgress] = React.useState(120);
 
+  // Because the onStatus always change during rendering, so we use a callback so that the useEffect() could depends on
+  // it to avoid infinitely loops. That is callback is not changed, while onStatus changed(not null) mnay times during
+  // each rendering of components.
+  const callback = React.useCallback((status) => {
+    onStatus(status);
+  }, []);
+
   // For callback to use state.
   const ref = React.useRef({});
   React.useEffect(() => {
@@ -316,7 +323,7 @@ function MgmtUpgradeButton({onStatus}) {
 
         // Normally state.
         setIsUpgrading(status.upgrading);
-        onStatus(status);
+        callback(status);
 
         // Whether upgrade is available.
         if (status && status.releases && status.releases.latest) {
@@ -344,7 +351,7 @@ function MgmtUpgradeButton({onStatus}) {
     refreshMgmtStatus();
     const timer = setInterval(() => refreshMgmtStatus(), 5000);
     return () => clearInterval(timer);
-  }, [startingUpgrade]);
+  }, [startingUpgrade, callback]);
 
   const handleStartUpgrade = () => {
     if (isUpgrading) return;

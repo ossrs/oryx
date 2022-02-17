@@ -10,7 +10,6 @@ export default function Navigator({initialized, token}) {
   const location = useLocation();
 
   React.useEffect(() => {
-    console.log(`xxx`, initialized, token, location.pathname);
     if (!initialized) return setNavs([]);
 
     if (!token) {
