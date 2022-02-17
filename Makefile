@@ -21,9 +21,9 @@ upgrade:
 
 install:
 	@mkdir -p $(__REAL_INSTALL)
-	@rm -rf $(__REAL_INSTALL)/mgmt
+	@rm -rf $(__REAL_INSTALL)/mgmt $(__REAL_INSTALL)/js-core
 	@ln -sf `pwd`/mgmt $(__REAL_INSTALL)/mgmt
-	@ls -lh $(__REAL_INSTALL)/mgmt
+	@ln -sf `pwd`/js-core $(__REAL_INSTALL)/js-core
 	@rm -rf $(__REAL_INSTALL)/usr
 	@cp -rf usr $(__REAL_INSTALL)/usr
 	@sed -i "s|/usr/local/srs-terraform|$(SRS_PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/srs-terraform.service
