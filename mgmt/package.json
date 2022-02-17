@@ -6,7 +6,8 @@
   "scripts": {
     "start": "env NODE_ENV=development node .",
     "build": "cd ui && env PUBLIC_URL=/mgmt npm run build",
-    "upgrade": "cd ui && env BUILD_PATH=./upgrade PUBLIC_URL=/mgmt npm run build"
+    "upgrade": "cd ui && env BUILD_PATH=./upgrade PUBLIC_URL=/mgmt npm run build",
+    "postinstall": "cd ui && npm install"
   },
   "author": "ossrs",
   "license": "MIT",

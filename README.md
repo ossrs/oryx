@@ -7,33 +7,17 @@ A control panel for SRS, to terraform the open-source video platform
 Install dependencies:
 
 ```bash
-cd releases && npm install
-cd hooks && npm install
 cd mgmt && npm install
 ```
 
-Run the releases:
-
-```
-cd releases
-npm start
-```
-
-Run the hooks:
-
-```
-cd hooks
-npm start
-```
-
-Run the backend:
+Run the mgmt backend:
 
 ```
 cd mgmt
 npm start
 ```
 
-Run the ui:
+Run the mgmt react ui:
 
 ```
 cd mgmt/ui
@@ -66,10 +50,19 @@ The features that we're developing:
 * [x] SRS container use docker logs `json-file` and rotate for logging.
 * [x] Support high-resolution and realtime(200~500ms) live streaming by SRT.
 * [x] Run SRS hooks in docker, to callback by SRS server.
-* [ ] Support publish by SRT, play by RTMP/HTTP-FLV/HLS/WebRTC/SRT.
+* [x] Support publish by SRT, play by RTMP/HTTP-FLV/HLS/WebRTC/SRT.
+* [x] Integrate with prometheus and node-exporter.
+* [ ] Support DVR to cloud storage, see [#1193](https://github.com/ossrs/srs/issues/1193).
+* [ ] Forward stream to multiple platforms, see [#2676](https://github.com/ossrs/srs/issues/2676).
+* [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
+* [ ] Support virtual live streaming, covert file or other resource to live.
+* [ ] Support WebRTC face to face chat, see [#2857](https://github.com/ossrs/srs/issues/2857).
+* [ ] Support WebRTC video chat room, see [#2924](https://github.com/ossrs/srs/issues/2924).
+* [ ] Support a set of tools for developer, see [#2891](https://github.com/ossrs/srs/issues/2891).
 * [ ] Collect logs of mgmt and containers together.
 * [ ] Stop, restart and upgrade containers.
 * [ ] Support logrotate to manage the logs.
+* [ ] Enhance prometheus API with authentication.
 
 ## APIs
 
