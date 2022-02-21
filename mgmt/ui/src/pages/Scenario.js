@@ -3,6 +3,7 @@ import {Container, Tabs, Tab, Accordion} from "react-bootstrap";
 import React from "react";
 import {Token, Errors} from "../utils";
 import axios from "axios";
+import QRCode from 'qrcode.react';
 import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
 
 export default function Dashboard() {
@@ -266,6 +267,21 @@ export default function Dashboard() {
                       </ol>
                     </li>
                     <li>点击推流按钮</li>
+                  </ol>
+                  <p><strong>二维码推流操作步骤：</strong></p>
+                  <ol>
+                    <li>先在服务器防火墙开启<code>UDP/10080</code>端口</li>
+                    <li>下载<a href='http://www.sinsam.com/sm/download/?t=2' target='_blank' rel='noreferrer'>芯象 APP</a></li>
+                    <li>
+                      打开芯象 APP, 点击"扫一扫", 扫描如下二维码开始推流
+                    </li>
+                    { srtPublishUrl ? <QRCode
+                      id="qrCode"
+                      style={{ margin: 'auto' }}
+                      value={srtPublishUrl}  // 二维码的链接
+                      size={200}  // 二维码的宽高尺寸
+                      fgColor="#000000"   // 二维码的颜色
+                    /> : "" }
                   </ol>
                   <p><strong>播放操作步骤：</strong></p>
                   <ol>
