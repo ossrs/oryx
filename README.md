@@ -80,6 +80,8 @@ Platform:
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
 * `/terraform/v1/mgmt/containers` Query and upgrade SRS container.
 * `/terraform/v1/mgmt/bilibili` Query the video information.
+* `/terraform/v1/mgmt/beian/query` Query the beian information.
+* `/terraform/v1/mgmt/beian/update` Update the beian information.
 
 Releases:
 

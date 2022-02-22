@@ -13,10 +13,30 @@ export default function Config() {
   const [secret, setSecret] = React.useState();
   const [secretId, setSecretId] = React.useState();
   const [secretKey, setSecretKey] = React.useState();
+  const [beian, setBeian] = React.useState();
 
   const sslTutorials = useTutorials(React.useRef([
     {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
   ]));
+
+  const updateBeian = (e) => {
+    e.preventDefault();
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/beian/update', {
+      ...token, beian: 'icp', text: beian,
+    }).then(res => {
+      alert('设置备案信息成功，请刷新页面');
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/routers-logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  };
 
   const updateTencentSecret = (e) => {
     e.preventDefault();
@@ -215,6 +235,25 @@ export default function Config() {
                     </Form.Group>
                     <Button variant="primary" type="submit" onClick={(e) => updateTencentSecret(e)}>
                       设置账号
+                    </Button>
+                  </Form>
+                </Accordion.Body>
+              </Accordion.Item>
+            </Accordion>
+          </Tab>
+          <Tab eventKey="beian" title="备案">
+            <Accordion defaultActiveKey="0">
+              <Accordion.Item eventKey="0">
+                <Accordion.Header>设置备案号</Accordion.Header>
+                <Accordion.Body>
+                  <Form>
+                    <Form.Group className="mb-3">
+                      <Form.Label>ICP备案号</Form.Label>
+                      <Form.Text> * 请参考<a href='https://beian.miit.gov.cn' target='_blank' rel='noreferrer'>https://beian.miit.gov.cn</a></Form.Text>
+                      <Form.Control as="input" defaultValue={beian} placeholder='例如：京ICP备XXXXXXXX号-X' onChange={(e) => setBeian(e.target.value)}/>
+                    </Form.Group>
+                    <Button variant="primary" type="submit" onClick={(e) => updateBeian(e)}>
+                      设置
                     </Button>
                   </Form>
                 </Accordion.Body>

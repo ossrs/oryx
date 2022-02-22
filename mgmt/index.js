@@ -132,7 +132,7 @@ if (true) {
 
   // Disable the index.html cache, because need to load the correct latest js files,
   // see https://github.com/koajs/static-cache#editing-the-files-object
-  reactFiles['/mgmt/index.html'].maxAge = 0;
+  if (reactFiles['/mgmt/index.html']) reactFiles['/mgmt/index.html'].maxAge = 0;
 }
 
 // For /favicon.ico
