@@ -15,7 +15,6 @@ const exec = util.promisify(require('child_process').exec);
 const metadata = require('./metadata');
 const os = require('os');
 const platform = require('./platform');
-const pkg = require('./package.json');
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const consts = require('./consts');
@@ -128,7 +127,7 @@ async function startContainer(conf) {
     ${tcpPorts} ${udpPorts} \\
     ${evalValue(conf.logConfig)} \\
     ${volumes} ${extras} \\
-    --env SRS_REGION=${region} --env SRS_SOURCE=${source} --env SRS_MGMT=v${pkg.version} \\
+    --env SRS_REGION=${region} --env SRS_SOURCE=${source} \\
     ${image} \\
     ${command}`;
   console.log(`Thread #market: docker run args ip=${privateIPv4.name}/${privateIPv4.address}, docker run ${dockerArgs}`);

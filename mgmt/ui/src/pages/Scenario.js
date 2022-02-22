@@ -5,6 +5,7 @@ import {Token, Errors} from "../utils";
 import axios from "axios";
 import QRCode from 'qrcode.react';
 import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
+import ScenarioDvr from './ScenarioDvr';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -398,6 +399,9 @@ export default function Dashboard() {
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>
+          </Tab>
+          <Tab eventKey="dvr" title="云录制">
+            <ScenarioDvr />
           </Tab>
           <Tab eventKey="source" title="源代码">
             <Accordion defaultActiveKey="0">

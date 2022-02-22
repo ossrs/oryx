@@ -64,6 +64,10 @@ app.use(proxy('/terraform/v1/mgmt/srs/hooks', withLogs({
   rewrite: path => path.replace('/terraform/v1/mgmt/srs/hooks', '/terraform/v1/hooks/srs/verify'),
 })));
 
+// We directly serve the static files, because we overwrite the www for DVR.
+app.use(mount('/console/', serve('./containers/www/console/')));
+app.use(mount('/players/', serve('./containers/www/players/')));
+
 // For registered modules, by /terraform/v1/tencent/
 app.use(proxy('/terraform/v1/tencent/', withLogs({target: 'http://127.0.0.1:2020/'})));
 
@@ -73,8 +77,6 @@ app.use(proxy('/terraform/v1/tencent/', withLogs({target: 'http://127.0.0.1:2020
 app.use(proxy('/api/', withLogs({target: 'http://127.0.0.1:1985/'})));
 app.use(proxy('/rtc/', withLogs({target: 'http://127.0.0.1:1985/'})));
 app.use(proxy('/*/*.(flv|m3u8|ts|aac|mp3)', withLogs({target: 'http://127.0.0.1:8080/'})));
-app.use(proxy('/console/', withLogs({target: 'http://127.0.0.1:8080/'})));
-app.use(proxy('/players/', withLogs({target: 'http://127.0.0.1:8080/'})));
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //   Static File Server sections.

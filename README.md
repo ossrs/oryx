@@ -92,6 +92,11 @@ Market:
 * `/terraform/v1/hooks/srs/verify` Hooks: Verify the stream request URL of SRS.
 * `/terraform/v1/hooks/srs/secret/query` Hooks: Query the secret to generate stream URL.
 * `/terraform/v1/hooks/srs/secret/update` Hooks: Update the secret to generate stream URL.
+* `/terraform/v1/hooks/srs/hls` Hooks: Handle the `on_hls` event.
+* `/terraform/v1/hooks/dvr/apply` Hooks: Apply the DVR pattern.
+* `/terraform/v1/hooks/dvr/query` Hooks: Query the DVR pattern.
+* `/terraform/v1/hooks/dvr/files` Hooks: List the DVR files.
+* `/terraform/v1/hooks/dvr/hls` Hooks: Generate HLS/m3u8 url to preview or download.
 * `/terraform/v1/tencent/cam/secret` Tencent: Setup the CAM SecretId and SecretKey.
 * `/prometheus` Prometheus: Time-series database and monitor.
 
@@ -107,9 +112,12 @@ The software we depend on:
   * Verify webroot: `mgmt/containers/www/.well-known/acme-challenge/`
   * Cert files: `mgmt/containers/etc/letsencrypt/live/`
 * [SRS](https://github.com/ossrs/srs), `docker --name srs-server`
-  * Config: `mgmt/containers/conf/srs.conf`
+  * Config: `mgmt/containers/conf/srs.conf` mount as `/usr/local/srs/conf/lighthouse.conf`
+  * Volume: `mgmt/containers/objs/nginx/html` mount as `/usr/local/srs/objs/nginx/html`
 * [srs-hooks](https://github.com/ossrs/srs-terraform/tree/lighthouse/hooks), `docker --name srs-hooks`
+  * Volume: `mgmt/containers/objs/nginx/html` mount as `/usr/local/mgmt/containers/objs/nginx/html`
 * [tencent-cloud](https://github.com/ossrs/srs-terraform/tree/lighthouse/tencent), `docker --name tencent-cloud`
+  * [CAM](https://console.cloud.tencent.com/cam/overview) Authentication by secretId and secretKey.
 * [Prometheus](https://github.com/prometheus/prometheus#install), `docker --name prometheus`
   * Config: `mgmt/containers/conf/prometheus.yml`
   * Data directory: `mgmt/containers/data/prometheus`

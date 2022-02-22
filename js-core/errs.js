@@ -22,6 +22,8 @@ exports.sys = {
   invalid: 1004,
   // In upgrading.
   upgrading: 1005,
+  // Authentication.
+  auth: 1006,
 };
 
 // Error codes for auth.

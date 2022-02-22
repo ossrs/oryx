@@ -134,7 +134,14 @@ git config --local alias.co checkout &&
 git config --local alias.br branch &&
 git config --local alias.ci commit &&
 git config --local alias.st status
-if [[ $? -ne 0 ]]; then echo "Warning: Setup git alias failed"; exit 1; fi
+if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
+
+# For DVR preview, create nginx location.
+if [[ ! -f /etc/nginx/default.d/dvr.preview.conf ]]; then
+  cp containers/conf/dvr.preview.conf /etc/nginx/default.d/dvr.preview.conf &&
+  systemctl reload nginx && echo "Create nginx location for DVR preview"
+  if [[ $? -ne 0 ]]; then echo "Create nginx location for DVR preview failed"; exit 1; fi
+fi
 
 # Execute script for each run.
 bash auto/foreach_run

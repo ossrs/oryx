@@ -21,6 +21,8 @@ const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const metadata = require('./metadata');
 const platform = require('./platform');
+const COS = require('cos-nodejs-sdk-v5');
+const cos = require('js-core/cos');
 
 if (!isMainThread) {
   threadMain();
@@ -43,6 +45,13 @@ async function threadMain() {
 }
 
 async function doThreadMain() {
+  // Run only once for each process.
+  await resetUpgrading();
+
+  const region = await platform.region();
+  await cos.createCosBucket(redis, COS, region);
+
+  // Run only once for a special version.
   await firstRun();
 
   // Wait for a while to request version.
@@ -111,20 +120,13 @@ async function doThreadMain() {
 }
 
 async function firstRun() {
-  // When restart, reset the upgrading.
-  const r1 = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
-  if (r1) {
-    const r2 = await redis.hget(consts.SRS_UPGRADING, 'desc');
-    const r3 = await redis.del(consts.SRS_UPGRADING);
-    console.log(`Thread #${metadata.upgrade.name}: reset upgrading for r1=${r1}, r2=${r2}, r3=${r3}`);
-  }
-
   // For each init stage changed, we could use a different redis key, to identify this special init workflow.
   // However, keep in mind that previous defined workflow always be executed, so these operations should be idempotent.
   // History:
   //    SRS_FIRST_BOOT_DONE, For release 4.1, to restart srs.
-  //    SRS_FIRST_BOOT_DONE_v1, For current release, to restart srs, exec upgrade_prepare.
-  const SRS_FIRST_BOOT_DONE = 'SRS_FIRST_BOOT_DONE_v1';
+  //    SRS_FIRST_BOOT_DONE_v1, For release 4.2, to restart srs, exec upgrade_prepare.
+  //    SRS_FIRST_BOOT_DONE_v2, For current release, to restart srs, update the hls hooks.
+  const SRS_FIRST_BOOT_DONE = 'SRS_FIRST_BOOT_DONE_v2';
 
   // Run once, record in redis.
   const r0 = await redis.get(SRS_FIRST_BOOT_DONE);
@@ -152,5 +154,15 @@ async function firstRun() {
 
   console.log(`Thread #${metadata.upgrade.name}: boot done`);
   return true;
+}
+
+async function resetUpgrading() {
+  // When restart, reset the upgrading.
+  const r1 = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
+  if (r1) {
+    const r2 = await redis.hget(consts.SRS_UPGRADING, 'desc');
+    const r3 = await redis.del(consts.SRS_UPGRADING);
+    console.log(`Thread #${metadata.upgrade.name}: reset upgrading for r1=${r1}, r2=${r2}, r3=${r3}`);
+  }
 }
 

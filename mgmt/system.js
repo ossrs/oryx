@@ -15,6 +15,7 @@ const { spawn } = require('child_process');
 const metadata = require('./metadata');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const execFile = util.promisify(require('child_process').execFile);
 const axios = require('axios');
 const consts = require('./consts');
 const fs = require('fs');
@@ -226,8 +227,12 @@ exports.handle = (router) => {
 
     // Remove the ssl file, because it might link to other file.
     await exec(`rm -f /etc/nginx/ssl/nginx.key /etc/nginx/ssl/nginx.crt`);
-    await exec(`ln -sf ${keyFile} /etc/nginx/ssl/nginx.key`);
-    await exec(`ln -sf ${crtFile} /etc/nginx/ssl/nginx.crt`);
+
+    // Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
+    await execFile('ln', ['-sf', keyFile, '/etc/nginx/ssl/nginx.key']);
+    await execFile('ln', ['-sf', crtFile, '/etc/nginx/ssl/nginx.crt']);
+
+    // Restart the nginx service to reload the SSL files.
     await exec(`systemctl reload nginx.service`);
 
     console.log(`let's encrypt ok, domain=${domain}, key=${keyFile}, crt=${crtFile}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
