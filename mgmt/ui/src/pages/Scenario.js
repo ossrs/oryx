@@ -3,6 +3,7 @@ import {Container, Tabs, Tab, Accordion} from "react-bootstrap";
 import React from "react";
 import {Token, Errors} from "../utils";
 import axios from "axios";
+import QRCode from 'qrcode.react';
 import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
 
 export default function Dashboard() {
@@ -257,12 +258,19 @@ export default function Dashboard() {
                   <p><strong>推流操作步骤：</strong></p>
                   <ol>
                     <li>先在服务器防火墙开启<code>UDP/10080</code>端口</li>
-                    <li>下载<a href='http://www.sinsam.com/' target='_blank' rel='noreferrer'>芯象直播Windows版</a>，注意一定要<code>Windows版</code>，若你是Mac请用其他方案</li>
+                    <li>下载<a href='http://www.sinsam.com/' target='_blank' rel='noreferrer'>芯象直播Windows版</a>，注意一定要<code>Windows版</code>，或者下载<a href='http://www.sinsam.com/sm/download/?t=2' target='_blank' rel='noreferrer'>芯象 APP</a>，若你是Mac请用其他方案</li>
                     <li>
                       配置芯象推流，可以参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-encoder'>链接</a>：
                       <ol>
                         <li>类型：<code>自定义推流</code></li>
                         <li>推流地址：<br/><code>{srtPublishUrl}</code></li>
+                          { srtPublishUrl ? <QRCode
+                          id="qrCode"
+                          style={{ margin: 'auto' }}
+                          value={srtPublishUrl}  // 二维码的链接
+                          size={200}  // 二维码的宽高尺寸
+                          fgColor="#000000"   // 二维码的颜色
+                        /> : "" }
                         <li>传输模式：<code>单一网络</code></li>
                         <li>编码方式：<code>软件编码</code></li>
                         <li>配置文件：<code>基线配置</code></li>
@@ -274,6 +282,13 @@ export default function Dashboard() {
                   <p><strong>播放操作步骤：</strong></p>
                   <ol>
                     <li>SRT流播放地址：<br/><code>{srtPlayUrl}</code></li>
+                      { srtPlayUrl ? <QRCode
+                          id="qrCode"
+                          style={{ margin: 'auto' }}
+                          value={srtPlayUrl}  // 二维码的链接
+                          size={200}  // 二维码的宽高尺寸
+                          fgColor="#000000"   // 二维码的颜色
+                        /> : "" }
                     <li>下载<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>ffplay</a>，FFmpeg自带的低延迟播放器</li>
                     <li>
                       Windows，执行命令：<br/>
