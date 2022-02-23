@@ -29,6 +29,7 @@ if [[ $SETUP_PASSWORD -ne 0 ]]; then
 fi
 
 if [[ $SETUP_BIND -ne 0 || $SETUP_PORT -ne 0 || $SETUP_PASSWORD -ne 0 ]]; then
+  echo "Wait for a while for upgrade to query and change status" && sleep 10 &&
   systemctl restart redis && systemctl status redis && echo "Restart redis"
   if [[ $? -ne 0 ]]; then echo "Restart redis failed"; exit 1; fi
 fi
