@@ -126,10 +126,11 @@ async function firstRun() {
   // History:
   //    SRS_FIRST_BOOT_DONE, For release 4.1, to restart srs.
   //    SRS_FIRST_BOOT_DONE_v1, For release 4.2, to restart srs, exec upgrade_prepare.
-  //    SRS_FIRST_BOOT_DONE_v2, For release 4.2, to restart srs, update the hls hooks.
-  //    SRS_FIRST_BOOT.v3, For current release, to restart hooks, update the volumes.
+  //    SRS_FIRST_BOOT_DONE_v2, For release 4.2, to restart srs-server, update the hls hooks.
+  //    SRS_FIRST_BOOT.v3, For current release, to restart srs-hooks, update the volumes.
+  //    SRS_FIRST_BOOT.v4, For current release, to restart tencent-cloud, update the volumes.
   const SRS_FIRST_BOOT = keys.redis.SRS_FIRST_BOOT;
-  const bootRelease = 'v3';
+  const bootRelease = 'v4';
 
   // Run once, record in redis.
   const r0 = await redis.hget(SRS_FIRST_BOOT, bootRelease);
@@ -146,13 +147,18 @@ async function firstRun() {
   console.log(`Thread #${metadata.upgrade.name}: Prepare OS for first run, r0=${r0}`);
   await exec(`bash auto/upgrade_prepare`);
 
-  try {
-    await exec(`docker rm -f ${metadata.market.srs.name}`);
-    await exec(`docker rm -f ${metadata.market.hooks.name}`);
-    console.log(`Thread #${metadata.upgrade.name}: boot remove docker ${metadata.market.srs.name} and ${metadata.market.hooks.name}`);
-  } catch (e) {
-    console.log(`Thread #${metadata.upgrade.name}: boot ignore rm dockers error ${e.message}`);
-  }
+  // Remove containers.
+  const removeContainer = async (name) => {
+    try {
+      await exec(`docker rm -f ${name}`);
+      console.log(`Thread #${metadata.upgrade.name}: boot remove docker ${name} ok`);
+    } catch (e) {
+      console.log(`Thread #${metadata.upgrade.name}: boot remove docker ${name}, ignore err ${e}`);
+    }
+  };
+  await removeContainer(metadata.market.srs.name);
+  await removeContainer(metadata.market.hooks.name);
+  await removeContainer(metadata.market.tencent.name);
 
   console.log(`Thread #${metadata.upgrade.name}: boot done`);
   return true;
