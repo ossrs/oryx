@@ -23,6 +23,7 @@ const metadata = require('./metadata');
 const platform = require('./platform');
 const COS = require('cos-nodejs-sdk-v5');
 const cos = require('js-core/cos');
+const keys = require('js-core/keys');
 
 if (!isMainThread) {
   threadMain();
@@ -127,7 +128,7 @@ async function firstRun() {
   //    SRS_FIRST_BOOT_DONE_v1, For release 4.2, to restart srs, exec upgrade_prepare.
   //    SRS_FIRST_BOOT_DONE_v2, For release 4.2, to restart srs, update the hls hooks.
   //    SRS_FIRST_BOOT.v3, For current release, to restart hooks, update the volumes.
-  const SRS_FIRST_BOOT = 'SRS_FIRST_BOOT';
+  const SRS_FIRST_BOOT = keys.redis.SRS_FIRST_BOOT;
   const bootRelease = 'v3';
 
   // Run once, record in redis.

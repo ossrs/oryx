@@ -70,6 +70,7 @@ Platform:
 
 * `/terraform/v1/mgmt/versions` Public version api.
 * `/terraform/v1/mgmt/init` Whether mgmt initialized.
+* `/terraform/v1/mgmt/check` Check whether system is ok.
 * `/terraform/v1/mgmt/status` Query the version of mgmt.
 * `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
 * `/terraform/v1/mgmt/strategy` Toggle the upgrade strategy.
@@ -129,9 +130,10 @@ When upgrading automatically or manually by user:
 
 * `bash upgrade` for each upgrade.
 
-When system start, check the flag `SRS_FIRST_BOOT_DONE` in redis, if not set:
+When system start, check the flag `SRS_FIRST_BOOT` in redis, if not set:
 
 * `bash auto/upgrade_prepare` do upgrade for previous images.
+* Restart container srs-server and srs-hooks, for config changed.
 
 They are not mutually exclusive.
 

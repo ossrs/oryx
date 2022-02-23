@@ -24,6 +24,8 @@ exports.sys = {
   upgrading: 1005,
   // Authentication.
   auth: 1006,
+  // For redis.
+  redis: 1007,
 };
 
 // Error codes for auth.

@@ -18,5 +18,9 @@ exports.redis = {
   SRS_DVR_M3U8_METADATA: 'SRS_DVR_M3U8_METADATA',
   // The patterns apply to DVR.
   SRS_DVR_PATTERNS: 'SRS_DVR_PATTERNS',
+  // The publish secret.
+  SRS_SECRET_PUBLISH: 'SRS_SECRET_PUBLISH',
+  // The first boot flag.
+  SRS_FIRST_BOOT: 'SRS_FIRST_BOOT',
 };
 

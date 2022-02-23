@@ -171,7 +171,7 @@ function ScenarioDvrImpl({activeKey, defaultDvrAll}) {
               </Table>
             ) : ''
           }
-          {!dvrFiles?.length ? '没有流。请推流后，等待大约30秒左右，录制列表会自动更新' : ''}
+          {!dvrFiles?.length ? '没有流。请开启录制并推流后，等待大约60秒左右，录制列表会自动更新' : ''}
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>

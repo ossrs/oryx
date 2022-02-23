@@ -1,5 +1,14 @@
 'use strict';
 
+// For mgmt, it's ok to connect to localhost.
+const config = {
+  redis:{
+    host: 'localhost',
+    port: 6379,
+    password: '',
+  },
+};
+
 const os = require('os');
 const fs = require('fs');
 const dotenv = require('dotenv');
@@ -11,6 +20,9 @@ const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const metadata = require('./metadata');
 const market = require('./market');
+const ioredis = require('ioredis');
+const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
+const keys = require('js-core/keys');
 
 // MySQL日期字段格式化字符串 @see https://stackoverflow.com/a/27381633
 const MYSQL_DATETIME = 'YYYY-MM-DD HH:mm:ss';
@@ -77,6 +89,17 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0, {
       init: !!process.env.MGMT_PASSWORD,
     });
+  });
+
+  router.all('/terraform/v1/mgmt/check', async (ctx) => {
+    // Check whether redis is ok.
+    const r0 = await redis.get(keys.redis.SRS_SECRET_PUBLISH);
+    const r1 = await redis.hlen(keys.redis.SRS_FIRST_BOOT);
+    const r2 = await redis.hlen(keys.redis.SRS_TENCENT_LH);
+    if (!r0 || !r1 || !r2) throw utils.asError(errs.sys.redis, errs.status.sys, `redis corrupt`);
+
+    console.log(`system check ok, r0=${r0}, r1=${r1}, r2=${r2}`);
+    ctx.body = utils.asResponse(0);
   });
 
   router.all('/terraform/v1/mgmt/token', async (ctx) => {
