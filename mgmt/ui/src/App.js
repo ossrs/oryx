@@ -34,7 +34,7 @@ function App() {
 
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/check').then(res => {
-      setInitialized(res.data.data.init);
+      console.log(`Check ok, ${JSON.stringify(res.data)}`);
     }).catch(e => {
       const err = e.response.data;
       alert(`服务器错误，${err.code}: ${err.data.message}`);
