@@ -24,7 +24,14 @@ exports.market = {
     udpPorts: [8000, 10080],
     command: ['./objs/srs -c conf/lighthouse.conf'],
     logConfig: '--log-driver json-file --log-opt max-size=3g --log-opt max-file=3',
-    volumes: [`${process.cwd()}/containers/conf/srs.conf:/usr/local/srs/conf/lighthouse.conf`],
+    volumes: [
+      `${process.cwd()}/containers/conf/srs.conf:/usr/local/srs/conf/lighthouse.conf`,
+      // Note that we mount the whole www directory, so we must build the static files such as players.
+      `${process.cwd()}/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html`,
+      // We must mount the player and console because the HTTP home of SRS is overwrite by DVR.
+      `${process.cwd()}/containers/www/players:/usr/local/srs/www/players`,
+      `${process.cwd()}/containers/www/console:/usr/local/srs/www/console`,
+    ],
     extras: [],
     container: {
       ID: null,
@@ -42,7 +49,11 @@ exports.market = {
     udpPorts: [],
     command: ['node .'],
     logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
-    volumes: [`${process.cwd()}/.env:/srs-terraform/hooks/.env`],
+    volumes: [
+      `${process.cwd()}/.env:/usr/local/srs-terraform/hooks/.env`,
+      `${process.cwd()}/containers/objs/nginx/html:/usr/local/srs-terraform/mgmt/containers/objs/nginx/html`,
+      `${process.cwd()}/containers/data/dvr:/usr/local/srs-terraform/mgmt/containers/data/dvr`,
+    ],
     extras: [],
     container: {
       ID: null,

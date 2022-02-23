@@ -4,6 +4,7 @@ import {Errors, Token, PlatformPublicKey} from "../utils";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
 import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
+import SetupCamSecret from '../components/SetupCamSecret';
 
 export default function Config() {
   const navigate = useNavigate();
@@ -11,8 +12,6 @@ export default function Config() {
   const [crt, setCrt] = React.useState();
   const [domain, setDomain] = React.useState();
   const [secret, setSecret] = React.useState();
-  const [secretId, setSecretId] = React.useState();
-  const [secretKey, setSecretKey] = React.useState();
   const [beian, setBeian] = React.useState();
 
   const sslTutorials = useTutorials(React.useRef([
@@ -27,25 +26,6 @@ export default function Config() {
       ...token, beian: 'icp', text: beian,
     }).then(res => {
       alert('设置备案信息成功，请刷新页面');
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
-  };
-
-  const updateTencentSecret = (e) => {
-    e.preventDefault();
-
-    const token = Token.load();
-    axios.post('/terraform/v1/tencent/cam/secret', {
-      ...token, secretId, secretKey,
-    }).then(res => {
-      alert('腾讯云访问密钥设置成功');
     }).catch(e => {
       const err = e.response.data;
       if (err.code === Errors.auth) {
@@ -222,21 +202,7 @@ export default function Config() {
               <Accordion.Item eventKey="0">
                 <Accordion.Header>腾讯云密钥(Secret)</Accordion.Header>
                 <Accordion.Body>
-                  <Form>
-                    <Form.Group className="mb-3">
-                      <Form.Label>SecretId</Form.Label>
-                      <Form.Text> * 腾讯云的账号ID</Form.Text>
-                      <Form.Control as="input" rows={2} defaultValue={secretId} onChange={(e) => setSecretId(e.target.value)} />
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                      <Form.Label>SecretKey</Form.Label>
-                      <Form.Text> * 腾讯云的账号Secret</Form.Text>
-                      <Form.Control as="input" rows={2} defaultValue={secretKey} onChange={(e) => setSecretKey(e.target.value)} />
-                    </Form.Group>
-                    <Button variant="primary" type="submit" onClick={(e) => updateTencentSecret(e)}>
-                      设置账号
-                    </Button>
-                  </Form>
+                  <SetupCamSecret submitTips=' * 会自动创建依赖的云资源' />
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>

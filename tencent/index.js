@@ -23,6 +23,19 @@ const app = new Koa();
 app.use(Cors());
 app.use(BodyParser());
 
+// For Error handler.
+app.use(async (ctx, next) => {
+  try {
+    await next();
+  } catch (e) {
+    ctx.status = e.status || 500;
+    ctx.body = utils.asResponse(e.code || 1, {
+      message: e.message || e.err?.message || 'unknown error',
+    });
+    console.error(e);
+  }
+});
+
 const router = new Router();
 
 settings.handle(router);

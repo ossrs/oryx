@@ -1,6 +1,18 @@
 'use strict';
 
+// For mgmt, it's ok to connect to localhost.
+const config = {
+  redis:{
+    host: 'localhost',
+    port: 6379,
+    password: '',
+  },
+};
+
 const axios = require('axios');
+const ioredis = require('ioredis');
+const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
+const keys = require('js-core/keys');
 
 exports.isDarwin = process.platform === 'darwin';
 
@@ -20,17 +32,26 @@ exports.registry = async () => {
 exports.init = async () => {
   const isDarwin = exports.isDarwin;
 
-  const region = await discoverRegion();
-  conf.region = region;
+  // Load the region first, because it never changed.
+  conf.region = await redis.hget(keys.redis.SRS_TENCENT_LH, 'region');
+  if (!conf.region) {
+    const region = await discoverRegion();
+    conf.region = region;
+    await redis.hset(keys.redis.SRS_TENCENT_LH, 'region', region);
+  }
 
-  const source = await discoverSource(region);
+  // Always update the source, because it might change.
+  const source = await discoverSource(conf.region);
   conf.source = source;
+  await redis.hset(keys.redis.SRS_TENCENT_LH, 'source', source);
 
+  // Always update the registry, because it might change.
   const registry = (source === 'github') ? 'sgccr.ccs.tencentyun.com' : 'ccr.ccs.tencentyun.com';
   conf.registry = registry;
+  await redis.hset(keys.redis.SRS_TENCENT_LH, 'registry', registry);
 
-  console.log(`Initialize region=${region}, source=${source}, registry=${registry}, isDarwin=${isDarwin}`);
-  return {region, registry, isDarwin};
+  console.log(`Initialize region=${conf.region}, source=${source}, registry=${registry}, isDarwin=${isDarwin}`);
+  return {region: conf.region, registry, isDarwin};
 };
 
 async function discoverRegion() {

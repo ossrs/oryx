@@ -1,12 +1,13 @@
 {
   "name": "hooks",
-  "version":"1.0.20",
+  "version": "1.0.20",
   "description": "Hooks for srs-terraform modules",
   "main": "index.js",
   "scripts": {
     "start": "env NODE_ENV=development node ."
   },
   "dependencies": {
+    "cos-nodejs-sdk-v5": "^2.11.6",
     "dotenv": "^14.3.2",
     "ioredis": "^4.28.3",
     "js-core": "file:../js-core",
@@ -15,6 +16,7 @@
     "koa-bodyparser": "^4.3.0",
     "koa-router": "^10.1.1",
     "koa2-cors": "^2.0.6",
-    "moment": "^2.29.1"
+    "moment": "^2.29.1",
+    "uuid": "^8.3.2"
   }
 }

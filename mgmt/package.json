@@ -13,6 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "axios": "^0.25.0",
+    "cos-nodejs-sdk-v5": "^2.11.6",
     "dotenv": "^14.2.0",
     "ioredis": "^4.28.3",
     "js-core": "file:../js-core",
