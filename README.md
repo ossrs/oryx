@@ -52,7 +52,10 @@ The features that we're developing:
 * [x] Run SRS hooks in docker, to callback by SRS server.
 * [x] Support publish by SRT, play by RTMP/HTTP-FLV/HLS/WebRTC/SRT.
 * [x] Integrate with prometheus and node-exporter.
-* [ ] Support DVR to cloud storage, see [#1193](https://github.com/ossrs/srs/issues/1193).
+* [x] Support DVR to cloud storage, see [#1193](https://github.com/ossrs/srs/issues/1193).
+* [x] Change redis port and use randomly password.
+* [ ] Support integrity with cloud VoD.
+* [ ] Support GB28181 by SRS 5.0 container.
 * [ ] Forward stream to multiple platforms, see [#2676](https://github.com/ossrs/srs/issues/2676).
 * [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
 * [ ] Support virtual live streaming, covert file or other resource to live.
