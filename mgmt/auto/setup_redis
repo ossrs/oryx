@@ -33,3 +33,9 @@ if [[ $SETUP_BIND -ne 0 || $SETUP_PORT -ne 0 || $SETUP_PASSWORD -ne 0 ]]; then
   if [[ $? -ne 0 ]]; then echo "Restart redis failed"; exit 1; fi
 fi
 
+echo '#!/usr/bin/env bash' > ~lighthouse/redis-cli &&
+cat .env |grep REDIS >> ~lighthouse/redis-cli &&
+echo "redis-cli -p \$REDIS_PORT -a \$REDIS_PASSWORD" >> ~lighthouse/redis-cli &&
+chmod +x ~lighthouse/redis-cli &&
+echo "Create redis-cli helper"
+
