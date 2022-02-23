@@ -202,7 +202,7 @@ export default function Config() {
               <Accordion.Item eventKey="0">
                 <Accordion.Header>腾讯云密钥(Secret)</Accordion.Header>
                 <Accordion.Body>
-                  <SetupCamSecret />
+                  <SetupCamSecret submitTips=' * 会自动创建依赖的云资源' />
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>

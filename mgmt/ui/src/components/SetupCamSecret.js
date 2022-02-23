@@ -4,7 +4,7 @@ import {Errors, Token} from "../utils";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
 
-export default function SetupCamSecret() {
+export default function SetupCamSecret({submitTips}) {
   const navigate = useNavigate();
   const [secretId, setSecretId] = React.useState();
   const [secretKey, setSecretKey] = React.useState();
@@ -43,6 +43,7 @@ export default function SetupCamSecret() {
       <Button variant="primary" type="submit" onClick={(e) => updateTencentSecret(e)}>
         设置账号
       </Button>
+      <Form.Text>{submitTips}</Form.Text>
     </Form>
   </>);
 }
