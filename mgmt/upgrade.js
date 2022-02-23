@@ -4,8 +4,8 @@
 const config = {
   redis:{
     host: 'localhost',
-    port: 6379,
-    password: '',
+    port: process.env.REDIS_PORT || 6379,
+    password: process.env.REDIS_PASSWORD || '',
   },
 };
 
@@ -129,8 +129,9 @@ async function firstRun() {
   //    SRS_FIRST_BOOT_DONE_v2, For release 4.2, to restart srs-server, update the hls hooks.
   //    SRS_FIRST_BOOT.v3, For current release, to restart srs-hooks, update the volumes.
   //    SRS_FIRST_BOOT.v4, For current release, to restart tencent-cloud, update the volumes.
+  //    SRS_FIRST_BOOT.v5, For current release, restart containers for .env changed.
   const SRS_FIRST_BOOT = keys.redis.SRS_FIRST_BOOT;
-  const bootRelease = 'v4';
+  const bootRelease = 'v5';
 
   // Run once, record in redis.
   const r0 = await redis.hget(SRS_FIRST_BOOT, bootRelease);

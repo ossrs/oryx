@@ -22,11 +22,8 @@ echo "PrivateIPv4 is $PIPV4, REGION is $REGION, SOURCE is $SOURCE"
 # We must setup the redis to listen at lo and eth0, to allow containers to access it.
 # Note that should never listen at * for security reason.
 if [[ -f /etc/redis.conf ]]; then
-  # Replace the bind for redis.
-  sed -i "s/^bind 127.0.0.1.*$/bind 127.0.0.1 $PIPV4/g" /etc/redis.conf && grep '^bind 127.0.0.1' /etc/redis.conf &&
-  systemctl restart redis && systemctl status redis &&
-  echo "Change redis to listen at lo and eth0=$PIPV4"
-  if [[ $? -ne 0 ]]; then echo "Listen at eth0=$PIPV4 for redis failed"; exit 1; fi
+  . auto/setup_redis
+  if [[ $? -ne 0 ]]; then echo "Setup redis failed"; exit 1; fi
 fi
 
 # Update the sysctl

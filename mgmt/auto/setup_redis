@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+# Replace the bind for redis.
+grep -q "^bind 127.0.0.1 $PIPV4" /etc/redis.conf; SETUP_BIND=$?
+if [[ $SETUP_BIND -ne 0 ]]; then
+  sed -i "s/^bind 127.0.0.1.*$/bind 127.0.0.1 $PIPV4/g" /etc/redis.conf &&
+  grep "^bind 127.0.0.1" /etc/redis.conf &&
+  echo "Change redis to listen at lo and eth0=$PIPV4"
+  if [[ $? -ne 0 ]]; then echo "Listen at eth0=$PIPV4 for redis failed"; exit 1; fi
+fi
+
+# Save port to .env
+grep -q "^REDIS_PORT=" .env; SETUP_PORT=$?
+if [[ $SETUP_PORT -ne 0 ]]; then
+  echo "REDIS_PORT=56379" >> .env &&
+  sed -i "s/^port 6379.*$/port 56379/g" /etc/redis.conf &&
+  echo "Listen to port 56379"
+  if [[ $? -ne 0 ]]; then echo "Change listen port failed"; exit 1; fi
+fi
+
+# Save password to .env
+grep -q "^REDIS_PASSWORD=" .env; SETUP_PASSWORD=$?
+if [[ $SETUP_PASSWORD -ne 0 ]]; then
+  REDIS_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 6)
+  echo "REDIS_PASSWORD=${REDIS_PASSWORD}" >> .env
+  sed -i "s/.*requirepass .*$/requirepass $REDIS_PASSWORD/g" /etc/redis.conf &&
+  echo "Set redis password"
+  if [[ $? -ne 0 ]]; then echo "Change password failed"; exit 1; fi
+fi
+
+if [[ $SETUP_BIND -ne 0 || $SETUP_PORT -ne 0 || $SETUP_PASSWORD -ne 0 ]]; then
+  systemctl restart redis && systemctl status redis && echo "Restart redis"
+  if [[ $? -ne 0 ]]; then echo "Restart redis failed"; exit 1; fi
+fi
+

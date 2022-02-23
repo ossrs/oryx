@@ -71,7 +71,9 @@ exports.market = {
     udpPorts: [],
     command: ['node .'],
     logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
-    volumes: [`${process.cwd()}/.env:/srs-terraform/tencent/.env`],
+    volumes: [
+      `${process.cwd()}/.env:/usr/local/srs-terraform/tencent/.env`,
+    ],
     extras: [],
     container: {
       ID: null,

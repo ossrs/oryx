@@ -29,7 +29,7 @@ const create = ({config, redis}) => {
     if (!config.port) throw utils.asError(errs.sys.empty, errs.status.sys, `config.port required`);
 
     const dbConfig = {
-      port: config.port,
+      port: parseInt(config.port),
       host: config.host,
       family: 4,
       db: 0,
