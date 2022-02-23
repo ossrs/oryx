@@ -125,31 +125,32 @@ async function firstRun() {
   // History:
   //    SRS_FIRST_BOOT_DONE, For release 4.1, to restart srs.
   //    SRS_FIRST_BOOT_DONE_v1, For release 4.2, to restart srs, exec upgrade_prepare.
-  //    SRS_FIRST_BOOT_DONE_v2, For current release, to restart srs, update the hls hooks.
-  const SRS_FIRST_BOOT_DONE = 'SRS_FIRST_BOOT_DONE_v2';
+  //    SRS_FIRST_BOOT_DONE_v2, For release 4.2, to restart srs, update the hls hooks.
+  //    SRS_FIRST_BOOT.v3, For current release, to restart hooks, update the volumes.
+  const SRS_FIRST_BOOT = 'SRS_FIRST_BOOT';
+  const bootRelease = 'v3';
 
   // Run once, record in redis.
-  const r0 = await redis.get(SRS_FIRST_BOOT_DONE);
-  await redis.set(SRS_FIRST_BOOT_DONE, 1);
+  const r0 = await redis.hget(SRS_FIRST_BOOT, bootRelease);
+  await redis.hset(SRS_FIRST_BOOT, bootRelease, 1);
   if (r0) {
     console.log(`Thread #${metadata.upgrade.name}: boot already done, r0=${r0}`);
     return false;
   }
 
   // To prevent boot again and again.
-  console.log(`Thread #${metadata.upgrade.name}: boot start to setup, v=${SRS_FIRST_BOOT_DONE}, r0=${r0}`);
+  console.log(`Thread #${metadata.upgrade.name}: boot start to setup, v=${SRS_FIRST_BOOT}.${bootRelease}, r0=${r0}`);
 
   // For the second time, we prepare the os, for previous version which does not run the upgrade living.
   console.log(`Thread #${metadata.upgrade.name}: Prepare OS for first run, r0=${r0}`);
   await exec(`bash auto/upgrade_prepare`);
 
   try {
-    // Because we already create the container, and cached the last SRS 4.0 image, also set the hosts for hooks by
-    // --add-host which is incorrect for new machine, so we must delete the container and restart it when first run.
     await exec(`docker rm -f ${metadata.market.srs.name}`);
-    console.log(`Thread #${metadata.upgrade.name}: boot remove docker ${metadata.market.srs.name}`);
+    await exec(`docker rm -f ${metadata.market.hooks.name}`);
+    console.log(`Thread #${metadata.upgrade.name}: boot remove docker ${metadata.market.srs.name} and ${metadata.market.hooks.name}`);
   } catch (e) {
-    console.log(`Thread #${metadata.upgrade.name}: boot ignore rm docker ${metadata.market.srs.name} error ${e.message}`);
+    console.log(`Thread #${metadata.upgrade.name}: boot ignore rm dockers error ${e.message}`);
   }
 
   console.log(`Thread #${metadata.upgrade.name}: boot done`);
