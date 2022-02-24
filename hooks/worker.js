@@ -69,7 +69,7 @@ async function handleMessage(msg) {
   localObj.nn = localObj.files.length;
   localObj.update = moment().format();
   const r1 = await redis.hset(keys.redis.SRS_DVR_M3U8_LOCAL, m3u8_url, JSON.stringify(localObj));
-  console.log(`Thread #worker: local dvr task m3u8=${m3u8_url}, uuid=${m3u8Obj.uuid}, file=${file}, tsfile=${tsfile}, duration=${duration}, seqno=${seqno}, r0=${r0}, r1=${r1}`);
+  console.log(`Thread #worker: local dvr task m3u8=${m3u8_url}, files=${localObj.files.length}, uuid=${m3u8Obj.uuid}, file=${file}, tsfile=${tsfile}, duration=${duration}, seqno=${seqno}, r0=${r0}, r1=${r1}`);
 }
 
 async function doThreadMain() {
@@ -123,10 +123,17 @@ async function handleLocalObject(cos, bucket, region, localKey, local) {
   const metadata = await redis.hget(keys.redis.SRS_DVR_M3U8_METADATA, local.uuid);
   const metadataObj = metadata && JSON.parse(metadata);
 
-  console.log(`Thread #worker: uploaded files=${localFiles.length}, left=${local.files.length}, uploaded=${uploadedObj?.files?.length}, metadata=${metadataObj?.files?.length}`);
+  console.log(`Thread #worker: Finished files=${localFiles.length}, left=${local.files.length}, uploaded=${uploadedObj?.files?.length}, metadata=${metadataObj?.files?.length}`);
 }
 
 async function handleLocalFile(cos, bucket, region, localKey, local, localFile) {
+  // Ignore file if not exists.
+  if (!fs.existsSync(localFile.tsfile)) {
+    await updateLocalObject(localKey, local, localFile, null);
+    console.warn(`Thread #worker: Ignore m3u8=${localKey}, ts=${localFile.url} for TsNotFount`);
+    return;
+  }
+
   // Upload the ts file to COS.
   const key = `${local.uuid}/${localFile.tsid}.ts`;
   const stats = fs.statSync(localFile.tsfile);
@@ -150,6 +157,20 @@ async function handleLocalFile(cos, bucket, region, localKey, local, localFile) 
   });
 
   // Update the uploaded ts files.
+  await updateUploadedObject(local, localFile, key, stats);
+
+  // Update the metadata for m3u8.
+  await updateMetadataObject(bucket, region, localKey, local, localFile, key, stats);
+
+  // Update the left local local files.
+  await updateLocalObject(localKey, local, localFile, key);
+
+  // Remove the tsfile.
+  fs.unlinkSync(localFile.tsfile);
+  console.log(`Thread #worker: Remove local for m3u8=${localKey}, ts=${localFile.url}, as=${key}`);
+}
+
+async function updateUploadedObject(local, localFile, key, stats) {
   const uploaded = await redis.hget(keys.redis.SRS_DVR_M3U8_UPLOADED, local.uuid);
   const uploadedObj = uploaded ? JSON.parse(uploaded) : {
     nn: 0,
@@ -157,6 +178,7 @@ async function handleLocalFile(cos, bucket, region, localKey, local, localFile) 
     uuid: local.uuid,
     files: [],
   };
+
   // Reduce the uploaded files by uuid.
   uploadedObj.files = uploadedObj.files.filter(e => e.tsid !== localFile.tsid);
   // Append the uploaded ts file.
@@ -167,9 +189,11 @@ async function handleLocalFile(cos, bucket, region, localKey, local, localFile) 
     ...localFile,
   });
   uploadedObj.nn = uploadedObj.files.length;
-  await redis.hset(keys.redis.SRS_DVR_M3U8_UPLOADED, local.uuid, JSON.stringify(uploadedObj));
 
-  // Update the metadata for m3u8.
+  await redis.hset(keys.redis.SRS_DVR_M3U8_UPLOADED, local.uuid, JSON.stringify(uploadedObj));
+}
+
+async function updateMetadataObject(bucket, region, localKey, local, localFile, key, stats) {
   const metadata = await redis.hget(keys.redis.SRS_DVR_M3U8_METADATA, local.uuid);
   const metadataObj = metadata ? JSON.parse(metadata) : {
     nn: 0,
@@ -187,6 +211,7 @@ async function handleLocalFile(cos, bucket, region, localKey, local, localFile) 
     // The ts files in COS.
     files: [],
   };
+
   // Reduce the uploaded files by uuid.
   metadataObj.files = metadataObj.files.filter(e => e.tsid !== localFile.tsid);
   metadataObj.files.push({
@@ -199,19 +224,32 @@ async function handleLocalFile(cos, bucket, region, localKey, local, localFile) 
   });
   metadataObj.nn = metadataObj.files.length;
   metadataObj.update = moment().format();
+
   await redis.hset(keys.redis.SRS_DVR_M3U8_METADATA, local.uuid, JSON.stringify(metadataObj));
   console.log(`Thread #worker: Update metadata for m3u8=${localKey}, uuid=${local.uuid}, files=${metadataObj.nn}`);
+}
 
-  // Update the left local local files.
-  const leftFiles = local.files.filter(e => e !== localFile);
-  console.log(`Thread #worker: Upload m3u8=${localKey}, ts=${localFile.url}, as=${key}, before=${local.files.length}, left=${leftFiles.length}`);
-  local.files = leftFiles;
-  local.nn = leftFiles.length;
-  local.update = moment().format();
-  await redis.hset(keys.redis.SRS_DVR_M3U8_LOCAL, localKey, JSON.stringify(local));
+async function updateLocalObject(localKey, local, localFile, key) {
+  // @remark Note that the local.files might changed by other asyncs, so we must reload it before save it.
+  const localRef = await redis.hget(keys.redis.SRS_DVR_M3U8_LOCAL, localKey);
+  const localRefObj = JSON.parse(localRef);
 
-  // Remove the tsfile.
-  fs.unlinkSync(localFile.tsfile);
+  // Warning if files changed.
+  if (local.files.length !== localRefObj.files.length) {
+    console.warn(`Thread #worker: LocalTsFiles changed, m3u8=${localKey}, before=${local.files.length}, ref=${localRefObj.files.length}`);
+  }
+
+  // Filter the left files.
+  const leftFiles = localRefObj.files.filter(e => e.tsid !== localFile.tsid);
+  console.log(`Thread #worker: Update local for m3u8=${localKey}, ts=${localFile.url}, as=${key}, before=${localRefObj.files.length}, left=${leftFiles.length}`);
+
+  // Update the local realtime reference object.
+  local.files = localRefObj.files = leftFiles;
+  local.nn = localRefObj.nn = leftFiles.length;
+  local.update = localRefObj.update = moment().format();
+
+  // Write to redis.
+  await redis.hset(keys.redis.SRS_DVR_M3U8_LOCAL, localKey, JSON.stringify(localRefObj));
 }
 
 async function finishLocalObject(cos, bucket, region, localKey, local) {
