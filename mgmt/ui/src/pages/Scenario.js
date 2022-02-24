@@ -31,10 +31,12 @@ export default function Dashboard() {
     {author: '崔国栋', id: 'BV1aS4y1G7iG'},
     {author: '马景瑞', id: 'BV1c341177e7'},
     {author: 'SRS', id: 'BV1Nb4y1t7ij'},
+    {author: '瓦全', id: 'BV1SF411t7Li'},
   ]));
   const movieTutorials = useTutorials(React.useRef([
     {author: '徐光磊', id: 'BV1RS4y1G7tb'},
     {author: 'SRS', id: 'BV1Nb4y1t7ij'},
+    {author: '瓦全', id: 'BV1SF411t7Li'},
   ]));
 
   React.useEffect(() => {
