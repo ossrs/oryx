@@ -32,12 +32,12 @@ export default function SetupCamSecret({submitTips}) {
     <Form>
       <Form.Group className="mb-3">
         <Form.Label>SecretId</Form.Label>
-        <Form.Text> * 腾讯云的SecretId, <a href='https://console.cloud.tencent.com/cam' target='_blank' rel='noreferrer'>获取密钥</a></Form.Text>
+        <Form.Text> * 腾讯云的SecretId, <a href='https://console.cloud.tencent.com/cam/capi' target='_blank' rel='noreferrer'>获取密钥</a></Form.Text>
         <Form.Control as="input" rows={2} defaultValue={secretId} onChange={(e) => setSecretId(e.target.value)} />
       </Form.Group>
       <Form.Group className="mb-3">
         <Form.Label>SecretKey</Form.Label>
-        <Form.Text> * 腾讯云的SecretKey, <a href='https://console.cloud.tencent.com/cam' target='_blank' rel='noreferrer'>获取密钥</a></Form.Text>
+        <Form.Text> * 腾讯云的SecretKey, <a href='https://console.cloud.tencent.com/cam/capi' target='_blank' rel='noreferrer'>获取密钥</a></Form.Text>
         <Form.Control as="input" type='password' rows={2} defaultValue={secretKey} onChange={(e) => setSecretKey(e.target.value)} />
       </Form.Group>
       <Button variant="primary" type="submit" onClick={(e) => updateTencentSecret(e)}>

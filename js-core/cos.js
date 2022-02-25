@@ -33,7 +33,7 @@ exports.createCosBucket = async (redis, COS, region) => {
     // See https://cloud.tencent.com/document/product/436/56556
     await redis.hset(keys.redis.SRS_TENCENT_COS, 'location', `${bucket}.cos.${region}.myqcloud.com`);
   } else {
-    console.log(`COS: Already exists bucket=${bucket}`);
+    console.log(`COS: Already exists key=${keys.redis.SRS_TENCENT_COS}, bucket=${bucket}`);
   }
 
   // Setup COS bucket if no policy.
@@ -42,7 +42,7 @@ exports.createCosBucket = async (redis, COS, region) => {
     await putBucketPolicy(cos, bucket, region, appId);
     await redis.hset(keys.redis.SRS_TENCENT_COS, 'policy', 'read-without-list-files');
   } else {
-    console.log(`COS: Already exists policy`);
+    console.log(`COS: Already exists policy, key=${keys.redis.SRS_TENCENT_COS}`);
   }
 
   // Setup the CORS of bucket.
