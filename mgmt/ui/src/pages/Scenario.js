@@ -1,4 +1,4 @@
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useSearchParams} from "react-router-dom";
 import {Container, Tabs, Tab} from "react-bootstrap";
 import React from "react";
 import {Token, Errors} from "../utils";
@@ -9,10 +9,11 @@ import ScenarioSrt from './ScenarioSrt';
 import ScenarioLive from './ScenarioLive';
 import useUrls from "../components/UrlGenerator";
 
-export default function Dashboard() {
+function DashboardImpl({defaultActiveTab}) {
   const navigate = useNavigate();
   const [secret, setSecret] = React.useState();
-  const [activeTab, setActiveTab] = React.useState('live');
+  const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const {
     rtmpServer,
@@ -51,11 +52,16 @@ export default function Dashboard() {
     });
   }, [navigate]);
 
+  const onSelectTab = (k) => {
+    setSearchParams({'tab': k});
+    setActiveTab(k);
+  };
+
   return (
     <>
       <p></p>
       <Container>
-        <Tabs defaultActiveKey={activeTab} id="uncontrolled-tab-example" className="mb-3" onSelect={(k) => setActiveTab(k)}>
+        <Tabs defaultActiveKey={activeTab} id="uncontrolled-tab-example" className="mb-3" onSelect={(k) => onSelectTab(k)}>
           <Tab eventKey="live" title="私人直播间">
             { activeTab === 'live' && <ScenarioLive urls={{flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2}} /> }
           </Tab>
@@ -72,5 +78,20 @@ export default function Dashboard() {
       </Container>
     </>
   );
+}
+
+export default function Dashboard() {
+  const [searchParams] = useSearchParams();
+  const [defaultActiveTab, setDefaultActiveTab] = React.useState();
+
+  React.useEffect(() => {
+    const tab = searchParams.get('tab') || 'live';
+    console.log(`?tab=live|srt|dvr|source, current=${tab}, Select the tab to render`);
+    setDefaultActiveTab(tab);
+  }, [searchParams]);
+
+  return (<>
+    { defaultActiveTab && <DashboardImpl defaultActiveTab={defaultActiveTab} /> }
+  </>);
 }
 
