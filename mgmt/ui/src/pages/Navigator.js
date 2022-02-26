@@ -18,12 +18,12 @@ export default function Navigator({initialized, token}) {
 
     setNavs([
       {eventKey: '1', to: '/routers-dashboard', text: '仪表盘'},
-      {eventKey: '2', to: '/routers-scenario', text: '应用场景'},
-      {eventKey: '3', to: '/routers-settings', text: '系统配置'},
+      {eventKey: '2', to: '/routers-scenario?tab=live', text: '应用场景'},
+      {eventKey: '3', to: '/routers-settings?tab=auth', text: '系统配置'},
       {eventKey: '4', to: '/routers-system', text: '组件管理'},
       {eventKey: '5', to: '/routers-contact', text: '专享群'},
     ].map(e => {
-      if (e.to === location.pathname) {
+      if (e.to.indexOf(location.pathname) === 0) {
         e.className = 'text-light';
         setActiveKey(e.eventKey);
       }

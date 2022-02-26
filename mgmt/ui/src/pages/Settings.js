@@ -2,17 +2,19 @@ import React from "react";
 import {Accordion, Container, Form, Button, Tabs, Tab} from "react-bootstrap";
 import {Errors, Token, PlatformPublicKey} from "../utils";
 import axios from "axios";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useSearchParams} from "react-router-dom";
 import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
 import SetupCamSecret from '../components/SetupCamSecret';
 
-export default function Config() {
+function SettingsImpl({defaultActiveTab}) {
   const navigate = useNavigate();
   const [key, setKey] = React.useState();
   const [crt, setCrt] = React.useState();
   const [domain, setDomain] = React.useState();
   const [secret, setSecret] = React.useState();
   const [beian, setBeian] = React.useState();
+  const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
+  const setSearchParams = useSearchParams()[1];
 
   const sslTutorials = useTutorials(React.useRef([
     {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
@@ -132,11 +134,16 @@ export default function Config() {
     });
   };
 
+  const onSelectTab = (k) => {
+    setSearchParams({'tab': k});
+    setActiveTab(k);
+  };
+
   return (
     <>
       <p></p>
       <Container>
-        <Tabs defaultActiveKey="https" id="uncontrolled-tab-example" className="mb-3">
+        <Tabs defaultActiveKey={activeTab} id="uncontrolled-tab-example" className="mb-3" onSelect={(k) => onSelectTab(k)}>
           <Tab eventKey="https" title="HTTPS">
             <Accordion defaultActiveKey="0">
               <Accordion.Item eventKey="0">
@@ -252,5 +259,20 @@ export default function Config() {
       </Container>
     </>
   );
+}
+
+export default function Settings() {
+  const [searchParams] = useSearchParams();
+  const [defaultActiveTab, setDefaultActiveTab] = React.useState();
+
+  React.useEffect(() => {
+    const tab = searchParams.get('tab') || 'auth';
+    console.log(`?tab=https|auth|tencent|beian|platform, current=${tab}, Select the tab to render`);
+    setDefaultActiveTab(tab);
+  }, [searchParams]);
+
+  return (<>
+    { defaultActiveTab && <SettingsImpl defaultActiveTab={defaultActiveTab} /> }
+  </>);
 }
 

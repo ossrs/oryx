@@ -13,7 +13,7 @@ function DashboardImpl({defaultActiveTab}) {
   const navigate = useNavigate();
   const [secret, setSecret] = React.useState();
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const setSearchParams = useSearchParams()[1];
 
   const {
     rtmpServer,
