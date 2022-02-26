@@ -12,6 +12,7 @@ import useUrls from "../components/UrlGenerator";
 export default function Dashboard() {
   const navigate = useNavigate();
   const [secret, setSecret] = React.useState();
+  const [activeTab, setActiveTab] = React.useState('live');
 
   const {
     rtmpServer,
@@ -54,18 +55,18 @@ export default function Dashboard() {
     <>
       <p></p>
       <Container>
-        <Tabs defaultActiveKey="live" id="uncontrolled-tab-example" className="mb-3">
+        <Tabs defaultActiveKey={activeTab} id="uncontrolled-tab-example" className="mb-3" onSelect={(k) => setActiveTab(k)}>
           <Tab eventKey="live" title="私人直播间">
-            <ScenarioLive urls={{flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2}} />
+            { activeTab === 'live' && <ScenarioLive urls={{flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2}} /> }
           </Tab>
           <Tab eventKey="srt" title="超清实时直播">
-            <ScenarioSrt urls={{srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer}}/>
+            { activeTab === 'srt' && <ScenarioSrt urls={{srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer}}/> }
           </Tab>
           <Tab eventKey="dvr" title="云录制">
-            <ScenarioDvr />
+            { activeTab === 'dvr' && <ScenarioDvr /> }
           </Tab>
           <Tab eventKey="source" title="源代码">
-            <ScenarioSource />
+            { activeTab === 'source' && <ScenarioSource /> }
           </Tab>
         </Tabs>
       </Container>
