@@ -5,6 +5,7 @@ import {Token, Errors, URL, Clipboard} from "../utils";
 import axios from "axios";
 import SetupCamSecret from '../components/SetupCamSecret';
 import moment from "moment";
+import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 
 export default function ScenarioDvr() {
   const navigate = useNavigate();
@@ -56,6 +57,10 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll}) {
   const navigate = useNavigate();
   const [dvrAll, setDvrAll] = React.useState(defaultApplyAll);
   const [dvrFiles, setDvrFiles] = React.useState();
+
+  const dvrTutorials = useTutorials(React.useRef([
+    {author: '唐为', id: 'BV14S4y1k7gr'},
+  ]));
 
   React.useEffect(() => {
     const refreshDvrFiles = () => {
@@ -142,7 +147,7 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll}) {
         <Accordion.Header>场景介绍</Accordion.Header>
         <Accordion.Body>
           <div>
-            云录制，指录制视频流到云存储，只要推送到服务器的流都可以录制。
+            云录制<TutorialsButton prefixLine={true} tutorials={dvrTutorials} />，指录制视频流到云存储，只要推送到服务器的流都可以录制。
             <p></p>
           </div>
           <p>可应用的具体场景包括：</p>
@@ -160,7 +165,9 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll}) {
       <Accordion.Item eventKey="1">
         <Accordion.Header>设置云密钥</Accordion.Header>
         <Accordion.Body>
-          <SetupCamSecret submitTips=' * 会自动创建云存储的存储桶(Bucket)' />
+          <SetupCamSecret submitTips=' * 会自动创建云存储的存储桶(Bucket)'>
+            <TutorialsButton prefixLine={true} tutorials={dvrTutorials} />
+          </SetupCamSecret>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="2">
@@ -172,7 +179,8 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll}) {
             </Form.Group>
             <Button variant="primary" type="submit" onClick={(e) => setupDvrPattern(e)}>
               提交
-            </Button>
+            </Button> &nbsp;
+            <TutorialsButton prefixLine={true} tutorials={dvrTutorials} />
           </Form>
         </Accordion.Body>
       </Accordion.Item>
