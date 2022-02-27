@@ -6,7 +6,8 @@ export const Token = {
   },
   load() {
     const info = localStorage.getItem(SRS_TERRAFORM_TOKEN);
-    return JSON.parse(info);
+    const o = JSON.parse(info);
+    return {token: o.token};
   },
   remove() {
     localStorage.removeItem(SRS_TERRAFORM_TOKEN);
