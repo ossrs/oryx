@@ -6,6 +6,52 @@ import axios from "axios";
 import SetupCamSecret from '../components/SetupCamSecret';
 import moment from "moment";
 
+export default function ScenarioDvr() {
+  const navigate = useNavigate();
+  const [dvrPatternStatus, setDvrPatternStatus] = React.useState();
+  const [activeKey, setActiveKey] = React.useState();
+
+  // We must init the activeKey, because the defaultActiveKey only apply when init for Accordion.
+  // See https://stackoverflow.com/q/61324259/17679565
+  React.useEffect(() => {
+    if (!dvrPatternStatus) return;
+
+    if (dvrPatternStatus.secret) {
+      if (dvrPatternStatus.all) {
+        setActiveKey('3');
+      } else {
+        setActiveKey('2');
+      }
+    } else {
+      setActiveKey('1');
+    }
+  }, [dvrPatternStatus]);
+
+  React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/hooks/dvr/query', {
+      ...token,
+    }).then(res => {
+      console.log(`DvrPattern: Query ok, ${JSON.stringify(res.data.data)}`);
+      setDvrPatternStatus(res.data.data);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/routers-logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  }, [navigate]);
+
+  return (
+    <>
+      { activeKey && <ScenarioDvrImpl activeKey={activeKey} defaultDvrAll={dvrPatternStatus.all} /> }
+    </>
+  );
+}
+
 function ScenarioDvrImpl({activeKey, defaultDvrAll}) {
   const navigate = useNavigate();
   const [dvrAll, setDvrAll] = React.useState(defaultDvrAll);
@@ -175,52 +221,6 @@ function ScenarioDvrImpl({activeKey, defaultDvrAll}) {
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
-  );
-}
-
-export default function ScenarioDvr() {
-  const navigate = useNavigate();
-  const [dvrPatternStatus, setDvrPatternStatus] = React.useState();
-  const [activeKey, setActiveKey] = React.useState();
-
-  // We must init the activeKey, because the defaultActiveKey only apply when init for Accordion.
-  // See https://stackoverflow.com/q/61324259/17679565
-  React.useEffect(() => {
-    if (!dvrPatternStatus) return;
-
-    if (dvrPatternStatus.secret) {
-      if (dvrPatternStatus.all) {
-        setActiveKey('3');
-      } else {
-        setActiveKey('2');
-      }
-    } else {
-      setActiveKey('1');
-    }
-  }, [dvrPatternStatus]);
-
-  React.useEffect(() => {
-    const token = Token.load();
-    axios.post('/terraform/v1/hooks/dvr/query', {
-      ...token,
-    }).then(res => {
-      console.log(`DvrPattern: Query ok, ${JSON.stringify(res.data.data)}`);
-      setDvrPatternStatus(res.data.data);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
-  }, [navigate]);
-
-  return (
-    <>
-    { activeKey && <ScenarioDvrImpl activeKey={activeKey} defaultDvrAll={dvrPatternStatus.all} /> }
-    </>
   );
 }
 

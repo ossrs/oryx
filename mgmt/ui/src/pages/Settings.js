@@ -6,6 +6,21 @@ import {useNavigate, useSearchParams} from "react-router-dom";
 import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
 import SetupCamSecret from '../components/SetupCamSecret';
 
+export default function Settings() {
+  const [searchParams] = useSearchParams();
+  const [defaultActiveTab, setDefaultActiveTab] = React.useState();
+
+  React.useEffect(() => {
+    const tab = searchParams.get('tab') || 'auth';
+    console.log(`?tab=https|auth|tencent|beian|platform, current=${tab}, Select the tab to render`);
+    setDefaultActiveTab(tab);
+  }, [searchParams]);
+
+  return (<>
+    { defaultActiveTab && <SettingsImpl defaultActiveTab={defaultActiveTab} /> }
+  </>);
+}
+
 function SettingsImpl({defaultActiveTab}) {
   const navigate = useNavigate();
   const [key, setKey] = React.useState();
@@ -259,20 +274,5 @@ function SettingsImpl({defaultActiveTab}) {
       </Container>
     </>
   );
-}
-
-export default function Settings() {
-  const [searchParams] = useSearchParams();
-  const [defaultActiveTab, setDefaultActiveTab] = React.useState();
-
-  React.useEffect(() => {
-    const tab = searchParams.get('tab') || 'auth';
-    console.log(`?tab=https|auth|tencent|beian|platform, current=${tab}, Select the tab to render`);
-    setDefaultActiveTab(tab);
-  }, [searchParams]);
-
-  return (<>
-    { defaultActiveTab && <SettingsImpl defaultActiveTab={defaultActiveTab} /> }
-  </>);
 }
 

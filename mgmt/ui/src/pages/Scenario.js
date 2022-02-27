@@ -9,7 +9,22 @@ import ScenarioSrt from './ScenarioSrt';
 import ScenarioLive from './ScenarioLive';
 import useUrls from "../components/UrlGenerator";
 
-function DashboardImpl({defaultActiveTab}) {
+export default function Scenario() {
+  const [searchParams] = useSearchParams();
+  const [defaultActiveTab, setDefaultActiveTab] = React.useState();
+
+  React.useEffect(() => {
+    const tab = searchParams.get('tab') || 'live';
+    console.log(`?tab=live|srt|dvr|source, current=${tab}, Select the tab to render`);
+    setDefaultActiveTab(tab);
+  }, [searchParams]);
+
+  return (<>
+    { defaultActiveTab && <ScenarioImpl defaultActiveTab={defaultActiveTab} /> }
+  </>);
+}
+
+function ScenarioImpl({defaultActiveTab}) {
   const navigate = useNavigate();
   const [secret, setSecret] = React.useState();
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
@@ -78,20 +93,5 @@ function DashboardImpl({defaultActiveTab}) {
       </Container>
     </>
   );
-}
-
-export default function Dashboard() {
-  const [searchParams] = useSearchParams();
-  const [defaultActiveTab, setDefaultActiveTab] = React.useState();
-
-  React.useEffect(() => {
-    const tab = searchParams.get('tab') || 'live';
-    console.log(`?tab=live|srt|dvr|source, current=${tab}, Select the tab to render`);
-    setDefaultActiveTab(tab);
-  }, [searchParams]);
-
-  return (<>
-    { defaultActiveTab && <DashboardImpl defaultActiveTab={defaultActiveTab} /> }
-  </>);
 }
 
