@@ -8,16 +8,16 @@ import moment from "moment";
 
 export default function ScenarioDvr() {
   const navigate = useNavigate();
-  const [dvrPatternStatus, setDvrPatternStatus] = React.useState();
+  const [patternStatus, setPatternStatus] = React.useState();
   const [activeKey, setActiveKey] = React.useState();
 
   // We must init the activeKey, because the defaultActiveKey only apply when init for Accordion.
   // See https://stackoverflow.com/q/61324259/17679565
   React.useEffect(() => {
-    if (!dvrPatternStatus) return;
+    if (!patternStatus) return;
 
-    if (dvrPatternStatus.secret) {
-      if (dvrPatternStatus.all) {
+    if (patternStatus.secret) {
+      if (patternStatus.all) {
         setActiveKey('3');
       } else {
         setActiveKey('2');
@@ -25,7 +25,7 @@ export default function ScenarioDvr() {
     } else {
       setActiveKey('1');
     }
-  }, [dvrPatternStatus]);
+  }, [patternStatus]);
 
   React.useEffect(() => {
     const token = Token.load();
@@ -33,7 +33,7 @@ export default function ScenarioDvr() {
       ...token,
     }).then(res => {
       console.log(`DvrPattern: Query ok, ${JSON.stringify(res.data.data)}`);
-      setDvrPatternStatus(res.data.data);
+      setPatternStatus(res.data.data);
     }).catch(e => {
       const err = e.response.data;
       if (err.code === Errors.auth) {
@@ -47,14 +47,14 @@ export default function ScenarioDvr() {
 
   return (
     <>
-      { activeKey && <ScenarioDvrImpl activeKey={activeKey} defaultDvrAll={dvrPatternStatus.all} /> }
+      { activeKey && <ScenarioDvrImpl activeKey={activeKey} defaultApplyAll={patternStatus.all} /> }
     </>
   );
 }
 
-function ScenarioDvrImpl({activeKey, defaultDvrAll}) {
+function ScenarioDvrImpl({activeKey, defaultApplyAll}) {
   const navigate = useNavigate();
-  const [dvrAll, setDvrAll] = React.useState(defaultDvrAll);
+  const [dvrAll, setDvrAll] = React.useState(defaultApplyAll);
   const [dvrFiles, setDvrFiles] = React.useState();
 
   React.useEffect(() => {
