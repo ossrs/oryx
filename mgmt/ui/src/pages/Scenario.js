@@ -8,6 +8,7 @@ import ScenarioSource from './ScenarioSource';
 import ScenarioSrt from './ScenarioSrt';
 import ScenarioLive from './ScenarioLive';
 import useUrls from "../components/UrlGenerator";
+import ScenarioVod from './ScenarioVod';
 
 export default function Scenario() {
   const [searchParams] = useSearchParams();
@@ -85,6 +86,9 @@ function ScenarioImpl({defaultActiveTab}) {
           </Tab>
           <Tab eventKey="dvr" title="云录制">
             { activeTab === 'dvr' && <ScenarioDvr /> }
+          </Tab>
+          <Tab eventKey="vod" title="云点播">
+            { activeTab === 'vod' && <ScenarioVod /> }
           </Tab>
           <Tab eventKey="source" title="源代码">
             { activeTab === 'source' && <ScenarioSource /> }

@@ -103,6 +103,7 @@ dist
 # TernJS port file
 .tern-port
 
+.DS_Store
 .idea
 mgmt/sources/*.gz
 tmp.js
@@ -113,4 +114,5 @@ mgmt/containers/var/lib/letsencrypt/*
 mgmt/containers/var/log/letsencrypt/*
 mgmt/containers/objs/nginx/html/*
 mgmt/containers/data/dvr/*
+mgmt/containers/data/vod/*
 

@@ -56,7 +56,7 @@ export const Errors = {
   auth: 2001, // Verify token failed.
 };
 
-export const URL = {
+export const StreamURL = {
   build: (vhost, app, stream) => {
     if (vhost === '__defaultVhost__') {
       return `${app}/${stream}`;

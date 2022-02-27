@@ -24,6 +24,9 @@ const platform = require('./platform');
 const COS = require('cos-nodejs-sdk-v5');
 const cos = require('js-core/cos');
 const keys = require('js-core/keys');
+const vod = require('js-core/vod');
+const {AbstractClient} = require('./sdk-internal/common/abstract_client');
+const VodClient = require("tencentcloud-sdk-nodejs").vod.v20180717.Client;
 
 if (!isMainThread) {
   threadMain();
@@ -32,7 +35,11 @@ if (!isMainThread) {
 async function threadMain() {
   // We must initialize the thread first.
   const {region, registry} = await platform.init();
-  console.log(`Thread #${metadata.upgrade.name}: initialize region=${region}, registry=${registry}`);
+
+  const srs = await metadata.market.srs.image();
+  await redis.hset(keys.redis.SRS_TENCENT_LH, 'srs', srs);
+
+  console.log(`Thread #${metadata.upgrade.name}: initialize region=${region}, registry=${registry}, srs=${srs}`);
 
   while (true) {
     try {
@@ -51,6 +58,7 @@ async function doThreadMain() {
 
   const region = await platform.region();
   await cos.createCosBucket(redis, COS, region);
+  await vod.createVodService(redis, VodClient, AbstractClient, region);
 
   // Run only once for a special version.
   await firstRun();
@@ -131,7 +139,7 @@ async function firstRun() {
   //    SRS_FIRST_BOOT.v4, For current release, to restart tencent-cloud, update the volumes.
   //    SRS_FIRST_BOOT.v5, For current release, restart containers for .env changed.
   const SRS_FIRST_BOOT = keys.redis.SRS_FIRST_BOOT;
-  const bootRelease = 'v5';
+  const bootRelease = 'v6';
 
   // Run once, record in redis.
   const r0 = await redis.hget(SRS_FIRST_BOOT, bootRelease);

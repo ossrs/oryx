@@ -53,6 +53,7 @@ exports.market = {
       `${process.cwd()}/.env:/usr/local/srs-terraform/hooks/.env`,
       `${process.cwd()}/containers/objs/nginx/html:/usr/local/srs-terraform/mgmt/containers/objs/nginx/html`,
       `${process.cwd()}/containers/data/dvr:/usr/local/srs-terraform/mgmt/containers/data/dvr`,
+      `${process.cwd()}/containers/data/vod:/usr/local/srs-terraform/mgmt/containers/data/vod`,
     ],
     extras: [],
     container: {

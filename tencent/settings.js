@@ -17,7 +17,10 @@ const jwt = require('jsonwebtoken');
 const keys = require('js-core/keys');
 const COS = require('cos-nodejs-sdk-v5');
 const cos = require('js-core/cos');
-const sdkInternal = require('./sdk-internal/common/abstract_client');
+const vod = require('js-core/vod');
+const cloud = require('js-core/cloud');
+const {AbstractClient} = require('./sdk-internal/common/abstract_client');
+const VodClient = require("tencentcloud-sdk-nodejs").vod.v20180717.Client;
 
 exports.handle = (router) => {
   // See https://console.cloud.tencent.com/cam
@@ -28,15 +31,9 @@ exports.handle = (router) => {
     if (!secretId) throw utils.asError(errs.sys.empty, errs.status.args, `no param secretId`);
     if (!secretKey) throw utils.asError(errs.sys.empty, errs.status.args, `no param secretKey`);
 
-    const res = await apiCloud({
-      secretId,
-      secretKey,
-      endpoint: 'cam.tencentcloudapi.com',
-      version: '2019-01-16',
-      action: 'GetUserAppId',
-      req: {},
-    });
-    const {AppId: appId, OwnerUin: uin} = res;
+    const {AppId: appId, OwnerUin: uin} = await cloud.tencent.cam(
+      AbstractClient, secretId, secretKey, 'GetUserAppId',
+    );
     if (!appId) throw utils.asError(errs.sys.auth, errs.status.args, `query appId failed`);
 
     const r0 = await redis.hset(keys.redis.SRS_TENCENT_CAM, 'appId', appId);
@@ -45,7 +42,12 @@ exports.handle = (router) => {
     const r3 = await redis.hset(keys.redis.SRS_TENCENT_CAM, 'uin', uin);
 
     const region = await redis.hget(keys.redis.SRS_TENCENT_LH, 'region');
+
+    // Create bucket and setup the policy.
     await cos.createCosBucket(redis, COS, region);
+
+    // Create cloud VoD service.
+    await vod.createVodService(redis, VodClient, AbstractClient, region);
 
     console.log(`CAM: Update ok, appId=${appId}, uin=${uin}, secretId=${secretId}, secretKey=${secretKey.length}B, r0=${r0}, r1=${r1}, r2=${r2}, r3=${r3}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0);
@@ -53,22 +55,4 @@ exports.handle = (router) => {
 
   return router;
 };
-
-async function apiCloud({secretId, secretKey, endpoint, region, version, action, req}) {
-  const profile = {
-    credential: {
-      secretId: secretId,
-      secretKey: secretKey,
-    },
-    profile: {
-      httpProfile: {
-        endpoint: endpoint,
-      },
-    },
-  };
-  if (region) profile.region = region;
-
-  const sdk = new sdkInternal.AbstractClient(endpoint, version, profile);
-  return await sdk.request(action, req);
-}
 

@@ -22,6 +22,8 @@ const hooks = require('./hooks');
 const pkg = require('./package.json');
 const utils = require('js-core/utils');
 const hls = require('./hls');
+const dvr = require('./dvr');
+const vod = require('./vod');
 const manager = require('./manager');
 
 const app = new Koa();
@@ -44,7 +46,7 @@ app.use(async (ctx, next) => {
 
 const router = new Router();
 
-hls.handle(hooks.handle(router));
+dvr.handle(vod.handle(hls.handle(hooks.handle(router))));
 
 router.all('/terraform/v1/hooks/versions', async (ctx) => {
   ctx.body = utils.asResponse(0, {version: pkg.version});

@@ -1,6 +1,6 @@
 {
   "name": "hooks",
-  "version":"1.0.25",
+  "version": "1.0.25",
   "description": "Hooks for srs-terraform modules",
   "main": "index.js",
   "scripts": {
@@ -17,6 +17,7 @@
     "koa-router": "^10.1.1",
     "koa2-cors": "^2.0.6",
     "moment": "^2.29.1",
+    "tencentcloud-sdk-nodejs": "^4.0.297",
     "uuid": "^8.3.2"
   }
 }

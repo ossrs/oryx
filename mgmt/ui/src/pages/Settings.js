@@ -224,7 +224,7 @@ function SettingsImpl({defaultActiveTab}) {
               <Accordion.Item eventKey="0">
                 <Accordion.Header>腾讯云密钥(Secret)</Accordion.Header>
                 <Accordion.Body>
-                  <SetupCamSecret submitTips=' * 会自动创建依赖的云资源' />
+                  <SetupCamSecret />
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>

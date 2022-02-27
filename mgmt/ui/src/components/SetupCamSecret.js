@@ -4,7 +4,7 @@ import {Errors, Token} from "../utils";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
 
-export default function SetupCamSecret({submitTips, children}) {
+export default function SetupCamSecret({children}) {
   const navigate = useNavigate();
   const [secretId, setSecretId] = React.useState();
   const [secretKey, setSecretKey] = React.useState();
@@ -43,7 +43,7 @@ export default function SetupCamSecret({submitTips, children}) {
       <Button variant="primary" type="submit" onClick={(e) => updateTencentSecret(e)}>
         设置账号
       </Button>
-      <Form.Text>{submitTips}</Form.Text> &nbsp;
+      <Form.Text> * 会自动创建依赖的云资源</Form.Text> &nbsp;
       {children}
     </Form>
   </>);
