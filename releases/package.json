@@ -1,6 +1,6 @@
 {
   "name": "releases-api",
-  "version":"1.0.148",
+  "version":"1.0.149",
   "description": "API for srs-terraform releases",
   "main": "index.js",
   "scripts": {
