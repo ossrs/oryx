@@ -14,11 +14,6 @@ fi
 if [[ $REGION == '' ]]; then REGION=$1; fi
 . auto/upgrade_region
 
-# Detect the private IPv4 address.
-PIPV4=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
-if [[ $PIPV4 == '' ]]; then echo 'No private IP of eth0'; exit 1; fi
-echo "PrivateIPv4 is $PIPV4, REGION is $REGION, SOURCE is $SOURCE"
-
 # Update the sysctl
 #   update_sysctl config value empty-line-prefix description
 #   update_sysctl net.ipv4.ip_forward 1 0 "# Controls IP packet forwarding"
@@ -131,13 +126,6 @@ if [[ ! -f /etc/nginx/default.d/dvr.preview.conf ]]; then
   cp containers/conf/dvr.preview.conf /etc/nginx/default.d/dvr.preview.conf &&
   systemctl reload nginx && echo "Create nginx location for DVR preview"
   if [[ $? -ne 0 ]]; then echo "Create nginx location for DVR preview failed"; exit 1; fi
-fi
-
-# We must setup the redis to listen at lo and eth0, to allow containers to access it.
-# Note that should never listen at * for security reason.
-if [[ -f /etc/redis.conf ]]; then
-  . auto/setup_redis
-  if [[ $? -ne 0 ]]; then echo "Setup redis failed"; exit 1; fi
 fi
 
 # Execute script for each run.
