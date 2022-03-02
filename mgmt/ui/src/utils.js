@@ -6,6 +6,8 @@ export const Token = {
   },
   load() {
     const info = localStorage.getItem(SRS_TERRAFORM_TOKEN);
+    if (!info) return null;
+
     const o = JSON.parse(info);
     return {token: o.token};
   },

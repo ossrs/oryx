@@ -35,7 +35,7 @@ export default function ScenarioVod() {
 
   return (
     <>
-      { activeKey && <ScenarioVodImpl activeKey={activeKey} defaultApplyAll={vodStatus.all} enabled={!dvrStatus?.all} /> }
+      { activeKey && <ScenarioVodImpl activeKey={activeKey} defaultApplyAll={vodStatus.all} enabled={!dvrStatus?.all || dvrStatus.all} /> }
     </>
   );
 }
@@ -172,7 +172,7 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
             <Button variant="primary" type="submit" disabled={!enabled} onClick={(e) => setupVodPattern(e)}>
               提交
             </Button>
-            {!enabled && <Form.Text> * 若需要开启云点播，请关闭云录制</Form.Text>}
+            {!enabled && <Form.Text> * 若需要开启云点播，请关闭云录制(<font color='red'>云录制 / 设置录制规则 / 取消录制流</font>)</Form.Text>}
           </Form>
         </Accordion.Body>
       </Accordion.Item>

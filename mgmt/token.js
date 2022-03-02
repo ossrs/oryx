@@ -71,17 +71,20 @@ exports.handle = (router) => {
       saveConfig({...config, MGMT_PASSWORD: password});
       loadConfig();
 
-      // We must restart the hooks, which depends on the .env
-      await exec(`docker rm -f ${metadata.market.hooks.name}`);
-      const previousContainerID = metadata.market.hooks.container.ID;
-      for (let i = 0; i < 60; i++) {
-        // Wait util running and got another container ID.
-        const [all, running] = await market.queryContainer(metadata.market.hooks.name);
-        // Please note that we don't update the metadata of SRS, client must request the updated status.
-        if (all && all.ID && running && running.ID && running.ID !== previousContainerID) break;
-        await new Promise(resolve => setTimeout(resolve, 500));
+      const [all, running] = await market.queryContainer(metadata.market.hooks.name);
+      if (all && all.ID && running && running.ID) {
+        // We must restart the hooks, which depends on the .env
+        await exec(`docker rm -f ${metadata.market.hooks.name}`);
+        const previousContainerID = metadata.market.hooks.container.ID;
+        for (let i = 0; i < 60; i++) {
+          // Wait util running and got another container ID.
+          const [all, running] = await market.queryContainer(metadata.market.hooks.name);
+          // Please note that we don't update the metadata of SRS, client must request the updated status.
+          if (all && all.ID && running && running.ID && running.ID !== previousContainerID) break;
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        console.log(`restart ${metadata.market.hooks.name} ${metadata.market.hooks.container.ID} when .env updated`);
       }
-      console.log(`restart ${metadata.market.hooks.name} ${metadata.market.hooks.container.ID} when .env updated`);
 
       const {expire, expireAt, createAt, token} = createToken(moment, jwt);
       console.log(`init password ok, duration=${expire}, create=${createAt}, expire=${expireAt}, password=${'*'.repeat(password.length)}`);
