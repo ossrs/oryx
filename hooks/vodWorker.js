@@ -401,7 +401,14 @@ function createVodClient(secretId, secretKey, region) {
 
 async function vodApplyUpload(vod, localKey, localObj) {
   const cosToken = await redis.hget(keys.redis.SRS_VOD_COS_TOKEN, localObj.uuid);
-  if (cosToken) return JSON.parse(cosToken);
+  let cosTokenObj = cosToken ? JSON.parse(cosToken) : null;
+
+  // If not expired, reuse the session.
+  if (cosTokenObj) {
+    const expired = moment(cosTokenObj.update).add(process.env.NODE_ENV === 'development' ? 30 : 1800, 's');
+    if (expired.isAfter(moment())) return cosTokenObj;
+    console.log(`Thread #vodWorker: VOD session expired, key=${localKey}, update=${cosTokenObj.update}, expireAt=${expired.format()}`);
+  }
 
   // See https://cloud.tencent.com/document/product/266/31767
   const {
@@ -415,6 +422,7 @@ async function vodApplyUpload(vod, localKey, localObj) {
     vod.ApplyUpload({
       MediaType: 'm3u8',
       CoverType: 'png',
+      VodSessionKey: cosTokenObj?.session,
     }).then(
       (data) => {
         resolve(data);
@@ -425,7 +433,7 @@ async function vodApplyUpload(vod, localKey, localObj) {
     );
   });
 
-  const cosTokenObj = {
+  cosTokenObj = {
     m3u8_url: localKey,
     uuid: localObj.uuid,
     bucket,
