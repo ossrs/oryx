@@ -139,7 +139,7 @@ async function firstRun() {
   //    SRS_FIRST_BOOT.v4, For current release, to restart tencent-cloud, update the volumes.
   //    SRS_FIRST_BOOT.v5, For current release, restart containers for .env changed.
   const SRS_FIRST_BOOT = keys.redis.SRS_FIRST_BOOT;
-  const bootRelease = 'v6';
+  const bootRelease = 'v7';
 
   // Run once, record in redis.
   const r0 = await redis.hget(SRS_FIRST_BOOT, bootRelease);
