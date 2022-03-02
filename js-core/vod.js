@@ -99,5 +99,34 @@ exports.createVodService = async (redis, VodClient, AbstractClient, region) => {
   } else {
     console.log(`VoD: Already exists remux template definition=${JSON.parse(remux).definition}`);
   }
+
+  // Query the global vod domain.
+  const domain = await redis.hget(keys.redis.SRS_TENCENT_VOD, 'domain');
+  if (!domain) {
+    // See https://cloud.tencent.com/document/product/266/54176
+    const {
+      DomainSet,
+    } = await new VodClient({
+      credential: {secretId, secretKey},
+      region,
+      profile: {
+        httpProfile: {
+          endpoint: "vod.tencentcloudapi.com",
+        },
+      },
+    }).DescribeVodDomains({});
+
+    const domains = DomainSet.filter(e => {
+      return e.DeployStatus === 'Online' ? e : null;
+    });
+    if (domains?.length) {
+      await redis.hset(keys.redis.SRS_TENCENT_VOD, 'domain', domains[0].Domain);
+      console.log(`VoD: Setup domain ${domains[0].Domain}`);
+    } else {
+      console.log(`VoD: No vod domain`);
+    }
+  } else {
+    console.log(`VoD: Already exists domain ${domain}`);
+  }
 };
 

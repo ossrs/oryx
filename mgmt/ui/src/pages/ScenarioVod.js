@@ -52,16 +52,22 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
       }).then(res => {
         console.log(`VoD: Files ok, ${JSON.stringify(res.data.data)}`);
         setVodFiles(res.data.data.map(file => {
-          if (!file.progress && file.media) {
+          if (file.progress) {
+            const l = window.location;
+            const schema = l.protocol.replace(':', '');
+            const httpPort = l.port || (l.protocol === 'http:' ? 80 : 443);
+            file.location = `${l.protocol}//${l.host}/terraform/v1/hooks/vod/hls/${file.uuid}.m3u8`;
+            file.preview = `/players/srs_player.html?schema=${schema}&port=${httpPort}&autostart=true&app=terraform/v1/hooks/vod/hls&stream=${file.uuid}.m3u8`;
+          } else if (file.media) {
             const u = new URL(file.media);
             const app = u.pathname.match(/.*\//)[0].replace(/^\//, '').replace(/\/$/, '');
             const stream = u.pathname.replace(/.*\//, '');
+            file.location = file.media;
             file.preview = `/players/srs_player.html?schema=https&port=443&autostart=true&vhost=${u.hostname}&server=${u.hostname}&app=${app}&stream=${stream}`;
           }
 
           return {
             ...file,
-            location: file.media,
             url: StreamURL.build(file.vhost, file.app, file.stream),
             update: moment(file.update),
             duration: Number(file.duration),
@@ -190,7 +196,7 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
                   vodFiles?.map(file => {
                     return <tr key={file.uuid} style={{verticalAlign: 'middle'}}>
                       <td>{file.i}</td>
-                      <td><img src={file.cover} width={96} alt='cover' /></td>
+                      <td>{file.cover && <img src={file.cover} width={96} alt='cover' />}</td>
                       <td title='若300秒没有流，会自动生成点播'>{file.progress ? '录制中' : '已完成'}</td>
                       <td>{`${file.update.format('YYYY-MM-DD HH:mm:ss')}`}</td>
                       <td>

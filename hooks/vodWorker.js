@@ -359,7 +359,7 @@ async function finishM3u8(cos, cosTokenObj, localKey, localObj) {
   const metadataObj = metadata && JSON.parse(metadata);
   const [contentType, m3u8Body, duration] = m3u8Generator.buildVodM3u8(metadataObj, false);
 
-  // Upload the ts file to COS.
+  // Upload the m3u8 file to COS.
   await new Promise((resolve, reject) => {
     // See https://cloud.tencent.com/document/product/436/64980
     cos.putObject({

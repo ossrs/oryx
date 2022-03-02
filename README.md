@@ -104,6 +104,7 @@ Market:
 * `/terraform/v1/hooks/vod/query` Hooks: Query the VoD pattern.
 * `/terraform/v1/hooks/vod/apply` Hooks: Apply the VoD pattern.
 * `/terraform/v1/hooks/vod/files` Hooks: List the VoD files.
+* `/terraform/v1/hooks/vod/hls` Hooks: Generate HLS/m3u8 url to preview or download.
 * `/terraform/v1/tencent/cam/secret` Tencent: Setup the CAM SecretId and SecretKey.
 * `/prometheus` Prometheus: Time-series database and monitor.
 

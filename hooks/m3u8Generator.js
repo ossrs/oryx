@@ -1,8 +1,10 @@
 'use strict';
 
+const path = require('path');
+
 // See https://github.com/ossrs/srs/wiki/v4_EN_DeliveryHLS#vodm3u8
 // See https://developer.apple.com/documentation/http_live_streaming/example_playlists_for_http_live_streaming/video_on_demand_playlist_construction
-exports.buildVodM3u8 = (metadataObj, absUrl) => {
+exports.buildVodM3u8 = (metadataObj, absUrl, domain) => {
   if (!metadataObj) throw new Error('no object');
   if (!metadataObj.files) throw new Error('no files');
   if (!metadataObj.bucket) throw new Error('no bucket');
@@ -26,7 +28,17 @@ exports.buildVodM3u8 = (metadataObj, absUrl) => {
       }
 
       desc.push(`#EXTINF:${Number(e.duration).toFixed(2)}, no desc`);
-      desc.push(absUrl ? `https://${metadataObj.bucket}.cos.${metadataObj.region}.myqcloud.com/${e.key}` : `${e.tsid}.ts`);
+
+      if (absUrl) {
+        if (domain) {
+          desc.push(path.join(`https://${domain}`, e.key));
+        } else {
+          desc.push(path.join(`https://${metadataObj.bucket}.cos.${metadataObj.region}.myqcloud.com`, e.key));
+        }
+      } else {
+        desc.push(`${e.tsid}.ts`);
+      }
+
       return desc;
     }).flat(),
     '#EXT-X-ENDLIST',
