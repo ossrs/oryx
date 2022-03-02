@@ -141,13 +141,18 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll, enabled}) {
           </div>
           <p>可应用的具体场景包括：</p>
           <ul>
-            <li>直播转点播，录制直播间内容，剪辑精彩片段后做成点播短视频</li>
+            <li>直播转点播，录制直播流成为一个HLS文件，存储在云存储上，可以下载</li>
           </ul>
           <p>使用说明：</p>
           <ul>
             <li>云存储无法使用开源方案搭建，依赖公有云的云存储（<a href='https://buy.cloud.tencent.com/price/cos/calculator' target='_blank' rel='noreferrer'>计费</a>），设置密钥后将自动开通<a href='https://console.cloud.tencent.com/cos' target='_blank' rel='noreferrer'>腾讯云COS</a>云存储服务</li>
             <li>第一次使用，需要先设置云存储的访问密钥，我们会自动创建<code>srs-lighthouse</code>开头的存储桶</li>
             <li>具体使用步骤，请根据下面引导操作</li>
+          </ul>
+          <p>和云录制差别：</p>
+          <ul>
+            <li>云录制是无限磁盘，生成的是一个HLS文件，适用于直接下载和预览HLS的用户</li>
+            <li>云点播是点播媒资系统，会产生一个多格式的点播文件，适用于短视频的用户，比如下载HLS和MP4、多码率、极致高清、内容处理、对视频号、分类和搜索等能力</li>
           </ul>
         </Accordion.Body>
       </Accordion.Item>
