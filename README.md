@@ -2,6 +2,20 @@
 
 Terraform a open-source video platform.
 
+```mermaid
+graph LR;
+  nginx --> mgmt;
+  mgmt --> SRS(SRS Server) --> Hooks --> StreamAuth & DVR & VoD;
+  DVR --> COS;
+  mgmt --> Upgrade --> Release;
+  mgmt --> Certbot --> HTTPS;
+  mgmt --> TencentCloud --> CAM[CAM/COS/VoD];
+  mgmt --> Prometheus --- NodeExporter;
+  mgmt --> Docker;
+  mgmt --> Env[(.env<br/>credentials.txt)];
+  mgmt --> Redis[(Redis KV)];
+```
+
 ## Usage
 
 Install dependencies:
