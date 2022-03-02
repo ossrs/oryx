@@ -23,6 +23,7 @@ const market = require('./market');
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const keys = require('js-core/keys');
+const consts = require('./consts');
 
 // MySQL日期字段格式化字符串 @see https://stackoverflow.com/a/27381633
 const MYSQL_DATETIME = 'YYYY-MM-DD HH:mm:ss';
@@ -88,7 +89,11 @@ exports.handle = (router) => {
 
       const {expire, expireAt, createAt, token} = createToken(moment, jwt);
       console.log(`init password ok, duration=${expire}, create=${createAt}, expire=${expireAt}, password=${'*'.repeat(password.length)}`);
-      return ctx.body = utils.asResponse(0, {token, createAt, expireAt});
+      return ctx.body = utils.asResponse(0, {
+        token,
+        createAt,
+        expireAt,
+      });
     }
 
     ctx.body = utils.asResponse(0, {
@@ -103,8 +108,12 @@ exports.handle = (router) => {
     const r2 = await redis.hlen(keys.redis.SRS_TENCENT_LH);
     if (!r0 || !r1 || !r2) throw utils.asError(errs.sys.redis, errs.status.sys, `redis corrupt`);
 
+    const upgrading = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
+
     console.log(`system check ok, r0=${r0}, r1=${r1}, r2=${r2}`);
-    ctx.body = utils.asResponse(0);
+    ctx.body = utils.asResponse(0, {
+      upgrading: upgrading === "1",
+    });
   });
 
   router.all('/terraform/v1/mgmt/token', async (ctx) => {

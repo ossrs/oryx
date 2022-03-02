@@ -8,6 +8,7 @@ import {useNavigate} from "react-router-dom";
 export default function Setup({onInit}) {
   const [password, setPassword] = React.useState();
   const [initializing, setInitializeing] = React.useState();
+  const [enabled, setEnabled] = React.useState(false);
   const navigate = useNavigate();
 
   // Generate password if not initialized.
@@ -37,6 +38,17 @@ export default function Setup({onInit}) {
     });
   };
 
+  React.useEffect(() => {
+    axios.get('/terraform/v1/mgmt/check').then(res => {
+      setEnabled(!res.data?.data?.upgrading);
+      console.log(`Check ok, ${JSON.stringify(res.data)}`);
+    }).catch(e => {
+      const err = e.response.data;
+      alert(`服务器错误，${err.code}: ${err.data.message}`);
+      console.error(err);
+    });
+  }, []);
+
   return (
     <>
       <Container>
@@ -50,7 +62,7 @@ export default function Setup({onInit}) {
               * 若忘记密码，可登录机器执行 <code>cat ~lighthouse/credentials.txt</code>
             </Form.Text>
           </Form.Group>
-          <Button variant="primary" type="submit" className={initializing && "disabled"} onClick={(e) => handleLogin(e)}>
+          <Button variant="primary" type="submit" disabled={!enabled} className={initializing && "disabled"} onClick={(e) => handleLogin(e)}>
             设置管理员密码
           </Button>
         </Form>
