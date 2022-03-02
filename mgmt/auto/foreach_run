@@ -19,6 +19,7 @@ if [[ $? -ne 0 ]]; then echo "Create swap failed"; exit 1; fi
 
 # We must setup the redis to listen at lo and eth0, to allow containers to access it.
 # Note that should never listen at * for security reason.
+# Note that we must check redis config for each run, to regenerate the config if corrupt.
 if [[ -f /etc/redis.conf ]]; then
   bash auto/setup_redis
   if [[ $? -ne 0 ]]; then echo "Setup redis failed"; exit 1; fi
