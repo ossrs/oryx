@@ -78,7 +78,6 @@ exports.handle = (router) => {
         stream: e.stream,
         file: e.fileId,
         media: e.mediaUrl,
-        cover: e.coverUrl,
         task: e.taskObj,
         progress: e.progress,
         update: e.update,

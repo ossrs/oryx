@@ -68,8 +68,6 @@ async function handleMessage(msg) {
   const localObj = local ? JSON.parse(local) : {nn: 0, update: null, done: null, uuid: m3u8Obj.uuid, uuids: [], files: []};
   if (!local || localObj.uuid !== m3u8Obj.uuid) {
     localObj.done = null;
-    localObj.coverFile = null;
-    localObj.coverFileStats = null;
     localObj.uuid = m3u8Obj.uuid;
     localObj.uuids.push(m3u8Obj.uuid);
     console.log(`Thread #vodWorker: local start new m3u8=${m3u8_url}, uuid=${m3u8Obj.uuid}, uuids=${localObj.uuids.length}`);
@@ -173,45 +171,10 @@ async function handleLocalFile(cos, cosTokenObj, localKey, localObj, localFile) 
 
   // Remove the tsfile.
   fs.unlinkSync(localFile.tsfile);
-  if (localObj.coverFile && fs.existsSync(localObj.coverFile)) fs.unlinkSync(localObj.coverFile);
   console.log(`Thread #vodWorker: Remove local for m3u8=${localKey}, ts=${localFile.url}, as=${key}`);
 }
 
 async function uploadToCos(cos, cosTokenObj, localObj, localFile, key, stats) {
-  // Snapshot and upload the cover.
-  if (cosTokenObj.cover) {
-    if (!localObj.coverFile) localObj.coverFile = `vod/${uuidv4()}.png`;
-    const srs = await redis.hget(keys.redis.SRS_TENCENT_LH, 'srs');
-    await exec(`docker run --rm -v ${process.cwd()}/vod:/vod ${srs} ./objs/ffmpeg/bin/ffmpeg -i /${localFile.tsfile} -frames:v 1 -q:v 2 -y /${localObj.coverFile}`);
-    console.log(`Thread #vodWorker: Snapshot cover=${localObj.coverFile}`);
-
-    // If we got bigger snapshot, or no snapshot, upload it.
-    const coverStats = fs.statSync(localObj.coverFile);
-    if (!localObj.coverFileStats || localObj.coverFileStats.size < coverStats.size) {
-      localObj.coverFileStats = coverStats;
-      console.log(`Thread #vodWorker: Snapshot cover=${localObj.coverFile}, size=${coverStats.size}`);
-
-      await new Promise((resolve, reject) => {
-        // See https://cloud.tencent.com/document/product/436/64980
-        cos.putObject({
-          Bucket: cosTokenObj.bucket,
-          Region: cosTokenObj.region,
-          Key: cosTokenObj.cover,
-          StorageClass: 'STANDARD',
-          Body: fs.createReadStream(localObj.coverFile),
-          ContentLength: coverStats.size,
-          ContentType: 'image/png',
-          onProgress: function (progressData) {
-            //console.log(`Thread #vodWorker: progress ${JSON.stringify(progressData)}`);
-          },
-        }, function (err, data) {
-          if (err) return reject(err);
-          resolve(data);
-        });
-      });
-    }
-  }
-
   // Upload the tsfile.
   await new Promise((resolve, reject) => {
     // See https://cloud.tencent.com/document/product/436/64980
@@ -306,14 +269,6 @@ async function updateLocalObject(localKey, localObj, localFile, key) {
   // Filter the left files.
   const leftFiles = localRefObj.files.filter(e => e.tsid !== localFile.tsid);
   console.log(`Thread #vodWorker: Update local for m3u8=${localKey}, ts=${localFile.url}, as=${key}, before=${localRefObj.files.length}, left=${leftFiles.length}`);
-
-  // Refresh the cover.
-  if (!localRefObj.coverFile && localObj.coverFile) {
-    localRefObj.coverFile = localObj.coverFile;
-  }
-  if (!localRefObj.coverFileStats || localRefObj.coverFileStats?.size < localObj.coverFileStats?.size) {
-    localRefObj.coverFileStats = localObj.coverFileStats;
-  }
 
   // Update the local realtime reference object.
   localObj.files = localRefObj.files = leftFiles;
@@ -415,13 +370,11 @@ async function vodApplyUpload(vod, localKey, localObj) {
     StorageBucket: bucket,
     StorageRegion: region,
     MediaStoragePath: key,
-    CoverStoragePath: cover,
     VodSessionKey: session,
     TempCertificate: cert,
   } = await new Promise((resolve, reject) => {
     vod.ApplyUpload({
       MediaType: 'm3u8',
-      CoverType: 'png',
       VodSessionKey: cosTokenObj?.session,
     }).then(
       (data) => {
@@ -439,7 +392,6 @@ async function vodApplyUpload(vod, localKey, localObj) {
     bucket,
     region,
     key,
-    cover,
     session,
     cert,
     update: moment().format(),
@@ -453,7 +405,6 @@ async function vodCommitUpload(vod, cosTokenObj, localObj) {
   const {
     FileId: fileId,
     MediaUrl: mediaUrl,
-    CoverUrl: coverUrl,
   } = await new Promise((resolve, reject) => {
     vod.CommitUpload({
       VodSessionKey: cosTokenObj.session,
@@ -502,7 +453,6 @@ async function vodCommitUpload(vod, cosTokenObj, localObj) {
   const metadataObj = metadata && JSON.parse(metadata);
   metadataObj.fileId = fileId;
   metadataObj.mediaUrl = mediaUrl;
-  metadataObj.coverUrl = coverUrl;
   if (definition) metadataObj.definition = definition;
   if (taskId) metadataObj.taskId = taskId;
 
