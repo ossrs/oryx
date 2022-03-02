@@ -144,6 +144,15 @@ When system start, check the flag `SRS_FIRST_BOOT` in redis, if not set:
 
 They are not mutually exclusive.
 
+## System Boot
+
+When system boot:
+
+* Restart the mgmt service by `systemctl start srs-terraform`
+* Execute script `bootstrap` at mgmt
+* Run script `auto/foreach_run` at mgmt
+* Start application by `node .` at mgmt
+
 ## Environments
 
 The optional environments defined by `mgmt/.env`:
