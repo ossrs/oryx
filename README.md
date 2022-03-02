@@ -153,6 +153,13 @@ When system boot:
 * Run script `auto/foreach_run` at mgmt
 * Start application by `node .` at mgmt
 
+## System Setup
+
+When user setup the system, the admin password for the first boot:
+
+* Setup the `MGMT_PASSWORD` in `.env`
+* Restat all containers that depends on `.env`
+
 ## Environments
 
 The optional environments defined by `mgmt/.env`:
@@ -169,4 +176,9 @@ For github actions to control the containers:
 
 * `SRS_DOCKER`: `srs` to enfore use `ossrs/srs` docker image.
 * `USE_DOCKER`: `true|false`, if false, disable all docker containers.
+
+For mgmt and containers to connect to redis:
+
+* `REDIS_PASSWORD`: The redis password.
+* `REDIS_PORT`: The redis port.
 
