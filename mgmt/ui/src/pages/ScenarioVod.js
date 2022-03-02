@@ -213,7 +213,7 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
                       <td>{`${file.size.toFixed(1)}`}MB</td>
                       <td>{file.task && <>{file.task?.width} x {file.task?.height}</>}</td>
                       <td>{file.nn}</td>
-                      <td><a href={`https://console.cloud.tencent.com/vod/media/manage?fileId=${file.file}`} target='_blank' rel='noreferrer'>{file.file?.slice(-8)}</a></td>
+                      <td><a href={`https://console.cloud.tencent.com/vod/media/manage?fileId=${file.file}`} target='_blank' rel='noreferrer'>{file.uuid.slice(0, 13)}</a></td>
                       <td>
                         <a href={file.location} onClick={(e) => copyToClipboard(e, file.location)} target='_blank' rel='noreferrer'>HLS</a>
                         {file.task && <>&nbsp;<a href={file.task?.url} target='_blank' rel='noreferrer'>MP4</a></>}
