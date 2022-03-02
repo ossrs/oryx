@@ -190,7 +190,7 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
                   vodFiles?.map(file => {
                     return <tr key={file.uuid} style={{verticalAlign: 'middle'}}>
                       <td>{file.i}</td>
-                      <td><img src={file.cover} width={96} /></td>
+                      <td><img src={file.cover} width={96} alt='cover' /></td>
                       <td title='若300秒没有流，会自动生成点播'>{file.progress ? '录制中' : '已完成'}</td>
                       <td>{`${file.update.format('YYYY-MM-DD HH:mm:ss')}`}</td>
                       <td>
