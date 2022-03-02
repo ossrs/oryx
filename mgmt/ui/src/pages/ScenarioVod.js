@@ -35,7 +35,7 @@ export default function ScenarioVod() {
 
   return (
     <>
-      { activeKey && <ScenarioVodImpl activeKey={activeKey} defaultApplyAll={vodStatus.all} enabled={!dvrStatus?.all || dvrStatus.all} /> }
+      { activeKey && <ScenarioVodImpl activeKey={activeKey} defaultApplyAll={vodStatus.all} enabled={!dvrStatus?.all || vodStatus.all} /> }
     </>
   );
 }

@@ -72,19 +72,41 @@ exports.handle = (router) => {
       saveConfig({...config, MGMT_PASSWORD: password});
       loadConfig();
 
-      const [all, running] = await market.queryContainer(metadata.market.hooks.name);
-      if (all && all.ID && running && running.ID) {
-        // We must restart the hooks, which depends on the .env
+      const [allHooks, runningHooks] = await market.queryContainer(metadata.market.hooks.name);
+      const [allTencent, runningTencent] = await market.queryContainer(metadata.market.tencent.name);
+
+      try {
         await exec(`docker rm -f ${metadata.market.hooks.name}`);
-        const previousContainerID = metadata.market.hooks.container.ID;
+      } catch (e) {
+      }
+
+      try {
+        await exec(`docker rm -f ${metadata.market.tencent.name}`);
+      } catch (e) {
+      }
+
+      if (allHooks?.ID && runningHooks?.ID) {
+        // We must restart the hooks, which depends on the .env
         for (let i = 0; i < 60; i++) {
           // Wait util running and got another container ID.
           const [all, running] = await market.queryContainer(metadata.market.hooks.name);
           // Please note that we don't update the metadata of SRS, client must request the updated status.
-          if (all && all.ID && running && running.ID && running.ID !== previousContainerID) break;
+          if (all && all.ID && running && running.ID && running.ID !== runningHooks.ID) break;
           await new Promise(resolve => setTimeout(resolve, 500));
         }
         console.log(`restart ${metadata.market.hooks.name} ${metadata.market.hooks.container.ID} when .env updated`);
+      }
+
+      if (allTencent?.ID && runningTencent?.ID) {
+        // We must restart the tencent, which depends on the .env
+        for (let i = 0; i < 60; i++) {
+          // Wait util running and got another container ID.
+          const [all, running] = await market.queryContainer(metadata.market.tencent.name);
+          // Please note that we don't update the metadata of SRS, client must request the updated status.
+          if (all && all.ID && running && running.ID && running.ID !== runningTencent.ID) break;
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        console.log(`restart ${metadata.market.tencent.name} ${metadata.market.tencent.container.ID} when .env updated`);
       }
 
       const {expire, expireAt, createAt, token} = createToken(moment, jwt);
