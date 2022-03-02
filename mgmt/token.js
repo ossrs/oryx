@@ -31,14 +31,16 @@ function loadConfig() {
   dotenv.config({path: '.env', override: true});
   return {
     MGMT_PASSWORD: process.env.MGMT_PASSWORD,
+    REDIS_PORT: process.env.REDIS_PORT,
+    REDIS_PASSWORD: process.env.REDIS_PASSWORD,
   };
 }
 
 function saveConfig(config) {
   const envVars = Object.keys(config).map(k => {
     const v = config[k];
-    return `${k}=${v}`;
-  });
+    return v ? `${k}=${v}` : '';
+  }).filter(e => e);
 
   // Append an empty line.
   envVars.push('');
