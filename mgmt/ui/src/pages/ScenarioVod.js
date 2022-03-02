@@ -6,6 +6,7 @@ import axios from "axios";
 import SetupCamSecret from '../components/SetupCamSecret';
 import useDvrVodStatus from "../components/DvrVodStatus";
 import moment from "moment";
+import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 
 export default function ScenarioVod() {
   const [activeKey, setActiveKey] = React.useState();
@@ -43,6 +44,10 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
   const navigate = useNavigate();
   const [vodAll, setVodAll] = React.useState(defaultApplyAll);
   const [vodFiles, setVodFiles] = React.useState();
+
+  const vodTutorials = useTutorials(React.useRef([
+    {author: '唐为', id: 'BV14S4y1k7gr'},
+  ]));
 
   React.useEffect(() => {
     const refreshVodFiles = () => {
@@ -134,7 +139,7 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
         <Accordion.Header>场景介绍</Accordion.Header>
         <Accordion.Body>
           <div>
-            云点播，指转换视频流到云点播，只要推送到服务器的流都可以对接云点播。
+            云点播<TutorialsButton prefixLine={true} tutorials={vodTutorials} />，指转换视频流到云点播，只要推送到服务器的流都可以对接云点播。
             <p></p>
           </div>
           <p>可应用的具体场景包括：</p>
@@ -152,7 +157,9 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
       <Accordion.Item eventKey="1">
         <Accordion.Header>设置云密钥</Accordion.Header>
         <Accordion.Body>
-          <SetupCamSecret />
+          <SetupCamSecret>
+            <TutorialsButton prefixLine={true} tutorials={vodTutorials} />
+          </SetupCamSecret>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="2">
