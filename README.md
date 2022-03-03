@@ -1,6 +1,6 @@
 # SRS-Cloud
 
-A light-weighted open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
+A lightweight open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
 
 ## Usage: LightHouse
 
