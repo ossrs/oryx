@@ -1,6 +1,6 @@
-# srs-cloud
+# SRS-Cloud
 
-A open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
+A light-weighted open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
 
 ```mermaid
 graph LR;
@@ -15,6 +15,8 @@ graph LR;
   mgmt --> Env[(.env<br/>credentials.txt)];
   mgmt --> Redis[(Redis KV)];
 ```
+
+> Note: It's a single node, also light-weighted, video cloud for tiny company, personal user and starter.
 
 ## Usage
 
@@ -66,11 +68,11 @@ The features that we're developing:
 * [x] Run SRS hooks in docker, to callback by SRS server.
 * [x] Support publish by SRT, play by RTMP/HTTP-FLV/HLS/WebRTC/SRT.
 * [x] Integrate with prometheus and node-exporter.
-* [x] Support DVR to cloud storage, see [#1193](https://github.com/ossrs/srs/issues/1193).
+* [x] Support DVR to tencent cloud storage, see [#1193](https://github.com/ossrs/srs/issues/1193).
 * [x] Change redis port and use randomly password.
-* [ ] Support integrity with cloud VoD.
-* [ ] Support GB28181 by SRS 5.0 container.
+* [x] Support integrity with tencent cloud VoD.
 * [ ] Forward stream to multiple platforms, see [#2676](https://github.com/ossrs/srs/issues/2676).
+* [ ] Support GB28181 by SRS 5.0 container.
 * [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
 * [ ] Support virtual live streaming, covert file or other resource to live.
 * [ ] Support WebRTC face to face chat, see [#2857](https://github.com/ossrs/srs/issues/2857).
@@ -136,9 +138,9 @@ The software we depend on:
 * [SRS](https://github.com/ossrs/srs), `docker --name srs-server`
   * Config: `mgmt/containers/conf/srs.conf` mount as `/usr/local/srs/conf/lighthouse.conf`
   * Volume: `mgmt/containers/objs/nginx/html` mount as `/usr/local/srs/objs/nginx/html`
-* [srs-hooks](https://github.com/ossrs/srs-terraform/tree/lighthouse/hooks), `docker --name srs-hooks`
+* [srs-hooks](https://github.com/ossrs/srs-cloud/tree/lighthouse/hooks), `docker --name srs-hooks`
   * Volume: `mgmt/containers/objs/nginx/html` mount as `/usr/local/mgmt/containers/objs/nginx/html`
-* [tencent-cloud](https://github.com/ossrs/srs-terraform/tree/lighthouse/tencent), `docker --name tencent-cloud`
+* [tencent-cloud](https://github.com/ossrs/srs-cloud/tree/lighthouse/tencent), `docker --name tencent-cloud`
   * [CAM](https://console.cloud.tencent.com/cam/overview) Authentication by secretId and secretKey.
 * [Prometheus](https://github.com/prometheus/prometheus#install), `docker --name prometheus`
   * Config: `mgmt/containers/conf/prometheus.yml`

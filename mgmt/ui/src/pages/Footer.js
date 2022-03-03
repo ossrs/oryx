@@ -23,7 +23,7 @@ export default function Footer() {
     <Container>
       <p></p>
       <p className="text-center">
-        <a href='https://github.com/ossrs/srs-terraform' target='_blank' rel='noreferrer'>
+        <a href='https://github.com/ossrs/srs-cloud' target='_blank' rel='noreferrer'>
           &copy;ossrs mgmt/v{versions?.data?.version}
         </a>
         &nbsp; <a href='https://beian.miit.gov.cn' target='_blank' rel='noreferrer'>{beian?.icp}</a>

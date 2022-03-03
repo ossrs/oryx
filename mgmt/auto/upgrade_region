@@ -25,10 +25,10 @@ echo "LightHouse REGION=$REGION, SOURCE=$SOURCE"
 
 # Switch the remote for git
 if [[ $SOURCE == GITHUB ]]; then
-  echo "Change origin to github https://github.com/ossrs/srs-terraform.git"
-  git remote set-url origin https://github.com/ossrs/srs-terraform.git
+  echo "Change origin to github https://github.com/ossrs/srs-cloud.git"
+  git remote set-url origin https://github.com/ossrs/srs-cloud.git
 else
-  echo "Change origin to gitee https://gitee.com/ossrs/srs-terraform.git"
-  git remote set-url origin https://gitee.com/ossrs/srs-terraform.git
+  echo "Change origin to gitee https://gitee.com/ossrs/srs-cloud.git"
+  git remote set-url origin https://gitee.com/ossrs/srs-cloud.git
 fi
 

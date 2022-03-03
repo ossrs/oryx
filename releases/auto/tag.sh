@@ -30,4 +30,4 @@ git push gitee &&
 git push gitee $TAG
 
 echo "publish $TAG ok"
-echo "    https://github.com/ossrs/srs-terraform/actions?query=branch%3A$TAG"
+echo "    https://github.com/ossrs/srs-cloud/actions?query=branch%3A$TAG"
