@@ -2,6 +2,19 @@
 
 A light-weighted open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
 
+## Usage: LightHouse
+
+- [x] [Getting Started](https://mp.weixin.qq.com/s/fWmdkw-2AoFD_pEmE_EIkA).
+- [x] [Live Streaming](https://mp.weixin.qq.com/s/AKqVWIdk3SBD-6uiTMliyA).
+- [x] [Realtime SRT Streaming](https://mp.weixin.qq.com/s/HQb3gLRyJHHu56pnyHerxA).
+- [x] [Automatical HTTPS](https://mp.weixin.qq.com/s/O70Fz-mxNedZpxgGXQ8DsA).
+- [x] [Dashboard by Prometheus](https://mp.weixin.qq.com/s/ub9ZGmntOy_-S11oxFkxvg).
+- [x] [DVR to Cloud Storage or VoD](https://mp.weixin.qq.com/s/UXR5EBKZ-LnthwKN_rlIjg).
+
+Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
+
+## Architecture
+
 ```mermaid
 graph LR;
   nginx --> mgmt(mgmt<br/>by nodejs);
@@ -17,30 +30,6 @@ graph LR;
 ```
 
 > Note: It's a single node, also light-weighted, video cloud for tiny company, personal user and starter.
-
-## Usage
-
-Install dependencies:
-
-```bash
-cd mgmt && npm install
-```
-
-Run the mgmt backend:
-
-```
-cd mgmt
-npm start
-```
-
-Run the mgmt react ui:
-
-```
-cd mgmt/ui
-npm start
-```
-
-Access the browser: http://localhost:3000
 
 ## Ports
 
@@ -197,4 +186,28 @@ For mgmt and containers to connect to redis:
 
 * `REDIS_PASSWORD`: The redis password.
 * `REDIS_PORT`: The redis port.
+
+## Develop
+
+Install dependencies:
+
+```bash
+cd mgmt && npm install
+```
+
+Run the mgmt backend:
+
+```
+cd mgmt
+npm start
+```
+
+Run the mgmt react ui:
+
+```
+cd mgmt/ui
+npm start
+```
+
+Access the browser: http://localhost:3000
 
