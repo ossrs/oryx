@@ -24,7 +24,7 @@ export default function Footer() {
       <p></p>
       <p className="text-center">
         <a href='https://github.com/ossrs/srs-cloud' target='_blank' rel='noreferrer'>
-          &copy;ossrs mgmt/v{versions?.data?.version}
+          &copy;srs-cloud/v{versions?.data?.version}
         </a>
         &nbsp; <a href='https://beian.miit.gov.cn' target='_blank' rel='noreferrer'>{beian?.icp}</a>
       </p>
