@@ -25,17 +25,7 @@ const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const moment = require('moment');
 const platform = require('./platform');
-
-async function queryLatestVersion() {
-  const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'http://api.ossrs.net';
-  const {data: releases} = await axios.get(`${releaseServer}/terraform/v1/releases`, {
-    params: {
-      version: `v${pkg.version}`,
-      ts: new Date().getTime(),
-    }
-  });
-  return releases;
-}
+const {queryLatestVersion} = require('./releases');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/status', async (ctx) => {
@@ -61,7 +51,7 @@ exports.handle = (router) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(jwt, token);
 
-    const releases = await queryLatestVersion();
+    const releases = await queryLatestVersion(redis, axios);
     metadata.upgrade.releases = releases;
 
     const upgrading = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
@@ -78,7 +68,7 @@ exports.handle = (router) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(jwt, token);
 
-    const releases = await queryLatestVersion();
+    const releases = await queryLatestVersion(redis, axios);
     metadata.upgrade.releases = releases;
 
     const target = releases?.latest || 'lighthouse';

@@ -1,6 +1,6 @@
 {
   "name": "mgmt-api",
-  "version":"1.0.129",
+  "version": "1.0.129",
   "description": "API for srs-terraform mgmt",
   "main": "index.js",
   "scripts": {
@@ -28,6 +28,7 @@
     "koa2-cors": "^2.0.6",
     "moment": "^2.29.1",
     "semver": "^7.3.5",
-    "tencentcloud-sdk-nodejs": "^4.0.297"
+    "tencentcloud-sdk-nodejs": "^4.0.297",
+    "uuid": "^8.3.2"
   }
 }
