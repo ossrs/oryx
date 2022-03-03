@@ -1,10 +1,10 @@
-# srs-terraform
+# srs-cloud
 
-Terraform a open-source video platform.
+A open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
 
 ```mermaid
 graph LR;
-  nginx --> mgmt;
+  nginx --> mgmt(mgmt<br/>by nodejs);
   mgmt --> SRS(SRS Server) --> Hooks --> StreamAuth & DVR & VoD;
   DVR --> COS;
   mgmt --> Upgrade --> Release;
