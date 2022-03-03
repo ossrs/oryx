@@ -22,6 +22,14 @@ exports.redis = {
   SRS_VOD_M3U8_METADATA: 'SRS_VOD_M3U8_METADATA',
   // The cos token and file information for cloud VoD, to upload files.
   SRS_VOD_COS_TOKEN: 'SRS_VOD_COS_TOKEN',
+  // For stream forwarding by FFmpeg.
+  SRS_FORWARD_CONFIG: 'SRS_FORWARD_CONFIG',
+  SRS_FORWARD_MAP: 'SRS_FORWARD_MAP',
+  SRS_FORWARD_STREAM: 'SRS_FORWARD_STREAM',
+  SRS_FORWARD_FRAME: 'SRS_FORWARD_FRAME',
+  SRS_FORWARD_CODE: 'SRS_FORWARD_CODE',
+  // For SRS stream status.
+  SRS_STREAM_ACTIVE: 'SRS_STREAM_ACTIVE',
   // The publish secret.
   SRS_SECRET_PUBLISH: 'SRS_SECRET_PUBLISH',
   // The first boot flag.

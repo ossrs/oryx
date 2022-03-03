@@ -14,6 +14,7 @@ export default function System() {
   const [srs, setSRS] = React.useState();
   const [hooks, setHooks] = React.useState();
   const [tencent, setTencent] = React.useState();
+  const [ffmpeg, setFFmpeg] = React.useState();
   const [prometheus, setPrometheus] = React.useState();
   const [nodeExporter, setNodeExporter] = React.useState();
   const [strategyAutoUpgrade, setStrategyAutoUpgrade] = React.useState();
@@ -76,6 +77,7 @@ export default function System() {
         if (container.name === 'srs-server') setSRS(container);
         if (container.name === 'srs-hooks') setHooks(container);
         if (container.name === 'tencent-cloud') setTencent(container);
+        if (container.name === 'ffmpeg') setFFmpeg(container);
         if (container.name === 'prometheus') setPrometheus(container);
         if (container.name === 'node-exporter') setNodeExporter(container);
         return null;
@@ -161,6 +163,32 @@ export default function System() {
                     allow={allowDisableContainer}
                     enabled={hooks?.enabled}
                     onClick={() => handleContainerChange(hooks)}
+                  />
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs lg={3}>
+            <Card style={{ width: '18rem', marginTop: '16px' }}>
+              <Card.Header>FFmpeg</Card.Header>
+              <Card.Body>
+                <Card.Text as={Col}>
+                  容器名：{ffmpeg?.name} <br/>
+                  容器ID：{ffmpeg?.container?.ID} <br/>
+                  状态：{ffmpeg?.container.State} {ffmpeg?.container.Status}
+                  <p></p>
+                </Card.Text>
+                <div style={{display: 'inline-block'}}>
+                  <Button className='disabled'>
+                    重启
+                  </Button> &nbsp;
+                  <Button className='disabled'>
+                    升级
+                  </Button> &nbsp;
+                  <MgmtUpdateContainer
+                    allow={allowDisableContainer}
+                    enabled={ffmpeg?.enabled}
+                    onClick={() => handleContainerChange(ffmpeg)}
                   />
                 </div>
               </Card.Body>

@@ -1,5 +1,7 @@
 const SRS_TERRAFORM_TOKEN = 'SRS_TERRAFORM_TOKEN';
 
+const utils = require('js-core/utils');
+
 export const Token = {
   save(data) {
     localStorage.setItem(SRS_TERRAFORM_TOKEN, JSON.stringify(data));
@@ -60,11 +62,7 @@ export const Errors = {
 
 export const StreamURL = {
   build: (vhost, app, stream) => {
-    if (vhost === '__defaultVhost__') {
-      return `${app}/${stream}`;
-    } else {
-      return `${vhost}/${app}/${stream}`;
-    }
+    return utils.streamURL(vhost, app, stream);
   },
 };
 

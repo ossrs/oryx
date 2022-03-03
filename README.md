@@ -15,11 +15,15 @@ Other more use scenarios is on the way, please read [this post](https://github.c
 
 ## Architecture
 
+The architecture by [mermaid](https://mermaid.live/edit/#pako:eNpdkU1vwjAMhv9KlMNUJAr3bkJCFIS0L9QyLnSH0JjS0SRV6jAQ4r_PDWxaOdhxXj-xLefMcyOBR3xbme98Jyyyl-Qx04zpotRHFoYjpgqFQeueNnY42pyYpidfTc9jre6pNEkDMpaCPYDteW1uzL65ZtGCUGOHO_bA4lVCfmViX6G9tcjkPe1WnM1UDYXX2sJhGP6X_rCPurBCgo8TqEA00AUmYHFjrvF8uVzctVmCzkHjpDJOXvnx65psSAMNacjPLr6wRgHuwDV-ojfaxfRYG4tgu2Bs8v29NtWHdTAAffCrzC1I6lyKqhngEXt3nRKQZbMO_MGeV5Tmfa7AKlFK-rFzC2ecRlGQ8YhCCVvhKsx4pi-EuloKhKks0VgebakL9LlwaNKTznmE1sEvFJeClqhu1OUHfKuoUQ)
+
 ```mermaid
-graph LR;
+flowchart LR;
   nginx --> mgmt(mgmt<br/>by nodejs);
   mgmt --> SRS(SRS Server) --> Hooks --> StreamAuth & DVR & VoD;
   DVR --> COS;
+  mgmt --> FFmpeg;
+  SRS --- FFmpeg;
   mgmt --> Upgrade --> Release;
   mgmt --> Certbot --> HTTPS;
   mgmt --> TencentCloud --> CAM[CAM/COS/VoD];
@@ -42,6 +46,7 @@ The ports allocated:
 | mgmt | 2022 |  - | Mount at `/mgmt/` and `/terraform/v1/mgmt/` |
 | hooks | 2021 |  - | Mount at `/terraform/v1/hooks/` |
 | tencent-cloud | 2020 |  - | Mount at `/terraform/v1/tencent/` |
+| ffmpeg | 2019 |  - | Mount at `/terraform/v1/ffmpeg/` |
 | prometheus | 9090 | - | Mount at `/prometheus` |
 | node-exporter | 9100 | - | - |
 
@@ -60,7 +65,7 @@ The features that we're developing:
 * [x] Support DVR to tencent cloud storage, see [#1193](https://github.com/ossrs/srs/issues/1193).
 * [x] Change redis port and use randomly password.
 * [x] Support integrity with tencent cloud VoD.
-* [ ] Forward stream to multiple platforms, see [#2676](https://github.com/ossrs/srs/issues/2676).
+* [x] Forward stream to multiple platforms, see [#2676](https://github.com/ossrs/srs/issues/2676).
 * [ ] Support GB28181 by SRS 5.0 container.
 * [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
 * [ ] Support virtual live streaming, covert file or other resource to live.
@@ -111,6 +116,8 @@ Market:
 * `/terraform/v1/hooks/vod/files` Hooks: List the VoD files.
 * `/terraform/v1/hooks/vod/hls` Hooks: Generate HLS/m3u8 url to preview or download.
 * `/terraform/v1/tencent/cam/secret` Tencent: Setup the CAM SecretId and SecretKey.
+* `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
+* `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 * `/prometheus` Prometheus: Time-series database and monitor.
 
 ## Depends
@@ -131,6 +138,8 @@ The software we depend on:
   * Volume: `mgmt/containers/objs/nginx/html` mount as `/usr/local/mgmt/containers/objs/nginx/html`
 * [tencent-cloud](https://github.com/ossrs/srs-cloud/tree/lighthouse/tencent), `docker --name tencent-cloud`
   * [CAM](https://console.cloud.tencent.com/cam/overview) Authentication by secretId and secretKey.
+* [ffmpeg](https://github.com/ossrs/srs-cloud/tree/lighthouse/ffmpeg), `docker --name ffmpeg`
+  * [FFmpeg and ffprobe](https://ffmpeg.org) tools in `ossrs/srs:node-av`
 * [Prometheus](https://github.com/prometheus/prometheus#install), `docker --name prometheus`
   * Config: `mgmt/containers/conf/prometheus.yml`
   * Data directory: `mgmt/containers/data/prometheus`

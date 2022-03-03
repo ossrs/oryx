@@ -82,6 +82,26 @@ exports.market = {
       Status: null,
     },
   },
+  ffmpeg: {
+    name: 'ffmpeg',
+    image: async () => {
+      const registry = await platform.registry();
+      return `${registry}/ossrs/srs-terraform:ffmpeg-1`;
+    },
+    tcpPorts: [2019],
+    udpPorts: [],
+    command: ['node .'],
+    logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
+    volumes: [
+      `${process.cwd()}/.env:/usr/local/srs-terraform/ffmpeg/.env`,
+    ],
+    extras: [],
+    container: {
+      ID: null,
+      State: null,
+      Status: null,
+    },
+  },
   prometheus: {
     name: 'prometheus',
     image: async () => {

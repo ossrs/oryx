@@ -9,6 +9,7 @@ import ScenarioSrt from './ScenarioSrt';
 import ScenarioLive from './ScenarioLive';
 import useUrls from "../components/UrlGenerator";
 import ScenarioVod from './ScenarioVod';
+import ScenarioForward from './ScenarioForward';
 
 export default function Scenario() {
   const [searchParams] = useSearchParams();
@@ -89,6 +90,9 @@ function ScenarioImpl({defaultActiveTab}) {
           </Tab>
           <Tab eventKey="vod" title="云点播">
             { activeTab === 'vod' && <ScenarioVod /> }
+          </Tab>
+          <Tab eventKey="forward" title="多平台转播">
+            { activeTab === 'forward' && <ScenarioForward /> }
           </Tab>
           <Tab eventKey="source" title="源代码">
             { activeTab === 'source' && <ScenarioSource /> }

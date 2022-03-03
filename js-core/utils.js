@@ -36,3 +36,13 @@ const verifyToken = async (jwt, token) => {
   });
 };
 exports.verifyToken = verifyToken;
+
+const streamURL = (vhost, app, stream) => {
+  if (vhost === '__defaultVhost__') {
+    return `${app}/${stream}`;
+  } else {
+    return `${vhost}/${app}/${stream}`;
+  }
+};
+exports.streamURL = streamURL;
+

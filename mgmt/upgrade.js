@@ -163,6 +163,7 @@ async function firstRun() {
   await removeContainer(metadata.market.srs.name);
   await removeContainer(metadata.market.hooks.name);
   await removeContainer(metadata.market.tencent.name);
+  await removeContainer(metadata.market.ffmpeg.name);
 
   console.log(`Thread #${metadata.upgrade.name}: boot done`);
   return true;

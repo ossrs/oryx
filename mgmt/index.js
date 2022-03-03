@@ -71,6 +71,9 @@ app.use(mount('/players/', serve('./containers/www/players/')));
 // For registered modules, by /terraform/v1/tencent/
 app.use(proxy('/terraform/v1/tencent/', withLogs({target: 'http://127.0.0.1:2020/'})));
 
+// For registered modules, by /terraform/v1/ffmpeg/
+app.use(proxy('/terraform/v1/ffmpeg/', withLogs({target: 'http://127.0.0.1:2019/'})));
+
 // Proxy to SRS HTTP streaming, console and player, by /api/, /rtc/, /live/, /console/, /players/
 // See https://github.com/vagusX/koa-proxies
 // TODO: FIXME: Do authentication for api.

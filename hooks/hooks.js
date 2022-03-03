@@ -22,12 +22,24 @@ exports.handle = (router) => {
 
   // See https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
   router.all('/terraform/v1/hooks/srs/verify', async (ctx) => {
-    const {action, param} = ctx.request.body;
+    const {action, param, vhost, app, stream, server_id, client_id} = ctx.request.body;
     if (action === 'on_publish') {
       const publish = await redis.get(keys.redis.SRS_SECRET_PUBLISH);
       if (publish && param.indexOf(publish) === -1) {
         throw utils.asError(errs.srs.verify, errs.status.auth, `invalid params=${param} action=${action}`);
       }
+    }
+
+    if (action === 'on_publish') {
+      await redis.hset(keys.redis.SRS_STREAM_ACTIVE, utils.streamURL(vhost, app, stream), JSON.stringify({
+        vhost,
+        app,
+        stream,
+        server: server_id,
+        client: client_id,
+      }));
+    } else if (action === 'on_unpublish') {
+      await redis.hdel(keys.redis.SRS_STREAM_ACTIVE, utils.streamURL(vhost, app, stream));
     }
 
     console.log(`srs hooks ok, ${JSON.stringify(ctx.request.body)}`);
