@@ -34,9 +34,8 @@ git tag -d $TAG 2>/dev/null && git push origin :$TAG
 git tag $TAG
 git push origin $TAG
 
-git remote |grep -q gitee &&
-git push gitee &&
-git push gitee $TAG
+git remote |grep -q gitee && git push gitee && git push gitee $TAG
+git remote |grep -q cloud && git push cloud && git push cloud $TAG
 
 echo "publish $TAG ok"
 
