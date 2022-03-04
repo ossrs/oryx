@@ -26,10 +26,10 @@ export default function ScenarioSrt({urls}) {
   }, [srtPublishUrl]);
 
   React.useEffect(() => {
-    if (!srtPublishUrl) return;
+    if (!srtPublishUrl || !srtPlayUrl) return;
     const u = new URL(srtPlayUrl.replace('srt://', 'http://'));
     setPlayStreamId(`${u.hash.split('&')[0]}`);
-  }, [srtPlayUrl]);
+  }, [srtPublishUrl, srtPlayUrl]);
 
   return (
     <Accordion defaultActiveKey="1">
