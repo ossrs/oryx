@@ -1,7 +1,7 @@
 import {Accordion} from "react-bootstrap";
 import React from "react";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
-import QRCode from "qrcode.react";
+import QRCode from "react-qr-code";
 
 export default function ScenarioSrt({urls}) {
   const {srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer} = urls;
@@ -73,8 +73,6 @@ export default function ScenarioSrt({urls}) {
                 <li>类型：<code>自定义推流</code></li>
                 <li>推流地址：<br/><code>{srtPublishUrl}</code></li>
                 { srtPublishUrl ? <QRCode
-                  id="qrCode"
-                  style={{ margin: 'auto' }}
                   value={srtPublishUrl}  // 二维码的链接
                   size={200}  // 二维码的宽高尺寸
                   fgColor="#000000"   // 二维码的颜色
