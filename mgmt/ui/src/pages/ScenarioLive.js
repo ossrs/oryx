@@ -23,7 +23,7 @@ export default function ScenarioLive({urls}) {
           <p>可应用的具体场景包括：</p>
           <ul>
             <li>一起看电影，异地恋的情侣，或者三五个好朋友，一起看看自己喜欢的电影</li>
-            <li>远程制作和导播，户外直播用手机或摄像头推流到SRS云服务器，用OBS/Vmix/芯象制作后再播出，编辑不用在直播现场</li>
+            <li>远程制作和导播，户外直播用手机或摄像头推流到SRS云服务器，用OBS/vMix/芯象制作后再播出，编辑不用在直播现场</li>
           </ul>
           <p>使用说明：</p>
           <ul>
@@ -33,7 +33,7 @@ export default function ScenarioLive({urls}) {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">
-        <Accordion.Header>OBS推流</Accordion.Header>
+        <Accordion.Header>OBS/vMix推流</Accordion.Header>
         <Accordion.Body>
           <div>
             <p style={{display: 'inline-block'}}><strong>操作步骤：</strong></p>
