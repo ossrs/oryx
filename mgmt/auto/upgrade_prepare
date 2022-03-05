@@ -110,7 +110,8 @@ echo "Detect REGISTRY=$REGISTRY"
 echo "Upgrading all containers by images" &&
 update_containers $REGISTRY ossrs/lighthouse:4 &&
 update_containers $REGISTRY ossrs/srs-terraform:hooks-1 &&
-update_containers $REGISTRY ossrs/srs-terraform:tencent-1
+update_containers $REGISTRY ossrs/srs-terraform:tencent-1 &&
+update_containers $REGISTRY ossrs/srs-terraform:ffmpeg-1
 if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
 
 # Setup git alias to make it convenient.

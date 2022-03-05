@@ -1,4 +1,4 @@
-name: "Release tencent for SRS"
+name: "Release FFmpeg for SRS"
 
 on:
   push:
