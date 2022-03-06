@@ -147,10 +147,9 @@ async function startNewTask(activeKey, forwardObj, configObj) {
   if (forwardObj.task && forwardObj.pid === process.pid) return;
 
   // Build the output stream url.
-  if (!forwardObj.output) {
-    const server = configObj.server;
-    forwardObj.output = `${server.trim()}/${configObj.secret}`;
-  }
+  const server = configObj.server.trim();
+  const seperator = (server.endsWith('/') || configObj.secret.startsWith('/')) ? '' : '/';
+  forwardObj.output = `${server}${seperator}${configObj.secret}`;
 
   // Start a child process to forward stream.
   const child = spawn('ffmpeg', ['-f', 'flv', '-i', forwardObj.input, '-c', 'copy', '-f', 'flv', forwardObj.output]);
