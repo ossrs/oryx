@@ -91,11 +91,11 @@ function ScenarioImpl({defaultActiveTab}) {
           <Tab eventKey="forward" title="多平台转播">
             { activeTab === 'forward' && <ScenarioForward /> }
           </Tab>
-          <Tab eventKey="dvr" title="云录制">
-            { activeTab === 'dvr' && <ScenarioDvr /> }
-          </Tab>
           <Tab eventKey="source" title="源代码">
             { activeTab === 'source' && <ScenarioSource /> }
+          </Tab>
+          <Tab eventKey="dvr" title="云录制">
+            { activeTab === 'dvr' && <ScenarioDvr /> }
           </Tab>
         </Tabs>
       </Container>
