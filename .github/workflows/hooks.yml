@@ -32,8 +32,8 @@ jobs:
       # Build SRS image
       - name: Build SRS docker image
         run: |
-          echo "Release ossrs/srs-cloud:$SRS_TAG"
-          docker build --tag ossrs/srs-cloud:$SRS_TAG -f hooks/Dockerfile .
+          echo "Release ossrs/srs-terraform:$SRS_TAG"
+          docker build --tag ossrs/srs-terraform:$SRS_TAG -f hooks/Dockerfile .
 
       ################################################################
       # Aliyun ACR
