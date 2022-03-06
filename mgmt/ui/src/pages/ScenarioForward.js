@@ -4,6 +4,7 @@ import {Errors, Token} from "../utils";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
 import moment from "moment";
+import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 
 export default function ScenarioForward() {
   const navigate = useNavigate();
@@ -67,6 +68,10 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
   const [kuaishouSecret, setKuaishouSecret] = React.useState(defaultSecrets?.kuaishou?.secret);
   const [forwards, setForwards] = React.useState();
 
+  const dvrTutorials = useTutorials(React.useRef([
+    {author: 'SRS', id: 'BV1KY411V7uc'},
+  ]));
+
   React.useEffect(() => {
     const refreshStreams = () => {
       const token = Token.load();
@@ -122,7 +127,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
         <Accordion.Header>场景介绍</Accordion.Header>
         <Accordion.Body>
           <div>
-            多平台转播，将流转发给其他平台，比如视频号直播、快手、B站等。
+            多平台转播<TutorialsButton prefixLine={true} tutorials={dvrTutorials} />，将流转发给其他平台，比如视频号直播、快手、B站等。
             <p></p>
           </div>
           <p>可应用的具体场景包括：</p>
@@ -159,7 +164,8 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
               onClick={(e) => updateSecrets(e, 'update', 'wx', wxServer, wxSecret, wxEnabled)}
             >
               更新配置
-            </Button>
+            </Button> &nbsp;
+            <TutorialsButton prefixLine={true} tutorials={dvrTutorials} /> &nbsp;
             <Form.Text> * 若有多个流，随机选择一个</Form.Text>
           </Form>
         </Accordion.Body>
@@ -187,7 +193,8 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
               onClick={(e) => updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, bilibiliEnabled)}
             >
               更新配置
-            </Button>
+            </Button> &nbsp;
+            <TutorialsButton prefixLine={true} tutorials={dvrTutorials} /> &nbsp;
             <Form.Text> * 若有多个流，随机选择一个</Form.Text>
           </Form>
         </Accordion.Body>
@@ -215,7 +222,8 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
               onClick={(e) => updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, kuaishouEnabled)}
             >
               更新配置
-            </Button>
+            </Button> &nbsp;
+            <TutorialsButton prefixLine={true} tutorials={dvrTutorials} /> &nbsp;
             <Form.Text> * 若有多个流，随机选择一个</Form.Text>
           </Form>
         </Accordion.Body>
