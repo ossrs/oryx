@@ -103,7 +103,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
 
   const updateSecrets = (e, action, platform, server, secret, enabled) => {
     e.preventDefault();
-    if (!server || !secret) return alert('请输入推流地址和密钥');
+    if (!server) return alert('请输入推流地址');
 
     const token = Token.load();
     axios.post('/terraform/v1/ffmpeg/forward/secret', {

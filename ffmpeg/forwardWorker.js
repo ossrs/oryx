@@ -148,7 +148,7 @@ async function startNewTask(activeKey, forwardObj, configObj) {
 
   // Build the output stream url.
   const server = configObj.server.trim();
-  const seperator = (server.endsWith('/') || configObj.secret.startsWith('/')) ? '' : '/';
+  const seperator = (server.endsWith('/') || configObj.secret.startsWith('/') || !configObj.secret) ? '' : '/';
   forwardObj.output = `${server}${seperator}${configObj.secret}`;
 
   // Start a child process to forward stream.
@@ -159,7 +159,7 @@ async function startNewTask(activeKey, forwardObj, configObj) {
   const r0 = await redis.hset(keys.redis.SRS_FORWARD_STREAM, activeKey, JSON.stringify(forwardObj));
   const r1 = await redis.hdel(keys.redis.SRS_FORWARD_CODE, activeKey);
   const r2 = await redis.hdel(keys.redis.SRS_FORWARD_FRAME, activeKey);
-  console.log(`Thread #forwardWorker: Start task=${child.pid}, pid=${previousPid}/${forwardObj.pid}, input=${forwardObj.input}, output=${forwardObj.output}, r0=${r0}, r1=${r1}, r2=${r2}`);
+  console.log(`Thread #forwardWorker: Start task=${child.pid}, pid=${previousPid}/${forwardObj.pid}, stream=${activeKey}, input=${forwardObj.input}, output=${forwardObj.output}, r0=${r0}, r1=${r1}, r2=${r2}`);
 
   let nnLogs = 0;
   child.stdout.on('data', (chunk) => {

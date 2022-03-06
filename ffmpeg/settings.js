@@ -34,7 +34,7 @@ exports.handle = (router) => {
       }
 
       if (!server) return utils.asError(errs.sys.empty, errs.status.args, 'no server');
-      if (!secret) return utils.asError(errs.sys.empty, errs.status.args, 'no secret');
+      if (!server && !secret) return utils.asError(errs.sys.empty, errs.status.args, 'no secret');
       if (enabled === undefined) return utils.asError(errs.sys.empty, errs.status.args, 'no enabled');
     }
 
@@ -43,6 +43,21 @@ exports.handle = (router) => {
       const r0 = await redis.hset(keys.redis.SRS_FORWARD_CONFIG, platform, JSON.stringify({
         platform, server, secret, enabled,
       }));
+
+      // Restart the forwarding if exists.
+      const stream = await redis.hget(keys.redis.SRS_FORWARD_MAP, platform);
+      if (stream) {
+        const activeKey = `${platform}@${stream}`;
+        const forward = await redis.hget(keys.redis.SRS_FORWARD_STREAM, activeKey);
+        const forwardObj = forward && JSON.parse(forward);
+        if (forwardObj?.task) {
+          try {
+            process.kill(forwardObj.task, 'SIGKILL');
+          } catch (e) {
+          }
+          console.log(`FFmpeg: Forward kill pid=${forwardObj.task}, stream=${activeKey}`);
+        }
+      }
       console.log(`FFmpeg: Forward update secret ok, action=${action}, platform=${platform}, r0=${r0}`);
     } else {
       const configs = await redis.hgetall(keys.redis.SRS_FORWARD_CONFIG);
