@@ -60,11 +60,13 @@ async function generateForwardRules() {
     if (config.enabled) nnPlatformEnabled++;
     configs[k] = config;
   }
-  if (!nnPlatformEnabled) return;
 
   const activeKeys = await redis.hkeys(keys.redis.SRS_STREAM_ACTIVE);
+  const platforms = nnPlatformEnabled ? Object.values(configs).map(e => `${e.platform}:${e.enabled}`) : Object.keys(configs);
+  console.log(`Thread #forwardWorker: Active streams ${JSON.stringify(activeKeys)}, enabled=${nnPlatformEnabled}, platforms=${JSON.stringify(platforms)}`);
+
+  if (!nnPlatformEnabled) return;
   if (!activeKeys || !activeKeys.length) return;
-  console.log(`Thread #forwardWorker: Active streams ${JSON.stringify(activeKeys)}, enabled=${nnPlatformEnabled}, platforms=${JSON.stringify(Object.values(configs).map(e => `${e.platform}:${e.enabled}`))}`);
 
   for (const i in activeKeys) {
     // Get the local object by the active key.

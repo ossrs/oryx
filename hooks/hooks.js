@@ -30,8 +30,9 @@ exports.handle = (router) => {
       }
     }
 
+    let active = null;
     if (action === 'on_publish') {
-      await redis.hset(keys.redis.SRS_STREAM_ACTIVE, utils.streamURL(vhost, app, stream), JSON.stringify({
+      active = await redis.hset(keys.redis.SRS_STREAM_ACTIVE, utils.streamURL(vhost, app, stream), JSON.stringify({
         vhost,
         app,
         stream,
@@ -39,10 +40,10 @@ exports.handle = (router) => {
         client: client_id,
       }));
     } else if (action === 'on_unpublish') {
-      await redis.hdel(keys.redis.SRS_STREAM_ACTIVE, utils.streamURL(vhost, app, stream));
+      active = await redis.hdel(keys.redis.SRS_STREAM_ACTIVE, utils.streamURL(vhost, app, stream));
     }
 
-    console.log(`srs hooks ok, ${JSON.stringify(ctx.request.body)}`);
+    console.log(`srs hooks ok, action=${action}, active=${active}, ${JSON.stringify(ctx.request.body)}`);
     ctx.body = utils.asResponse(0);
   });
 

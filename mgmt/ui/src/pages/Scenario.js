@@ -85,14 +85,14 @@ function ScenarioImpl({defaultActiveTab}) {
           <Tab eventKey="srt" title="超清实时直播">
             { activeTab === 'srt' && <ScenarioSrt urls={{srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer}}/> }
           </Tab>
-          <Tab eventKey="dvr" title="云录制">
-            { activeTab === 'dvr' && <ScenarioDvr /> }
-          </Tab>
           <Tab eventKey="vod" title="云点播">
             { activeTab === 'vod' && <ScenarioVod /> }
           </Tab>
           <Tab eventKey="forward" title="多平台转播">
             { activeTab === 'forward' && <ScenarioForward /> }
+          </Tab>
+          <Tab eventKey="dvr" title="云录制">
+            { activeTab === 'dvr' && <ScenarioDvr /> }
           </Tab>
           <Tab eventKey="source" title="源代码">
             { activeTab === 'source' && <ScenarioSource /> }
