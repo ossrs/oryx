@@ -45,6 +45,8 @@ async function queryLatestVersion(redis, axios) {
 
   // Request the release service API.
   const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'https://api.ossrs.net';
+  console.log(`Query ${releaseServer} with ${JSON.stringify(params)}`);
+
   const {data: releases} = await axios.get(`${releaseServer}/terraform/v1/releases`, {params});
   return releases;
 }
