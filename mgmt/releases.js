@@ -39,6 +39,10 @@ async function queryLatestVersion(redis, axios) {
     if (vodn) params.vodn = vodn;
   }
 
+  // Report about FFmpeg forwarding.
+  const forward = await redis.hlen(keys.redis.SRS_FORWARD_STREAM);
+  if (forward) params.forward = forward;
+
   // Request the release service API.
   const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'https://api.ossrs.net';
   const {data: releases} = await axios.get(`${releaseServer}/terraform/v1/releases`, {params});

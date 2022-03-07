@@ -1,6 +1,6 @@
 {
-  "short_name": "SRS Terraform",
-  "name": "A control system for SRS, to terraform the open-source video platform",
+  "short_name": "SRS Cloud",
+  "name": "A lightweight open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.",
   "icons": [
     {
       "src": "favicon.ico",

@@ -40,7 +40,7 @@ export default function Navigator({initialized, token}) {
             width="64"
             height="30"
             className="d-inline-block align-top"
-            alt="SRS Terraform"
+            alt="SRS Cloud"
           />
         </Navbar.Brand>
         <Nav className='me-auto' variant="pills" activeKey={activekey}>
