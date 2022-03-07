@@ -31,19 +31,18 @@ exports.handle = (router) => {
     }
 
     let active = null;
+    const srt = param && param.indexOf('upstream=srt') >= 0;
+    const url = vhost && app && stream && utils.streamURL(vhost, app, stream);
     if (action === 'on_publish') {
-      active = await redis.hset(keys.redis.SRS_STREAM_ACTIVE, utils.streamURL(vhost, app, stream), JSON.stringify({
-        vhost,
-        app,
-        stream,
-        server: server_id,
-        client: client_id,
-      }));
+      const streamObj = {vhost, app, stream, server: server_id, client: client_id,};
+      active = await redis.hset(keys.redis.SRS_STREAM_ACTIVE, url, JSON.stringify(streamObj));
+      if (srt) await redis.hset(keys.redis.SRS_SRT_ACTIVE, url, JSON.stringify(streamObj));
     } else if (action === 'on_unpublish') {
-      active = await redis.hdel(keys.redis.SRS_STREAM_ACTIVE, utils.streamURL(vhost, app, stream));
+      active = await redis.hdel(keys.redis.SRS_STREAM_ACTIVE, url);
+      await redis.hdel(keys.redis.SRS_SRT_ACTIVE, url);
     }
 
-    console.log(`srs hooks ok, action=${action}, active=${active}, ${JSON.stringify(ctx.request.body)}`);
+    console.log(`srs hooks ok, action=${action}, active=${active}, srt=${srt}, url=${url}, ${JSON.stringify(ctx.request.body)}`);
     ctx.body = utils.asResponse(0);
   });
 

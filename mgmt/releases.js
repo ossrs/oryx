@@ -47,6 +47,10 @@ async function queryLatestVersion(redis, axios) {
   const streams = await redis.hlen(keys.redis.SRS_STREAM_ACTIVE);
   if (streams) params.streams = streams;
 
+  // Report about SRT stream.
+  const srt = await redis.hlen(keys.redis.SRS_SRT_ACTIVE);
+  if (srt) params.srt = srt;
+
   // Request the release service API.
   const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'https://api.ossrs.net';
   console.log(`Query ${releaseServer} with ${JSON.stringify(params)}`);
