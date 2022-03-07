@@ -48,8 +48,12 @@ async function queryLatestVersion(redis, axios) {
   if (streams) params.streams = streams;
 
   // Report about SRT stream.
-  const srt = await redis.hlen(keys.redis.SRS_SRT_ACTIVE);
+  const srt = await redis.hlen(keys.redis.SRS_STREAM_SRT_ACTIVE);
   if (srt) params.srt = srt;
+
+  // Report about WebRTC stream.
+  const rtc = await redis.hlen(keys.redis.SRS_STREAM_RTC_ACTIVE);
+  if (rtc) params.rtc = rtc;
 
   // Request the release service API.
   const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'https://api.ossrs.net';
