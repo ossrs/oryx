@@ -55,6 +55,10 @@ async function queryLatestVersion(redis, axios) {
   const rtc = await redis.hlen(keys.redis.SRS_STREAM_RTC_ACTIVE);
   if (rtc) params.rtc = rtc;
 
+  // Report about beian feature.
+  const beian = await redis.hlen(keys.redis.SRS_BEIAN);
+  if (beian) params.beian = beian;
+
   // Request the release service API.
   const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'https://api.ossrs.net';
   console.log(`Query ${releaseServer} with ${JSON.stringify(params)}`);

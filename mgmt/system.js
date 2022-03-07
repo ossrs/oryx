@@ -26,6 +26,7 @@ const redis = require('js-core/redis').create({config: config.redis, redis: iore
 const moment = require('moment');
 const platform = require('./platform');
 const {queryLatestVersion} = require('./releases');
+const keys = require('js-core/keys');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/status', async (ctx) => {
@@ -246,7 +247,7 @@ exports.handle = (router) => {
   });
 
   router.all('/terraform/v1/mgmt/beian/query', async (ctx) => {
-    const icp = await redis.hget(consts.SRS_BEIAN, 'icp');
+    const icp = await redis.hget(keys.redis.SRS_BEIAN, 'icp');
 
     console.log(`beian: query ok, miit=${JSON.stringify(icp)}`);
     ctx.body = utils.asResponse(0, {icp});
@@ -259,7 +260,7 @@ exports.handle = (router) => {
     if (!beian) throw utils.asError(errs.sys.empty, errs.status.args, 'no beian');
     if (!text) throw utils.asError(errs.sys.empty, errs.status.args, 'no text');
 
-    const r0 = await redis.hset(consts.SRS_BEIAN, beian, text);
+    const r0 = await redis.hset(keys.redis.SRS_BEIAN, beian, text);
     console.log(`beian: update ok, beian=${beian}, text=${text}, r0=${JSON.stringify(r0)}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, r0);
   });

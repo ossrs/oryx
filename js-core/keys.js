@@ -32,9 +32,9 @@ exports.redis = {
   SRS_STREAM_ACTIVE: 'SRS_STREAM_ACTIVE',
   SRS_STREAM_SRT_ACTIVE: 'SRS_STREAM_SRT_ACTIVE',
   SRS_STREAM_RTC_ACTIVE: 'SRS_STREAM_RTC_ACTIVE',
-  // The publish secret.
+  // For system settings.
   SRS_SECRET_PUBLISH: 'SRS_SECRET_PUBLISH',
-  // The first boot flag.
   SRS_FIRST_BOOT: 'SRS_FIRST_BOOT',
+  SRS_BEIAN: 'SRS_BEIAN',
 };
 
