@@ -59,6 +59,10 @@ async function queryLatestVersion(redis, axios) {
   const beian = await redis.hlen(keys.redis.SRS_BEIAN);
   if (beian) params.beian = beian;
 
+  // Report about HTTPS feature.
+  const ssl = await redis.get(keys.redis.SRS_HTTPS);
+  if (ssl) params.https = ssl;
+
   // Request the release service API.
   const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'https://api.ossrs.net';
   console.log(`Query ${releaseServer} with ${JSON.stringify(params)}`);

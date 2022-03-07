@@ -183,6 +183,9 @@ exports.handle = (router) => {
     fs.writeFileSync('/etc/nginx/ssl/nginx.crt', crt);
     await exec(`systemctl reload nginx.service`);
 
+    // Setup the HTTPS information.
+    await redis.set(keys.redis.SRS_HTTPS, 'ssl');
+
     console.log(`ssl ok, key=${key.length}B, crt=${crt.length}B, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0);
   });
@@ -225,6 +228,9 @@ exports.handle = (router) => {
 
     // Restart the nginx service to reload the SSL files.
     await exec(`systemctl reload nginx.service`);
+
+    // Setup the HTTPS information.
+    await redis.set(keys.redis.SRS_HTTPS, 'lets');
 
     console.log(`let's encrypt ok, domain=${domain}, key=${keyFile}, crt=${crtFile}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0);
