@@ -15,6 +15,7 @@ export default function ScenarioSrt({urls}) {
     {author: '马景瑞', id: 'BV1c341177e7'},
     {author: 'SRS', id: 'BV1Nb4y1t7ij'},
     {author: '瓦全', id: 'BV1SF411t7Li'},
+    {author: '王大江', id: 'BV16r4y1q7ZT'},
   ]));
 
   React.useEffect(() => {

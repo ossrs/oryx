@@ -9,6 +9,7 @@ export default function ScenarioLive({urls}) {
     {author: '徐光磊', id: 'BV1RS4y1G7tb'},
     {author: 'SRS', id: 'BV1Nb4y1t7ij'},
     {author: '瓦全', id: 'BV1SF411t7Li'},
+    {author: '王大江', id: 'BV16r4y1q7ZT'},
   ]));
 
   return (
