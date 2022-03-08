@@ -97,7 +97,9 @@ async function doThreadMain() {
     const upgradingMessage = `upgrade from v${pkg.version} to stable ${metadata.upgrade.releases.stable}`;
     console.log(`Thread #${metadata.upgrade.name}: ${upgradingMessage}`);
 
-    if (!(await helper.inUpgradeWindow())) {
+    const uwStart = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'start');
+    const uwDuration = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'duration');
+    if (!helper.inUpgradeWindow(uwStart, uwDuration, moment())) {
       console.log(`Thread #${metadata.upgrade.name}: Ignore for not in window`);
       return;
     }

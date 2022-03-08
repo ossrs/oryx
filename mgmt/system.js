@@ -104,8 +104,11 @@ exports.handle = (router) => {
     const releases = await queryLatestVersion(redis, axios);
     metadata.upgrade.releases = releases;
 
+    const uwStart = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'start');
+    const uwDuration = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'duration');
+    const inUpgradeWindow = helper.inUpgradeWindow(uwStart, uwDuration, moment());
+
     const target = releases?.latest || 'lighthouse';
-    const inUpgradeWindow = await helper.inUpgradeWindow();
     const upgradingMessage = `upgrade to target=${target}, current=${pkg.version}, releases=${JSON.stringify(releases)}, window=${inUpgradeWindow}`;
     console.log(`Start ${upgradingMessage}`);
 
