@@ -57,9 +57,15 @@ async function doThreadMain() {
   // Run only once for each process.
   await resetUpgrading();
 
-  const region = await platform.region();
-  await cos.createCosBucket(redis, COS, region);
-  await vod.createVodService(redis, VodClient, AbstractClient, region);
+  // Try to create cloud service, we ignore error, because user might delete the secret directly on console of cloud
+  // platform, so it might throw exception when create cloud resource.
+  try {
+    const region = await platform.region();
+    await cos.createCosBucket(redis, COS, region);
+    await vod.createVodService(redis, VodClient, AbstractClient, region);
+  } catch (e) {
+    console.warn(`Thread #${metadata.upgrade.name}: Ignore cloud service err`, e);
+  }
 
   // Run only once for a special version.
   await firstRun();
