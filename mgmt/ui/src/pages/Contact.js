@@ -2,6 +2,7 @@ import React from "react";
 import {Container, Carousel} from "react-bootstrap";
 import srsCloud from "../resources/srs-cloud-1296x648.png";
 import srsServer from "../resources/srs-server-1296x648.png";
+import srsVideo from "../resources/srs-video-1296x648.png";
 
 export default function Contact() {
   return (
@@ -11,7 +12,7 @@ export default function Contact() {
           <img
             className="d-block w-100"
             src={srsCloud}
-            alt="First slide"
+            alt="SRS云服务器"
           />
           <Carousel.Caption>
             <h5>欢迎加SRS云服务器专享微信群</h5>
@@ -24,8 +25,21 @@ export default function Contact() {
         <Carousel.Item>
           <img
             className="d-block w-100"
+            src={srsVideo}
+            alt="SRS每周答疑"
+          />
+          <Carousel.Caption>
+            <h5>欢迎关注SRS视频号</h5>
+            <p>
+              每周六晚上20点答疑哦，有问必答，欢迎来问。
+            </p>
+          </Carousel.Caption>
+        </Carousel.Item>
+        <Carousel.Item>
+          <img
+            className="d-block w-100"
             src={srsServer}
-            alt="First slide"
+            alt="SRS开源服务器"
           />
           <Carousel.Caption>
             <h5>欢迎加SRS开源服务器社区</h5>
