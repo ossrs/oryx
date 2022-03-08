@@ -28,6 +28,7 @@ const vod = require('js-core/vod');
 const {AbstractClient} = require('./sdk-internal/common/abstract_client');
 const VodClient = require("tencentcloud-sdk-nodejs").vod.v20180717.Client;
 const {queryLatestVersion} = require('./releases');
+const helper = require('./helper');
 
 if (!isMainThread) {
   threadMain();
@@ -56,6 +57,9 @@ async function threadMain() {
 async function doThreadMain() {
   // Run only once for each process.
   await resetUpgrading();
+
+  // Setup the upgrade window if not set.
+  await setupUpgradeWindow();
 
   // Try to create cloud service, we ignore error, because user might delete the secret directly on console of cloud
   // platform, so it might throw exception when create cloud resource.
@@ -92,6 +96,11 @@ async function doThreadMain() {
   if (metadata.upgrade.releases && metadata.upgrade.releases.stable && higherStable) {
     const upgradingMessage = `upgrade from v${pkg.version} to stable ${metadata.upgrade.releases.stable}`;
     console.log(`Thread #${metadata.upgrade.name}: ${upgradingMessage}`);
+
+    if (!(await helper.inUpgradeWindow())) {
+      console.log(`Thread #${metadata.upgrade.name}: Ignore for not in window`);
+      return;
+    }
 
     const r0 = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
     if (r0 === "1") {
@@ -182,6 +191,15 @@ async function resetUpgrading() {
     const r2 = await redis.hget(consts.SRS_UPGRADING, 'desc');
     const r3 = await redis.del(consts.SRS_UPGRADING);
     console.log(`Thread #${metadata.upgrade.name}: reset upgrading for r1=${r1}, r2=${r2}, r3=${r3}`);
+  }
+}
+
+async function setupUpgradeWindow() {
+  // If user not setup it, we will set the default value for each time, because we could change it apparently.
+  const update = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'update');
+  if (!update) {
+    await redis.hset(keys.redis.SRS_UPGRADE_WINDOW, 'start', 23);
+    await redis.hset(keys.redis.SRS_UPGRADE_WINDOW, 'duration', 6);
   }
 }
 

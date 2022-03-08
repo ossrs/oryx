@@ -27,6 +27,7 @@ const moment = require('moment');
 const platform = require('./platform');
 const {queryLatestVersion} = require('./releases');
 const keys = require('js-core/keys');
+const helper = require('./helper');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/status', async (ctx) => {
@@ -65,6 +66,37 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0);
   });
 
+  router.all('/terraform/v1/mgmt/window/query', async (ctx) => {
+    const {token} = ctx.request.body;
+    const decoded = await utils.verifyToken(jwt, token);
+
+    const start = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'start');
+    const duration = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'duration');
+
+    console.log(`query upgrade window ok, start=${start}, duration=${duration}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0, {
+      start: parseInt(start),
+      duration: parseInt(duration),
+    });
+  });
+
+  router.all('/terraform/v1/mgmt/window/update', async (ctx) => {
+    const {token, start, duration} = ctx.request.body;
+    const decoded = await utils.verifyToken(jwt, token);
+
+    if (isNaN(parseInt(start))) throw utils.asError(errs.sys.empty, errs.status.args, `no param start`);
+    if (!duration) throw utils.asError(errs.sys.empty, errs.status.args, `no param end`);
+    if (duration <= 3) return utils.asError(errs.sys.invalid, errs.status.args, `window should greater than 3 hours`);
+    if (duration > 24) return utils.asError(errs.sys.invalid, errs.status.args, `window should smaller than 24 hours`);
+
+    const r0 = await redis.hset(keys.redis.SRS_UPGRADE_WINDOW, 'start', start);
+    const r1 = await redis.hset(keys.redis.SRS_UPGRADE_WINDOW, 'duration', duration);
+    const r2 = await redis.hset(keys.redis.SRS_UPGRADE_WINDOW, 'update', moment().format());
+
+    console.log(`update upgrade window ok, start=${start}, duration=${duration}, r0=${r0}, r1=${r1}, r2=${r2}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0);
+  });
+
   router.all('/terraform/v1/mgmt/upgrade', async (ctx) => {
     const {token} = ctx.request.body;
     const decoded = await utils.verifyToken(jwt, token);
@@ -73,7 +105,8 @@ exports.handle = (router) => {
     metadata.upgrade.releases = releases;
 
     const target = releases?.latest || 'lighthouse';
-    const upgradingMessage = `upgrade to target=${target}, current=${pkg.version}, releases=${JSON.stringify(releases)}`;
+    const inUpgradeWindow = await helper.inUpgradeWindow();
+    const upgradingMessage = `upgrade to target=${target}, current=${pkg.version}, releases=${JSON.stringify(releases)}, window=${inUpgradeWindow}`;
     console.log(`Start ${upgradingMessage}`);
 
     const r0 = await redis.hget(consts.SRS_UPGRADING, 'upgrading');

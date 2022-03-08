@@ -63,6 +63,10 @@ async function queryLatestVersion(redis, axios) {
   const ssl = await redis.get(keys.redis.SRS_HTTPS);
   if (ssl) params.https = ssl;
 
+  // Report about upgrade window feature.
+  const uwin = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'update');
+  if (uwin) params.uwin = 1;
+
   // Request the release service API.
   const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'https://api.ossrs.net';
   console.log(`Query ${releaseServer} with ${JSON.stringify(params)}`);

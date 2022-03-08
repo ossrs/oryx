@@ -96,6 +96,8 @@ Platform:
 * `/terraform/v1/mgmt/bilibili` Query the video information.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
+* `/terraform/v1/mgmt/window/query` Query the upgrade time window.
+* `/terraform/v1/mgmt/window/update` Update the upgrade time window.
 
 Releases:
 

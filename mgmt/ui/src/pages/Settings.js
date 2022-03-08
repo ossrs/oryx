@@ -1,5 +1,5 @@
 import React from "react";
-import {Accordion, Container, Form, Button, Tabs, Tab} from "react-bootstrap";
+import {Accordion, Container, Form, Button, Tabs, Tab, InputGroup, FormControl, DropdownButton, Dropdown} from "react-bootstrap";
 import {Errors, Token, PlatformPublicKey} from "../utils";
 import axios from "axios";
 import {useNavigate, useSearchParams} from "react-router-dom";
@@ -7,8 +7,10 @@ import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
 import SetupCamSecret from '../components/SetupCamSecret';
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [defaultActiveTab, setDefaultActiveTab] = React.useState();
+  const [upgradeWindow, setUpgradeWindow] = React.useState();
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'auth';
@@ -16,12 +18,39 @@ export default function Settings() {
     setDefaultActiveTab(tab);
   }, [searchParams]);
 
+  React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/window/query', {
+      ...token,
+    }).then(res => {
+      const data = res.data.data;
+      const win = {
+        ...data,
+        end: (data.start + data.duration)%24,
+      };
+
+      setUpgradeWindow(win);
+      console.log(`Query upgrade window ${JSON.stringify(win)}`);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/routers-logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  }, [navigate]);
+
   return (<>
-    { defaultActiveTab && <SettingsImpl defaultActiveTab={defaultActiveTab} /> }
+    {
+      defaultActiveTab && upgradeWindow &&
+      <SettingsImpl defaultActiveTab={defaultActiveTab} defaultWindow={upgradeWindow} />
+    }
   </>);
 }
 
-function SettingsImpl({defaultActiveTab}) {
+function SettingsImpl({defaultActiveTab, defaultWindow}) {
   const navigate = useNavigate();
   const [key, setKey] = React.useState();
   const [crt, setCrt] = React.useState();
@@ -34,6 +63,10 @@ function SettingsImpl({defaultActiveTab}) {
   const sslTutorials = useTutorials(React.useRef([
     {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
   ]));
+
+  const timeSeries = React.useRef([...Array(25).keys()]).current;
+  const [upgradeWindowStart, setUpgradeWindowStart] = React.useState(defaultWindow.start);
+  const [upgradeWindowEnd, setUpgradeWindowEnd] = React.useState(defaultWindow.end);
 
   const updateBeian = (e) => {
     e.preventDefault();
@@ -154,6 +187,31 @@ function SettingsImpl({defaultActiveTab}) {
     setActiveTab(k);
   };
 
+  const setupUpgradeWindow = (e) => {
+    e.preventDefault();
+
+    const [start, end] = [parseInt(upgradeWindowStart || 0), parseInt(upgradeWindowEnd || 0)];
+
+    const duration = start < end ? end - start : end + 24 - start;
+    if (duration <= 3) return alert(`升级窗口不能小于3小时`);
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/window/update', {
+      ...token, start, duration,
+    }).then(res => {
+      alert(`升级窗口[${start}点至${end}点]更新成功，窗口长度${duration}小时`);
+      console.log(`Setup upgrade window start=${start}, end=${end}`);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/routers-logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  };
+
   return (
     <>
       <p></p>
@@ -264,6 +322,42 @@ function SettingsImpl({defaultActiveTab}) {
                     </Button> &nbsp;
                     <Button variant="primary" type="submit" onClick={(e) => enablePlatformAccess(e, false)}>
                       取消授权
+                    </Button>
+                  </Form>
+                </Accordion.Body>
+              </Accordion.Item>
+              <Accordion.Item eventKey="1">
+                <Accordion.Header>设置升级窗口</Accordion.Header>
+                <Accordion.Body>
+                  <Form>
+                    <Form.Label htmlFor="basic-url">升级窗口</Form.Label>
+                    <Form.Text> * 系统会在这个时间段，自动升级到最新的稳定版本</Form.Text>
+                    <InputGroup className="mb-3">
+                      <InputGroup.Text>开始时间</InputGroup.Text>
+                      <Form.Select
+                        aria-label="Start time"
+                        defaultValue={upgradeWindowStart}
+                        onChange={(e) => setUpgradeWindowStart(e.target.value)}
+                      >
+                        {timeSeries.map((e) => {
+                          return <option key={e} value={e}>{`${String(e).padStart(2, '0')}:00`}</option>;
+                        })}
+                      </Form.Select>
+                    </InputGroup>
+                    <InputGroup className="mb-3">
+                      <InputGroup.Text>结束时间</InputGroup.Text>
+                      <Form.Select
+                        aria-label="End time"
+                        defaultValue={upgradeWindowEnd}
+                        onChange={(e) => setUpgradeWindowEnd(e.target.value)}
+                      >
+                        {timeSeries.map((e) => {
+                          return <option key={e} value={e}>{`${String(e).padStart(2, '0')}:00`}</option>;
+                        })}
+                      </Form.Select>
+                    </InputGroup>
+                    <Button variant="primary" type="submit" onClick={(e) => setupUpgradeWindow(e)}>
+                      设置窗口
                     </Button>
                   </Form>
                 </Accordion.Body>
