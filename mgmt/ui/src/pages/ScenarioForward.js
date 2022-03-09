@@ -1,16 +1,16 @@
 import {Accordion, Badge, Button, Form, Table} from "react-bootstrap";
 import React from "react";
-import {Errors, Token} from "../utils";
+import {Token} from "../utils";
 import axios from "axios";
-import {useNavigate} from "react-router-dom";
 import moment from "moment";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
+import {useErrorHandler} from "react-error-boundary";
 
 export default function ScenarioForward() {
-  const navigate = useNavigate();
   const [init, setInit] = React.useState();
   const [activeKey, setActiveKey] = React.useState();
   const [secrets, setSecrets] = React.useState();
+  const handleError = useErrorHandler();
 
   React.useEffect(() => {
     const token = Token.load();
@@ -21,16 +21,8 @@ export default function ScenarioForward() {
       setInit(true);
       setSecrets(secrets || {});
       console.log(`Forward: Secret query ok ${JSON.stringify(secrets)}`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
-  }, [navigate]);
+    }).catch(handleError);
+  }, []);
 
   React.useEffect(() => {
     if (!init || !secrets) return;
@@ -56,7 +48,6 @@ export default function ScenarioForward() {
 }
 
 function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
-  const navigate = useNavigate();
   const [wxEnabled, setWxEnabled] = React.useState(defaultSecrets?.wx?.enabled);
   const [wxServer, setWxServer] = React.useState(defaultSecrets?.wx?.server);
   const [wxSecret, setWxSecret] = React.useState(defaultSecrets?.wx?.secret);
@@ -67,6 +58,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
   const [kuaishouServer, setKuaishouServer] = React.useState(defaultSecrets?.kuaishou?.server);
   const [kuaishouSecret, setKuaishouSecret] = React.useState(defaultSecrets?.kuaishou?.secret);
   const [forwards, setForwards] = React.useState();
+  const handleError = useErrorHandler();
 
   const forwardTutorials = useTutorials(React.useRef([
     {author: 'SRS', id: 'BV1KY411V7uc'},
@@ -85,21 +77,13 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
           i,
         })));
         console.log(`Forward: Query streams ${JSON.stringify(res.data.data)}`);
-      }).catch(e => {
-        const err = e.response.data;
-        if (err.code === Errors.auth) {
-          alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-          navigate('/routers-logout');
-        } else {
-          alert(`服务器错误，${err.code}: ${err.data.message}`);
-        }
-      });
+      }).catch(handleError);
     };
 
     refreshStreams();
     const timer = setInterval(() => refreshStreams(), 10 * 1000);
     return () => clearInterval(timer);
-  }, [navigate]);
+  }, []);
 
   const updateSecrets = (e, action, platform, server, secret, enabled) => {
     e.preventDefault();
@@ -110,15 +94,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
       ...token, action, platform, server, secret, enabled: !!enabled,
     }).then(res => {
       alert('转推设置成功');
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
+    }).catch(handleError);
   };
 
   return (

@@ -1,16 +1,26 @@
 import React from "react";
 import {Accordion, Container, Form, Button, Tabs, Tab, InputGroup} from "react-bootstrap";
-import {Errors, Token, PlatformPublicKey} from "../utils";
+import {Token, PlatformPublicKey} from "../utils";
 import axios from "axios";
-import {useNavigate, useSearchParams} from "react-router-dom";
+import {useSearchParams} from "react-router-dom";
 import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
 import SetupCamSecret from '../components/SetupCamSecret';
+import {SrsErrorBoundary} from "../components/ErrorBoundary";
+import {useErrorHandler} from "react-error-boundary";
 
 export default function Settings() {
-  const navigate = useNavigate();
+  return (
+    <SrsErrorBoundary>
+      <SettingsImpl />
+    </SrsErrorBoundary>
+  );
+}
+
+function SettingsImpl({}) {
   const [searchParams] = useSearchParams();
   const [defaultActiveTab, setDefaultActiveTab] = React.useState();
   const [upgradeWindow, setUpgradeWindow] = React.useState();
+  const handleError = useErrorHandler();
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'auth';
@@ -31,27 +41,18 @@ export default function Settings() {
 
       setUpgradeWindow(win);
       console.log(`Query upgrade window ${JSON.stringify(win)}`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
-  }, [navigate]);
+    }).catch(handleError);
+  }, []);
 
   return (<>
     {
       defaultActiveTab && upgradeWindow &&
-      <SettingsImpl defaultActiveTab={defaultActiveTab} defaultWindow={upgradeWindow} />
+      <SettingsImpl2 defaultActiveTab={defaultActiveTab} defaultWindow={upgradeWindow} />
     }
   </>);
 }
 
-function SettingsImpl({defaultActiveTab, defaultWindow}) {
-  const navigate = useNavigate();
+function SettingsImpl2({defaultActiveTab, defaultWindow}) {
   const [key, setKey] = React.useState();
   const [crt, setCrt] = React.useState();
   const [domain, setDomain] = React.useState();
@@ -59,6 +60,7 @@ function SettingsImpl({defaultActiveTab, defaultWindow}) {
   const [beian, setBeian] = React.useState();
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
   const setSearchParams = useSearchParams()[1];
+  const handleError = useErrorHandler();
 
   const sslTutorials = useTutorials(React.useRef([
     {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
@@ -76,15 +78,7 @@ function SettingsImpl({defaultActiveTab, defaultWindow}) {
       ...token, beian: 'icp', text: beian,
     }).then(res => {
       alert('设置备案信息成功，请刷新页面');
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
+    }).catch(handleError);
   };
 
   const enablePlatformAccess = (e, enabled) => {
@@ -96,15 +90,7 @@ function SettingsImpl({defaultActiveTab, defaultWindow}) {
     }).then(res => {
       alert(enabled ? '授权平台管理员访问成功' : '取消授权成功');
       console.log(`PublicKey: Update ok, enabled=${enabled}`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
+    }).catch(handleError);
   };
 
   const updateSSL = (e) => {
@@ -121,15 +107,7 @@ function SettingsImpl({defaultActiveTab, defaultWindow}) {
     }).then(res => {
       alert(`SSL证书更新成功`);
       console.log(`SSL: Update ok`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
+    }).catch(handleError);
   };
 
   const requestLetsEncrypt = (e) => {
@@ -146,15 +124,7 @@ function SettingsImpl({defaultActiveTab, defaultWindow}) {
     }).then(res => {
       alert(`Let's Encrypt SSL证书更新成功`);
       console.log(`SSL: Let's Encrypt SSL ok`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
+    }).catch(handleError);
   };
 
   const updateSecret = (e) => {
@@ -171,15 +141,7 @@ function SettingsImpl({defaultActiveTab, defaultWindow}) {
     }).then(res => {
       alert(`推流密钥更新成功`);
       console.log(`Secret: Update ok`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
+    }).catch(handleError);
   };
 
   const onSelectTab = (k) => {
@@ -201,15 +163,7 @@ function SettingsImpl({defaultActiveTab, defaultWindow}) {
     }).then(res => {
       alert(`升级窗口[${start}点至${end}点]更新成功，窗口长度${duration}小时`);
       console.log(`Setup upgrade window start=${start}, end=${end}`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
+    }).catch(handleError);
   };
 
   return (

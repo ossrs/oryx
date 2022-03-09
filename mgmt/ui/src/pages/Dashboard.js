@@ -4,10 +4,21 @@ import moment from "moment";
 import axios from 'axios';
 import {XAxis, Tooltip, CartesianGrid, AreaChart, YAxis, Area} from "recharts";
 import querystring from "querystring";
+import {useErrorHandler} from 'react-error-boundary';
+import {SrsErrorBoundary} from "../components/ErrorBoundary";
 
 export default function Dashboard() {
+  return (
+    <SrsErrorBoundary>
+      <DashboardImpl />
+    </SrsErrorBoundary>
+  );
+}
+
+function DashboardImpl() {
   const [data, setData] = React.useState();
   const [promQL, setPromQL] = React.useState();
+  const handleError = useErrorHandler();
 
   React.useEffect(() => {
     const query = '(1 - min by(mode) (rate(node_cpu_seconds_total{mode="idle"}[10s]))) * 100';
@@ -39,10 +50,7 @@ export default function Dashboard() {
         setData(samples);
       }
       console.log(`Status: Query ok, matrix=${matrix.length}`);
-    }).catch(e => {
-      const err = e.response.data;
-      alert(`服务器错误，${err.code}: ${err.data.message}`);
-    });
+    }).catch(handleError);
   }, []);
 
   return (

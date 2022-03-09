@@ -22,6 +22,7 @@ export default function Navigator({initialized, token}) {
       {eventKey: '3', to: '/routers-settings?tab=auth', text: '系统配置'},
       {eventKey: '4', to: '/routers-system', text: '组件管理'},
       {eventKey: '5', to: '/routers-contact', text: '专享群'},
+      {eventKey: '6', to: '/routers-logout', text: '退出'},
     ].map(e => {
       if (e.to.indexOf(location.pathname) === 0) {
         e.className = 'text-light';

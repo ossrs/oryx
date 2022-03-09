@@ -1,16 +1,25 @@
-import {useNavigate, useSearchParams} from "react-router-dom";
+import {useSearchParams} from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import React from "react";
-import {Token, Errors} from "../utils";
+import {Token} from "../utils";
 import axios from "axios";
 import {Row, Col, Card, Button, Form} from "react-bootstrap";
 import UpgradeConfirmButton from '../components/UpgradeConfirmButton';
 import SwitchConfirmButton from '../components/SwitchConfirmButton';
 import * as semver from 'semver';
 import * as moment from 'moment';
+import {SrsErrorBoundary} from "../components/ErrorBoundary";
+import {useErrorHandler} from "react-error-boundary";
 
 export default function System() {
-  const navigate = useNavigate();
+  return (
+    <SrsErrorBoundary>
+      <SystemImpl />
+    </SrsErrorBoundary>
+  );
+}
+
+function SystemImpl() {
   const [status, setStatus] = React.useState();
   const [srsRelease, setSrsRelease] = React.useState();
   const [srsDev, setSrsDev] = React.useState();
@@ -26,6 +35,7 @@ export default function System() {
   const [allowDisableContainer, setAllowDisableContainer] = React.useState();
   const [refreshContainers, setRefreshContainers] = React.useState();
   const [allowSwitchContainer, setAllowSwitchContainer] = React.useState();
+  const handleError = useErrorHandler();
 
   React.useEffect(() => {
     const allowManuallyUpgrade = searchParams.get('allow-manual') === 'true';
@@ -65,15 +75,7 @@ export default function System() {
     }).then(res => {
       setUserToggleStrategy(!userToggleStrategy);
       console.log(`Strategy: Change ok`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
+    }).catch(handleError);
   };
 
   React.useEffect(() => {
@@ -93,16 +95,8 @@ export default function System() {
         return null;
       });
       console.log(`SRS: Query ok, containers are ${JSON.stringify(containers)}`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
-  }, [navigate, refreshContainers]);
+    }).catch(handleError);
+  }, [refreshContainers]);
 
   const handleContainerChange = (container) => {
     const token = Token.load();
@@ -111,15 +105,7 @@ export default function System() {
     }).then(res => {
       console.log(`SRS: Update ok, enabled=${!container.enabled}`);
       setRefreshContainers(Math.random());
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
+    }).catch(handleError);
   };
 
   const handleSwitch = (container) => {
@@ -129,15 +115,7 @@ export default function System() {
     }).then(res => {
       console.log(`SRS: Switch ok, name=${container.name}`);
       setRefreshContainers(Math.random());
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
+    }).catch(handleError);
   };
 
   return (

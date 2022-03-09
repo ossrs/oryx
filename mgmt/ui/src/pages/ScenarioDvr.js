@@ -1,12 +1,12 @@
-import {useNavigate} from "react-router-dom";
-import {Accordion, Form, Button, Table} from "react-bootstrap";
 import React from "react";
-import {Token, Errors, StreamURL, Clipboard} from "../utils";
+import {Accordion, Form, Button, Table} from "react-bootstrap";
+import {Token, StreamURL, Clipboard} from "../utils";
 import axios from "axios";
 import SetupCamSecret from '../components/SetupCamSecret';
 import moment from "moment";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import useDvrVodStatus from "../components/DvrVodStatus";
+import {useErrorHandler} from "react-error-boundary";
 
 export default function ScenarioDvr() {
   const [dvrStatus, vodStatus] = useDvrVodStatus();
@@ -41,9 +41,9 @@ export default function ScenarioDvr() {
 }
 
 function ScenarioDvrImpl({activeKey, defaultApplyAll, enabled}) {
-  const navigate = useNavigate();
   const [dvrAll, setDvrAll] = React.useState(defaultApplyAll);
   const [dvrFiles, setDvrFiles] = React.useState();
+  const handleError = useErrorHandler();
 
   const dvrTutorials = useTutorials(React.useRef([
     {author: '唐为', id: 'BV14S4y1k7gr'},
@@ -81,21 +81,13 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll, enabled}) {
         }).map((file, i) => {
           return {...file, i: i + 1};
         }));
-      }).catch(e => {
-        const err = e.response.data;
-        if (err.code === Errors.auth) {
-          alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-          navigate('/routers-logout');
-        } else {
-          alert(`服务器错误，${err.code}: ${err.data.message}`);
-        }
-      });
+      }).catch(handleError);
     };
 
     refreshDvrFiles();
     const timer = setInterval(() => refreshDvrFiles(), 10 * 1000);
     return () => clearInterval(timer);
-  }, [navigate]);
+  }, []);
 
   const setupDvrPattern = (e) => {
     e.preventDefault();
@@ -108,15 +100,7 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll, enabled}) {
     }).then(res => {
       alert('设置录制规则成功');
       console.log(`DVR: Apply patterns ok, all=${dvrAll}`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
+    }).catch(handleError);
   };
 
   const copyToClipboard = async (e, text) => {

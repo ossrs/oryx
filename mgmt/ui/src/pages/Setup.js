@@ -4,12 +4,23 @@ import React from "react";
 import axios from "axios";
 import {Token, Tools} from "../utils";
 import {useNavigate} from "react-router-dom";
+import {SrsErrorBoundary} from "../components/ErrorBoundary";
+import {useErrorHandler} from "react-error-boundary";
 
 export default function Setup({onInit}) {
+  return (
+    <SrsErrorBoundary>
+      <SetupImpl onInit={onInit} />
+    </SrsErrorBoundary>
+  );
+}
+
+function SetupImpl({onInit}) {
   const [password, setPassword] = React.useState();
   const [initializing, setInitializeing] = React.useState();
   const [enabled, setEnabled] = React.useState(false);
   const navigate = useNavigate();
+  const handleError = useErrorHandler();
 
   // Generate password if not initialized.
   React.useEffect(() => {
@@ -31,22 +42,14 @@ export default function Setup({onInit}) {
       Token.save(data);
       onInit && onInit();
       navigate('/routers-scenario');
-    }).catch(e => {
-      const err = e.response.data;
-      alert(`${err.code}: ${err.data.message}`);
-      console.error(e);
-    });
+    }).catch(handleError);
   };
 
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/check').then(res => {
       setEnabled(!res.data?.data?.upgrading);
       console.log(`Check ok, ${JSON.stringify(res.data)}`);
-    }).catch(e => {
-      const err = e.response.data;
-      alert(`服务器错误，${err.code}: ${err.data.message}`);
-      console.error(err);
-    });
+    }).catch(handleError);
   }, []);
 
   return (

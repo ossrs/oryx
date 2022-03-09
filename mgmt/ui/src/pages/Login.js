@@ -4,13 +4,24 @@ import {Form, Button} from 'react-bootstrap';
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
 import {Token, Tools} from '../utils';
+import {SrsErrorBoundary} from "../components/ErrorBoundary";
+import {useErrorHandler} from "react-error-boundary";
 
 export default function Login({onLogin}) {
+  return (
+    <SrsErrorBoundary>
+      <LoginImpl onLogin={onLogin} />
+    </SrsErrorBoundary>
+  );
+}
+
+function LoginImpl({onLogin}) {
   const [plaintext, setPlaintext] = React.useState(false);
   const [password, setPassword] = React.useState();
   const navigate = useNavigate();
   const passwordRef = React.useRef();
   const plaintextRef = React.useRef();
+  const handleError = useErrorHandler();
 
   // Verify the token if exists.
   React.useEffect(() => {
@@ -23,10 +34,7 @@ export default function Login({onLogin}) {
     }).then(res => {
       console.log(`Login: Done, token is ${Tools.mask(token)}`);
       navigate('/routers-scenario');
-    }).catch(e => {
-      const err = e.response.data;
-      alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-    });
+    }).catch(handleError);
   }, [navigate]);
 
   // Focus to password input.
@@ -47,11 +55,7 @@ export default function Login({onLogin}) {
 
       onLogin && onLogin();
       navigate('/routers-scenario');
-    }).catch(e => {
-      const err = e.response.data;
-      alert(`${err.code}: ${err.data.message}`);
-      console.error(e);
-    });
+    }).catch(handleError);
   };
 
   return (

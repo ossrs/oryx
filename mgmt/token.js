@@ -29,12 +29,8 @@ const consts = require('./consts');
 const MYSQL_DATETIME = 'YYYY-MM-DD HH:mm:ss';
 
 function loadConfig() {
-  dotenv.config({path: '.env', override: true});
-  return {
-    MGMT_PASSWORD: process.env.MGMT_PASSWORD,
-    REDIS_PORT: process.env.REDIS_PORT,
-    REDIS_PASSWORD: process.env.REDIS_PASSWORD,
-  };
+  const {parsed: envs} = dotenv.config({path: '.env', override: true});
+  return envs;
 }
 
 function saveConfig(config) {

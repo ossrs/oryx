@@ -14,20 +14,34 @@ import {Container} from "react-bootstrap";
 import Settings from "./pages/Settings";
 import Dashboard from './pages/Dashboard';
 import Contact from "./pages/Contact";
+import {ErrorBoundary, useErrorHandler} from 'react-error-boundary';
+import {SrsErrorBoundary} from "./components/ErrorBoundary";
 
 function App() {
+  return (
+    <ErrorBoundary FallbackComponent={(RootError)}>
+      <SrsErrorBoundary>
+        <AppImpl />
+      </SrsErrorBoundary>
+    </ErrorBoundary>
+  );
+}
+
+function RootError({error}) {
+  return <Container>{error?.message}</Container>;
+}
+
+function AppImpl() {
   const [loading, setLoading] = React.useState(true);
   const [initialized, setInitialized] = React.useState();
   const [tokenUpdated, setTokenUpdated] = React.useState();
   const [token, setToken] = React.useState();
+  const handleError = useErrorHandler();
 
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/init').then(res => {
       setInitialized(res.data.data.init);
-    }).catch(e => {
-      alert(e.response.data);
-      console.error(e);
-    }).finally(() => {
+    }).catch(handleError).finally(() => {
       setLoading(false);
     });
   }, []);
@@ -35,11 +49,7 @@ function App() {
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/check').then(res => {
       console.log(`Check ok, ${JSON.stringify(res.data)}`);
-    }).catch(e => {
-      const err = e.response.data;
-      alert(`服务器错误，${err.code}: ${err.data.message}`);
-      console.error(err);
-    });
+    }).catch(handleError);
   }, []);
 
   React.useEffect(() => {
@@ -77,9 +87,9 @@ function App() {
               <Route path="/routers-logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
             </>}
           </Routes>
+          <Footer />
         </BrowserRouter>
       </>}
-      <Footer />
     </>
   );
 }

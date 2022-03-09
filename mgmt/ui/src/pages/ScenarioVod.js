@@ -1,12 +1,12 @@
-import {useNavigate} from "react-router-dom";
-import {Accordion, Form, Button, Table} from "react-bootstrap";
 import React from "react";
-import {Token, Errors, StreamURL, Clipboard} from "../utils";
+import {Accordion, Form, Button, Table} from "react-bootstrap";
+import {Token, StreamURL, Clipboard} from "../utils";
 import axios from "axios";
 import SetupCamSecret from '../components/SetupCamSecret';
 import useDvrVodStatus from "../components/DvrVodStatus";
 import moment from "moment";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
+import {useErrorHandler} from "react-error-boundary";
 
 export default function ScenarioVod() {
   const [activeKey, setActiveKey] = React.useState();
@@ -41,9 +41,9 @@ export default function ScenarioVod() {
 }
 
 function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
-  const navigate = useNavigate();
   const [vodAll, setVodAll] = React.useState(defaultApplyAll);
   const [vodFiles, setVodFiles] = React.useState();
+  const handleError = useErrorHandler();
 
   const vodTutorials = useTutorials(React.useRef([
     {author: '唐为', id: 'BV14S4y1k7gr'},
@@ -83,21 +83,13 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
         }).map((file, i) => {
           return {...file, i: i + 1};
         }));
-      }).catch(e => {
-        const err = e.response.data;
-        if (err.code === Errors.auth) {
-          alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-          navigate('/routers-logout');
-        } else {
-          alert(`服务器错误，${err.code}: ${err.data.message}`);
-        }
-      });
+      }).catch(handleError);
     };
 
     refreshVodFiles();
     const timer = setInterval(() => refreshVodFiles(), 10 * 1000);
     return () => clearInterval(timer);
-  }, [navigate]);
+  }, []);
 
   const setupVodPattern = (e) => {
     e.preventDefault();
@@ -110,15 +102,7 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
     }).then(res => {
       alert('设置VoD规则成功');
       console.log(`VoD: Apply patterns ok, all=${vodAll}`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
+    }).catch(handleError);
   };
 
   const copyToClipboard = async (e, text) => {

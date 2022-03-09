@@ -29,9 +29,9 @@ const verifyToken = async (jwt, token) => {
   return await new Promise((resolve, reject) => {
     jwt.verify(token, process.env.MGMT_PASSWORD, function (err, decoded) {
       if (!err) return resolve(decoded);
-      if (err.name === 'TokenExpiredError') throw utils.asError(errs.auth.token, errs.status.auth, `token expired, token=${token}, expiredAt=${err.expiredAt}, ${err.message}`);
-      if (err.name === 'JsonWebTokenError') throw utils.asError(errs.auth.token, errs.status.auth, `token invalid, token=${token}, ${err.message}`);
-      throw utils.asError(errs.auth.token, errs.status.auth, `token verify failed, ${err.message}`);
+      if (err?.name === 'TokenExpiredError') throw utils.asError(errs.auth.token, errs.status.auth, `token expired, token=${token}, expiredAt=${err?.expiredAt}, ${err?.message}`);
+      if (err?.name === 'JsonWebTokenError') throw utils.asError(errs.auth.token, errs.status.auth, `token invalid, token=${token}, ${err?.message}`);
+      throw utils.asError(errs.auth.token, errs.status.auth, `token verify failed, ${err?.message}`);
     });
   });
 };

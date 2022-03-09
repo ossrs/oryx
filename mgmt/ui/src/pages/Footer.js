@@ -1,14 +1,25 @@
 import React from "react";
 import Container from "react-bootstrap/Container";
 import axios from "axios";
+import {SrsErrorBoundary} from "../components/ErrorBoundary";
+import {useErrorHandler} from "react-error-boundary";
 
 export default function Footer() {
+  return (
+    <SrsErrorBoundary>
+      <FooterImpl />
+    </SrsErrorBoundary>
+  );
+}
+
+function FooterImpl() {
   const [versions, setVersions] = React.useState();
   const [beian, setBeian] = React.useState();
+  const handleError = useErrorHandler();
 
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/versions')
-      .then(res => setVersions(res.data));
+      .then(res => setVersions(res.data)).catch(handleError);
   }, []);
 
   React.useEffect(() => {
@@ -16,7 +27,7 @@ export default function Footer() {
       .then(res => {
         setBeian(res.data.data);
         console.log(`Beian: query ${JSON.stringify(res.data.data)}`);
-      });
+      }).catch(handleError);
   }, []);
 
   return (

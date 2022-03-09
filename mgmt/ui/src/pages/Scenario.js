@@ -1,7 +1,7 @@
-import {useNavigate, useSearchParams} from "react-router-dom";
+import {useSearchParams} from "react-router-dom";
 import {Container, Tabs, Tab} from "react-bootstrap";
 import React from "react";
-import {Token, Errors} from "../utils";
+import {Token} from "../utils";
 import axios from "axios";
 import ScenarioDvr from './ScenarioDvr';
 import ScenarioSource from './ScenarioSource';
@@ -10,6 +10,8 @@ import ScenarioLive from './ScenarioLive';
 import useUrls from "../components/UrlGenerator";
 import ScenarioVod from './ScenarioVod';
 import ScenarioForward from './ScenarioForward';
+import {useErrorHandler} from 'react-error-boundary';
+import {SrsErrorBoundary} from "../components/ErrorBoundary";
 
 export default function Scenario() {
   const [searchParams] = useSearchParams();
@@ -21,16 +23,18 @@ export default function Scenario() {
     setDefaultActiveTab(tab);
   }, [searchParams]);
 
-  return (<>
-    { defaultActiveTab && <ScenarioImpl defaultActiveTab={defaultActiveTab} /> }
-  </>);
+  return (
+    <SrsErrorBoundary>
+      { defaultActiveTab && <ScenarioImpl defaultActiveTab={defaultActiveTab} /> }
+    </SrsErrorBoundary>
+  );
 }
 
 function ScenarioImpl({defaultActiveTab}) {
-  const navigate = useNavigate();
   const [secret, setSecret] = React.useState();
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
   const setSearchParams = useSearchParams()[1];
+  const handleError = useErrorHandler();
 
   const {
     rtmpServer,
@@ -58,16 +62,8 @@ function ScenarioImpl({defaultActiveTab}) {
     }).then(res => {
       setSecret(res.data.data);
       console.log(`Status: Query ok, secret=${JSON.stringify(res.data.data)}`);
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
-  }, [navigate]);
+    }).catch(handleError);
+  }, []);
 
   const onSelectTab = (k) => {
     setSearchParams({'tab': k});
