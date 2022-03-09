@@ -1,9 +1,11 @@
 import {Accordion} from "react-bootstrap";
 import React from "react";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
+import SrsQRCode from "../components/SrsQRCode";
 
 export default function ScenarioLive({urls}) {
   const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
+  const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
 
   const movieTutorials = useTutorials(React.useRef([
     {author: '徐光磊', id: 'BV1RS4y1G7tb'},
@@ -63,7 +65,7 @@ export default function ScenarioLive({urls}) {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="2">
-        <Accordion.Header>FFmpeg推流</Accordion.Header>
+        <Accordion.Header>FFmpeg/芯象推流</Accordion.Header>
         <Accordion.Body>
           <div>
             <p style={{display: 'inline-block'}}><strong>操作步骤：</strong></p>
@@ -78,6 +80,8 @@ export default function ScenarioLive({urls}) {
                 ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv {rtmpServer}{rtmpStreamKey}
               </code>
             </li>
+            <li>推流地址：<br/><code>{rtmpPublishUrl}</code></li>
+            <SrsQRCode url={rtmpPublishUrl} />
             <li>
               请选择播放的流：
               <ul>
