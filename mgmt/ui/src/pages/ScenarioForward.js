@@ -97,7 +97,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
     };
 
     refreshStreams();
-    const timer = setInterval(() => refreshStreams(), 5000);
+    const timer = setInterval(() => refreshStreams(), 10 * 1000);
     return () => clearInterval(timer);
   }, [navigate]);
 

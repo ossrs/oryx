@@ -150,8 +150,8 @@ export default function System() {
               <Card.Body>
                 <Card.Text as={Col}>
                   容器名：{srsRelease?.name} <br/>
-                  容器ID：{srsRelease?.container?.ID} <br/>
-                  状态：{srsRelease?.container.State} {srsRelease?.container.Status}
+                  容器ID：{srsRelease?.container?.ID ? srsRelease.container.ID : 'No Container'} <br/>
+                  状态：{srsRelease?.container.State || srsRelease?.container.Status ? `${srsRelease?.container.State} ${srsRelease?.container.Status}` : 'Stopped'}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
@@ -183,8 +183,8 @@ export default function System() {
               <Card.Body>
                 <Card.Text as={Col}>
                   容器名：{srsDev?.name} <br/>
-                  容器ID：{srsDev?.container?.ID} <br/>
-                  状态：{srsDev?.container.State} {srsDev?.container.Status}
+                  容器ID：{srsDev?.container?.ID ? srsDev.container.ID : 'No Container'} <br/>
+                  状态：{srsDev?.container.State || srsDev?.container.Status ? `${srsDev?.container.State} ${srsDev?.container.Status}` : 'Stopped'}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
@@ -443,7 +443,7 @@ function MgmtUpgradeButton({onStatus}) {
     };
 
     refreshMgmtStatus();
-    const timer = setInterval(() => refreshMgmtStatus(), 5000);
+    const timer = setInterval(() => refreshMgmtStatus(), 10 * 1000);
     return () => clearInterval(timer);
   }, [startingUpgrade, onStatus]);
 

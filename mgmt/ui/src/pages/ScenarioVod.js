@@ -95,7 +95,7 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
     };
 
     refreshVodFiles();
-    const timer = setInterval(() => refreshVodFiles(), 5000);
+    const timer = setInterval(() => refreshVodFiles(), 10 * 1000);
     return () => clearInterval(timer);
   }, [navigate]);
 

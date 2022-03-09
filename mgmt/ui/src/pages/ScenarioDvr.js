@@ -93,7 +93,7 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll, enabled}) {
     };
 
     refreshDvrFiles();
-    const timer = setInterval(() => refreshDvrFiles(), 5000);
+    const timer = setInterval(() => refreshDvrFiles(), 10 * 1000);
     return () => clearInterval(timer);
   }, [navigate]);
 
