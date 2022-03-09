@@ -67,6 +67,10 @@ async function queryLatestVersion(redis, axios) {
   const uwin = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'update');
   if (uwin) params.uwin = 1;
 
+  // Report whether start as develop environment.
+  const dev = (process.env.NODE_ENV === 'development');
+  if (dev) params.dev = 1;
+
   // Request the release service API.
   const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'https://api.ossrs.net';
   console.log(`Query ${releaseServer} with ${JSON.stringify(params)}`);
