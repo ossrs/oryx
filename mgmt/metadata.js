@@ -13,6 +13,8 @@ exports.upgrade = {
 exports.market = {
   srs: {
     name: 'srs-server',
+    // For China, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/1
+    // For Global, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/9
     image: async () => {
       let image = 'ossrs/lighthouse';
       if (process.env.NODE_ENV === 'development') image = 'ossrs/srs';
@@ -25,7 +27,37 @@ exports.market = {
     command: ['./objs/srs -c conf/lighthouse.conf'],
     logConfig: '--log-driver json-file --log-opt max-size=3g --log-opt max-file=3',
     volumes: [
-      `${process.cwd()}/containers/conf/srs.conf:/usr/local/srs/conf/lighthouse.conf`,
+      `${process.cwd()}/containers/conf/srs.release.conf:/usr/local/srs/conf/lighthouse.conf`,
+      // Note that we mount the whole www directory, so we must build the static files such as players.
+      `${process.cwd()}/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html`,
+      // We must mount the player and console because the HTTP home of SRS is overwrite by DVR.
+      `${process.cwd()}/containers/www/players:/usr/local/srs/www/players`,
+      `${process.cwd()}/containers/www/console:/usr/local/srs/www/console`,
+    ],
+    extras: [],
+    container: {
+      ID: null,
+      State: null,
+      Status: null,
+    },
+  },
+  srsDev: {
+    name: 'srs-dev',
+    // For China, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/1
+    // For Global, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/9
+    image: async () => {
+      let image = 'ossrs/lighthouse';
+      if (process.env.NODE_ENV === 'development') image = 'ossrs/srs';
+      if (process.env.SRS_DOCKER === 'srs') image = 'ossrs/srs';
+      const registry = await platform.registry();
+      return `${registry}/${image}:5`;
+    },
+    tcpPorts: [1935, 1985, 8080],
+    udpPorts: [8000, 10080],
+    command: ['./objs/srs -c conf/lighthouse.conf'],
+    logConfig: '--log-driver json-file --log-opt max-size=3g --log-opt max-file=3',
+    volumes: [
+      `${process.cwd()}/containers/conf/srs.dev.conf:/usr/local/srs/conf/lighthouse.conf`,
       // Note that we mount the whole www directory, so we must build the static files such as players.
       `${process.cwd()}/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html`,
       // We must mount the player and console because the HTTP home of SRS is overwrite by DVR.

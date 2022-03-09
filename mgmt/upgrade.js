@@ -169,18 +169,10 @@ async function firstRun() {
   await exec(`bash auto/upgrade_prepare`);
 
   // Remove containers.
-  const removeContainer = async (name) => {
-    try {
-      await exec(`docker rm -f ${name}`);
-      console.log(`Thread #${metadata.upgrade.name}: boot remove docker ${name} ok`);
-    } catch (e) {
-      console.log(`Thread #${metadata.upgrade.name}: boot remove docker ${name}, ignore err ${e}`);
-    }
-  };
-  await removeContainer(metadata.market.srs.name);
-  await removeContainer(metadata.market.hooks.name);
-  await removeContainer(metadata.market.tencent.name);
-  await removeContainer(metadata.market.ffmpeg.name);
+  await exec(`docker rm -f ${metadata.market.srs.name}`);
+  await exec(`docker rm -f ${metadata.market.hooks.name}`);
+  await exec(`docker rm -f ${metadata.market.tencent.name}`);
+  await exec(`docker rm -f ${metadata.market.ffmpeg.name}`);
 
   console.log(`Thread #${metadata.upgrade.name}: boot done`);
   return true;

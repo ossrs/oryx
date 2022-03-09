@@ -76,20 +76,9 @@ exports.handle = (router) => {
       const [allTencent, runningTencent] = await market.queryContainer(metadata.market.tencent.name);
       const [allFFmpeg, runningFFmpeg] = await market.queryContainer(metadata.market.ffmpeg.name);
 
-      try {
-        await exec(`docker rm -f ${metadata.market.hooks.name}`);
-      } catch (e) {
-      }
-
-      try {
-        await exec(`docker rm -f ${metadata.market.tencent.name}`);
-      } catch (e) {
-      }
-
-      try {
-        await exec(`docker rm -f ${metadata.market.ffmpeg.name}`);
-      } catch (e) {
-      }
+      await exec(`docker rm -f ${metadata.market.hooks.name}`);
+      await exec(`docker rm -f ${metadata.market.tencent.name}`);
+      await exec(`docker rm -f ${metadata.market.ffmpeg.name}`);
 
       if (allHooks?.ID && runningHooks?.ID) {
         // We must restart the hooks, which depends on the .env

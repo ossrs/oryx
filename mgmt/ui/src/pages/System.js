@@ -5,13 +5,15 @@ import {Token, Errors} from "../utils";
 import axios from "axios";
 import {Row, Col, Card, Button, Form} from "react-bootstrap";
 import UpgradeConfirmButton from '../components/UpgradeConfirmButton';
+import SwitchConfirmButton from '../components/SwitchConfirmButton';
 import * as semver from 'semver';
 import * as moment from 'moment';
 
 export default function System() {
   const navigate = useNavigate();
   const [status, setStatus] = React.useState();
-  const [srs, setSRS] = React.useState();
+  const [srsRelease, setSrsRelease] = React.useState();
+  const [srsDev, setSrsDev] = React.useState();
   const [hooks, setHooks] = React.useState();
   const [tencent, setTencent] = React.useState();
   const [ffmpeg, setFFmpeg] = React.useState();
@@ -23,6 +25,7 @@ export default function System() {
   const [allowManuallyUpgrade, setAllowManuallyUpgrade] = React.useState();
   const [allowDisableContainer, setAllowDisableContainer] = React.useState();
   const [refreshContainers, setRefreshContainers] = React.useState();
+  const [allowSwitchContainer, setAllowSwitchContainer] = React.useState();
 
   React.useEffect(() => {
     const allowManuallyUpgrade = searchParams.get('allow-manual') === 'true';
@@ -34,6 +37,12 @@ export default function System() {
     const allowDisableContainer = searchParams.get('allow-disable') === 'true';
     console.log(`?allow-disable=true|false, current=${allowDisableContainer}, Whether allow disable container`);
     setAllowDisableContainer(allowDisableContainer);
+  }, [searchParams]);
+
+  React.useEffect(() => {
+    const allowSwitchContainer = searchParams.get('allow-switch') === 'true';
+    console.log(`?allow-switch=true|false, current=${allowSwitchContainer}, Whether allow switch srs server`);
+    setAllowSwitchContainer(allowSwitchContainer);
   }, [searchParams]);
 
   // Because the onStatus always change during rendering, so we use a callback so that the useEffect() could depends on
@@ -74,7 +83,8 @@ export default function System() {
     }).then(res => {
       const containers = res.data.data;
       containers.filter(container => {
-        if (container.name === 'srs-server') setSRS(container);
+        if (container.name === 'srs-server') setSrsRelease(container);
+        if (container.name === 'srs-dev') setSrsDev(container);
         if (container.name === 'srs-hooks') setHooks(container);
         if (container.name === 'tencent-cloud') setTencent(container);
         if (container.name === 'ffmpeg') setFFmpeg(container);
@@ -112,32 +122,92 @@ export default function System() {
     });
   };
 
+  const handleSwitch = (container) => {
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/containers', {
+      ...token, action: 'switch', name: container.name,
+    }).then(res => {
+      console.log(`SRS: Switch ok, name=${container.name}`);
+      setRefreshContainers(Math.random());
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/routers-logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  };
+
   return (
     <>
       <Container>
         <Row>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>SRS服务器</Card.Header>
+              <Card.Header>SRS服务器(稳定版)</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
-                  容器名：{srs?.name} <br/>
-                  容器ID：{srs?.container?.ID} <br/>
-                  状态：{srs?.container.State} {srs?.container.Status}
+                  容器名：{srsRelease?.name} <br/>
+                  容器ID：{srsRelease?.container?.ID} <br/>
+                  状态：{srsRelease?.container.State} {srsRelease?.container.Status}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
-                  <Button className='disabled'>
-                    重启
-                  </Button> &nbsp;
+                  {srsDev?.enabled || <>
+                    <Button className='disabled'>重启</Button> &nbsp;
+                  </>}
+                  <Button className='disabled'>升级</Button> &nbsp;
+                  <MgmtUpdateContainer
+                    allow={allowDisableContainer}
+                    enabled={srsRelease?.enabled}
+                    onClick={() => handleContainerChange(srsRelease)}
+                  /> &nbsp;
+                  <SwitchConfirmButton
+                    enabled={srsDev?.enabled}
+                    onClick={() => handleSwitch(srsRelease)}
+                    allowSwitchContainer={allowSwitchContainer}
+                  >
+                    <p>
+                      切换SRS服务器，会导致流中断，确认继续切换么？
+                    </p>
+                  </SwitchConfirmButton>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs lg={3}>
+            <Card style={{ width: '18rem', marginTop: '16px' }}>
+              <Card.Header>SRS服务器(开发版)</Card.Header>
+              <Card.Body>
+                <Card.Text as={Col}>
+                  容器名：{srsDev?.name} <br/>
+                  容器ID：{srsDev?.container?.ID} <br/>
+                  状态：{srsDev?.container.State} {srsDev?.container.Status}
+                  <p></p>
+                </Card.Text>
+                <div style={{display: 'inline-block'}}>
+                  {srsRelease?.enabled || <>
+                    <Button className='disabled'>重启</Button> &nbsp;
+                  </>}
                   <Button className='disabled'>
                     升级
                   </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer}
-                    enabled={srs?.enabled}
-                    onClick={() => handleContainerChange(srs)}
-                  />
+                    enabled={srsDev?.enabled}
+                    onClick={() => handleContainerChange(srsDev)}
+                  /> &nbsp;
+                  <SwitchConfirmButton
+                    enabled={srsRelease?.enabled}
+                    onClick={() => handleSwitch(srsDev)}
+                    allowSwitchContainer={allowSwitchContainer}
+                  >
+                    <p>
+                      切换SRS开发版，会导致流中断，并且<font color='red'>开发版是不稳定</font>的版本，确认继续切换么？
+                    </p>
+                  </SwitchConfirmButton>
                 </div>
               </Card.Body>
             </Card>

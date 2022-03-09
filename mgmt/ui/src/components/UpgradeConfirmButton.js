@@ -2,7 +2,7 @@ import React from "react";
 import {Button, Spinner, OverlayTrigger, Popover} from "react-bootstrap";
 import {useSearchParams} from "react-router-dom";
 
-export default function PopoverConfirmButton({onClick, releaseAvailable, upgrading, progress, text, children}) {
+export default function UpgradeConfirmButton({onClick, releaseAvailable, upgrading, progress, text, children}) {
   const [startUpgrade, setStartUpgrade] = React.useState();
   const [disabled, setDisabled] = React.useState(true);
   const [searchParams] = useSearchParams();

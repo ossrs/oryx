@@ -154,15 +154,31 @@ exports.handle = (router) => {
 
     if (!action) throw utils.asError(errs.sys.empty, errs.status.args, `no param action`);
 
-    const validActions = ['query', 'enabled'];
+    const validActions = ['query', 'enabled', 'switch'];
     if (!validActions.includes(action)) throw utils.asError(errs.sys.invalid, errs.status.args, `invalid action ${action}, should be ${validActions}`);
 
     if (action === 'enabled') {
       if (!name) throw utils.asError(errs.sys.empty, errs.status.args, `no param name`);
       if (enabled !== true && enabled !== false) throw utils.asError(errs.sys.empty, errs.status.args, `no param enabled`);
+
       const r0 = await redis.hset(consts.SRS_CONTAINER_DISABLED, name, !enabled);
       if (!enabled && name) await exec(`docker rm -f ${name}`);
+
       console.log(`srs ok, action=${action}, name=${name}, enabled=${enabled}, r0=${r0}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+      return ctx.body = utils.asResponse(0);
+    } else if (action === 'switch') {
+      const market = metadata.market;
+      if (!name) throw utils.asError(errs.sys.empty, errs.status.args, `no param name`);
+      if (name !== market.srs.name && name !== market.srsDev.name) {
+        throw utils.asError(errs.sys.invalid, errs.status.args, `invalid name ${name}`);
+      }
+
+      const disable = (name === market.srsDev.name) ? market.srs.name : market.srsDev.name;
+      const r0 = await redis.hset(consts.SRS_CONTAINER_DISABLED, name, false);
+      const r1 = await redis.hset(consts.SRS_CONTAINER_DISABLED, disable, true);
+      await exec(`docker rm -f ${disable}`);
+
+      console.log(`switch ok, action=${action}, name=${name}/${r0}, disable=${disable}/${r1}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
       return ctx.body = utils.asResponse(0);
     }
 

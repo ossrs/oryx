@@ -41,6 +41,15 @@ async function threadMain() {
 }
 
 async function doThreadMain() {
+  // For SRS, if release enabled, disable dev automatically.
+  const srsReleaseDisabled = await redis.hget(consts.SRS_CONTAINER_DISABLED, metadata.market.srs.name);
+  const srsDevDisabled = await redis.hget(consts.SRS_CONTAINER_DISABLED, metadata.market.srsDev.name);
+  if (srsReleaseDisabled !== 'true' && srsDevDisabled !== 'true') {
+    const r0 = await redis.hset(consts.SRS_CONTAINER_DISABLED, metadata.market.srsDev.name, true);
+    await exec(`docker rm -f ${metadata.market.srsDev.name}`);
+    console.log(`Thread #market: Disable srs dev for release enabled, r0=${r0}`);
+  }
+
   for (const e in metadata.market) {
     const conf = metadata.market[e];
     const container = await doContainerMain(conf);
