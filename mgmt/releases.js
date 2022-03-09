@@ -4,6 +4,7 @@ const consts = require('./consts');
 const pkg = require('./package.json');
 const keys = require('js-core/keys');
 const { v4: uuidv4 } = require('uuid');
+const metadata = require('./metadata');
 
 async function queryLatestVersion(redis, axios) {
   // Request release api with params.
@@ -70,6 +71,10 @@ async function queryLatestVersion(redis, axios) {
   // Report whether start as develop environment.
   const dev = (process.env.NODE_ENV === 'development');
   if (dev) params.dev = 1;
+
+  // Report whether enable SRS development version.
+  const srsDev = await redis.hget(keys.redis.SRS_CONTAINER_DISABLED, metadata.market.srsDev.name)
+  if (srsDev === 'false') params.srsd = 1;
 
   // Request the release service API.
   const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'https://api.ossrs.net';
