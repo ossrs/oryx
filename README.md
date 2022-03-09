@@ -15,12 +15,17 @@ Other more use scenarios is on the way, please read [this post](https://github.c
 
 ## Architecture
 
-The architecture by [mermaid](https://mermaid.live/edit/#pako:eNpdkU1vwjAMhv9KlMNUJAr3bkJCFIS0L9QyLnSH0JjS0SRV6jAQ4r_PDWxaOdhxXj-xLefMcyOBR3xbme98Jyyyl-Qx04zpotRHFoYjpgqFQeueNnY42pyYpidfTc9jre6pNEkDMpaCPYDteW1uzL65ZtGCUGOHO_bA4lVCfmViX6G9tcjkPe1WnM1UDYXX2sJhGP6X_rCPurBCgo8TqEA00AUmYHFjrvF8uVzctVmCzkHjpDJOXvnx65psSAMNacjPLr6wRgHuwDV-ojfaxfRYG4tgu2Bs8v29NtWHdTAAffCrzC1I6lyKqhngEXt3nRKQZbMO_MGeV5Tmfa7AKlFK-rFzC2ecRlGQ8YhCCVvhKsx4pi-EuloKhKks0VgebakL9LlwaNKTznmE1sEvFJeClqhu1OUHfKuoUQ)
+The architecture of [srs-cloud](https://github.com/ossrs/srs-cloud#architecture) by 
+[mermaid](https://mermaid.live/edit/#pako:eNpdkU1vwjAMhv9KlMMEEh87bJduQkIUhLQv1DIuLYe0MW1Hk1Spy0CI_74kZWxwqO3Yj_M67pGmigP16KZU32nONJLX4CmWhMiskHvS74-IyAR2rHlO9HCUHIg0LV9112F1k2SaVTkJg9AliI2CyBjyMLh3LSGypIT1X9l35cdz2YcdlKpq6yC5dVbOiVvQ-rlS27rNoAYmxg3m5I74q8DYlfJdsz1ZZPLRznK5ZTYTFWQu117Y_5-6YJ-VeQsHFwdQAqvhGpiAxkS18Xy5XNzILEGmIHFSqoa3_PgtMt_QDDQ0Q66v8YVWAjCHpnYTvZu1TveV0gj6GvRVur3NTeUu6gxA7twOUw3cKBesrAe4x-6NUgC8qKOOc-RlZcq0RwVowQpufv7RwjE1owiIqWdCDhvWlBjTWJ4M2lScIUx5gUpTb2NUoEdZgyo8yJR6qBv4hfyCmSWKM3X6AZm9vuQ)
 
 ```mermaid
 flowchart LR;
   nginx --> mgmt(mgmt<br/>by nodejs);
-  mgmt --> SRS(SRS Server) --> Hooks --> StreamAuth & DVR & VoD;
+  subgraph SRS;
+    SRSR[SRS 4.0<br/>Stable];
+    SRSD[SRS 5.0<br/>Develop];
+  end
+  mgmt --> SRS --> Hooks --> StreamAuth & DVR & VoD;
   DVR --> COS;
   mgmt --> FFmpeg;
   SRS --- FFmpeg;
