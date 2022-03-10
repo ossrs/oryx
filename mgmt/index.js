@@ -26,6 +26,25 @@ const pkg = require('./package.json');
 const staticCache = require('koa-static-cache');
 const platform = require('./platform');
 
+function srsProxy(app, home, prefix, noCaches, alias) {
+  const reactFiles = {};
+
+  app.use(staticCache(path.join(__dirname, home), {
+    // Cache for a year for it never changes.
+    maxAge: 365 * 24 * 3600,
+    // It's important to set to dynamic, because the js might changed.
+    dynamic: true,
+    // If not set, NOT FOUND.
+    alias,
+    // The baseUrl to mount.
+    prefix,
+  }, reactFiles));
+
+  noCaches.map(f => {
+    if (reactFiles[f]) reactFiles[f].maxAge = 0;
+  });
+}
+
 // Start all workers threads first.
 threads.run();
 
@@ -67,6 +86,7 @@ app.use(proxy('/terraform/v1/mgmt/srs/hooks', withLogs({
 // We directly serve the static files, because we overwrite the www for DVR.
 app.use(mount('/console/', serve('./containers/www/console/')));
 app.use(mount('/players/', serve('./containers/www/players/')));
+srsProxy(app, 'containers/www/tools/', '/tools/', ['/tools/player.html']);
 
 // For registered modules, by /terraform/v1/tencent/
 app.use(proxy('/terraform/v1/tencent/', withLogs({target: 'http://127.0.0.1:2020/'})));
@@ -119,26 +139,7 @@ app.use(async (ctx, next) => {
 });
 
 // For react, static files server, by /mgmt/
-if (true) {
-  const reactFiles = {};
-
-  app.use(staticCache(path.join(__dirname, 'ui/build'), {
-    // Cache for a year for it never changes.
-    maxAge: 365 * 24 * 3600,
-    // It's important to set to dynamic, because the js might changed.
-    dynamic: true,
-    // If not set, NOT FOUND.
-    alias: {
-      '/mgmt/': '/mgmt/index.html',
-    },
-    // The baseUrl for react.
-    prefix: '/mgmt/',
-  }, reactFiles));
-
-  // Disable the index.html cache, because need to load the correct latest js files,
-  // see https://github.com/koajs/static-cache#editing-the-files-object
-  if (reactFiles['/mgmt/index.html']) reactFiles['/mgmt/index.html'].maxAge = 0;
-}
+srsProxy(app, 'ui/build', '/mgmt/', ['/mgmt/index.html'], {'/mgmt/': '/mgmt/index.html'});
 
 // For /favicon.ico
 // For homepage from root, use mgmt.

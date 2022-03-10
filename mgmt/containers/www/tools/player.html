@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SRS Cloud</title>
+  <meta charset="utf-8">
+</head>
+<body>
+  <video id="player" autoplay controls muted></video>
+</body>
+<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="js/flv-1.5.0.min.js"></script>
+<script type="text/javascript" src="js/hls-0.14.17.min.js"></script>
+<script type="text/javascript">
+  $(function(){
+    // See https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
+    const resource = new URLSearchParams(location.search).get('url');
+    if (!resource) return alert(`没有指定URL`);
+
+    // See https://stackoverflow.com/a/12905122/17679565
+    if (document.createElement('video').canPlayType('application/vnd.apple.mpegURL')) {
+      console.log(`Play by native for ${resource}`);
+      $('#player').prop('src', resource);
+      return;
+    }
+
+    if (resource.indexOf('.flv') > 0) {
+      if (!flvjs.isSupported()) return alert(`你的浏览器不支持HTTP-FLV`);
+
+      const player = flvjs.createPlayer({type: 'flv', url: resource});
+      player.attachMediaElement(document.getElementById('player'));
+      player.load();
+      player.play();
+      console.log(`Play by flv.js for ${resource}`);
+      return;
+    }
+
+    if (resource.indexOf('.m3u8') > 0) {
+      const player = new Hls();
+      player.loadSource(resource);
+      player.attachMedia(document.getElementById('player'));
+      console.log(`Play by hls.js for ${resource}`);
+      return;
+    }
+
+    alert(`不支持的URL：${resource}`);
+  });
+</script>
+</html>
+

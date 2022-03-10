@@ -44,8 +44,9 @@ export default function useUrls({secret}) {
       const httpPort = window.location.port || (window.location.protocol === 'http:' ? 80 : 443);
       setFlvUrl(`${schema}://${window.location.hostname}/live/livestream.flv`);
       setM3u8Url(`${schema}://${window.location.hostname}/live/livestream.m3u8`);
-      setFlvPlayer(`/players/srs_player.html?schema=${schema}&port=${httpPort}&autostart=true&stream=livestream.flv`);
-      setHlsPlayer(`/players/srs_player.html?schema=${schema}&port=${httpPort}&autostart=true&stream=livestream.m3u8`);
+      // /tools/player.html?url=http://localhost:3000/live/livestream.m3u8
+      setFlvPlayer(`/tools/player.html?url=${schema}://${window.location.host}/live/livestream.flv`);
+      setHlsPlayer(`/tools/player.html?url=${schema}://${window.location.host}/live/livestream.m3u8`);
       setRtcPlayer(`/players/rtc_player.html?schema=${schema}&port=${httpPort}&api=${httpPort}&autostart=true&stream=livestream`);
     }
 
