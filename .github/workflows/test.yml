@@ -33,3 +33,7 @@ jobs:
       - name: Install and build mgmt
         run: |
           cd mgmt && npm run build
+
+      - name: Test mgmt
+        run: |
+          cd mgmt && npm test
