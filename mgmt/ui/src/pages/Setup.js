@@ -43,7 +43,7 @@ function SetupImpl({onInit}) {
       onInit && onInit();
       navigate('/routers-scenario');
     }).catch(handleError);
-  }, [handleError, navigate, password, initializing]);
+  }, [handleError, navigate, password, initializing, onInit]);
 
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/check').then(res => {

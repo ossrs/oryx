@@ -68,7 +68,7 @@ function ScenarioImpl({defaultActiveTab}) {
   const onSelectTab = React.useCallback((k) => {
     setSearchParams({'tab': k});
     setActiveTab(k);
-  }, []);
+  }, [setSearchParams]);
 
   return (
     <>

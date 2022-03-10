@@ -147,7 +147,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
   const onSelectTab = React.useCallback((k) => {
     setSearchParams({'tab': k});
     setActiveTab(k);
-  }, []);
+  }, [setSearchParams]);
 
   const setupUpgradeWindow = React.useCallback((e) => {
     e.preventDefault();

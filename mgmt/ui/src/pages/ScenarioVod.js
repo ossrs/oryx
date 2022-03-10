@@ -103,7 +103,7 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
       alert('设置VoD规则成功');
       console.log(`VoD: Apply patterns ok, all=${vodAll}`);
     }).catch(handleError);
-  }, [handleError, vodAll]);
+  }, [handleError, vodAll, enabled]);
 
   const copyToClipboard = React.useCallback((e, text) => {
     e.preventDefault();
