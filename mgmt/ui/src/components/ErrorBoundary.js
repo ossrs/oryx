@@ -12,7 +12,7 @@ export function SrsErrorBoundary({children}) {
   );
 }
 
-export function ErrorFallback({error}) {
+function ErrorFallback({error}) {
   const [show, setShow] = React.useState(true);
 
   if (!show) return <></>;

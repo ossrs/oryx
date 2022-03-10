@@ -9,3 +9,9 @@ test('renders qrCode component', () => {
   expect(elem).toBeInTheDocument();
 });
 
+test('renders qrCode without url', () => {
+  render(<SrsQRCode />);
+  const elem = screen.queryByTestId(/qrCode/i);
+  expect(elem).toBeNull();
+});
+
