@@ -17,10 +17,10 @@ export default function UpgradeConfirmButton({onClick, releaseAvailable, upgradi
     console.log(`?allow-force=true|false, current=${allowForceUpgrade}, Whether allow force to upgrade, even it's the latest version`);
   }, [searchParams]);
 
-  const onHandleClick = () => {
+  const onHandleClick = React.useCallback(() => {
     setStartUpgrade(false);
     onClick && onClick();
-  };
+  }, [onClick]);
 
   const popover = (
     <Popover id="popover-basic">

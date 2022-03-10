@@ -28,7 +28,7 @@ function SetupImpl({onInit}) {
   }, []);
 
   // User click login button.
-  const handleLogin = (e) => {
+  const handleLogin = React.useCallback((e) => {
     e.preventDefault();
 
     if (initializing) return;
@@ -43,7 +43,7 @@ function SetupImpl({onInit}) {
       onInit && onInit();
       navigate('/routers-scenario');
     }).catch(handleError);
-  };
+  }, [handleError, navigate, password, initializing]);
 
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/check').then(res => {

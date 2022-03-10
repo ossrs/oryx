@@ -85,7 +85,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
     return () => clearInterval(timer);
   }, [handleError]);
 
-  const updateSecrets = (e, action, platform, server, secret, enabled) => {
+  const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled) => {
     e.preventDefault();
     if (!server) return alert('请输入推流地址');
 
@@ -95,7 +95,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
     }).then(res => {
       alert('转推设置成功');
     }).catch(handleError);
-  };
+  }, [handleError]);
 
   return (
     <Accordion defaultActiveKey={defaultActiveKey}>

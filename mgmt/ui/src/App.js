@@ -56,10 +56,10 @@ function AppImpl() {
     setToken(Token.load());
   }, [tokenUpdated]);
 
-  const onInit = (token) => {
+  const onInit = React.useCallback((token) => {
     setInitialized(true);
     setTokenUpdated(true);
-  };
+  }, []);
 
   return (
     <>

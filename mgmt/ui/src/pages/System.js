@@ -63,7 +63,7 @@ function SystemImpl() {
     setStatus(status);
   }, []);
 
-  const handleUpgradeStrategyChange = (e) => {
+  const handleUpgradeStrategyChange = React.useCallback((e) => {
     if (strategyAutoUpgrade && !window.confirm(`关闭自动更新，将无法及时修复缺陷。\n是否确认关闭?`)) {
       e.preventDefault();
       return;
@@ -76,7 +76,7 @@ function SystemImpl() {
       setUserToggleStrategy(!userToggleStrategy);
       console.log(`Strategy: Change ok`);
     }).catch(handleError);
-  };
+  }, [handleError, strategyAutoUpgrade, userToggleStrategy]);
 
   React.useEffect(() => {
     const token = Token.load();
@@ -98,7 +98,7 @@ function SystemImpl() {
     }).catch(handleError);
   }, [refreshContainers, handleError]);
 
-  const handleContainerChange = (container) => {
+  const handleContainerChange = React.useCallback((container) => {
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/containers', {
       ...token, action: 'enabled', name: container.name, enabled: !container.enabled,
@@ -106,9 +106,9 @@ function SystemImpl() {
       console.log(`SRS: Update ok, enabled=${!container.enabled}`);
       setRefreshContainers(Math.random());
     }).catch(handleError);
-  };
+  }, [handleError]);
 
-  const handleSwitch = (container) => {
+  const handleSwitch = React.useCallback((container) => {
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/containers', {
       ...token, action: 'switch', name: container.name,
@@ -116,7 +116,7 @@ function SystemImpl() {
       console.log(`SRS: Switch ok, name=${container.name}`);
       setRefreshContainers(Math.random());
     }).catch(handleError);
-  };
+  }, [handleError]);
 
   return (
     <>

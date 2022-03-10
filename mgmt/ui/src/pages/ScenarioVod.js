@@ -89,9 +89,9 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
     refreshVodFiles();
     const timer = setInterval(() => refreshVodFiles(), 10 * 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [handleError]);
 
-  const setupVodPattern = (e) => {
+  const setupVodPattern = React.useCallback((e) => {
     e.preventDefault();
 
     if (!enabled) return;
@@ -103,19 +103,18 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
       alert('设置VoD规则成功');
       console.log(`VoD: Apply patterns ok, all=${vodAll}`);
     }).catch(handleError);
-  };
+  }, [handleError, vodAll]);
 
-  const copyToClipboard = async (e, text) => {
+  const copyToClipboard = React.useCallback((e, text) => {
     e.preventDefault();
     if (!text) return;
 
-    try {
-      await Clipboard.copy(text);
+    Clipboard.copy(text).then(() => {
       alert(`已经复制到剪切板`);
-    } catch (e) {
+    }).catch((e) => {
       alert(`复制失败，请右键复制链接 ${e}`);
-    }
-  };
+    });
+  }, []);
 
   return (
     <Accordion defaultActiveKey={activeKey}>

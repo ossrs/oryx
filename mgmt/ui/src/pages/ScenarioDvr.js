@@ -103,16 +103,15 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll, enabled}) {
     }).catch(handleError);
   };
 
-  const copyToClipboard = async (e, text) => {
+  const copyToClipboard = React.useCallback((e, text) => {
     e.preventDefault();
 
-    try {
-      await Clipboard.copy(text);
+    Clipboard.copy(text).then(() => {
       alert(`已经复制到剪切板`);
-    } catch (e) {
+    }).catch((e) => {
       alert(`复制失败，请右键复制链接 ${e}`);
-    }
-  };
+    });
+  }, []);
 
   return (
     <Accordion defaultActiveKey={activeKey}>
