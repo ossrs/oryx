@@ -50,7 +50,14 @@ exports.init = async () => {
   conf.registry = registry;
   await redis.hset(keys.redis.SRS_TENCENT_LH, 'registry', registry);
 
-  console.log(`Initialize region=${conf.region}, source=${source}, registry=${registry}, isDarwin=${isDarwin}`);
+  // Load the cvm first, because it never changed.
+  let platform = await redis.hget(keys.redis.SRS_TENCENT_LH, 'platform');
+  if (!platform) {
+    platform = await discoverPlatform();
+    await redis.hset(keys.redis.SRS_TENCENT_LH, 'platform', platform);
+  }
+
+  console.log(`Initialize region=${conf.region}, source=${source}, registry=${registry}, platform=${platform}, isDarwin=${isDarwin}`);
   return {region: conf.region, registry, isDarwin};
 };
 
@@ -79,5 +86,18 @@ async function discoverSource(region) {
   });
 
   return source;
+}
+
+async function discoverPlatform() {
+  if (exports.isDarwin) {
+    return 'dev';
+  }
+
+  if (process.env.PLATFORM) {
+    return process.env.PLATFORM;
+  }
+
+  const {data} = await axios.get(`http://metadata.tencentyun.com/latest/meta-data/instance-name`);
+  return data.indexOf('-lhins-') > 0 ? 'lighthouse' : 'cvm';
 }
 

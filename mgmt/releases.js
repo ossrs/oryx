@@ -76,6 +76,10 @@ async function queryLatestVersion(redis, axios) {
   const srsDev = await redis.hget(keys.redis.SRS_CONTAINER_DISABLED, metadata.market.srsDev.name)
   if (srsDev === 'false') params.srsd = 1;
 
+  // Report about the platform.
+  const platform = await redis.hget(keys.redis.SRS_TENCENT_LH, 'platform');
+  if (platform) params.plat = platform;
+
   // Request the release service API.
   const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:${consts.config.port}` : 'https://api.ossrs.net';
   console.log(`Query ${releaseServer} with ${JSON.stringify(params)}`);

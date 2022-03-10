@@ -187,6 +187,7 @@ The optional environments defined by `mgmt/.env`:
 
 * `MGMT_PASSWORD`: The mgmt administrator password.
 * `REGION`: `ap-guangzhou|ap-singapore`, the region for upgrade source.
+* `PLATFORM`: The platform name.
 
 For testing the specified service:
 
