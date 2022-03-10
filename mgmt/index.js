@@ -40,7 +40,7 @@ function srsProxy(app, home, prefix, noCaches, alias) {
     prefix,
   }, reactFiles));
 
-  noCaches.map(f => {
+  noCaches && noCaches.map(f => {
     if (reactFiles[f]) reactFiles[f].maxAge = 0;
   });
 }
@@ -84,8 +84,8 @@ app.use(proxy('/terraform/v1/mgmt/srs/hooks', withLogs({
 })));
 
 // We directly serve the static files, because we overwrite the www for DVR.
-app.use(mount('/console/', serve('./containers/www/console/')));
-app.use(mount('/players/', serve('./containers/www/players/')));
+srsProxy(app, 'containers/www/console/', '/console/');
+srsProxy(app, 'containers/www/players/', '/players/');
 srsProxy(app, 'containers/www/tools/', '/tools/', ['/tools/player.html']);
 
 // For registered modules, by /terraform/v1/tencent/

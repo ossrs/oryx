@@ -103,10 +103,11 @@ Platform:
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
 * `/terraform/v1/mgmt/window/query` Query the upgrade time window.
 * `/terraform/v1/mgmt/window/update` Update the upgrade time window.
-
-Releases:
-
+* `/tools/` A set of H5 tools, like simple player.
+* `/console/` The SRS console, serve by mgmt.
+* `/players/` The SRS player, serve by mgmt.
 * `/terraform/v1/releases` Version management for all components.
+* `/.well-known/acme-challenge/` HTTPS verify mount for letsencrypt.
 
 Market:
 
@@ -126,6 +127,9 @@ Market:
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 * `/prometheus` Prometheus: Time-series database and monitor.
+* `/api/` SRS: HTTP API of SRS media server.
+* `/rtc/` SRS: HTTP API for WebERTC of SRS media server.
+* `/*/*.(flv|m3u8|ts|aac|mp3)` SRS: Media stream for HTTP-FLV, HLS, HTTP-TS, HTTP-AAC, HTTP-MP3.
 
 ## Depends
 
