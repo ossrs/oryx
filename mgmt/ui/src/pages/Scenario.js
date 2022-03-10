@@ -63,7 +63,7 @@ function ScenarioImpl({defaultActiveTab}) {
       setSecret(res.data.data);
       console.log(`Status: Query ok, secret=${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
-  }, []);
+  }, [handleError]);
 
   const onSelectTab = (k) => {
     setSearchParams({'tab': k});

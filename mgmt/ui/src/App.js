@@ -44,13 +44,13 @@ function AppImpl() {
     }).catch(handleError).finally(() => {
       setLoading(false);
     });
-  }, []);
+  }, [handleError]);
 
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/check').then(res => {
       console.log(`Check ok, ${JSON.stringify(res.data)}`);
     }).catch(handleError);
-  }, []);
+  }, [handleError]);
 
   React.useEffect(() => {
     setToken(Token.load());

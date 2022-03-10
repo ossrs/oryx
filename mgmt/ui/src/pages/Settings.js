@@ -42,7 +42,7 @@ function SettingsImpl({}) {
       setUpgradeWindow(win);
       console.log(`Query upgrade window ${JSON.stringify(win)}`);
     }).catch(handleError);
-  }, []);
+  }, [handleError]);
 
   return (<>
     {

@@ -28,7 +28,7 @@ function FooterImpl() {
         setBeian(res.data.data);
         console.log(`Beian: query ${JSON.stringify(res.data.data)}`);
       }).catch(handleError);
-  }, []);
+  }, [handleError]);
 
   return (
     <Container>

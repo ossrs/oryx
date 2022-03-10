@@ -96,7 +96,7 @@ function SystemImpl() {
       });
       console.log(`SRS: Query ok, containers are ${JSON.stringify(containers)}`);
     }).catch(handleError);
-  }, [refreshContainers]);
+  }, [refreshContainers, handleError]);
 
   const handleContainerChange = (container) => {
     const token = Token.load();

@@ -35,7 +35,7 @@ function LoginImpl({onLogin}) {
       console.log(`Login: Done, token is ${Tools.mask(token)}`);
       navigate('/routers-scenario');
     }).catch(handleError);
-  }, [navigate]);
+  }, [navigate, handleError]);
 
   // Focus to password input.
   React.useEffect(() => {

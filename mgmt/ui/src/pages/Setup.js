@@ -50,7 +50,7 @@ function SetupImpl({onInit}) {
       setEnabled(!res.data?.data?.upgrading);
       console.log(`Check ok, ${JSON.stringify(res.data)}`);
     }).catch(handleError);
-  }, []);
+  }, [handleError]);
 
   return (
     <>

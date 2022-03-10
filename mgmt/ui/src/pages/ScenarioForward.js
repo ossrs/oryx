@@ -22,7 +22,7 @@ export default function ScenarioForward() {
       setSecrets(secrets || {});
       console.log(`Forward: Secret query ok ${JSON.stringify(secrets)}`);
     }).catch(handleError);
-  }, []);
+  }, [handleError]);
 
   React.useEffect(() => {
     if (!init || !secrets) return;
@@ -83,7 +83,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
     refreshStreams();
     const timer = setInterval(() => refreshStreams(), 10 * 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [handleError]);
 
   const updateSecrets = (e, action, platform, server, secret, enabled) => {
     e.preventDefault();

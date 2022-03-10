@@ -51,7 +51,7 @@ function DashboardImpl() {
       }
       console.log(`Status: Query ok, matrix=${matrix.length}`);
     }).catch(handleError);
-  }, []);
+  }, [handleError]);
 
   return (
     <>
