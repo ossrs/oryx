@@ -37,16 +37,32 @@ function ErrorDetail({error}) {
   }
 
   if (err?.code) return (
-    <p>
-      Request: {`${error.request?.responseURL}`} <br/>
-      Status: {`${error.response?.status}`} {`${error.response?.statusText}`} <br/>
-      Code: {`${err?.code}`} <br/>
-      Message: {`${err?.data?.message}`} <br/> <br/>
+    <div>
+      <p>
+        Request: {`${error.request?.responseURL}`} <br/>
+        Status: {`${error.response?.status}`} {`${error.response?.statusText}`} <br/>
+        Code: {`${err?.code}`} <br/>
+        Message: {`${err?.data?.message}`} <br/> <br/>
+      </p>
       <pre>
         {JSON.stringify(error.response.data, null, 2)}
       </pre>
-    </p>
+    </div>
   );
+
+  if (error instanceof Error) {
+    return (
+      <div>
+        <p>
+          Name: {error.name} <br/>
+          Message: {error.message} <br/> <br/>
+        </p>
+        <pre>
+          {error.stack}
+        </pre>
+      </div>
+    );
+  }
 
   return (
     <p>

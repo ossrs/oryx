@@ -3,6 +3,7 @@ import Container from "react-bootstrap/Container";
 import axios from "axios";
 import {SrsErrorBoundary} from "../components/ErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
+import {Errors} from "../utils";
 
 export default function Footer() {
   return (
