@@ -37,3 +37,7 @@ jobs:
       - name: Test mgmt
         run: |
           cd mgmt && npm test
+
+      - name: Test ui
+        run: |
+          cd mgmt/ui && npm test
