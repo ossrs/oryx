@@ -70,7 +70,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
   const [upgradeWindowStart, setUpgradeWindowStart] = React.useState(defaultWindow.start);
   const [upgradeWindowEnd, setUpgradeWindowEnd] = React.useState(defaultWindow.end);
 
-  const updateBeian = (e) => {
+  const updateBeian = React.useCallback((e) => {
     e.preventDefault();
 
     const token = Token.load();
@@ -79,9 +79,9 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
     }).then(res => {
       alert('设置备案信息成功，请刷新页面');
     }).catch(handleError);
-  };
+  }, [handleError, beian]);
 
-  const enablePlatformAccess = (e, enabled) => {
+  const enablePlatformAccess = React.useCallback((e, enabled) => {
     e.preventDefault();
 
     const token = Token.load();
@@ -91,9 +91,9 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
       alert(enabled ? '授权平台管理员访问成功' : '取消授权成功');
       console.log(`PublicKey: Update ok, enabled=${enabled}`);
     }).catch(handleError);
-  };
+  }, [handleError]);
 
-  const updateSSL = (e) => {
+  const updateSSL = React.useCallback((e) => {
     e.preventDefault();
 
     if (!key || !crt) {
@@ -108,9 +108,9 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
       alert(`SSL证书更新成功`);
       console.log(`SSL: Update ok`);
     }).catch(handleError);
-  };
+  }, [handleError, key, crt]);
 
-  const requestLetsEncrypt = (e) => {
+  const requestLetsEncrypt = React.useCallback((e) => {
     e.preventDefault();
 
     if (!domain) {
@@ -125,9 +125,9 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
       alert(`Let's Encrypt SSL证书更新成功`);
       console.log(`SSL: Let's Encrypt SSL ok`);
     }).catch(handleError);
-  };
+  }, [handleError, domain]);
 
-  const updateSecret = (e) => {
+  const updateSecret = React.useCallback((e) => {
     e.preventDefault();
 
     if (!secret) {
@@ -142,14 +142,14 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
       alert(`推流密钥更新成功`);
       console.log(`Secret: Update ok`);
     }).catch(handleError);
-  };
+  }, [handleError, secret]);
 
-  const onSelectTab = (k) => {
+  const onSelectTab = React.useCallback((k) => {
     setSearchParams({'tab': k});
     setActiveTab(k);
-  };
+  }, [setSearchParams]);
 
-  const setupUpgradeWindow = (e) => {
+  const setupUpgradeWindow = React.useCallback((e) => {
     e.preventDefault();
 
     const [start, end] = [parseInt(upgradeWindowStart || 0), parseInt(upgradeWindowEnd || 0)];
@@ -164,7 +164,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
       alert(`升级窗口[${start}点至${end}点]更新成功，窗口长度${duration}小时`);
       console.log(`Setup upgrade window start=${start}, end=${end}`);
     }).catch(handleError);
-  };
+  }, [handleError, upgradeWindowStart, upgradeWindowEnd]);
 
   return (
     <>

@@ -65,10 +65,10 @@ function ScenarioImpl({defaultActiveTab}) {
     }).catch(handleError);
   }, [handleError]);
 
-  const onSelectTab = (k) => {
+  const onSelectTab = React.useCallback((k) => {
     setSearchParams({'tab': k});
     setActiveTab(k);
-  };
+  }, [setSearchParams]);
 
   return (
     <>
