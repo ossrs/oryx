@@ -20,7 +20,7 @@ function FooterImpl() {
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/versions')
       .then(res => setVersions(res.data)).catch(handleError);
-  }, []);
+  }, [handleError]);
 
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/beian/query')

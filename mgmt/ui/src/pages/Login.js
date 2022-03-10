@@ -43,7 +43,10 @@ function LoginImpl({onLogin}) {
   }, [plaintext]);
 
   // User click login button.
-  const handleLogin = (e) => {
+  // Note that we use callback, because when we use it in other hooks, it might be null, for example, to use handleLogin
+  // in useEffect, which should depends on the hooks, but should never depends on RAW function, because it always
+  // changes its value. See https://stackoverflow.com/a/55854902/17679565
+  const handleLogin = React.useCallback((e) => {
     e.preventDefault();
 
     axios.post('/terraform/v1/mgmt/login', {
@@ -56,7 +59,7 @@ function LoginImpl({onLogin}) {
       onLogin && onLogin();
       navigate('/routers-scenario');
     }).catch(handleError);
-  };
+  }, [password, handleError, onLogin, navigate]);
 
   return (
     <>

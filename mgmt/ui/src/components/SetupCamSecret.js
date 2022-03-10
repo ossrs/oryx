@@ -9,7 +9,7 @@ export default function SetupCamSecret({children}) {
   const [secretId, setSecretId] = React.useState();
   const [secretKey, setSecretKey] = React.useState();
 
-  const updateTencentSecret = (e) => {
+  const updateTencentSecret = React.useCallback((e) => {
     e.preventDefault();
 
     const token = Token.load();
@@ -26,7 +26,7 @@ export default function SetupCamSecret({children}) {
         alert(`服务器错误，${err.code}: ${err.data.message}`);
       }
     });
-  };
+  }, [navigate, secretId, secretKey]);
 
   return (<>
     <Form>

@@ -89,7 +89,7 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
     refreshVodFiles();
     const timer = setInterval(() => refreshVodFiles(), 10 * 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [handleError]);
 
   const setupVodPattern = (e) => {
     e.preventDefault();

@@ -16,7 +16,7 @@ export default function Settings() {
   );
 }
 
-function SettingsImpl({}) {
+function SettingsImpl() {
   const [searchParams] = useSearchParams();
   const [defaultActiveTab, setDefaultActiveTab] = React.useState();
   const [upgradeWindow, setUpgradeWindow] = React.useState();

@@ -4,12 +4,12 @@ import {Button, OverlayTrigger, Popover} from "react-bootstrap";
 export default function SwitchConfirmButton({onClick, enabled, children, allowSwitchContainer}) {
   const [startUpgrade, setStartUpgrade] = React.useState();
 
-  const handleClick = (e) => {
+  const handleClick = React.useCallback((e) => {
     e.preventDefault();
 
     setStartUpgrade(false);
     onClick();
-  };
+  }, [onClick]);
 
   const popover = (
     <Popover id="popover-basic">
