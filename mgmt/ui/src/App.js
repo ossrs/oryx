@@ -15,7 +15,7 @@ import Settings from "./pages/Settings";
 import Dashboard from './pages/Dashboard';
 import Contact from "./pages/Contact";
 import {ErrorBoundary, useErrorHandler} from 'react-error-boundary';
-import {SrsErrorBoundary} from "./components/ErrorBoundary";
+import {SrsErrorBoundary} from "./components/SrsErrorBoundary";
 
 function App() {
   return (

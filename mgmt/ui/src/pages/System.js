@@ -8,7 +8,7 @@ import UpgradeConfirmButton from '../components/UpgradeConfirmButton';
 import SwitchConfirmButton from '../components/SwitchConfirmButton';
 import * as semver from 'semver';
 import * as moment from 'moment';
-import {SrsErrorBoundary} from "../components/ErrorBoundary";
+import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 
 export default function System() {

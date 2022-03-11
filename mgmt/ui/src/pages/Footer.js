@@ -1,7 +1,7 @@
 import React from "react";
 import Container from "react-bootstrap/Container";
 import axios from "axios";
-import {SrsErrorBoundary} from "../components/ErrorBoundary";
+import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 
 export default function Footer() {

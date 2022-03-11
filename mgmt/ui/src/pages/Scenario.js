@@ -11,7 +11,7 @@ import useUrls from "../components/UrlGenerator";
 import ScenarioVod from './ScenarioVod';
 import ScenarioForward from './ScenarioForward';
 import {useErrorHandler} from 'react-error-boundary';
-import {SrsErrorBoundary} from "../components/ErrorBoundary";
+import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 
 export default function Scenario() {
   const [searchParams] = useSearchParams();
