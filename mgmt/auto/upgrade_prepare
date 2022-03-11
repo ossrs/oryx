@@ -63,56 +63,13 @@ if [[ $(uname -s) != 'Darwin' ]]; then
   if [[ $? -ne 0 ]]; then echo "Setup the UDP kernel options failed"; exit 1; fi
 fi
 
-echo "Update the docker containers."
-docker pull ccr.ccs.tencentyun.com/ossrs/node:slim &&
-docker pull ccr.ccs.tencentyun.com/ossrs/srs:4 &&
-docker pull ccr.ccs.tencentyun.com/ossrs/prometheus &&
-docker pull ccr.ccs.tencentyun.com/ossrs/redis_exporter &&
-docker pull ccr.ccs.tencentyun.com/ossrs/node-exporter &&
-docker pull ccr.ccs.tencentyun.com/ossrs/certbot
-if [[ $? -ne 0 ]]; then echo "Update the containers failed"; exit 1; fi
-
-# Remove the containers if need upgrade
-#   update_containers registry image
-#   update_containers ccr.ccs.tencentyun.com ossrs/lighthouse:4
-function update_containers() {
-  REGISTRY=$1 && IMAGE=$2
-  echo "Update containers for REGISTRY=$REGISTRY IMAGE=$IMAGE"
-
-  # We must store the container images ID before pull, which will change it.
-  IMAGE_IDS=$(docker ps -a | grep $IMAGE | awk '{print $1}')
-  echo "The containers for $REGISTRY/$IMAGE is $IMAGE_IDS"
-
-  docker pull $REGISTRY/$IMAGE
-  if [[ $? -ne 0 ]]; then echo "Update the image $REGISTRY/$IMAGE failed"; exit 1; fi
-
-  for IMAGE_ID in $IMAGE_IDS; do
-    LATEST=$(docker inspect --format "{{.Id}}" $REGISTRY/$IMAGE)
-    RUNNING=$(docker inspect --format "{{.Image}}" $IMAGE_ID)
-    NAME=$(docker inspect --format '{{.Name}}' $IMAGE_ID |sed 's|/||g')
-    echo "Check $NAME RUNNING=$RUNNING, LATEST=$LATEST"
-
-    if [[ $RUNNING != $LATEST ]]; then
-      echo "Upgrade container $NAME from $RUNNING to $LATEST"
-      docker rm -f $NAME
-    fi
-  done
-}
-
 # Use different docker registry.
 REGISTRY=ccr.ccs.tencentyun.com
 if [[ $SOURCE == GITHUB ]]; then REGISTRY=sgccr.ccs.tencentyun.com; fi
 echo "Detect REGISTRY=$REGISTRY"
 
-# Update the containers before restart. Note that the containers are normally started by previous mgmt, with the
-# upgraded image. So we only upgrade the images for all containers, and it's the responsibility for mgmt to restart the
-# container if need to change the startup arguments.
-echo "Upgrading all containers by images" &&
-update_containers $REGISTRY ossrs/lighthouse:4 &&
-update_containers $REGISTRY ossrs/srs-terraform:hooks-1 &&
-update_containers $REGISTRY ossrs/srs-terraform:tencent-1 &&
-update_containers $REGISTRY ossrs/srs-terraform:ffmpeg-1
-if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
+bash auto/upgrade_containers $REGISTRY
+if [[ $? -ne 0 ]]; then echo "Update docker containers failed"; exit 1; fi
 
 # Setup git alias to make it convenient.
 echo "Setup git alias to make it more convenient" &&
