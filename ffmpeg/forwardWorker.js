@@ -138,6 +138,13 @@ async function handleForwardTasks() {
   }
 }
 
+function generateOutput(svr, secret) {
+  const server = svr.trim();
+  const seperator = (server.endsWith('/') || !secret || secret.startsWith('/')) ? '' : '/';
+  return `${server}${seperator}${secret || ''}`;
+}
+exports.generateOutput = generateOutput;
+
 async function startNewTask(activeKey, forwardObj, configObj) {
   // Ignore if not enabled.
   if (!configObj.enabled) return;
@@ -147,9 +154,7 @@ async function startNewTask(activeKey, forwardObj, configObj) {
   if (forwardObj.task && forwardObj.pid === process.pid) return;
 
   // Build the output stream url.
-  const server = configObj.server.trim();
-  const seperator = (server.endsWith('/') || configObj.secret.startsWith('/') || !configObj.secret) ? '' : '/';
-  forwardObj.output = `${server}${seperator}${configObj.secret}`;
+  forwardObj.output = generateOutput(configObj.server, configObj.secret);
 
   // Start a child process to forward stream.
   const child = spawn('ffmpeg', ['-f', 'flv', '-i', forwardObj.input, '-c', 'copy', '-f', 'flv', forwardObj.output]);

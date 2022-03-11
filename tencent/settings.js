@@ -22,6 +22,9 @@ const cloud = require('js-core/cloud');
 const {AbstractClient} = require('./sdk-internal/common/abstract_client');
 const VodClient = require("tencentcloud-sdk-nodejs").vod.v20180717.Client;
 
+const GetUserAppId = 'GetUserAppId';
+exports.GetUserAppId = GetUserAppId;
+
 exports.handle = (router) => {
   // See https://console.cloud.tencent.com/cam
   router.all('/terraform/v1/tencent/cam/secret', async (ctx) => {
@@ -32,7 +35,7 @@ exports.handle = (router) => {
     if (!secretKey) throw utils.asError(errs.sys.empty, errs.status.args, `no param secretKey`);
 
     const {AppId: appId, OwnerUin: uin} = await cloud.tencent.cam(
-      AbstractClient, secretId, secretKey, 'GetUserAppId',
+      AbstractClient, secretId, secretKey, GetUserAppId,
     );
     if (!appId) throw utils.asError(errs.sys.auth, errs.status.args, `query appId failed`);
 

@@ -31,9 +31,9 @@ exports.buildVodM3u8 = (metadataObj, absUrl, domain) => {
 
       if (absUrl) {
         if (domain) {
-          desc.push(path.join(`https://${domain}`, e.key));
+          desc.push(new URL(e.key, `https://${domain}`).href);
         } else {
-          desc.push(path.join(`https://${metadataObj.bucket}.cos.${metadataObj.region}.myqcloud.com`, e.key));
+          desc.push(new URL(e.key, `https://${metadataObj.bucket}.cos.${metadataObj.region}.myqcloud.com`).href);
         }
       } else {
         desc.push(`${e.tsid}.ts`);
