@@ -370,12 +370,14 @@ function MgmtUpdateContainer({allow, enabled, onClick}) {
   );
 }
 
+const upgradeProgress = 300;
+
 function MgmtUpgradeButton({onStatus}) {
   const [startingUpgrade, setStartingUpgrade] = React.useState();
   const [isUpgrading, setIsUpgrading] = React.useState();
   const [releaseAvailable, setReleaseAvailable] = React.useState();
   const [upgradeDone, setUpgradeDone] = React.useState();
-  const [progress, setProgress] = React.useState(120);
+  const [progress, setProgress] = React.useState(upgradeProgress);
 
   // For callback to use state.
   const ref = React.useRef({});
@@ -403,7 +405,7 @@ function MgmtUpgradeButton({onStatus}) {
         }
 
         // If upgradeDone is false, we're in the upgrading progress, so it's done when upgrading changed to false.
-        if (ref.current.upgradeDone === false && !status.upgrading && ref.current.progress < 120) {
+        if (ref.current.upgradeDone === false && !status.upgrading && ref.current.progress < upgradeProgress) {
           setStartingUpgrade(false);
           setUpgradeDone(true);
         }
@@ -430,7 +432,7 @@ function MgmtUpgradeButton({onStatus}) {
 
     setUpgradeDone(false);
     setStartingUpgrade(true);
-    setProgress(120);
+    setProgress(upgradeProgress);
 
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/upgrade', {
