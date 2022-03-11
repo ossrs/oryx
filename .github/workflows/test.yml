@@ -24,20 +24,14 @@ jobs:
             mgmt/ui/package-lock.json
             releases/package-lock.json
             hooks/package-lock.json
+            ffmpeg/package-lock.json
+            tecent/package-lock.json
 
-      - name: Install depends
+      - name: Install and build
         run: |
-          cd mgmt && npm install &&
-          cd ui && npm install
+          make build
 
-      - name: Install and build mgmt
+      - name: Test by jest
         run: |
-          cd mgmt && npm run build
+          make test
 
-      - name: Test mgmt
-        run: |
-          cd mgmt && npm test
-
-      - name: Test ui
-        run: |
-          cd mgmt/ui && npm test

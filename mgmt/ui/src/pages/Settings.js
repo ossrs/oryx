@@ -5,7 +5,7 @@ import axios from "axios";
 import {useSearchParams} from "react-router-dom";
 import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
 import SetupCamSecret from '../components/SetupCamSecret';
-import {SrsErrorBoundary} from "../components/ErrorBoundary";
+import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 
 export default function Settings() {

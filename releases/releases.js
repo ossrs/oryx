@@ -3,7 +3,7 @@
 const pkg = require('./package.json');
 
 const stable = 'v1.0.130';
-const latest = 'v1.0.152';
+const latest = 'v1.0.154';
 
 // Build the version and docker image url.
 function buildVersion(q, version) {
@@ -20,7 +20,7 @@ function buildFeatures(q, version, res) {
 
 // Filter the version from querystring.
 function filterVersion(event) {
-  let q = event.queryString || {}
+  let q = event?.queryString || {}
 
   let version = q.version? q.version :  "v0.0.0"
   if (version.indexOf('v') !== 0) {
@@ -32,6 +32,7 @@ function filterVersion(event) {
 
   return {q, version};
 }
+exports.filterVersion = filterVersion;
 
 // See GetOriginalClientIP of https://github.com/winlinvip/http-gif-sls-writer/blob/master/main.go
 function getOriginalClientIP(q, headers, sourceIp) {

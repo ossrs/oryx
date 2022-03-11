@@ -1,17 +1,22 @@
-.PHONY: default build install run uninstall upgrade
+.PHONY: default build install run uninstall upgrade test
 
 SRS_PREFIX=/usr/local/srs-terraform
 __REAL_INSTALL=$(DESTDIR)$(SRS_PREFIX)
 
 default:
-	@echo "Usage: make build|install|upgrade"
+	@echo "Usage: make build|install|upgrade|test"
 	@echo "     build       Build the project, npm install and build the ui"
 	@echo "     install     Copy files for installer"
 	@echo "     upgrade     Build for upgrade"
+	@echo "     test     	Run tests"
 
 build:
+	@cd ffmpeg && npm install
+	@cd hooks && npm install
 	@cd mgmt && npm install
 	@cd mgmt/ui && npm install
+	@cd releases && npm install
+	@cd tencent && npm install
 	@cd mgmt && npm run build
 
 upgrade:
@@ -31,3 +36,12 @@ install:
 uninstall:
 	@echo "rmdir $(SRS_PREFIX)"
 	@rm -rf $(SRS_PREFIX)
+
+test:
+	@cd ffmpeg && npm test
+	@cd hooks && npm test
+	@cd mgmt && npm test
+	@cd mgmt/ui && npm test
+	@cd releases && npm test
+	@cd tencent && npm test
+

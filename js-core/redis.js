@@ -41,42 +41,50 @@ const create = ({config, redis}) => {
     return client;
   };
 
-  const client = connect();
+  // Lazy init client util use it.
+  let redisClient = null;
+  const buildClient = function() {
+    if (!redisClient) {
+      redisClient = connect();
+    }
+    return redisClient;
+  };
+
   return {
     del: async function (key) {
-      return await client.del(key);
+      return await buildClient().del(key);
     },
     // @see https://redis.io/commands/set
     set: async function (key, value) {
-      return await client.set(key, value);
+      return await buildClient().set(key, value);
     },
     get: async function (key) {
-      return await client.get(key);
+      return await buildClient().get(key);
     },
     // @see https://redis.io/commands/hset
     hset: async function (key, field, value) {
-      return await client.hset(key, field, value);
+      return await buildClient().hset(key, field, value);
     },
     hget: async function (key, field) {
-      return await client.hget(key, field);
+      return await buildClient().hget(key, field);
     },
     hdel: async function (key, field) {
-      return await client.hdel(key, field);
+      return await buildClient().hdel(key, field);
     },
     hscan: async function (key, cursor, match, count) {
-      return await client.hscan(key, cursor, 'MATCH', match, 'COUNT', count);
+      return await buildClient().hscan(key, cursor, 'MATCH', match, 'COUNT', count);
     },
     hkeys: async function (key) {
-      return await client.hkeys(key);
+      return await buildClient().hkeys(key);
     },
     hgetall: async function (key) {
-      return await client.hgetall(key);
+      return await buildClient().hgetall(key);
     },
     time: async function () {
-      return await client.time();
+      return await buildClient().time();
     },
     hlen: async function (key) {
-      return await client.hlen(key);
+      return await buildClient().hlen(key);
     },
   };
 };

@@ -5,7 +5,7 @@ import axios from 'axios';
 import {XAxis, Tooltip, CartesianGrid, AreaChart, YAxis, Area} from "recharts";
 import querystring from "querystring";
 import {useErrorHandler} from 'react-error-boundary';
-import {SrsErrorBoundary} from "../components/ErrorBoundary";
+import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 
 export default function Dashboard() {
   return (

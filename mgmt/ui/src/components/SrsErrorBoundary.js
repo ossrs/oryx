@@ -50,6 +50,16 @@ function ErrorDetail({error}) {
     </div>
   );
 
+  if (error.response?.status) {
+    return (
+      <p>
+        Request: {`${error.request?.responseURL}`} <br/>
+        Status: {`${error.response?.status}`} {`${error.response?.statusText}`} <br/>
+        Data: {`${err}`}
+      </p>
+    );
+  }
+
   if (error instanceof Error) {
     return (
       <div>
@@ -64,12 +74,14 @@ function ErrorDetail({error}) {
     );
   }
 
-  return (
-    <p>
-      Request: {`${error.request?.responseURL}`} <br/>
-      Status: {`${error.response?.status}`} {`${error.response?.statusText}`} <br/>
-      Data: {`${err}`}
-    </p>
-  );
+  if (typeof(error) === 'object') {
+    return <p>Object: {JSON.stringify(error)}</p>
+  }
+
+  if (typeof(error) === 'function') {
+    return <p>Function: {error.toString()}</p>
+  }
+
+  return <p>{error.toString()}</p>;
 }
 

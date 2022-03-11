@@ -4,7 +4,7 @@ import React from "react";
 import axios from "axios";
 import {Token, Tools} from "../utils";
 import {useNavigate} from "react-router-dom";
-import {SrsErrorBoundary} from "../components/ErrorBoundary";
+import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 
 export default function Setup({onInit}) {

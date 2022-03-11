@@ -1,13 +1,16 @@
 {
-  "name": "releases-api",
-  "version":"1.0.188",
+  "name": "releases",
+  "version":"1.0.194",
   "description": "API for srs-terraform releases",
   "main": "index.js",
   "scripts": {
-    "start": "env NODE_ENV=development node ."
+    "start": "env NODE_ENV=development node .",
+    "test": "jest --watchAll=false",
+    "testWatch": "jest --watchAll=true"
   },
   "dependencies": {
     "dotenv": "^10.0.0",
+    "jest": "^27.5.1",
     "js-core": "file:../js-core",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",

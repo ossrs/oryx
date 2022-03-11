@@ -1,14 +1,17 @@
 {
   "name": "ffmpeg",
-  "version":"1.0.3",
+  "version":"1.0.4",
   "description": "FFmpeg API for srs-terraform modules",
   "main": "index.js",
   "scripts": {
-    "start": "env NODE_ENV=development node ."
+    "start": "env NODE_ENV=development node .",
+    "test": "jest --watchAll=false",
+    "testWatch": "jest --watchAll=true"
   },
   "dependencies": {
     "dotenv": "^14.3.2",
     "ioredis": "^4.28.3",
+    "jest": "^27.5.1",
     "js-core": "file:../js-core",
     "jsonwebtoken": "^8.5.1",
     "koa": "^2.13.4",

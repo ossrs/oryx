@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import {BrowserRouter} from "react-router-dom";
-import {SrsErrorBoundary} from "./ErrorBoundary";
+import {SrsErrorBoundary} from "./SrsErrorBoundary";
 import {Errors} from "../utils";
 
 // See https://github.com/facebook/react/issues/11098#issuecomment-523977830
@@ -73,6 +73,54 @@ test('renders with status', () => {
   disableConsoleError(() => {
     render(<BrowserRouter><SrsErrorBoundary><TestError /></SrsErrorBoundary></BrowserRouter>);
     const elem = screen.getByText(/Status: 500/i);
+    expect(elem).toBeInTheDocument();
+  });
+});
+
+test('renders with object', () => {
+  const TestError = () => {
+    throw {key: 100};
+  }
+
+  disableConsoleError(() => {
+    render(<BrowserRouter><SrsErrorBoundary><TestError /></SrsErrorBoundary></BrowserRouter>);
+    const elem = screen.getByText(/Object: /i);
+    expect(elem).toBeInTheDocument();
+  });
+});
+
+test('renders with array', () => {
+  const TestError = () => {
+    throw [1, 'a', {}];
+  }
+
+  disableConsoleError(() => {
+    render(<BrowserRouter><SrsErrorBoundary><TestError /></SrsErrorBoundary></BrowserRouter>);
+    const elem = screen.getByText(/Object: /i);
+    expect(elem).toBeInTheDocument();
+  });
+});
+
+test('renders with funciton', () => {
+  const TestError = () => {
+    throw ()=>{};
+  }
+
+  disableConsoleError(() => {
+    render(<BrowserRouter><SrsErrorBoundary><TestError /></SrsErrorBoundary></BrowserRouter>);
+    const elem = screen.getByText(/Function: /i);
+    expect(elem).toBeInTheDocument();
+  });
+});
+
+test('renders with string', () => {
+  const TestError = () => {
+    throw 'Hello World!';
+  }
+
+  disableConsoleError(() => {
+    render(<BrowserRouter><SrsErrorBoundary><TestError /></SrsErrorBoundary></BrowserRouter>);
+    const elem = screen.getByText(/Hello World!/i);
     expect(elem).toBeInTheDocument();
   });
 });
