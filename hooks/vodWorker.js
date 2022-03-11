@@ -147,6 +147,11 @@ async function handleLocalObject(vod, region, localKey, localObj) {
   console.log(`Thread #vodWorker: Finished files=${localFiles.length}, left=${localObj.files.length}, uploaded=${uploadedObj?.files?.length}, metadata=${metadataObj?.files?.length}`);
 }
 
+function buildVodTsKey(key, tsid) {
+  return path.join(path.dirname(key), `${tsid}.ts`);
+}
+exports.buildVodTsKey = buildVodTsKey;
+
 async function handleLocalFile(cos, cosTokenObj, localKey, localObj, localFile) {
   // Ignore file if not exists.
   if (!fs.existsSync(localFile.tsfile)) {
@@ -157,7 +162,7 @@ async function handleLocalFile(cos, cosTokenObj, localKey, localObj, localFile) 
 
   // Upload the ts file to COS.
   const stats = fs.statSync(localFile.tsfile);
-  const key = path.join(path.dirname(cosTokenObj.key), `${localFile.tsid}.ts`);
+  const key = buildVodTsKey(cosTokenObj.key, localFile.tsid);
   await uploadToCos(cos, cosTokenObj, localObj, localFile, key, stats);
 
   // Update the uploaded ts files.
