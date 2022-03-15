@@ -54,7 +54,9 @@ exports.handle = (router) => {
 
   const handleSecretQuery = async (ctx) => {
     const {token} = ctx.request.body;
-    const decoded = await utils.verifyToken(jwt, token);
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
     const publish = await redis.get(keys.redis.SRS_SECRET_PUBLISH);
     if (!publish) throw utils.asError(errs.sys.boot, errs.status.sys, `system not boot yet`);
@@ -68,13 +70,15 @@ exports.handle = (router) => {
 
   router.all('/terraform/v1/hooks/srs/secret/update', async (ctx) => {
     const { token, secret} = ctx.request.body;
-    await utils.verifyToken(jwt, token);
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
     if (!secret) throw utils.asError(errs.sys.empty, errs.status.args, 'no secret');
 
     const r0 = await redis.set(keys.redis.SRS_SECRET_PUBLISH, secret);
 
-    console.log(`hooks update secret, key=${keys.redis.SRS_SECRET_PUBLISH}, value=${'*'.repeat(secret.length)}, r0=${r0}`);
+    console.log(`hooks update secret, key=${keys.redis.SRS_SECRET_PUBLISH}, value=${'*'.repeat(secret.length)}, r0=${r0}, decoded=${JSON.stringify(decoded)}`);
     ctx.body = utils.asResponse(0, {});
   });
 

@@ -29,7 +29,9 @@ exports.handle = (router) => {
   // See https://console.cloud.tencent.com/cam
   router.all('/terraform/v1/tencent/cam/secret', async (ctx) => {
     const {token, secretId, secretKey} = ctx.request.body;
-    const decoded = await utils.verifyToken(jwt, token);
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
     if (!secretId) throw utils.asError(errs.sys.empty, errs.status.args, `no param secretId`);
     if (!secretKey) throw utils.asError(errs.sys.empty, errs.status.args, `no param secretKey`);

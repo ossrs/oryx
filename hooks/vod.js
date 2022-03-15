@@ -22,7 +22,9 @@ exports.handle = (router) => {
   // Query the VoD patterns.
   router.all('/terraform/v1/hooks/vod/query', async (ctx) => {
     const {token} = ctx.request.body;
-    const decoded = await utils.verifyToken(jwt, token);
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
     const all = await redis.hget(keys.redis.SRS_VOD_PATTERNS, 'all');
 
@@ -40,7 +42,9 @@ exports.handle = (router) => {
   // Setup the VoD patterns.
   router.all('/terraform/v1/hooks/vod/apply', async (ctx) => {
     const {token, all} = ctx.request.body;
-    const decoded = await utils.verifyToken(jwt, token);
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
     if (all !== true && all !== false) throw utils.asError(errs.sys.invalid, errs.status.args, `invalid all=${all}`);
 
@@ -53,7 +57,9 @@ exports.handle = (router) => {
   // List the VoD files.
   router.all('/terraform/v1/hooks/vod/files', async (ctx) => {
     const {token} = ctx.request.body;
-    const decoded = await utils.verifyToken(jwt, token);
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
     const files = [];
     const fileObjs = {};

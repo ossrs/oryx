@@ -9,160 +9,226 @@ const config = {
   },
 };
 
-const os = require('os');
 const fs = require('fs');
+const path = require('path');
 const dotenv = require('dotenv');
 const utils = require('js-core/utils');
 const errs = require('js-core/errs');
-const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const util = require('util');
 const execFile = util.promisify(require('child_process').execFile);
-const metadata = require('./metadata');
 const market = require('./market');
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
+const pkg = require('./package.json');
+const metadata = require('./metadata');
+const { spawn } = require('child_process');
+const axios = require('axios');
+const {queryLatestVersion} = require('./releases');
+const platform = require('./platform');
 const keys = require('js-core/keys');
-const consts = require('./consts');
 
-// MySQL日期字段格式化字符串 @see https://stackoverflow.com/a/27381633
-const MYSQL_DATETIME = 'YYYY-MM-DD HH:mm:ss';
+const handlers = {
+  // Query the containers information.
+  queryContainer: async ({ctx, action, args}) => {
+    const name = args[0];
+    if (!name) throw utils.asError(errs.sys.empty, errs.status.args, `no name`);
 
-function loadConfig() {
-  const {parsed: envs} = dotenv.config({path: '.env', override: true});
-  return envs;
-}
+    const [all, running] = await market.queryContainer(name);
+    ctx.body = utils.asResponse(0, {all, running});
+  },
 
-function saveConfig(config) {
-  const envVars = Object.keys(config).map(k => {
-    const v = config[k];
-    return v ? `${k}=${v}` : '';
-  }).filter(e => e);
+  // Fecth the containers information.
+  fetchContainers: async ({ctx, action, args}) => {
+    const name = args[0];
 
-  // Append an empty line.
-  envVars.push('');
+    const containers = [];
+    for (const k in metadata.market) {
+      if (name && k !== name) return;
 
-  fs.writeFileSync('.env', envVars.join(os.EOL));
-  return config;
-}
+      const container = metadata.market[k];
+      if (!container) throw utils.asError(errs.sys.resource, errs.status.not, `no container --name=${k}`);
 
-function createToken(moment, jwt) {
-  // Update the user info, @see https://www.npmjs.com/package/jsonwebtoken#usage
-  const expire = moment.duration(1, 'years');
-  const createAt = moment.utc().format(MYSQL_DATETIME);
-  const expireAt = moment.utc().add(expire).format(MYSQL_DATETIME);
-  const token = jwt.sign(
-    {v: 1.0, t: createAt, d: expire},
-    process.env.MGMT_PASSWORD, {expiresIn: expire.asSeconds()},
-  );
+      // Query container enabled status from redis.
+      const disabled = await redis.hget(keys.redis.SRS_CONTAINER_DISABLED, container.name);
 
-  return {expire, expireAt, createAt, token};
-}
-
-exports.handle = (router) => {
-  router.all('/terraform/v1/mgmt/init', async (ctx) => {
-    const {password} = ctx.request.body;
-    if (!process.env.MGMT_PASSWORD && password) {
-      console.log(`init mgmt password ${'*'.repeat(password.length)} ok`);
-      const config = loadConfig();
-      saveConfig({...config, MGMT_PASSWORD: password});
-      loadConfig();
-
-      const [allHooks, runningHooks] = await market.queryContainer(metadata.market.hooks.name);
-      const [allTencent, runningTencent] = await market.queryContainer(metadata.market.tencent.name);
-      const [allFFmpeg, runningFFmpeg] = await market.queryContainer(metadata.market.ffmpeg.name);
-
-      await utils.removeContainerQuiet(execFile, metadata.market.hooks.name);
-      await utils.removeContainerQuiet(execFile, metadata.market.tencent.name);
-      await utils.removeContainerQuiet(execFile, metadata.market.ffmpeg.name);
-
-      if (allHooks?.ID && runningHooks?.ID) {
-        // We must restart the hooks, which depends on the .env
-        for (let i = 0; i < 60; i++) {
-          // Wait util running and got another container ID.
-          const [all, running] = await market.queryContainer(metadata.market.hooks.name);
-          // Please note that we don't update the metadata of SRS, client must request the updated status.
-          if (all && all.ID && running && running.ID && running.ID !== runningHooks.ID) break;
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-        console.log(`restart ${metadata.market.hooks.name} ${metadata.market.hooks.container.ID} when .env updated`);
-      }
-
-      if (allTencent?.ID && runningTencent?.ID) {
-        // We must restart the tencent, which depends on the .env
-        for (let i = 0; i < 60; i++) {
-          // Wait util running and got another container ID.
-          const [all, running] = await market.queryContainer(metadata.market.tencent.name);
-          // Please note that we don't update the metadata of SRS, client must request the updated status.
-          if (all && all.ID && running && running.ID && running.ID !== runningTencent.ID) break;
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-        console.log(`restart ${metadata.market.tencent.name} ${metadata.market.tencent.container.ID} when .env updated`);
-      }
-
-      if (allFFmpeg?.ID && runningFFmpeg?.ID) {
-        // We must restart the ffmpeg, which depends on the .env
-        for (let i = 0; i < 60; i++) {
-          // Wait util running and got another container ID.
-          const [all, running] = await market.queryContainer(metadata.market.ffmpeg.name);
-          // Please note that we don't update the metadata of SRS, client must request the updated status.
-          if (all && all.ID && running && running.ID && running.ID !== runningFFmpeg.ID) break;
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-        console.log(`restart ${metadata.market.ffmpeg.name} ${metadata.market.ffmpeg.container.ID} when .env updated`);
-      }
-
-      const {expire, expireAt, createAt, token} = createToken(moment, jwt);
-      console.log(`init password ok, duration=${expire}, create=${createAt}, expire=${expireAt}, password=${'*'.repeat(password.length)}`);
-      return ctx.body = utils.asResponse(0, {
-        token,
-        createAt,
-        expireAt,
+      containers.push({
+        name: container.name,
+        enabled: disabled !== 'true',
+        container: {
+          ID: container.container.ID,
+          State: container.container.State,
+          Status: container.container.Status,
+        },
       });
     }
 
+    ctx.body = utils.asResponse(0, {containers});
+  },
+
+  // Remove the specified container.
+  rmContainer: async ({ctx, action, args}) => {
+    const name = args[0];
+    if (!name) throw utils.asError(errs.sys.empty, errs.status.args, `no name`);
+
+    await utils.removeContainerQuiet(execFile, name);
+    ctx.body = utils.asResponse(0);
+  },
+
+  // Reload the env from .env
+  reloadEnv: async ({ctx, action, args}) => {
+    utils.reloadEnv(dotenv, fs, path);
+    ctx.body = utils.asResponse(0);
+  },
+
+  // Query the cached version.
+  queryVersion: async ({ctx, action, args}) => {
     ctx.body = utils.asResponse(0, {
-      init: !!process.env.MGMT_PASSWORD,
+      version: `v${pkg.version}`,
+      stable: metadata.upgrade.releases?.stable,
+      latest: metadata.upgrade.releases?.latest,
     });
-  });
+  },
 
-  router.all('/terraform/v1/mgmt/check', async (ctx) => {
-    // Check whether redis is ok.
-    const r0 = await redis.get(keys.redis.SRS_SECRET_PUBLISH);
-    const r1 = await redis.hlen(keys.redis.SRS_FIRST_BOOT);
-    const r2 = await redis.hlen(keys.redis.SRS_TENCENT_LH);
-    if (!r0 || !r1 || !r2) throw utils.asError(errs.sys.redis, errs.status.sys, `redis corrupt`);
+  // Refresh the version from api.
+  refreshVersion: async ({ctx, action, args}) => {
+    const releases = await queryLatestVersion(redis, axios);
+    metadata.upgrade.releases = releases;
 
-    const upgrading = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
-
-    console.log(`system check ok, r0=${r0}, r1=${r1}, r2=${r2}`);
     ctx.body = utils.asResponse(0, {
-      upgrading: upgrading === "1",
+      version: `v${pkg.version}`,
+      stable: metadata.upgrade.releases?.stable,
+      latest: metadata.upgrade.releases?.latest,
     });
-  });
+  },
 
-  router.all('/terraform/v1/mgmt/token', async (ctx) => {
-    const {token} = ctx.request.body;
-    if (!token) throw utils.asError(errs.sys.empty, errs.status.auth, 'no token');
+  // Start upgrade.
+  execUpgrade: async ({ctx, action, args}) => {
+    const target = args[0];
+    if (!target) throw utils.asError(errs.sys.empty, errs.status.args, `no target`);
 
-    const decoded = await utils.verifyToken(jwt, token);
-    const {expire, expireAt, createAt, token2} = createToken(moment, jwt);
-    console.log(`login by token ok, decoded=${JSON.stringify(decoded)}, duration=${expire}, create=${createAt}, expire=${expireAt}, token=${token.length}B`);
-    ctx.body = utils.asResponse(0, {token:token2, createAt, expireAt});
-  });
+    await new Promise((resolve, reject) => {
+      const child = spawn('bash', ['upgrade', target]);
+      child.stdout.on('data', (chunk) => {
+        console.log(chunk.toString());
+      });
+      child.stderr.on('data', (chunk) => {
+        console.log(chunk.toString());
+      });
+      child.on('close', (code) => {
+        console.log(`upgrading exited with code ${code}`);
+        if (code !== 0) return reject(code);
+        resolve();
+      });
+    });
 
-  router.all('/terraform/v1/mgmt/login', async (ctx) => {
-    if (!process.env.MGMT_PASSWORD) throw utils.asError(errs.auth.init, errs.status.auth, 'not init');
+    ctx.body = utils.asResponse(0);
+  },
 
-    const {password} = ctx.request.body;
-    if (!password) throw utils.asError(errs.sys.empty, errs.status.auth, 'no password');
+  // Write SSL cert and key files.
+  updateSslFile: async ({ctx, action, args}) => {
+    const [key, crt] = args;
 
-    if (password !== process.env.MGMT_PASSWORD)
-      throw utils.asError(errs.auth.password, errs.status.auth, 'invalid password');
+    if (!key) throw utils.asError(errs.sys.empty, errs.status.args, 'no key');
+    if (!crt) throw utils.asError(errs.sys.empty, errs.status.args, 'no crt');
 
-    const {expire, expireAt, createAt, token} = createToken(moment, jwt);
-    console.log(`login by password ok, duration=${expire}, create=${createAt}, expire=${expireAt}, password=${'*'.repeat(password.length)}`);
-    ctx.body = utils.asResponse(0, {token, createAt, expireAt});
+    if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
+    if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
+
+    // Remove the ssl file, because it might link to other file.
+    await execFile('rm', ['-f', '/etc/nginx/ssl/nginx.key', '/etc/nginx/ssl/nginx.crt']);
+
+    // Write the ssl key and cert, and reload nginx when ready.
+    fs.writeFileSync('/etc/nginx/ssl/nginx.key', key);
+    fs.writeFileSync('/etc/nginx/ssl/nginx.crt', crt);
+    await execFile('systemctl', ['reload', 'nginx.service']);
+
+    ctx.body = utils.asResponse(0);
+  },
+
+  // Update SSL by let's encrypt.
+  updateLetsEncrypt: async ({ctx, action, args}) => {
+    const [domain] = args;
+
+    if (!domain) throw utils.asError(errs.sys.empty, errs.status.args, 'no domain');
+
+    if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
+    if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
+
+    // We run always with "-n Run non-interactively"
+    // Note that it's started by nodejs, so never use '-it' or failed for 'the input device is not a TTY'.
+    //
+    // The www root to verify while requesting the SSL file:
+    //    /.well-known/acme-challenge/
+    // which mount as:
+    //    ./containers/www/.well-known/acme-challenge/
+    const registry = await platform.registry();
+    const dockerArgs = ['run', '--rm', '--name', 'certbot-certonly',
+      '-v', `${process.cwd()}/containers/etc/letsencrypt:/etc/letsencrypt`,
+      '-v', `${process.cwd()}/containers/var/lib/letsencrypt:/var/lib/letsencrypt`,
+      '-v', `${process.cwd()}/containers/var/log/letsencrypt:/var/log/letsencrypt`,
+      '-v', `${process.cwd()}/containers/www:/www`,
+      `${registry}/ossrs/certbot`,
+      'certonly', '--webroot', '-w', '/www',
+      '-d', `${domain}`, '--register-unsafely-without-email', '--agree-tos', '--preferred-challenges', 'http',
+      '-n',
+    ];
+    await execFile('docker', dockerArgs);
+    console.log(`certbot request ssl ok docker ${dockerArgs.join(' ')}`);
+
+    const keyFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domain}/privkey.pem`;
+    if (!fs.existsSync(keyFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue key file ${keyFile}`);
+
+    const crtFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domain}/cert.pem`;
+    if (!fs.existsSync(crtFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue crt file ${crtFile}`);
+
+    // Remove the ssl file, because it might link to other file.
+    await execFile('rm', ['-f', '/etc/nginx/ssl/nginx.key', '/etc/nginx/ssl/nginx.crt']);
+
+    // Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
+    await execFile('ln', ['-sf', keyFile, '/etc/nginx/ssl/nginx.key']);
+    await execFile('ln', ['-sf', crtFile, '/etc/nginx/ssl/nginx.crt']);
+
+    // Restart the nginx service to reload the SSL files.
+    await execFile('systemctl', ['reload', 'nginx.service']);
+
+    ctx.body = utils.asResponse(0);
+  },
+
+  // Update access for ssh keys.
+  accessSsh: async ({ctx, action, args}) => {
+    const [enabled] = args;
+    await execFile('bash', ['auto/update_access', enabled]);
+    ctx.body = utils.asResponse(0);
+  },
+
+  // RPC template.
+  xxx: async ({ctx, action, args}) => {
+  },
+};
+
+exports.handle = (router) => {
+  // In the container, we can't neither manage other containers, nor execute command, so we must request this api to
+  // execute the command on host machine.
+  router.all('/terraform/v1/host/exec', async (ctx) => {
+    const {action, token, args} = ctx.request.body;
+
+    if (!token) throw utils.asError(errs.sys.empty, errs.status.auth, `no token`);
+    if (!action) throw utils.asError(errs.sys.empty, errs.status.args, `no action`);
+
+    if (!Object.keys(handlers).includes(action)) {
+      throw utils.asError(errs.sys.invalid, errs.status.args, `invalid action=${action}`);
+    }
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
+    console.log(`exec verify action=${action}, args=${JSON.stringify(args)}, token=${token.length}B, decoded=${JSON.stringify(decoded)}`);
+
+    if (handlers[action]) {
+      await handlers[action]({ctx, action, args});
+    } else {
+      throw utils.asError(errs.sys.invalid, errs.status.args, `invalid action ${action}`);
+    }
   });
 
   return router;

@@ -18,8 +18,8 @@ const os = require('os');
 const platform = require('./platform');
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
-const consts = require('./consts');
 const utils = require('js-core/utils');
+const keys = require('js-core/keys');
 
 if (!isMainThread) {
   threadMain();
@@ -37,17 +37,17 @@ async function threadMain() {
       console.error(`Thread #market: err`, e);
       await new Promise(resolve => setTimeout(resolve, 30 * 1000));
     } finally {
-      await new Promise(resolve => setTimeout(resolve, 3 * 1000));
+      await new Promise(resolve => setTimeout(resolve, 10 * 1000));
     }
   }
 }
 
 async function doThreadMain() {
   // For SRS, if release enabled, disable dev automatically.
-  const srsReleaseDisabled = await redis.hget(consts.SRS_CONTAINER_DISABLED, metadata.market.srs.name);
-  const srsDevDisabled = await redis.hget(consts.SRS_CONTAINER_DISABLED, metadata.market.srsDev.name);
+  const srsReleaseDisabled = await redis.hget(keys.redis.SRS_CONTAINER_DISABLED, metadata.market.srs.name);
+  const srsDevDisabled = await redis.hget(keys.redis.SRS_CONTAINER_DISABLED, metadata.market.srsDev.name);
   if (srsReleaseDisabled !== 'true' && srsDevDisabled !== 'true') {
-    const r0 = await redis.hset(consts.SRS_CONTAINER_DISABLED, metadata.market.srsDev.name, true);
+    const r0 = await redis.hset(keys.redis.SRS_CONTAINER_DISABLED, metadata.market.srsDev.name, true);
     await utils.removeContainerQuiet(execFile, metadata.market.srsDev.name);
     console.log(`Thread #market: Disable srs dev for release enabled, r0=${r0}`);
   }
@@ -79,7 +79,7 @@ async function doContainerMain(conf) {
   // Restart the SRS container.
   if (!all || !all.ID || !running || !running.ID) {
     // Query container enabled status from redis.
-    const disabled = await redis.hget(consts.SRS_CONTAINER_DISABLED, conf.name);
+    const disabled = await redis.hget(keys.redis.SRS_CONTAINER_DISABLED, conf.name);
     if (disabled === 'true') {
       console.log(`Thread #market: container ${conf.name} disable`);
       return container;

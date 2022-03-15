@@ -26,6 +26,7 @@ function SystemImpl() {
   const [hooks, setHooks] = React.useState();
   const [tencent, setTencent] = React.useState();
   const [ffmpeg, setFFmpeg] = React.useState();
+  const [platform, setPlatform] = React.useState();
   const [prometheus, setPrometheus] = React.useState();
   const [nodeExporter, setNodeExporter] = React.useState();
   const [strategyAutoUpgrade, setStrategyAutoUpgrade] = React.useState();
@@ -90,6 +91,7 @@ function SystemImpl() {
         if (container.name === 'srs-hooks') setHooks(container);
         if (container.name === 'tencent-cloud') setTencent(container);
         if (container.name === 'ffmpeg') setFFmpeg(container);
+        if (container.name === 'platform') setPlatform(container);
         if (container.name === 'prometheus') setPrometheus(container);
         if (container.name === 'node-exporter') setNodeExporter(container);
         return null;
@@ -124,7 +126,7 @@ function SystemImpl() {
         <Row>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>SRS服务器(稳定版)</Card.Header>
+              <Card.Header>SRS(稳定版)</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
                   容器名：{srsRelease?.name} <br/>
@@ -157,7 +159,7 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>SRS服务器(开发版)</Card.Header>
+              <Card.Header>SRS(开发版)</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
                   容器名：{srsDev?.name} <br/>
@@ -192,7 +194,7 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>SRS回调</Card.Header>
+              <Card.Header>Hooks(回调)</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
                   容器名：{hooks?.name} <br/>
@@ -218,7 +220,7 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>FFmpeg</Card.Header>
+              <Card.Header>FFmpeg(流处理)</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
                   容器名：{ffmpeg?.name} <br/>
@@ -244,7 +246,7 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>腾讯云</Card.Header>
+              <Card.Header>Tencent(腾讯云)</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
                   容器名：{tencent?.name} <br/>
@@ -270,7 +272,7 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>Prometheus监控</Card.Header>
+              <Card.Header>Prometheus(监控)</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
                   容器名：{prometheus?.name} <br/>
@@ -322,7 +324,33 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>管理后台</Card.Header>
+              <Card.Header>Platform(平台管理)</Card.Header>
+              <Card.Body>
+                <Card.Text as={Col}>
+                  容器名：{platform?.name} <br/>
+                  容器ID：{platform?.container?.ID} <br/>
+                  状态：{platform?.container.State} {platform?.container.Status}
+                  <p></p>
+                </Card.Text>
+                <div style={{display: 'inline-block'}}>
+                  <Button className='disabled'>
+                    重启
+                  </Button> &nbsp;
+                  <Button className='disabled'>
+                    升级
+                  </Button> &nbsp;
+                  <MgmtUpdateContainer
+                    allow={allowDisableContainer}
+                    enabled={platform?.enabled}
+                    onClick={() => handleContainerChange(platform)}
+                  />
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs lg={3}>
+            <Card style={{ width: '18rem', marginTop: '16px' }}>
+              <Card.Header>Host(主机管理)</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
                   你的版本: {status?.version} <br/>
