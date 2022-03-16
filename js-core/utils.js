@@ -49,8 +49,9 @@ exports.streamURL = streamURL;
 // Remove container, ignore any error.
 const removeContainerQuiet = async (execFile, name) => {
   try {
-    await execFile(docker, ['rm', '-f', name]);
+    await execFile('docker', ['rm', '-f', name]);
   } catch (e) {
+    console.log('utils ignore remove container err', e);
   }
 };
 exports.removeContainerQuiet = removeContainerQuiet;
