@@ -30,12 +30,17 @@ function useTutorials(bvidsRef) {
   React.useEffect(() => {
     if (!bvids || !bvids.length) return;
 
+    // Allow cancel up the requests.
+    const source = axios.CancelToken.source();
+
     const token = Token.load();
     bvids.map(tutorial => {
       tutorial.link = `https://www.bilibili.com/video/${tutorial.id}`;
 
       axios.post(`/terraform/v1/mgmt/bilibili`, {
         ...token, bvid: tutorial.id,
+      }, {
+        cancelToken: source.token,
       }).then(res => {
         const data = res.data.data;
         tutorial.title = data.title;
@@ -45,9 +50,19 @@ function useTutorials(bvidsRef) {
         tutorial.share = parseInt(data.stat.share);
         // Order by view desc.
         setTutorials([...ref.current.tutorials, tutorial].sort((a, b) => b.view - a.view));
+      }).catch((e) => {
+        if (axios.isCancel(e)) return;
+        throw e;
       });
       return null;
     });
+
+    return () => {
+      // When cleanup, cancel all requests to avoid update the unmounted components, like error message as:
+      //    Can't perform a React state update on an unmounted component.
+      //    This is a no-op, but it indicates a memory leak in your application.
+      source.cancel();
+    };
   }, [bvids]);
 
   return tutorials;
