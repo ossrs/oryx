@@ -22,9 +22,6 @@
     const q = new URLSearchParams(location.search);
 
     console.log(`?url=${q.get('url')} Setup the url to play, HTTP-FLV or HLS`);
-    console.log(`?fullscreen=${q.get('fullscreen')} Setup the fullscreen mode. Default: true`);
-    console.log(`?orientation=${q.get('orientation')} Setup the orientation, portraint or landscape. Default: landscape`);
-    console.log(`?autoplay=${q.get('autoplay')} Whether autoplay the stream. Default: true`);
 
     const resource = q.get('url');
     if (!resource) return alert(`没有指定URL`);
@@ -33,13 +30,11 @@
       id: "player",
       url: resource,
       isLive: true,
-      autoplay: q.get('autoplay') ? q.get('autoplay') !== 'false' : true,
+      autoplay: true,
       volume: 0.8,
       download: false,
       fitVideoSize: 'auto',
       lang: 'zh-cn',
-      'x5-video-player-fullscreen': q.get('orientation') ? q.get('orientation') !== 'false' : true,
-      'x5-video-orientation': q.get('orientation') || 'landscape',
     };
 
     if (resource.indexOf('.flv') > 0) {
