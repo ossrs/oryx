@@ -99,14 +99,18 @@ async function doContainerMain(conf) {
 async function queryContainer(name) {
   let all, running;
 
-  if (true) {
+  try {
     const {stdout} = await exec(`docker ps -a -f name=${name} --format '{{json .}}'`);
     all = stdout ? JSON.parse(stdout) : {};
+  } catch (e) {
+    console.log(`Thread #market: Ignore query container ${name} err`, e);
   }
 
-  if (true) {
+  try {
     const {stdout} = await exec(`docker ps -f name=${name} --format '{{json .}}'`);
     running = stdout ? JSON.parse(stdout) : {};
+  } catch (e) {
+    console.log(`Thread #market: Ignore query container ${name} err`, e);
   }
 
   return [all, running];
