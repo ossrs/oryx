@@ -17,7 +17,7 @@ const errs = require('js-core/errs');
 const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const util = require('util');
-const exec = util.promisify(require('child_process').exec);
+const execFile = util.promisify(require('child_process').execFile);
 const metadata = require('./metadata');
 const market = require('./market');
 const ioredis = require('ioredis');
@@ -72,9 +72,9 @@ exports.handle = (router) => {
       const [allTencent, runningTencent] = await market.queryContainer(metadata.market.tencent.name);
       const [allFFmpeg, runningFFmpeg] = await market.queryContainer(metadata.market.ffmpeg.name);
 
-      await exec(`docker rm -f ${metadata.market.hooks.name}`);
-      await exec(`docker rm -f ${metadata.market.tencent.name}`);
-      await exec(`docker rm -f ${metadata.market.ffmpeg.name}`);
+      await utils.removeContainerQuiet(execFile, metadata.market.hooks.name);
+      await utils.removeContainerQuiet(execFile, metadata.market.tencent.name);
+      await utils.removeContainerQuiet(execFile, metadata.market.ffmpeg.name);
 
       if (allHooks?.ID && runningHooks?.ID) {
         // We must restart the hooks, which depends on the .env

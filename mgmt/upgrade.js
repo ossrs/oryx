@@ -19,6 +19,7 @@ const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const execFile = util.promisify(require('child_process').execFile);
 const metadata = require('./metadata');
 const platform = require('./platform');
 const COS = require('cos-nodejs-sdk-v5');
@@ -29,6 +30,7 @@ const {AbstractClient} = require('./sdk-internal/common/abstract_client');
 const VodClient = require("tencentcloud-sdk-nodejs").vod.v20180717.Client;
 const {queryLatestVersion} = require('./releases');
 const helper = require('./helper');
+const utils = require('js-core/utils');
 
 if (!isMainThread) {
   threadMain();
@@ -169,10 +171,10 @@ async function firstRun() {
   await exec(`bash auto/upgrade_prepare`);
 
   // Remove containers.
-  await exec(`docker rm -f ${metadata.market.srs.name}`);
-  await exec(`docker rm -f ${metadata.market.hooks.name}`);
-  await exec(`docker rm -f ${metadata.market.tencent.name}`);
-  await exec(`docker rm -f ${metadata.market.ffmpeg.name}`);
+  await utils.removeContainerQuiet(execFile, metadata.market.srs.name);
+  await utils.removeContainerQuiet(execFile, metadata.market.hooks.name);
+  await utils.removeContainerQuiet(execFile, metadata.market.tencent.name);
+  await utils.removeContainerQuiet(execFile, metadata.market.ffmpeg.name);
 
   console.log(`Thread #${metadata.upgrade.name}: boot done`);
   return true;

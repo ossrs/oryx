@@ -46,3 +46,12 @@ const streamURL = (vhost, app, stream) => {
 };
 exports.streamURL = streamURL;
 
+// Remove container, ignore any error.
+const removeContainerQuiet = async (execFile, name) => {
+  try {
+    await execFile(docker, ['rm', '-f', name]);
+  } catch (e) {
+  }
+};
+exports.removeContainerQuiet = removeContainerQuiet;
+

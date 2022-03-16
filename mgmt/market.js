@@ -12,12 +12,14 @@ const config = {
 const { isMainThread, parentPort } = require("worker_threads");
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const execFile = util.promisify(require('child_process').execFile);
 const metadata = require('./metadata');
 const os = require('os');
 const platform = require('./platform');
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const consts = require('./consts');
+const utils = require('js-core/utils');
 
 if (!isMainThread) {
   threadMain();
@@ -46,7 +48,7 @@ async function doThreadMain() {
   const srsDevDisabled = await redis.hget(consts.SRS_CONTAINER_DISABLED, metadata.market.srsDev.name);
   if (srsReleaseDisabled !== 'true' && srsDevDisabled !== 'true') {
     const r0 = await redis.hset(consts.SRS_CONTAINER_DISABLED, metadata.market.srsDev.name, true);
-    await exec(`docker rm -f ${metadata.market.srsDev.name}`);
+    await utils.removeContainerQuiet(execFile, metadata.market.srsDev.name);
     console.log(`Thread #market: Disable srs dev for release enabled, r0=${r0}`);
   }
 
@@ -144,7 +146,7 @@ async function startContainer(conf) {
   // Only remove the container when got ID, to avoid fail for CentOS.
   const all = (await queryContainer(conf.name))[0];
   if (all && all.ID) {
-    await exec(`docker rm -f ${conf.name}`);
+    await utils.removeContainerQuiet(execFile, conf.name);
     console.log(`Thread #market: docker run remove ID=${all.ID}`);
   }
 

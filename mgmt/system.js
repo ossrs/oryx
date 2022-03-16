@@ -162,7 +162,7 @@ exports.handle = (router) => {
       if (enabled !== true && enabled !== false) throw utils.asError(errs.sys.empty, errs.status.args, `no param enabled`);
 
       const r0 = await redis.hset(consts.SRS_CONTAINER_DISABLED, name, !enabled);
-      if (!enabled && name) await exec(`docker rm -f ${name}`);
+      if (!enabled && name) await utils.removeContainerQuiet(execFile, name);
 
       console.log(`srs ok, action=${action}, name=${name}, enabled=${enabled}, r0=${r0}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
       return ctx.body = utils.asResponse(0);
@@ -176,7 +176,7 @@ exports.handle = (router) => {
       const disable = (name === market.srsDev.name) ? market.srs.name : market.srsDev.name;
       const r0 = await redis.hset(consts.SRS_CONTAINER_DISABLED, name, false);
       const r1 = await redis.hset(consts.SRS_CONTAINER_DISABLED, disable, true);
-      await exec(`docker rm -f ${disable}`);
+      await utils.removeContainerQuiet(execFile, disable);
 
       console.log(`switch ok, action=${action}, name=${name}/${r0}, disable=${disable}/${r1}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
       return ctx.body = utils.asResponse(0);
