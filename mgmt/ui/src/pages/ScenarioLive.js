@@ -6,6 +6,8 @@ import SrsQRCode from "../components/SrsQRCode";
 export default function ScenarioLive({urls}) {
   const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
+  const xgFlvPlayerUrl = flvPlayer?.replace('player.html', 'xgplayer.html');
+  const xgHlsPlayerUrl = hlsPlayer?.replace('player.html', 'xgplayer.html');
 
   const movieTutorials = useTutorials(React.useRef([
     {author: '徐光磊', id: 'BV1RS4y1G7tb'},
@@ -55,8 +57,18 @@ export default function ScenarioLive({urls}) {
             <li>
               请选择播放的流：
               <ul>
-                <li>播放<a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
-                <li>播放<a href={hlsPlayer} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url}</code></li>
+                <li>
+                  播放HTTP-FLV流, 请选择
+                  <a href={flvPlayer} target='_blank' rel='noreferrer'>简易</a>或
+                  <a href={xgFlvPlayerUrl} target='_blank' rel='noreferrer'>西瓜</a>播放器&nbsp;
+                  <code>{flvUrl}</code>
+                </li>
+                <li>
+                  播放HLS流, 请选择
+                  <a href={hlsPlayer} target='_blank' rel='noreferrer'>简易</a>或
+                  <a href={xgHlsPlayerUrl} target='_blank' rel='noreferrer'>西瓜</a>播放器&nbsp;
+                  <code>{m3u8Url}</code>
+                </li>
                 <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
               </ul>
             </li>
@@ -85,8 +97,18 @@ export default function ScenarioLive({urls}) {
             <li>
               请选择播放的流：
               <ul>
-                <li>播放<a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
-                <li>播放<a href={hlsPlayer} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url}</code></li>
+                <li>
+                  播放HTTP-FLV流, 请选择
+                  <a href={flvPlayer} target='_blank' rel='noreferrer'>简易</a>或
+                  <a href={xgFlvPlayerUrl} target='_blank' rel='noreferrer'>西瓜</a>播放器&nbsp;
+                  <code>{flvUrl}</code>
+                </li>
+                <li>
+                  播放HLS流, 请选择
+                  <a href={hlsPlayer} target='_blank' rel='noreferrer'>简易</a>或
+                  <a href={xgHlsPlayerUrl} target='_blank' rel='noreferrer'>西瓜</a>播放器&nbsp;
+                  <code>{m3u8Url}</code>
+                </li>
                 <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
               </ul>
             </li>

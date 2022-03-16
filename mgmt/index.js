@@ -86,7 +86,10 @@ app.use(proxy('/terraform/v1/mgmt/srs/hooks', withLogs({
 // We directly serve the static files, because we overwrite the www for DVR.
 srsProxy(app, 'containers/www/console/', '/console/');
 srsProxy(app, 'containers/www/players/', '/players/');
-srsProxy(app, 'containers/www/tools/', '/tools/', ['/tools/player.html']);
+srsProxy(app, 'containers/www/tools/', '/tools/', [
+  '/tools/player.html',
+  '/tools/xgplayer.html',
+]);
 
 // For registered modules, by /terraform/v1/tencent/
 app.use(proxy('/terraform/v1/tencent/', withLogs({target: 'http://127.0.0.1:2020/'})));
