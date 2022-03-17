@@ -15,6 +15,7 @@ export default function ScenarioLive({urls}) {
     {author: '瓦全', id: 'BV1SF411t7Li'},
     {author: '王大江', id: 'BV16r4y1q7ZT'},
     {author: '骆合祥', id: 'BV16T4y1U7CN'},
+    {author: '周亮', id: 'BV1gT4y1U76d'},
   ]));
 
   return (
