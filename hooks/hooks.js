@@ -37,12 +37,15 @@ exports.handle = (router) => {
     if (action === 'on_publish') {
       const streamObj = {vhost, app, stream, server: server_id, client: client_id,};
       active = await redis.hset(keys.redis.SRS_STREAM_ACTIVE, url, JSON.stringify(streamObj));
+      await redis.hincrby(keys.redis.SRS_STAT_COUNTER, 'publish', 1);
       if (srt) await redis.hset(keys.redis.SRS_STREAM_SRT_ACTIVE, url, JSON.stringify(streamObj));
       if (rtc) await redis.hset(keys.redis.SRS_STREAM_RTC_ACTIVE, url, JSON.stringify(streamObj));
     } else if (action === 'on_unpublish') {
       active = await redis.hdel(keys.redis.SRS_STREAM_ACTIVE, url);
       await redis.hdel(keys.redis.SRS_STREAM_SRT_ACTIVE, url);
       await redis.hdel(keys.redis.SRS_STREAM_RTC_ACTIVE, url);
+    } else if (action === 'on_play') {
+      await redis.hincrby(keys.redis.SRS_STAT_COUNTER, 'play', 1);
     }
 
     console.log(`srs hooks ok, action=${action}, active=${active}, srt=${srt}, rtc=${rtc}, url=${url}, ${JSON.stringify(ctx.request.body)}`);

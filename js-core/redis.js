@@ -80,6 +80,10 @@ const create = ({config, redis}) => {
     hgetall: async function (key) {
       return await buildClient().hgetall(key);
     },
+    // See https://redis.io/commands/HINCRBY
+    hincrby: async function (key, field, value) {
+      return await buildClient().hincrby(key, field, value);
+    },
     time: async function () {
       return await buildClient().time();
     },
