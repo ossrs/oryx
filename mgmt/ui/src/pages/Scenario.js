@@ -12,14 +12,15 @@ import ScenarioVod from './ScenarioVod';
 import ScenarioForward from './ScenarioForward';
 import {useErrorHandler} from 'react-error-boundary';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
+import ScenarioTutorials from './ScenarioTutorials';
 
 export default function Scenario() {
   const [searchParams] = useSearchParams();
   const [defaultActiveTab, setDefaultActiveTab] = React.useState();
 
   React.useEffect(() => {
-    const tab = searchParams.get('tab') || 'live';
-    console.log(`?tab=live|srt|dvr|source, current=${tab}, Select the tab to render`);
+    const tab = searchParams.get('tab') || 'tutorials';
+    console.log(`?tab=tutorials|live|srt|dvr|source, current=${tab}, Select the tab to render`);
     setDefaultActiveTab(tab);
   }, [searchParams]);
 
@@ -75,6 +76,9 @@ function ScenarioImpl({defaultActiveTab}) {
       <p></p>
       <Container>
         <Tabs defaultActiveKey={activeTab} id="uncontrolled-tab-example" className="mb-3" onSelect={(k) => onSelectTab(k)}>
+          <Tab eventKey="tutorials" title="教程">
+            { activeTab === 'tutorials' && <ScenarioTutorials /> }
+          </Tab>
           <Tab eventKey="live" title="私人直播间">
             { activeTab === 'live' && <ScenarioLive urls={{flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2}} /> }
           </Tab>
