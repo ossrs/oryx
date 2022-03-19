@@ -141,7 +141,7 @@ exports.market = {
       const registry = await platform.registry();
       return `${registry}/ossrs/srs-terraform:platform-1`;
     },
-    tcpPorts: [2019],
+    tcpPorts: [2024],
     udpPorts: [],
     command: ['node .'],
     logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
