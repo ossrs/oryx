@@ -1,6 +1,6 @@
 {
   "name": "ffmpeg",
-  "version":"1.0.4",
+  "version":"1.0.5",
   "description": "FFmpeg API for srs-terraform modules",
   "main": "index.js",
   "scripts": {
