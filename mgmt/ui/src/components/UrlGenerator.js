@@ -27,9 +27,9 @@ export default function useUrls({secret}) {
 
     // Build SRT url.
     if (true) {
-      const secretQuery = secret ? `?secret=${secret.publish}` : '';
-      setSrtPublishUrl(`srt://${window.location.hostname}:10080?streamid=#!::h=live/livestream${secretQuery},m=publish`);
-      setSrtPlayUrl(`srt://${window.location.hostname}:10080?streamid=#!::h=live/livestream${secretQuery},m=request&latency=20`);
+      const secretQuery = secret ? `,secret=${secret.publish}` : '';
+      setSrtPublishUrl(`srt://${window.location.hostname}:10080?streamid=#!::r=live/livestream${secretQuery},m=publish`);
+      setSrtPlayUrl(`srt://${window.location.hostname}:10080?streamid=#!::r=live/livestream,latency=20,m=request`);
     }
 
     // Build console url.
