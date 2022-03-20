@@ -36,11 +36,12 @@ jobs:
         run: |
           sudo ln -sf $(pwd) /usr/local/srs-terraform
           sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
-          sudo systemctl enable srs-terraform
+          sudo systemctl enable srs-terraform nginx
 
           echo "Disable docker for test"
           echo "USE_DOCKER=false" >> $GITHUB_ENV
           echo "SRS_DOCKER=srs" >> $GITHUB_ENV
+          echo "SRS_UTEST=true" >> $GITHUB_ENV
 
       - name: Mock the environments for upgrading
         run: |
@@ -49,6 +50,9 @@ jobs:
 
       - name: Upgrade to stable
         run: |
+          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          sudo systemctl start nginx
+
           echo "Reset to release 4.3 at v1.0.162"
           git reset --hard v1.0.162
 
@@ -56,7 +60,6 @@ jobs:
           (cd mgmt/ui && npm install)
           (cd mgmt && npm run build)
 
-          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
           echo "Upgrade to stable $TARGET"
           sudo ./mgmt/upgrade $TARGET
 
@@ -91,11 +94,12 @@ jobs:
         run: |
           sudo ln -sf $(pwd) /usr/local/srs-terraform
           sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
-          sudo systemctl enable srs-terraform
+          sudo systemctl enable srs-terraform nginx
 
           echo "Disable docker for test"
           echo "USE_DOCKER=false" >> $GITHUB_ENV
           echo "SRS_DOCKER=srs" >> $GITHUB_ENV
+          echo "SRS_UTEST=true" >> $GITHUB_ENV
 
       - name: Mock the environments for upgrading
         run: |
@@ -104,6 +108,9 @@ jobs:
 
       - name: Upgrade to latest
         run: |
+          TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
+          sudo systemctl start nginx
+
           echo "Reset to release 4.3 at v1.0.162"
           git reset --hard v1.0.162
 
@@ -111,7 +118,6 @@ jobs:
           (cd mgmt/ui && npm install)
           (cd mgmt && npm run build)
 
-          TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
           echo "Upgrade to latest $TARGET"
           sudo ./mgmt/upgrade $TARGET
 
@@ -146,11 +152,12 @@ jobs:
         run: |
           sudo ln -sf $(pwd) /usr/local/srs-terraform
           sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
-          sudo systemctl enable srs-terraform
+          sudo systemctl enable srs-terraform nginx
 
           echo "Disable docker for test"
           echo "USE_DOCKER=false" >> $GITHUB_ENV
           echo "SRS_DOCKER=srs" >> $GITHUB_ENV
+          echo "SRS_UTEST=true" >> $GITHUB_ENV
 
       - name: Mock the environments for upgrading
         run: |
@@ -159,6 +166,9 @@ jobs:
 
       - name: Upgrade to stable
         run: |
+          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          sudo systemctl start nginx
+
           echo "Reset to release 4.2 at v1.0.105"
           git reset --hard v1.0.105
 
@@ -166,7 +176,6 @@ jobs:
           (cd mgmt/ui && npm install)
           (cd mgmt && npm run build)
 
-          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
           echo "Upgrade to stable $TARGET"
           sudo ./mgmt/upgrade $TARGET
 
@@ -201,11 +210,12 @@ jobs:
         run: |
           sudo ln -sf $(pwd) /usr/local/srs-terraform
           sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
-          sudo systemctl enable srs-terraform
+          sudo systemctl enable srs-terraform nginx
 
           echo "Disable docker for test"
           echo "USE_DOCKER=false" >> $GITHUB_ENV
           echo "SRS_DOCKER=srs" >> $GITHUB_ENV
+          echo "SRS_UTEST=true" >> $GITHUB_ENV
 
       - name: Mock the environments for upgrading
         run: |
@@ -214,6 +224,9 @@ jobs:
 
       - name: Upgrade to latest
         run: |
+          TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
+          sudo systemctl start nginx
+
           echo "Reset to release 4.2 at v1.0.105"
           git reset --hard v1.0.105
 
@@ -221,6 +234,5 @@ jobs:
           (cd mgmt/ui && npm install)
           (cd mgmt && npm run build)
 
-          TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
           echo "Upgrade to latest $TARGET"
           sudo ./mgmt/upgrade $TARGET

@@ -215,6 +215,7 @@ For github actions to control the containers:
 
 * `SRS_DOCKER`: `srs` to enfore use `ossrs/srs` docker image.
 * `USE_DOCKER`: `true|false`, if false, disable all docker containers.
+* `SRS_UTEST`: `true|false`, if true, running in utest mode.
 
 For mgmt and containers to connect to redis:
 

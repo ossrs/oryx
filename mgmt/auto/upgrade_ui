@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# Ignore darwin
+if [[ ! -d /usr/local/srs-terraform && $(uname -s) == 'Darwin' ]]; then
+  echo "Directly finish upgrade for macOS development"
+  sleep 3; exit 0;
+fi
+
+echo "Make and upgrade updates"
+(cd .. && make upgrade)
+if [[ $? -ne 0 ]]; then echo "Make and install updates failed"; exit 1; fi
+
+echo "Switch to new version"
+(cd ui && TMP_BUILD="build-$(date +%s)" && mv build $TMP_BUILD && mv upgrade build && rm -rf $TMP_BUILD)
+if [[ $? -ne 0 ]]; then echo "Switch to new version failed"; exit 1; fi
+
