@@ -79,13 +79,31 @@ git config --local alias.ci commit &&
 git config --local alias.st status
 if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
 
-# For DVR preview, create nginx location.
-if [[ ! -f /etc/nginx/default.d/dvr.preview.conf ]]; then
-  mkdir -p /etc/nginx/default.d &&
-  cp containers/conf/dvr.preview.conf /etc/nginx/default.d/dvr.preview.conf &&
-  systemctl reload nginx &&
-  echo "Create nginx location for DVR preview"
-  if [[ $? -ne 0 ]]; then echo "Create nginx location for DVR preview failed"; exit 1; fi
+# Setup nginx configuration.
+if [[ -d /etc/nginx/default.d ]]; then
+  # Overwrite the default nginx config.
+  cp containers/conf/nginx.conf /etc/nginx/nginx.conf && echo "Refresh nginx.conf ok"
+  if [[ $? -ne 0 ]]; then echo "Refresh nginx.conf failed"; exit 1; fi
+
+  # For nginx default config.
+  cp containers/conf/nginx.default.conf /etc/nginx/default.d/default.conf && echo "Refresh nginx default.conf ok"
+  if [[ $? -ne 0 ]]; then echo "Refresh nginx default.conf failed"; exit 1; fi
+
+  # For nginx mgmt config.
+  cp containers/conf/nginx.mgmt.conf /etc/nginx/default.d/mgmt.conf && echo "Refresh nginx mgmt.conf ok"
+  if [[ $? -ne 0 ]]; then echo "Refresh nginx mgmt.conf failed"; exit 1; fi
+
+  # For nginx srs config.
+  cp containers/conf/nginx.srs.conf /etc/nginx/default.d/srs.conf && echo "Refresh nginx srs.conf ok"
+  if [[ $? -ne 0 ]]; then echo "Refresh nginx srs.conf failed"; exit 1; fi
+
+  # For DVR preview, create nginx location.
+  cp containers/conf/nginx.dvr.preview.conf /etc/nginx/default.d/dvr.preview.conf && echo "Refresh nginx dvr.preview.conf ok"
+  if [[ $? -ne 0 ]]; then echo "Refresh nginx dvr.preview.conf failed"; exit 1; fi
+
+  # Reload nginx service.
+  systemctl reload nginx && echo "Reload nginx ok"
+  if [[ $? -ne 0 ]]; then echo "Reload nginx failed"; exit 1; fi
 fi
 
 # Execute script for each run.
