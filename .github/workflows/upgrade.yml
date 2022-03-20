@@ -50,6 +50,7 @@ jobs:
 
       - name: Upgrade to stable
         run: |
+          WHOAMI=$(whoami)
           TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
           sudo systemctl start nginx
 
@@ -60,8 +61,13 @@ jobs:
           (cd mgmt/ui && npm install)
           (cd mgmt && npm run build)
 
-          echo "Upgrade to stable $TARGET"
-          sudo ./mgmt/upgrade $TARGET
+          # See https://stackoverflow.com/a/8633575/17679565
+          echo "Upgrade to stable TARGET=$TARGET SRS_UTEST=$SRS_UTEST USER=${WHOAMI}"
+          sudo -E bash -c "./mgmt/upgrade $TARGET"
+          sudo chown -R ${WHOAMI}:${WHOAMI} mgmt
+
+          echo "Upgrade the react UI, run by current user"
+          (cd mgmt && bash auto/upgrade_ui)
 
   test-release-4-3-latest:
     name: Upgrading latest from release 4.3
@@ -108,6 +114,7 @@ jobs:
 
       - name: Upgrade to latest
         run: |
+          WHOAMI=$(whoami)
           TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
           sudo systemctl start nginx
 
@@ -118,8 +125,13 @@ jobs:
           (cd mgmt/ui && npm install)
           (cd mgmt && npm run build)
 
-          echo "Upgrade to latest $TARGET"
-          sudo ./mgmt/upgrade $TARGET
+          # See https://stackoverflow.com/a/8633575/17679565
+          echo "Upgrade to latest TARGET=$TARGET SRS_UTEST=$SRS_UTEST USER=${WHOAMI}"
+          sudo -E bash -c "./mgmt/upgrade $TARGET"
+          sudo chown -R ${WHOAMI}:${WHOAMI} mgmt
+
+          echo "Upgrade the react UI, run by current user"
+          (cd mgmt && bash auto/upgrade_ui)
 
   test-release-4-2-stable:
     name: Upgrading to stable from release 4.2
@@ -166,6 +178,7 @@ jobs:
 
       - name: Upgrade to stable
         run: |
+          WHOAMI=$(whoami)
           TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
           sudo systemctl start nginx
 
@@ -176,8 +189,13 @@ jobs:
           (cd mgmt/ui && npm install)
           (cd mgmt && npm run build)
 
-          echo "Upgrade to stable $TARGET"
-          sudo ./mgmt/upgrade $TARGET
+          # See https://stackoverflow.com/a/8633575/17679565
+          echo "Upgrade to stable TARGET=$TARGET SRS_UTEST=$SRS_UTEST USER=${WHOAMI}"
+          sudo -E bash -c "./mgmt/upgrade $TARGET"
+          sudo chown -R ${WHOAMI}:${WHOAMI} mgmt
+
+          echo "Upgrade the react UI, run by current user"
+          (cd mgmt && bash auto/upgrade_ui)
 
   test-release-4-2-latest:
     name: Upgrading latest from release 4.2
@@ -224,6 +242,7 @@ jobs:
 
       - name: Upgrade to latest
         run: |
+          WHOAMI=$(whoami)
           TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
           sudo systemctl start nginx
 
@@ -234,5 +253,10 @@ jobs:
           (cd mgmt/ui && npm install)
           (cd mgmt && npm run build)
 
-          echo "Upgrade to latest $TARGET"
-          sudo ./mgmt/upgrade $TARGET
+          # See https://stackoverflow.com/a/8633575/17679565
+          echo "Upgrade to latest TARGET=$TARGET SRS_UTEST=$SRS_UTEST USER=${WHOAMI}"
+          sudo -E bash -c "./mgmt/upgrade $TARGET"
+          sudo chown -R ${WHOAMI}:${WHOAMI} mgmt
+
+          echo "Upgrade the react UI, run by current user"
+          (cd mgmt && bash auto/upgrade_ui)
