@@ -3,8 +3,9 @@ import React from "react";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import SrsQRCode from "../components/SrsQRCode";
 
-export default function ScenarioLive({urls}) {
+export default function ScenarioLive({tools, urls}) {
   const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
+  const {updateStreamName} = tools;
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
 
   const movieTutorials = useTutorials(React.useRef([
@@ -49,7 +50,7 @@ export default function ScenarioLive({urls}) {
               在OBS输入：
               <ul>
                 <li>推流地址（服务器） <code>{rtmpServer}</code></li>
-                <li>推流密钥（串流密钥） <code>{rtmpStreamKey}</code></li>
+                <li>推流密钥（串流密钥） <a href='' onClick={(e) => updateStreamName(e)}>(换流名称)</a><code>{rtmpStreamKey}</code></li>
               </ul>
             </li>
             <li>
@@ -75,12 +76,12 @@ export default function ScenarioLive({urls}) {
             <li>先在防火墙开启<code>TCP/1935</code>端口</li>
             <li>请<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>下载FFmpeg</a>工具</li>
             <li>
-              FFmpeg推流命令：<br/>
+              FFmpeg推流命令：<a href='' onClick={(e) => updateStreamName(e)}>(换流名称)</a><br/>
               <code>
                 ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv {rtmpPublishUrl}
               </code>
             </li>
-            <li>推流地址：<br/><code>{rtmpPublishUrl}</code></li>
+            <li>推流地址：<a href='' onClick={(e) => updateStreamName(e)}>(换流名称)</a><br/><code>{rtmpPublishUrl}</code></li>
             <SrsQRCode url={rtmpPublishUrl} />
             <li>
               请选择播放的流：
@@ -104,7 +105,7 @@ export default function ScenarioLive({urls}) {
           <ol>
             <li>先在服务器防火墙开启<code>UDP/8000</code>端口</li>
             <li>请使用<code>https</code>访问管理后台。若使用自签名证书，请点页面空白处然后敲<code>thisisunsafe</code></li>
-            <li>打开页面推<a href={rtcPublisher} target='_blank' rel='noreferrer'>WebRTC流</a>。注意先停止掉FFmpeg/OBS推流。</li>
+            <li>打开页面推<a href={rtcPublisher} target='_blank' rel='noreferrer'>WebRTC流</a>。注意先停止掉FFmpeg/OBS推流。<a href='' onClick={(e) => updateStreamName(e)}>(换流名称)</a></li>
             <li>
               请选择播放的流：
               <ul>

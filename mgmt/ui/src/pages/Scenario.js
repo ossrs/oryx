@@ -1,7 +1,7 @@
 import {useSearchParams} from "react-router-dom";
 import {Container, Tabs, Tab} from "react-bootstrap";
 import React from "react";
-import {Token} from "../utils";
+import {Token, RandomString} from "../utils";
 import axios from "axios";
 import ScenarioDvr from './ScenarioDvr';
 import ScenarioSource from './ScenarioSource';
@@ -32,6 +32,7 @@ export default function Scenario() {
 
 function ScenarioImpl({defaultActiveTab}) {
   const [secret, setSecret] = React.useState();
+  const [streamName, setStreamName] = React.useState('livestream');
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
   const setSearchParams = useSearchParams()[1];
   const handleError = useErrorHandler();
@@ -53,7 +54,7 @@ function ScenarioImpl({defaultActiveTab}) {
     rtcPlayer2,
     flvUrl2,
     m3u8Url2,
-  } = useUrls({secret});
+  } = useUrls({secret, streamName});
 
   React.useEffect(() => {
     const token = Token.load();
@@ -70,16 +71,25 @@ function ScenarioImpl({defaultActiveTab}) {
     setActiveTab(k);
   }, [setSearchParams]);
 
+  const updateStreamName = React.useCallback((e) => {
+    e.preventDefault();
+
+    // generate a new random streamName
+    const newStreamName = RandomString(8, RandomString.HEX);
+    setStreamName(newStreamName);
+    console.log(`Set new streamName: ${newStreamName}`);
+  });
+
   return (
     <>
       <p></p>
       <Container>
         <Tabs defaultActiveKey={activeTab} id="uncontrolled-tab-example" className="mb-3" onSelect={(k) => onSelectTab(k)}>
           <Tab eventKey="live" title="私人直播间">
-            { activeTab === 'live' && <ScenarioLive urls={{flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2}} /> }
+            { activeTab === 'live' && <ScenarioLive tools={{updateStreamName}} urls={{flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2}} /> }
           </Tab>
           <Tab eventKey="srt" title="超清实时直播">
-            { activeTab === 'srt' && <ScenarioSrt urls={{srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer}}/> }
+            { activeTab === 'srt' && <ScenarioSrt tools={{updateStreamName}} urls={{srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer}}/> }
           </Tab>
           <Tab eventKey="forward" title="多平台转播">
             { activeTab === 'forward' && <ScenarioForward /> }

@@ -3,8 +3,9 @@ import React from "react";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import SrsQRCode from "../components/SrsQRCode";
 
-export default function ScenarioSrt({urls}) {
+export default function ScenarioSrt({tools, urls}) {
   const {srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer} = urls;
+  const {updateStreamName} = tools;
   const [hostname, setHostname] = React.useState();
   const [srtPort, setSrtPort] = React.useState();
   const [srtPublishStreamId, setPublishStreamId] = React.useState();
@@ -98,7 +99,7 @@ export default function ScenarioSrt({urls}) {
                 <li>Hostname：<code>{hostname}</code></li>
                 <li>Port：<code>{srtPort}</code></li>
                 <li>Latency：<code>20</code></li>
-                <li>Stream ID：<code>{srtPublishStreamId}</code></li>
+                <li>Stream ID：<a href='' onClick={(e) => updateStreamName(e)}>(换流名称)</a><code>{srtPublishStreamId}</code></li>
               </ol>
             </li>
             <li>点OK就开始推流</li>
@@ -167,7 +168,7 @@ export default function ScenarioSrt({urls}) {
               配置OBS推流，可以参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-encoder'>链接</a>：
               <ol>
                 <li>服务： <code>自定义</code></li>
-                <li>推流地址（服务器）： <br/><code>{srtPublishUrl}</code></li>
+                <li>推流地址（服务器）：<a href='' onClick={(e) => updateStreamName(e)}>(换流名称)</a> <br/><code>{srtPublishUrl}</code></li>
                 <li>推流密钥（串流密钥）：<code>无，注意请不要填任何字符串</code></li>
               </ol>
             </li>
@@ -249,7 +250,7 @@ export default function ScenarioSrt({urls}) {
               配置芯象推流，可以参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-encoder'>链接</a>：
               <ol>
                 <li>类型：<code>自定义推流</code></li>
-                <li>推流地址：<br/><code>{srtPublishUrl}</code></li>
+                <li>推流地址：<a href='' onClick={(e) => updateStreamName(e)}>(换流名称)</a><br/><code>{srtPublishUrl}</code></li>
                 <SrsQRCode url={srtPublishUrl} />
                 <li>传输模式：<code>单一网络</code></li>
                 <li>编码方式：<code>软件编码</code></li>
