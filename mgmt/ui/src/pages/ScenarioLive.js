@@ -2,12 +2,15 @@ import {Accordion} from "react-bootstrap";
 import React from "react";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import SrsQRCode from "../components/SrsQRCode";
+import * as Icon from 'react-bootstrap-icons';
+import {Clipboard} from "../utils";
 
-export default function ScenarioLive({urls}) {
+export default function ScenarioLive({updateStreamName, copyToClipboard, urls}) {
   const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
   const xgFlvPlayerUrl = flvPlayer?.replace('player.html', 'xgplayer.html');
   const xgHlsPlayerUrl = hlsPlayer?.replace('player.html', 'xgplayer.html');
+  const ffmpegPublishCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv ${rtmpPublishUrl}`;
 
   const movieTutorials = useTutorials(React.useRef([
     {author: '徐光磊', id: 'BV1RS4y1G7tb'},
@@ -52,8 +55,21 @@ export default function ScenarioLive({urls}) {
             <li>
               在OBS输入：
               <ul>
-                <li>推流地址（服务器） <code>{rtmpServer}</code></li>
-                <li>推流密钥（串流密钥） <code>{rtmpStreamKey}</code></li>
+                <li>
+                  推流地址（服务器） <code>{rtmpServer}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtmpServer)} />
+                  </div>
+                </li>
+                <li>
+                  推流密钥（串流密钥）<code>{rtmpStreamKey}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
+                    <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+                  </div> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtmpStreamKey)} />
+                  </div>
+                </li>
               </ul>
             </li>
             <li>
@@ -63,13 +79,19 @@ export default function ScenarioLive({urls}) {
                   播放HTTP-FLV流, 请选择
                   <a href={flvPlayer} target='_blank' rel='noreferrer'>简易</a>或
                   <a href={xgFlvPlayerUrl} target='_blank' rel='noreferrer'>西瓜</a>播放器&nbsp;
-                  <code>{flvUrl}</code>
+                  <code>{flvUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrl)} />
+                  </div>
                 </li>
                 <li>
                   播放HLS流, 请选择
                   <a href={hlsPlayer} target='_blank' rel='noreferrer'>简易</a>或
                   <a href={xgHlsPlayerUrl} target='_blank' rel='noreferrer'>西瓜</a>播放器&nbsp;
-                  <code>{m3u8Url}</code>
+                  <code>{m3u8Url}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+                  </div>
                 </li>
                 <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
               </ul>
@@ -92,10 +114,26 @@ export default function ScenarioLive({urls}) {
               FFmpeg推流命令：<br/>
               <code>
                 ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv {rtmpPublishUrl}
-              </code>
+              </code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
+                <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+              </div> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffmpegPublishCli)} />
+              </div>
             </li>
-            <li>推流地址：<br/><code>{rtmpPublishUrl}</code></li>
-            <SrsQRCode url={rtmpPublishUrl} />
+            <li>
+              推流地址：<br/>
+              <code>{rtmpPublishUrl}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
+                <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+              </div> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtmpPublishUrl)} />
+              </div>
+              <br/>
+              <SrsQRCode url={rtmpPublishUrl} />
+            </li>
             <li>
               请选择播放的流：
               <ul>
@@ -103,13 +141,19 @@ export default function ScenarioLive({urls}) {
                   播放HTTP-FLV流, 请选择
                   <a href={flvPlayer} target='_blank' rel='noreferrer'>简易</a>或
                   <a href={xgFlvPlayerUrl} target='_blank' rel='noreferrer'>西瓜</a>播放器&nbsp;
-                  <code>{flvUrl}</code>
+                  <code>{flvUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrl)} />
+                  </div>
                 </li>
                 <li>
                   播放HLS流, 请选择
                   <a href={hlsPlayer} target='_blank' rel='noreferrer'>简易</a>或
                   <a href={xgHlsPlayerUrl} target='_blank' rel='noreferrer'>西瓜</a>播放器&nbsp;
-                  <code>{m3u8Url}</code>
+                  <code>{m3u8Url}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+                  </div>
                 </li>
                 <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
               </ul>
@@ -128,7 +172,14 @@ export default function ScenarioLive({urls}) {
           <ol>
             <li>先在服务器防火墙开启<code>UDP/8000</code>端口</li>
             <li>请使用<code>https</code>访问管理后台。若使用自签名证书，请点页面空白处然后敲<code>thisisunsafe</code></li>
-            <li>打开页面推<a href={rtcPublisher} target='_blank' rel='noreferrer'>WebRTC流</a>。注意先停止掉FFmpeg/OBS推流。</li>
+            <li>
+              打开页面推<a href={rtcPublisher} target='_blank' rel='noreferrer'>WebRTC流</a>。 &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
+                <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+              </div>
+              <br/>
+              <code>注意先停止掉FFmpeg/OBS推流。</code>
+            </li>
             <li>
               请选择播放的流：
               <ul>
