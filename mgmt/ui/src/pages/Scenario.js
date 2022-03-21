@@ -77,7 +77,7 @@ function ScenarioImpl({defaultActiveTab}) {
       return (e >= '0' && e <= '9') ? String.fromCharCode('a'.charCodeAt(0) + (parseInt(Math.random() * 16 + e) % 25)) : e;
     }).join(''));
     alert(`更换流名称成功`);
-  });
+  }, []);
 
   const copyToClipboard = React.useCallback((e, text) => {
     e.preventDefault();

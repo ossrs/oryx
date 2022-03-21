@@ -3,7 +3,6 @@ import React from "react";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import SrsQRCode from "../components/SrsQRCode";
 import * as Icon from 'react-bootstrap-icons';
-import {Clipboard} from "../utils";
 
 export default function ScenarioLive({updateStreamName, copyToClipboard, urls}) {
   const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
