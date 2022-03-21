@@ -37,25 +37,7 @@ function ScenarioImpl({defaultActiveTab}) {
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
   const setSearchParams = useSearchParams()[1];
   const handleError = useErrorHandler();
-
-  const {
-    rtmpServer,
-    rtmpStreamKey,
-    srtPublishUrl,
-    srtPlayUrl,
-    flvUrl,
-    m3u8Url,
-    cnConsole,
-    flvPlayer,
-    hlsPlayer,
-    rtcPlayer,
-    rtcPublisher,
-    flvPlayer2,
-    hlsPlayer2,
-    rtcPlayer2,
-    flvUrl2,
-    m3u8Url2,
-  } = useUrls({secret, streamName});
+  const urls = useUrls({secret, streamName});
 
   React.useEffect(() => {
     const token = Token.load();
@@ -103,7 +85,7 @@ function ScenarioImpl({defaultActiveTab}) {
               <ScenarioLive
                 updateStreamName={updateStreamName}
                 copyToClipboard={copyToClipboard}
-                urls={{flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2}}
+                urls={urls}
               />
             }
           </Tab>
@@ -113,7 +95,7 @@ function ScenarioImpl({defaultActiveTab}) {
               <ScenarioSrt
                 updateStreamName={updateStreamName}
                 copyToClipboard={copyToClipboard}
-                urls={{srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer}}
+                urls={urls}
               />
             }
           </Tab>
