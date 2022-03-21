@@ -14,7 +14,6 @@ const Cors = require('koa2-cors');
 const BodyParser = require('koa-bodyparser');
 const serve = require('koa-static');
 const mount  = require('koa-mount');
-const token = require('./token');
 const system = require('./system');
 const threads = require('./threads');
 const consts = require('./consts');
@@ -183,7 +182,7 @@ app.use(async (ctx, next) => {
 // Note: We should move all /terraform/v1/mgmt/ APIs to platform module.
 const router = new Router();
 
-token.handle(system.handle(router));
+system.handle(router);
 
 router.all('/terraform/v1/host/versions', async (ctx) => {
   ctx.body = utils.asResponse(0, {version: pkg.version});
