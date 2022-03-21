@@ -73,7 +73,7 @@ exports.market = {
     },
   },
   hooks: {
-    name: 'srs-hooks',
+    name: metadata.market.hooks.name,
     image: async () => {
       const registry = await platform.registry();
       return `${registry}/ossrs/srs-terraform:hooks-1`;
@@ -97,7 +97,7 @@ exports.market = {
     },
   },
   tencent: {
-    name: 'tencent-cloud',
+    name: metadata.market.tencent.name,
     image: async () => {
       const registry = await platform.registry();
       return `${registry}/ossrs/srs-terraform:tencent-1`;
@@ -117,7 +117,7 @@ exports.market = {
     },
   },
   ffmpeg: {
-    name: 'ffmpeg',
+    name: metadata.market.ffmpeg.name,
     image: async () => {
       const registry = await platform.registry();
       return `${registry}/ossrs/srs-terraform:ffmpeg-1`;

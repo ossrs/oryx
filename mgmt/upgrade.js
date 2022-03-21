@@ -17,19 +17,10 @@ const semver = require('semver');
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const util = require('util');
-const exec = util.promisify(require('child_process').exec);
-const execFile = util.promisify(require('child_process').execFile);
 const metadata = require('./metadata');
 const platform = require('./platform');
-const COS = require('cos-nodejs-sdk-v5');
-const cos = require('js-core/cos');
 const keys = require('js-core/keys');
-const vod = require('js-core/vod');
-const {AbstractClient} = require('./sdk-internal/common/abstract_client');
-const VodClient = require("tencentcloud-sdk-nodejs").vod.v20180717.Client;
 const {queryLatestVersion} = require('./releases');
-const utils = require('js-core/utils');
-const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
 
 if (!isMainThread) {
@@ -57,25 +48,6 @@ async function threadMain() {
 }
 
 async function doThreadMain() {
-  // Run only once for each process.
-  await resetUpgrading();
-
-  // Setup the upgrade window if not set.
-  await setupUpgradeWindow();
-
-  // Try to create cloud service, we ignore error, because user might delete the secret directly on console of cloud
-  // platform, so it might throw exception when create cloud resource.
-  try {
-    const region = await platform.region();
-    await cos.createCosBucket(redis, COS, region);
-    await vod.createVodService(redis, VodClient, AbstractClient, region);
-  } catch (e) {
-    console.warn(`Thread #${metadata.upgrade.name}: Ignore cloud service err`, e);
-  }
-
-  // Run only once for a special version.
-  await firstRun();
-
   // Wait for a while to request version.
   console.log(`Thread #${metadata.upgrade.name}: query current version=v${pkg.version}`);
   await new Promise(resolve => setTimeout(resolve, 1 * 1000));
@@ -139,67 +111,6 @@ async function doThreadMain() {
         resolve();
       });
     });
-  }
-}
-
-async function firstRun() {
-  // For each init stage changed, we could use a different redis key, to identify this special init workflow.
-  // However, keep in mind that previous defined workflow always be executed, so these operations should be idempotent.
-  // History:
-  //    SRS_FIRST_BOOT_DONE, For release 4.1, to restart srs.
-  //    SRS_FIRST_BOOT_DONE_v1, For release 4.2, to restart srs, exec upgrade_prepare.
-  //    SRS_FIRST_BOOT_DONE_v2, For release 4.2, to restart srs-server, update the hls hooks.
-  //    SRS_FIRST_BOOT.v3, For current release, to restart srs-hooks, update the volumes.
-  //    SRS_FIRST_BOOT.v4, For current release, to restart tencent-cloud, update the volumes.
-  //    SRS_FIRST_BOOT.v5, For current release, restart containers for .env changed.
-  const SRS_FIRST_BOOT = keys.redis.SRS_FIRST_BOOT;
-  const bootRelease = 'v10';
-
-  // Run once, record in redis.
-  const r0 = await redis.hget(SRS_FIRST_BOOT, bootRelease);
-  await redis.hset(SRS_FIRST_BOOT, bootRelease, 1);
-  if (r0) {
-    console.log(`Thread #${metadata.upgrade.name}: boot already done, r0=${r0}`);
-    return false;
-  }
-
-  // To prevent boot again and again.
-  console.log(`Thread #${metadata.upgrade.name}: boot start to setup, v=${SRS_FIRST_BOOT}.${bootRelease}, r0=${r0}`);
-
-  // For the second time, we prepare the os, for previous version which does not run the upgrade living.
-  console.log(`Thread #${metadata.upgrade.name}: Prepare OS for first run, r0=${r0}`);
-  await exec(`bash auto/upgrade_prepare`);
-
-  // Setup the api secret.
-  const [token, created] = await utils.setupApiSecret(redis, uuidv4, moment);
-  console.log(`Thread #${metadata.upgrade.name}: Platform api secret, token=${token.length}B, created=${created}`);
-
-  // Remove containers.
-  await utils.removeContainerQuiet(execFile, metadata.market.srs.name);
-  await utils.removeContainerQuiet(execFile, metadata.market.hooks.name);
-  await utils.removeContainerQuiet(execFile, metadata.market.tencent.name);
-  await utils.removeContainerQuiet(execFile, metadata.market.ffmpeg.name);
-
-  console.log(`Thread #${metadata.upgrade.name}: boot done`);
-  return true;
-}
-
-async function resetUpgrading() {
-  // When restart, reset the upgrading.
-  const r1 = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
-  if (r1) {
-    const r2 = await redis.hget(keys.redis.SRS_UPGRADING, 'desc');
-    const r3 = await redis.del(keys.redis.SRS_UPGRADING);
-    console.log(`Thread #${metadata.upgrade.name}: reset upgrading for r1=${r1}, r2=${r2}, r3=${r3}`);
-  }
-}
-
-async function setupUpgradeWindow() {
-  // If user not setup it, we will set the default value for each time, because we could change it apparently.
-  const update = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'update');
-  if (!update) {
-    await redis.hset(keys.redis.SRS_UPGRADE_WINDOW, 'start', 23);
-    await redis.hset(keys.redis.SRS_UPGRADE_WINDOW, 'duration', 6);
   }
 }
 

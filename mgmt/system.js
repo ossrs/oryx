@@ -233,7 +233,17 @@ const handlers = {
   // Update access for ssh keys.
   accessSsh: async ({ctx, action, args}) => {
     const [enabled] = args;
-    await execFile('bash', ['auto/update_access', enabled]);
+    const {stdout} = await execFile('bash', ['auto/update_access', enabled]);
+    console.log(`Access: SSH enabled=${enabled}, message is ${stdout}`);
+
+    ctx.body = utils.asResponse(0);
+  },
+
+  // Execute the upgrade prepare script when platform startup.
+  executeUpgradePrepare: async ({ctx, action, args}) => {
+    const {stdout} = await execFile('bash', ['auto/upgrade_prepare']);
+    console.log(`Upgrade: Prepare message is ${stdout}`);
+
     ctx.body = utils.asResponse(0);
   },
 

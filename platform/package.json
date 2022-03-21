@@ -1,6 +1,6 @@
 {
   "name": "platform",
-  "version":"1.0.2",
+  "version": "1.0.2",
   "description": "Platform API for srs-terraform modules",
   "main": "index.js",
   "scripts": {
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "axios": "^0.26.1",
+    "cos-nodejs-sdk-v5": "^2.11.6",
     "dotenv": "^14.3.2",
     "fs": "^0.0.1-security",
     "ioredis": "^4.28.3",
@@ -23,6 +24,7 @@
     "moment": "^2.29.1",
     "os": "^0.1.2",
     "path": "^0.12.7",
+    "tencentcloud-sdk-nodejs": "^4.0.311",
     "uuid": "^8.3.2"
   }
 }

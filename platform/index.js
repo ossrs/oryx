@@ -13,7 +13,7 @@ const Cors = require('koa2-cors');
 const BodyParser = require('koa-bodyparser');
 const token = require('./token');
 const pkg = require('./package.json');
-const manager = require('./manager');
+const thread = require('./thread');
 const system = require('./system');
 const platform = require('./platform');
 
@@ -50,7 +50,7 @@ const run = async () => {
   await platform.init();
   console.log(`Run with cwd=${process.cwd()}`);
 
-  manager.run();
+  thread.run();
 
   app.listen(2024, () => {
     console.log(`Server start on http://localhost:2024`);
