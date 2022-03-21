@@ -36,7 +36,7 @@ function SettingsImpl() {
       const data = res.data.data;
       const win = {
         ...data,
-        end: (data.start + data.duration)%24,
+        end: data.start ? (data.start + data.duration)%24 : data.duration,
       };
 
       setUpgradeWindow(win);

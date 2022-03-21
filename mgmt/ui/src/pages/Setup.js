@@ -1,5 +1,5 @@
 import Container from "react-bootstrap/Container";
-import {Button, Form} from "react-bootstrap";
+import {Button, Form, Spinner} from "react-bootstrap";
 import React from "react";
 import axios from "axios";
 import {Token, Tools} from "../utils";
@@ -58,7 +58,7 @@ function SetupImpl({onInit}) {
         <Form>
           <Form.Group className="mb-3" controlId="formBasicPassword">
             <Form.Label>请设置初始密码</Form.Label>
-            <Form.Control type="text" placeholder="Password" defaultValue={password}
+            <Form.Control type={initializing ? 'password' : 'text'} placeholder="Password" defaultValue={password}
               onChange={(e) => setPassword(e.target.value)}/>
             <Form.Text className="text-muted">
               * 初始密码由程序随机生成，可以修改成更高强度的密码 <br/>
@@ -66,8 +66,9 @@ function SetupImpl({onInit}) {
             </Form.Text>
           </Form.Group>
           <Button variant="primary" type="submit" disabled={!enabled} className={initializing && "disabled"} onClick={(e) => handleLogin(e)}>
-            设置管理员密码
-          </Button>
+            {initializing ? '初始化中...' : '设置管理员密码'}
+          </Button> &nbsp;
+          {initializing && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />}
         </Form>
       </Container>
     </>

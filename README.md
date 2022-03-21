@@ -16,7 +16,7 @@ Other more use scenarios is on the way, please read [this post](https://github.c
 ## Architecture
 
 The architecture of [srs-cloud](https://github.com/ossrs/srs-cloud#architecture) by 
-[mermaid](https://mermaid.live/edit/#pako:eNpdkU1vwjAMhv9KlMMEEh87bJduQkIUhLQv1DIuLYe0MW1Hk1Spy0CI_74kZWxwqO3Yj_M67pGmigP16KZU32nONJLX4CmWhMiskHvS74-IyAR2rHlO9HCUHIg0LV9112F1k2SaVTkJg9AliI2CyBjyMLh3LSGypIT1X9l35cdz2YcdlKpq6yC5dVbOiVvQ-rlS27rNoAYmxg3m5I74q8DYlfJdsz1ZZPLRznK5ZTYTFWQu117Y_5-6YJ-VeQsHFwdQAqvhGpiAxkS18Xy5XNzILEGmIHFSqoa3_PgtMt_QDDQ0Q66v8YVWAjCHpnYTvZu1TveV0gj6GvRVur3NTeUu6gxA7twOUw3cKBesrAe4x-6NUgC8qKOOc-RlZcq0RwVowQpufv7RwjE1owiIqWdCDhvWlBjTWJ4M2lScIUx5gUpTb2NUoEdZgyo8yJR6qBv4hfyCmSWKM3X6AZm9vuQ)
+[mermaid](https://mermaid.live/edit#pako:eNptkstuwjAQRX_F8qICiUcX7YZWSIiAkPpCCWWTsHDiIUmJ7cgZUxDqv9d2-gJ1kfH4zpncySgnmikOdES3lXrPCqaRPIZ3iSRE5qU8kH5_TEQusOPCfaqH4_RIpG15a7oea0yaa1YXJAojLxCXhbEN5GZw7VsiZGkFm99y4Mu3X-UA9lCpuq2D5O5wdt7cge5cKLVrWgU1MDExWJArEqxDG9cq8M3u5pDpSzvLz1vmc1FD_lfrk7piuFVaeLW16f8Djslrbb-Qg89DqIA1cA5MQWOq2nyxWi0vzFcgM5A4rZThLT95iu0ztGMO7eibc3yplQAswDR-ome77NmhVhpBn4OBynaX2kzu484A5N5vNtPArXPJqmaAB-xeOIXAyybu-IM8rG2Z9qgALVjJ7S9xcnBC7SgCEjqyKYctMxUmNJEfFjU1ZwgzXqLSdITaQI8ygyo6yuz73jJByewORSt-fALuq8V0)
 
 ```mermaid
 flowchart LR;
@@ -28,6 +28,7 @@ flowchart LR;
   mgmt --> SRS --> Hooks --> StreamAuth & DVR & VoD;
   DVR --> COS;
   mgmt --> FFmpeg;
+  mgmt --- platform;
   SRS --- FFmpeg;
   mgmt --> Upgrade --> Release;
   mgmt --> Certbot --> HTTPS;
@@ -47,6 +48,7 @@ The ports allocated:
 | Module | TCP Ports | UDP Ports | Notes |
 | ------ | --------- | --------- | ----- |
 | SRS | 1935, 1985, 8080,<br/> 8088, 1990, 554,<br/> 8936 | 8000, 8935, 10080,<br/> 1989 | See [SRS ports](https://github.com/ossrs/srs/blob/develop/trunk/doc/Resources.md#ports) |
+| platform | 2024 |  - | Mount at `/terraform/v1/mgmt/` |
 | releases | 2023 |  - | Mount at `/terraform/v1/releases` |
 | mgmt | 2022 |  - | Mount at `/mgmt/` and `/terraform/v1/mgmt/` |
 | hooks | 2021 |  - | Mount at `/terraform/v1/hooks/` |
@@ -71,6 +73,7 @@ The features that we're developing:
 * [x] Change redis port and use randomly password.
 * [x] Support integrity with tencent cloud VoD.
 * [x] Forward stream to multiple platforms, see [#2676](https://github.com/ossrs/srs/issues/2676).
+* [ ] Support install script for CentOS 7. 
 * [ ] Support GB28181 by SRS 5.0 container.
 * [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
 * [ ] Support virtual live streaming, covert file or other resource to live.
@@ -84,30 +87,32 @@ The features that we're developing:
 
 ## APIs
 
+Mgmt:
+
+* `/terraform/v1/host/versions` Public version api.
+* `/terraform/v1/host/exec` Exec command sync, response the stdout and stderr.
+* `/terraform/v1/releases` Version management for all components.
+* `/.well-known/acme-challenge/` HTTPS verify mount for letsencrypt.
+
 Platform:
 
 * `/terraform/v1/mgmt/versions` Public version api.
 * `/terraform/v1/mgmt/init` Whether mgmt initialized.
 * `/terraform/v1/mgmt/check` Check whether system is ok.
+* `/terraform/v1/mgmt/token` System auth with token.
+* `/terraform/v1/mgmt/login` System auth with password.
 * `/terraform/v1/mgmt/status` Query the version of mgmt.
 * `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
 * `/terraform/v1/mgmt/strategy` Toggle the upgrade strategy.
-* `/terraform/v1/mgmt/token` System auth with token.
-* `/terraform/v1/mgmt/login` System auth with password.
 * `/terraform/v1/mgmt/ssl` Config the system SSL config.
-* `/terraform/v1/mgmt/pubkey` Update the access for platform administrator pubkey.
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
+* `/terraform/v1/mgmt/pubkey` Update the access for platform administrator pubkey.
 * `/terraform/v1/mgmt/containers` Query and upgrade SRS container.
 * `/terraform/v1/mgmt/bilibili` Query the video information.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
 * `/terraform/v1/mgmt/window/query` Query the upgrade time window.
 * `/terraform/v1/mgmt/window/update` Update the upgrade time window.
-* `/tools/` A set of H5 tools, like simple player.
-* `/console/` The SRS console, serve by mgmt.
-* `/players/` The SRS player, serve by mgmt.
-* `/terraform/v1/releases` Version management for all components.
-* `/.well-known/acme-challenge/` HTTPS verify mount for letsencrypt.
 
 Market:
 
@@ -130,6 +135,13 @@ Market:
 * `/api/` SRS: HTTP API of SRS media server.
 * `/rtc/` SRS: HTTP API for WebERTC of SRS media server.
 * `/*/*.(flv|m3u8|ts|aac|mp3)` SRS: Media stream for HTTP-FLV, HLS, HTTP-TS, HTTP-AAC, HTTP-MP3.
+
+Static Files:
+
+* `/tools/` A set of H5 tools, like simple player, xgplayer, etc, serve by mgmt.
+* `/console/` The SRS console, serve by mgmt.
+* `/players/` The SRS player, serve by mgmt.
+* `/mgmt/` The ui for mgmt, serve by mgmt.
 
 ## Depends
 
@@ -190,6 +202,7 @@ When user setup the system, the admin password for the first boot:
 The optional environments defined by `mgmt/.env`:
 
 * `MGMT_PASSWORD`: The mgmt administrator password.
+* `SRS_PLATFORM_SECRET`: The mgmt api secret for token generating and verifying.
 * `REGION`: `ap-guangzhou|ap-singapore`, the region for upgrade source.
 * `PLATFORM`: The platform name.
 
@@ -202,6 +215,7 @@ For github actions to control the containers:
 
 * `SRS_DOCKER`: `srs` to enfore use `ossrs/srs` docker image.
 * `USE_DOCKER`: `true|false`, if false, disable all docker containers.
+* `SRS_UTEST`: `true|false`, if true, running in utest mode.
 
 For mgmt and containers to connect to redis:
 

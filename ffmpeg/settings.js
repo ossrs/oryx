@@ -19,7 +19,9 @@ const keys = require('js-core/keys');
 exports.handle = (router) => {
   router.all('/terraform/v1/ffmpeg/forward/secret', async (ctx) => {
     const {token, action, platform, server, secret, enabled} = ctx.request.body;
-    const decoded = await utils.verifyToken(jwt, token);
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
     const allowedActions = ['update'];
     const allowedPlatforms = ['wx', 'bilibili', 'kuaishou'];
@@ -73,7 +75,9 @@ exports.handle = (router) => {
 
   router.all('/terraform/v1/ffmpeg/forward/streams', async (ctx) => {
     const {token} = ctx.request.body;
-    const decoded = await utils.verifyToken(jwt, token);
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
     const configs = await redis.hgetall(keys.redis.SRS_FORWARD_CONFIG);
     const maps = await redis.hgetall(keys.redis.SRS_FORWARD_MAP);

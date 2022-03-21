@@ -3,9 +3,14 @@
 <head>
   <title>SRS Cloud</title>
   <meta charset="utf-8">
+  <style>
+      body {
+          margin: 10px 10px 10px 10px;
+      }
+  </style>
 </head>
 <body>
-  <video id="player" autoplay controls muted></video>
+  <video id="player" autoplay controls></video>
 </body>
 <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
 <script type="text/javascript" src="js/flv-1.5.0.min.js"></script>
@@ -13,7 +18,9 @@
 <script type="text/javascript">
   $(function(){
     // See https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
-    const resource = new URLSearchParams(location.search).get('url');
+    const q = new URLSearchParams(location.search);
+
+    const resource = q.get('url');
     if (!resource) return alert(`没有指定URL`);
 
     // See https://stackoverflow.com/a/12905122/17679565

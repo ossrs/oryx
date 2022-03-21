@@ -1,9 +1,10 @@
 import React from "react";
-import {Toast} from "react-bootstrap";
+import {Col, Row, Toast} from "react-bootstrap";
 import logo from '../resources/logo.svg';
 import * as Icon from 'react-bootstrap-icons';
 import {Token} from "../utils";
 import axios from "axios";
+import Container from "react-bootstrap/Container";
 
 /**
  * Fetch the video tutorials from bilibili, for example:
@@ -21,14 +22,13 @@ function useTutorials(bvidsRef) {
   const bvids = bvidsRef.current;
 
   const [tutorials, setTutorials] = React.useState([]);
-  const ref = React.useRef({});
-
-  React.useEffect(() => {
-    ref.current.tutorials = tutorials;
-  }, [tutorials]);
+  const ref = React.useRef({tutorials:[]});
 
   React.useEffect(() => {
     if (!bvids || !bvids.length) return;
+
+    // Allow cancel up the requests.
+    const source = axios.CancelToken.source();
 
     const token = Token.load();
     bvids.map(tutorial => {
@@ -36,6 +36,8 @@ function useTutorials(bvidsRef) {
 
       axios.post(`/terraform/v1/mgmt/bilibili`, {
         ...token, bvid: tutorial.id,
+      }, {
+        cancelToken: source.token,
       }).then(res => {
         const data = res.data.data;
         tutorial.title = data.title;
@@ -44,13 +46,54 @@ function useTutorials(bvidsRef) {
         tutorial.like = parseInt(data.stat.like);
         tutorial.share = parseInt(data.stat.share);
         // Order by view desc.
-        setTutorials([...ref.current.tutorials, tutorial].sort((a, b) => b.view - a.view));
+        ref.current.tutorials.push(tutorial);
+        setTutorials([...ref.current.tutorials].sort((a, b) => b.view - a.view));
+      }).catch((e) => {
+        if (axios.isCancel(e)) return;
+        throw e;
       });
       return null;
     });
+
+    return () => {
+      // When cleanup, cancel all requests to avoid update the unmounted components, like error message as:
+      //    Can't perform a React state update on an unmounted component.
+      //    This is a no-op, but it indicates a memory leak in your application.
+      source.cancel();
+    };
   }, [bvids]);
 
   return tutorials;
+}
+
+// A toast list for tutorials.
+function TutorialsToast({tutorials, onClose}) {
+  return (<>
+    <Container>
+      <Row>
+        {tutorials.map((tutorial, index) => (
+          <Col xs lg={4} key={index}>
+            <Toast onClose={onClose}>
+              <Toast.Header>
+                <img src={logo} className="rounded me-2" width={56} alt=''/>
+                <strong className="me-auto">Bilibili</strong>
+                <span title='播放次数'><Icon.Play /> {tutorial.view}</span> &nbsp;
+                <span title='点赞次数'><Icon.HandThumbsUp /> {tutorial.like}</span> &nbsp;
+                <span title='分享次数'><Icon.Share /> {tutorial.share}</span> &nbsp;
+                <small>by {tutorial.author}</small>
+              </Toast.Header>
+              <Toast.Body>
+                <a href={tutorial.link} target='_blank' rel='noreferrer'>
+                  {tutorial.title}
+                </a>
+              </Toast.Body>
+            </Toast>
+            <p></p>
+          </Col>
+        ))}
+      </Row>
+    </Container>
+  </>);
 }
 
 // The tutorials button, the props tutorials is a array, create by useTutorials.
@@ -63,29 +106,16 @@ function TutorialsButton({tutorials, prefixLine}) {
         <Icon.PatchQuestion onClick={() => setShow(!show)} />
       </div>
       {show && prefixLine && <p></p>}
-      {show && tutorials.map((tutorial, index) => (
-        <div key={index}>
-          <Toast show={show} onClose={() => setShow(false)}>
-            <Toast.Header>
-              <img src={logo} className="rounded me-2" width={56} alt=''/>
-              <strong className="me-auto">bilibili</strong>
-              <span title='播放次数'><Icon.Play /> {tutorial.view}</span> &nbsp;
-              <span title='点赞次数'><Icon.HandThumbsUp /> {tutorial.like}</span> &nbsp;
-              <span title='分享次数'><Icon.Share /> {tutorial.share}</span> &nbsp;
-              <small>by {tutorial.author}</small>
-            </Toast.Header>
-            <Toast.Body>
-              <a href={tutorial.link} target='_blank' rel='noreferrer'>
-                {tutorial.title}
-              </a>
-            </Toast.Body>
-          </Toast>
-          <p></p>
-        </div>
-      ))}
+      {show &&
+        <TutorialsToast
+          prefixLine={prefixLine}
+          tutorials={tutorials}
+          onClose={() => setShow(false)}
+        />
+      }
     </>
   );
 }
 
-export {useTutorials, TutorialsButton};
+export {useTutorials, TutorialsButton, TutorialsToast};
 

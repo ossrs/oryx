@@ -5,8 +5,8 @@ on:
     branches: [main, lighthouse]
 
 jobs:
-  test-release-4-1-stable:
-    name: Upgrading to stable from release 4.1
+  test-release-4-3-stable:
+    name: Upgrading to stable from release 4.3
     runs-on: ubuntu-20.04
 
     steps:
@@ -36,11 +36,12 @@ jobs:
         run: |
           sudo ln -sf $(pwd) /usr/local/srs-terraform
           sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
-          sudo systemctl enable srs-terraform
+          sudo systemctl enable srs-terraform nginx
 
           echo "Disable docker for test"
           echo "USE_DOCKER=false" >> $GITHUB_ENV
           echo "SRS_DOCKER=srs" >> $GITHUB_ENV
+          echo "SRS_UTEST=true" >> $GITHUB_ENV
 
       - name: Mock the environments for upgrading
         run: |
@@ -49,19 +50,27 @@ jobs:
 
       - name: Upgrade to stable
         run: |
-          echo "Reset to release 4.1 at v1.0.42"
-          git reset --hard v1.0.42
+          WHOAMI=$(whoami)
+          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          sudo systemctl start nginx
+
+          echo "Reset to release 4.3 at v1.0.162"
+          git reset --hard v1.0.162
 
           (cd mgmt && npm install)
           (cd mgmt/ui && npm install)
           (cd mgmt && npm run build)
 
-          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
-          echo "Upgrade to stable $TARGET"
-          sudo ./mgmt/upgrade $TARGET
+          # See https://stackoverflow.com/a/8633575/17679565
+          echo "Upgrade to stable TARGET=$TARGET SRS_UTEST=$SRS_UTEST USER=${WHOAMI}"
+          sudo -E bash -c "./mgmt/upgrade $TARGET"
+          sudo chown -R ${WHOAMI}:${WHOAMI} mgmt
 
-  test-release-4-1-latest:
-    name: Upgrading latest from release 4.1
+          echo "Upgrade the react UI, run by current user"
+          (cd mgmt && bash auto/upgrade_ui)
+
+  test-release-4-3-latest:
+    name: Upgrading latest from release 4.3
     runs-on: ubuntu-20.04
 
     steps:
@@ -91,11 +100,12 @@ jobs:
         run: |
           sudo ln -sf $(pwd) /usr/local/srs-terraform
           sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
-          sudo systemctl enable srs-terraform
+          sudo systemctl enable srs-terraform nginx
 
           echo "Disable docker for test"
           echo "USE_DOCKER=false" >> $GITHUB_ENV
           echo "SRS_DOCKER=srs" >> $GITHUB_ENV
+          echo "SRS_UTEST=true" >> $GITHUB_ENV
 
       - name: Mock the environments for upgrading
         run: |
@@ -104,16 +114,24 @@ jobs:
 
       - name: Upgrade to latest
         run: |
-          echo "Reset to release 4.1 at v1.0.42"
-          git reset --hard v1.0.42
+          WHOAMI=$(whoami)
+          TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
+          sudo systemctl start nginx
+
+          echo "Reset to release 4.3 at v1.0.162"
+          git reset --hard v1.0.162
 
           (cd mgmt && npm install)
           (cd mgmt/ui && npm install)
           (cd mgmt && npm run build)
 
-          TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
-          echo "Upgrade to latest $TARGET"
-          sudo ./mgmt/upgrade $TARGET
+          # See https://stackoverflow.com/a/8633575/17679565
+          echo "Upgrade to latest TARGET=$TARGET SRS_UTEST=$SRS_UTEST USER=${WHOAMI}"
+          sudo -E bash -c "./mgmt/upgrade $TARGET"
+          sudo chown -R ${WHOAMI}:${WHOAMI} mgmt
+
+          echo "Upgrade the react UI, run by current user"
+          (cd mgmt && bash auto/upgrade_ui)
 
   test-release-4-2-stable:
     name: Upgrading to stable from release 4.2
@@ -146,11 +164,12 @@ jobs:
         run: |
           sudo ln -sf $(pwd) /usr/local/srs-terraform
           sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
-          sudo systemctl enable srs-terraform
+          sudo systemctl enable srs-terraform nginx
 
           echo "Disable docker for test"
           echo "USE_DOCKER=false" >> $GITHUB_ENV
           echo "SRS_DOCKER=srs" >> $GITHUB_ENV
+          echo "SRS_UTEST=true" >> $GITHUB_ENV
 
       - name: Mock the environments for upgrading
         run: |
@@ -159,6 +178,10 @@ jobs:
 
       - name: Upgrade to stable
         run: |
+          WHOAMI=$(whoami)
+          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          sudo systemctl start nginx
+
           echo "Reset to release 4.2 at v1.0.105"
           git reset --hard v1.0.105
 
@@ -166,9 +189,13 @@ jobs:
           (cd mgmt/ui && npm install)
           (cd mgmt && npm run build)
 
-          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
-          echo "Upgrade to stable $TARGET"
-          sudo ./mgmt/upgrade $TARGET
+          # See https://stackoverflow.com/a/8633575/17679565
+          echo "Upgrade to stable TARGET=$TARGET SRS_UTEST=$SRS_UTEST USER=${WHOAMI}"
+          sudo -E bash -c "./mgmt/upgrade $TARGET"
+          sudo chown -R ${WHOAMI}:${WHOAMI} mgmt
+
+          echo "Upgrade the react UI, run by current user"
+          (cd mgmt && bash auto/upgrade_ui)
 
   test-release-4-2-latest:
     name: Upgrading latest from release 4.2
@@ -201,11 +228,12 @@ jobs:
         run: |
           sudo ln -sf $(pwd) /usr/local/srs-terraform
           sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
-          sudo systemctl enable srs-terraform
+          sudo systemctl enable srs-terraform nginx
 
           echo "Disable docker for test"
           echo "USE_DOCKER=false" >> $GITHUB_ENV
           echo "SRS_DOCKER=srs" >> $GITHUB_ENV
+          echo "SRS_UTEST=true" >> $GITHUB_ENV
 
       - name: Mock the environments for upgrading
         run: |
@@ -214,6 +242,10 @@ jobs:
 
       - name: Upgrade to latest
         run: |
+          WHOAMI=$(whoami)
+          TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
+          sudo systemctl start nginx
+
           echo "Reset to release 4.2 at v1.0.105"
           git reset --hard v1.0.105
 
@@ -221,6 +253,10 @@ jobs:
           (cd mgmt/ui && npm install)
           (cd mgmt && npm run build)
 
-          TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
-          echo "Upgrade to latest $TARGET"
-          sudo ./mgmt/upgrade $TARGET
+          # See https://stackoverflow.com/a/8633575/17679565
+          echo "Upgrade to latest TARGET=$TARGET SRS_UTEST=$SRS_UTEST USER=${WHOAMI}"
+          sudo -E bash -c "./mgmt/upgrade $TARGET"
+          sudo chown -R ${WHOAMI}:${WHOAMI} mgmt
+
+          echo "Upgrade the react UI, run by current user"
+          (cd mgmt && bash auto/upgrade_ui)

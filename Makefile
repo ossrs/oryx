@@ -12,6 +12,7 @@ default:
 
 build:
 	@cd ffmpeg && npm install
+	@cd platform && npm install
 	@cd hooks && npm install
 	@cd mgmt && npm install
 	@cd mgmt/ui && npm install
@@ -39,6 +40,7 @@ uninstall:
 
 test:
 	@cd ffmpeg && npm test
+	@cd platform && npm test
 	@cd hooks && npm test
 	@cd mgmt && npm test
 	@cd mgmt/ui && npm test

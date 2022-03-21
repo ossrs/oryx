@@ -14,11 +14,11 @@ const { spawn } = require('child_process');
 const pkg = require('./package.json');
 const axios = require('axios');
 const semver = require('semver');
-const consts = require('./consts');
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const execFile = util.promisify(require('child_process').execFile);
 const metadata = require('./metadata');
 const platform = require('./platform');
 const COS = require('cos-nodejs-sdk-v5');
@@ -29,6 +29,9 @@ const {AbstractClient} = require('./sdk-internal/common/abstract_client');
 const VodClient = require("tencentcloud-sdk-nodejs").vod.v20180717.Client;
 const {queryLatestVersion} = require('./releases');
 const helper = require('./helper');
+const utils = require('js-core/utils');
+const { v4: uuidv4 } = require('uuid');
+const moment = require('moment');
 
 if (!isMainThread) {
   threadMain();
@@ -104,24 +107,24 @@ async function doThreadMain() {
       return;
     }
 
-    const r0 = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
+    const r0 = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
     if (r0 === "1") {
-      const r1 = await redis.hget(consts.SRS_UPGRADING, 'desc');
+      const r1 = await redis.hget(keys.redis.SRS_UPGRADING, 'desc');
       console.log(`Thread #${metadata.upgrade.name}: already upgrading r0=${r0} ${r1}`);
       return;
     }
 
-    const r2 = await redis.hget(consts.SRS_UPGRADE_STRATEGY, 'strategy');
+    const r2 = await redis.hget(keys.redis.SRS_UPGRADE_STRATEGY, 'strategy');
     const strategy = r2 || 'auto';
     if (strategy !== 'auto') {
-      const r3 = await redis.hget(consts.SRS_UPGRADE_STRATEGY, 'desc');
+      const r3 = await redis.hget(keys.redis.SRS_UPGRADE_STRATEGY, 'desc');
       console.log(`Thread #${metadata.upgrade.name}: ignore for strategy=${r2}/${strategy} ${r3}`);
       return;
     }
 
     // Set the upgrading to avoid others.
-    await redis.hset(consts.SRS_UPGRADING, 'upgrading', 1);
-    await redis.hset(consts.SRS_UPGRADING, 'desc', `${upgradingMessage}`);
+    await redis.hset(keys.redis.SRS_UPGRADING, 'upgrading', 1);
+    await redis.hset(keys.redis.SRS_UPGRADING, 'desc', `${upgradingMessage}`);
 
     await new Promise((resolve, reject) => {
       const child = spawn('bash', ['upgrade', metadata.upgrade.releases.stable]);
@@ -151,7 +154,7 @@ async function firstRun() {
   //    SRS_FIRST_BOOT.v4, For current release, to restart tencent-cloud, update the volumes.
   //    SRS_FIRST_BOOT.v5, For current release, restart containers for .env changed.
   const SRS_FIRST_BOOT = keys.redis.SRS_FIRST_BOOT;
-  const bootRelease = 'v7';
+  const bootRelease = 'v10';
 
   // Run once, record in redis.
   const r0 = await redis.hget(SRS_FIRST_BOOT, bootRelease);
@@ -168,11 +171,15 @@ async function firstRun() {
   console.log(`Thread #${metadata.upgrade.name}: Prepare OS for first run, r0=${r0}`);
   await exec(`bash auto/upgrade_prepare`);
 
+  // Setup the api secret.
+  const [token, created] = await utils.setupApiSecret(redis, uuidv4, moment);
+  console.log(`Thread #${metadata.upgrade.name}: Platform api secret, token=${token.length}B, created=${created}`);
+
   // Remove containers.
-  await exec(`docker rm -f ${metadata.market.srs.name}`);
-  await exec(`docker rm -f ${metadata.market.hooks.name}`);
-  await exec(`docker rm -f ${metadata.market.tencent.name}`);
-  await exec(`docker rm -f ${metadata.market.ffmpeg.name}`);
+  await utils.removeContainerQuiet(execFile, metadata.market.srs.name);
+  await utils.removeContainerQuiet(execFile, metadata.market.hooks.name);
+  await utils.removeContainerQuiet(execFile, metadata.market.tencent.name);
+  await utils.removeContainerQuiet(execFile, metadata.market.ffmpeg.name);
 
   console.log(`Thread #${metadata.upgrade.name}: boot done`);
   return true;
@@ -180,10 +187,10 @@ async function firstRun() {
 
 async function resetUpgrading() {
   // When restart, reset the upgrading.
-  const r1 = await redis.hget(consts.SRS_UPGRADING, 'upgrading');
+  const r1 = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
   if (r1) {
-    const r2 = await redis.hget(consts.SRS_UPGRADING, 'desc');
-    const r3 = await redis.del(consts.SRS_UPGRADING);
+    const r2 = await redis.hget(keys.redis.SRS_UPGRADING, 'desc');
+    const r3 = await redis.del(keys.redis.SRS_UPGRADING);
     console.log(`Thread #${metadata.upgrade.name}: reset upgrading for r1=${r1}, r2=${r2}, r3=${r3}`);
   }
 }

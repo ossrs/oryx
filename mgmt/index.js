@@ -3,11 +3,8 @@
 const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
-['.', '..', '../..'].map(envDir => {
-  if (fs.existsSync(path.join(envDir, '.env'))) {
-    dotenv.config({path: path.join(envDir, '.env')});
-  }
-});
+const utils = require('js-core/utils');
+utils.reloadEnv(dotenv, fs, path);
 console.log(`load envs MGMT_PASSWORD=${'*'.repeat(process.env.MGMT_PASSWORD?.length)}`);
 
 const Koa = require('koa');
@@ -17,8 +14,6 @@ const Cors = require('koa2-cors');
 const BodyParser = require('koa-bodyparser');
 const serve = require('koa-static');
 const mount  = require('koa-mount');
-const token = require('./token');
-const utils = require('js-core/utils');
 const system = require('./system');
 const threads = require('./threads');
 const consts = require('./consts');
@@ -86,13 +81,20 @@ app.use(proxy('/terraform/v1/mgmt/srs/hooks', withLogs({
 // We directly serve the static files, because we overwrite the www for DVR.
 srsProxy(app, 'containers/www/console/', '/console/');
 srsProxy(app, 'containers/www/players/', '/players/');
-srsProxy(app, 'containers/www/tools/', '/tools/', ['/tools/player.html']);
+srsProxy(app, 'containers/www/tools/', '/tools/', [
+  '/tools/player.html',
+  '/tools/xgplayer.html',
+]);
 
 // For registered modules, by /terraform/v1/tencent/
 app.use(proxy('/terraform/v1/tencent/', withLogs({target: 'http://127.0.0.1:2020/'})));
 
 // For registered modules, by /terraform/v1/ffmpeg/
 app.use(proxy('/terraform/v1/ffmpeg/', withLogs({target: 'http://127.0.0.1:2019/'})));
+
+// For platform apis, by /terraform/v1/mgmt/
+// TODO: FIXME: Proxy all mgmt APIs to platform.
+app.use(proxy('/terraform/v1/mgmt/', withLogs({target: 'http://127.0.0.1:2024/'})));
 
 // Proxy to SRS HTTP streaming, console and player, by /api/, /rtc/, /live/, /console/, /players/
 // See https://github.com/vagusX/koa-proxies
@@ -176,12 +178,13 @@ app.use(async (ctx, next) => {
   }
 });
 
-// For backend APIs, with specified path, by /terraform/v1/mgmt/
+// For backend APIs, with specified path, by /terraform/v1/host/
+// Note: We should move all /terraform/v1/mgmt/ APIs to platform module.
 const router = new Router();
 
-token.handle(system.handle(router));
+system.handle(router);
 
-router.all('/terraform/v1/mgmt/versions', async (ctx) => {
+router.all('/terraform/v1/host/versions', async (ctx) => {
   ctx.body = utils.asResponse(0, {version: pkg.version});
 });
 

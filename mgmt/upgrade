@@ -40,8 +40,8 @@ if [[ $? -ne 0 ]]; then
   echo "Warning: git stash failed, see upgrade.error.log for detail\n";
 fi
 
-echo "Reset code files"
-git checkout . && git fetch --all
+echo "Reset code files at parent directory"
+git checkout ../ && git fetch --all
 if [[ $? -ne 0 ]]; then echo "Reset code files failed"; exit 1; fi
 
 echo "Create target branch"

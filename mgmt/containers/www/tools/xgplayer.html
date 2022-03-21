@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SRS Cloud</title>
+  <meta charset="utf-8">
+  <style>
+      body {
+          margin: 10px 10px 10px 10px;
+      }
+  </style>
+</head>
+<body>
+  <div id="player"></div>
+</body>
+<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="js/xgplayer-2.31.4/browser/index.js"></script>
+<script type="text/javascript" src="js/xgplayer-flv.js-2.3.0/browser/index.js"></script>
+<script type="text/javascript" src="js/xgplayer-hls.js-2.6.1/browser/index.js"></script>
+<script type="text/javascript">
+  $(function(){
+    // See https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
+    const q = new URLSearchParams(location.search);
+
+    console.log(`?url=${q.get('url')} Setup the url to play, HTTP-FLV or HLS`);
+
+    const resource = q.get('url');
+    if (!resource) return alert(`没有指定URL`);
+
+    const config = {
+      id: "player",
+      url: resource,
+      isLive: true,
+      autoplay: true,
+      volume: 0.8,
+      download: false,
+      fitVideoSize: 'auto',
+      lang: 'zh-cn',
+    };
+
+    if (resource.indexOf('.flv') > 0) {
+      new FlvJsPlayer({
+        ...config,
+        hasVideo: true,
+        hasAudio: true,
+        flvOptionalConfig: {
+          enableWorker: true,
+        },
+      });
+      return;
+    }
+
+    if (resource.indexOf('.m3u8') > 0) {
+      new HlsJsPlayer({
+        ...config,
+      });
+      return;
+    }
+
+    alert(`不支持的URL：${resource}`);
+  });
+</script>
+</html>
+

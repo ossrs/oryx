@@ -1,6 +1,7 @@
 'use strict';
 
 const platform = require('./platform');
+const metadata = require('js-core/metadata');
 
 exports.upgrade = {
   name: 'upgrade',
@@ -12,7 +13,7 @@ exports.upgrade = {
 
 exports.market = {
   srs: {
-    name: 'srs-server',
+    name: metadata.market.srs.name,
     // For China, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/1
     // For Global, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/9
     image: async () => {
@@ -42,7 +43,7 @@ exports.market = {
     },
   },
   srsDev: {
-    name: 'srs-dev',
+    name: metadata.market.srsDev.name,
     // For China, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/1
     // For Global, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/9
     image: async () => {
@@ -126,6 +127,26 @@ exports.market = {
     logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
     volumes: [
       `${process.cwd()}/.env:/usr/local/srs-terraform/ffmpeg/.env`,
+    ],
+    extras: [],
+    container: {
+      ID: null,
+      State: null,
+      Status: null,
+    },
+  },
+  platform: {
+    name: 'platform',
+    image: async () => {
+      const registry = await platform.registry();
+      return `${registry}/ossrs/srs-terraform:platform-1`;
+    },
+    tcpPorts: [2024],
+    udpPorts: [],
+    command: ['node .'],
+    logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
+    volumes: [
+      `${process.cwd()}/.env:/usr/local/srs-terraform/platform/.env`,
     ],
     extras: [],
     container: {

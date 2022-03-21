@@ -3,6 +3,8 @@
 # This is scripts run after code is updated, so it's living as the target version not the previous old version,
 # it allows one roundtrip upgrade.
 
+echo "Upgrade living SRS_UTEST=$SRS_UTEST args: $*"
+
 # Ignore darwin
 if [[ ! -d /usr/local/srs-terraform && $(uname -s) == 'Darwin' ]]; then
   echo "Directly finish upgrade for macOS development"
@@ -13,25 +15,25 @@ fi
 bash auto/upgrade_prepare "$@"
 if [[ $? -ne 0 ]]; then echo "Prepare OS failed"; exit 1; fi
 
-echo "Make and upgrade updates"
-(cd .. && make upgrade)
-if [[ $? -ne 0 ]]; then echo "Make and install updates failed"; exit 1; fi
+# Upgrade the react ui and restart mgmt service, ignore for utest.
+if [[ $SRS_UTEST == true ]]; then
+  echo "Ignore UI and mgmt service upgrade for utest"
+else
+  # Upgrade the react UI.
+  . auto/upgrade_ui
 
-echo "Switch to new version"
-(cd ui && TMP_BUILD="build-$(date +%s)" && mv build $TMP_BUILD && mv upgrade build && rm -rf $TMP_BUILD)
-if [[ $? -ne 0 ]]; then echo "Switch to new version failed"; exit 1; fi
+  # Change permissions before restart.
+  if [[ $(id -un lighthouse 2>/dev/null) == 'lighthouse' ]]; then
+    echo "Change permissions for generated files"
+    chown -R lighthouse:lighthouse /usr/local/lighthouse/softwares &&
+    chown -R lighthouse:lighthouse /usr/local/srs-terraform
+    if [[ $? -ne 0 ]]; then echo "Change owner failed"; exit 1; fi
+  fi
 
-# Change permissions before restart.
-if [[ $(id -un lighthouse 2>/dev/null) == 'lighthouse' ]]; then
-  echo "Change permissions for generated files"
-  chown -R lighthouse:lighthouse /usr/local/lighthouse/softwares &&
-  chown -R lighthouse:lighthouse /usr/local/srs-terraform
-  if [[ $? -ne 0 ]]; then echo "Change owner failed"; exit 1; fi
+  echo "Restart service"
+  systemctl daemon-reload && systemctl restart srs-terraform
+  if [[ $? -ne 0 ]]; then echo "Restart service failed"; exit 1; fi
 fi
-
-echo "Restart service"
-systemctl daemon-reload && systemctl restart srs-terraform
-if [[ $? -ne 0 ]]; then echo "Restart service failed"; exit 1; fi
 
 echo "Living upgrade OK"
 

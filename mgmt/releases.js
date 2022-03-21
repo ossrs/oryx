@@ -45,8 +45,18 @@ async function queryLatestVersion(redis, axios) {
   if (forward) params.forward = forward;
 
   // Report about active streams.
-  const streams = await redis.hlen(keys.redis.SRS_STREAM_ACTIVE);
-  if (streams) params.streams = streams;
+  const streams = await redis.hget(keys.redis.SRS_STAT_COUNTER, 'publish');
+  if (streams) {
+    await redis.hset(keys.redis.SRS_STAT_COUNTER, 'publish', 0);
+    params.streams = parseInt(streams);
+  }
+
+  // Report about active players.
+  const players = await redis.hget(keys.redis.SRS_STAT_COUNTER, 'play');
+  if (streams) {
+    await redis.hset(keys.redis.SRS_STAT_COUNTER, 'play', 0);
+    params.players = parseInt(players);
+  }
 
   // Report about SRT stream.
   const srt = await redis.hlen(keys.redis.SRS_STREAM_SRT_ACTIVE);

@@ -21,7 +21,9 @@ exports.handle = (router) => {
   // Setup the DVR patterns.
   router.all('/terraform/v1/hooks/dvr/apply', async (ctx) => {
     const {token, all} = ctx.request.body;
-    const decoded = await utils.verifyToken(jwt, token);
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
     if (all !== true && all !== false) throw utils.asError(errs.sys.invalid, errs.status.args, `invalid all=${all}`);
 
@@ -34,7 +36,9 @@ exports.handle = (router) => {
   // Query the DVR patterns.
   router.all('/terraform/v1/hooks/dvr/query', async (ctx) => {
     const {token} = ctx.request.body;
-    const decoded = await utils.verifyToken(jwt, token);
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
     const all = await redis.hget(keys.redis.SRS_DVR_PATTERNS, 'all');
 
@@ -52,7 +56,9 @@ exports.handle = (router) => {
   // List the DVR files.
   router.all('/terraform/v1/hooks/dvr/files', async (ctx) => {
     const {token} = ctx.request.body;
-    const decoded = await utils.verifyToken(jwt, token);
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
     const files = [];
     const [cursor, fileKVs] = await redis.hscan(keys.redis.SRS_DVR_M3U8_METADATA, 0, '*', 100);
