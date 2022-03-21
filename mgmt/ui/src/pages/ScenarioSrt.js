@@ -2,14 +2,16 @@ import {Accordion} from "react-bootstrap";
 import React from "react";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import SrsQRCode from "../components/SrsQRCode";
+import * as Icon from "react-bootstrap-icons";
 
-export default function ScenarioSrt({tools, urls}) {
+export default function ScenarioSrt({updateStreamName, copyToClipboard, urls}) {
   const {srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer} = urls;
-  const {updateStreamName} = tools;
   const [hostname, setHostname] = React.useState();
   const [srtPort, setSrtPort] = React.useState();
   const [srtPublishStreamId, setPublishStreamId] = React.useState();
   const [srtPlayStreamId, setPlayStreamId] = React.useState();
+  const ffplayWindows = `ffplay -fflags nobuffer -flags low_delay -i "${srtPlayUrl}"`;
+  const ffplayMac = `ffplay -fflags nobuffer -flags low_delay -i '${srtPlayUrl}'`;
 
   const srtTutorials = useTutorials(React.useRef([
     {author: '崔国栋', id: 'BV1aS4y1G7iG'},
@@ -96,10 +98,33 @@ export default function ScenarioSrt({tools, urls}) {
                 </li>
                 <li>勾选上：<code>Enable SRT</code></li>
                 <li>Type：<code>Caller</code></li>
-                <li>Hostname：<code>{hostname}</code></li>
-                <li>Port：<code>{srtPort}</code></li>
-                <li>Latency：<code>20</code></li>
-                <li>Stream ID：<a href='' onClick={(e) => updateStreamName(e)}>(换流名称)</a><code>{srtPublishStreamId}</code></li>
+                <li>
+                  Hostname：<code>{hostname}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, hostname)} />
+                  </div>
+                </li>
+                <li>
+                  Port：<code>{srtPort}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPort)} />
+                  </div>
+                </li>
+                <li>
+                  Latency：<code>20</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, '20')} />
+                  </div>
+                </li>
+                <li>
+                  Stream ID：<code>{srtPublishStreamId}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
+                    <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+                  </div> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPublishStreamId)} />
+                  </div>
+                </li>
               </ol>
             </li>
             <li>点OK就开始推流</li>
@@ -112,10 +137,30 @@ export default function ScenarioSrt({tools, urls}) {
               <ol>
                 <li>点下方的 <code>Add Input(添加输入)</code> => <code>Stream/SRT(流/SRT)</code></li>
                 <li>Stream Type(码流类型)：<code>SRT Caller</code></li>
-                <li>Hostname：<code>{hostname}</code></li>
-                <li>Port：<code>{srtPort}</code></li>
-                <li>Latency(延迟)：<code>20</code></li>
-                <li>Stream ID(流ID)：<code>{srtPlayStreamId}</code></li>
+                <li>
+                  Hostname：<code>{hostname}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, hostname)} />
+                  </div>
+                </li>
+                <li>
+                  Port：<code>{srtPort}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPort)} />
+                  </div>
+                </li>
+                <li>
+                  Latency(延迟)：<code>20</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, '20')} />
+                  </div>
+                </li>
+                <li>
+                  Stream ID(流ID)：<code>{srtPlayStreamId}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPlayStreamId)} />
+                  </div>
+                </li>
                 <li>注意：若无法播放，请取消勾选<code>Use Hardware Decoder(使用硬件解码器)</code></li>
               </ol>
             </li>
@@ -124,8 +169,18 @@ export default function ScenarioSrt({tools, urls}) {
               也可以快速预览其他格式的流，注意延迟比直接播放SRT流会高很多：<br/>
               <ul>
                 <li>可以用FFplay播放，参考下面的<code>ffplay播放</code>部分</li>
-                <li>播放<a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
-                <li>播放<a href={hlsPlayer} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url}</code></li>
+                <li>
+                  播放<a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrl)} />
+                  </div>
+                </li>
+                <li>
+                  播放<a href={hlsPlayer} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+                  </div>
+                </li>
                 <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
               </ul>
             </li>
@@ -167,8 +222,16 @@ export default function ScenarioSrt({tools, urls}) {
             <li>
               配置OBS推流，可以参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-encoder'>链接</a>：
               <ol>
-                <li>服务： <code>自定义</code></li>
-                <li>推流地址（服务器）：<a href='' onClick={(e) => updateStreamName(e)}>(换流名称)</a> <br/><code>{srtPublishUrl}</code></li>
+                <li>服务：<code>自定义</code></li>
+                <li>
+                  推流地址（服务器）：<br/><code>{srtPublishUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
+                    <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+                  </div> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPublishUrl)} />
+                  </div>
+                </li>
                 <li>推流密钥（串流密钥）：<code>无，注意请不要填任何字符串</code></li>
               </ol>
             </li>
@@ -178,7 +241,12 @@ export default function ScenarioSrt({tools, urls}) {
                 <li>输出模式：<code>高级</code></li>
                 <li>编码器：<code>x264</code></li>
                 <li>码率控制：<code>CBR</code></li>
-                <li>关键帧间隔： <code>3</code></li>
+                <li>
+                  关键帧间隔： <code>3</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, '3')} />
+                  </div>
+                </li>
                 <li>CPU使用预设：<code>veryfast</code></li>
                 <li>配置（Profile）：<code>baseline</code></li>
                 <li>微调（Tune）： <code>zerolatency</code></li>
@@ -188,26 +256,43 @@ export default function ScenarioSrt({tools, urls}) {
           </ol>
           <p><strong>播放操作步骤：</strong></p>
           <ol>
-            <li>SRT流播放地址：<br/><code>{srtPlayUrl}</code></li>
+            <li>
+              SRT流播放地址：<br/><code>{srtPlayUrl}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPlayUrl)} />
+              </div>
+            </li>
             <li>下载<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>ffplay</a>，FFmpeg自带的低延迟播放器</li>
             <li>
               Windows，执行命令：<br/>
-              <code>
-                ffplay -fflags nobuffer -flags low_delay -i "{srtPlayUrl}"
-              </code>
+              <code>{ffplayWindows}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffplayWindows)} />
+              </div>
             </li>
             <li>
               Mac或Linux，执行命令：<br/>
-              <code>
-                ffplay -fflags nobuffer -flags low_delay -i '{srtPlayUrl}'
-              </code>
+              <code>{ffplayMac}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffplayMac)} />
+              </div>
             </li>
             <li>SRT流画面出来较慢，请稍安勿躁</li>
             <li>
               也可以快速预览其他格式的流，注意延迟比直接播放SRT流会高很多：<br/>
               <ul>
-                <li>播放<a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
-                <li>播放<a href={hlsPlayer} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url}</code></li>
+                <li>
+                  播放<a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrl)} />
+                  </div>
+                </li>
+                <li>
+                  播放<a href={hlsPlayer} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+                  </div>
+                </li>
                 <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
               </ul>
             </li>
@@ -250,8 +335,17 @@ export default function ScenarioSrt({tools, urls}) {
               配置芯象推流，可以参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-encoder'>链接</a>：
               <ol>
                 <li>类型：<code>自定义推流</code></li>
-                <li>推流地址：<a href='' onClick={(e) => updateStreamName(e)}>(换流名称)</a><br/><code>{srtPublishUrl}</code></li>
-                <SrsQRCode url={srtPublishUrl} />
+                <li>
+                  推流地址：<br/><code>{srtPublishUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
+                    <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+                  </div> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPublishUrl)} />
+                  </div>
+                  <br/>
+                  <SrsQRCode url={srtPublishUrl} />
+                </li>
                 <li>传输模式：<code>单一网络</code></li>
                 <li>编码方式：<code>软件编码</code></li>
                 <li>配置文件：<code>基线配置</code></li>
@@ -262,27 +356,44 @@ export default function ScenarioSrt({tools, urls}) {
           </ol>
           <p><strong>播放操作步骤：</strong></p>
           <ol>
-            <li>SRT流播放地址：<br/><code>{srtPlayUrl}</code></li>
+            <li>
+              SRT流播放地址：<br/><code>{srtPlayUrl}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPlayUrl)} />
+              </div>
+            </li>
             <SrsQRCode url={srtPlayUrl} />
             <li>下载<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>ffplay</a>，FFmpeg自带的低延迟播放器</li>
             <li>
               Windows，执行命令：<br/>
-              <code>
-                ffplay -fflags nobuffer -flags low_delay -i "{srtPlayUrl}"
-              </code>
+              <code>{ffplayWindows}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffplayWindows)} />
+              </div>
             </li>
             <li>
               Mac或Linux，执行命令：<br/>
-              <code>
-                ffplay -fflags nobuffer -flags low_delay -i '{srtPlayUrl}'
-              </code>
+              <code>{ffplayMac}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffplayMac)} />
+              </div>
             </li>
             <li>SRT流画面出来较慢，请稍安勿躁</li>
             <li>
               也可以快速预览其他格式的流，注意延迟比直接播放SRT流会高很多：<br/>
               <ul>
-                <li>播放<a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl}</code></li>
-                <li>播放<a href={hlsPlayer} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url}</code></li>
+                <li>
+                  播放<a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrl)} />
+                  </div>
+                </li>
+                <li>
+                  播放<a href={hlsPlayer} target='_blank' rel='noreferrer'>HLS流</a> <code>{m3u8Url}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+                  </div>
+                </li>
                 <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
               </ul>
             </li>

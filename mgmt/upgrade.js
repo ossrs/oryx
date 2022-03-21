@@ -28,7 +28,6 @@ const vod = require('js-core/vod');
 const {AbstractClient} = require('./sdk-internal/common/abstract_client');
 const VodClient = require("tencentcloud-sdk-nodejs").vod.v20180717.Client;
 const {queryLatestVersion} = require('./releases');
-const helper = require('./helper');
 const utils = require('js-core/utils');
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
