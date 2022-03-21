@@ -19,18 +19,6 @@ exports.run = async () => {
     });
   });
 
-  new Promise((resolve, reject) => {
-    const worker = new Worker("./crontab.js");
-    worker.on('error', reject);
-    worker.on('exit', (code) => {
-      console.log(`Thread #crontab: exit with ${code}`);
-      if (code !== 0) {
-        return reject(new Error(`Thread #crontab: stopped with exit code ${code}`));
-      }
-      resolve();
-    });
-  });
-
   if (process.env.USE_DOCKER === 'false') {
     console.warn(`run without docker, please start components by npm start`);
     return;

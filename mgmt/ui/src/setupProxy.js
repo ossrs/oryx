@@ -22,5 +22,8 @@ module.exports = function(app) {
   app.use('/api/', withLogs({target: 'http://127.0.0.1:1985/'}));
   app.use('/rtc/', withLogs({target: 'http://127.0.0.1:1985/'}));
   app.use('/*/*.(flv|m3u8|ts|aac|mp3)', withLogs({target: 'http://127.0.0.1:8080/'}));
+
+  // The redefined home page.
+  app.use('/index.html', createProxyMiddleware({target: 'http://127.0.0.1:2022/'}));
 };
 

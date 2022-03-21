@@ -15,6 +15,7 @@ const token = require('./token');
 const pkg = require('./package.json');
 const manager = require('./manager');
 const system = require('./system');
+const platform = require('./platform');
 
 const app = new Koa();
 
@@ -46,6 +47,7 @@ app.use(router.routes());
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 const run = async () => {
+  await platform.init();
   console.log(`Run with cwd=${process.cwd()}`);
 
   manager.run();

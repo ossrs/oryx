@@ -194,6 +194,7 @@ app.use(router.routes());
 const run = async () => {
   const {region, registry} = await platform.init();
   console.log(`Run with cwd=${process.cwd()}, region=${region}, registry=${registry}`);
+  
   app.listen(consts.config.port, () => {
     console.log(`Server start on http://localhost:${consts.config.port}`);
   });

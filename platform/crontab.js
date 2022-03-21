@@ -1,21 +1,10 @@
 'use strict';
 
-// For components in docker, connect by host.
-const config = {
-  redis:{
-    host: process.env.NODE_ENV === 'development' ? 'localhost' : 'mgmt.srs.local',
-    port: process.env.REDIS_PORT || 6379,
-    password: process.env.REDIS_PASSWORD || '',
-  },
-};
-
-const ioredis = require('ioredis');
-const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
-const moment = require('moment');
-const { v4: uuidv4 } = require('uuid');
-const utils = require('js-core/utils');
-
 const { isMainThread } = require("worker_threads");
+const util = require('util');
+const exec = util.promisify(require('child_process').exec);
+const helper = require('./helper');
+const platform = require('./platform');
 
 if (!isMainThread) {
   threadMain();
@@ -23,6 +12,7 @@ if (!isMainThread) {
 
 async function threadMain() {
   // We must initialize the thread first.
+  await platform.init();
   console.log(`Thread #crontab: initialize`);
 
   while (true) {
@@ -37,7 +27,17 @@ async function threadMain() {
 }
 
 async function doThreadMain() {
-  const [token, created] = await utils.setupApiSecret(redis, uuidv4, moment);
-  console.log(`Platform api secret, token=${token.length}B, created=${created}`);
+  if (process.platform === 'darwin') {
+    console.log('Thread #crontab: ignore for Darwin');
+    return;
+  }
+
+  console.log(`Thread #crontab: auto renew the Let's Encrypt ssl`);
+  const {stdout: liveDomains} = await exec('ls -d containers/etc/letsencrypt/live/*/ |wc -l');
+  const nnLiveDomains = liveDomains && parseInt(liveDomains.trim());
+  if (!nnLiveDomains) return console.log(`Thread #crontab: No domains in containers/etc/letsencrypt/live/`);
+
+  const {stdout, renewOk} = await helper.execApi('renewLetsEncrypt');
+  console.log(`Thread #crontab: renew ssl updated=${renewOk}, message is ${stdout}`);
 }
 

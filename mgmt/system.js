@@ -195,6 +195,41 @@ const handlers = {
     ctx.body = utils.asResponse(0);
   },
 
+  // Renew the lets encrypt SSL files.
+  renewLetsEncrypt: async ({ctx, action, args}) => {
+    // Whether force to renew.
+    const [force] = args;
+
+    // Remove the ssl file, because it might link to other file.
+    const signalFile = `${process.cwd()}/containers/var/log/letsencrypt/CERTBOT_HOOK_RELOAD_NGINX`;
+    await execFile('rm', ['-f', signalFile]);
+
+    // We run always with "-n Run non-interactively"
+    // Note that it's started by nodejs, so never use '-it' or failed for 'the input device is not a TTY'.
+    const registry = await platform.registry();
+    const dockerArgs = ['run', '--rm', '--name', 'certbot-renew',
+      '-v', `${process.cwd()}/containers/etc/letsencrypt:/etc/letsencrypt`,
+      '-v', `${process.cwd()}/containers/var/lib/letsencrypt:/var/lib/letsencrypt`,
+      '-v', `${process.cwd()}/containers/var/log/letsencrypt:/var/log/letsencrypt`,
+      `${registry}/ossrs/certbot`,
+      'renew', '--post-hook', 'touch /var/log/letsencrypt/CERTBOT_HOOK_RELOAD_NGINX',
+      // See https://github.com/ossrs/srs/issues/2864#issuecomment-1027944527
+      // Use --force-renewal and --no-random-sleep-on-renew to always renew a cert,
+      // see https://community.letsencrypt.org/t/disabling-random-sleep-of-certbot/83201
+      ...(force ? ['--force-renewal', '--no-random-sleep-on-renew'] : []),
+      '-n',
+    ];
+    const {stdout} = await execFile('docker', dockerArgs);
+    console.log(`certbot renew ssl ok, docker ${dockerArgs.join(' ')}`);
+
+    // Restart the nginx service to reload the SSL files.
+    const renewOk = fs.existsSync(signalFile);
+    if (renewOk) await execFile('systemctl', ['reload', 'nginx.service']);
+    console.log(`certbot renew updated=${renewOk}, args=${args}, message is ${stdout}`);
+
+    ctx.body = utils.asResponse(0, {stdout, renewOk});
+  },
+
   // Update access for ssh keys.
   accessSsh: async ({ctx, action, args}) => {
     const [enabled] = args;

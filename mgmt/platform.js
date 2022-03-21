@@ -13,6 +13,7 @@ const axios = require('axios');
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const keys = require('js-core/keys');
+const utils = require('js-core/utils');
 
 exports.isDarwin = process.platform === 'darwin';
 
@@ -57,7 +58,10 @@ exports.init = async () => {
     await redis.hset(keys.redis.SRS_TENCENT_LH, 'platform', platform);
   }
 
-  console.log(`Initialize region=${conf.region}, source=${source}, registry=${registry}, platform=${platform}, isDarwin=${isDarwin}`);
+  // Request and cache the apiSecret.
+  const apiSecret = await utils.apiSecret(redis);
+
+  console.log(`Initialize region=${conf.region}, source=${source}, registry=${registry}, platform=${platform}, isDarwin=${isDarwin}, apiSecret=${apiSecret.length}B`);
   return {region: conf.region, registry, isDarwin};
 };
 

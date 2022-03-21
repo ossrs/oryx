@@ -36,16 +36,25 @@ exports.inUpgradeWindow = (uwStart, uwDuration, now) => {
 }
 
 async function execApi(action, args) {
+  if (args !== null && args !== undefined && !Array.isArray(args)) {
+    throw new Error(`args is not array, ${args}`);
+  }
+
   const apiSecret = await utils.apiSecret(redis);
   const token = utils.createToken(moment, jwt, apiSecret);
   const server = process.env.NODE_ENV === 'development' ? 'localhost' : 'mgmt.srs.local';
 
-  const {data: {data: res}} = await axios.post(`http://${server}:2022/terraform/v1/host/exec`, {
-    ...token, action, args: args || [],
-  });
-  console.log(`exec server=${server}, action=${action}, args=${JSON.stringify(args)}, res=${JSON.stringify(res)}`);
-
-  return res;
+  try {
+    const data = await axios.post(
+      `http://${server}:2022/terraform/v1/host/exec`,
+      {
+        ...token, action, args: args || [],
+      },
+    );
+    return data?.data?.data;
+  } catch (e) {
+    console.error(`exec server=${server}, action=${action}, args=${JSON.stringify(args)}, err`, e);
+  }
 }
 exports.execApi = execApi;
 

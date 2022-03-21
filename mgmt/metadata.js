@@ -84,6 +84,7 @@ exports.market = {
     logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
     volumes: [
       `${process.cwd()}/.env:/usr/local/srs-terraform/hooks/.env`,
+      // We mount the containers to mgmt in hooks container, which links to hooks.
       `${process.cwd()}/containers/objs/nginx/html:/usr/local/srs-terraform/mgmt/containers/objs/nginx/html`,
       `${process.cwd()}/containers/data/dvr:/usr/local/srs-terraform/mgmt/containers/data/dvr`,
       `${process.cwd()}/containers/data/vod:/usr/local/srs-terraform/mgmt/containers/data/vod`,
@@ -147,6 +148,8 @@ exports.market = {
     logConfig: '--log-driver json-file --log-opt max-size=1g --log-opt max-file=3',
     volumes: [
       `${process.cwd()}/.env:/usr/local/srs-terraform/platform/.env`,
+      // We mount the containers to mgmt in platform container, which links to platform.
+      `${process.cwd()}/containers:/usr/local/srs-terraform/mgmt/containers`,
     ],
     extras: [],
     container: {
