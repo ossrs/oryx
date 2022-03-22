@@ -18,7 +18,6 @@
   "license": "MIT",
   "dependencies": {
     "axios": "^0.25.0",
-    "cos-nodejs-sdk-v5": "^2.11.6",
     "dotenv": "^14.2.0",
     "ioredis": "^4.28.3",
     "jest": "^27.5.1",
@@ -34,7 +33,6 @@
     "koa2-cors": "^2.0.6",
     "moment": "^2.29.1",
     "semver": "^7.3.5",
-    "tencentcloud-sdk-nodejs": "^4.0.297",
     "uuid": "^8.3.2"
   }
 }
