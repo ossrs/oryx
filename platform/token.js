@@ -21,6 +21,7 @@ const moment = require('moment');
 const dotenv = require('dotenv');
 const path = require('path');
 const helper = require('./helper');
+const metadata = require('./metadata');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/init', async (ctx) => {
@@ -107,7 +108,9 @@ exports.handle = (router) => {
     const apiSecret = await utils.apiSecret(redis);
     const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
-    const {version, stable, latest} = await helper.execApi('queryVersion');
+    const {version} = await helper.execApi('queryVersion');
+    const {stable, latest} = metadata.upgrade.releases;
+
     const upgrading = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
     const r0 = await redis.hget(keys.redis.SRS_UPGRADE_STRATEGY, 'strategy');
     const strategy = r0 || 'auto';

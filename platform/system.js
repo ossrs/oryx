@@ -17,7 +17,7 @@ const redis = require('js-core/redis').create({config: config.redis, redis: iore
 const moment = require('moment');
 const keys = require('js-core/keys');
 const helper = require('./helper');
-const metadata = require('js-core/metadata');
+const metadata = require('./metadata');
 const axios = require('axios');
 
 exports.handle = (router) => {
@@ -31,7 +31,10 @@ exports.handle = (router) => {
     const uwDuration = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'duration');
     const inUpgradeWindow = helper.inUpgradeWindow(uwStart, uwDuration, moment());
 
-    const {version, latest} = await helper.queryLatestVersion();
+    const releases = await helper.queryLatestVersion();
+    metadata.upgrade.releases = releases;
+
+    const {version, latest} = releases;
     const target = latest || 'lighthouse';
     const upgradingMessage = `upgrade to target=${target}, current=${version}, latest=${latest}, window=${inUpgradeWindow}`;
     console.log(`Start ${upgradingMessage}`);
@@ -64,7 +67,8 @@ exports.handle = (router) => {
     const apiSecret = await utils.apiSecret(redis);
     const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
-    const r3 = await helper.queryLatestVersion();
+    const releases = await helper.queryLatestVersion();
+    metadata.upgrade.releases = releases;
 
     const upgrading = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
     const r0 = await redis.hget(keys.redis.SRS_UPGRADE_STRATEGY, 'strategy');
@@ -72,7 +76,7 @@ exports.handle = (router) => {
     const newStrategy = strategy === 'auto' ? 'manual' : 'auto';
     const r1 = await redis.hset(keys.redis.SRS_UPGRADE_STRATEGY, 'strategy', newStrategy);
     const r2 = await redis.hset(keys.redis.SRS_UPGRADE_STRATEGY, 'desc', `${moment().format()} changed, upgrading=${upgrading}, r0=${r0}/${strategy}, r1=${r1}/${newStrategy}`);
-    console.log(`status ok, upgrading=${upgrading}, r0=${r0}/${strategy}, r1=${r1}/${newStrategy}, r2=${r2}, releases=${JSON.stringify(r3)}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    console.log(`status ok, upgrading=${upgrading}, r0=${r0}/${strategy}, r1=${r1}/${newStrategy}, r2=${r2}, releases=${JSON.stringify(releases)}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0);
   });
 

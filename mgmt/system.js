@@ -84,8 +84,6 @@ const handlers = {
   queryVersion: async ({ctx, action, args}) => {
     ctx.body = utils.asResponse(0, {
       version: `v${pkg.version}`,
-      stable: metadata.upgrade.releases?.stable,
-      latest: metadata.upgrade.releases?.latest,
     });
   },
 
@@ -102,12 +100,11 @@ const handlers = {
     console.log(`Query ${releaseServer} with ${JSON.stringify(params)}`);
 
     const {data: releases} = await axios.get(`${releaseServer}/terraform/v1/releases`, {params});
-    metadata.upgrade.releases = releases;
 
     ctx.body = utils.asResponse(0, {
       version: params.version,
-      stable: metadata.upgrade.releases?.stable,
-      latest: metadata.upgrade.releases?.latest,
+      stable: releases?.stable,
+      latest: releases?.latest,
     });
   },
 

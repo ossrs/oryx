@@ -3,14 +3,6 @@
 const platform = require('./platform');
 const metadata = require('js-core/metadata');
 
-exports.upgrade = {
-  name: 'upgrade',
-  releases: {
-    stable: null,
-    latest: null,
-  },
-};
-
 exports.market = {
   srs: {
     name: metadata.market.srs.name,

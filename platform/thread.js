@@ -1,6 +1,7 @@
 'use strict';
 
 const { Worker } = require("worker_threads");
+const metadata = require('./metadata');
 
 exports.run = async () => {
   // The DVR worker, for cloud storage.

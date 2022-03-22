@@ -9,7 +9,7 @@ const config = {
   },
 };
 
-const { isMainThread } = require("worker_threads");
+const { isMainThread, parentPort } = require("worker_threads");
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const platform = require('./platform');
@@ -22,7 +22,7 @@ const VodClient = require("tencentcloud-sdk-nodejs").vod.v20180717.Client;
 const utils = require('js-core/utils');
 const { v4: uuidv4 } = require('uuid');
 const helper = require('./helper');
-const metadata = require('js-core/metadata');
+const metadata = require('./metadata');
 const moment = require('moment');
 const semver = require('semver');
 
@@ -68,6 +68,8 @@ async function doThreadMain() {
 
   // For development, request the releases from itself which proxy to the releases service.
   const releases = await helper.queryLatestVersion();
+  metadata.upgrade.releases = releases;
+  parentPort.postMessage({metadata});
   console.log(`Thread #upgrade: query done, version=${releases.version}, response=${JSON.stringify(releases)}`);
 
   // Try to upgrade mgmt itself.
