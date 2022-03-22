@@ -24,7 +24,6 @@ const pkg = require('./package.json');
 const metadata = require('./metadata');
 const { spawn } = require('child_process');
 const axios = require('axios');
-const {queryLatestVersion} = require('./releases');
 const platform = require('./platform');
 const keys = require('js-core/keys');
 
@@ -92,11 +91,21 @@ const handlers = {
 
   // Refresh the version from api.
   refreshVersion: async ({ctx, action, args}) => {
-    const releases = await queryLatestVersion(redis, axios);
+    const params = args[0];
+    if (!params) throw utils.asError(errs.sys.empty, errs.status.args, `no params`);
+
+    params.version = `v${pkg.version}`;
+    params.ts = new Date().getTime();
+
+    // Request the release service API.
+    const releaseServer = process.env.LOCAL_RELEASE === 'true' ? `http://localhost:2022` : 'https://api.ossrs.net';
+    console.log(`Query ${releaseServer} with ${JSON.stringify(params)}`);
+
+    const {data: releases} = await axios.get(`${releaseServer}/terraform/v1/releases`, {params});
     metadata.upgrade.releases = releases;
 
     ctx.body = utils.asResponse(0, {
-      version: `v${pkg.version}`,
+      version: params.version,
       stable: metadata.upgrade.releases?.stable,
       latest: metadata.upgrade.releases?.latest,
     });

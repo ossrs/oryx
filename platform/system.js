@@ -31,7 +31,7 @@ exports.handle = (router) => {
     const uwDuration = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'duration');
     const inUpgradeWindow = helper.inUpgradeWindow(uwStart, uwDuration, moment());
 
-    const {version, latest} = await helper.execApi('refreshVersion');
+    const {version, latest} = await helper.queryLatestVersion();
     const target = latest || 'lighthouse';
     const upgradingMessage = `upgrade to target=${target}, current=${version}, latest=${latest}, window=${inUpgradeWindow}`;
     console.log(`Start ${upgradingMessage}`);
@@ -64,7 +64,7 @@ exports.handle = (router) => {
     const apiSecret = await utils.apiSecret(redis);
     const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
-    const r3 = await helper.execApi('refreshVersion');
+    const r3 = await helper.queryLatestVersion();
 
     const upgrading = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
     const r0 = await redis.hget(keys.redis.SRS_UPGRADE_STRATEGY, 'strategy');

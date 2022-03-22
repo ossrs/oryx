@@ -4,21 +4,6 @@ const { Worker } = require("worker_threads");
 const metadata = require('./metadata');
 
 exports.run = async () => {
-  new Promise((resolve, reject) => {
-    const worker = new Worker("./upgrade.js");
-    worker.on('message', (msg) => {
-      metadata.upgrade = msg.metadata.upgrade;
-    });
-    worker.on('error', reject);
-    worker.on('exit', (code) => {
-      console.log(`Thread #upgrade: exit with ${code}`);
-      if (code !== 0) {
-        return reject(new Error(`Thread #upgrade: stopped with exit code ${code}`));
-      }
-      resolve();
-    });
-  });
-
   if (process.env.USE_DOCKER === 'false') {
     console.warn(`run without docker, please start components by npm start`);
     return;

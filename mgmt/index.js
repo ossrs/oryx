@@ -16,7 +16,6 @@ const serve = require('koa-static');
 const mount  = require('koa-mount');
 const system = require('./system');
 const threads = require('./threads');
-const consts = require('./consts');
 const pkg = require('./package.json');
 const staticCache = require('koa-static-cache');
 const platform = require('./platform');
@@ -194,9 +193,9 @@ app.use(router.routes());
 const run = async () => {
   const {region, registry} = await platform.init();
   console.log(`Run with cwd=${process.cwd()}, region=${region}, registry=${registry}`);
-  
-  app.listen(consts.config.port, () => {
-    console.log(`Server start on http://localhost:${consts.config.port}`);
+
+  app.listen(2022, () => {
+    console.log(`Server start on http://localhost:2022`);
   });
 };
 run();

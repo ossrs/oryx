@@ -24,6 +24,7 @@ const { v4: uuidv4 } = require('uuid');
 const helper = require('./helper');
 const metadata = require('js-core/metadata');
 const moment = require('moment');
+const semver = require('semver');
 
 if (!isMainThread) {
   threadMain();
@@ -64,6 +65,46 @@ async function doThreadMain() {
 
   // Run only once for a special version.
   await firstRun();
+
+  // For development, request the releases from itself which proxy to the releases service.
+  const releases = await helper.queryLatestVersion();
+  console.log(`Thread #upgrade: query done, version=${releases.version}, response=${JSON.stringify(releases)}`);
+
+  // Try to upgrade mgmt itself.
+  const higherStable = semver.lt(releases.version, releases.stable);
+  if (releases?.stable && higherStable) {
+    const upgradingMessage = `upgrade from ${releases.version} to stable ${releases.stable}`;
+    console.log(`Thread #upgrade: ${upgradingMessage}`);
+
+    const uwStart = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'start');
+    const uwDuration = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'duration');
+    if (!helper.inUpgradeWindow(uwStart, uwDuration, moment())) {
+      console.log(`Thread #upgrade: Ignore for not in window`);
+      return;
+    }
+    
+    const r0 = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
+    if (r0 === "1") {
+      const r1 = await redis.hget(keys.redis.SRS_UPGRADING, 'desc');
+      console.log(`Thread #upgrade: already upgrading r0=${r0} ${r1}`);
+      return;
+    }
+
+    const r2 = await redis.hget(keys.redis.SRS_UPGRADE_STRATEGY, 'strategy');
+    const strategy = r2 || 'auto';
+    if (strategy !== 'auto') {
+      const r3 = await redis.hget(keys.redis.SRS_UPGRADE_STRATEGY, 'desc');
+      console.log(`Thread #upgrade: ignore for strategy=${r2}/${strategy} ${r3}`);
+      return;
+    }
+
+    // Set the upgrading to avoid others.
+    await redis.hset(keys.redis.SRS_UPGRADING, 'upgrading', 1);
+    await redis.hset(keys.redis.SRS_UPGRADING, 'desc', `${upgradingMessage}`);
+
+    await helper.execApi('execUpgrade', [releases.stable]);
+    console.log(`Thread #upgrade: Upgrade to ${releases.stable} done`);
+  }
 }
 
 async function resetUpgrading() {
