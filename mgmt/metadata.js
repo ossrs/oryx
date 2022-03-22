@@ -9,6 +9,8 @@ exports.market = {
     name: 'platform',
     image: async () => {
       const registry = await platform.registry();
+      // Note that we use the same version of mgmt for image, to support latest and stable version of container, and to
+      // avoid upgrading to latest for stable mgmt. The mgmt is locked with the correct version of platform.
       return `${registry}/ossrs/srs-terraform:platform-v${pkg.version}`;
     },
     tcpPorts: [2024],
@@ -16,8 +18,8 @@ exports.market = {
     command: ['node', '.'],
     logConfig: [
       '--log-driver=json-file',
-      '--log-opt', 'max-size=1g',
-      '--log-opt', 'max-file=3',
+      '--log-opt=max-size=1g',
+      '--log-opt=max-file=3',
     ],
     volumes: [
       `${process.cwd()}/.env:/usr/local/srs-terraform/platform/.env`,
@@ -25,9 +27,10 @@ exports.market = {
       `${process.cwd()}/containers:/usr/local/srs-terraform/mgmt/containers`,
     ],
     extras: [
-      '--env', `SRS_DOCKER=${process.env.SRS_DOCKER || ''}`,
-      '--env', `USE_DOCKER=${process.env.USE_DOCKER || ''}`,
-      '--env', `NODE_ENV=${process.env.NODE_ENV || ''}`,
+      `--env=SRS_DOCKER=${process.env.SRS_DOCKER || ''}`,
+      `--env=USE_DOCKER=${process.env.USE_DOCKER || ''}`,
+      // If use docker, should always use production to connect to redis.
+      `--env=NODE_ENV=production`,
     ],
     // The running status, updated by fetchContainer.
     container: {
