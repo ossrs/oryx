@@ -125,3 +125,23 @@ function reloadEnv(dotenv, fs, path) {
 }
 exports.reloadEnv = reloadEnv;
 
+function srsProxy(staticCache, app, home, prefix, noCaches, alias) {
+  const reactFiles = {};
+
+  app.use(staticCache(home, {
+    // Cache for a year for it never changes.
+    maxAge: 365 * 24 * 3600,
+    // It's important to set to dynamic, because the js might changed.
+    dynamic: true,
+    // If not set, NOT FOUND.
+    alias,
+    // The baseUrl to mount.
+    prefix,
+  }, reactFiles));
+
+  noCaches && noCaches.map(f => {
+    if (reactFiles[f]) reactFiles[f].maxAge = 0;
+  });
+}
+exports.srsProxy = srsProxy;
+

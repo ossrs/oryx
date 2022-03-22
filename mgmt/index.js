@@ -20,25 +20,6 @@ const pkg = require('./package.json');
 const staticCache = require('koa-static-cache');
 const platform = require('./platform');
 
-function srsProxy(app, home, prefix, noCaches, alias) {
-  const reactFiles = {};
-
-  app.use(staticCache(path.join(__dirname, home), {
-    // Cache for a year for it never changes.
-    maxAge: 365 * 24 * 3600,
-    // It's important to set to dynamic, because the js might changed.
-    dynamic: true,
-    // If not set, NOT FOUND.
-    alias,
-    // The baseUrl to mount.
-    prefix,
-  }, reactFiles));
-
-  noCaches && noCaches.map(f => {
-    if (reactFiles[f]) reactFiles[f].maxAge = 0;
-  });
-}
-
 // Start all workers threads first.
 threads.run();
 
@@ -78,9 +59,9 @@ app.use(proxy('/terraform/v1/mgmt/srs/hooks', withLogs({
 })));
 
 // We directly serve the static files, because we overwrite the www for DVR.
-srsProxy(app, 'containers/www/console/', '/console/');
-srsProxy(app, 'containers/www/players/', '/players/');
-srsProxy(app, 'containers/www/tools/', '/tools/', [
+utils.srsProxy(staticCache, app, path.join(__dirname, 'containers/www/console/'), '/console/');
+utils.srsProxy(staticCache, app, path.join(__dirname, 'containers/www/players/'), '/players/');
+utils.srsProxy(staticCache, app, path.join(__dirname, 'containers/www/tools/'), '/tools/', [
   '/tools/player.html',
   '/tools/xgplayer.html',
 ]);
@@ -94,6 +75,10 @@ app.use(proxy('/terraform/v1/ffmpeg/', withLogs({target: 'http://127.0.0.1:2019/
 // For platform apis, by /terraform/v1/mgmt/
 // TODO: FIXME: Proxy all mgmt APIs to platform.
 app.use(proxy('/terraform/v1/mgmt/', withLogs({target: 'http://127.0.0.1:2024/'})));
+// The UI proxy to platform UI, system mgmt UI.
+app.use(proxy('/mgmt/', withLogs({target: 'http://127.0.0.1:2024/'})));
+// For automatic HTTPS by letsencrypt, for certbot to verify the domain.
+app.use(proxy('/.well-known/acme-challenge/', withLogs({target: 'http://127.0.0.1:2024/'})));
 
 // Proxy to SRS HTTP streaming, console and player, by /api/, /rtc/, /live/, /console/, /players/
 // See https://github.com/vagusX/koa-proxies
@@ -107,40 +92,6 @@ app.use(proxy('/*/*.(flv|m3u8|ts|aac|mp3)', withLogs({target: 'http://127.0.0.1:
 ///////////////////////////////////////////////////////////////////////////////////////////
 // For source files like srs.tar.gz, by /terraform/v1/sources/
 app.use(mount('/terraform/v1/sources/', serve('./sources')));
-
-// For automatic HTTPS by letsencrypt, for certbot to verify the domain.
-// Note that should never create the directory .well-known/acme-challenge/ because it's auto created by certbot.
-// See https://eff-certbot.readthedocs.io/en/stable/using.html#webroot
-// See https://github.com/ossrs/srs/issues/2864#issuecomment-1027944527
-app.use(mount('/.well-known/acme-challenge/', serve('./containers/www/.well-known/acme-challenge/')));
-
-// For react-router pages, by /mgmt/routers-*
-app.use(async (ctx, next) => {
-  // Compatible with old react routes.
-  // TODO: FIXME: Remove it in next large release.
-  const isPreviousReactRoutes = [
-    '/mgmt/login',
-    '/mgmt/dashboard',
-    '/mgmt/scenario',
-    '/mgmt/config',
-    '/mgmt/system',
-    '/mgmt/logout',
-  ].includes(ctx.request.path);
-
-  // Directly serve the react routes by index.html
-  // See https://stackoverflow.com/a/52464577/17679565
-  if (isPreviousReactRoutes || ctx.request.path.indexOf('/mgmt/routers-') === 0) {
-    ctx.type = 'text/html';
-    ctx.set('Cache-Control', 'public, max-age=0');
-    ctx.body = fs.readFileSync('./ui/build/index.html');
-    return;
-  }
-
-  await next();
-});
-
-// For react, static files server, by /mgmt/
-srsProxy(app, 'ui/build', '/mgmt/', ['/mgmt/index.html'], {'/mgmt/': '/mgmt/index.html'});
 
 // For /favicon.ico
 // For homepage from root, use mgmt.

@@ -13,16 +13,17 @@ default:
 build:
 	@cd ffmpeg && npm install
 	@cd platform && npm install
+	@cd platform/ui && npm install
 	@cd hooks && npm install
 	@cd mgmt && npm install
 	@cd mgmt/ui && npm install
 	@cd releases && npm install
 	@cd tencent && npm install
 	@cd mgmt && npm run build
+	@cd platform && npm run build
 
 upgrade:
 	@cd mgmt && npm install
-	@cd mgmt/ui && npm install
 	@cd mgmt && npm run upgrade
 
 install:
@@ -41,6 +42,7 @@ uninstall:
 test:
 	@cd ffmpeg && npm test
 	@cd platform && npm test
+	@cd platform/ui && npm test
 	@cd hooks && npm test
 	@cd mgmt && npm test
 	@cd mgmt/ui && npm test
