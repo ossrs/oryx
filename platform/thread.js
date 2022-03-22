@@ -43,5 +43,22 @@ exports.run = async () => {
       resolve();
     });
   });
+
+  if (process.env.USE_DOCKER === 'false') {
+    console.warn(`run without docker, please start components by npm start`);
+    return;
+  }
+
+  new Promise((resolve, reject) => {
+    const worker = new Worker("./market.js");
+    worker.on('error', reject);
+    worker.on('exit', (code) => {
+      console.log(`Thread #market: exit with ${code}`);
+      if (code !== 0) {
+        return reject(new Error(`Thread #market: stopped with exit code ${code}`));
+      }
+      resolve();
+    });
+  });
 };
 

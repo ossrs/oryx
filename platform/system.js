@@ -166,7 +166,8 @@ exports.handle = (router) => {
     }
 
     // Query containers
-    const {containers} = await helper.execApi('fetchContainers', [name]);
+    const names = name ? [name] : Object.keys(metadata.market);
+    const {containers} = await helper.execApi('queryContainers', names);
 
     console.log(`srs ok, action=${action}, name=${name}, containers=${containers.length}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, containers);

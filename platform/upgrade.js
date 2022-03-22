@@ -69,7 +69,7 @@ async function doThreadMain() {
   // For development, request the releases from itself which proxy to the releases service.
   const releases = await helper.queryLatestVersion();
   metadata.upgrade.releases = releases;
-  parentPort.postMessage({metadata});
+  parentPort.postMessage({metadata: {upgrade: metadata.upgrade}});
   console.log(`Thread #upgrade: query done, version=${releases.version}, response=${JSON.stringify(releases)}`);
 
   // Try to upgrade mgmt itself.

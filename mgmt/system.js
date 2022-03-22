@@ -28,36 +28,45 @@ const platform = require('./platform');
 const keys = require('js-core/keys');
 
 const handlers = {
-  // Query the containers information.
-  queryContainer: async ({ctx, action, args}) => {
-    const name = args[0];
+  // Fetch the container, build the market if exists.
+  fetchContainer: async ({ctx, action, args}) => {
+    const [name, marketName] = args;
     if (!name) throw utils.asError(errs.sys.empty, errs.status.args, `no name`);
 
     const [all, running] = await market.queryContainer(name);
+
+    // We build the containers in market when query it.
+    if (marketName) {
+      if (!metadata.market[marketName]) {
+        metadata.market[marketName] = {name};
+      }
+      if (all?.ID) metadata.market[marketName].container = all;
+    }
+
     ctx.body = utils.asResponse(0, {all, running});
   },
 
-  // Fecth the containers information.
-  fetchContainers: async ({ctx, action, args}) => {
-    const name = args[0];
+  // Query all the containers, ignore if not exists.
+  queryContainers: async ({ctx, action, args}) => {
+    const names = args;
+    if (!names || !names.length) throw utils.asError(errs.sys.empty, errs.status.args, `no name`);
 
     const containers = [];
-    for (const k in metadata.market) {
-      if (name && k !== name) return;
-
-      const container = metadata.market[k];
-      if (!container) throw utils.asError(errs.sys.resource, errs.status.not, `no container --name=${k}`);
+    for (const k in names) {
+      const name = names[k];
+      const provider = metadata.market[name];
+      if (!provider) continue;
 
       // Query container enabled status from redis.
-      const disabled = await redis.hget(keys.redis.SRS_CONTAINER_DISABLED, container.name);
+      const disabled = await redis.hget(keys.redis.SRS_CONTAINER_DISABLED, provider.name);
 
       containers.push({
-        name: container.name,
+        name: provider.name,
         enabled: disabled !== 'true',
         container: {
-          ID: container.container.ID,
-          State: container.container.State,
-          Status: container.container.Status,
+          ID: provider.container?.ID,
+          State: provider.container?.State,
+          Status: provider.container?.Status,
         },
       });
     }
@@ -71,6 +80,16 @@ const handlers = {
     if (!name) throw utils.asError(errs.sys.empty, errs.status.args, `no name`);
 
     await utils.removeContainerQuiet(execFile, name);
+    ctx.body = utils.asResponse(0);
+  },
+
+  // Start the container with args.
+  startContainer: async ({ctx, action, args}) => {
+    const [name, dockerArgs] = args;
+    if (!name) throw utils.asError(errs.sys.empty, errs.status.args, `no name`);
+    if (!dockerArgs || !dockerArgs.length) throw utils.asError(errs.sys.empty, errs.status.args, `no args`);
+
+    await market.startContainer(name, dockerArgs);
     ctx.body = utils.asResponse(0);
   },
 
@@ -251,6 +270,17 @@ const handlers = {
     console.log(`Upgrade: Prepare message is ${stdout}`);
 
     ctx.body = utils.asResponse(0);
+  },
+
+  // Current work directory.
+  cwd: async ({ctx, action, args}) => {
+    ctx.body = utils.asResponse(0, {cwd: process.cwd()});
+  },
+
+  // Current ipv4 internal address.
+  ipv4: async ({ctx, action, args}) => {
+    const r0 = await platform.ipv4();
+    ctx.body = utils.asResponse(0, r0);
   },
 
   // RPC template.

@@ -14,6 +14,8 @@ const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const keys = require('js-core/keys');
 const utils = require('js-core/utils');
+const os = require('os');
+const moment = require('moment');
 
 exports.isDarwin = process.platform === 'darwin';
 
@@ -27,6 +29,9 @@ exports.source = async () => {
 };
 exports.registry = async () => {
   return conf.registry;
+};
+exports.ipv4 = async () => {
+  return await discoverPrivateIPv4();
 };
 
 // Initialize the platform before thread run.
@@ -103,5 +108,46 @@ async function discoverPlatform() {
 
   const {data} = await axios.get(`http://metadata.tencentyun.com/latest/meta-data/instance-name`);
   return data.indexOf('-lhins-') > 0 ? 'lighthouse' : 'cvm';
+}
+
+// Discover the private ip of machine.
+let privateIPv4 = null;
+let privateIPv4Update = null;
+async function discoverPrivateIPv4() {
+  if (privateIPv4 && privateIPv4Update) {
+    // If not expired, return the cache.
+    const expired = moment(privateIPv4Update).add(process.env.NODE_ENV === 'development' ? 10 : 24 * 3600, 's');
+    if (expired.isAfter(moment())) return privateIPv4;
+  }
+
+  const networks = {};
+
+  const networkInterfaces = os.networkInterfaces();
+  Object.keys(networkInterfaces).map(name => {
+    for (const network of networkInterfaces[name]) {
+      if (network.family === 'IPv4' && !network.internal) {
+        networks[name] = {...network, name};
+      }
+    }
+  });
+  console.log(`discover ip networks=${JSON.stringify(networks)}`);
+
+  if (!Object.keys(networks).length) {
+    throw new Error(`no private address from ${JSON.stringify(networkInterfaces)}`);
+  }
+
+  // Default to the first one.
+  privateIPv4 = networks[Object.keys(networks)[0]];
+  privateIPv4Update = moment();
+
+  // Best match the en or eth network, for example, eth0 or en0.
+  Object.keys(networks).map(e => {
+    if (e.indexOf('en') === 0 || e.indexOf('eth') === 0) {
+      privateIPv4 = networks[e];
+    }
+  });
+  console.log(`discover ip privateIPv4=${JSON.stringify(privateIPv4)}, update=${privateIPv4Update.format()}`);
+
+  return privateIPv4;
 }
 

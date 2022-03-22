@@ -145,3 +145,41 @@ function srsProxy(staticCache, app, home, prefix, noCaches, alias) {
 }
 exports.srsProxy = srsProxy;
 
+async function generateDockerArgs(platform, ipv4, conf) {
+  const evalValue = (e, defaults) => {
+    if (!e) return defaults || '';
+    if (typeof(e) === 'function') return e();
+    return e;
+  };
+
+  const tcpPorts = evalValue(conf.tcpPorts, []).map(e => ['-p', `${e}:${e}/tcp`]).flat();
+  const udpPorts = evalValue(conf.udpPorts, []).map(e => ['-p', `${e}:${e}/udp`]).flat();
+  const volumes = evalValue(conf.volumes, []).map(e => ['-v', e]).flat();
+  const command = evalValue(conf.command, []);
+  const extras = evalValue(conf.extras, []);
+  const logConfig = evalValue(conf.logConfig, []);
+
+  // The image depends on the registry, which is discovered by platform.
+  const image = await conf.image();
+  const region = await platform.region();
+  const source = await platform.source();
+
+  // Note that it's started by nodejs, so never use '-it'.
+  const dockerArgs = [
+    'run', '-d', '--restart=always', '--privileged', `--name=${evalValue(conf.name)}`,
+    `--add-host=mgmt.srs.local:${ipv4.address}`,
+    ...tcpPorts,
+    ...udpPorts,
+    ...logConfig,
+    ...volumes,
+    ...extras,
+    '--env', `SRS_REGION=${region}`,
+    '--env', `SRS_SOURCE=${source}`,
+    image,
+    ...command,
+  ];
+
+  return dockerArgs;
+}
+exports.generateDockerArgs = generateDockerArgs;
+
