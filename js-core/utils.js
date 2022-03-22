@@ -44,7 +44,9 @@ async function doVerifyToken(jwt, token, passwd) {
 // Verify the token.
 const verifyToken = async (jwt, token, passwd) => {
   try {
-    return await doVerifyToken(jwt, token, passwd);
+    if (passwd) {
+      return await doVerifyToken(jwt, token, passwd);
+    }
   } catch (e) {
   }
 
@@ -75,8 +77,11 @@ exports.createToken = createToken;
 // Query the api secret from redis, cache it to env.
 const apiSecret = async (redis) => {
   if (!process.env.SRS_PLATFORM_SECRET) {
-    process.env.SRS_PLATFORM_SECRET = await redis.hget(keys.redis.SRS_PLATFORM_SECRET, 'token');
-    console.log(`Update api secret to ${process.env.SRS_PLATFORM_SECRET?.length}B`);
+    const token = await redis.hget(keys.redis.SRS_PLATFORM_SECRET, 'token');
+    if (token) {
+      process.env.SRS_PLATFORM_SECRET = token;
+      console.log(`Update api secret to ${process.env.SRS_PLATFORM_SECRET?.length}B`);
+    }
   }
 
   return process.env.SRS_PLATFORM_SECRET;

@@ -15,6 +15,7 @@ const redis = require('js-core/redis').create({config: config.redis, redis: iore
 const keys = require('js-core/keys');
 const utils = require('js-core/utils');
 const os = require('os');
+const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
 
 exports.isDarwin = process.platform === 'darwin';
@@ -37,6 +38,10 @@ exports.ipv4 = async () => {
 // Initialize the platform before thread run.
 exports.init = async () => {
   const isDarwin = exports.isDarwin;
+
+  // Setup the api secret.
+  // Remark: Should do it before any helper.execApi, which depends on it.
+  await utils.setupApiSecret(redis, uuidv4, moment);
 
   // Load the region first, because it never changed.
   conf.region = await redis.hget(keys.redis.SRS_TENCENT_LH, 'region');
