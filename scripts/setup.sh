@@ -45,16 +45,16 @@ if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 # Cache the docker images for srs-cloud to startup faster.
 systemctl restart docker &&
 echo "Cache docker images from TCR Beijing" &&
-docker pull ccr.ccs.tencentyun.com/ossrs/srs:4 &&
-docker pull ccr.ccs.tencentyun.com/ossrs/lighthouse:4 &&
-docker pull ccr.ccs.tencentyun.com/ossrs/node:slim &&
-docker pull ccr.ccs.tencentyun.com/ossrs/srs-terraform:hooks-1 &&
-docker pull ccr.ccs.tencentyun.com/ossrs/srs-terraform:tencent-1 &&
-docker pull ccr.ccs.tencentyun.com/ossrs/srs-terraform:ffmpeg-1 &&
-docker pull ccr.ccs.tencentyun.com/ossrs/prometheus &&
-docker pull ccr.ccs.tencentyun.com/ossrs/redis_exporter &&
-docker pull ccr.ccs.tencentyun.com/ossrs/node-exporter &&
-docker pull ccr.ccs.tencentyun.com/ossrs/certbot &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs:4 &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:4 &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:hooks-1 &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:tencent-1 &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:ffmpeg-1 &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/redis_exporter &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/certbot &&
 echo "Cache docker images from TCR Singapore" &&
 docker pull sgccr.ccs.tencentyun.com/ossrs/srs:4 &&
 docker pull sgccr.ccs.tencentyun.com/ossrs/lighthouse:4 &&

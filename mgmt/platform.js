@@ -52,7 +52,7 @@ exports.init = async () => {
   await redis.hset(keys.redis.SRS_TENCENT_LH, 'source', source);
 
   // Always update the registry, because it might change.
-  const registry = (source === 'github') ? 'sgccr.ccs.tencentyun.com' : 'ccr.ccs.tencentyun.com';
+  const registry = (source === 'github') ? 'sgccr.ccs.tencentyun.com' : 'registry.cn-hangzhou.aliyuncs.com';
   conf.registry = registry;
   await redis.hset(keys.redis.SRS_TENCENT_LH, 'registry', registry);
 

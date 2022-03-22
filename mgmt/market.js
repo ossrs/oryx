@@ -19,6 +19,7 @@ const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const utils = require('js-core/utils');
 const keys = require('js-core/keys');
+const pkg = require('./package.json');
 
 if (!isMainThread) {
   threadMain();
@@ -27,7 +28,11 @@ if (!isMainThread) {
 async function threadMain() {
   // We must initialize the thread first.
   const {region, registry} = await platform.init();
-  console.log(`Thread #market: initialize region=${region}, registry=${registry}`);
+  console.log(`Thread #market: initialize region=${region}, registry=${registry}, version=v${pkg.version}`);
+
+  // Note that we always restart the platform container.
+  await utils.removeContainerQuiet(execFile, metadata.market.platform.name);
+  console.log(`Thread #market: Restart container ${metadata.market.platform.name}`);
 
   while (true) {
     try {

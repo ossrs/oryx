@@ -64,7 +64,7 @@ if [[ $(uname -s) != 'Darwin' ]]; then
 fi
 
 # Use different docker registry.
-REGISTRY=ccr.ccs.tencentyun.com
+REGISTRY=registry.cn-hangzhou.aliyuncs.com
 if [[ $SOURCE == GITHUB ]]; then REGISTRY=sgccr.ccs.tencentyun.com; fi
 echo "Detect REGISTRY=$REGISTRY"
 

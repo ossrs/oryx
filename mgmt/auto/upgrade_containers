@@ -15,6 +15,7 @@ if [[ $? -ne 0 ]]; then echo "Update the containers failed"; exit 1; fi
 # Remove the containers if need upgrade
 #   update_containers registry image
 #   update_containers ccr.ccs.tencentyun.com ossrs/lighthouse:4
+#   update_containers registry.cn-hangzhou.aliyuncs.com ossrs/lighthouse:4
 function update_containers() {
   REGISTRY=$1 && IMAGE=$2
   echo "Update containers for REGISTRY=$REGISTRY IMAGE=$IMAGE"

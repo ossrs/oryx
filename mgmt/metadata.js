@@ -2,13 +2,14 @@
 
 const platform = require('./platform');
 const metadata = require('js-core/metadata');
+const pkg = require('./package.json');
 
 exports.market = {
   platform: {
     name: 'platform',
     image: async () => {
       const registry = await platform.registry();
-      return `${registry}/ossrs/srs-terraform:platform-1`;
+      return `${registry}/ossrs/srs-terraform:platform-v${pkg.version}`;
     },
     tcpPorts: [2024],
     udpPorts: [],
