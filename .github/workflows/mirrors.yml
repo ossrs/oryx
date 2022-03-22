@@ -116,7 +116,7 @@ jobs:
       ################################################################################################
       ################################################################################################
       # Tencent TCR in Beijing
-      - name: Login Tencent Beijing docker hub
+      - name: Login Tencent Guangzhou docker hub
         uses: docker/login-action@v1
         with:
           registry: ccr.ccs.tencentyun.com

@@ -70,15 +70,15 @@ jobs:
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/srs-terraform/1"
 
       ################################################################
-      # Tencent TCR Beijing
-      - name: Login Tencent Beijing docker hub
+      # Tencent TCR Guangzhou
+      - name: Login Tencent Guangzhou docker hub
         uses: docker/login-action@v1
         with:
           registry: ccr.ccs.tencentyun.com
           username: "${{ secrets.TCR_USERNAME }}"
           password: "${{ secrets.TCR_PASSWORD }}"
 
-      - name: Push to Tencent Beijing docker hub
+      - name: Push to Tencent Guangzhou docker hub
         run: |
           docker tag ossrs/srs-terraform:$SRS_TAG ccr.ccs.tencentyun.com/ossrs/srs-terraform:$SRS_TAG
           docker tag ossrs/srs-terraform:$SRS_TAG ccr.ccs.tencentyun.com/ossrs/srs-terraform:$SRS_MAJOR
