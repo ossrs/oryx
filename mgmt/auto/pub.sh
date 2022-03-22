@@ -32,7 +32,7 @@ git ci -am "Update mgmt version to $TAG"
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
 ######################################################################
-echo "\n\n"
+echo -e "\n\n"
 git push
 git tag -d $TAG 2>/dev/null && git push origin :$TAG
 git tag $TAG; git push origin $TAG
@@ -43,7 +43,7 @@ git remote |grep -q cloud && git push cloud && git push cloud $TAG
 echo "publish $TAG ok"
 
 ######################################################################
-echo "\n\n"
+echo -e "\n\n"
 TAG="platform-v$VERSION"
 git tag -d $TAG 2>/dev/null && git push origin :$TAG
 git tag $TAG; git push origin $TAG
@@ -54,7 +54,7 @@ git remote |grep -q cloud && git push cloud && git push cloud $TAG
 echo "publish $TAG ok"
 
 ######################################################################
-echo "\n\n"
+echo -e "\n\n"
 echo "now, update the releases"
 bash ../releases/auto/tag.sh
 
