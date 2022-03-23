@@ -32,7 +32,6 @@
     "koa-static-cache": "^5.1.4",
     "koa2-cors": "^2.0.6",
     "moment": "^2.29.1",
-    "semver": "^7.3.5",
     "uuid": "^8.3.2"
   }
 }
