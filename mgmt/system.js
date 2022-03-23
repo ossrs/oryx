@@ -275,6 +275,11 @@ const handlers = {
     ctx.body = utils.asResponse(0, r0);
   },
 
+  // Current host platform name.
+  hostPlatform: async ({ctx, action, args}) => {
+    ctx.body = utils.asResponse(0, {platform: process.platform});
+  },
+
   // RPC template.
   xxx: async ({ctx, action, args}) => {
   },

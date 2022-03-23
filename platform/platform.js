@@ -17,10 +17,11 @@ const helper = require('./helper');
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
 
-exports.isDarwin = process.platform === 'darwin';
+// Whether the host is darwin, we must request from mgmt.
+exports.isDarwin = null;
 
 // We must mark these fields as async, to notice user not to use it before it initialized.
-const conf = {region: null, source: null, registry: null, cwd: null};
+const conf = {region: null, source: null, registry: null, cwd: null, platform: null};
 exports.region = async () => {
   return conf.region;
 };
@@ -53,6 +54,11 @@ exports.init = async () => {
   // Request the cwd of mgmt.
   const {cwd} = await helper.execApi('cwd');
   conf.cwd = cwd;
+
+  // Request the host platform.
+  const {platform: hostPlatform} = await helper.execApi('hostPlatform');
+  conf.platform = hostPlatform;
+  exports.isDarwin = conf.platform === 'darwin';
 
   console.log(`Initialize region=${conf.region}, source=${conf.source}, registry=${conf.registry}, isDarwin=${exports.isDarwin}, cwd=${cwd}, apiSecret=${apiSecret.length}B`);
 };
