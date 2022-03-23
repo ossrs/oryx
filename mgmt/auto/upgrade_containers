@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+echo "Update containers script."
+
 REGISTRY=$1
 if [[ $REGISTRY == '' ]]; then echo "No docker registry"; exit 1; fi
 

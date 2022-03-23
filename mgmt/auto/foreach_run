@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+echo "Foreach run script"
+
 # If memory smaller than 2GB, create swap to avoid OOM, please see
 # https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-18-04
 #

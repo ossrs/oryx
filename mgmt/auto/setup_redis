@@ -3,7 +3,7 @@
 # Detect the private IPv4 address.
 PIPV4=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
 if [[ $PIPV4 == '' ]]; then echo 'No private IP of eth0'; exit 1; fi
-echo "PrivateIPv4 is $PIPV4, REGION is $REGION, SOURCE is $SOURCE"
+echo "Setup redis script, PrivateIPv4=$PIPV4"
 
 # Replace the bind for redis.
 grep -q "^bind 127.0.0.1 $PIPV4" /etc/redis.conf; SETUP_BIND=$?
