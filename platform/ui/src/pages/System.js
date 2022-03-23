@@ -140,7 +140,7 @@ function SystemImpl() {
                   </>}
                   <Button className='disabled'>升级</Button> &nbsp;
                   <MgmtUpdateContainer
-                    allow={allowDisableContainer}
+                    allow={allowDisableContainer && srsRelease?.name}
                     enabled={srsRelease?.enabled}
                     onClick={() => handleContainerChange(srsRelease)}
                   /> &nbsp;
@@ -175,7 +175,7 @@ function SystemImpl() {
                     升级
                   </Button> &nbsp;
                   <MgmtUpdateContainer
-                    allow={allowDisableContainer}
+                    allow={allowDisableContainer && srsDev?.name}
                     enabled={srsDev?.enabled}
                     onClick={() => handleContainerChange(srsDev)}
                   /> &nbsp;
@@ -210,7 +210,7 @@ function SystemImpl() {
                     升级
                   </Button> &nbsp;
                   <MgmtUpdateContainer
-                    allow={allowDisableContainer}
+                    allow={allowDisableContainer && hooks?.name}
                     enabled={hooks?.enabled}
                     onClick={() => handleContainerChange(hooks)}
                   />
@@ -236,7 +236,7 @@ function SystemImpl() {
                     升级
                   </Button> &nbsp;
                   <MgmtUpdateContainer
-                    allow={allowDisableContainer}
+                    allow={allowDisableContainer && ffmpeg?.name}
                     enabled={ffmpeg?.enabled}
                     onClick={() => handleContainerChange(ffmpeg)}
                   />
@@ -262,7 +262,7 @@ function SystemImpl() {
                     升级
                   </Button> &nbsp;
                   <MgmtUpdateContainer
-                    allow={allowDisableContainer}
+                    allow={allowDisableContainer && tencent?.name}
                     enabled={tencent?.enabled}
                     onClick={() => handleContainerChange(tencent)}
                   />
@@ -288,7 +288,7 @@ function SystemImpl() {
                     升级
                   </Button> &nbsp;
                   <MgmtUpdateContainer
-                    allow={allowDisableContainer}
+                    allow={allowDisableContainer && prometheus?.name}
                     enabled={prometheus?.enabled}
                     onClick={() => handleContainerChange(prometheus)}
                   />
@@ -314,7 +314,7 @@ function SystemImpl() {
                     升级
                   </Button> &nbsp;
                   <MgmtUpdateContainer
-                    allow={allowDisableContainer}
+                    allow={allowDisableContainer && nodeExporter?.name}
                     enabled={nodeExporter?.enabled}
                     onClick={() => handleContainerChange(nodeExporter)}
                   />
@@ -340,7 +340,7 @@ function SystemImpl() {
                     升级
                   </Button> &nbsp;
                   <MgmtUpdateContainer
-                    allow={allowDisableContainer}
+                    allow={allowDisableContainer && platform?.name}
                     enabled={platform?.enabled}
                     onClick={() => handleContainerChange(platform)}
                   />
