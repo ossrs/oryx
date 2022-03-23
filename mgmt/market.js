@@ -47,21 +47,15 @@ async function threadMain() {
 }
 
 async function doThreadMain() {
-  for (const e in metadata.market) {
-    const conf = metadata.market[e];
+  // We only start the platform container.
+  const conf = metadata.market.platform;
 
-    // If no image, it's only a hint, for example, the container is managed by others.
-    if (!conf.image) continue;
+  // Try to restart the container.
+  const container = await doContainerMain(conf);
 
-    // Try to restart the container.
-    const container = await doContainerMain(conf);
-
-    // Update the metadata to main thread.
-    if (container) {
-      const msg = {metadata: {}};
-      msg.metadata[e] = container;
-      parentPort.postMessage(msg);
-    }
+  // Update the metadata to main thread.
+  if (container) {
+    parentPort.postMessage({metadata: {platform: container}});
   }
 }
 
@@ -88,6 +82,9 @@ async function doContainerMain(conf) {
     const privateIPv4 = await platform.ipv4();
     const dockerArgs = await utils.generateDockerArgs(platform, privateIPv4, conf);
     await startContainer(conf.name, dockerArgs);
+
+    // Cleaup the previous unused images.
+    await cleanupImages(conf);
 
     all = (await queryContainer(conf.name))[0];
     if (all && all.ID) container = all;
@@ -133,4 +130,22 @@ async function startContainer(name, dockerArgs) {
   console.log(`Thread #market: docker run ok`);
 }
 exports.startContainer = startContainer;
+
+async function cleanupImages(conf) {
+  const previousImage = await redis.hget(keys.redis.SRS_DOCKER_IMAGES, conf.name);
+
+  const newImage = await conf.image();
+  if (newImage) await redis.hset(keys.redis.SRS_DOCKER_IMAGES, conf.name, newImage);
+
+  if (!previousImage || !newImage || previousImage === newImage) {
+    return console.log(`Thread #market: Keep image ${newImage}, previous is ${previousImage}`);
+  }
+
+  try {
+    const {stdout} = await execFile('docker', ['rmi', previousImage]);
+    console.log(`Thread #market: Remove previous image ${previousImage}, ${stdout}`);
+  } catch (e) {
+    console.warn(`Thread #market: Ignore docker rmi ${previousImage}, err`, e);
+  }
+}
 

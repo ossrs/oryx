@@ -54,3 +54,9 @@ update_containers $REGISTRY ossrs/srs-terraform:ffmpeg-1 &&
 update_containers $REGISTRY ossrs/srs-terraform:platform-1
 if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
 
+# Removed unreferenced image, the TAG is <none>
+for image in $(docker images |grep '<none>' |awk '{print $3}'); do
+  docker rmi -f $image
+  echo "Remove image $image, r0=$?"
+done
+
