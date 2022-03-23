@@ -33,7 +33,7 @@ jobs:
       - name: Build SRS docker image
         run: |
           echo "Release ossrs/srs-cloud:$SRS_TAG"
-          docker build --tag ossrs/srs-cloud:$SRS_TAG -f ffmpeg/Dockerfile .
+          docker build --tag ossrs/srs-cloud:$SRS_TAG -f releases/Dockerfile .
 
       ################################################################
       # Aliyun ACR
