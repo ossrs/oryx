@@ -10,6 +10,7 @@ echo "Make and upgrade updates"
 (cd .. && make upgrade)
 if [[ $? -ne 0 ]]; then echo "Make and install updates failed"; exit 1; fi
 
+# TODO: Note that now we don't build the ui, so remove it when all upgrade to v1.0.180+
 if [[ -d ui/build && -d ui/upgrade ]]; then
   echo "Switch to new version"
   (cd ui && TMP_BUILD="build-$(date +%s)" && mv build $TMP_BUILD && mv upgrade build && rm -rf $TMP_BUILD)

@@ -173,11 +173,17 @@ The software we depend on:
 When upgrading automatically or manually by user:
 
 * `bash upgrade` for each upgrade.
+* `. auto/upgrade_region` to setup the region.
+* `git checkout` to checkout to specified tag or branch.
+* `bash upgrade_living` to run with the updated scripts.
+* `bash auto/upgrade_prepare` do upgrade for previous images.
+* `. auto/upgrade_ui` to upgrade the ui.
+* `systemctl restart srs-terraform` to restart the mgmt service.
 
 When system start, check the flag `SRS_FIRST_BOOT` in redis, if not set:
 
-* `bash auto/upgrade_prepare` do upgrade for previous images.
-* Restart container srs-server and srs-hooks, for config changed.
+* Always restart container platform to use the correct image version, which should be same to mgmt.
+* Restart containers for the host ip might change.
 
 They are not mutually exclusive.
 

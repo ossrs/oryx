@@ -264,14 +264,6 @@ const handlers = {
     ctx.body = utils.asResponse(0);
   },
 
-  // Execute the upgrade prepare script when platform startup.
-  executeUpgradePrepare: async ({ctx, action, args}) => {
-    const {stdout} = await execFile('bash', ['auto/upgrade_prepare']);
-    console.log(`Upgrade: Prepare message is ${stdout}`);
-
-    ctx.body = utils.asResponse(0);
-  },
-
   // Current work directory.
   cwd: async ({ctx, action, args}) => {
     ctx.body = utils.asResponse(0, {cwd: process.cwd()});

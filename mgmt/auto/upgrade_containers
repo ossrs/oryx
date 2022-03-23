@@ -51,6 +51,8 @@ update_containers $REGISTRY ossrs/lighthouse:5 &&
 update_containers $REGISTRY ossrs/srs-terraform:hooks-1 &&
 update_containers $REGISTRY ossrs/srs-terraform:tencent-1 &&
 update_containers $REGISTRY ossrs/srs-terraform:ffmpeg-1 &&
+# Note that we should update the platform image, so we could fast startup the container, because mgmt use another tag
+# which has the same hash.
 update_containers $REGISTRY ossrs/srs-terraform:platform-1
 if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
 

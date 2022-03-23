@@ -131,15 +131,8 @@ async function setupUpgradeWindow() {
 async function firstRun() {
   // For each init stage changed, we could use a different redis key, to identify this special init workflow.
   // However, keep in mind that previous defined workflow always be executed, so these operations should be idempotent.
-  // History:
-  //    SRS_FIRST_BOOT_DONE, For release 4.1, to restart srs.
-  //    SRS_FIRST_BOOT_DONE_v1, For release 4.2, to restart srs, exec upgrade_prepare.
-  //    SRS_FIRST_BOOT_DONE_v2, For release 4.2, to restart srs-server, update the hls hooks.
-  //    SRS_FIRST_BOOT.v3, For current release, to restart srs-hooks, update the volumes.
-  //    SRS_FIRST_BOOT.v4, For current release, to restart tencent-cloud, update the volumes.
-  //    SRS_FIRST_BOOT.v5, For current release, restart containers for .env changed.
   const SRS_FIRST_BOOT = keys.redis.SRS_FIRST_BOOT;
-  const bootRelease = 'v11';
+  const bootRelease = 'v12';
 
   // Run once, record in redis.
   const r0 = await redis.hget(SRS_FIRST_BOOT, bootRelease);
@@ -150,17 +143,13 @@ async function firstRun() {
   }
 
   // To prevent boot again and again.
-  console.log(`Thread #upgrade: boot start to setup, v=${SRS_FIRST_BOOT}.${bootRelease}, r0=${r0}`);
-
-  // For the second time, we prepare the os, for previous version which does not run the upgrade living.
-  console.log(`Thread #upgrade: Prepare OS for first run, r0=${r0}`);
-  await helper.execApi('executeUpgradePrepare');
+  console.log(`Thread #upgrade: boot setup, v=${SRS_FIRST_BOOT}.${bootRelease}, r0=${r0}`);
 
   // Setup the api secret.
   const [token, created] = await utils.setupApiSecret(redis, uuidv4, moment);
   console.log(`Thread #upgrade: Platform api secret, token=${token.length}B, created=${created}`);
 
-  // Remove containers.
+  // Remove containers for IP might change.
   await helper.execApi('rmContainer', [metadata.market.srs.name]);
   await helper.execApi('rmContainer', [metadata.market.hooks.name]);
   await helper.execApi('rmContainer', [metadata.market.tencent.name]);
