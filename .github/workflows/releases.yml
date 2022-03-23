@@ -32,8 +32,8 @@ jobs:
       # Build SRS image
       - name: Build SRS docker image
         run: |
-          echo "Release ossrs/srs-terraform:$SRS_TAG"
-          docker build --tag ossrs/srs-terraform:$SRS_TAG -f releases/Dockerfile .
+          echo "Release ossrs/srs-cloud:$SRS_TAG"
+          docker build --tag ossrs/srs-cloud:$SRS_TAG -f ffmpeg/Dockerfile .
 
       ################################################################
       # Aliyun ACR
@@ -45,10 +45,15 @@ jobs:
           password: "${{ secrets.ACR_PASSWORD }}"
       - name: Push to Aliyun docker hub
         run: |
-          docker tag ossrs/srs-terraform:$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:$SRS_TAG
-          docker tag ossrs/srs-terraform:$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:$SRS_MAJOR
+          docker tag ossrs/srs-cloud:$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
+          docker tag ossrs/srs-cloud:$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_MAJOR
+          docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud
+          echo "Alias srs-cloud to srs-terraform"
+          docker tag ossrs/srs-cloud:$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:$SRS_TAG
+          docker tag ossrs/srs-cloud:$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:$SRS_MAJOR
           docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform
           echo "Release ok, please see:"
+          echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/srs-cloud/images"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/srs-terraform/images"
 
       ################################################################
@@ -61,5 +66,5 @@ jobs:
       # K8S for terraform versions
       - name: Release terraform versions to Aliyun ACK
         run: |-
-          kubectl set image deploy/srs-terraform-deploy releases=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:$SRS_TAG
+          kubectl set image deploy/srs-terraform-deploy releases=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
           kubectl describe deploy/srs-terraform-deploy

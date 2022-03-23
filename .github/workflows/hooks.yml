@@ -32,8 +32,8 @@ jobs:
       # Build SRS image
       - name: Build SRS docker image
         run: |
-          echo "Release ossrs/srs-terraform:$SRS_TAG"
-          docker build --tag ossrs/srs-terraform:$SRS_TAG -f hooks/Dockerfile .
+          echo "Release ossrs/srs-cloud:$SRS_TAG"
+          docker build --tag ossrs/srs-cloud:$SRS_TAG -f ffmpeg/Dockerfile .
 
       ################################################################
       # Aliyun ACR
@@ -46,10 +46,15 @@ jobs:
 
       - name: Push to Aliyun docker hub
         run: |
-          docker tag ossrs/srs-terraform:$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:$SRS_TAG
-          docker tag ossrs/srs-terraform:$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:$SRS_MAJOR
+          docker tag ossrs/srs-cloud:$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
+          docker tag ossrs/srs-cloud:$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_MAJOR
+          docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud
+          echo "Alias srs-cloud to srs-terraform"
+          docker tag ossrs/srs-cloud:$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:$SRS_TAG
+          docker tag ossrs/srs-cloud:$SRS_TAG registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:$SRS_MAJOR
           docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform
           echo "Release ok, please see:"
+          echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/srs-cloud/images"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/srs-terraform/images"
 
       ################################################################
@@ -63,10 +68,15 @@ jobs:
 
       - name: Push to Tencent Singapore docker hub
         run: |
-          docker tag ossrs/srs-terraform:$SRS_TAG sgccr.ccs.tencentyun.com/ossrs/srs-terraform:$SRS_TAG
-          docker tag ossrs/srs-terraform:$SRS_TAG sgccr.ccs.tencentyun.com/ossrs/srs-terraform:$SRS_MAJOR
+          docker tag ossrs/srs-cloud:$SRS_TAG sgccr.ccs.tencentyun.com/ossrs/srs-cloud:$SRS_TAG
+          docker tag ossrs/srs-cloud:$SRS_TAG sgccr.ccs.tencentyun.com/ossrs/srs-cloud:$SRS_MAJOR
+          docker push --all-tags sgccr.ccs.tencentyun.com/ossrs/srs-cloud
+          echo "Alias srs-cloud to srs-terraform"
+          docker tag ossrs/srs-cloud:$SRS_TAG sgccr.ccs.tencentyun.com/ossrs/srs-terraform:$SRS_TAG
+          docker tag ossrs/srs-cloud:$SRS_TAG sgccr.ccs.tencentyun.com/ossrs/srs-terraform:$SRS_MAJOR
           docker push --all-tags sgccr.ccs.tencentyun.com/ossrs/srs-terraform
           echo "Release ok, please see:"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/srs-cloud/1"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/srs-terraform/1"
 
       ################################################################
@@ -80,8 +90,13 @@ jobs:
 
       - name: Push to Tencent Guangzhou docker hub
         run: |
-          docker tag ossrs/srs-terraform:$SRS_TAG ccr.ccs.tencentyun.com/ossrs/srs-terraform:$SRS_TAG
-          docker tag ossrs/srs-terraform:$SRS_TAG ccr.ccs.tencentyun.com/ossrs/srs-terraform:$SRS_MAJOR
+          docker tag ossrs/srs-cloud:$SRS_TAG ccr.ccs.tencentyun.com/ossrs/srs-cloud:$SRS_TAG
+          docker tag ossrs/srs-cloud:$SRS_TAG ccr.ccs.tencentyun.com/ossrs/srs-cloud:$SRS_MAJOR
+          docker push --all-tags ccr.ccs.tencentyun.com/ossrs/srs-cloud
+          echo "Alias srs-cloud to srs-terraform"
+          docker tag ossrs/srs-cloud:$SRS_TAG ccr.ccs.tencentyun.com/ossrs/srs-terraform:$SRS_TAG
+          docker tag ossrs/srs-cloud:$SRS_TAG ccr.ccs.tencentyun.com/ossrs/srs-terraform:$SRS_MAJOR
           docker push --all-tags ccr.ccs.tencentyun.com/ossrs/srs-terraform
           echo "Release ok, please see:"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/srs-cloud/1"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/srs-terraform/1"
