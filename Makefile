@@ -1,6 +1,6 @@
 .PHONY: default build install run uninstall upgrade test
 
-SRS_PREFIX=/usr/local/srs-terraform
+SRS_PREFIX=/usr/local/srs-cloud
 __REAL_INSTALL=$(DESTDIR)$(SRS_PREFIX)
 
 default:
@@ -33,7 +33,7 @@ install:
 	@ln -sf `pwd`/js-core $(__REAL_INSTALL)/js-core
 	@rm -rf $(__REAL_INSTALL)/usr
 	@cp -rf usr $(__REAL_INSTALL)/usr
-	@sed -i "s|/usr/local/srs-terraform|$(SRS_PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/srs-terraform.service
+	@sed -i "s|/usr/local/srs-cloud|$(SRS_PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/srs-cloud.service
 
 uninstall:
 	@echo "rmdir $(SRS_PREFIX)"

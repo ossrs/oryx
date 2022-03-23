@@ -85,7 +85,7 @@ exports.handle = (router) => {
       res.addr = {rip: q.rip, fwd: q.fwd};
     }
 
-    console.log(`srs-terraform id=${q.id}, version=${version}, eip=${q.eip}, rip=${q.rip}, fwd=${q.fwd}, res=${JSON.stringify(res)}`);
+    console.log(`srs-cloud id=${q.id}, version=${version}, eip=${q.eip}, rip=${q.rip}, fwd=${q.fwd}, res=${JSON.stringify(res)}`);
     ctx.body = res;
   });
 

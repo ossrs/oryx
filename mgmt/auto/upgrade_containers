@@ -15,22 +15,26 @@ docker pull ${REGISTRY}/ossrs/srs:node-av
 if [[ $? -ne 0 ]]; then echo "Update the containers failed"; exit 1; fi
 
 # Remove the containers if need upgrade
-#   update_containers registry image
-#   update_containers ccr.ccs.tencentyun.com ossrs/lighthouse:4
-#   update_containers registry.cn-hangzhou.aliyuncs.com ossrs/lighthouse:4
+#   update_containers registry image as_image
+#   update_containers ccr.ccs.tencentyun.com ossrs/lighthouse:4 ossrs/lighthouse:4
+#   update_containers registry.cn-hangzhou.aliyuncs.com ossrs/lighthouse:4 ossrs/lighthouse:4
+#   update_containers registry.cn-hangzhou.aliyuncs.com ossrs/lighthouse:4 ossrs/lighthouse:4
+#   update_containers registry.cn-hangzhou.aliyuncs.com ossrs/srs-terraform:hooks-1 ossrs/srs-cloud:hooks-1
+#   update_containers registry.cn-hangzhou.aliyuncs.com ossrs/srs-cloud:hooks-1 ossrs/srs-cloud:hooks-1
 function update_containers() {
-  REGISTRY=$1 && IMAGE=$2
+  REGISTRY=$1 && IMAGE=$2 && AS_IMAGE=$3
   echo "Update containers for REGISTRY=$REGISTRY IMAGE=$IMAGE"
 
   # We must store the container images ID before pull, which will change it.
   IMAGE_IDS=$(docker ps -a | grep $IMAGE | awk '{print $1}')
   echo "The containers for $REGISTRY/$IMAGE is $IMAGE_IDS"
 
-  docker pull $REGISTRY/$IMAGE
-  if [[ $? -ne 0 ]]; then echo "Update the image $REGISTRY/$IMAGE failed"; exit 1; fi
+  docker pull $REGISTRY/$IMAGE &&
+  docker pull $REGISTRY/$AS_IMAGE
+  if [[ $? -ne 0 ]]; then echo "Update the image $REGISTRY/$IMAGE as $AS_IMAGE failed"; exit 1; fi
 
   for IMAGE_ID in $IMAGE_IDS; do
-    LATEST=$(docker inspect --format "{{.Id}}" $REGISTRY/$IMAGE)
+    LATEST=$(docker inspect --format "{{.Id}}" $REGISTRY/$AS_IMAGE)
     RUNNING=$(docker inspect --format "{{.Image}}" $IMAGE_ID)
     NAME=$(docker inspect --format '{{.Name}}' $IMAGE_ID |sed 's|/||g')
     echo "Check $NAME RUNNING=$RUNNING, LATEST=$LATEST"
@@ -45,17 +49,24 @@ function update_containers() {
 # Update the containers before restart. Note that the containers are normally started by previous mgmt, with the
 # upgraded image. So we only upgrade the images for all containers, and it's the responsibility for mgmt to restart the
 # container if need to change the startup arguments.
-echo "Upgrading all containers by images" &&
-update_containers $REGISTRY ossrs/srs:4 &&
-update_containers $REGISTRY ossrs/srs:5 &&
-update_containers $REGISTRY ossrs/lighthouse:4 &&
-update_containers $REGISTRY ossrs/lighthouse:5 &&
-update_containers $REGISTRY ossrs/srs-terraform:hooks-1 &&
-update_containers $REGISTRY ossrs/srs-terraform:tencent-1 &&
-update_containers $REGISTRY ossrs/srs-terraform:ffmpeg-1 &&
+#
 # Note that we should update the platform image, so we could fast startup the container, because mgmt use another tag
 # which has the same hash.
-update_containers $REGISTRY ossrs/srs-terraform:platform-1
+echo "Upgrading all containers by images" &&
+update_containers $REGISTRY ossrs/srs:4 ossrs/srs:4 &&
+update_containers $REGISTRY ossrs/srs:5 ossrs/srs:5 &&
+update_containers $REGISTRY ossrs/lighthouse:4 ossrs/lighthouse:4 &&
+update_containers $REGISTRY ossrs/lighthouse:5 ossrs/lighthouse:5 &&
+# Compatible for previous versions.
+update_containers $REGISTRY ossrs/srs-terraform:hooks-1 ossrs/srs-cloud:hooks-1 &&
+update_containers $REGISTRY ossrs/srs-terraform:tencent-1 ossrs/srs-cloud:tencent-1 &&
+update_containers $REGISTRY ossrs/srs-terraform:ffmpeg-1 ossrs/srs-cloud:ffmpeg-1 &&
+update_containers $REGISTRY ossrs/srs-terraform:platform-1 ossrs/srs-cloud:platform-1
+# For new versions.
+update_containers $REGISTRY ossrs/srs-cloud:hooks-1 ossrs/srs-cloud:hooks-1 &&
+update_containers $REGISTRY ossrs/srs-cloud:tencent-1 ossrs/srs-cloud:tencent-1 &&
+update_containers $REGISTRY ossrs/srs-cloud:ffmpeg-1 ossrs/srs-cloud:ffmpeg-1 &&
+update_containers $REGISTRY ossrs/srs-cloud:platform-1 ossrs/srs-cloud:platform-1
 if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
 
 # Removed unreferenced image, the TAG is <none>

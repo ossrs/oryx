@@ -218,8 +218,9 @@ The optional environments defined by `mgmt/.env`:
 
 * `MGMT_PASSWORD`: The mgmt administrator password.
 * `SRS_PLATFORM_SECRET`: The mgmt api secret for token generating and verifying.
-* `REGION`: `ap-guangzhou|ap-singapore`, the region for upgrade source.
-* `PLATFORM`: The platform name.
+* `CLOUD`: The cloud platform name, DEV for development.
+* `REGION`: `ap-guangzhou|ap-singapore|sgp1`, The region for upgrade source.
+* `SOURCE`: `github|gitee`, The source code for upgrading. 
 
 For testing the specified service:
 
@@ -242,21 +243,27 @@ For mgmt and containers to connect to redis:
 Install dependencies:
 
 ```bash
-cd mgmt && npm install
+(cd mgmt && npm install)
+(cd platform && npm install)
+(cd platform/ui && npm install)
 ```
 
 Run the mgmt backend:
 
 ```
-cd mgmt
-npm start
+(cd mgmt && npm start)
 ```
 
-Run the mgmt react ui:
+Run the platform backend:
 
 ```
-cd mgmt/ui
-npm start
+(cd platform && npm start)
+```
+
+Run the platform react ui:
+
+```
+(cd platform/ui && npm start)
 ```
 
 Access the browser: http://localhost:3000

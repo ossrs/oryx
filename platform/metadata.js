@@ -75,7 +75,7 @@ exports.market = {
     name: metadata.market.hooks.name,
     image: async () => {
       const registry = await platform.registry();
-      return `${registry}/ossrs/srs-terraform:hooks-1`;
+      return `${registry}/ossrs/srs-cloud:hooks-1`;
     },
     tcpPorts: [2021],
     udpPorts: [],
@@ -86,11 +86,11 @@ exports.market = {
       '--log-opt', 'max-file=3',
     ],
     volumes: () => [
-      `${platform.cwd()}/.env:/usr/local/srs-terraform/hooks/.env`,
+      `${platform.cwd()}/.env:/usr/local/srs-cloud/hooks/.env`,
       // We mount the containers to mgmt in hooks container, which links to hooks.
-      `${platform.cwd()}/containers/objs/nginx/html:/usr/local/srs-terraform/mgmt/containers/objs/nginx/html`,
-      `${platform.cwd()}/containers/data/dvr:/usr/local/srs-terraform/mgmt/containers/data/dvr`,
-      `${platform.cwd()}/containers/data/vod:/usr/local/srs-terraform/mgmt/containers/data/vod`,
+      `${platform.cwd()}/containers/objs/nginx/html:/usr/local/srs-cloud/mgmt/containers/objs/nginx/html`,
+      `${platform.cwd()}/containers/data/dvr:/usr/local/srs-cloud/mgmt/containers/data/dvr`,
+      `${platform.cwd()}/containers/data/vod:/usr/local/srs-cloud/mgmt/containers/data/vod`,
     ],
     extras: [],
   },
@@ -98,7 +98,7 @@ exports.market = {
     name: metadata.market.tencent.name,
     image: async () => {
       const registry = await platform.registry();
-      return `${registry}/ossrs/srs-terraform:tencent-1`;
+      return `${registry}/ossrs/srs-cloud:tencent-1`;
     },
     tcpPorts: [2020],
     udpPorts: [],
@@ -109,7 +109,7 @@ exports.market = {
       '--log-opt', 'max-file=3',
     ],
     volumes: () => [
-      `${platform.cwd()}/.env:/usr/local/srs-terraform/tencent/.env`,
+      `${platform.cwd()}/.env:/usr/local/srs-cloud/tencent/.env`,
     ],
     extras: [],
   },
@@ -117,7 +117,7 @@ exports.market = {
     name: metadata.market.ffmpeg.name,
     image: async () => {
       const registry = await platform.registry();
-      return `${registry}/ossrs/srs-terraform:ffmpeg-1`;
+      return `${registry}/ossrs/srs-cloud:ffmpeg-1`;
     },
     tcpPorts: [2019],
     udpPorts: [],
@@ -128,7 +128,7 @@ exports.market = {
       '--log-opt', 'max-file=3',
     ],
     volumes: () => [
-      `${platform.cwd()}/.env:/usr/local/srs-terraform/ffmpeg/.env`,
+      `${platform.cwd()}/.env:/usr/local/srs-cloud/ffmpeg/.env`,
     ],
     extras: [],
   },

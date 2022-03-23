@@ -9,19 +9,21 @@ const config = {
   },
 };
 
+const os = require('os');
+const fs = require('fs');
+const dotenv = require('dotenv');
 const axios = require('axios');
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const keys = require('js-core/keys');
 const utils = require('js-core/utils');
-const os = require('os');
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
 
 exports.isDarwin = process.platform === 'darwin';
 
 // We must mark these fields as async, to notice user not to use it before it initialized.
-const conf = {region: null, source: null, registry: null};
+const conf = {cloud: null, region: null, source: null, registry: null};
 exports.region = async () => {
   return conf.region;
 };
@@ -51,17 +53,26 @@ exports.init = async () => {
   await utils.setupApiSecret(redis, uuidv4, moment);
 
   // Load the region first, because it never changed.
+  conf.cloud = await redis.hget(keys.redis.SRS_TENCENT_LH, 'cloud');
   conf.region = await redis.hget(keys.redis.SRS_TENCENT_LH, 'region');
-  if (!conf.region) {
-    const region = await discoverRegion();
-    conf.region = region;
+  if (!conf.cloud || !conf.region) {
+    const {cloud, region} = await discoverRegion();
+    conf.cloud = cloud; conf.region = region;
+    await redis.hset(keys.redis.SRS_TENCENT_LH, 'cloud', cloud);
     await redis.hset(keys.redis.SRS_TENCENT_LH, 'region', region);
   }
 
   // Always update the source, because it might change.
-  const source = await discoverSource(conf.region);
+  const source = await discoverSource(conf.cloud, conf.region);
   conf.source = source;
   await redis.hset(keys.redis.SRS_TENCENT_LH, 'source', source);
+
+  // Refresh the env file.
+  utils.saveEnvs(fs, os, dotenv, '.env', {
+    CLOUD: conf.cloud,
+    REGION: conf.region,
+    SOURCE: conf.source,
+  });
 
   // Always update the registry, because it might change.
   const registry = (source === 'github') ? 'sgccr.ccs.tencentyun.com' : 'registry.cn-hangzhou.aliyuncs.com';
@@ -71,52 +82,61 @@ exports.init = async () => {
   // Load the cvm first, because it never changed.
   let platform = await redis.hget(keys.redis.SRS_TENCENT_LH, 'platform');
   if (!platform) {
-    platform = await discoverPlatform();
+    platform = await discoverPlatform(conf.cloud);
     await redis.hset(keys.redis.SRS_TENCENT_LH, 'platform', platform);
   }
 
   // Request and cache the apiSecret.
   const apiSecret = await utils.apiSecret(redis);
 
-  console.log(`Initialize node=${nid}, region=${conf.region}, source=${source}, registry=${registry}, platform=${platform}, isDarwin=${isDarwin}, apiSecret=${apiSecret.length}B`);
+  console.log(`Initialize node=${nid}, cloud=${conf.cloud}, region=${conf.region}, source=${source}, registry=${registry}, platform=${platform}, isDarwin=${isDarwin}, apiSecret=${apiSecret.length}B`);
   return {region: conf.region, registry, isDarwin};
 };
 
 async function discoverRegion() {
   if (exports.isDarwin) {
-    return 'ap-beijing';
+    return {cloud: 'DEV', region: 'ap-beijing'};
   }
 
-  if (process.env.REGION) {
-    return process.env.REGION;
+  if (process.env.CLOUD && process.env.REGION) {
+    return {cloud: process.env.CLOUD, region: process.env.REGION};
   }
 
-  const {data} = await axios.get(`http://metadata.tencentyun.com/latest/meta-data/placement/region`);
-  return data;
+  console.log(`Initialize start to discover region`);
+  return await new Promise((resolve, reject) => {
+    axios.get(`http://metadata.tencentyun.com/latest/meta-data/placement/region`).then((data) => {
+      if (data?.data) resolve({cloud: 'TENCENT', region: data.data});
+    }).catch(e => {
+      console.warn(`Ignore tencent region error, ${e.message}`);
+    });
+
+    // See https://docs.digitalocean.com/reference/api/metadata-api/#operation/getRegion
+    axios.get(`http://169.254.169.254/metadata/v1/region`).then((data) => {
+      if (data?.data) resolve({cloud: 'DO', region: data.data});
+    }).catch(e => {
+      console.warn(`Ignore do region error, ${e.message}`);
+    });
+  });
 }
 
-async function discoverSource(region) {
-  if (exports.isDarwin) {
-    return 'gitee';
-  }
+async function discoverSource(cloud, region) {
+  if (cloud === 'DEV') return 'gitee';
+  if (cloud === 'DO') return 'github';
 
   let source = 'github';
-  ['ap-guangzhou', 'ap-shanghai', 'ap-nanjing', 'ap-beijing', 'ap-chengdu', 'ap-chongqing'].filter(v => {
-    if (region.startsWith(v)) source = 'gitee';
-    return null;
-  });
+  if (cloud === 'TENCENT') {
+    ['ap-guangzhou', 'ap-shanghai', 'ap-nanjing', 'ap-beijing', 'ap-chengdu', 'ap-chongqing'].filter(v => {
+      if (region.startsWith(v)) source = 'gitee';
+      return null;
+    });
+  }
 
   return source;
 }
 
-async function discoverPlatform() {
-  if (exports.isDarwin) {
-    return 'dev';
-  }
-
-  if (process.env.PLATFORM) {
-    return process.env.PLATFORM;
-  }
+async function discoverPlatform(cloud) {
+  if (cloud === 'DEV') return 'dev';
+  if (cloud === 'DO') return 'droplet';
 
   const {data} = await axios.get(`http://metadata.tencentyun.com/latest/meta-data/instance-name`);
   return data.indexOf('-lhins-') > 0 ? 'lighthouse' : 'cvm';
