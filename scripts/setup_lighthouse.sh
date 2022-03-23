@@ -147,7 +147,7 @@ update_sysctl net.core.wmem_default 16777216
 # https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-18-04
 # You could disable swap by: swapoff /srs-swapfile
 MEM_TOTAL=$(grep MemTotal /proc/meminfo |awk '{print $2}')
-if [[ MEM_TOTAL -lt 2097152 ]]; then
+if [[ $MEM_TOTAL -lt 2097152 ]]; then
   swapon --show |grep "/srs-swapfile"
   if [[ $? -ne 0 ]]; then
     rm -rf /srs-swapfile && fallocate -l 1G /srs-swapfile && chmod 600 /srs-swapfile && ls -lh /srs-swapfile &&
