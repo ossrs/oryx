@@ -93,7 +93,7 @@ const setupApiSecret = async (redis, uuidv4, moment) => {
   const r0 = await redis.hget(keys.redis.SRS_PLATFORM_SECRET, 'token');
   if (r0) return [r0, false];
 
-  const token = uuidv4();
+  const token = `srs-v1-${uuidv4().replace(/-/g, '')}`;
   const r1 = await redis.hset(keys.redis.SRS_PLATFORM_SECRET, 'token', token);
   const r2 = await redis.hset(keys.redis.SRS_PLATFORM_SECRET, 'update', moment().format());
 
