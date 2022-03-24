@@ -17,6 +17,8 @@ const platform = require('./platform');
 const metadata = require('./metadata');
 const helper = require('./helper');
 const keys = require('js-core/keys');
+const util = require('util');
+const execFile = util.promisify(require('child_process').execFile);
 
 if (!isMainThread) {
   threadMain();
