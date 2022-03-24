@@ -1,6 +1,6 @@
 {
   "name": "platform",
-  "version":"1.0.188",
+  "version":"1.0.189",
   "description": "Platform API for srs-terraform modules",
   "main": "index.js",
   "scripts": {
