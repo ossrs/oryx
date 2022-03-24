@@ -65,13 +65,8 @@ async function queryLatestVersion() {
   const params = {};
 
   // Generate and setup the node id.
-  let nid = await redis.hget(keys.redis.SRS_TENCENT_LH, 'node');
-  if (!nid) {
-    nid = uuidv4();
-    await redis.hset(keys.redis.SRS_TENCENT_LH, 'node', nid);
-    console.log(`Node: Generate node nid=${nid}`);
-  }
-  params.nid = nid;
+  const nid = await redis.hget(keys.redis.SRS_TENCENT_LH, 'node');
+  if (nid) params.nid = nid;
 
   // Report about COS and resource usage.
   const cos = await redis.hget(keys.redis.SRS_TENCENT_COS, 'bucket');

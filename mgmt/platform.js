@@ -39,6 +39,13 @@ exports.ipv4 = async () => {
 exports.init = async () => {
   const isDarwin = exports.isDarwin;
 
+  // Initialize the node id.
+  let nid = await redis.hget(keys.redis.SRS_TENCENT_LH, 'node');
+  if (!nid) {
+    nid = uuidv4();
+    await redis.hset(keys.redis.SRS_TENCENT_LH, 'node', nid);
+  }
+
   // Setup the api secret.
   // Remark: Should do it before any helper.execApi, which depends on it.
   await utils.setupApiSecret(redis, uuidv4, moment);
@@ -71,7 +78,7 @@ exports.init = async () => {
   // Request and cache the apiSecret.
   const apiSecret = await utils.apiSecret(redis);
 
-  console.log(`Initialize region=${conf.region}, source=${source}, registry=${registry}, platform=${platform}, isDarwin=${isDarwin}, apiSecret=${apiSecret.length}B`);
+  console.log(`Initialize node=${nid}, region=${conf.region}, source=${source}, registry=${registry}, platform=${platform}, isDarwin=${isDarwin}, apiSecret=${apiSecret.length}B`);
   return {region: conf.region, registry, isDarwin};
 };
 
