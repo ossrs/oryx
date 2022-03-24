@@ -2,12 +2,12 @@
 ############################################################
 # build
 ############################################################
-FROM registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:nodejs-1 AS build
+FROM registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:nodejs-1 AS build
 
-COPY js-core /usr/local/srs-terraform/js-core
-COPY platform /usr/local/srs-terraform/platform
+COPY js-core /usr/local/srs-cloud/js-core
+COPY platform /usr/local/srs-cloud/platform
 
-WORKDIR /usr/local/srs-terraform/platform
+WORKDIR /usr/local/srs-cloud/platform
 RUN npm install && (cd ui && npm install)
 RUN npm run build
 
@@ -16,8 +16,9 @@ RUN npm run build
 ############################################################
 FROM node:slim as dist
 
-COPY --from=build /usr/local/srs-terraform /usr/local/srs-terraform
+COPY --from=build /usr/local/srs-cloud /usr/local/srs-cloud
 
 ENV NODE_ENV=production
-WORKDIR /usr/local/srs-terraform/platform
+RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform
+WORKDIR /usr/local/srs-cloud/platform
 CMD ["node", "."]

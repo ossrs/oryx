@@ -1,8 +1,9 @@
 FROM registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim
 
-COPY js-core /usr/local/srs-terraform/js-core
-COPY hooks /usr/local/srs-terraform/hooks
-RUN cd /usr/local/srs-terraform/hooks && npm i
+COPY js-core /usr/local/srs-cloud/js-core
+COPY hooks /usr/local/srs-cloud/hooks
+RUN cd /usr/local/srs-cloud/hooks && npm i
 
-WORKDIR /usr/local/srs-terraform/hooks
+RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform
+WORKDIR /usr/local/srs-cloud/hooks
 CMD ["node", "."]

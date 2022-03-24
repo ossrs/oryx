@@ -116,4 +116,6 @@ mgmt/containers/objs/nginx/html/*
 mgmt/containers/data/dvr/*
 mgmt/containers/data/vod/*
 mgmt/containers/www/*
+mgmt/ui/build
+
 
