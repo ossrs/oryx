@@ -41,7 +41,7 @@ fi
 
 echo '#!/usr/bin/env bash' > ~lighthouse/redis-cli &&
 cat .env |grep REDIS >> ~lighthouse/redis-cli &&
-echo "redis-cli -p \$REDIS_PORT -a \$REDIS_PASSWORD" >> ~lighthouse/redis-cli &&
+echo "redis-cli -p \$REDIS_PORT -a \$REDIS_PASSWORD \$*" >> ~lighthouse/redis-cli &&
 chmod +x ~lighthouse/redis-cli &&
 echo "Create redis-cli helper"
 

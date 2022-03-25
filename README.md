@@ -185,7 +185,16 @@ When system start, check the flag `SRS_FIRST_BOOT` in redis, if not set:
 * Always restart container platform to use the correct image version, which should be same to mgmt.
 * Restart containers for the host ip might change.
 
-They are not mutually exclusive.
+They are not mutually exclusive. To force to upgrade to a branch:
+
+```bash
+~lighthouse/redis-cli hset SRS_UPGRADING force main
+systemctl restart srs-terraform
+```
+
+> Note: Please set the upgrade window to [0, 24] to allow upgrade full time.
+
+It will trigger the upgrading process immediately.
 
 ## System Boot
 
