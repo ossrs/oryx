@@ -72,10 +72,16 @@ async function doThreadMain() {
   parentPort.postMessage({metadata: {upgrade: metadata.upgrade}});
   console.log(`Thread #upgrade: query done, version=${releases.version}, response=${JSON.stringify(releases)}`);
 
+  // Whether force to upgrading.
+  const force = await redis.hget(keys.redis.SRS_UPGRADING, 'force');
+  if (force) {
+    await redis.hdel(keys.redis.SRS_UPGRADING, 'force');
+  }
+
   // Try to upgrade mgmt itself.
   const higherStable = semver.lt(releases.version, releases.stable);
-  if (releases?.stable && higherStable) {
-    const upgradingMessage = `upgrade from ${releases.version} to stable ${releases.stable}`;
+  if (force || releases?.stable && higherStable) {
+    const upgradingMessage = `upgrade current=${releases.version}, stable=${releases.stable}, force=${force}`;
     console.log(`Thread #upgrade: ${upgradingMessage}`);
 
     const uwStart = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'start');
@@ -104,8 +110,8 @@ async function doThreadMain() {
     await redis.hset(keys.redis.SRS_UPGRADING, 'upgrading', 1);
     await redis.hset(keys.redis.SRS_UPGRADING, 'desc', `${upgradingMessage}`);
 
-    await helper.execApi('execUpgrade', [releases.stable]);
-    console.log(`Thread #upgrade: Upgrade to ${releases.stable} done`);
+    await helper.execApi('execUpgrade', [force || releases.stable]);
+    console.log(`Thread #upgrade: Upgrade to stable=${releases.stable}, force=${force} done`);
   }
 }
 
