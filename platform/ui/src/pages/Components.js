@@ -10,16 +10,17 @@ import * as semver from 'semver';
 import * as moment from 'moment';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
+import {useTranslation} from "react-i18next";
 
-export default function System() {
+export default function Components() {
   return (
     <SrsErrorBoundary>
-      <SystemImpl />
+      <ComponentsImpl />
     </SrsErrorBoundary>
   );
 }
 
-function SystemImpl() {
+function ComponentsImpl() {
   const [status, setStatus] = React.useState();
   const [srsRelease, setSrsRelease] = React.useState();
   const [srsDev, setSrsDev] = React.useState();
@@ -37,6 +38,7 @@ function SystemImpl() {
   const [refreshContainers, setRefreshContainers] = React.useState();
   const [allowSwitchContainer, setAllowSwitchContainer] = React.useState();
   const handleError = useErrorHandler();
+  const {t} = useTranslation();
 
   React.useEffect(() => {
     const allowManuallyUpgrade = searchParams.get('allow-manual') === 'true';
@@ -65,7 +67,7 @@ function SystemImpl() {
   }, []);
 
   const handleUpgradeStrategyChange = React.useCallback((e) => {
-    if (strategyAutoUpgrade && !window.confirm(`关闭自动更新，将无法及时修复缺陷。\n是否确认关闭?`)) {
+    if (strategyAutoUpgrade && !window.confirm(t('coms.disableUpgrade'))) {
       e.preventDefault();
       return;
     }
@@ -77,7 +79,7 @@ function SystemImpl() {
       setUserToggleStrategy(!userToggleStrategy);
       console.log(`Strategy: Change ok`);
     }).catch(handleError);
-  }, [handleError, strategyAutoUpgrade, userToggleStrategy]);
+  }, [handleError, strategyAutoUpgrade, userToggleStrategy, t]);
 
   React.useEffect(() => {
     const token = Token.load();
@@ -126,19 +128,19 @@ function SystemImpl() {
         <Row>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>SRS(稳定版)</Card.Header>
+              <Card.Header>{t('coms.srs4')}</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
-                  容器名：{srsRelease?.name} <br/>
-                  容器ID：{srsRelease?.container?.ID ? srsRelease.container.ID : 'No Container'} <br/>
-                  状态：{srsRelease?.container.State || srsRelease?.container.Status ? `${srsRelease?.container.State} ${srsRelease?.container.Status}` : 'Stopped'}
+                  {t('coms.containerName')}：{srsRelease?.name} <br/>
+                  {t('coms.containerId')}：{srsRelease?.container?.ID ? srsRelease.container.ID : 'No Container'} <br/>
+                  {t('coms.containerState')}：{srsRelease?.container.State || srsRelease?.container.Status ? `${srsRelease?.container.State} ${srsRelease?.container.Status}` : 'Stopped'}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
                   {srsDev?.enabled || <>
-                    <Button className='disabled'>重启</Button> &nbsp;
+                    <Button className='disabled'>{t('helper.restart')}</Button> &nbsp;
                   </>}
-                  <Button className='disabled'>升级</Button> &nbsp;
+                  <Button className='disabled'>{t('helper.upgrade')}</Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && srsRelease?.name}
                     enabled={srsRelease?.enabled}
@@ -149,9 +151,7 @@ function SystemImpl() {
                     onClick={() => handleSwitch(srsRelease)}
                     allowSwitchContainer={allowSwitchContainer}
                   >
-                    <p>
-                      切换SRS服务器，会导致流中断，确认继续切换么？
-                    </p>
+                    <p>{t('coms.switchConfirm')}</p>
                   </SwitchConfirmButton>
                 </div>
               </Card.Body>
@@ -159,20 +159,20 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>SRS(开发版)</Card.Header>
+              <Card.Header>{t('coms.srs5')}</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
-                  容器名：{srsDev?.name} <br/>
-                  容器ID：{srsDev?.container?.ID ? srsDev.container.ID : 'No Container'} <br/>
-                  状态：{srsDev?.container.State || srsDev?.container.Status ? `${srsDev?.container.State} ${srsDev?.container.Status}` : 'Stopped'}
+                  {t('coms.containerName')}：{srsDev?.name} <br/>
+                  {t('coms.containerId')}：{srsDev?.container?.ID ? srsDev.container.ID : 'No Container'} <br/>
+                  {t('coms.containerState')}：{srsDev?.container.State || srsDev?.container.Status ? `${srsDev?.container.State} ${srsDev?.container.Status}` : 'Stopped'}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
                   {srsRelease?.enabled || <>
-                    <Button className='disabled'>重启</Button> &nbsp;
+                    <Button className='disabled'>{t('helper.restart')}</Button> &nbsp;
                   </>}
                   <Button className='disabled'>
-                    升级
+                    {t('helper.upgrade')}
                   </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && srsDev?.name}
@@ -185,7 +185,9 @@ function SystemImpl() {
                     allowSwitchContainer={allowSwitchContainer}
                   >
                     <p>
-                      切换SRS开发版，会导致流中断，并且<font color='red'>开发版是不稳定</font>的版本，确认继续切换么？
+                      {t('coms.switchConfirm1')}
+                      <font color='red'>{t('coms.switchConfirm2')}</font>
+                      {t('coms.switchConfirm3')}
                     </p>
                   </SwitchConfirmButton>
                 </div>
@@ -194,20 +196,20 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>Hooks(回调)</Card.Header>
+              <Card.Header>{t('coms.hooks')}</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
-                  容器名：{hooks?.name} <br/>
-                  容器ID：{hooks?.container?.ID} <br/>
-                  状态：{hooks?.container.State} {hooks?.container.Status}
+                  {t('coms.containerName')}：{hooks?.name} <br/>
+                  {t('coms.containerId')}：{hooks?.container?.ID} <br/>
+                  {t('coms.containerState')}：{hooks?.container.State} {hooks?.container.Status}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
                   <Button className='disabled'>
-                    重启
+                    {t('helper.restart')}
                   </Button> &nbsp;
                   <Button className='disabled'>
-                    升级
+                    {t('helper.upgrade')}
                   </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && hooks?.name}
@@ -220,20 +222,20 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>FFmpeg(流处理)</Card.Header>
+              <Card.Header>{t('coms.ffmpeg')}</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
-                  容器名：{ffmpeg?.name} <br/>
-                  容器ID：{ffmpeg?.container?.ID} <br/>
-                  状态：{ffmpeg?.container.State} {ffmpeg?.container.Status}
+                  {t('coms.containerName')}：{ffmpeg?.name} <br/>
+                  {t('coms.containerId')}：{ffmpeg?.container?.ID} <br/>
+                  {t('coms.containerState')}：{ffmpeg?.container.State} {ffmpeg?.container.Status}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
                   <Button className='disabled'>
-                    重启
+                    {t('helper.restart')}
                   </Button> &nbsp;
                   <Button className='disabled'>
-                    升级
+                    {t('helper.upgrade')}
                   </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && ffmpeg?.name}
@@ -246,20 +248,20 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>Tencent(腾讯云)</Card.Header>
+              <Card.Header>{t('coms.tencent')}</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
-                  容器名：{tencent?.name} <br/>
-                  容器ID：{tencent?.container?.ID} <br/>
-                  状态：{tencent?.container.State} {tencent?.container.Status}
+                  {t('coms.containerName')}：{tencent?.name} <br/>
+                  {t('coms.containerId')}：{tencent?.container?.ID} <br/>
+                  {t('coms.containerState')}：{tencent?.container.State} {tencent?.container.Status}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
                   <Button className='disabled'>
-                    重启
+                    {t('helper.restart')}
                   </Button> &nbsp;
                   <Button className='disabled'>
-                    升级
+                    {t('helper.upgrade')}
                   </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && tencent?.name}
@@ -272,20 +274,20 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>Prometheus(监控)</Card.Header>
+              <Card.Header>{t('coms.prometheus')}</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
-                  容器名：{prometheus?.name} <br/>
-                  容器ID：{prometheus?.container?.ID} <br/>
-                  状态：{prometheus?.container.State} {prometheus?.container.Status}
+                  {t('coms.containerName')}：{prometheus?.name} <br/>
+                  {t('coms.containerId')}：{prometheus?.container?.ID} <br/>
+                  {t('coms.containerState')}：{prometheus?.container.State} {prometheus?.container.Status}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
                   <Button className='disabled'>
-                    重启
+                    {t('helper.restart')}
                   </Button> &nbsp;
                   <Button className='disabled'>
-                    升级
+                    {t('helper.upgrade')}
                   </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && prometheus?.name}
@@ -298,20 +300,20 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>NodeExporter(节点监控)</Card.Header>
+              <Card.Header>{t('coms.node')}</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
-                  容器名：{nodeExporter?.name} <br/>
-                  容器ID：{nodeExporter?.container?.ID} <br/>
-                  状态：{nodeExporter?.container.State} {nodeExporter?.container.Status}
+                  {t('coms.containerName')}：{nodeExporter?.name} <br/>
+                  {t('coms.containerId')}：{nodeExporter?.container?.ID} <br/>
+                  {t('coms.containerState')}：{nodeExporter?.container.State} {nodeExporter?.container.Status}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
                   <Button className='disabled'>
-                    重启
+                    {t('helper.restart')}
                   </Button> &nbsp;
                   <Button className='disabled'>
-                    升级
+                    {t('helper.upgrade')}
                   </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && nodeExporter?.name}
@@ -324,20 +326,20 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>Platform(平台管理)</Card.Header>
+              <Card.Header>{t('coms.platform')}</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
-                  容器名：{platform?.name} <br/>
-                  容器ID：{platform?.container?.ID} <br/>
-                  状态：{platform?.container.State} {platform?.container.Status}
+                  {t('coms.containerName')}：{platform?.name} <br/>
+                  {t('coms.containerId')}：{platform?.container?.ID} <br/>
+                  {t('coms.containerState')}：{platform?.container.State} {platform?.container.Status}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
                   <Button className='disabled'>
-                    重启
+                    {t('helper.restart')}
                   </Button> &nbsp;
                   <Button className='disabled'>
-                    升级
+                    {t('helper.upgrade')}
                   </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && platform?.name}
@@ -350,22 +352,22 @@ function SystemImpl() {
           </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>Host(主机管理)</Card.Header>
+              <Card.Header>{t('coms.host')}</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
-                  你的版本: {status?.version} <br/>
-                  稳定版本: {status?.releases?.stable} &nbsp;
+                  {t('coms.version')}: {status?.version} <br/>
+                  {t('coms.stable')}: {status?.releases?.stable} &nbsp;
                   <Form.Check
                     type='switch'
-                    label='自动更新'
+                    label={t('coms.autoUpgrade')}
                     style={{display: 'inline-block'}}
-                    title='是否自动更新到稳定版本'
+                    title={t('coms.autoUpgradeTip')}
                     disabled={!allowManuallyUpgrade}
                     defaultChecked={strategyAutoUpgrade}
                     onClick={(e) => handleUpgradeStrategyChange(e)}
                   />
                   <br/>
-                  最新版本: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
+                  {t('coms.latest')}: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
                   <p></p>
                 </Card.Text>
                 <MgmtUpgradeButton onStatus={onStatus}/>
@@ -379,8 +381,10 @@ function SystemImpl() {
 }
 
 function MgmtUpdateContainer({allow, enabled, onClick}) {
+  const {t} = useTranslation();
+
   const handleClick = (e) => {
-    if (enabled && !window.confirm(`禁用容器，将会停止服务。\n服务将不可用，且重启服务器也不会启动。\n是否确认禁用?`)) {
+    if (enabled && !window.confirm(t('coms.disableContainer'))) {
       e.preventDefault();
       return;
     }
@@ -393,7 +397,7 @@ function MgmtUpdateContainer({allow, enabled, onClick}) {
       variant={enabled ? 'danger' : 'success'}
       onClick={(e) => handleClick(e)}
     >
-      {enabled ? '禁用' : '启用'}
+      {enabled ? t('helper.disable') : t('helper.enable')}
     </Button>
   );
 }
@@ -406,6 +410,7 @@ function MgmtUpgradeButton({onStatus}) {
   const [releaseAvailable, setReleaseAvailable] = React.useState();
   const [upgradeDone, setUpgradeDone] = React.useState();
   const [progress, setProgress] = React.useState(upgradeProgress);
+  const {t} = useTranslation();
 
   // For callback to use state.
   const ref = React.useRef({});
@@ -484,8 +489,8 @@ function MgmtUpgradeButton({onStatus}) {
 
   React.useEffect(() => {
     if (!upgradeDone) return;
-    alert('升级成功，请刷新页面');
-  }, [upgradeDone]);
+    alert(t('coms.upgradeOk'));
+  }, [upgradeDone, t]);
 
   return (
     <UpgradeConfirmButton
@@ -493,12 +498,14 @@ function MgmtUpgradeButton({onStatus}) {
       upgrading={startingUpgrade || isUpgrading}
       progress={`${progress}s`}
       onClick={handleStartUpgrade}
-      text='升级'
+      text={t('helper.upgrade')}
     >
       <p>
-        升级管理后台，并且可能造成
-        <span className='text-danger'><strong>系统不可用</strong></span>，
-        确认继续升级么？
+        {t('coms.upgradeTip1')}
+        <span className='text-danger'><strong>
+          {t('coms.upgradeTip2')}
+        </strong></span>
+        {t('coms.upgradeTip3')}
       </p>
     </UpgradeConfirmButton>
   );

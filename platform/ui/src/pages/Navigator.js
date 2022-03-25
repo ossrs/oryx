@@ -3,34 +3,38 @@ import Container from "react-bootstrap/Container";
 import {Navbar, Nav} from 'react-bootstrap';
 import {Link, useLocation} from "react-router-dom";
 import logo from '../resources/logo.svg';
+import LanguageSwitch from "../components/LanguageSwitch";
+import {useTranslation} from "react-i18next";
 
-export default function Navigator({initialized, token}) {
+export default function Navigator({initialized, token, localChanged}) {
   const [activekey, setActiveKey] = React.useState(1);
   const [navs, setNavs] = React.useState([]);
   const location = useLocation();
+  const {t} = useTranslation();
 
   React.useEffect(() => {
     if (!initialized) return setNavs([]);
 
     if (!token) {
-      return setNavs([{to:'/routers-login', text: '登录', className: 'text-light'}]);
+      return setNavs([{to:'/routers-login', text: t('nav.login'), className: 'text-light'}]);
     }
 
+    const r0 = `${location.pathname}${location.search}`;
     setNavs([
-      {eventKey: '1', to: '/routers-dashboard', text: '仪表盘'},
-      {eventKey: '2', to: '/routers-scenario?tab=tutorials', text: '应用场景'},
-      {eventKey: '3', to: '/routers-settings?tab=auth', text: '系统配置'},
-      {eventKey: '4', to: '/routers-system', text: '组件管理'},
-      {eventKey: '5', to: '/routers-contact', text: '专享群'},
-      {eventKey: '6', to: '/routers-logout', text: '退出'},
+      {eventKey: '1', to: '/routers-dashboard', text: t('nav.dashboard')},
+      {eventKey: '2', to: '/routers-scenario', text: t('nav.scenario')},
+      {eventKey: '3', to: '/routers-settings', text: t('nav.system')},
+      {eventKey: '4', to: '/routers-components', text: t('nav.component')},
+      {eventKey: '5', to: '/routers-contact', text: t('nav.contact')},
+      {eventKey: '6', to: '/routers-logout', text: t('nav.logout')},
     ].map(e => {
-      if (e.to.indexOf(location.pathname) === 0) {
+      if (r0.indexOf(e.to) >= 0) {
         e.className = 'text-light';
         setActiveKey(e.eventKey);
       }
       return e;
     }));
-  }, [initialized, token, location]);
+  }, [initialized, token, location, t]);
 
   return (<>
     <Navbar>
@@ -59,6 +63,9 @@ export default function Navigator({initialized, token}) {
             );
           })}
         </Nav>
+        <Navbar.Collapse className="justify-content-end">
+          <LanguageSwitch localChanged={localChanged} />
+        </Navbar.Collapse>
       </Container>
     </Navbar>
   </>);

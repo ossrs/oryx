@@ -53,7 +53,7 @@ app.use(async (ctx, next) => {
 
   // Directly serve the react routes by index.html
   // See https://stackoverflow.com/a/52464577/17679565
-  if (isPreviousReactRoutes || ctx.request.path.indexOf('/mgmt/routers-') === 0) {
+  if (isPreviousReactRoutes || ctx.request.path?.match(/\/mgmt.*\/routers-/)) {
     ctx.type = 'text/html';
     ctx.set('Cache-Control', 'public, max-age=0');
     ctx.body = fs.readFileSync('./ui/build/index.html');

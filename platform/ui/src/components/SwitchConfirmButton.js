@@ -1,8 +1,10 @@
 import React from "react";
 import {Button, OverlayTrigger, Popover} from "react-bootstrap";
+import {useTranslation} from "react-i18next";
 
 export default function SwitchConfirmButton({onClick, enabled, children, allowSwitchContainer}) {
   const [startUpgrade, setStartUpgrade] = React.useState();
+  const {t} = useTranslation();
 
   const handleClick = React.useCallback((e) => {
     e.preventDefault();
@@ -24,7 +26,7 @@ export default function SwitchConfirmButton({onClick, enabled, children, allowSw
               variant="danger"
               onClick={(e) => handleClick(e)}
             >
-              确认
+              {t('helper.confirm')}
             </Button>
           </div>
           <div className="col-12">
@@ -32,7 +34,7 @@ export default function SwitchConfirmButton({onClick, enabled, children, allowSw
               variant="primary"
               onClick={() => setStartUpgrade(false)}
             >
-              取消
+              {t('helper.cancel')}
             </Button>
           </div>
         </div>
@@ -48,7 +50,7 @@ export default function SwitchConfirmButton({onClick, enabled, children, allowSw
         disabled={!allowSwitchContainer}
         onClick={() => setStartUpgrade(true)}
       >
-        切换
+        {t('helper.switch')}
       </Button>
     </OverlayTrigger>
   </>);

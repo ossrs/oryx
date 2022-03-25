@@ -8,6 +8,7 @@ export default function useUrls({secret, streamName}) {
   const [flvUrl, setFlvUrl] = React.useState();
   const [m3u8Url, setM3u8Url] = React.useState();
   const [cnConsole, setCnConsole] = React.useState();
+  const [enConsole, setEnConsole] = React.useState();
   const [flvPlayer, setFlvPlayer] = React.useState();
   const [hlsPlayer, setHlsPlayer] = React.useState();
   const [rtcPlayer, setRtcPlayer] = React.useState();
@@ -36,6 +37,7 @@ export default function useUrls({secret, streamName}) {
     if (true) {
       const httpPort = window.location.port || (window.location.protocol === 'http:' ? 80 : 443);
       setCnConsole(`/console/ng_index.html#/summaries?port=${httpPort}&http=${httpPort}`);
+      setEnConsole(`/console/en_index.html#/summaries?port=${httpPort}&http=${httpPort}`);
     }
 
     // The player url.
@@ -70,6 +72,7 @@ export default function useUrls({secret, streamName}) {
     flvUrl,
     m3u8Url,
     cnConsole,
+    enConsole,
     flvPlayer,
     hlsPlayer,
     rtcPlayer,

@@ -238,6 +238,14 @@ For mgmt and containers to connect to redis:
 * `REDIS_PASSWORD`: The redis password.
 * `REDIS_PORT`: The redis port.
 
+Environments for react ui:
+
+* `PUBLIC_URL`: The mount prefix.
+* `BUILD_PATH`: The output build path, default to `build`.
+* `REACT_APP_LOCALE`: The i18n config for ui, `en` or `zh`, default to `zh`.
+
+> Note: The env for react must start with `REACT_APP_`, please read [this post](https://create-react-app.dev/docs/adding-custom-environment-variables/#referencing-environment-variables-in-the-html).
+
 ## Develop
 
 Install dependencies:

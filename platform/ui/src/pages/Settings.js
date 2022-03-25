@@ -7,16 +7,17 @@ import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
 import SetupCamSecret from '../components/SetupCamSecret';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
+import {useTranslation} from "react-i18next";
 
-export default function Settings() {
+export default function Systems() {
   return (
     <SrsErrorBoundary>
-      <SettingsImpl />
+      <SystemsImpl />
     </SrsErrorBoundary>
   );
 }
 
-function SettingsImpl() {
+function SystemsImpl() {
   const [searchParams] = useSearchParams();
   const [defaultActiveTab, setDefaultActiveTab] = React.useState();
   const [upgradeWindow, setUpgradeWindow] = React.useState();
@@ -61,6 +62,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
   const setSearchParams = useSearchParams()[1];
   const handleError = useErrorHandler();
+  const {t} = useTranslation();
 
   const sslTutorials = useTutorials(React.useRef([
     {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
@@ -77,9 +79,9 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
     axios.post('/terraform/v1/mgmt/beian/update', {
       ...token, beian: 'icp', text: beian,
     }).then(res => {
-      alert('设置备案信息成功，请刷新页面');
+      alert(t('settings.footer'));
     }).catch(handleError);
-  }, [handleError, beian]);
+  }, [handleError, beian, t]);
 
   const enablePlatformAccess = React.useCallback((e, enabled) => {
     e.preventDefault();
@@ -88,16 +90,16 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
     axios.post('/terraform/v1/mgmt/pubkey', {
       ...token, enabled,
     }).then(res => {
-      alert(enabled ? '授权平台管理员访问成功' : '取消授权成功');
+      alert(enabled ? t('settings.sshEnable') : t('settings.sshDisable'));
       console.log(`PublicKey: Update ok, enabled=${enabled}`);
     }).catch(handleError);
-  }, [handleError]);
+  }, [handleError, t]);
 
   const updateSSL = React.useCallback((e) => {
     e.preventDefault();
 
     if (!key || !crt) {
-      alert('请输入SSL密钥和证书');
+      alert(t('settings.sslNoFile'));
       return;
     }
 
@@ -105,16 +107,16 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
     axios.post('/terraform/v1/mgmt/ssl', {
       ...token, key, crt,
     }).then(res => {
-      alert(`SSL证书更新成功`);
+      alert(t('settings.sslOk'));
       console.log(`SSL: Update ok`);
     }).catch(handleError);
-  }, [handleError, key, crt]);
+  }, [handleError, key, crt, t]);
 
   const requestLetsEncrypt = React.useCallback((e) => {
     e.preventDefault();
 
     if (!domain) {
-      alert('请输入你域名');
+      alert(t('settings.sslNoDomain'));
       return;
     }
 
@@ -122,16 +124,16 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
     axios.post('/terraform/v1/mgmt/letsencrypt', {
       ...token, domain,
     }).then(res => {
-      alert(`Let's Encrypt SSL证书更新成功`);
+      alert(t('settings.sslLetsOk'));
       console.log(`SSL: Let's Encrypt SSL ok`);
     }).catch(handleError);
-  }, [handleError, domain]);
+  }, [handleError, domain, t]);
 
   const updateSecret = React.useCallback((e) => {
     e.preventDefault();
 
     if (!secret) {
-      alert('请输入密钥');
+      alert(t('settings.secretNoValue'));
       return;
     }
 
@@ -139,10 +141,10 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
     axios.post('/terraform/v1/hooks/srs/secret/update', {
       ...token, secret,
     }).then(res => {
-      alert(`推流密钥更新成功`);
+      alert(t('settings.secretOk'));
       console.log(`Secret: Update ok`);
     }).catch(handleError);
-  }, [handleError, secret]);
+  }, [handleError, secret, t]);
 
   const onSelectTab = React.useCallback((k) => {
     setSearchParams({'tab': k});
@@ -155,16 +157,16 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
     const [start, end] = [parseInt(upgradeWindowStart || 0), parseInt(upgradeWindowEnd || 0)];
 
     const duration = start < end ? end - start : end + 24 - start;
-    if (duration <= 3) return alert(`升级窗口不能小于3小时`);
+    if (duration <= 3) return alert(t('settings.upgradeWindowInvalid'));
 
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/window/update', {
       ...token, start, duration,
     }).then(res => {
-      alert(`升级窗口[${start}点至${end}点]更新成功，窗口长度${duration}小时`);
-      console.log(`Setup upgrade window start=${start}, end=${end}`);
+      alert(t('settings.upgradeWindowOk'));
+      console.log(`Setup upgrade window start=${start}, end=${end}, duration=${duration}`);
     }).catch(handleError);
-  }, [handleError, upgradeWindowStart, upgradeWindowEnd]);
+  }, [handleError, upgradeWindowStart, upgradeWindowEnd, t]);
 
   return (
     <>
@@ -178,33 +180,33 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
                 <Accordion.Body>
                   <Form>
                     <Form.Group className="mb-3">
-                      <Form.Label>域名</Form.Label>
-                      <Form.Text> * 你的域名，请先解析到本服务器的公网IP，例如 your-domain.com</Form.Text>
+                      <Form.Label>{t('settings.letsDomain')}</Form.Label>
+                      <Form.Text> * {t('settings.letsDomainTip')}</Form.Text>
                       <Form.Control as="input" defaultValue={domain} onChange={(e) => setDomain(e.target.value)} />
                     </Form.Group>
                     <Button variant="primary" type="submit" onClick={(e) => requestLetsEncrypt(e)}>
-                      申请证书
+                      {t('settings.letsDomainSubmit')}
                     </Button> &nbsp;
                     <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
                   </Form>
                 </Accordion.Body>
               </Accordion.Item>
               <Accordion.Item eventKey="1">
-                <Accordion.Header>HTTPS: 上传证书</Accordion.Header>
+                <Accordion.Header>{t('settings.sslFileTitle')}</Accordion.Header>
                 <Accordion.Body>
                   <Form>
                     <Form.Group className="mb-3">
-                      <Form.Label>密钥(KEY)</Form.Label>
-                      <Form.Text> * Nginx格式的SSL密钥内容，例如 your-domain.com.key</Form.Text>
+                      <Form.Label>{t('settings.sslFileKey')}</Form.Label>
+                      <Form.Text> * {t('settings.sslFileKeyTip')}</Form.Text>
                       <Form.Control as="textarea" rows={5} defaultValue={key} onChange={(e) => setKey(e.target.value)} />
                     </Form.Group>
                     <Form.Group className="mb-3">
-                      <Form.Label>证书(PEM格式)</Form.Label>
-                      <Form.Text> * Nginx格式的SSL证书内容，例如 your-domain.com.pem</Form.Text>
+                      <Form.Label>{t('settings.sslFileCert')}</Form.Label>
+                      <Form.Text> * {t('settings.sslFileCertTip')}</Form.Text>
                       <Form.Control as="textarea" rows={5} defaultValue={crt} onChange={(e) => setCrt(e.target.value)} />
                     </Form.Group>
                     <Button variant="primary" type="submit" onClick={(e) => updateSSL(e)}>
-                      更新证书
+                      {t('settings.sslFileSubmit')}
                     </Button> &nbsp;
                     <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
                   </Form>
@@ -212,82 +214,81 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
               </Accordion.Item>
             </Accordion>
           </Tab>
-          <Tab eventKey="auth" title="流鉴权">
+          <Tab eventKey="auth" title={t('settings.tabAuth')}>
             <Accordion defaultActiveKey="0">
               <Accordion.Item eventKey="0">
-                <Accordion.Header>更新流密钥</Accordion.Header>
+                <Accordion.Header>{t('settings.authTitle')}</Accordion.Header>
                 <Accordion.Body>
                   <Form>
                     <Form.Group className="mb-3">
-                      <Form.Label>密钥</Form.Label>
-                      <Form.Text> * 推流鉴权的密钥</Form.Text>
+                      <Form.Label>{t('settings.authSecret')}</Form.Label>
+                      <Form.Text> * {t('settings.authSecretTip')}</Form.Text>
                       <Form.Control as="input" defaultValue={secret} onChange={(e) => setSecret(e.target.value)}/>
                     </Form.Group>
                     <Button variant="primary" type="submit" onClick={(e) => updateSecret(e, true)}>
-                      更新
+                      {t('settings.authSubmit')}
                     </Button> &nbsp;
                   </Form>
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>
           </Tab>
-          <Tab eventKey="tencent" title="腾讯云">
+          <Tab eventKey="tencent" title={t('settings.tabTencent')}>
             <Accordion defaultActiveKey="0">
               <Accordion.Item eventKey="0">
-                <Accordion.Header>腾讯云密钥(Secret)</Accordion.Header>
+                <Accordion.Header>{t('settings.tecentTitle')}</Accordion.Header>
                 <Accordion.Body>
                   <SetupCamSecret />
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>
           </Tab>
-          <Tab eventKey="beian" title="备案">
+          <Tab eventKey="beian" title={t('settings.tabFooter')}>
             <Accordion defaultActiveKey="0">
               <Accordion.Item eventKey="0">
-                <Accordion.Header>设置备案号</Accordion.Header>
+                <Accordion.Header>{t('settings.footerTitle')}</Accordion.Header>
                 <Accordion.Body>
                   <Form>
                     <Form.Group className="mb-3">
-                      <Form.Label>ICP备案号</Form.Label>
-                      <Form.Text> * 请参考<a href='https://beian.miit.gov.cn' target='_blank' rel='noreferrer'>https://beian.miit.gov.cn</a></Form.Text>
-                      <Form.Control as="input" defaultValue={beian} placeholder='例如：京ICP备XXXXXXXX号-X' onChange={(e) => setBeian(e.target.value)}/>
+                      <Form.Label>{t('settings.footerIcp')}</Form.Label>
+                      <Form.Control as="input" defaultValue={beian} placeholder={t('settings.footerHolder')} onChange={(e) => setBeian(e.target.value)}/>
                     </Form.Group>
                     <Button variant="primary" type="submit" onClick={(e) => updateBeian(e)}>
-                      设置
+                      {t('settings.footerSubmit')}
                     </Button>
                   </Form>
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>
           </Tab>
-          <Tab eventKey="platform" title="平台">
+          <Tab eventKey="platform" title={t('settings.tabPlatform')}>
             <Accordion defaultActiveKey="0">
               <Accordion.Item eventKey="0">
-                <Accordion.Header>授权平台管理员</Accordion.Header>
+                <Accordion.Header>{t('settings.platformSsh')}</Accordion.Header>
                 <Accordion.Body>
                   <Form>
                     <Form.Group className="mb-3">
-                      <Form.Label>公钥</Form.Label>
-                      <Form.Text> * 平台管理员的公钥</Form.Text>
+                      <Form.Label>{t('settings.platformPubkey')}</Form.Label>
+                      <Form.Text> * {t('settings.platformPubkeyTip')}</Form.Text>
                       <Form.Control as="textarea" rows={2} defaultValue={PlatformPublicKey} readOnly={true} />
                     </Form.Group>
                     <Button variant="primary" type="submit" onClick={(e) => enablePlatformAccess(e, true)}>
-                      授权访问
+                      {t('settings.platformAccessEnable')}
                     </Button> &nbsp;
                     <Button variant="primary" type="submit" onClick={(e) => enablePlatformAccess(e, false)}>
-                      取消授权
+                      {t('settings.platformAccessDisable')}
                     </Button>
                   </Form>
                 </Accordion.Body>
               </Accordion.Item>
               <Accordion.Item eventKey="1">
-                <Accordion.Header>设置升级窗口</Accordion.Header>
+                <Accordion.Header>{t('settings.upgradeTitle')}</Accordion.Header>
                 <Accordion.Body>
                   <Form>
-                    <Form.Label htmlFor="basic-url">升级窗口</Form.Label>
-                    <Form.Text> * 系统会在这个时间段，自动升级到最新的稳定版本</Form.Text>
+                    <Form.Label htmlFor="basic-url">{t('settings.upgradeWindow')}</Form.Label>
+                    <Form.Text> * {t('settings.upgradeTip')}</Form.Text>
                     <InputGroup className="mb-3">
-                      <InputGroup.Text>开始时间</InputGroup.Text>
+                      <InputGroup.Text>{t('settings.upgradeStart')}</InputGroup.Text>
                       <Form.Select
                         aria-label="Start time"
                         defaultValue={upgradeWindowStart}
@@ -299,7 +300,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
                       </Form.Select>
                     </InputGroup>
                     <InputGroup className="mb-3">
-                      <InputGroup.Text>结束时间</InputGroup.Text>
+                      <InputGroup.Text>{t('settings.upgradeEnd')}</InputGroup.Text>
                       <Form.Select
                         aria-label="End time"
                         defaultValue={upgradeWindowEnd}
@@ -311,7 +312,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
                       </Form.Select>
                     </InputGroup>
                     <Button variant="primary" type="submit" onClick={(e) => setupUpgradeWindow(e)}>
-                      设置窗口
+                      {t('settings.upgradeSubmit')}
                     </Button>
                   </Form>
                 </Accordion.Body>

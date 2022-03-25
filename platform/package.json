@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "env NODE_ENV=development node .",
-    "build": "cd ui && env PUBLIC_URL=/mgmt npm run build",
+    "build": "cd ui && env PUBLIC_URL=/mgmt REACT_APP_LOCALE=zh npm run build",
+    "buildCn": "cd ui && env PUBLIC_URL=/mgmt REACT_APP_LOCALE=zh npm run build",
+    "buildEn": "cd ui && env PUBLIC_URL=/mgmt REACT_APP_LOCALE=en npm run build",
     "postinstall": "cd ui && npm install",
     "test": "jest --watchAll=false --passWithNoTests",
     "testWatch": "jest --watchAll=true --passWithNoTests"

@@ -3,8 +3,14 @@ import {Container, Carousel} from "react-bootstrap";
 import srsCloud from "../resources/srs-cloud-1296x648.png";
 import srsServer from "../resources/srs-server-1296x648.png";
 import srsVideo from "../resources/srs-video-1296x648.png";
+import {useSrsLanguage} from "../components/LanguageSwitch";
 
 export default function Contact() {
+  const language = useSrsLanguage();
+  return language === 'zh' ? <ContactCn /> : <ContactEn />;
+}
+
+function ContactCn() {
   return (
     <Container>
       <Carousel variant="dark">
@@ -49,6 +55,34 @@ export default function Contact() {
           </Carousel.Caption>
         </Carousel.Item>
       </Carousel>
+    </Container>
+  );
+}
+
+function ContactEn() {
+  return (
+    <Container>
+      Welcome to contact us by:
+      <ul>
+        <li>
+          Discord:
+          <a href='https://discord.gg/yZ4BnPmHAd' target='_blank' rel='noreferrer'>
+            https://discord.gg/yZ4BnPmHAd
+          </a>
+        </li>
+        <li>
+          Twitter:
+          <a href='https://twitter.com/srs_server' target='_blank' rel='noreferrer'>
+            https://twitter.com/srs_server
+          </a>
+        </li>
+        <li>
+          GitHub:
+          <a href='https://github.com/ossrs/srs' target='_blank' rel='noreferrer'>
+            https://github.com/ossrs/srs
+          </a>
+        </li>
+      </ul>
     </Container>
   );
 }

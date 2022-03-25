@@ -7,8 +7,15 @@ import moment from "moment";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import useDvrVodStatus from "../components/DvrVodStatus";
 import {useErrorHandler} from "react-error-boundary";
+import {useTranslation} from "react-i18next";
+import {useSrsLanguage} from "../components/LanguageSwitch";
 
 export default function ScenarioDvr() {
+  const language = useSrsLanguage();
+  return language === 'zh' ? <ScenarioDvrCn /> : <ScenarioDvrEn />;
+}
+
+function ScenarioDvrCn() {
   const [dvrStatus, vodStatus] = useDvrVodStatus();
   const [activeKey, setActiveKey] = React.useState();
 
@@ -44,6 +51,7 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll, enabled}) {
   const [dvrAll, setDvrAll] = React.useState(defaultApplyAll);
   const [dvrFiles, setDvrFiles] = React.useState();
   const handleError = useErrorHandler();
+  const {t} = useTranslation();
 
   const dvrTutorials = useTutorials(React.useRef([
     {author: '唐为', id: 'BV14S4y1k7gr'},
@@ -107,11 +115,11 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll, enabled}) {
     e.preventDefault();
 
     Clipboard.copy(text).then(() => {
-      alert(`已经复制到剪切板`);
-    }).catch((e) => {
-      alert(`复制失败，请右键复制链接 ${e}`);
+      alert(t('helper.copyOk'));
+    }).catch((err) => {
+      alert(`${t('helper.copyFail')} ${err}`);
     });
-  }, []);
+  }, [t]);
 
   return (
     <Accordion defaultActiveKey={activeKey}>
@@ -207,6 +215,12 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll, enabled}) {
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
+  );
+}
+
+function ScenarioDvrEn() {
+  return (
+    <span>On the way...</span>
   );
 }
 

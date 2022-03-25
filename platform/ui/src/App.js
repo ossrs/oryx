@@ -1,14 +1,14 @@
 import React from 'react';
 import axios from "axios";
 import './App.css'
-import {BrowserRouter, Routes, Route} from "react-router-dom";
+import {BrowserRouter, Routes, Route, useParams, Outlet, useNavigate, useLocation} from "react-router-dom";
 import Footer from './pages/Footer';
 import Login from './pages/Login';
 import Logout from './pages/Logout';
 import Navigator from './pages/Navigator';
 import Setup from './pages/Setup';
-import {Token} from "./utils";
-import System from "./pages/System";
+import {Locale, Token} from "./utils";
+import Components from "./pages/Components";
 import Scenario from "./pages/Scenario";
 import {Container} from "react-bootstrap";
 import Settings from "./pages/Settings";
@@ -16,6 +16,7 @@ import Dashboard from './pages/Dashboard';
 import Contact from "./pages/Contact";
 import {ErrorBoundary, useErrorHandler} from 'react-error-boundary';
 import {SrsErrorBoundary} from "./components/SrsErrorBoundary";
+import resources from "./resources/locale.json";
 
 function App() {
   return (
@@ -70,28 +71,67 @@ function AppImpl() {
         <BrowserRouter basename={window.PUBLIC_URL}>
           <Navigator initialized={initialized} token={token} />
           <Routes>
-            {!initialized && <>
-              <Route path="*" element={<Setup onInit={onInit} />}/>
-            </>}
-            {initialized && !token && <>
-              <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
-            </>}
-            {initialized && token && <>
-              <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
-              <Route path="/routers-login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
-              <Route path="/routers-dashboard" element={<Dashboard/>}/>
-              <Route path="/routers-scenario" element={<Scenario/>}/>
-              <Route path="/routers-settings" element={<Settings/>}/>
-              <Route path="/routers-contact" element={<Contact/>}/>
-              <Route path="/routers-system" element={<System/>}/>
-              <Route path="/routers-logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
-            </>}
+            <Route path="/" element={<AppRoot />}/>
+            <Route path=':locale' element={<AppLocale />}>
+              {!initialized && <>
+                <Route path="*" element={<Setup onInit={onInit} />}/>
+                <Route path="routers-setup" element={<Setup onInit={onInit} />}/>
+              </>}
+              {initialized && !token && <>
+                <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
+              </>}
+              {initialized && token && <>
+                <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
+                <Route path="routers-login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
+                <Route path="routers-dashboard" element={<Dashboard/>}/>
+                <Route path="routers-scenario" element={<Scenario/>}/>
+                <Route path="routers-settings" element={<Settings/>}/>
+                <Route path="routers-contact" element={<Contact/>}/>
+                <Route path="routers-components" element={<Components/>}/>
+                <Route path="routers-logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
+              </>}
+            </Route>
           </Routes>
           <Footer />
         </BrowserRouter>
       </>}
     </>
   );
+}
+
+function AppLocale() {
+  const params = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Prefix with default language.
+  React.useEffect(() => {
+    if (Object.keys(resources).includes(params.locale)) {
+      return;
+    }
+    if (!Object.keys(resources).includes(Locale.current())) {
+      return;
+    }
+
+    const to = {pathname: `/${Locale.current()}/${params.locale}`, search: location.search};
+    console.log(`Jump to ${JSON.stringify(to)} by locale`);
+    return navigate(to);
+  }, [navigate, params, location]);
+
+  return <Outlet />;
+}
+
+function AppRoot() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  React.useEffect(() => {
+    const to = {pathname: `/${Locale.current()}/routers-login`, search: location.search};
+    console.log(`Jump to ${JSON.stringify(to)} by root`);
+    navigate(to);
+  }, [navigate, location]);
+
+  return <></>;
 }
 
 export default App;

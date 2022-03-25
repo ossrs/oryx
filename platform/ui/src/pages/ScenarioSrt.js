@@ -3,8 +3,14 @@ import React from "react";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import SrsQRCode from "../components/SrsQRCode";
 import * as Icon from "react-bootstrap-icons";
+import {useSrsLanguage} from "../components/LanguageSwitch";
 
-export default function ScenarioSrt({updateStreamName, copyToClipboard, urls}) {
+export default function ScenarioSrt(props) {
+  const language = useSrsLanguage();
+  return language === 'zh' ? <ScenarioSrtCn {...props} /> : <ScenarioSrtEn {...props} />;
+}
+
+function ScenarioSrtCn({updateStreamName, copyToClipboard, urls}) {
   const {srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer} = urls;
   const [hostname, setHostname] = React.useState();
   const [srtPort, setSrtPort] = React.useState();
@@ -399,6 +405,276 @@ export default function ScenarioSrt({updateStreamName, copyToClipboard, urls}) {
             </li>
           </ol>
           <p>若需要测量延迟请参考<a href='https://github.com/ossrs/srs/issues/1147#lagging-benchmark' target='_blank' rel='noreferrer'>这里</a></p>
+        </Accordion.Body>
+      </Accordion.Item>
+    </Accordion>
+  );
+}
+
+function ScenarioSrtEn({updateStreamName, copyToClipboard, urls}) {
+  const {srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer} = urls;
+  const [hostname, setHostname] = React.useState();
+  const [srtPort, setSrtPort] = React.useState();
+  const [srtPublishStreamId, setPublishStreamId] = React.useState();
+  const [srtPlayStreamId, setPlayStreamId] = React.useState();
+  const ffplayWindows = `ffplay -fflags nobuffer -flags low_delay -i "${srtPlayUrl}"`;
+  const ffplayMac = `ffplay -fflags nobuffer -flags low_delay -i '${srtPlayUrl}'`;
+
+  React.useEffect(() => {
+    if (!srtPublishUrl) return;
+    const u = new URL(srtPublishUrl.replace('srt://', 'http://'));
+    setHostname(u.hostname);
+    setSrtPort(u.port);
+    setPublishStreamId(`${u.hash}`);
+  }, [srtPublishUrl]);
+
+  React.useEffect(() => {
+    if (!srtPublishUrl || !srtPlayUrl) return;
+    const u = new URL(srtPlayUrl.replace('srt://', 'http://'));
+    setPlayStreamId(`${u.hash.split('&')[0]}`);
+  }, [srtPublishUrl, srtPlayUrl]);
+
+  return (
+    <Accordion defaultActiveKey="2">
+      <Accordion.Item eventKey="0">
+        <Accordion.Header>Introduction</Accordion.Header>
+        <Accordion.Body>
+          <p>
+            Low latency live streaming service.
+          </p>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="1">
+        <Accordion.Header>vMix ~= 300ms</Accordion.Header>
+        <Accordion.Body>
+          <div>
+            <p style={{display: 'inline-block'}}><strong>Requires:</strong></p>
+          </div>
+          <ol>
+            <li>
+              The RTT must <code>&lt;=60ms</code>, please check by<br/>
+              <code>ping {window.location.hostname}</code>
+            </li>
+            <li>
+              The network packet loss must <code>&lt;=10%</code>
+            </li>
+            <li>
+              Please use wire network, WiFi is not recommend.
+            </li>
+            <li>
+              The CPU of client and server must <code>&lt;=80%</code>
+            </li>
+          </ol>
+          <p><strong>Usage for Publisher:</strong></p>
+          <ol>
+            <li>Allow <code>UDP/10080</code> by firewall</li>
+            <li>Down vMix from <a href='https://www.vmix.com/software/download.aspx' target='_blank' rel='noreferrer'>here</a></li>
+            <li>
+              Config vMix as bellow
+              <ol>
+                <li>
+                  Click <code>Settings</code> => <code>Outputs/NDI/SRT</code> / Click <code>Output(1)</code> <br/>
+                  Or click <code>External</code> => <code>Outputs/NDI/SRT Settings</code> / Click <code>Output(1)</code>
+                </li>
+                <li>Check <code>Enable SRT</code></li>
+                <li>Type: <code>Caller</code></li>
+                <li>
+                  Hostname：<code>{hostname}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, hostname)} />
+                  </div>
+                </li>
+                <li>
+                  Port：<code>{srtPort}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPort)} />
+                  </div>
+                </li>
+                <li>
+                  Latency：<code>20</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, '20')} />
+                  </div>
+                </li>
+                <li>
+                  Stream ID：<code>{srtPublishStreamId}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Change'>
+                    <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+                  </div> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPublishStreamId)} />
+                  </div>
+                </li>
+              </ol>
+            </li>
+            <li>Click OK</li>
+          </ol>
+          <p><strong>Usage for Player:</strong></p>
+          <ol>
+            <li>Down vMix from <a href='https://www.vmix.com/software/download.aspx' target='_blank' rel='noreferrer'>here</a></li>
+            <li>
+              Config vMix as bellow
+              <ol>
+                <li>Click <code>Add Input</code> => <code>Stream/SRT</code></li>
+                <li>Stream Type: <code>SRT Caller</code></li>
+                <li>
+                  Hostname：<code>{hostname}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, hostname)} />
+                  </div>
+                </li>
+                <li>
+                  Port：<code>{srtPort}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPort)} />
+                  </div>
+                </li>
+                <li>
+                  Latency(延迟)：<code>20</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, '20')} />
+                  </div>
+                </li>
+                <li>
+                  Stream ID(流ID)：<code>{srtPlayStreamId}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPlayStreamId)} />
+                  </div>
+                </li>
+                <li>Note: If play failed, uncheck the <code>Use Hardware Decoder</code> and try</li>
+              </ol>
+            </li>
+            <li>Click OK</li>
+            <li>
+              You're able to play by H5<br/>
+              <ul>
+                <li>For ffplay, please read other section</li>
+                <li>
+                  <a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV</a> <code>{flvUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrl)} />
+                  </div>
+                </li>
+                <li>
+                  HLS by <a href={hlsPlayer} target='_blank' rel='noreferrer'>H5</a> &nbsp;
+                  <code>{m3u8Url}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+                  </div>
+                </li>
+                <li>WebRTC by <a href={rtcPlayer} target='_blank' rel='noreferrer'>H5</a></li>
+              </ul>
+            </li>
+          </ol>
+          <p>For latency benchmark, please read <a href='https://github.com/ossrs/srs/issues/1147#lagging-benchmark' target='_blank' rel='noreferrer'>here</a></p>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="2">
+        <Accordion.Header>OBS+ffplay ~= 300ms</Accordion.Header>
+        <Accordion.Body>
+          <div>
+            <p style={{display: 'inline-block'}}><strong>Requires:</strong></p>
+          </div>
+          <ol>
+            <li>
+              The RTT must <code>&lt;=60ms</code>, please check by<br/>
+              <code>ping {window.location.hostname}</code>
+            </li>
+            <li>
+              The network packet loss must <code>&lt;=10%</code>
+            </li>
+            <li>
+              Please use wire network, WiFi is not recommend.
+            </li>
+            <li>
+              The CPU of client and server must <code>&lt;=80%</code>
+            </li>
+          </ol>
+          <p><strong>Usage for Publisher:</strong></p>
+          <ol>
+            <li>Allow <code>UDP/10080</code> by firewall</li>
+            <li>Download OBS from <a href='https://obsproject.com/download' target='_blank' rel='noreferrer'>here</a> and install</li>
+            <li>
+              Config OBS Stream:
+              <ol>
+                <li>Service: <code>Custom</code></li>
+                <li>
+                  Server: <br/><code>{srtPublishUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Change'>
+                    <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+                  </div> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPublishUrl)} />
+                  </div>
+                </li>
+                <li>Stream Key: <code>Empty. Please keep it empty.</code></li>
+              </ol>
+            </li>
+            <li>
+              Config OBS Output:
+              <ol>
+                <li>Output Mode: <code>Advanced</code></li>
+                <li>Encoder: <code>x264</code></li>
+                <li>Rate Control: <code>CBR</code></li>
+                <li>
+                  Keyframe Interval: <code>3</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, '3')} />
+                  </div>
+                </li>
+                <li>CPU Usage Preset: <code>veryfast</code></li>
+                <li>Profile: <code>baseline</code></li>
+                <li>Tune: <code>zerolatency</code></li>
+              </ol>
+            </li>
+            <li>Click Start Streaming</li>
+          </ol>
+          <p><strong>Usage for Player:</strong></p>
+          <ol>
+            <li>
+              SRT URL: <br/><code>{srtPlayUrl}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPlayUrl)} />
+              </div>
+            </li>
+            <li>Download ffplay from <a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>here</a>, a low latency player by FFmpeg</li>
+            <li>
+              For Windows:<br/>
+              <code>{ffplayWindows}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffplayWindows)} />
+              </div>
+            </li>
+            <li>
+              For Mac or Linux:<br/>
+              <code>{ffplayMac}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffplayMac)} />
+              </div>
+            </li>
+            <li>It takes a while to render the SRT stream, please wait.</li>
+            <li>
+              You're able to play by H5<br/>
+              <ul>
+                <li>For ffplay, please read other section</li>
+                <li>
+                  <a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV</a> <code>{flvUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrl)} />
+                  </div>
+                </li>
+                <li>
+                  HLS by <a href={hlsPlayer} target='_blank' rel='noreferrer'>H5</a> &nbsp;
+                  <code>{m3u8Url}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+                  </div>
+                </li>
+                <li>WebRTC by <a href={rtcPlayer} target='_blank' rel='noreferrer'>H5</a></li>
+              </ul>
+            </li>
+          </ol>
+          <p>For latency benchmark, please read <a href='https://github.com/ossrs/srs/issues/1147#lagging-benchmark' target='_blank' rel='noreferrer'>here</a></p>
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>

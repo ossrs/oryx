@@ -6,6 +6,7 @@ import {useNavigate} from "react-router-dom";
 import {Token, Tools} from '../utils';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
+import {useTranslation} from "react-i18next";
 
 export default function Login({onLogin}) {
   return (
@@ -22,6 +23,7 @@ function LoginImpl({onLogin}) {
   const passwordRef = React.useRef();
   const plaintextRef = React.useRef();
   const handleError = useErrorHandler();
+  const {t} = useTranslation();
 
   // Verify the token if exists.
   React.useEffect(() => {
@@ -66,7 +68,7 @@ function LoginImpl({onLogin}) {
       <Container>
         <Form>
           <Form.Group className="mb-3" controlId="formBasicPassword">
-            <Form.Label>请输入密码</Form.Label>
+            <Form.Label>{t('login.passwordLabel')}</Form.Label>
             {
               !plaintext &&
               <Form.Control type="password" placeholder="Password" ref={passwordRef} defaultValue={password}
@@ -78,15 +80,15 @@ function LoginImpl({onLogin}) {
                 onChange={(e) => setPassword(e.target.value)}/>
             }
             <Form.Text className="text-muted">
-              * 忘记密码？可登录机器执行 <code>cat ~lighthouse/credentials.txt</code>
+              * {t('login.passwordTip')}
             </Form.Text>
           </Form.Group>
           <Form.Group className="mb-3" controlId="formBasicCheckbox">
-            <Form.Check type="checkbox" label="显示密码" defaultChecked={plaintext}
+            <Form.Check type="checkbox" label={t('login.labelShow')} defaultChecked={plaintext}
               onClick={() => setPlaintext(!plaintext)}/>
           </Form.Group>
           <Button variant="primary" type="submit" onClick={(e) => handleLogin(e)}>
-            登录
+            {t('login.labelLogin')}
           </Button>
         </Form>
       </Container>
