@@ -1,7 +1,7 @@
 {
   "name": "platform",
   "version":"1.0.190",
-  "description": "Platform API for srs-terraform modules",
+  "description": "Platform API for srs-cloud modules",
   "main": "index.js",
   "scripts": {
     "start": "env NODE_ENV=development node .",

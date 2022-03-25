@@ -1,7 +1,7 @@
 {
   "name": "tencent",
   "version":"1.0.10",
-  "description": "Tencent cloud API for srs-terraform modules",
+  "description": "Tencent cloud API for srs-cloud modules",
   "main": "index.js",
   "scripts": {
     "start": "env NODE_ENV=development node .",

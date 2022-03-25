@@ -1,7 +1,7 @@
 {
   "name": "mgmt",
   "version":"1.0.190",
-  "description": "API for srs-terraform mgmt",
+  "description": "API for srs-cloud mgmt",
   "main": "index.js",
   "scripts": {
     "start": "env NODE_ENV=development node .",

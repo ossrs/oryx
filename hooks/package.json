@@ -1,7 +1,7 @@
 {
   "name": "hooks",
   "version":"1.0.37",
-  "description": "Hooks for srs-terraform modules",
+  "description": "Hooks for srs-cloud modules",
   "main": "index.js",
   "scripts": {
     "start": "env NODE_ENV=development node .",
