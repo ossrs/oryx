@@ -31,7 +31,6 @@ export const Locale = {
     return this._cache;
   },
   current() {
-    console.log(`envs is`, process.env);
     return this._cache?.lang || process.env.REACT_APP_LOCALE || 'zh';
   }
 };

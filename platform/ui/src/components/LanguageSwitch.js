@@ -14,7 +14,7 @@ export default function LanguageSwitch() {
   const {i18n} = useTranslation();
 
   React.useEffect(() => {
-    const [lang] = location.pathname.split('/')[1];
+    const lang = location.pathname.split('/')[1];
 
     // Ignore if invalid language.
     if (!lang || !Object.keys(resources).includes(lang)) {

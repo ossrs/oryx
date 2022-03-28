@@ -104,6 +104,7 @@ app.use(async (ctx, next) => {
   }
 
   if (ctx.request.path === '/') return ctx.response.redirect('/mgmt/');
+  if (ctx.request.path === '/mgmt') return ctx.response.redirect('/mgmt/');
   if (ctx.request.path === '/index.html') return ctx.response.redirect('/mgmt/');
   await next();
 });

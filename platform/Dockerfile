@@ -9,7 +9,9 @@ COPY platform /usr/local/srs-cloud/platform
 
 WORKDIR /usr/local/srs-cloud/platform
 RUN npm install && (cd ui && npm install)
-RUN npm run build
+
+RUN env PUBLIC_URL=/mgmt REACT_APP_LOCALE=zh BUILD_PATH=build/zh npm run buildDocker
+RUN env PUBLIC_URL=/mgmt REACT_APP_LOCALE=en BUILD_PATH=build/en npm run buildDocker
 
 ############################################################
 # dist

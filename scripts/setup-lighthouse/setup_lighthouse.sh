@@ -95,6 +95,10 @@ touch /usr/local/srs-cloud/mgmt/.env &&
 systemctl enable srs-cloud
 if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
 
+# Choose default language.
+echo 'REACT_APP_LOCALE=zh' > /usr/local/srs-cloud/mgmt/.env
+if [[ $? -ne 0 ]]; then echo "Setup language failed"; exit 1; fi
+
 # Generate self-sign HTTPS crt and file.
 if [[ ! -f /etc/nginx/ssl/nginx.key ]]; then
   mkdir -p /etc/nginx/ssl &&
