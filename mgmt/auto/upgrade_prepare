@@ -9,6 +9,11 @@ if [[ ! -d /usr/local/srs-cloud && $(uname -s) == 'Darwin' ]]; then
   sleep 3; exit 0;
 fi
 
+# Get the metadata of machine.
+if [[ -f .env ]]; then source .env; fi
+if [[ -f ../.env ]]; then source ../.env; fi
+echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
+
 # Initialize the REGION and SOURCE, try to load from param 1.
 # Note that we MUST load the REGION and SOURCE again, because nodejs executes this directly, and the region list might
 # changed after the image is created.
@@ -66,7 +71,7 @@ fi
 
 # Use different docker registry.
 REGISTRY=registry.cn-hangzhou.aliyuncs.com
-if [[ $SOURCE == GITHUB ]]; then REGISTRY=sgccr.ccs.tencentyun.com; fi
+if [[ $SOURCE == GITHUB || $SOURCE == github ]]; then REGISTRY=sgccr.ccs.tencentyun.com; fi
 echo "Detect REGISTRY=$REGISTRY"
 
 bash auto/upgrade_containers $REGISTRY

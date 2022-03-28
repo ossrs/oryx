@@ -34,9 +34,9 @@ jobs:
 
       - name: Setup the service
         run: |
-          sudo ln -sf $(pwd) /usr/local/srs-terraform
-          sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
-          sudo systemctl enable srs-terraform nginx
+          sudo ln -sf $(pwd) /usr/local/srs-cloud
+          sudo cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
+          sudo systemctl enable srs-cloud nginx
 
           echo "Disable docker for test"
           echo "USE_DOCKER=false" >> $GITHUB_ENV
@@ -98,9 +98,9 @@ jobs:
 
       - name: Setup the service
         run: |
-          sudo ln -sf $(pwd) /usr/local/srs-terraform
-          sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
-          sudo systemctl enable srs-terraform nginx
+          sudo ln -sf $(pwd) /usr/local/srs-cloud
+          sudo cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
+          sudo systemctl enable srs-cloud nginx
 
           echo "Disable docker for test"
           echo "USE_DOCKER=false" >> $GITHUB_ENV
@@ -162,9 +162,9 @@ jobs:
 
       - name: Setup the service
         run: |
-          sudo ln -sf $(pwd) /usr/local/srs-terraform
-          sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
-          sudo systemctl enable srs-terraform nginx
+          sudo ln -sf $(pwd) /usr/local/srs-cloud
+          sudo cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
+          sudo systemctl enable srs-cloud nginx
 
           echo "Disable docker for test"
           echo "USE_DOCKER=false" >> $GITHUB_ENV
@@ -226,9 +226,9 @@ jobs:
 
       - name: Setup the service
         run: |
-          sudo ln -sf $(pwd) /usr/local/srs-terraform
-          sudo cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service
-          sudo systemctl enable srs-terraform nginx
+          sudo ln -sf $(pwd) /usr/local/srs-cloud
+          sudo cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
+          sudo systemctl enable srs-cloud nginx
 
           echo "Disable docker for test"
           echo "USE_DOCKER=false" >> $GITHUB_ENV
