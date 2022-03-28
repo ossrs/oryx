@@ -13,7 +13,6 @@
     "i18next": "^21.6.14",
     "js-core": "file:../../js-core",
     "moment": "^2.29.1",
-    "querystring": "^0.2.1",
     "react": "^17.0.2",
     "react-bootstrap": "^2.1.1",
     "react-bootstrap-icons": "^1.7.2",
