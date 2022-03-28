@@ -22,7 +22,7 @@ if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 #   gnutls_handshake() failed: The TLS connection was non-properly terminated.
 # so we try to wait for a while and try later.
 for ((i=0; i<30; i++)); do
-  rm -rf srs-cloud && git clone -b droplet https://github.com/ossrs/srs-cloud.git && GIT_DONE=YES
+  rm -rf srs-cloud && git clone -b main https://github.com/ossrs/srs-cloud.git && GIT_DONE=YES
   if [[ $? -eq 0 ]]; then break; fi
   echo "Ignore error and try later..."; sleep 3;
 done
