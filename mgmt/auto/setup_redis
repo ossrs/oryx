@@ -45,3 +45,9 @@ echo "redis-cli -p \$REDIS_PORT -a \$REDIS_PASSWORD \$*" >> ~lighthouse/redis-cl
 chmod +x ~lighthouse/redis-cli &&
 echo "Create redis-cli helper"
 
+
+echo '#!/usr/bin/env bash' > ~lighthouse/api-secret &&
+cat .env |grep REDIS >> ~lighthouse/api-secret &&
+echo "redis-cli -p \$REDIS_PORT -a \$REDIS_PASSWORD \$* HGET SRS_PLATFORM_SECRET token" >> ~lighthouse/api-secret &&
+chmod +x ~lighthouse/api-secret &&
+echo "Get api-secret from redis"

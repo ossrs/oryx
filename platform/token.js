@@ -86,6 +86,21 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0, {token:token2, createAt, expireAt});
   });
 
+  router.all('/terraform/v1/mgmt/token/create', async (ctx) => {
+    const {apiSecret} = ctx.request.body;
+
+    const apiSecret2 = await utils.apiSecret(redis);
+
+    if (apiSecret !== apiSecret2) {
+      throw utils.asError(errs.auth.password, errs.status.auth, 'apiSecret verify failed');
+    }
+
+    const { expire, token } = utils.createToken(moment, jwt, apiSecret);
+    const expiresIn = expire.asSeconds()
+    console.log(`create token by apiSecret ok, token=${token.length}B, expiresIn=${expiresIn}`);
+    ctx.body = utils.asResponse(0, {token, expiresIn});
+  });
+
   router.all('/terraform/v1/mgmt/login', async (ctx) => {
     if (!process.env.MGMT_PASSWORD) throw utils.asError(errs.auth.init, errs.status.auth, 'not init');
 

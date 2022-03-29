@@ -1,6 +1,6 @@
 import React from "react";
 import {Accordion, Container, Form, Button, Tabs, Tab, InputGroup} from "react-bootstrap";
-import {Token, PlatformPublicKey} from "../utils";
+import {Clipboard, Token, PlatformPublicKey} from "../utils";
 import axios from "axios";
 import {useSearchParams} from "react-router-dom";
 import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
@@ -57,8 +57,12 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
   const [crt, setCrt] = React.useState();
   const [domain, setDomain] = React.useState();
   const [secret, setSecret] = React.useState();
+  const [apiSecret, setAPISecret] = React.useState();
+  const [accessToken, setAccessToken] = React.useState();
   const [beian, setBeian] = React.useState();
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
+  const [openAPICreateTokenRes, setOpenAPICreateTokenRes] = React.useState();
+  const [openAPIExample1Res, setOpenAPIExample1Res] = React.useState();
   const setSearchParams = useSearchParams()[1];
   const handleError = useErrorHandler();
 
@@ -69,6 +73,16 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
   const timeSeries = React.useRef([...Array(25).keys()]).current;
   const [upgradeWindowStart, setUpgradeWindowStart] = React.useState(defaultWindow.start);
   const [upgradeWindowEnd, setUpgradeWindowEnd] = React.useState(defaultWindow.end);
+
+  React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/apiSecret/query', {
+      ...token,
+    }).then(res => {
+      setAPISecret(res.data.data);
+      console.log(`Status: Query ok, apiSecret=${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError]);
 
   const updateBeian = React.useCallback((e) => {
     e.preventDefault();
@@ -165,6 +179,39 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
       console.log(`Setup upgrade window start=${start}, end=${end}`);
     }).catch(handleError);
   }, [handleError, upgradeWindowStart, upgradeWindowEnd]);
+
+  const copyToClipboard = React.useCallback((e, text) => {
+    e.preventDefault();
+
+    Clipboard.copy(text).then(() => {
+      alert(`已经复制到剪切板`);
+    }).catch((err) => {
+      alert(`复制失败，请右键复制链接 ${err}`);
+    });
+  }, []);
+
+  const getAccessToken = React.useCallback((e) => {
+    e.preventDefault();
+
+    axios.post('/terraform/v1/mgmt/token/create', {
+      apiSecret
+    }).then(res => {
+      setOpenAPICreateTokenRes(res.data);
+      setAccessToken(res.data.data.token);
+      console.log(`OpenAPI Example: Get access_token ok, data=${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError, apiSecret]);
+
+  const runOpenAPIExample1 = React.useCallback((e) => {
+    e.preventDefault();
+
+    axios.post('/terraform/v1/hooks/srs/secret/query', {
+      token: accessToken
+    }).then(res => {
+      setOpenAPIExample1Res(res.data.data);
+      console.log(`OpenAPI Example: Query Pushlish Stream Secret ok, data=${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError, accessToken]);
 
   return (
     <>
@@ -313,6 +360,91 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
                     <Button variant="primary" type="submit" onClick={(e) => setupUpgradeWindow(e)}>
                       设置窗口
                     </Button>
+                  </Form>
+                </Accordion.Body>
+              </Accordion.Item>
+            </Accordion>
+          </Tab>
+          <Tab eventKey="api" title="API">
+            <Accordion defaultActiveKey="0">
+              <Accordion.Item eventKey="0">
+                <Accordion.Header>接入介绍</Accordion.Header>
+                <Accordion.Body>
+                  <div>
+                    SRS Cloud 向开发者提供 Open API, 方便开发者对接 SRS Cloud 平台。
+                    <p></p>
+                  </div>
+                  <p>平台 Open API 使用说明:</p>
+                  <ul>
+                    <li> token 是 OpenAPI 接口调用凭据, 调用各接口时都需要使用 token </li>
+                    <li> 使用 apiSeceret 调用 /terraform/v1/mgmt/token/create 接口, 可获取 token, 默认有效期为 1 年 </li>
+                  </ul>
+                </Accordion.Body>
+              </Accordion.Item>
+              <Accordion.Item eventKey="1">
+                <Accordion.Header>获取 apiSeceret</Accordion.Header>
+                <Accordion.Body>
+                  <Form>
+                    <Form.Group className="mb-3">
+                      <Form.Label>apiSecret</Form.Label>
+                      <Form.Text> * apiSecret 调用 SRS Cloud API 接口的密钥</Form.Text>
+                      <Form.Control as="textarea" rows={1} defaultValue={apiSecret} readOnly={true}/>
+                    </Form.Group>
+                    <Button variant="primary" type="submit" onClick={(e) => copyToClipboard(e)}>
+                      复制
+                    </Button>
+                  </Form>
+                </Accordion.Body>
+              </Accordion.Item>
+              <Accordion.Item eventKey="2">
+                <Accordion.Header>获取 token</Accordion.Header>
+                <Accordion.Body>
+                  <Form>
+                  <Form.Group className="mb-3">
+                      <Form.Label>API 接口</Form.Label>
+                      <Form.Control as="textarea" rows={1} defaultValue='POST /terraform/v1/mgmt/token/create' readOnly={true} />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Body 请求参数</Form.Label>
+                      <pre>
+                        {JSON.stringify({apiSecret: `${apiSecret}`}, null, 2)}
+                      </pre>
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>响应结果</Form.Label>
+                      <pre>
+                      {JSON.stringify(openAPICreateTokenRes, null, 2)}
+                      </pre>
+                    </Form.Group>
+                    <Button variant="primary" type="submit" onClick={(e) => getAccessToken(e)}>
+                      RUN
+                    </Button> &nbsp;
+                  </Form>
+                </Accordion.Body>
+              </Accordion.Item>
+              <Accordion.Item eventKey="3">
+                <Accordion.Header>Examples 1: 获取推流密钥</Accordion.Header>
+                <Accordion.Body>
+                  <Form>
+                  <Form.Group className="mb-3">
+                      <Form.Label>API 接口</Form.Label>
+                      <Form.Control as="textarea" rows={1} defaultValue='POST /terraform/v1/hooks/srs/secret/query' readOnly={true} />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Body 请求参数 * 先运行获取 token</Form.Label>
+                      <pre>
+                        {JSON.stringify({accessToken: `${accessToken}`}, null, 2)}
+                      </pre>
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>响应结果</Form.Label>
+                      <pre>
+                      {JSON.stringify(openAPIExample1Res, null, 2)}
+                      </pre>
+                    </Form.Group>
+                    <Button variant="primary" type="submit" onClick={(e) => runOpenAPIExample1(e)}>
+                      RUN
+                    </Button> &nbsp;
                   </Form>
                 </Accordion.Body>
               </Accordion.Item>

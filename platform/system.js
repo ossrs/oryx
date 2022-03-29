@@ -213,6 +213,16 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0, {icp});
   });
 
+  router.all('/terraform/v1/mgmt/apiSecret/query', async (ctx) => {
+    const {token} = ctx.request.body;
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
+
+    console.log(`query apiSecret ok, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0, apiSecret);
+  });
+
   router.all('/terraform/v1/mgmt/beian/update', async (ctx) => {
     const {token, beian, text} = ctx.request.body;
 
