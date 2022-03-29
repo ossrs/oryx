@@ -87,7 +87,7 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0, {token:token2, createAt, expireAt});
   });
 
-  router.all('/terraform/v1/mgmt/token/create', async (ctx) => {
+  router.all('/terraform/v1/mgmt/secret/token', async (ctx) => {
     const {apiSecret} = ctx.request.body;
 
     const apiSecret2 = await utils.apiSecret(redis);

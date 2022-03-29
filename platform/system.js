@@ -213,7 +213,7 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0, {icp});
   });
 
-  router.all('/terraform/v1/mgmt/apiSecret/query', async (ctx) => {
+  router.all('/terraform/v1/mgmt/secret/query', async (ctx) => {
     const {token} = ctx.request.body;
 
     const apiSecret = await utils.apiSecret(redis);

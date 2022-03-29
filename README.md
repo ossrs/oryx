@@ -113,6 +113,8 @@ Platform:
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
 * `/terraform/v1/mgmt/window/query` Query the upgrade time window.
 * `/terraform/v1/mgmt/window/update` Update the upgrade time window.
+* `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
+* `/terraform/v1/mgmt/secret/token` Create token for OpenAPI.
 
 Market:
 

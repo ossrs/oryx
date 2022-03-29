@@ -78,7 +78,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
 
   React.useEffect(() => {
     const token = Token.load();
-    axios.post('/terraform/v1/mgmt/apiSecret/query', {
+    axios.post('/terraform/v1/mgmt/secret/query', {
       ...token,
     }).then(res => {
       setAPISecret(res.data.data);
@@ -195,7 +195,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
   const getAccessToken = React.useCallback((e) => {
     e.preventDefault();
 
-    axios.post('/terraform/v1/mgmt/token/create', {
+    axios.post('/terraform/v1/mgmt/secret/token', {
       apiSecret
     }).then(res => {
       setOpenAPICreateTokenRes(res.data);
@@ -210,7 +210,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
     axios.post('/terraform/v1/hooks/srs/secret/query', {
       token: accessToken
     }).then(res => {
-      setOpenAPIExample1Res(res.data.data);
+      setOpenAPIExample1Res(res.data);
       console.log(`OpenAPI Example: Query Pushlish Stream Secret ok, data=${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
   }, [handleError, accessToken]);
@@ -367,7 +367,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
             </Accordion>
           </Tab>
           <Tab eventKey="api" title="API">
-            <Accordion defaultActiveKey="0">
+            <Accordion defaultActiveKey="2">
               <Accordion.Item eventKey="0">
                 <Accordion.Header>接入介绍</Accordion.Header>
                 <Accordion.Body>
@@ -378,17 +378,17 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
                   <p>平台 Open API 使用说明:</p>
                   <ul>
                     <li> token 是 OpenAPI 接口调用凭据, 调用各接口时都需要使用 token </li>
-                    <li> 使用 apiSeceret 调用 /terraform/v1/mgmt/token/create 接口, 可获取 token, 默认有效期为 1 年 </li>
+                    <li> 使用 apiSeceret 调用 /terraform/v1/mgmt/secret/token 接口, 可获取 token, 默认有效期为 1 年 </li>
                   </ul>
                 </Accordion.Body>
               </Accordion.Item>
               <Accordion.Item eventKey="1">
-                <Accordion.Header>获取 apiSeceret</Accordion.Header>
+                <Accordion.Header>获取ApiSecret</Accordion.Header>
                 <Accordion.Body>
                   <Form>
                     <Form.Group className="mb-3">
-                      <Form.Label>apiSecret</Form.Label>
-                      <Form.Text> * apiSecret 调用 SRS Cloud API 接口的密钥</Form.Text>
+                      <Form.Label>ApiSecret</Form.Label>
+                      <Form.Text> * 使用ApiSecret生成token，用于访问SRS Cloud OpenAPI</Form.Text>
                       <Form.Control as="textarea" rows={1} defaultValue={apiSecret} readOnly={true}/>
                     </Form.Group>
                     <Button variant="primary" type="submit" onClick={(e) => copyToClipboard(e)}>
@@ -398,12 +398,12 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
                 </Accordion.Body>
               </Accordion.Item>
               <Accordion.Item eventKey="2">
-                <Accordion.Header>获取 token</Accordion.Header>
+                <Accordion.Header>获取Token</Accordion.Header>
                 <Accordion.Body>
                   <Form>
                   <Form.Group className="mb-3">
                       <Form.Label>API 接口</Form.Label>
-                      <Form.Control as="textarea" rows={1} defaultValue='POST /terraform/v1/mgmt/token/create' readOnly={true} />
+                      <Form.Control as="textarea" rows={1} defaultValue='POST /terraform/v1/mgmt/secret/token' readOnly={true} />
                     </Form.Group>
                     <Form.Group className="mb-3">
                       <Form.Label>Body 请求参数</Form.Label>
@@ -424,7 +424,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
                 </Accordion.Body>
               </Accordion.Item>
               <Accordion.Item eventKey="3">
-                <Accordion.Header>Examples 1: 获取推流密钥</Accordion.Header>
+                <Accordion.Header>API: 获取推流密钥</Accordion.Header>
                 <Accordion.Body>
                   <Form>
                   <Form.Group className="mb-3">
