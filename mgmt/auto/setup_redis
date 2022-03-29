@@ -12,10 +12,11 @@ REDIS_CONF=/etc/redis.conf
 if [[ ! -f $REDIS_CONF ]]; then REDIS_CONF=/etc/redis/redis.conf; fi
 if [[ ! -f $REDIS_CONF ]]; then echo "no redis config"; exit 1; fi
 
-# Always write redis-cli to /root
+# Always write all cli tools to /root
 # Note that it's not required tool, so we only need a place to save the script.
 REDIS_CLI=/root/redis-cli
-echo "Setup redis script, PrivateIPv4=$PIPV4, REDIS_CONF=${REDIS_CONF}, REDIS_CLI=${REDIS_CLI}"
+API_SECRET_CLI=/root/api-secret
+echo "Setup redis script, PrivateIPv4=$PIPV4, REDIS_CONF=${REDIS_CONF}, REDIS_CLI=${REDIS_CLI}, API_SECRET_CLI=${API_SECRET_CLI}"
 
 # Replace the bind for redis.
 grep -q "^bind 127.0.0.1 $PIPV4" $REDIS_CONF; SETUP_BIND=$?
@@ -56,6 +57,14 @@ if [[ ! -z $REDIS_CLI ]]; then
   cat .env |grep REDIS >> $REDIS_CLI &&
   echo "redis-cli -p \$REDIS_PORT -a \$REDIS_PASSWORD \$*" >> $REDIS_CLI &&
   chmod +x $REDIS_CLI &&
-  echo "Create redis-cli helper"
+  echo "Create redis-cli helper at $REDIS_CLI"
+fi
+
+if [[ ! -z $API_SECRET_CLI ]]; then
+  echo '#!/usr/bin/env bash' > $API_SECRET_CLI &&
+  cat .env |grep REDIS >> $API_SECRET_CLI &&
+  echo "redis-cli -p \$REDIS_PORT -a \$REDIS_PASSWORD \$* HGET SRS_PLATFORM_SECRET token" >> $API_SECRET_CLI &&
+  chmod +x $API_SECRET_CLI &&
+  echo "Create api-secret helper at $API_SECRET_CLI"
 fi
 
