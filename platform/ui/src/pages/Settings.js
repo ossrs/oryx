@@ -463,7 +463,6 @@ function RunOpenAPI(props) {
 function OpenAPIResult({token, api}) {
   const [openAPIRes, setOpenAPIRes] = React.useState();
   const handleError = useErrorHandler();
-  const {t} = useTranslation();
 
   React.useEffect(() => {
     axios.post(api, {
