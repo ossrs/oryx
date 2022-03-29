@@ -59,7 +59,6 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
   const [domain, setDomain] = React.useState();
   const [secret, setSecret] = React.useState();
   const [apiSecret, setAPISecret] = React.useState();
-  const [accessToken, setAccessToken] = React.useState();
   const [beian, setBeian] = React.useState();
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
   const [apiToken, setApiToken] = React.useState();
@@ -191,14 +190,13 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
     });
   }, []);
 
-  const getAccessToken = React.useCallback((e) => {
+  const createApiToken = React.useCallback((e) => {
     e.preventDefault();
 
     axios.post('/terraform/v1/mgmt/secret/token', {
       apiSecret
     }).then(res => {
       setApiToken(res.data);
-      setAccessToken(res.data.data.token);
       console.log(`OpenAPI Example: Get access_token ok, data=${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
   }, [handleError, apiSecret]);
@@ -296,7 +294,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
               </Accordion.Item>
             </Accordion>
           </Tab>
-          <Tab eventKey="api" title="API">
+          <Tab eventKey="api" title="OpenAPI">
             <Accordion defaultActiveKey="2">
               <Accordion.Item eventKey="0">
                 <Accordion.Header>接入介绍</Accordion.Header>
@@ -319,16 +317,16 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
                     <Form.Group className="mb-3">
                       <Form.Label>ApiSecret</Form.Label>
                       <Form.Text> * 使用ApiSecret生成token，用于访问SRS Cloud OpenAPI</Form.Text>
-                      <Form.Control as="textarea" rows={1} defaultValue={apiSecret} readOnly={true}/>
+                      <Form.Control as="input" type='password' rows={1} defaultValue={apiSecret} readOnly={true}/>
                     </Form.Group>
-                    <Button variant="primary" type="submit" onClick={(e) => copyToClipboard(e)}>
+                    <Button variant="primary" type="submit" onClick={(e) => copyToClipboard(e, apiSecret)}>
                       复制
                     </Button>
                   </Form>
                 </Accordion.Body>
               </Accordion.Item>
               <Accordion.Item eventKey="2">
-                <Accordion.Header>获取Token</Accordion.Header>
+                <Accordion.Header>API: 创建Token</Accordion.Header>
                 <Accordion.Body>
                   <Form>
                     <Form.Group className="mb-3">
@@ -338,13 +336,13 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
                     <Form.Group className="mb-3">
                       <Form.Label>Body 请求参数</Form.Label>
                       <pre>
-                        {JSON.stringify({apiSecret: `${apiSecret}`}, null, 2)}
+                        {JSON.stringify({apiSecret: `${'*'.repeat(apiSecret?.length)}`}, null, 2)}
                       </pre>
                     </Form.Group>
                     <Form.Group className="mb-3">
                       { apiToken && <><Form.Label>响应结果</Form.Label><pre>{JSON.stringify(apiToken, null, 2)}</pre></> }
                     </Form.Group>
-                    <Button variant="primary" type="submit" onClick={(e) => getAccessToken(e)}>
+                    <Button variant="primary" type="submit" onClick={(e) => createApiToken(e)}>
                       RUN
                     </Button> &nbsp;
                   </Form>
@@ -353,7 +351,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
               <Accordion.Item eventKey="3">
                 <Accordion.Header>API: 获取推流密钥</Accordion.Header>
                 <Accordion.Body>
-                  <RunOpenAPI accessToken={accessToken} api='/terraform/v1/hooks/srs/secret/query' />
+                  <RunOpenAPI token={apiToken?.data?.token} api='/terraform/v1/hooks/srs/secret/query' />
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>
@@ -424,12 +422,20 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
 
 function RunOpenAPI(props) {
   const [showResult, setShowResult] = React.useState();
-  const {accessToken, api} = props;
+  const {token, api} = props;
 
   const onClick = React.useCallback((e) => {
     e.preventDefault();
     setShowResult(!showResult);
   }, [showResult]);
+
+  if (!token) {
+    return (
+      <div>
+        没有Token，请先运行<code>API: 创建Token</code>
+      </div>
+    );
+  }
 
   return (
     <Form>
@@ -438,9 +444,9 @@ function RunOpenAPI(props) {
         <Form.Control as="textarea" rows={1} defaultValue={`POST ${api}`} readOnly={true} />
       </Form.Group>
       <Form.Group className="mb-3">
-        <Form.Label>Body 请求参数 * 请获取 Token</Form.Label>
+        <Form.Label>Body 请求参数 </Form.Label>
         <pre>
-          {JSON.stringify({accessToken: `${accessToken || ''}`}, null, 2)}
+          {JSON.stringify({token: `${token || ''}`}, null, 2)}
         </pre>
       </Form.Group>
       <Form.Group className="mb-3">
@@ -453,18 +459,18 @@ function RunOpenAPI(props) {
   );
 }
 
-function OpenAPIResult({accessToken, api}) {
+function OpenAPIResult({token, api}) {
   const handleError = useErrorHandler();
   const [openAPIRes, setOpenAPIRes] = React.useState();
 
   React.useEffect(() => {
     axios.post(api, {
-      token: accessToken
+      token: token
     }).then(res => {
       setOpenAPIRes(res.data);
       console.log(`OpenAPI: Run api=${api} ok, data=${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
-  }, [handleError, accessToken, api]);
+  }, [handleError, token, api]);
 
   return (
     <>
