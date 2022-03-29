@@ -118,6 +118,18 @@
         "autoUpgrade": "自动更新",
         "autoUpgradeTip": "是否自动更新到稳定版本"
       },
+      "openapi": {
+        "title": "使用场景",
+        "summary": "向开发者提供 OpenAPI, 方便开发者对接",
+        "usage1": "Token是OpenAPI接口调用凭据, 调用各接口时都需要使用Token",
+        "usage2": "使用ApiSecret，调用接口可创建Token, 默认有效期为1年",
+        "secret": "获取ApiSecret",
+        "secretTip": "使用ApiSecret生成Token，用于访问OpenAPI",
+        "secretCopy": "复制ApiSecret",
+        "token": "API: 创建Token",
+        "apiPublishSecret": "API: 获取推流密钥",
+        "tokenEmpty": "没有Token，请先运行"
+      },
       "errs": {
         "expire1": "Token过期，请",
         "expire2": "重新登录"
@@ -254,6 +266,18 @@
         "latest": "Latest",
         "autoUpgrade": "Auto",
         "autoUpgradeTip": "Whether automatically upgrade"
+      },
+      "openapi": {
+        "title": "Introduction",
+        "summary": "For developer to call OpenAPi of SRS Cloud",
+        "usage1": "Token is used for authentication of OpenAPI",
+        "usage2": "Use ApiSecret to create Token, expired in 1 year",
+        "secret": "Get ApiSecret",
+        "secretTip": "Use ApiSecret to create Token",
+        "secretCopy": "Copy ApiSecret",
+        "token": "API: Create Token",
+        "apiPublishSecret": "API: Query Publish Secret",
+        "tokenEmpty": "No Token, please run "
       },
       "errs": {
         "expire1": "Token expired, please ",

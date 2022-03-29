@@ -297,59 +297,59 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
           <Tab eventKey="api" title="OpenAPI">
             <Accordion defaultActiveKey="2">
               <Accordion.Item eventKey="0">
-                <Accordion.Header>接入介绍</Accordion.Header>
+                <Accordion.Header>{t('openapi.title')}</Accordion.Header>
                 <Accordion.Body>
                   <div>
-                    SRS Cloud 向开发者提供 Open API, 方便开发者对接 SRS Cloud 平台。
+                    {t('openapi.summary')}
                     <p></p>
                   </div>
-                  <p>平台 Open API 使用说明:</p>
+                  <p>Usage:</p>
                   <ul>
-                    <li> token 是 OpenAPI 接口调用凭据, 调用各接口时都需要使用 token </li>
-                    <li> 使用 apiSeceret 调用 /terraform/v1/mgmt/secret/token 接口, 可获取 token, 默认有效期为 1 年 </li>
+                    <li> {t('openapi.usage1')} </li>
+                    <li> {t('openapi.usage2')} </li>
                   </ul>
                 </Accordion.Body>
               </Accordion.Item>
               <Accordion.Item eventKey="1">
-                <Accordion.Header>获取ApiSecret</Accordion.Header>
+                <Accordion.Header>{t('openapi.secret')}</Accordion.Header>
                 <Accordion.Body>
                   <Form>
                     <Form.Group className="mb-3">
                       <Form.Label>ApiSecret</Form.Label>
-                      <Form.Text> * 使用ApiSecret生成token，用于访问SRS Cloud OpenAPI</Form.Text>
+                      <Form.Text> * {t('openapi.secretTip')}</Form.Text>
                       <Form.Control as="input" type='password' rows={1} defaultValue={apiSecret} readOnly={true}/>
                     </Form.Group>
                     <Button variant="primary" type="submit" onClick={(e) => copyToClipboard(e, apiSecret)}>
-                      复制
+                      {t('openapi.secretCopy')}
                     </Button>
                   </Form>
                 </Accordion.Body>
               </Accordion.Item>
               <Accordion.Item eventKey="2">
-                <Accordion.Header>API: 创建Token</Accordion.Header>
+                <Accordion.Header>{t('openapi.token')}</Accordion.Header>
                 <Accordion.Body>
                   <Form>
                     <Form.Group className="mb-3">
-                      <Form.Label>API 接口</Form.Label>
+                      <Form.Label>API</Form.Label>
                       <Form.Control as="textarea" rows={1} defaultValue='POST /terraform/v1/mgmt/secret/token' readOnly={true} />
                     </Form.Group>
                     <Form.Group className="mb-3">
-                      <Form.Label>Body 请求参数</Form.Label>
+                      <Form.Label>Body</Form.Label>
                       <pre>
                         {JSON.stringify({apiSecret: `${'*'.repeat(apiSecret?.length)}`}, null, 2)}
                       </pre>
                     </Form.Group>
                     <Form.Group className="mb-3">
-                      { apiToken && <><Form.Label>响应结果</Form.Label><pre>{JSON.stringify(apiToken, null, 2)}</pre></> }
+                      { apiToken && <><Form.Label>Response</Form.Label><pre>{JSON.stringify(apiToken, null, 2)}</pre></> }
                     </Form.Group>
                     <Button variant="primary" type="submit" onClick={(e) => createApiToken(e)}>
-                      RUN
+                      Run
                     </Button> &nbsp;
                   </Form>
                 </Accordion.Body>
               </Accordion.Item>
               <Accordion.Item eventKey="3">
-                <Accordion.Header>API: 获取推流密钥</Accordion.Header>
+                <Accordion.Header>{t('openapi.apiPublishSecret')}</Accordion.Header>
                 <Accordion.Body>
                   <RunOpenAPI token={apiToken?.data?.token} api='/terraform/v1/hooks/srs/secret/query' />
                 </Accordion.Body>
@@ -422,6 +422,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
 
 function RunOpenAPI(props) {
   const [showResult, setShowResult] = React.useState();
+  const {t} = useTranslation();
   const {token, api} = props;
 
   const onClick = React.useCallback((e) => {
@@ -432,7 +433,7 @@ function RunOpenAPI(props) {
   if (!token) {
     return (
       <div>
-        没有Token，请先运行<code>API: 创建Token</code>
+        {t('openapi.tokenEmpty')}<code>{t('openapi.token')}</code>
       </div>
     );
   }
@@ -440,11 +441,11 @@ function RunOpenAPI(props) {
   return (
     <Form>
       <Form.Group className="mb-3">
-        <Form.Label>API 接口</Form.Label>
+        <Form.Label>API</Form.Label>
         <Form.Control as="textarea" rows={1} defaultValue={`POST ${api}`} readOnly={true} />
       </Form.Group>
       <Form.Group className="mb-3">
-        <Form.Label>Body 请求参数 </Form.Label>
+        <Form.Label>Body </Form.Label>
         <pre>
           {JSON.stringify({token: `${token || ''}`}, null, 2)}
         </pre>
@@ -453,15 +454,16 @@ function RunOpenAPI(props) {
         { showResult && <SrsErrorBoundary><OpenAPIResult {...props} /></SrsErrorBoundary> }
       </Form.Group>
       <Button variant="primary" type="submit" onClick={(e) => onClick(e)}>
-        {showResult ? 'RESET' : 'RUN'}
+        {showResult ? 'Reset' : 'Run'}
       </Button> &nbsp;
     </Form>
   );
 }
 
 function OpenAPIResult({token, api}) {
-  const handleError = useErrorHandler();
   const [openAPIRes, setOpenAPIRes] = React.useState();
+  const handleError = useErrorHandler();
+  const {t} = useTranslation();
 
   React.useEffect(() => {
     axios.post(api, {
@@ -474,7 +476,7 @@ function OpenAPIResult({token, api}) {
 
   return (
     <>
-      <Form.Label>响应结果</Form.Label>
+      <Form.Label>Response</Form.Label>
       <pre>
       {JSON.stringify(openAPIRes, null, 2)}
       </pre>
