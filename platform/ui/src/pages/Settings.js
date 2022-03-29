@@ -62,8 +62,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
   const [accessToken, setAccessToken] = React.useState();
   const [beian, setBeian] = React.useState();
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
-  const [openAPICreateTokenRes, setOpenAPICreateTokenRes] = React.useState();
-  const [openAPIRes, setOpenAPIRes] = React.useState();
+  const [apiToken, setApiToken] = React.useState();
   const setSearchParams = useSearchParams()[1];
   const handleError = useErrorHandler();
   const {t} = useTranslation();
@@ -198,22 +197,11 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
     axios.post('/terraform/v1/mgmt/secret/token', {
       apiSecret
     }).then(res => {
-      setOpenAPICreateTokenRes(res.data);
+      setApiToken(res.data);
       setAccessToken(res.data.data.token);
       console.log(`OpenAPI Example: Get access_token ok, data=${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
   }, [handleError, apiSecret]);
-
-  const runOpenAPI = React.useCallback((e) => {
-    e.preventDefault();
-
-    axios.post('/terraform/v1/hooks/srs/secret/query', {
-      token: accessToken
-    }).then(res => {
-      setOpenAPIRes(res.data);
-      console.log(`OpenAPI Example: Query Pushlish Stream Secret ok, data=${JSON.stringify(res.data.data)}`);
-    }).catch(handleError);
-  }, [handleError, accessToken]);
 
   return (
     <>
@@ -354,10 +342,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
                       </pre>
                     </Form.Group>
                     <Form.Group className="mb-3">
-                      <Form.Label>响应结果</Form.Label>
-                      <pre>
-                      {JSON.stringify(openAPICreateTokenRes, null, 2)}
-                      </pre>
+                      { apiToken && <><Form.Label>响应结果</Form.Label><pre>{JSON.stringify(apiToken, null, 2)}</pre></> }
                     </Form.Group>
                     <Button variant="primary" type="submit" onClick={(e) => getAccessToken(e)}>
                       RUN
@@ -368,27 +353,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
               <Accordion.Item eventKey="3">
                 <Accordion.Header>API: 获取推流密钥</Accordion.Header>
                 <Accordion.Body>
-                  <Form>
-                    <Form.Group className="mb-3">
-                      <Form.Label>API 接口</Form.Label>
-                      <Form.Control as="textarea" rows={1} defaultValue='POST /terraform/v1/hooks/srs/secret/query' readOnly={true} />
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Body 请求参数 * 先运行获取 token</Form.Label>
-                      <pre>
-                        {JSON.stringify({accessToken: `${accessToken}`}, null, 2)}
-                      </pre>
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                      <Form.Label>响应结果</Form.Label>
-                      <pre>
-                      {JSON.stringify(openAPIRes, null, 2)}
-                      </pre>
-                    </Form.Group>
-                    <Button variant="primary" type="submit" onClick={(e) => runOpenAPI(e)}>
-                      RUN
-                    </Button> &nbsp;
-                  </Form>
+                  <RunOpenAPI accessToken={accessToken} api='/terraform/v1/hooks/srs/secret/query' />
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>
@@ -453,6 +418,60 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
           </Tab>
         </Tabs>
       </Container>
+    </>
+  );
+}
+
+function RunOpenAPI(props) {
+  const [showResult, setShowResult] = React.useState();
+  const {accessToken, api} = props;
+
+  const onClick = React.useCallback((e) => {
+    e.preventDefault();
+    setShowResult(!showResult);
+  }, [showResult]);
+
+  return (
+    <Form>
+      <Form.Group className="mb-3">
+        <Form.Label>API 接口</Form.Label>
+        <Form.Control as="textarea" rows={1} defaultValue={`POST ${api}`} readOnly={true} />
+      </Form.Group>
+      <Form.Group className="mb-3">
+        <Form.Label>Body 请求参数 * 请获取 Token</Form.Label>
+        <pre>
+          {JSON.stringify({accessToken: `${accessToken || ''}`}, null, 2)}
+        </pre>
+      </Form.Group>
+      <Form.Group className="mb-3">
+        { showResult && <SrsErrorBoundary><OpenAPIResult {...props} /></SrsErrorBoundary> }
+      </Form.Group>
+      <Button variant="primary" type="submit" onClick={(e) => onClick(e)}>
+        {showResult ? 'RESET' : 'RUN'}
+      </Button> &nbsp;
+    </Form>
+  );
+}
+
+function OpenAPIResult({accessToken, api}) {
+  const handleError = useErrorHandler();
+  const [openAPIRes, setOpenAPIRes] = React.useState();
+
+  React.useEffect(() => {
+    axios.post(api, {
+      token: accessToken
+    }).then(res => {
+      setOpenAPIRes(res.data);
+      console.log(`OpenAPI: Run api=${api} ok, data=${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError, accessToken, api]);
+
+  return (
+    <>
+      <Form.Label>响应结果</Form.Label>
+      <pre>
+      {JSON.stringify(openAPIRes, null, 2)}
+      </pre>
     </>
   );
 }
