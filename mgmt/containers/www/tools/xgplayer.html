@@ -21,10 +21,12 @@
     // See https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
     const q = new URLSearchParams(location.search);
 
+    // See https://v2.h5player.bytedance.com/en/config/#multilingual
     console.log(`?url=${q.get('url')} Setup the url to play, HTTP-FLV or HLS`);
+    console.log(`?lang=${q.get('lang')} Setup the lang, zh-cn, en or jp`);
 
     const resource = q.get('url');
-    if (!resource) return alert(`没有指定URL`);
+    if (!resource) return alert(`No URL`);
 
     const config = {
       id: "player",
@@ -34,7 +36,7 @@
       volume: 0.8,
       download: false,
       fitVideoSize: 'auto',
-      lang: 'zh-cn',
+      lang: q.get('lang') || 'zh-cn',
     };
 
     if (resource.indexOf('.flv') > 0) {
@@ -56,7 +58,7 @@
       return;
     }
 
-    alert(`不支持的URL：${resource}`);
+    alert(`Invalid URL：${resource}`);
   });
 </script>
 </html>

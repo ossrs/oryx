@@ -29,14 +29,16 @@ app.use(Cors());
 //   Static File Server sections.
 ///////////////////////////////////////////////////////////////////////////////////////////
 // For react, static files server, by /mgmt/
+const mgmtHome = path.join(__dirname, 'ui/build', process.env.REACT_APP_LOCALE || 'zh');
 utils.srsProxy(
   staticCache,
   app,
-  path.join(__dirname, 'ui/build'),
+  mgmtHome,
   '/mgmt/',
   ['/mgmt/index.html'],
   {'/mgmt/': '/mgmt/index.html'},
 );
+console.log(`serve mgmt at ${mgmtHome}`);
 
 // For react-router pages, by /mgmt/routers-*
 app.use(async (ctx, next) => {
@@ -53,10 +55,10 @@ app.use(async (ctx, next) => {
 
   // Directly serve the react routes by index.html
   // See https://stackoverflow.com/a/52464577/17679565
-  if (isPreviousReactRoutes || ctx.request.path.indexOf('/mgmt/routers-') === 0) {
+  if (isPreviousReactRoutes || ctx.request.path?.match(/\/mgmt.*\/routers-/)) {
     ctx.type = 'text/html';
     ctx.set('Cache-Control', 'public, max-age=0');
-    ctx.body = fs.readFileSync('./ui/build/index.html');
+    ctx.body = fs.readFileSync(path.join(mgmtHome, 'index.html'));
     return;
   }
 
@@ -73,6 +75,14 @@ app.use(
     serve('./containers/www/.well-known/acme-challenge/'),
   ),
 );
+
+// For homepage from root, use mgmt.
+app.use(async (ctx, next) => {
+  if (ctx.request.path === '/') return ctx.response.redirect('/mgmt/');
+  if (ctx.request.path === '/mgmt') return ctx.response.redirect('/mgmt/');
+  if (ctx.request.path === '/index.html') return ctx.response.redirect('/mgmt/');
+  await next();
+});
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //   API sections.

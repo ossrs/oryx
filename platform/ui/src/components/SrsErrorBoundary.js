@@ -3,6 +3,7 @@ import {ErrorBoundary} from 'react-error-boundary';
 import {Alert, Container} from "react-bootstrap";
 import {Errors} from "../utils";
 import {NavLink} from "react-router-dom";
+import {useTranslation} from "react-i18next";
 
 export function SrsErrorBoundary({children}) {
   return (
@@ -27,13 +28,27 @@ function ErrorFallback({error}) {
 }
 
 function ErrorDetail({error}) {
+  const {t} = useTranslation();
+
   if (!error) return (
     <p>Empty unknown error</p>
   );
 
   const err = error?.response?.data;
   if (err?.code === Errors.auth) {
-    return <p>Token过期，请<NavLink to='/routers-logout'>重新登录</NavLink>，{err?.code}: {err?.data?.message}</p>;
+    return (
+      <>
+        <p>
+          {t('errs.expire1')}<NavLink to='/routers-logout'>{t('errs.expire2')}</NavLink>
+        </p>
+        <p>
+          Error Code: {err?.code}
+        </p>
+        <p>
+          <pre style={{whiteSpace: 'pre-wrap'}}>{err?.data?.message}</pre>
+        </p>
+      </>
+    );
   }
 
   if (err?.code) return (

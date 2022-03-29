@@ -1,34 +1,38 @@
 #!/usr/bin/env bash
 
 # Ignore darwin
-if [[ ! -d /usr/local/srs-terraform && $(uname -s) == 'Darwin' ]]; then
+if [[ ! -d /usr/local/srs-cloud && $(uname -s) == 'Darwin' ]]; then
   echo "Directly finish upgrade for macOS development"
   sleep 3; exit 0;
 fi
 
-if [[ ! -d ~lighthouse ]]; then
-  echo "No ~lighthouse"
+# Always write SSH keys to root.
+# Note that it's not required tool, so we write to root home by default.
+SSH_HOME=/root
+
+if [[ ! -d $SSH_HOME ]]; then
+  echo "No $SSH_HOME"
   exit 1
 fi
 
-mkdir -p ~lighthouse/.ssh &&
-touch ~lighthouse/.ssh/authorized_keys
+mkdir -p $SSH_HOME/.ssh &&
+touch $SSH_HOME/.ssh/authorized_keys
 if [[ $? -ne 0 ]]; then echo "Create authorized_keys failed"; exit 1; fi
 
 PLATFORM_PUBKEY='ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC1c+ZAfJ93/qJ3bYp3SuVaMqYMniMCjNnFf20asK+oM7HJqFbBe/VZM2/Z2UkDHZiOqiArb1RLjYQeUFbUmPj2A5cCE8IPaeu28thbOdEC6wTztnAOdVzQBkBPytZiVR8DUUAzgz0tLoXB4nXGXQDntTgXoL/Rzn59BQIa7BzLlLnKc4TCn+LPpsOOmDPnnvjjJXpBKTY/rRTYvvgCUCQ/clSfBsgfQgP1p0nVRlH3FoZaJS4QRdzFVRKJtCytC1NwtgVNwRxpqYsJos9YW+yw+X/K5w7JAjG0v+9TycIzl5/Wd7R3zHMENe2uYx7XayksLc1ZLfgBD1/gldYd6l5VCcgHZJWKVsur8dNwvs0yWj3y9iOi1Lx+J8gLkMSqNouHVV2nVvSILoeWHaadd1+3ghuXKmbvauYI6mYai/T12vnEcxZ1yc6rVah8oy+vNwmpcKj2lixExrNW8JrhjLUU/Rlzla89es8JAZNfQDy7+ZOU1UGt//QqGZaiC8VhtV0= video@MB0'
 # Note that we ignore any error for filter, allows empty file.
-grep -v "${PLATFORM_PUBKEY}" ~lighthouse/.ssh/authorized_keys > ~lighthouse/.ssh/authorized_keys.tmp
+grep -v "${PLATFORM_PUBKEY}" $SSH_HOME/.ssh/authorized_keys > $SSH_HOME/.ssh/authorized_keys.tmp
 echo "Filter authorized_keys ok"
 
 if [[ $1 == 'enable' ]]; then
-  echo "${PLATFORM_PUBKEY}" >> ~lighthouse/.ssh/authorized_keys.tmp
+  echo "${PLATFORM_PUBKEY}" >> $SSH_HOME/.ssh/authorized_keys.tmp
   if [[ $? -ne 0 ]]; then echo "Failed to append authorized_keys"; exit 1; fi
   echo "Enable authorized_keys ok"
 fi
 
-mv -f ~lighthouse/.ssh/authorized_keys.tmp ~lighthouse/.ssh/authorized_keys &&
-chmod 600 ~lighthouse/.ssh/authorized_keys &&
-chown -R lighthouse:lighthouse ~lighthouse/.ssh
+mv -f $SSH_HOME/.ssh/authorized_keys.tmp $SSH_HOME/.ssh/authorized_keys &&
+chmod 600 $SSH_HOME/.ssh/authorized_keys &&
+chown -R lighthouse:lighthouse $SSH_HOME/.ssh
 if [[ $? -ne 0 ]]; then echo "Failed to update authorized_keys"; exit 1; fi
 
 echo "Update authorized_keys ok"

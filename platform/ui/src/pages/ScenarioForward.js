@@ -5,8 +5,14 @@ import axios from "axios";
 import moment from "moment";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import {useErrorHandler} from "react-error-boundary";
+import {useSrsLanguage} from "../components/LanguageSwitch";
 
 export default function ScenarioForward() {
+  const language = useSrsLanguage();
+  return language === 'zh' ? <ScenarioForwardCn /> : <ScenarioForwardEn />;
+}
+
+function ScenarioForwardCn() {
   const [init, setInit] = React.useState();
   const [activeKey, setActiveKey] = React.useState();
   const [secrets, setSecrets] = React.useState();
@@ -245,6 +251,12 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
+  );
+}
+
+function ScenarioForwardEn() {
+  return (
+    <span>On the way...</span>
   );
 }
 

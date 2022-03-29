@@ -1,13 +1,15 @@
 import React from "react";
 import {Button, Form} from "react-bootstrap";
-import {Errors, Token} from "../utils";
+import {Token} from "../utils";
 import axios from "axios";
-import {useNavigate} from "react-router-dom";
+import {useTranslation} from "react-i18next";
+import {useErrorHandler} from "react-error-boundary";
 
 export default function SetupCamSecret({children}) {
-  const navigate = useNavigate();
   const [secretId, setSecretId] = React.useState();
   const [secretKey, setSecretKey] = React.useState();
+  const handleError = useErrorHandler();
+  const {t} = useTranslation();
 
   const updateTencentSecret = React.useCallback((e) => {
     e.preventDefault();
@@ -16,34 +18,26 @@ export default function SetupCamSecret({children}) {
     axios.post('/terraform/v1/tencent/cam/secret', {
       ...token, secretId, secretKey,
     }).then(res => {
-      alert('腾讯云访问密钥设置成功');
-    }).catch(e => {
-      const err = e.response.data;
-      if (err.code === Errors.auth) {
-        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
-        navigate('/routers-logout');
-      } else {
-        alert(`服务器错误，${err.code}: ${err.data.message}`);
-      }
-    });
-  }, [navigate, secretId, secretKey]);
+      alert(t('tencent.secretOk'));
+    }).catch(handleError);
+  }, [handleError, secretId, secretKey, t]);
 
   return (<>
     <Form>
       <Form.Group className="mb-3">
         <Form.Label>SecretId</Form.Label>
-        <Form.Text> * 腾讯云的SecretId, <a href='https://console.cloud.tencent.com/cam/capi' target='_blank' rel='noreferrer'>获取密钥</a></Form.Text>
+        <Form.Text> * {t('tencent.secretIdTip')}, <a href='https://console.cloud.tencent.com/cam/capi' target='_blank' rel='noreferrer'>{t('tencent.secretGet')}</a></Form.Text>
         <Form.Control as="input" rows={2} defaultValue={secretId} onChange={(e) => setSecretId(e.target.value)} />
       </Form.Group>
       <Form.Group className="mb-3">
         <Form.Label>SecretKey</Form.Label>
-        <Form.Text> * 腾讯云的SecretKey, <a href='https://console.cloud.tencent.com/cam/capi' target='_blank' rel='noreferrer'>获取密钥</a></Form.Text>
+        <Form.Text> * {t('tencent.secretKeyTip')}, <a href='https://console.cloud.tencent.com/cam/capi' target='_blank' rel='noreferrer'>{t('tencent.secretGet')}</a></Form.Text>
         <Form.Control as="input" type='password' rows={2} defaultValue={secretKey} onChange={(e) => setSecretKey(e.target.value)} />
       </Form.Group>
       <Button variant="primary" type="submit" onClick={(e) => updateTencentSecret(e)}>
-        设置账号
+        {t('tencent.secretSubmit')}
       </Button>
-      <Form.Text> * 会自动创建依赖的云资源</Form.Text> &nbsp;
+      <Form.Text> * {t('tencent.secretSubmitTip')}</Form.Text> &nbsp;
       {children}
     </Form>
   </>);

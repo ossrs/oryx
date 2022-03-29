@@ -1,11 +1,13 @@
 import React from "react";
 import {Button, Spinner, OverlayTrigger, Popover} from "react-bootstrap";
 import {useSearchParams} from "react-router-dom";
+import {useSrsLanguage} from "./LanguageSwitch";
 
 export default function UpgradeConfirmButton({onClick, releaseAvailable, upgrading, progress, text, children}) {
   const [startUpgrade, setStartUpgrade] = React.useState();
   const [disabled, setDisabled] = React.useState(true);
   const [searchParams] = useSearchParams();
+  const language = useSrsLanguage();
 
   React.useEffect(() => {
     const allowForceUpgrade = searchParams.get('allow-force') === 'true';
@@ -36,7 +38,7 @@ export default function UpgradeConfirmButton({onClick, releaseAvailable, upgradi
               disabled={disabled}
               onClick={!disabled ? onHandleClick : null}
             >
-              确认
+              {language === 'zh' ? '确认' : 'Continue'}
             </Button>
           </div>
           <div className="col-12">
@@ -44,7 +46,7 @@ export default function UpgradeConfirmButton({onClick, releaseAvailable, upgradi
               variant="primary"
               onClick={() => setStartUpgrade(false)}
             >
-              取消
+              {language === 'zh' ? '取消' : 'Abort'}
             </Button>
           </div>
         </div>
@@ -57,7 +59,7 @@ export default function UpgradeConfirmButton({onClick, releaseAvailable, upgradi
       <div className="col-12">
         <OverlayTrigger trigger="click" placement="right" overlay={popover} show={startUpgrade}>
           <Button variant="primary" onClick={() => setStartUpgrade(!startUpgrade)} disabled={disabled}>
-            {upgrading ? '升级中...' : text}
+            {upgrading ? (language === 'zh' ? '升级中...' : 'Upgrading...') : text}
           </Button>
         </OverlayTrigger> &nbsp;
         {upgrading && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />} &nbsp;

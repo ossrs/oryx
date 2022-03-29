@@ -130,6 +130,33 @@ function reloadEnv(dotenv, fs, path) {
 }
 exports.reloadEnv = reloadEnv;
 
+function saveEnvs(fs, os, dotenv, filename, config) {
+  const {parsed: envs} = dotenv.config({path: filename, override: true});
+
+  const merged = {...envs, ...config};
+
+  const envVars = [];
+  if (process.env.MGMT_PASSWORD || merged.MGMT_PASSWORD) {
+    envVars.push(`MGMT_PASSWORD=${process.env.MGMT_PASSWORD || merged.MGMT_PASSWORD}`);
+    envVars.push('');
+  }
+
+  envVars.push(
+    ...Object.keys(merged).map(k => {
+      const v = merged[k];
+      if (k === 'MGMT_PASSWORD') return '';
+      return v ? `${k}=${v}` : '';
+    }).filter(e => e)
+  );
+
+  // Append an empty line.
+  envVars.push('');
+
+  fs.writeFileSync(filename, envVars.join(os.EOL));
+  return merged;
+}
+exports.saveEnvs = saveEnvs;
+
 function srsProxy(staticCache, app, home, prefix, noCaches, alias) {
   const reactFiles = {};
 

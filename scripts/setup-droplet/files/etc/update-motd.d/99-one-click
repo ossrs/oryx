@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# Configured as part of the DigitalOcean 1-Click Image build process
+
+myip=$(hostname -I | awk '{print$1}')
+cat <<EOF
+********************************************************************************
+
+Welcome to DigitalOcean's 1-Click SRS Droplet.
+To keep this Droplet secure, the UFW firewall is enabled.
+All ports are BLOCKED except 22 (SSH), 80 (HTTP), 443 (HTTPS), 1935 (RTMP),
+8000/UDP (WebRTC), 10080/UDP (SRT), 9000/TCP+UDP (GB28181), 5060/TDP+UDP (SIP),
+2022 (MGMT) and 56379 (REDIS).
+
+In a web browser, you can view:
+  * The SRS 1-Click Quickstart guide: https://github.com/ossrs/srs-cloud/wiki/Droplet
+  * Your SRS website: http://$myip/mgmt/
+
+On the server:
+  * The default web root is redirected to /mgmt/
+  * The MGMT admin password is saved in /root/credentials.txt
+  * Automatic HTTPS is supported.
+
+For help and more information, visit https://ossrs.io
+
+********************************************************************************
+To delete this message of the day: rm -rf $(readlink -f ${0})
+EOF

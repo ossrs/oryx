@@ -1,4 +1,5 @@
 const SRS_TERRAFORM_TOKEN = 'SRS_TERRAFORM_TOKEN';
+const SRS_CLOUD_LOCALE = 'SRS_CLOUD_LOCALE';
 
 const utils = require('js-core/utils');
 
@@ -16,6 +17,22 @@ export const Token = {
   remove() {
     localStorage.removeItem(SRS_TERRAFORM_TOKEN);
   },
+};
+
+export const Locale = {
+  _cache: null,
+  save(data) {
+    this._cache = data;
+    localStorage.setItem(SRS_CLOUD_LOCALE, JSON.stringify(data));
+  },
+  load() {
+    const info = localStorage.getItem(SRS_CLOUD_LOCALE);
+    this._cache = info ? JSON.parse(info) : null;
+    return this._cache;
+  },
+  current() {
+    return this._cache?.lang || process.env.REACT_APP_LOCALE || 'zh';
+  }
 };
 
 export const Tools = {

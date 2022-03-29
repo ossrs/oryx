@@ -41,7 +41,8 @@ exports.handle = (router) => {
 
     // Initialize the system password, save to env.
     console.log(`init mgmt password ${'*'.repeat(password.length)} ok`);
-    saveEnvs({MGMT_PASSWORD: password});
+    const filename = process.env.NODE_ENV === 'development' ? path.join('..', 'mgmt', '.env') : '.env';
+    utils.saveEnvs(fs, os, dotenv, filename, {MGMT_PASSWORD: password});
 
     // Refresh the local token.
     await helper.execApi('reloadEnv');
@@ -144,21 +145,4 @@ exports.handle = (router) => {
 
   return router;
 };
-
-function saveEnvs(config) {
-  const filename = process.env.NODE_ENV === 'development' ? path.join('..', 'mgmt', '.env') : '.env';
-  const {parsed: envs} = dotenv.config({path: filename, override: true});
-
-  const merged = {...envs, ...config};
-  const envVars = Object.keys(merged).map(k => {
-    const v = merged[k];
-    return v ? `${k}=${v}` : '';
-  }).filter(e => e);
-
-  // Append an empty line.
-  envVars.push('');
-
-  fs.writeFileSync(filename, envVars.join(os.EOL));
-  return merged;
-}
 

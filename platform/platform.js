@@ -21,7 +21,7 @@ const moment = require('moment');
 exports.isDarwin = null;
 
 // We must mark these fields as async, to notice user not to use it before it initialized.
-const conf = {region: null, source: null, registry: null, cwd: null, platform: null};
+const conf = {cloud: null, region: null, source: null, registry: null, cwd: null, platform: null};
 exports.region = async () => {
   return conf.region;
 };
@@ -47,6 +47,7 @@ exports.init = async () => {
   const apiSecret = await utils.apiSecret(redis);
 
   // Load the platform from redis, initialized by mgmt.
+  conf.cloud = await redis.hget(keys.redis.SRS_TENCENT_LH, 'cloud');
   conf.region = await redis.hget(keys.redis.SRS_TENCENT_LH, 'region');
   conf.source = await redis.hget(keys.redis.SRS_TENCENT_LH, 'source');
   conf.registry = await redis.hget(keys.redis.SRS_TENCENT_LH, 'registry');
@@ -60,6 +61,6 @@ exports.init = async () => {
   conf.platform = hostPlatform;
   exports.isDarwin = conf.platform === 'darwin';
 
-  console.log(`Initialize region=${conf.region}, source=${conf.source}, registry=${conf.registry}, isDarwin=${exports.isDarwin}, cwd=${cwd}, apiSecret=${apiSecret.length}B`);
+  console.log(`Initialize cloud=${conf.cloud}, region=${conf.region}, source=${conf.source}, registry=${conf.registry}, isDarwin=${exports.isDarwin}, cwd=${cwd}, apiSecret=${apiSecret.length}B`);
 };
 

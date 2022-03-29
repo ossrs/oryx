@@ -1,10 +1,16 @@
-import {Accordion} from "react-bootstrap";
 import React from "react";
+import {Accordion} from "react-bootstrap";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import SrsQRCode from "../components/SrsQRCode";
 import * as Icon from 'react-bootstrap-icons';
+import {useSrsLanguage} from "../components/LanguageSwitch";
 
-export default function ScenarioLive({updateStreamName, copyToClipboard, urls}) {
+export default function ScenarioLive(props) {
+  const language = useSrsLanguage();
+  return language === 'zh' ? <ScenarioLiveCn {...props} /> : <ScenarioLiveEn {...props} />;
+}
+
+function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
   const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
   const xgFlvPlayerUrl = flvPlayer?.replace('player.html', 'xgplayer.html');
@@ -188,6 +194,160 @@ export default function ScenarioLive({updateStreamName, copyToClipboard, urls}) 
               </ul>
             </li>
             <li>可选，点击进入<a id="cnConsole" href={cnConsole}>SRS控制台</a>查看流信息</li>
+          </ol>
+        </Accordion.Body>
+      </Accordion.Item>
+    </Accordion>
+  );
+}
+
+function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
+  const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, enConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
+  const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
+  const ffmpegPublishCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv ${rtmpPublishUrl}`;
+
+  return (
+    <Accordion defaultActiveKey="1">
+      <Accordion.Item eventKey="0">
+        <Accordion.Header>Introduction</Accordion.Header>
+        <Accordion.Body>
+          <p>
+            Build a live streaming service.
+          </p>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="1">
+        <Accordion.Header>OBS/vMix</Accordion.Header>
+        <Accordion.Body>
+          <div>
+            <p style={{display: 'inline-block'}}><strong>Usage:</strong></p>
+          </div>
+          <ol>
+            <li>Download OBS from <a href='https://obsproject.com/download' target='_blank' rel='noreferrer'>here</a> and install.</li>
+            <li>
+              OBS configuration:
+              <ul>
+                <li>
+                  Server: <code>{rtmpServer}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtmpServer)} />
+                  </div>
+                </li>
+                <li>
+                  Stream Key: <code>{rtmpStreamKey}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Change Stream'>
+                    <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+                  </div> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtmpStreamKey)} />
+                  </div>
+                </li>
+              </ul>
+            </li>
+            <li>
+              Play the stream by:
+              <ul>
+                <li>
+                  HTTP-FLV by <a href={flvPlayer} target='_blank' rel='noreferrer'>H5</a> &nbsp;
+                  <code>{flvUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrl)} />
+                  </div>
+                </li>
+                <li>
+                  HLS by <a href={hlsPlayer} target='_blank' rel='noreferrer'>H5</a> &nbsp;
+                  <code>{m3u8Url}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+                  </div>
+                </li>
+                <li>WebRTC by <a href={rtcPlayer} target='_blank' rel='noreferrer'>H5</a></li>
+              </ul>
+            </li>
+            <li>Optional, check by <a href={enConsole} target='_blank' rel='noreferrer'>console</a></li>
+          </ol>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="2">
+        <Accordion.Header>FFmpeg</Accordion.Header>
+        <Accordion.Body>
+          <div>
+            <p style={{display: 'inline-block'}}><strong>Usage:</strong></p>
+          </div>
+          <ol>
+            <li>Download FFmpeg from <a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>here</a>.</li>
+            <li>
+              FFmpeg cli: <br/>
+              <code>
+                ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv {rtmpPublishUrl}
+              </code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='Change Stream'>
+                <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+              </div> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffmpegPublishCli)} />
+              </div>
+            </li>
+            <li>
+              Stream URL:<br/>
+              <code>{rtmpPublishUrl}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='Change Stream'>
+                <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+              </div> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtmpPublishUrl)} />
+              </div>
+            </li>
+            <li>
+              Play the stream by:
+              <ul>
+                <li>
+                  HTTP-FLV by <a href={flvPlayer} target='_blank' rel='noreferrer'>H5</a> &nbsp;
+                  <code>{flvUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrl)} />
+                  </div>
+                </li>
+                <li>
+                  HLS by <a href={hlsPlayer} target='_blank' rel='noreferrer'>H5</a> &nbsp;
+                  <code>{m3u8Url}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+                  </div>
+                </li>
+                <li>WebRTC by <a href={rtcPlayer} target='_blank' rel='noreferrer'>H5</a></li>
+              </ul>
+            </li>
+            <li>Optional, check by <a href={enConsole} target='_blank' rel='noreferrer'>console</a></li>
+          </ol>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="3">
+        <Accordion.Header>WebRTC</Accordion.Header>
+        <Accordion.Body>
+          <div>
+            <p style={{display: 'inline-block'}}><strong>Usage:</strong></p>
+          </div>
+          <ol>
+            <li>Allow <code>UDP/8000</code> by firewall</li>
+            <li>Please use <code>https</code>.</li>
+            <li>
+              Publish by <a href={rtcPublisher} target='_blank' rel='noreferrer'>H5</a>. &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='Change'>
+                <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+              </div>
+              <br/>
+              <code>Please stop FFmpeg/OBS before publishing.</code>
+            </li>
+            <li>
+              Play stream by:
+              <ul>
+                <li><a href={flvPlayer2} target='_blank' rel='noreferrer'>HTTP-FLV</a> <code>{flvUrl2}</code></li>
+                <li><a href={hlsPlayer2} target='_blank' rel='noreferrer'>HLS</a> <code>{m3u8Url2}</code></li>
+                <li><a href={rtcPlayer2} target='_blank' rel='noreferrer'>WebRTC</a></li>
+              </ul>
+            </li>
+            <li>Optional, check by <a href={enConsole} target='_blank' rel='noreferrer'>console</a></li>
           </ol>
         </Accordion.Body>
       </Accordion.Item>

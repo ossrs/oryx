@@ -6,6 +6,7 @@ import {Token, Tools} from "../utils";
 import {useNavigate} from "react-router-dom";
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
+import {useTranslation} from "react-i18next";
 
 export default function Setup({onInit}) {
   return (
@@ -21,6 +22,7 @@ function SetupImpl({onInit}) {
   const [enabled, setEnabled] = React.useState(false);
   const navigate = useNavigate();
   const handleError = useErrorHandler();
+  const {t} = useTranslation();
 
   // Generate password if not initialized.
   React.useEffect(() => {
@@ -57,16 +59,15 @@ function SetupImpl({onInit}) {
       <Container>
         <Form>
           <Form.Group className="mb-3" controlId="formBasicPassword">
-            <Form.Label>请设置初始密码</Form.Label>
+            <Form.Label>{t('setup.passwordLabel')}</Form.Label>
             <Form.Control type={initializing ? 'password' : 'text'} placeholder="Password" defaultValue={password}
               onChange={(e) => setPassword(e.target.value)}/>
             <Form.Text className="text-muted">
-              * 初始密码由程序随机生成，可以修改成更高强度的密码 <br/>
-              * 若忘记密码，可登录机器执行 <code>cat ~lighthouse/credentials.txt</code>
+              * {t('setup.passwordTip')}
             </Form.Text>
           </Form.Group>
           <Button variant="primary" type="submit" disabled={!enabled} className={initializing && "disabled"} onClick={(e) => handleLogin(e)}>
-            {initializing ? '初始化中...' : '设置管理员密码'}
+            {initializing ? t('setup.labelInit') : t('setup.labelNormal')}
           </Button> &nbsp;
           {initializing && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />}
         </Form>

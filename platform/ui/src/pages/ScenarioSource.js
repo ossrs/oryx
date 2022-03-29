@@ -1,7 +1,13 @@
 import {Accordion} from "react-bootstrap";
 import React from "react";
+import {useSrsLanguage} from "../components/LanguageSwitch";
 
 export default function ScenarioSource() {
+  const language = useSrsLanguage();
+  return language === 'zh' ? <ScenarioSourceCn /> : <ScenarioSourceEn />;
+}
+
+function ScenarioSourceCn() {
   return (
     <Accordion defaultActiveKey="0">
       <Accordion.Item eventKey="0">
@@ -30,6 +36,12 @@ export default function ScenarioSource() {
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
+  );
+}
+
+function ScenarioSourceEn() {
+  return (
+    <span>On the way...</span>
   );
 }
 

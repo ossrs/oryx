@@ -3,9 +3,9 @@ import {Container, Tabs, Tab, Accordion} from "react-bootstrap";
 import moment from "moment";
 import axios from 'axios';
 import {XAxis, Tooltip, CartesianGrid, AreaChart, YAxis, Area} from "recharts";
-import querystring from "querystring";
 import {useErrorHandler} from 'react-error-boundary';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
+import {useTranslation} from "react-i18next";
 
 export default function Dashboard() {
   return (
@@ -19,17 +19,21 @@ function DashboardImpl() {
   const [data, setData] = React.useState();
   const [promQL, setPromQL] = React.useState();
   const handleError = useErrorHandler();
+  const {t} = useTranslation();
 
   React.useEffect(() => {
     const query = '(1 - min by(mode) (rate(node_cpu_seconds_total{mode="idle"}[10s]))) * 100';
-    const queryEscaped = querystring.stringify({
+
+    // See https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
+    // Note that never use querystring, because it cause warning.
+    const qe = new URLSearchParams({
       "g0.expr": query,
       "g0.tab": 0,
       "g0.stacked": 0,
       "g0.show_exemplars": 0,
       "g0.range_input": "1h",
     });
-    setPromQL(`/prometheus/graph?${queryEscaped}`);
+    setPromQL(`/prometheus/graph?${qe.toString()}`);
 
     // See https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries
     axios.get(`/prometheus/api/v1/query_range`, {
@@ -58,7 +62,7 @@ function DashboardImpl() {
       <p></p>
       <Container>
         <Tabs defaultActiveKey="sys" id="uncontrolled-tab-example" className="mb-3">
-          <Tab eventKey="sys" title="系统状态">
+          <Tab eventKey="sys" title={t('dashboard.sys')}>
             <Accordion defaultActiveKey="0">
               <Accordion.Item eventKey="0">
                 <Accordion.Header>CPU</Accordion.Header>
@@ -81,7 +85,9 @@ function DashboardImpl() {
                     <Tooltip />
                     <Area type="monotone" dataKey="cpu" stroke="#82ca9d" fillOpacity={1} fill="url(#colorCpu)" />
                   </AreaChart>
-                  <a href={promQL} target='_blank' rel='noreferrer'>Show in Prometheus</a>
+                  <a href={promQL} target='_blank' rel='noreferrer'>
+                    {t('dashboard.prometheus')}
+                  </a>
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>

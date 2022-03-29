@@ -2,8 +2,8 @@
 
 const pkg = require('./package.json');
 
-const stable = 'v1.0.162';
-const latest = 'v1.0.191';
+const stable = 'v1.0.191';
+const latest = 'v1.0.193';
 
 // Build the version and docker image url.
 function buildVersion(q, version) {
@@ -85,7 +85,7 @@ exports.handle = (router) => {
       res.addr = {rip: q.rip, fwd: q.fwd};
     }
 
-    console.log(`srs-terraform id=${q.id}, version=${version}, eip=${q.eip}, rip=${q.rip}, fwd=${q.fwd}, res=${JSON.stringify(res)}`);
+    console.log(`srs-cloud id=${q.id}, version=${version}, eip=${q.eip}, rip=${q.rip}, fwd=${q.fwd}, res=${JSON.stringify(res)}`);
     ctx.body = res;
   });
 

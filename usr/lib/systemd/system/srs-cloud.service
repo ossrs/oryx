@@ -6,7 +6,7 @@ Wants=docker.service nginx.service redis.service
 [Service]
 Type=simple
 Restart=always
-ExecStart=/usr/local/srs-terraform/mgmt/bootstrap
+ExecStart=/usr/local/srs-cloud/mgmt/bootstrap
 KillSignal=SIGKILL
 
 [Install]

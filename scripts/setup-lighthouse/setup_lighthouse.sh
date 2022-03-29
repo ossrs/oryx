@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REALPATH=$(realpath $0)
-WORK_DIR=$(cd $(dirname $REALPATH)/.. && pwd)
+WORK_DIR=$(cd $(dirname $REALPATH)/../.. && pwd)
 echo "Run setup at $WORK_DIR from $0"
 cd $WORK_DIR
 
@@ -28,6 +28,11 @@ if [[ ! -d ~lighthouse ]]; then
   echo "No home directory ~lighthouse"; exit 1;
 fi
 
+# Ignore darwin
+if [[ $(uname -s) == 'Darwin' ]]; then
+  echo "Mac is not supported"; exit 1;
+fi
+
 ########################################################################################################################
 # Install depends services, except nodejs.
 yum install -y git gcc-c++ gdb make tree dstat docker redis nginx &&
@@ -36,21 +41,26 @@ if [[ $? -ne 0 ]]; then echo "Install dependencies failed"; exit 1; fi
 
 # Install files to lighthouse directory.
 mkdir -p /usr/local/lighthouse/softwares &&
-rm -rf /usr/local/lighthouse/softwares/srs-terraform &&
-(cd $(dirname $WORK_DIR) && cp -r $(basename $WORK_DIR) /usr/local/lighthouse/softwares/srs-terraform) &&
-cd /usr/local/lighthouse/softwares/srs-terraform &&
+rm -rf /usr/local/lighthouse/softwares/srs-cloud &&
+(cd $(dirname $WORK_DIR) && cp -r $(basename $WORK_DIR) /usr/local/lighthouse/softwares/srs-cloud) &&
+cd /usr/local/lighthouse/softwares/srs-cloud &&
 make build && make install
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 
+cd /usr/local/lighthouse/softwares && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
+if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
+
+########################################################################################################################
 # Cache the docker images for srs-cloud to startup faster.
-systemctl restart docker &&
+systemctl start docker &&
 echo "Cache docker images from TCR Beijing" &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs:4 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:4 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:hooks-1 &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:tencent-1 &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:ffmpeg-1 &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:hooks-1 &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:tencent-1 &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:ffmpeg-1 &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/redis_exporter &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter &&
@@ -59,9 +69,10 @@ echo "Cache docker images from TCR Singapore" &&
 docker pull sgccr.ccs.tencentyun.com/ossrs/srs:4 &&
 docker pull sgccr.ccs.tencentyun.com/ossrs/lighthouse:4 &&
 docker pull sgccr.ccs.tencentyun.com/ossrs/node:slim &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/srs-terraform:hooks-1 &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/srs-terraform:tencent-1 &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/srs-terraform:ffmpeg-1 &&
+docker pull sgccr.ccs.tencentyun.com/ossrs/srs-cloud:hooks-1 &&
+docker pull sgccr.ccs.tencentyun.com/ossrs/srs-cloud:tencent-1 &&
+docker pull sgccr.ccs.tencentyun.com/ossrs/srs-cloud:ffmpeg-1 &&
+docker pull sgccr.ccs.tencentyun.com/ossrs/srs-cloud:platform-1 &&
 docker pull sgccr.ccs.tencentyun.com/ossrs/prometheus &&
 docker pull sgccr.ccs.tencentyun.com/ossrs/redis_exporter &&
 docker pull sgccr.ccs.tencentyun.com/ossrs/node-exporter &&
@@ -69,17 +80,24 @@ docker pull sgccr.ccs.tencentyun.com/ossrs/certbot
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
 # If install ok, the directory should exists.
-if [[ ! -d /usr/local/srs-terraform || ! -d /usr/local/srs-terraform/mgmt ]]; then
+if [[ ! -d /usr/local/srs-cloud || ! -d /usr/local/srs-cloud/mgmt ]]; then
   echo "Install srs-cloud failed"; exit 1;
 fi
 
-# Create srs-terraform service, and the credential file.
+cd /usr/local && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
+if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
+
+# Create srs-cloud service, and the credential file.
 # Remark: Never start the service, because the IP will change for new machine created.
-cd /usr/local/srs-terraform &&
-cp -f usr/lib/systemd/system/srs-terraform.service /usr/lib/systemd/system/srs-terraform.service &&
-touch /usr/local/srs-terraform/mgmt/.env &&
-systemctl enable srs-terraform
+cd /usr/local/srs-cloud &&
+cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
+touch /usr/local/srs-cloud/mgmt/.env &&
+systemctl enable srs-cloud
 if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
+
+# Choose default language.
+echo 'REACT_APP_LOCALE=zh' > /usr/local/srs-cloud/mgmt/.env
+if [[ $? -ne 0 ]]; then echo "Setup language failed"; exit 1; fi
 
 # Generate self-sign HTTPS crt and file.
 if [[ ! -f /etc/nginx/ssl/nginx.key ]]; then
@@ -93,24 +111,19 @@ fi
 
 # Setup the nginx configuration.
 rm -f /etc/nginx/nginx.conf &&
-cp /usr/local/lighthouse/softwares/srs-terraform/mgmt/containers/conf/nginx.conf /etc/nginx/nginx.conf &&
+cp /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/conf/nginx.conf /etc/nginx/nginx.conf &&
 rm -f /usr/share/nginx/html/index.html &&
-cp /usr/local/lighthouse/softwares/srs-terraform/mgmt/containers/www/nginx.html /usr/share/nginx/html/index.html &&
+cp /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/www/nginx.html /usr/share/nginx/html/index.html &&
 rm -f /usr/share/nginx/html/50x.html &&
-cp /usr/local/lighthouse/softwares/srs-terraform/mgmt/containers/www/50x.html /usr/share/nginx/html/50x.html
+cp /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/www/50x.html /usr/share/nginx/html/50x.html
 if [[ $? -ne 0 ]]; then echo "Setup nginx config failed"; exit 1; fi
 
-# Setup the mod and link.
-chown -R lighthouse:lighthouse /usr/local/lighthouse/softwares &&
-chown -R lighthouse:lighthouse /etc/nginx/default.d &&
-chown -R lighthouse:lighthouse /etc/nginx/ssl &&
-chown -R lighthouse:lighthouse /usr/local/srs-terraform
-if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
-
-rm -rf ~/lighthouse/ssl && ln -sf /etc/nginx/ssl ~lighthouse/ssl &&
-ln -sf /usr/local/srs-terraform/mgmt/.env ~lighthouse/credentials.txt &&
-ln -sf /usr/local/lighthouse/softwares/srs-terraform/mgmt/upgrade ~lighthouse/upgrade
-if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
+cd /usr/local/lighthouse/softwares/srs-cloud/mgmt &&
+cp containers/conf/nginx.default.conf /etc/nginx/default.d/default.conf && echo "Refresh nginx default.conf ok" &&
+cp containers/conf/nginx.mgmt.conf /etc/nginx/default.d/mgmt.conf && echo "Refresh nginx mgmt.conf ok" &&
+cp containers/conf/nginx.srs.conf /etc/nginx/default.d/srs.conf && echo "Refresh nginx srs.conf ok" &&
+cp containers/conf/nginx.dvr.preview.conf /etc/nginx/default.d/dvr.preview.conf && echo "Refresh nginx dvr.preview.conf ok"
+if [[ $? -ne 0 ]]; then echo "Reload nginx failed"; exit 1; fi
 
 # Update sysctl.conf and add if not exists. For example:
 #   update_sysctl net.ipv4.ip_forward 1 0 "# Controls IP packet forwarding"
@@ -143,16 +156,16 @@ update_sysctl net.core.rmem_default 16777216
 update_sysctl net.core.wmem_max 16777216
 update_sysctl net.core.wmem_default 16777216
 
-# If memory smaller than 2GB, create swap to avoid OOM, please see
-# https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-18-04
-# You could disable swap by: swapoff /srs-swapfile
-MEM_TOTAL=$(grep MemTotal /proc/meminfo |awk '{print $2}')
-if [[ $MEM_TOTAL -lt 2097152 ]]; then
-  swapon --show |grep "/srs-swapfile"
-  if [[ $? -ne 0 ]]; then
-    rm -rf /srs-swapfile && fallocate -l 1G /srs-swapfile && chmod 600 /srs-swapfile && ls -lh /srs-swapfile &&
-    mkswap /srs-swapfile && swapon /srs-swapfile && echo "Create swap /srs-swapfile for MEM_TOTAL=$MEM_TOTAL"
-  fi
-fi
-if [[ $? -ne 0 ]]; then echo "Create swap failed"; exit 1; fi
+########################################################################################################################
+# Setup the mod and link.
+chown -R lighthouse:lighthouse /usr/local/lighthouse/softwares/ &&
+chown -R lighthouse:lighthouse /etc/nginx/default.d/ &&
+chown -R lighthouse:lighthouse /etc/nginx/ssl/ &&
+chown -R lighthouse:lighthouse /usr/local/srs-cloud/
+if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
+
+rm -rf ~/lighthouse/ssl && ln -sf /etc/nginx/ssl ~lighthouse/ssl &&
+rm -rf ~lighthouse/credentials.txt && ln -sf /usr/local/srs-cloud/mgmt/.env ~lighthouse/credentials.txt &&
+rm -rf ~lighthouse/upgrade && ln -sf /usr/local/lighthouse/softwares/srs-cloud/mgmt/upgrade ~lighthouse/upgrade
+if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 

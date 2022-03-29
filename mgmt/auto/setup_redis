@@ -1,24 +1,36 @@
 #!/usr/bin/env bash
 
-# Detect the private IPv4 address.
-PIPV4=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
-if [[ $PIPV4 == '' ]]; then echo 'No private IP of eth0'; exit 1; fi
-echo "Setup redis script, PrivateIPv4=$PIPV4"
+# Detect the private IPv4 address, try eth1, then eth0.
+# For droplet, the eth0 is public network.
+PIPV4=$(ifconfig eth1 2>/dev/null |grep 'inet ' |awk '{print $2}')
+if [[ -z $PIPV4 ]]; then PIPV4=$(ifconfig eth0 2>/dev/null |grep 'inet ' |awk '{print $2}'); fi
+if [[ -z $PIPV4 ]]; then echo 'No private IP of eth0'; exit 1; fi
+
+# For CentOS 7, it's /etc/redis.conf
+# For Ubuntu 20, it's /etc/redis/redis.conf
+REDIS_CONF=/etc/redis.conf
+if [[ ! -f $REDIS_CONF ]]; then REDIS_CONF=/etc/redis/redis.conf; fi
+if [[ ! -f $REDIS_CONF ]]; then echo "no redis config"; exit 1; fi
+
+# Always write redis-cli to /root
+# Note that it's not required tool, so we only need a place to save the script.
+REDIS_CLI=/root/redis-cli
+echo "Setup redis script, PrivateIPv4=$PIPV4, REDIS_CONF=${REDIS_CONF}, REDIS_CLI=${REDIS_CLI}"
 
 # Replace the bind for redis.
-grep -q "^bind 127.0.0.1 $PIPV4" /etc/redis.conf; SETUP_BIND=$?
+grep -q "^bind 127.0.0.1 $PIPV4" $REDIS_CONF; SETUP_BIND=$?
 if [[ $SETUP_BIND -ne 0 ]]; then
-  sed -i "s/^bind 127.0.0.1.*$/bind 127.0.0.1 $PIPV4/g" /etc/redis.conf &&
-  grep "^bind 127.0.0.1" /etc/redis.conf &&
-  echo "Change redis to listen at lo and eth0=$PIPV4"
-  if [[ $? -ne 0 ]]; then echo "Listen at eth0=$PIPV4 for redis failed"; exit 1; fi
+  sed -i "s/^bind 127.0.0.1.*$/bind 127.0.0.1 $PIPV4/g" $REDIS_CONF &&
+  grep "^bind 127.0.0.1" $REDIS_CONF &&
+  echo "Change redis to listen at lo and $PIPV4"
+  if [[ $? -ne 0 ]]; then echo "Listen at $PIPV4 for redis failed"; exit 1; fi
 fi
 
 # Save port to .env
 grep -q "^REDIS_PORT=" .env; SETUP_PORT=$?
 if [[ $SETUP_PORT -ne 0 ]]; then
   echo "REDIS_PORT=56379" >> .env &&
-  sed -i "s/^port 6379.*$/port 56379/g" /etc/redis.conf &&
+  sed -i "s/^port 6379.*$/port 56379/g" $REDIS_CONF &&
   echo "Listen to port 56379"
   if [[ $? -ne 0 ]]; then echo "Change listen port failed"; exit 1; fi
 fi
@@ -28,7 +40,7 @@ grep -q "^REDIS_PASSWORD=" .env; SETUP_PASSWORD=$?
 if [[ $SETUP_PASSWORD -ne 0 ]]; then
   REDIS_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 6)
   echo "REDIS_PASSWORD=${REDIS_PASSWORD}" >> .env
-  sed -i "s/.*requirepass .*$/requirepass $REDIS_PASSWORD/g" /etc/redis.conf &&
+  sed -i "s/.*requirepass .*$/requirepass $REDIS_PASSWORD/g" $REDIS_CONF &&
   echo "Set redis password"
   if [[ $? -ne 0 ]]; then echo "Change password failed"; exit 1; fi
 fi
@@ -39,11 +51,13 @@ if [[ $SETUP_BIND -ne 0 || $SETUP_PORT -ne 0 || $SETUP_PASSWORD -ne 0 ]]; then
   if [[ $? -ne 0 ]]; then echo "Restart redis failed"; exit 1; fi
 fi
 
-echo '#!/usr/bin/env bash' > ~lighthouse/redis-cli &&
-cat .env |grep REDIS >> ~lighthouse/redis-cli &&
-echo "redis-cli -p \$REDIS_PORT -a \$REDIS_PASSWORD \$*" >> ~lighthouse/redis-cli &&
-chmod +x ~lighthouse/redis-cli &&
-echo "Create redis-cli helper"
+if [[ ! -z $REDIS_CLI ]]; then
+  echo '#!/usr/bin/env bash' > $REDIS_CLI &&
+  cat .env |grep REDIS >> $REDIS_CLI &&
+  echo "redis-cli -p \$REDIS_PORT -a \$REDIS_PASSWORD \$*" >> $REDIS_CLI &&
+  chmod +x $REDIS_CLI &&
+  echo "Create redis-cli helper"
+fi
 
 
 echo '#!/usr/bin/env bash' > ~lighthouse/api-secret &&

@@ -4,10 +4,15 @@
 echo "Upgrade prepare script"
 
 # Ignore darwin
-if [[ ! -d /usr/local/srs-terraform && $(uname -s) == 'Darwin' ]]; then
+if [[ ! -d /usr/local/srs-cloud && $(uname -s) == 'Darwin' ]]; then
   echo "Directly finish upgrade for macOS development"
   sleep 3; exit 0;
 fi
+
+# Get the metadata of machine.
+if [[ -f .env ]]; then source .env; fi
+if [[ -f ../.env ]]; then source ../.env; fi
+echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 
 # Initialize the REGION and SOURCE, try to load from param 1.
 # Note that we MUST load the REGION and SOURCE again, because nodejs executes this directly, and the region list might
@@ -66,7 +71,7 @@ fi
 
 # Use different docker registry.
 REGISTRY=registry.cn-hangzhou.aliyuncs.com
-if [[ $SOURCE == GITHUB ]]; then REGISTRY=sgccr.ccs.tencentyun.com; fi
+if [[ $SOURCE == GITHUB || $SOURCE == github ]]; then REGISTRY=sgccr.ccs.tencentyun.com; fi
 echo "Detect REGISTRY=$REGISTRY"
 
 bash auto/upgrade_containers $REGISTRY
@@ -85,6 +90,13 @@ if [[ -d /etc/nginx/default.d ]]; then
   # Overwrite the default nginx config.
   cp containers/conf/nginx.conf /etc/nginx/nginx.conf && echo "Refresh nginx.conf ok"
   if [[ $? -ne 0 ]]; then echo "Refresh nginx.conf failed"; exit 1; fi
+
+  # For DO Ubuntu20, use www-data as nginx user.
+  if [[ $CLOUD == DO ]];  then
+    echo "Switch to user www-data for nginx" &&
+    sed -i "s/user nginx;/user www-data;/g" /etc/nginx/nginx.conf
+    if [[ $? -ne 0 ]]; then echo "Setup nginx.conf failed"; exit 1; fi
+  fi
 
   # For nginx default config.
   cp containers/conf/nginx.default.conf /etc/nginx/default.d/default.conf && echo "Refresh nginx default.conf ok"
