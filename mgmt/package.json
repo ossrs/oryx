@@ -1,6 +1,6 @@
 {
   "name": "mgmt",
-  "version":"1.0.193",
+  "version":"1.0.194",
   "description": "API for srs-cloud mgmt",
   "main": "index.js",
   "scripts": {
