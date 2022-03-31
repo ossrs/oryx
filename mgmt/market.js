@@ -31,8 +31,11 @@ async function threadMain() {
   console.log(`Thread #market: initialize region=${region}, registry=${registry}, version=v${pkg.version}`);
 
   // Note that we always restart the platform container.
-  await utils.removeContainerQuiet(execFile, metadata.market.platform.name);
-  console.log(`Thread #market: Restart container ${metadata.market.platform.name}`);
+  const [all, running] = await queryContainer(metadata.market.platform.name);
+  if (all?.ID || running?.ID) {
+    await utils.removeContainerQuiet(execFile, metadata.market.platform.name);
+    console.log(`Thread #market: Restart container ${metadata.market.platform.name}`);
+  }
 
   while (true) {
     try {
