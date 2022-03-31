@@ -19,6 +19,7 @@ function ScenarioTutorialsCn() {
     {author: '崔国栋', id: 'BV1aS4y1G7iG'},
     {author: 'SRS', id: 'BV1KY411V7uc'},
     {author: '唐为', id: 'BV14S4y1k7gr'},
+    {author: 'SRS', id:"BV1cq4y1e7Au"}
   ]));
 
   return (
