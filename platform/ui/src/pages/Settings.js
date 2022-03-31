@@ -84,6 +84,9 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
           <Tab eventKey="https" title="HTTPS">
             <SettingHttps />
           </Tab>
+          <Tab eventKey="nginx" title="NGINX">
+            <SettingNginx />
+          </Tab>
           <Tab eventKey="beian" title={t('settings.tabFooter')}>
             <SettingBeian />
           </Tab>
@@ -100,6 +103,10 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
       </Container>
     </>
   );
+}
+
+function SettingNginx() {
+  return <></>;
 }
 
 function SettingPlatform({defaultWindow}) {
