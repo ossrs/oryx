@@ -68,6 +68,10 @@ async function doThreadMain() {
 
   // For development, request the releases from itself which proxy to the releases service.
   const releases = await helper.queryLatestVersion();
+  if (!releases) {
+    return console.log(`Thread #upgrade: Ignore empty releases`);
+  }
+
   metadata.upgrade.releases = releases;
   parentPort.postMessage({metadata: {upgrade: metadata.upgrade}});
   console.log(`Thread #upgrade: query done, version=${releases.version}, response=${JSON.stringify(releases)}`);
