@@ -2,8 +2,8 @@
 
 REALPATH=$(realpath $0)
 WORK_DIR=$(cd $(dirname $REALPATH)/.. && pwd)
-cd $WORK_DIR
+cd $WORK_DIR/mgmt
 
-cd mgmt/containers/names &&
+cd containers/names &&
 docker rm -f *
 
