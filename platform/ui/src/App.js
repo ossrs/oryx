@@ -69,7 +69,7 @@ function AppImpl() {
       </>}
       {!loading && <>
         <BrowserRouter basename={window.PUBLIC_URL}>
-          <Navigator initialized={initialized} token={token} />
+          <Navigator {...{initialized, token}} />
           <Routes>
             <Route path="/" element={<AppRoot />}/>
             <Route path=':locale' element={<AppLocale />}>

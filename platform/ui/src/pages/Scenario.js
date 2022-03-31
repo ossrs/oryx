@@ -84,10 +84,10 @@ function ScenarioImpl({defaultActiveTab}) {
             { activeTab === 'tutorials' && <ScenarioTutorials /> }
           </Tab>
           <Tab eventKey="live" title={t('scenario.live')}>
-            { activeTab === 'live' && <ScenarioLive updateStreamName={updateStreamName} copyToClipboard={copyToClipboard} urls={urls} /> }
+            { activeTab === 'live' && <ScenarioLive {...{updateStreamName, copyToClipboard, urls}} /> }
           </Tab>
           <Tab eventKey="srt" title={t('scenario.srt')}>
-            { activeTab === 'srt' && <ScenarioSrt updateStreamName={updateStreamName} copyToClipboard={copyToClipboard} urls={urls} /> }
+            { activeTab === 'srt' && <ScenarioSrt {...{updateStreamName, copyToClipboard, urls}} /> }
           </Tab>
           <Tab eventKey="forward" title={t('scenario.restream')}>
             { activeTab === 'forward' && <ScenarioForward /> }
