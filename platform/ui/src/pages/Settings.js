@@ -106,7 +106,38 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
 }
 
 function SettingNginx() {
-  return <></>;
+  const [hlsDelivery, setHlsDelivery] = React.useState();
+  const handleError = useErrorHandler();
+  const {t} = useTranslation();
+
+  const updateHlsDelivery = React.useCallback((e) => {
+    e.preventDefault();
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/nginx/hls', {
+      ...token, enabled: hlsDelivery,
+    }).then(res => {
+      alert(t('helper.setOk'));
+    }).catch(handleError);
+  }, [handleError, hlsDelivery, t]);
+
+  return (
+    <Accordion defaultActiveKey="0">
+      <Accordion.Item eventKey="0">
+        <Accordion.Header>{t('settings.nginxHlsTitle')}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3" controlId="formDvrAllCheckbox">
+              <Form.Check type="checkbox" label={t('settings.nginxHlsTip')} defaultChecked={hlsDelivery} onClick={() => setHlsDelivery(!hlsDelivery)} />
+            </Form.Group>
+            <Button variant="primary" type="submit" onClick={(e) => updateHlsDelivery(e)}>
+              {t('helper.submit')}
+            </Button>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+    </Accordion>
+  );
 }
 
 function SettingPlatform({defaultWindow}) {

@@ -10,6 +10,7 @@ const config = {
 };
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const dotenv = require('dotenv');
 const utils = require('js-core/utils');
@@ -278,6 +279,40 @@ const handlers = {
   // Current host platform name.
   hostPlatform: async ({ctx, action, args}) => {
     ctx.body = utils.asResponse(0, {platform: process.platform});
+  },
+
+  // Generate dynamic.conf for NGINX.
+  nginxGenerateConfig: async ({ctx, action, args}) => {
+    const hls = await redis.hget(keys.redis.SRS_STREAM_NGINX, 'hls');
+    const hlsConf = hls === 'true' ? `root ${process.cwd()}/containers/objs/nginx/html;` : 'proxy_pass http://127.0.0.1:8080$request_uri;';
+
+    const confLines = [
+      '# !!! Important: SRS will restore this file during each upgrade, please never modify it.',
+      '',
+      '  # For HLS delivery',
+      '  location ~ /.+/.*\\.(m3u8|ts)$ {',
+      `    ${hlsConf}`,
+      '  }',
+      '',
+      '',
+    ];
+
+    fs.writeFileSync('containers/conf/nginx.dynamic.conf', confLines.join(os.EOL));
+    await execFile('systemctl', ['reload', 'nginx.service']);
+    console.log(`NGINX: Refresh dynamic.conf ok`);
+
+    ctx.body = utils.asResponse(0);
+  },
+
+  // Whether use NGINX to deliver HLS.
+  nginxHlsDelivery: async ({ctx, action, args}) => {
+    const [enabled] = args;
+    if (!enabled) throw utils.asError(errs.sys.empty, errs.status.args, 'no enabled');
+
+    const r0 = await redis.hset(keys.redis.SRS_STREAM_NGINX, 'hls', enabled === 'enable');
+    console.log(`NGINX: Set hls delivery to ${enabled}, r0=${r0}`);
+
+    ctx.body = utils.asResponse(0);
   },
 
   // RPC template.

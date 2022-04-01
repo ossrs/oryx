@@ -87,7 +87,9 @@
         "upgradeTip": "系统会在这个时间段，自动升级到最新的稳定版本",
         "upgradeStart": "开始时间",
         "upgradeEnd": "结束时间",
-        "upgradeSubmit": "设置窗口"
+        "upgradeSubmit": "设置窗口",
+        "nginxHlsTitle": "HLS分发",
+        "nginxHlsTip": "使用NGINX分发HLS"
       },
       "coms": {
         "srs4": "SRS(稳定版)",
@@ -144,7 +146,9 @@
         "cancel": "取消",
         "switch": "切换",
         "enable": "启用",
-        "disable": "禁用"
+        "disable": "禁用",
+        "submit": "提交",
+        "setOk": "设置成功"
       }
     }
   },
@@ -236,7 +240,9 @@
         "upgradeTip": "Upgrade to stable version automatically",
         "upgradeStart": "Start",
         "upgradeEnd": "End",
-        "upgradeSubmit": "Submit"
+        "upgradeSubmit": "Submit",
+        "nginxHlsTitle": "HLS Streaming",
+        "nginxHlsTip": "Deliver HLS by NGINX"
       },
       "coms": {
         "srs4": "SRS(Stable)",
@@ -293,7 +299,9 @@
         "cancel": "Cancel",
         "switch": "Switch",
         "enable": "On",
-        "disable": "Off"
+        "disable": "Off",
+        "submit": "Submit",
+        "setOk": "Setup OK"
       }
     }
   }

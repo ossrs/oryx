@@ -271,6 +271,20 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0);
   });
 
+  router.all('/terraform/v1/mgmt/nginx/hls', async (ctx) => {
+    const {token, enabled} = ctx.request.body;
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
+
+    const enabledValue = enabled ? 'enable' : 'disable';
+    await helper.execApi('nginxHlsDelivery', [enabledValue]);
+    await helper.execApi('nginxGenerateConfig');
+
+    console.log(`nginx hls ok, enable=${enabled}/${enabledValue}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0);
+  });
+
   return router;
 };
 

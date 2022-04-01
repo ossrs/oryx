@@ -115,6 +115,7 @@ Platform:
 * `/terraform/v1/mgmt/window/update` Update the upgrade time window.
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
 * `/terraform/v1/mgmt/secret/token` Create token for OpenAPI.
+* `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
 
 Market:
 
