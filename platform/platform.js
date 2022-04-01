@@ -22,6 +22,9 @@ exports.isDarwin = null;
 
 // We must mark these fields as async, to notice user not to use it before it initialized.
 const conf = {cloud: null, region: null, source: null, registry: null, cwd: null, platform: null};
+exports.cloud = async () => {
+  return conf.cloud;
+};
 exports.region = async () => {
   return conf.region;
 };

@@ -17,9 +17,14 @@ exports.market = {
     // For China, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/1
     // For Global, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/9
     image: async () => {
-      let image = 'ossrs/lighthouse';
+      const cloud = await platform.cloud();
+
+      let image = 'ossrs/srs';
+      if (cloud === 'TENCENT') image = 'ossrs/lighthouse';
+      if (cloud === 'DO') image = 'ossrs/droplet';
       if (process.env.NODE_ENV === 'development') image = 'ossrs/srs';
       if (process.env.SRS_DOCKER === 'srs') image = 'ossrs/srs';
+
       const registry = await platform.registry();
       return `${registry}/${image}:4`;
     },
