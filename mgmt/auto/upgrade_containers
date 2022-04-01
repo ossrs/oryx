@@ -29,6 +29,11 @@ function update_containers() {
   IMAGE_IDS=$(docker ps -a | grep $IMAGE | awk '{print $1}')
   echo "The containers for $REGISTRY/$IMAGE is $IMAGE_IDS"
 
+  if [[ -z  $IMAGE_IDS ]]; then
+    echo "No containers for $REGISTRY/$IMAGE"
+    return 0
+  fi
+
   docker pull $REGISTRY/$IMAGE &&
   docker pull $REGISTRY/$AS_IMAGE
   if [[ $? -ne 0 ]]; then echo "Update the image $REGISTRY/$IMAGE as $AS_IMAGE failed"; exit 1; fi
@@ -49,25 +54,27 @@ function update_containers() {
 # Update the containers before restart. Note that the containers are normally started by previous mgmt, with the
 # upgraded image. So we only upgrade the images for all containers, and it's the responsibility for mgmt to restart the
 # container if need to change the startup arguments.
-#
-# Note that we should update the platform image, so we could fast startup the container, because mgmt use another tag
-# which has the same hash.
 echo "Upgrading all containers by images" &&
 update_containers $REGISTRY ossrs/srs:4 ossrs/srs:4 &&
 update_containers $REGISTRY ossrs/srs:5 ossrs/srs:5 &&
 update_containers $REGISTRY ossrs/lighthouse:4 ossrs/lighthouse:4 &&
 update_containers $REGISTRY ossrs/lighthouse:5 ossrs/lighthouse:5 &&
+update_containers $REGISTRY ossrs/droplet:4 ossrs/droplet:4 &&
+update_containers $REGISTRY ossrs/droplet:5 ossrs/droplet:5 &&
 # Compatible for previous versions.
 update_containers $REGISTRY ossrs/srs-terraform:hooks-1 ossrs/srs-cloud:hooks-1 &&
 update_containers $REGISTRY ossrs/srs-terraform:tencent-1 ossrs/srs-cloud:tencent-1 &&
 update_containers $REGISTRY ossrs/srs-terraform:ffmpeg-1 ossrs/srs-cloud:ffmpeg-1 &&
-update_containers $REGISTRY ossrs/srs-terraform:platform-1 ossrs/srs-cloud:platform-1
 # For new versions.
 update_containers $REGISTRY ossrs/srs-cloud:hooks-1 ossrs/srs-cloud:hooks-1 &&
 update_containers $REGISTRY ossrs/srs-cloud:tencent-1 ossrs/srs-cloud:tencent-1 &&
-update_containers $REGISTRY ossrs/srs-cloud:ffmpeg-1 ossrs/srs-cloud:ffmpeg-1 &&
-update_containers $REGISTRY ossrs/srs-cloud:platform-1 ossrs/srs-cloud:platform-1
+update_containers $REGISTRY ossrs/srs-cloud:ffmpeg-1 ossrs/srs-cloud:ffmpeg-1
 if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
+
+# Note that we should update the platform image, so we could fast startup the container, because mgmt use another tag
+# which has the same hash.
+echo "Update platform image" && docker pull $REGISTRY/ossrs/srs-cloud:platform-1
+if [[ $? -ne 0 ]]; then echo "Update platform image failed"; exit 1; fi
 
 # Removed unreferenced image, the TAG is <none>
 for image in $(docker images |grep '<none>' |awk '{print $3}'); do

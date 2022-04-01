@@ -11,7 +11,7 @@ exports.market = {
       const registry = await platform.registry();
       // Note that we use the same version of mgmt for image, to support latest and stable version of container, and to
       // avoid upgrading to latest for stable mgmt. The mgmt is locked with the correct version of platform.
-      return `${registry}/ossrs/srs-terraform:platform-v${pkg.version}`;
+      return `${registry}/ossrs/srs-cloud:platform-v${pkg.version}`;
     },
     tcpPorts: [2024],
     udpPorts: [],
@@ -22,9 +22,9 @@ exports.market = {
       '--log-opt=max-file=3',
     ],
     volumes: [
-      `${process.cwd()}/.env:/usr/local/srs-terraform/platform/.env`,
+      `${process.cwd()}/.env:/usr/local/srs-cloud/platform/.env`,
       // We mount the containers to mgmt in platform container, which links to platform.
-      `${process.cwd()}/containers:/usr/local/srs-terraform/mgmt/containers`,
+      `${process.cwd()}/containers:/usr/local/srs-cloud/mgmt/containers`,
     ],
     extras: [
       `--env=SRS_DOCKER=${process.env.SRS_DOCKER || ''}`,
