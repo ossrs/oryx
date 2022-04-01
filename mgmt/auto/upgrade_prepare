@@ -18,7 +18,7 @@ echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 # Note that we MUST load the REGION and SOURCE again, because nodejs executes this directly, and the region list might
 # changed after the image is created.
 if [[ $REGION == '' ]]; then REGION=$1; fi
-. auto/upgrade_region
+bash auto/upgrade_region $SOURCE
 
 # Update the sysctl
 #   update_sysctl config value empty-line-prefix description

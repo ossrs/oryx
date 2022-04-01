@@ -7,6 +7,7 @@ echo "Upgrade living SRS_UTEST=$SRS_UTEST and ARGS: $*"
 
 # Get the metadata of machine.
 if [[ -f .env ]]; then source .env; fi
+if [[ -f ../.env ]]; then source ../.env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 
 # Ignore darwin
@@ -25,7 +26,7 @@ if [[ $SRS_UTEST == true ]]; then
 else
   # Upgrade the react UI.
   # Note that new UI is built in platform docker image, so it's kept only for compatible reason.
-  . auto/upgrade_ui
+  bash auto/upgrade_ui
 
   # Compatible with previous version.
   if [[ ! -d /usr/local/lighthouse/softwares/srs-cloud ]]; then

@@ -175,11 +175,13 @@ The software we depend on:
 When upgrading automatically or manually by user:
 
 * `bash upgrade` for each upgrade.
-* `. auto/upgrade_region` to setup the region.
+* `bash auto/upgrade_region` to setup the source by region.
 * `git checkout` to checkout to specified tag or branch.
 * `bash upgrade_living` to run with the updated scripts.
 * `bash auto/upgrade_prepare` do upgrade for previous images.
-* `. auto/upgrade_ui` to upgrade the ui.
+* `bash auto/upgrade_nginx` to upgrade the nginx configuration.
+* `bash auto/foreach_run` to setup swap and redis configuration.
+* `bash auto/upgrade_ui` to upgrade the ui.
 * `systemctl restart srs-terraform` to restart the mgmt service.
 
 When system start, check the flag `SRS_FIRST_BOOT` in redis, if not set:

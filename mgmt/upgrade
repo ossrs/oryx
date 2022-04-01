@@ -31,8 +31,13 @@ if [[ ! -d /usr/local/srs-cloud && $(uname -s) == 'Darwin' ]]; then
   sleep 30; exit 0;
 fi
 
+# Get the metadata of machine.
+if [[ -f .env ]]; then source .env; fi
+if [[ -f ../.env ]]; then source ../.env; fi
+echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
+
 # Initialize the REGION and SOURCE.
-. auto/upgrade_region
+bash auto/upgrade_region $SOURCE
 
 # Try git stash first, ignore any error.
 git stash 2>>upgrade.error.log

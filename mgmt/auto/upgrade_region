@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Init the REGION and SOURCE.
+SOURCE=$1
+echo "Upgrade region script, SOURCE=$SOURCE"
 
 # Ignore darwin
 if [[ ! -d /usr/local/srs-cloud && $(uname -s) == 'Darwin' ]]; then
