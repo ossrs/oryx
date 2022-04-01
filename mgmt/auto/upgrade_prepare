@@ -11,7 +11,6 @@ fi
 
 # Get the metadata of machine.
 if [[ -f .env ]]; then source .env; fi
-if [[ -f ../.env ]]; then source ../.env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 
 # Initialize the REGION and SOURCE, try to load from param 1.

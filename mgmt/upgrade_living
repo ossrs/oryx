@@ -7,7 +7,6 @@ echo "Upgrade living SRS_UTEST=$SRS_UTEST and ARGS: $*"
 
 # Get the metadata of machine.
 if [[ -f .env ]]; then source .env; fi
-if [[ -f ../.env ]]; then source ../.env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 
 # Ignore darwin
