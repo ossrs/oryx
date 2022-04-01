@@ -284,14 +284,32 @@ const handlers = {
   // Generate dynamic.conf for NGINX.
   nginxGenerateConfig: async ({ctx, action, args}) => {
     const hls = await redis.hget(keys.redis.SRS_STREAM_NGINX, 'hls');
-    const hlsConf = hls === 'true' ? `root ${process.cwd()}/containers/objs/nginx/html;` : 'proxy_pass http://127.0.0.1:8080$request_uri;';
+
+    const m3u8Conf = hls === 'true' ? [
+      // Use NGINX to deliver m3u8 files.
+      `root ${process.cwd()}/containers/objs/nginx/html;`,
+      // Set the cache control, see http://nginx.org/en/docs/http/ngx_http_headers_module.html
+      'add_header Cache-Control "public, max-age=10";',
+    ] : [
+      'proxy_pass http://127.0.0.1:8080$request_uri;',
+    ];
+
+    const tsConf = hls === 'true' ? [
+      `root ${process.cwd()}/containers/objs/nginx/html;`,
+      'add_header Cache-Control "public, max-age=86400";'
+    ] : [
+      'proxy_pass http://127.0.0.1:8080$request_uri;',
+    ];
 
     const confLines = [
       '# !!! Important: SRS will restore this file during each upgrade, please never modify it.',
       '',
       '  # For HLS delivery',
-      '  location ~ /.+/.*\\.(m3u8|ts)$ {',
-      `    ${hlsConf}`,
+      '  location ~ /.+/.*\\.(m3u8)$ {',
+      ...m3u8Conf.map(e => `    ${e}`),
+      '  }',
+      '  location ~ /.+/.*\\.(ts)$ {',
+      ...tsConf.map(e => `    ${e}`),
       '  }',
       '',
       '',
