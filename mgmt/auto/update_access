@@ -8,7 +8,8 @@ fi
 
 # Always write SSH keys to root.
 # Note that it's not required tool, so we write to root home by default.
-SSH_HOME=/root
+SSH_USER=root
+SSH_HOME=/$SSH_USER
 
 if [[ ! -d $SSH_HOME ]]; then
   echo "No $SSH_HOME"
@@ -32,7 +33,7 @@ fi
 
 mv -f $SSH_HOME/.ssh/authorized_keys.tmp $SSH_HOME/.ssh/authorized_keys &&
 chmod 600 $SSH_HOME/.ssh/authorized_keys &&
-chown -R lighthouse:lighthouse $SSH_HOME/.ssh
+chown -R $SSH_USER:$SSH_USER $SSH_HOME/.ssh
 if [[ $? -ne 0 ]]; then echo "Failed to update authorized_keys"; exit 1; fi
 
 echo "Update authorized_keys ok"
