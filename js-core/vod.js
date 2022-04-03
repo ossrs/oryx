@@ -8,6 +8,9 @@ exports.createVodService = async (redis, VodClient, AbstractClient, region) => {
   const secretKey = await redis.hget(keys.redis.SRS_TENCENT_CAM, 'secretKey');
   if (!secretId || !secretKey) return console.log(`COS: Ignore for no secret`);
 
+  // Whethether VoD config changed.
+  let vodConfigChanged = false;
+
   // Create services if not exists.
   const service = await redis.hget(keys.redis.SRS_TENCENT_VOD, 'service');
   if (!service) {
@@ -17,11 +20,10 @@ exports.createVodService = async (redis, VodClient, AbstractClient, region) => {
       );
 
       console.log(`VoD: CreateService ok`);
-      await redis.hset(keys.redis.SRS_TENCENT_VOD, 'service', 'ok');
+      vodConfigChanged = true;
     } catch (e) {
       if (e && e.code === 'FailedOperation.ServiceExist') {
         console.log(`VoD: CreateService exist`);
-        await redis.hset(keys.redis.SRS_TENCENT_VOD, 'service', 'ok');
       } else {
         throw e;
       }
@@ -38,7 +40,7 @@ exports.createVodService = async (redis, VodClient, AbstractClient, region) => {
     );
 
     console.log(`VoD: CreateStorageRegion ok, region=${region}`);
-    await redis.hset(keys.redis.SRS_TENCENT_VOD, 'storage', region);
+    vodConfigChanged = true;
   } else {
     console.log(`VoD: Already exists storage region ${storage}`);
   }
@@ -127,6 +129,12 @@ exports.createVodService = async (redis, VodClient, AbstractClient, region) => {
     }
   } else {
     console.log(`VoD: Already exists domain ${domain}`);
+  }
+
+  if (vodConfigChanged) {
+    await redis.hset(keys.redis.SRS_TENCENT_VOD, 'service', 'ok');
+    await redis.hset(keys.redis.SRS_TENCENT_VOD, 'storage', region);
+    console.log(`Vod: Config service for region=${region}`);
   }
 };
 

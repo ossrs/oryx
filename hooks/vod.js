@@ -32,10 +32,16 @@ exports.handle = (router) => {
     const secretId = await redis.hget(keys.redis.SRS_TENCENT_CAM, 'secretId');
     const secretKey = await redis.hget(keys.redis.SRS_TENCENT_CAM, 'secretKey');
 
+    // VoD service status.
+    const service = await redis.hget(keys.redis.SRS_TENCENT_VOD, 'service');
+    const storage = await redis.hget(keys.redis.SRS_TENCENT_VOD, 'storage');
+
     console.log(`vod apply ok, all=${all}, appId=${appId}, secretId=${secretId}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {
       all: all === 'true',
       secret: !!(appId && secretId && secretKey),
+      service: !!service,
+      storage: !!storage,
     });
   });
 

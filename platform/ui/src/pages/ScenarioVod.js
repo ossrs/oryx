@@ -29,7 +29,8 @@ function ScenarioVodCn() {
       return;
     }
 
-    if (vodStatus.secret) {
+    // TODO: FIXME: Show detail stage for VoD.
+    if (vodStatus.secret && vodStatus.service && vodStatus.storage) {
       if (vodStatus.all) {
         setActiveKey('3');
       } else {
