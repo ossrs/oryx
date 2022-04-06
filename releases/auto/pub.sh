@@ -33,4 +33,4 @@ git remote |grep -q gitee && git push gitee && git push gitee $TAG
 git remote |grep -q cloud && git push cloud && git push cloud $TAG
 
 echo "publish $TAG ok"
-echo "    https://github.com/ossrs/srs-cloud/actions?query=branch%3A$TAG"
+echo "    https://github.com/ossrs/srs-cloud/actions?query=is%3Ain_progress"
