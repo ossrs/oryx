@@ -66,12 +66,12 @@ jobs:
       # K8S for terraform versions
       - name: Release terraform versions to Aliyun ACK
         run: |-
-          STABLE_RELEASE=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          STABLE_RELEASE=platform-$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
           echo "Check stable release $STABLE_RELEASE"
 
           while true; do
             docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$STABLE_RELEASE >/dev/null 2>&1 && echo "done" && break
-            echo "Not ready, wait..." && sleep 30
+            echo "Image $STABLE_RELEASE not ready, wait..." && sleep 30
           done
 
           kubectl set image deploy/srs-terraform-deploy releases=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
