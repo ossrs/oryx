@@ -48,7 +48,7 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">
-        <Accordion.Header>OBS/vMix推流</Accordion.Header>
+        <Accordion.Header>OBS或vMix推流</Accordion.Header>
         <Accordion.Body>
           <div>
             <p style={{display: 'inline-block'}}><strong>操作步骤：</strong></p>
@@ -217,7 +217,7 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">
-        <Accordion.Header>OBS/vMix</Accordion.Header>
+        <Accordion.Header>OBS or vMix</Accordion.Header>
         <Accordion.Body>
           <div>
             <p style={{display: 'inline-block'}}><strong>Usage:</strong></p>
