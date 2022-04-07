@@ -122,6 +122,7 @@ Market:
 * `/terraform/v1/hooks/srs/verify` Hooks: Verify the stream request URL of SRS.
 * `/terraform/v1/hooks/srs/secret/query` Hooks: Query the secret to generate stream URL.
 * `/terraform/v1/hooks/srs/secret/update` Hooks: Update the secret to generate stream URL.
+* `/terraform/v1/hooks/srs/secret/disable` Hooks: Disable the secret for authentication.
 * `/terraform/v1/hooks/srs/hls` Hooks: Handle the `on_hls` event.
 * `/terraform/v1/hooks/dvr/apply` Hooks: Apply the DVR pattern.
 * `/terraform/v1/hooks/dvr/query` Hooks: Query the DVR pattern.

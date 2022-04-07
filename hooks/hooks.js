@@ -22,9 +22,15 @@ exports.handle = (router) => {
 
   // See https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
   router.all('/terraform/v1/hooks/srs/verify', async (ctx) => {
+    const noAuth = await redis.hget(keys.redis.SRS_AUTH_SECRET, 'pubNoAuth');
+    if (noAuth === 'true') {
+      ctx.body = utils.asResponse(0);
+      return console.log(`srs hooks disabled, ${JSON.stringify(ctx.request.body)}`);
+    }
+
     const {action, param, vhost, app, stream, server_id, client_id} = ctx.request.body;
     if (action === 'on_publish') {
-      const publish = await redis.get(keys.redis.SRS_SECRET_PUBLISH);
+      const publish = await redis.hget(keys.redis.SRS_AUTH_SECRET, 'pubSecret');
       if (publish && param.indexOf(publish) === -1) {
         throw utils.asError(errs.srs.verify, errs.status.auth, `invalid params=${param} action=${action}`);
       }
@@ -58,10 +64,10 @@ exports.handle = (router) => {
     const apiSecret = await utils.apiSecret(redis);
     const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
-    const publish = await redis.get(keys.redis.SRS_SECRET_PUBLISH);
+    const publish = await redis.hget(keys.redis.SRS_AUTH_SECRET, 'pubSecret');
     if (!publish) throw utils.asError(errs.sys.boot, errs.status.sys, `system not boot yet`);
 
-    console.log(`srs secret ok, key=${keys.redis.SRS_SECRET_PUBLISH}, value=${'*'.repeat(publish.length)}, decoded=${JSON.stringify(decoded)}`);
+    console.log(`srs secret ok, key=${keys.redis.SRS_AUTH_SECRET}, field=pubSecret, value=${'*'.repeat(publish.length)}, decoded=${JSON.stringify(decoded)}`);
     ctx.body = utils.asResponse(0, {publish});
   };
   // Compatible with previous mgmt.
@@ -76,22 +82,45 @@ exports.handle = (router) => {
 
     if (!secret) throw utils.asError(errs.sys.empty, errs.status.args, 'no secret');
 
-    const r0 = await redis.set(keys.redis.SRS_SECRET_PUBLISH, secret);
+    const r0 = await redis.hset(keys.redis.SRS_AUTH_SECRET, 'pubSecret', secret);
 
-    console.log(`hooks update secret, key=${keys.redis.SRS_SECRET_PUBLISH}, value=${'*'.repeat(secret.length)}, r0=${r0}, decoded=${JSON.stringify(decoded)}`);
+    console.log(`hooks update secret, key=${keys.redis.SRS_AUTH_SECRET}, field=pubSecret, value=${'*'.repeat(secret.length)}, r0=${r0}, decoded=${JSON.stringify(decoded)}`);
     ctx.body = utils.asResponse(0, {});
+  });
+
+  router.all('/terraform/v1/hooks/srs/secret/disable', async (ctx) => {
+    const { token, pubNoAuth} = ctx.request.body;
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
+
+    const r0 = await redis.hset(keys.redis.SRS_AUTH_SECRET, 'pubNoAuth', pubNoAuth);
+
+    console.log(`hooks disable secret, pubNoAuth=${pubNoAuth}, r0=${r0}, decoded=${JSON.stringify(decoded)}`);
+    ctx.body = utils.asResponse(0);
   });
 
   return router;
 };
 
 async function init() {
+  let publish = await redis.hget(keys.redis.SRS_AUTH_SECRET, 'pubSecret');
+
+  // Migrate from previous key.
+  if (!publish) {
+    let previous = await redis.get('SRS_SECRET_PUBLISH');
+    if (previous) {
+      publish = previous;
+      await redis.hset(keys.redis.SRS_AUTH_SECRET, 'pubSecret', publish);
+      await redis.del('SRS_SECRET_PUBLISH');
+    }
+  }
+
   // Setup the publish secret for first run.
-  let publish = await redis.get(keys.redis.SRS_SECRET_PUBLISH);
   if (!publish) {
     publish = Math.random().toString(16).slice(-8);
-    const r0 = await redis.set(keys.redis.SRS_SECRET_PUBLISH, publish);
-    console.log(`hooks create secret, key=${keys.redis.SRS_SECRET_PUBLISH}, value=${'*'.repeat(publish.length)}, r0=${r0}`);
+    const r0 = await redis.hset(keys.redis.SRS_AUTH_SECRET, 'pubSecret', publish);
+    console.log(`hooks create secret, key=${keys.redis.SRS_AUTH_SECRET}, field=pubSecret, value=${'*'.repeat(publish.length)}, r0=${r0}`);
   }
 }
 

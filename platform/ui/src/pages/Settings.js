@@ -381,8 +381,17 @@ function SettingTencent() {
 
 function SettingAuth() {
   const [secret, setSecret] = React.useState();
+  const [allowNoAuth, setAllowNoAuth] = React.useState();
+  const [noAuth, setNoAuth] = React.useState();
+  const [searchParams] = useSearchParams();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
+
+  React.useEffect(() => {
+    const allowNoAuth = searchParams.get('allow-noauth') === 'true';
+    console.log(`?allow-noauth=true|false, current=${allowNoAuth}, Whether allow disable auth`);
+    setAllowNoAuth(allowNoAuth);
+  }, [searchParams]);
 
   const updateSecret = React.useCallback((e) => {
     e.preventDefault();
@@ -401,6 +410,16 @@ function SettingAuth() {
     }).catch(handleError);
   }, [handleError, secret, t]);
 
+  const updateNoAuth = React.useCallback((e) => {
+    const token = Token.load();
+    axios.post('/terraform/v1/hooks/srs/secret/disable', {
+      ...token, pubNoAuth: !!noAuth,
+    }).then(res => {
+      alert(t('helper.setOk'));
+      console.log(`Disable: Update ok, noAuth=${noAuth}`);
+    }).catch(handleError);
+  }, [handleError, t, noAuth])
+
   return (
     <Accordion defaultActiveKey="0">
       <Accordion.Item eventKey="0">
@@ -418,6 +437,19 @@ function SettingAuth() {
           </Form>
         </Accordion.Body>
       </Accordion.Item>
+      {allowNoAuth && <>
+        <Accordion.Item eventKey="1">
+          <Accordion.Header>{t('settings.noAuthTitle')}</Accordion.Header>
+          <Accordion.Body>
+            <Form.Group className="mb-3" controlId="formDisableAuthCheckbox">
+              <Form.Check type="checkbox" label={t('settings.noAuthTips')} defaultChecked={noAuth} onClick={() => setNoAuth(!noAuth)} />
+            </Form.Group>
+            <Button variant="primary" type="submit" onClick={(e) => updateNoAuth(e)}>
+              {t('helper.submit')}
+            </Button>
+          </Accordion.Body>
+        </Accordion.Item>
+      </>}
     </Accordion>
   );
 }

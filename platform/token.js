@@ -62,7 +62,7 @@ exports.handle = (router) => {
 
   router.all('/terraform/v1/mgmt/check', async (ctx) => {
     // Check whether redis is ok.
-    const r0 = await redis.get(keys.redis.SRS_SECRET_PUBLISH);
+    const r0 = await redis.hget(keys.redis.SRS_AUTH_SECRET, 'pubSecret');
     const r1 = await redis.hlen(keys.redis.SRS_FIRST_BOOT);
     const r2 = await redis.hlen(keys.redis.SRS_TENCENT_LH);
     if (!r0 || !r1 || !r2) throw utils.asError(errs.sys.redis, errs.status.sys, `redis corrupt`);
