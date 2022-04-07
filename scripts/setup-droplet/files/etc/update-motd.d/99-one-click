@@ -9,7 +9,7 @@ cat <<EOF
 Welcome to DigitalOcean's 1-Click SRS Droplet.
 To keep this Droplet secure, the UFW firewall is enabled.
 All ports are BLOCKED except 22 (SSH), 80 (HTTP), 443 (HTTPS), 1935 (RTMP),
-8000/UDP (WebRTC), 10080/UDP (SRT), 9000/TCP+UDP (GB28181), 5060/TDP+UDP (SIP),
+8000/UDP (WebRTC), 10080/UDP (SRT), 9000/TCP+UDP (GB28181), 5060/TCP+UDP (SIP),
 2022 (MGMT) and 56379 (REDIS).
 
 In a web browser, you can view:
