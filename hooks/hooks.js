@@ -83,6 +83,7 @@ exports.handle = (router) => {
     if (!secret) throw utils.asError(errs.sys.empty, errs.status.args, 'no secret');
 
     const r0 = await redis.hset(keys.redis.SRS_AUTH_SECRET, 'pubSecret', secret);
+    await redis.set(keys.redis.SRS_SECRET_PUBLISH, secret);
 
     console.log(`hooks update secret, key=${keys.redis.SRS_AUTH_SECRET}, field=pubSecret, value=${'*'.repeat(secret.length)}, r0=${r0}, decoded=${JSON.stringify(decoded)}`);
     ctx.body = utils.asResponse(0, {});
@@ -107,12 +108,12 @@ async function init() {
   let publish = await redis.hget(keys.redis.SRS_AUTH_SECRET, 'pubSecret');
 
   // Migrate from previous key.
+  // TODO: FIXME: Remove SRS_SECRET_PUBLISH in the next major release.
   if (!publish) {
-    let previous = await redis.get('SRS_SECRET_PUBLISH');
+    let previous = await redis.get(keys.redis.SRS_SECRET_PUBLISH);
     if (previous) {
       publish = previous;
       await redis.hset(keys.redis.SRS_AUTH_SECRET, 'pubSecret', publish);
-      await redis.del('SRS_SECRET_PUBLISH');
     }
   }
 
@@ -120,6 +121,7 @@ async function init() {
   if (!publish) {
     publish = Math.random().toString(16).slice(-8);
     const r0 = await redis.hset(keys.redis.SRS_AUTH_SECRET, 'pubSecret', publish);
+    await redis.set(keys.redis.SRS_SECRET_PUBLISH, publish);
     console.log(`hooks create secret, key=${keys.redis.SRS_AUTH_SECRET}, field=pubSecret, value=${'*'.repeat(publish.length)}, r0=${r0}`);
   }
 }
