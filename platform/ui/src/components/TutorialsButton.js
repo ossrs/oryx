@@ -5,6 +5,41 @@ import * as Icon from 'react-bootstrap-icons';
 import {Token} from "../utils";
 import axios from "axios";
 import Container from "react-bootstrap/Container";
+import {useTranslation} from "react-i18next";
+import {useSrsLanguage} from "./LanguageSwitch";
+
+function useTutorials(bvidsRef, mediumRef) {
+  const language = useSrsLanguage();
+  const cn = useTutorialsCn(bvidsRef);
+  const en = useTutorialsEn(mediumRef);
+  return language === 'zh' ? cn : en;
+}
+
+function useTutorialsEn(mediumRef) {
+  const language = useSrsLanguage();
+  const [tutorials, setTutorials] = React.useState([]);
+  const ref = React.useRef({tutorials:[]});
+
+  const dict = React.useRef({
+    'e9fe6f314ac6': {
+      author: 'SRS',
+      link: 'https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-1-click-e9fe6f314ac6',
+      title: 'How to Setup a Video Streaming Service by 1-Click',
+    },
+  });
+
+  const bvids = mediumRef?.current;
+  React.useEffect(() => {
+    if (!bvids || !bvids.length) return;
+    if (language !== 'en') return;
+    bvids.map(tutorial => {
+      ref.current.tutorials.push(dict.current[tutorial.id]);
+      setTutorials([...ref.current.tutorials].sort((a, b) => b.view - a.view));
+    });
+  }, [bvids, language]);
+
+  return tutorials;
+}
 
 /**
  * Fetch the video tutorials from bilibili, for example:
@@ -18,14 +53,15 @@ import Container from "react-bootstrap/Container";
  * Then, use the state in TutorialsButton:
       return <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
  */
-function useTutorials(bvidsRef) {
-  const bvids = bvidsRef.current;
-
+function useTutorialsCn(bvidsRef) {
+  const language = useSrsLanguage();
   const [tutorials, setTutorials] = React.useState([]);
   const ref = React.useRef({tutorials:[]});
 
+  const bvids = bvidsRef.current;
   React.useEffect(() => {
     if (!bvids || !bvids.length) return;
+    if (language !== 'zh') return;
 
     // Allow cancel up the requests.
     const source = axios.CancelToken.source();
@@ -61,13 +97,15 @@ function useTutorials(bvidsRef) {
       //    This is a no-op, but it indicates a memory leak in your application.
       source.cancel();
     };
-  }, [bvids]);
+  }, [bvids, language]);
 
   return tutorials;
 }
 
 // A toast list for tutorials.
 function TutorialsToast({tutorials, onClose}) {
+  const {t} = useTranslation();
+
   return (<>
     <Container>
       <Row>
@@ -76,10 +114,10 @@ function TutorialsToast({tutorials, onClose}) {
             <Toast onClose={onClose}>
               <Toast.Header>
                 <img src={logo} className="rounded me-2" width={56} alt=''/>
-                <strong className="me-auto">Bilibili</strong>
-                <span title='播放次数'><Icon.Play /> {tutorial.view}</span> &nbsp;
-                <span title='点赞次数'><Icon.HandThumbsUp /> {tutorial.like}</span> &nbsp;
-                <span title='分享次数'><Icon.Share /> {tutorial.share}</span> &nbsp;
+                <strong className="me-auto">{t('tutorials.media')}</strong>
+                {tutorial.view && <> <span title={t('tutorials.view')}><Icon.Play /> {tutorial.view}</span> &nbsp; </>}
+                {tutorial.like && <> <span title={t('tutorials.like')}><Icon.HandThumbsUp /> {tutorial.like}</span> &nbsp; </>}
+                {tutorial.share && <> <span title={t('tutorials.share')}><Icon.Share /> {tutorial.share}</span> &nbsp; </>}
                 <small>by {tutorial.author}</small>
               </Toast.Header>
               <Toast.Body>

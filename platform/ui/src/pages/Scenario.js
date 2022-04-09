@@ -22,7 +22,7 @@ export default function Scenario() {
   const language = useSrsLanguage();
 
   React.useEffect(() => {
-    const tab = searchParams.get('tab') || (language === 'zh' ? 'tutorials' : 'live');
+    const tab = searchParams.get('tab') || 'tutorials';
     console.log(`?tab=tutorials|live|srt|dvr|source, current=${tab}, Select the tab to render`);
     setDefaultActiveTab(tab);
   }, [searchParams, language]);

@@ -1,13 +1,7 @@
 import React from "react";
 import {TutorialsToast, useTutorials} from "../components/TutorialsButton";
-import {useSrsLanguage} from "../components/LanguageSwitch";
 
-export default function ScenarioTutorials(props) {
-  const language = useSrsLanguage();
-  return language === 'zh' ? <ScenarioTutorialsCn {...props} /> : <ScenarioTutorialsEn {...props} />;
-}
-
-function ScenarioTutorialsCn() {
+export default function ScenarioTutorials() {
   const movieTutorials = useTutorials(React.useRef([
     {author: 'SRS', id: 'BV1844y1L7dL'},
     {author: '徐光磊', id: 'BV1RS4y1G7tb'},
@@ -22,16 +16,12 @@ function ScenarioTutorialsCn() {
     {author: 'SRS', id: 'BV1KY411V7uc'},
     {author: '唐为', id: 'BV14S4y1k7gr'},
     {author: 'SRS', id:"BV1cq4y1e7Au"}
+  ]), React.useRef([
+    {id: 'e9fe6f314ac6'}
   ]));
 
   return (
       <TutorialsToast tutorials={movieTutorials} />
-  );
-}
-
-function ScenarioTutorialsEn() {
-  return (
-    <span>On the way...</span>
   );
 }
 

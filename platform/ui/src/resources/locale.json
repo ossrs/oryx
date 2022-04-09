@@ -134,6 +134,12 @@
         "apiPublishSecret": "API: 获取推流密钥",
         "tokenEmpty": "没有Token，请先运行"
       },
+      "tutorials": {
+        "media": "Bilibili",
+        "view": "播放次数",
+        "like": "点赞次数",
+        "share": "分享次数"
+      },
       "errs": {
         "expire1": "Token过期，请",
         "expire2": "重新登录"
@@ -288,6 +294,12 @@
         "token": "API: Create Token",
         "apiPublishSecret": "API: Query Publish Secret",
         "tokenEmpty": "No Token, please run "
+      },
+      "tutorials": {
+        "media": "Medium",
+        "view": "View",
+        "like": "Like",
+        "share": "Share"
       },
       "errs": {
         "expire1": "Token expired, please ",
