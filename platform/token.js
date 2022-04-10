@@ -82,6 +82,8 @@ exports.handle = (router) => {
     const apiSecret = await utils.apiSecret(redis);
     const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     const {expire, expireAt, createAt, nonce, token2} = utils.createToken(moment, jwt, apiSecret);
     console.log(`login by token ok, decoded=${JSON.stringify(decoded)}, duration=${expire}, create=${createAt}, expire=${expireAt}, nonce=${nonce}, token=${token.length}B`);
     ctx.body = utils.asResponse(0, {token:token2, createAt, expireAt});
@@ -111,6 +113,8 @@ exports.handle = (router) => {
     if (password !== process.env.MGMT_PASSWORD) {
       throw utils.asError(errs.auth.password, errs.status.auth, 'invalid password');
     }
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     const apiSecret = await utils.apiSecret(redis);
     const {expire, expireAt, createAt, nonce, token} = utils.createToken(moment, jwt, apiSecret);
