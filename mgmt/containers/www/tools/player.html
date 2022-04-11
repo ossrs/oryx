@@ -10,7 +10,7 @@
   </style>
 </head>
 <body>
-  <video id="player" autoplay controls></video>
+  <video id="player" autoplay controls muted></video>
 </body>
 <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
 <script type="text/javascript" src="js/flv-1.5.0.min.js"></script>
@@ -22,13 +22,6 @@
 
     const resource = q.get('url');
     if (!resource) return alert(`没有指定URL`);
-
-    // See https://stackoverflow.com/a/12905122/17679565
-    if (document.createElement('video').canPlayType('application/vnd.apple.mpegURL')) {
-      console.log(`Play by native for ${resource}`);
-      $('#player').prop('src', resource);
-      return;
-    }
 
     if (resource.indexOf('.flv') > 0) {
       if (!flvjs.isSupported()) return alert(`你的浏览器不支持HTTP-FLV`);
@@ -42,6 +35,13 @@
     }
 
     if (resource.indexOf('.m3u8') > 0) {
+      // See https://stackoverflow.com/a/12905122/17679565
+      if (document.createElement('video').canPlayType('application/vnd.apple.mpegURL')) {
+        console.log(`Play by native for ${resource}`);
+        $('#player').prop('src', resource);
+        return;
+      }
+
       const player = new Hls();
       player.loadSource(resource);
       player.attachMedia(document.getElementById('player'));
