@@ -35,6 +35,7 @@ function useTutorialsEn(mediumRef) {
     bvids.map(tutorial => {
       ref.current.tutorials.push(dict.current[tutorial.id]);
       setTutorials([...ref.current.tutorials].sort((a, b) => b.view - a.view));
+      return null;
     });
   }, [bvids, language]);
 
