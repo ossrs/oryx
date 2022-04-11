@@ -502,7 +502,7 @@ function SettingHttps() {
   return (
     <Accordion defaultActiveKey="0">
       <Accordion.Item eventKey="0">
-        <Accordion.Header>HTTPS: Let's Encrypt</Accordion.Header>
+        <Accordion.Header>{t('settings.letsTitle')}</Accordion.Header>
         <Accordion.Body>
           <Form>
             <Form.Group className="mb-3">
