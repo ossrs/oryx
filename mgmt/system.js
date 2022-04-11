@@ -290,13 +290,17 @@ const handlers = {
       `root ${process.cwd()}/containers/objs/nginx/html;`,
       // Set the cache control, see http://nginx.org/en/docs/http/ngx_http_headers_module.html
       'add_header Cache-Control "public, max-age=10";',
+      // Allow CORS for all domain, see https://ubiq.co/tech-blog/enable-cors-nginx/
+      'add_header Access-Control-Allow-Origin *;',
     ] : [
       'proxy_pass http://127.0.0.1:8080$request_uri;',
     ];
 
     const tsConf = hls === 'true' ? [
       `root ${process.cwd()}/containers/objs/nginx/html;`,
-      'add_header Cache-Control "public, max-age=86400";'
+      'add_header Cache-Control "public, max-age=86400";',
+      // Allow CORS for all domain, see https://ubiq.co/tech-blog/enable-cors-nginx/
+      'add_header Access-Control-Allow-Origin *;',
     ] : [
       'proxy_pass http://127.0.0.1:8080$request_uri;',
     ];
