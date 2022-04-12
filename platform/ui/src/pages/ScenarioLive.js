@@ -11,11 +11,16 @@ export default function ScenarioLive(props) {
 }
 
 function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
-  const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
+  const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcUrl, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
   const xgFlvPlayerUrl = flvPlayer?.replace('player.html', 'xgplayer.html');
   const xgHlsPlayerUrl = hlsPlayer?.replace('player.html', 'xgplayer.html');
   const ffmpegPublishCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv ${rtmpPublishUrl}`;
+
+  // Shortcodes of WordPress.
+  const flvUrlShortCode = `[srs_player url="${flvUrl}"]`;
+  const m3u8UrlShortCode = `[srs_player url="${m3u8Url}"]`;
+  const rtcUrlShortCode = `[srs_player url="${rtcUrl}"]`;
 
   const movieTutorials = useTutorials(React.useRef([
     {author: '徐光磊', id: 'BV1RS4y1G7tb'},
@@ -101,6 +106,32 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
                 <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
               </ul>
             </li>
+            <li>
+              你也可以嵌入到WordPress：
+              <ul>
+                <li>
+                  嵌入HTTP-FLV流：
+                  <code>{flvUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  嵌入HLS流：
+                  <code>{m3u8UrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  嵌入WebRTC流：
+                  <code>{rtcUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
+                  </div>
+                </li>
+              </ul>
+            </li>
             <li>可选，点击进入<a id="cnConsole" href={cnConsole}>SRS控制台</a>查看流信息</li>
           </ol>
         </Accordion.Body>
@@ -163,6 +194,32 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
                 <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
               </ul>
             </li>
+            <li>
+              你也可以嵌入到WordPress：
+              <ul>
+                <li>
+                  嵌入HTTP-FLV流：
+                  <code>{flvUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  嵌入HLS流：
+                  <code>{m3u8UrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  嵌入WebRTC流：
+                  <code>{rtcUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
+                  </div>
+                </li>
+              </ul>
+            </li>
             <li>可选，点击进入<a id="cnConsole" href={cnConsole}>SRS控制台</a>查看流信息</li>
           </ol>
         </Accordion.Body>
@@ -193,6 +250,32 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
                 <li>播放<a href={rtcPlayer2} target='_blank' rel='noreferrer'>WebRTC流</a></li>
               </ul>
             </li>
+            <li>
+              你也可以嵌入到WordPress：
+              <ul>
+                <li>
+                  嵌入HTTP-FLV流：
+                  <code>{flvUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  嵌入HLS流：
+                  <code>{m3u8UrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  嵌入WebRTC流：
+                  <code>{rtcUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
+                  </div>
+                </li>
+              </ul>
+            </li>
             <li>可选，点击进入<a id="cnConsole" href={cnConsole}>SRS控制台</a>查看流信息</li>
           </ol>
         </Accordion.Body>
@@ -202,9 +285,14 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
 }
 
 function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
-  const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcPlayer, enConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
+  const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcUrl, rtcPlayer, enConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
   const ffmpegPublishCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv ${rtmpPublishUrl}`;
+
+  // Shortcodes of WordPress.
+  const flvUrlShortCode = `[srs_player url="${flvUrl}"]`;
+  const m3u8UrlShortCode = `[srs_player url="${m3u8Url}"]`;
+  const rtcUrlShortCode = `[srs_player url="${rtcUrl}"]`;
 
   return (
     <Accordion defaultActiveKey="1">
@@ -264,6 +352,32 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
                 <li>WebRTC by <a href={rtcPlayer} target='_blank' rel='noreferrer'>H5</a></li>
               </ul>
             </li>
+            <li>
+              Embed in WordPress post/page：
+              <ul>
+                <li>
+                  For HTTP-FLV:
+                  <code>{flvUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  For HLS:
+                  <code>{m3u8UrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  For WebRTC:
+                  <code>{rtcUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
+                  </div>
+                </li>
+              </ul>
+            </li>
             <li>Optional, check by <a href={enConsole} target='_blank' rel='noreferrer'>console</a></li>
           </ol>
         </Accordion.Body>
@@ -318,6 +432,32 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
                 <li>WebRTC by <a href={rtcPlayer} target='_blank' rel='noreferrer'>H5</a></li>
               </ul>
             </li>
+            <li>
+              Embed in WordPress post/page：
+              <ul>
+                <li>
+                  For HTTP-FLV:
+                  <code>{flvUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  For HLS:
+                  <code>{m3u8UrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  For WebRTC:
+                  <code>{rtcUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
+                  </div>
+                </li>
+              </ul>
+            </li>
             <li>Optional, check by <a href={enConsole} target='_blank' rel='noreferrer'>console</a></li>
           </ol>
         </Accordion.Body>
@@ -345,6 +485,32 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
                 <li><a href={flvPlayer2} target='_blank' rel='noreferrer'>HTTP-FLV</a> <code>{flvUrl2}</code></li>
                 <li><a href={hlsPlayer2} target='_blank' rel='noreferrer'>HLS</a> <code>{m3u8Url2}</code></li>
                 <li><a href={rtcPlayer2} target='_blank' rel='noreferrer'>WebRTC</a></li>
+              </ul>
+            </li>
+            <li>
+              Embed in WordPress post/page：
+              <ul>
+                <li>
+                  For HTTP-FLV:
+                  <code>{flvUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  For HLS:
+                  <code>{m3u8UrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  For WebRTC:
+                  <code>{rtcUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
+                  </div>
+                </li>
               </ul>
             </li>
             <li>Optional, check by <a href={enConsole} target='_blank' rel='noreferrer'>console</a></li>
