@@ -178,8 +178,8 @@ const handlers = {
 
     if (!domain) throw utils.asError(errs.sys.empty, errs.status.args, 'no domain');
 
-    if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
-    if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
+    // Only require the SSL directory exists, beause user might remove the key and crt files.
+    if (!fs.existsSync('/etc/nginx/ssl/')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no ssl directory');
 
     // We run always with "-n Run non-interactively"
     // Note that it's started by nodejs, so never use '-it' or failed for 'the input device is not a TTY'.
