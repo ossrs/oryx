@@ -20,8 +20,9 @@ async function threadMain() {
       await doThreadMain();
     } catch (e) {
       console.error(`Thread #crontab: err`, e);
+      await new Promise(resolve => setTimeout(resolve, 300 * 1000));
     } finally {
-      await new Promise(resolve => setTimeout(resolve, 3600 * 1000));
+      await new Promise(resolve => setTimeout(resolve, 30 * 1000));
     }
   }
 }
@@ -39,5 +40,8 @@ async function doThreadMain() {
 
   const {stdout, renewOk} = await helper.execApi('renewLetsEncrypt');
   console.log(`Thread #crontab: renew ssl updated=${renewOk}, message is ${stdout}`);
+
+  await new Promise(resolve => setTimeout(resolve, 24 * 3600 * 1000));
+  console.log(`Thread #crontab: renew done`);
 }
 
