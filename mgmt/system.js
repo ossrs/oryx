@@ -181,6 +181,9 @@ const handlers = {
     // Only require the SSL directory exists, beause user might remove the key and crt files.
     if (!fs.existsSync('/etc/nginx/ssl/')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no ssl directory');
 
+    // We will request both domain.com and www.domain.com
+    const domainWithoutWww = domain.replace(/^www\./g, '');
+
     // We run always with "-n Run non-interactively"
     // Note that it's started by nodejs, so never use '-it' or failed for 'the input device is not a TTY'.
     //
@@ -196,17 +199,17 @@ const handlers = {
       '-v', `${process.cwd()}/containers/www:/www`,
       `${registry}/ossrs/certbot`,
       'certonly', '--webroot', '-w', '/www',
-      '-d', `${domain}`, '-d', `www.${domain}`, '--register-unsafely-without-email', '--agree-tos',
+      '-d', `${domainWithoutWww}`, '-d', `www.${domainWithoutWww}`, '--register-unsafely-without-email', '--agree-tos',
       '--preferred-challenges', 'http',
       '-n',
     ];
     await execFile('docker', dockerArgs);
     console.log(`certbot request ssl ok docker ${dockerArgs.join(' ')}`);
 
-    const keyFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domain}/privkey.pem`;
+    const keyFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domainWithoutWww}/privkey.pem`;
     if (!fs.existsSync(keyFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue key file ${keyFile}`);
 
-    const crtFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domain}/cert.pem`;
+    const crtFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domainWithoutWww}/cert.pem`;
     if (!fs.existsSync(crtFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue crt file ${crtFile}`);
 
     // Remove the ssl file, because it might link to other file.
