@@ -285,6 +285,19 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0);
   });
 
+  router.all('/terraform/v1/mgmt/nginx/homepage', async (ctx) => {
+    const {token, homepage} = ctx.request.body;
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
+
+    if (!homepage) throw utils.asError(errs.sys.empty, errs.status.args, `no param homepage`);
+    const r0 = await redis.hset(keys.redis.SRS_HTTP_REWRITE, '/', homepage);
+
+    console.log(`nginx homepage ok, homepage=${homepage}, r0=${r0}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0);
+  });
+
   return router;
 };
 

@@ -92,7 +92,11 @@
         "upgradeEnd": "结束时间",
         "upgradeSubmit": "设置窗口",
         "nginxHlsTitle": "HLS分发",
-        "nginxHlsTip": "使用NGINX分发HLS"
+        "nginxHlsTip": "使用NGINX分发HLS",
+        "nginxHomeTitle": "首页设置",
+        "nginxHomeRedirect": "跳转路径",
+        "nginxHomeTip": "重定向的路径",
+        "nginxHomeRequired": "请输入首页路径"
       },
       "coms": {
         "srs4": "SRS(稳定版)",
@@ -254,7 +258,11 @@
         "upgradeEnd": "End",
         "upgradeSubmit": "Submit",
         "nginxHlsTitle": "HLS Streaming",
-        "nginxHlsTip": "Deliver HLS by NGINX"
+        "nginxHlsTip": "Deliver HLS by NGINX",
+        "nginxHomeTitle": "Homepage",
+        "nginxHomeRedirect": "Redirect",
+        "nginxHomeTip": "The url to redirect to",
+        "nginxHomeRequired": "Please input the homepage"
       },
       "coms": {
         "srs4": "SRS(Stable)",

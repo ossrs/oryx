@@ -19,6 +19,7 @@ const threads = require('./threads');
 const pkg = require('./package.json');
 const staticCache = require('koa-static-cache');
 const platform = require('./platform');
+const rewrite = require('./rewrite');
 
 // Start all workers threads first.
 threads.run();
@@ -93,20 +94,8 @@ app.use(proxy('/*/*.(flv|m3u8|ts|aac|mp3)', withLogs({target: 'http://127.0.0.1:
 // For source files like srs.tar.gz, by /terraform/v1/sources/
 app.use(mount('/terraform/v1/sources/', serve('./sources')));
 
-// For /favicon.ico
-// For homepage from root, use mgmt.
-app.use(async (ctx, next) => {
-  if (ctx.request.path === '/favicon.ico') {
-    ctx.type = 'image/x-icon';
-    ctx.set('Cache-Control', 'public, max-age=31536000');
-    ctx.body = fs.readFileSync('./ui/build/favicon.ico');
-    return;
-  }
-
-  if (ctx.request.path === '/') return ctx.response.redirect('/mgmt/');
-  if (ctx.request.path === '/index.html') return ctx.response.redirect('/mgmt/');
-  await next();
-});
+// Rewrite other static files or websites.
+rewrite.handle(app);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //   API sections.
