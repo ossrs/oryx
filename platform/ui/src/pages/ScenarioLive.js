@@ -110,21 +110,21 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
               你也可以嵌入到WordPress：
               <ul>
                 <li>
-                  嵌入HTTP-FLV流：
+                  嵌入HTTP-FLV流 &nbsp;
                   <code>{flvUrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='拷贝'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
                   </div>
                 </li>
                 <li>
-                  嵌入HLS流：
+                  嵌入HLS流 &nbsp;
                   <code>{m3u8UrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='拷贝'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
                   </div>
                 </li>
                 <li>
-                  嵌入WebRTC流：
+                  嵌入WebRTC流 &nbsp;
                   <code>{rtcUrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='拷贝'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
@@ -198,21 +198,21 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
               你也可以嵌入到WordPress：
               <ul>
                 <li>
-                  嵌入HTTP-FLV流：
+                  嵌入HTTP-FLV流 &nbsp;
                   <code>{flvUrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='拷贝'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
                   </div>
                 </li>
                 <li>
-                  嵌入HLS流：
+                  嵌入HLS流 &nbsp;
                   <code>{m3u8UrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='拷贝'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
                   </div>
                 </li>
                 <li>
-                  嵌入WebRTC流：
+                  嵌入WebRTC流 &nbsp;
                   <code>{rtcUrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='拷贝'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
@@ -254,21 +254,21 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
               你也可以嵌入到WordPress：
               <ul>
                 <li>
-                  嵌入HTTP-FLV流：
+                  嵌入HTTP-FLV流 &nbsp;
                   <code>{flvUrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='拷贝'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
                   </div>
                 </li>
                 <li>
-                  嵌入HLS流：
+                  嵌入HLS流 &nbsp;
                   <code>{m3u8UrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='拷贝'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
                   </div>
                 </li>
                 <li>
-                  嵌入WebRTC流：
+                  嵌入WebRTC流 &nbsp;
                   <code>{rtcUrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='拷贝'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
@@ -356,21 +356,21 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
               Embed in WordPress post/page：
               <ul>
                 <li>
-                  For HTTP-FLV:
+                  For HTTP-FLV &nbsp;
                   <code>{flvUrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='Copy'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
                   </div>
                 </li>
                 <li>
-                  For HLS:
+                  For HLS &nbsp;
                   <code>{m3u8UrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='Copy'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
                   </div>
                 </li>
                 <li>
-                  For WebRTC:
+                  For WebRTC &nbsp;
                   <code>{rtcUrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='Copy'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
@@ -436,21 +436,21 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
               Embed in WordPress post/page：
               <ul>
                 <li>
-                  For HTTP-FLV:
+                  For HTTP-FLV &nbsp;
                   <code>{flvUrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='Copy'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
                   </div>
                 </li>
                 <li>
-                  For HLS:
+                  For HLS &nbsp;
                   <code>{m3u8UrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='Copy'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
                   </div>
                 </li>
                 <li>
-                  For WebRTC:
+                  For WebRTC &nbsp;
                   <code>{rtcUrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='Copy'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
@@ -491,21 +491,21 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
               Embed in WordPress post/page：
               <ul>
                 <li>
-                  For HTTP-FLV:
+                  For HTTP-FLV &nbsp;
                   <code>{flvUrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='Copy'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
                   </div>
                 </li>
                 <li>
-                  For HLS:
+                  For HLS &nbsp;
                   <code>{m3u8UrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='Copy'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
                   </div>
                 </li>
                 <li>
-                  For WebRTC:
+                  For WebRTC &nbsp;
                   <code>{rtcUrlShortCode}</code> &nbsp;
                   <div role='button' style={{display: 'inline-block'}} title='Copy'>
                     <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
