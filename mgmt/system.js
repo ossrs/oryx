@@ -196,7 +196,8 @@ const handlers = {
       '-v', `${process.cwd()}/containers/www:/www`,
       `${registry}/ossrs/certbot`,
       'certonly', '--webroot', '-w', '/www',
-      '-d', `${domain}`, '--register-unsafely-without-email', '--agree-tos', '--preferred-challenges', 'http',
+      '-d', `${domain}`, '-d', `www.${domain}`, '--register-unsafely-without-email', '--agree-tos',
+      '--preferred-challenges', 'http',
       '-n',
     ];
     await execFile('docker', dockerArgs);
