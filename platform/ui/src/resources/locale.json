@@ -221,7 +221,7 @@
         "tabTencent": "TencentCloud",
         "tabFooter": "Footer",
         "tabPlatform": "Platform",
-        "letsTitle": "HTTPS: Automatic HTTPS",
+        "letsTitle": "HTTPS: Let's Encrypt",
         "letsDomain": "Domain Name",
         "letsDomainTip": "For example, your-domain.com",
         "letsDomainSubmit": "Submit",
