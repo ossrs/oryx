@@ -17,7 +17,8 @@ export default function ScenarioTutorials() {
     {author: '唐为', id: 'BV14S4y1k7gr'},
     {author: 'SRS', id:"BV1cq4y1e7Au"}
   ]), React.useRef([
-    {id: 'e9fe6f314ac6'}
+    {id: 'e9fe6f314ac6'},
+    {id: 'cb618777639f'},
   ]));
 
   return (

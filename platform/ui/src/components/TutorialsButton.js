@@ -22,9 +22,14 @@ function useTutorialsEn(mediumRef) {
 
   const dict = React.useRef({
     'e9fe6f314ac6': {
-      author: 'SRS',
+      author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-1-click-e9fe6f314ac6',
       title: 'How to Setup a Video Streaming Service by 1-Click',
+    },
+    'cb618777639f': {
+      author: 'Winlin Yang',
+      link: 'https://blog.ossrs.io/how-to-secure-srs-with-lets-encrypt-by-1-click-cb618777639f',
+      title: 'How to Secure SRS Droplet with Let’s Encrypt by 1-Click',
     },
   });
 
