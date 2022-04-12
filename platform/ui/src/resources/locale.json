@@ -96,7 +96,14 @@
         "nginxHomeTitle": "首页设置",
         "nginxHomeRedirect": "跳转路径",
         "nginxHomeTip": "重定向的路径",
-        "nginxHomeRequired": "请输入首页路径"
+        "nginxHomeRequired": "请输入首页路径",
+        "nginxProxyTitle": "反向代理",
+        "nginxProxyLocation": "代理路径",
+        "nginxProxyTip": "反向代理的路径",
+        "nginxProxyRequired": "请输入代理的路径",
+        "nginxBackendLocation": "后端服务地址",
+        "nginxBackendTip": "后端服务的地址",
+        "nginxBackendRequired": "请输入后端服务的地址"
       },
       "coms": {
         "srs4": "SRS(稳定版)",
@@ -262,7 +269,14 @@
         "nginxHomeTitle": "Homepage",
         "nginxHomeRedirect": "Redirect",
         "nginxHomeTip": "The url to redirect to",
-        "nginxHomeRequired": "Please input the homepage"
+        "nginxHomeRequired": "Please input the homepage",
+        "nginxProxyTitle": "Reverse Proxy",
+        "nginxProxyLocation": "Location",
+        "nginxProxyTip": "The location to proxy to",
+        "nginxProxyRequired": "Please input the location",
+        "nginxBackendLocation": "Backend Server",
+        "nginxBackendTip": "The backend server to proxy to",
+        "nginxBackendRequired": "Please input the backend server"
       },
       "coms": {
         "srs4": "SRS(Stable)",

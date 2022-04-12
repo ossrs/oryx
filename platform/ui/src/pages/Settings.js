@@ -108,6 +108,8 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
 function SettingNginx() {
   const [hlsDelivery, setHlsDelivery] = React.useState();
   const [homepage, setHomepage] = React.useState();
+  const [reverseProxy, setReverseProxy] = React.useState();
+  const [reverseBackend, setReverseBackend] = React.useState();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
@@ -138,6 +140,25 @@ function SettingNginx() {
 
   }, [handleError, t, homepage]);
 
+  const updateReverseProxy = React.useCallback((e) => {
+    e.preventDefault();
+
+    if (!reverseProxy) {
+      return alert(`${t('settings.nginxProxyRequired')}`);
+    }
+    if (!reverseBackend) {
+      return alert(`${t('settings.nginxBackendRequired')}`);
+    }
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/nginx/proxy', {
+      ...token, location: reverseProxy, backend: reverseBackend,
+    }).then(res => {
+      alert(t('helper.setOk'));
+    }).catch(handleError);
+
+  }, [handleError, t, reverseProxy, reverseBackend]);
+
   return (
     <Accordion defaultActiveKey="0">
       <Accordion.Item eventKey="0">
@@ -157,9 +178,9 @@ function SettingNginx() {
         <Accordion.Header>{t('settings.nginxHomeTitle')}</Accordion.Header>
         <Accordion.Body>
           <Form>
-            <Form.Group className="mb-3" controlId="formDvrAllCheckbox">
+            <Form.Group className="mb-3" controlId="formNginxHomepageInput">
               <Form.Label>{t('settings.nginxHomeRedirect')}</Form.Label>
-              <Form.Text> * {t('openapi.nginxHomeTip')}</Form.Text>
+              <Form.Text> * {t('settings.nginxHomeTip')}</Form.Text>
               <Form.Control
                 as="input"
                 type='input'
@@ -168,6 +189,36 @@ function SettingNginx() {
               />
             </Form.Group>
             <Button variant="primary" type="submit" onClick={(e) => updateHomepage(e)}>
+              {t('helper.submit')}
+            </Button>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="2">
+        <Accordion.Header>{t('settings.nginxProxyTitle')}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3" controlId="formNginxReverseProxyLocationInput">
+              <Form.Label>{t('settings.nginxProxyLocation')}</Form.Label>
+              <Form.Text> * {t('settings.nginxProxyTip')}</Form.Text>
+              <Form.Control
+                as="input"
+                type='input'
+                placeholder='For example, /app/'
+                onChange={(e) => setReverseProxy(e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="formNginxReverseProxyBackendInput">
+              <Form.Label>{t('settings.nginxBackendLocation')}</Form.Label>
+              <Form.Text> * {t('settings.nginxBackendTip')}</Form.Text>
+              <Form.Control
+                as="input"
+                type='input'
+                placeholder='For example, http://127.0.0.1:8000'
+                onChange={(e) => setReverseBackend(e.target.value)}
+              />
+            </Form.Group>
+            <Button variant="primary" type="submit" onClick={(e) => updateReverseProxy(e)}>
               {t('helper.submit')}
             </Button>
           </Form>

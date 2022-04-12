@@ -58,7 +58,7 @@ The ports allocated:
 | hooks | 2021 |  - | Mount at `/terraform/v1/hooks/` |
 | tencent-cloud | 2020 |  - | Mount at `/terraform/v1/tencent/` |
 | ffmpeg | 2019 |  - | Mount at `/terraform/v1/ffmpeg/` |
-| prometheus | 9090 | - | Mount at `/prometheus` |
+| prometheus | 9090 | - | Mount at `/prometheus/` |
 | node-exporter | 9100 | - | - |
 
 ## Features
@@ -121,6 +121,7 @@ Platform:
 * `/terraform/v1/mgmt/secret/token` Create token for OpenAPI.
 * `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
 * `/terraform/v1/mgmt/nginx/homepage` Setup the homepage redirection.
+* `/terraform/v1/mgmt/nginx/proxy` Setup a reverse proxy location.
 
 Market:
 

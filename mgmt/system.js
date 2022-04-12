@@ -283,6 +283,7 @@ const handlers = {
 
   // Generate dynamic.conf for NGINX.
   nginxGenerateConfig: async ({ctx, action, args}) => {
+    // Build HLS config for NGINX.
     const hls = await redis.hget(keys.redis.SRS_STREAM_NGINX, 'hls');
 
     const m3u8Conf = hls === 'true' ? [
@@ -305,6 +306,19 @@ const handlers = {
       'proxy_pass http://127.0.0.1:8080$request_uri;',
     ];
 
+    // Build reverse proxy config for NGINX.
+    const reverses = await redis.hgetall(keys.redis.SRS_HTTP_PROXY);
+    const reversesConf = [];
+    reverses && Object.keys(reverses).map(location => {
+      const backend = reverses[location];
+      reversesConf.push(
+        `location ${location} {`,
+        `  proxy_pass ${backend};`,
+        '}',
+      );
+    });
+
+    // Build the config for NGINX.
     const confLines = [
       '# !!! Important: SRS will restore this file during each upgrade, please never modify it.',
       '',
@@ -315,6 +329,9 @@ const handlers = {
       '  location ~ /.+/.*\\.(ts)$ {',
       ...tsConf.map(e => `    ${e}`),
       '  }',
+      '',
+      '  # For Reverse Proxy',
+      ...reversesConf.map(e => `  ${e}`),
       '',
       '',
     ];
