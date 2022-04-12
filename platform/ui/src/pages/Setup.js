@@ -7,6 +7,7 @@ import {useNavigate} from "react-router-dom";
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
+const { v4: uuidv4 } = require('uuid');
 
 export default function Setup({onInit}) {
   return (
@@ -26,7 +27,7 @@ function SetupImpl({onInit}) {
 
   // Generate password if not initialized.
   React.useEffect(() => {
-    setPassword(Math.random().toString(16).slice(-6));
+    setPassword(uuidv4().replace(/-/g, '').slice(-16));
   }, []);
 
   // User click login button.

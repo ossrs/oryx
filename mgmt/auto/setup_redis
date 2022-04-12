@@ -39,7 +39,7 @@ fi
 # Save password to .env
 grep -q "^REDIS_PASSWORD=" .env; SETUP_PASSWORD=$?
 if [[ $SETUP_PASSWORD -ne 0 ]]; then
-  REDIS_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 6)
+  REDIS_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32)
   echo "REDIS_PASSWORD=${REDIS_PASSWORD}" >> .env
   sed -i "s/.*requirepass .*$/requirepass $REDIS_PASSWORD/g" $REDIS_CONF &&
   echo "Set redis password"

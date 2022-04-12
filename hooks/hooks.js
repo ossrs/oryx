@@ -15,6 +15,7 @@ const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const jwt = require('jsonwebtoken');
 const keys = require('js-core/keys');
+const { v4: uuidv4 } = require('uuid');
 
 exports.handle = (router) => {
   // Init the secrets.
@@ -119,7 +120,7 @@ async function init() {
 
   // Setup the publish secret for first run.
   if (!publish) {
-    publish = Math.random().toString(16).slice(-8);
+    publish = uuidv4().replace(/-/g, '');
     const r0 = await redis.hset(keys.redis.SRS_AUTH_SECRET, 'pubSecret', publish);
     await redis.set(keys.redis.SRS_SECRET_PUBLISH, publish);
     console.log(`hooks create secret, key=${keys.redis.SRS_AUTH_SECRET}, field=pubSecret, value=${'*'.repeat(publish.length)}, r0=${r0}`);
