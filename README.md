@@ -120,6 +120,7 @@ Platform:
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
 * `/terraform/v1/mgmt/secret/token` Create token for OpenAPI.
 * `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
+* `/terraform/v1/mgmt/nginx/homepage` Setup the homepage redirection.
 
 Market:
 
