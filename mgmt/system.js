@@ -316,6 +316,7 @@ const handlers = {
         `  proxy_pass ${backend};`,
         '}',
       );
+      return null;
     });
 
     // Build the config for NGINX.

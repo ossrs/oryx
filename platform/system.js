@@ -307,8 +307,12 @@ exports.handle = (router) => {
     if (!location) throw utils.asError(errs.sys.empty, errs.status.args, `no param location`);
     if (!backend) throw utils.asError(errs.sys.empty, errs.status.args, `no param backend`);
 
-    const forbidden = ['/terraform/', '/mgmt/', '/prometheus/'];
-    if (forbidden.includes(location)) throw utils.asError(errs.sys.invalid, errs.status.args, `location ${location} is reserved`);
+    ['/terraform/', '/mgmt/', '/prometheus/', '/.well-known/'].map(forbidden => {
+      if (location.indexOf(forbidden) === 0) {
+        throw utils.asError(errs.sys.invalid, errs.status.args, `location ${location} or ${forbidden} is reserved`);
+      }
+      return null;
+    });
 
     const r0 = await redis.hset(keys.redis.SRS_HTTP_PROXY, location, backend);
     await helper.execApi('nginxGenerateConfig');
