@@ -174,15 +174,16 @@ const handlers = {
 
   // Update SSL by let's encrypt.
   updateLetsEncrypt: async ({ctx, action, args}) => {
-    const [domain] = args;
+    const [domains] = args;
 
-    if (!domain) throw utils.asError(errs.sys.empty, errs.status.args, 'no domain');
+    if (!domains) throw utils.asError(errs.sys.empty, errs.status.args, 'no domain');
 
     // Only require the SSL directory exists, beause user might remove the key and crt files.
     if (!fs.existsSync('/etc/nginx/ssl/')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no ssl directory');
 
-    // We will request both domain.com and www.domain.com
-    const domainWithoutWww = domain.replace(/^www\./g, '');
+    // Support multiple domains like domain.com;www.domain.com
+    const domainConfs = domains.split(/[;, ]+/);
+    const firstDomain = domainConfs[0];
 
     // We run always with "-n Run non-interactively"
     // Note that it's started by nodejs, so never use '-it' or failed for 'the input device is not a TTY'.
@@ -199,17 +200,18 @@ const handlers = {
       '-v', `${process.cwd()}/containers/www:/www`,
       `${registry}/ossrs/certbot`,
       'certonly', '--webroot', '-w', '/www',
-      '-d', `${domainWithoutWww}`, '-d', `www.${domainWithoutWww}`, '--register-unsafely-without-email', '--agree-tos',
+      ...domainConfs.map(e => ['-d', e]).flat(),
+      '--register-unsafely-without-email', '--agree-tos',
       '--preferred-challenges', 'http',
       '-n',
     ];
     await execFile('docker', dockerArgs);
     console.log(`certbot request ssl ok docker ${dockerArgs.join(' ')}`);
 
-    const keyFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domainWithoutWww}/privkey.pem`;
+    const keyFile = `${process.cwd()}/containers/etc/letsencrypt/live/${firstDomain}/privkey.pem`;
     if (!fs.existsSync(keyFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue key file ${keyFile}`);
 
-    const crtFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domainWithoutWww}/cert.pem`;
+    const crtFile = `${process.cwd()}/containers/etc/letsencrypt/live/${firstDomain}/cert.pem`;
     if (!fs.existsSync(crtFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue crt file ${crtFile}`);
 
     // Remove the ssl file, because it might link to other file.
