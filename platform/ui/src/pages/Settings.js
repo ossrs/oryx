@@ -107,7 +107,6 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
 
 function SettingNginx() {
   const [hlsDelivery, setHlsDelivery] = React.useState();
-  const [homepage, setHomepage] = React.useState();
   const [reverseProxy, setReverseProxy] = React.useState();
   const [reverseBackend, setReverseBackend] = React.useState();
   const handleError = useErrorHandler();
@@ -123,22 +122,6 @@ function SettingNginx() {
       alert(t('helper.setOk'));
     }).catch(handleError);
   }, [handleError, hlsDelivery, t]);
-
-  const updateHomepage = React.useCallback((e) => {
-    e.preventDefault();
-
-    if (!homepage) {
-      return alert(`${t('settings.nginxHomeRequired')}`);
-    }
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/nginx/homepage', {
-      ...token, homepage,
-    }).then(res => {
-      alert(t('helper.setOk'));
-    }).catch(handleError);
-
-  }, [handleError, t, homepage]);
 
   const updateReverseProxy = React.useCallback((e) => {
     e.preventDefault();
@@ -175,26 +158,6 @@ function SettingNginx() {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">
-        <Accordion.Header>{t('settings.nginxHomeTitle')}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3" controlId="formNginxHomepageInput">
-              <Form.Label>{t('settings.nginxHomeRedirect')}</Form.Label>
-              <Form.Text> * {t('settings.nginxHomeTip')}</Form.Text>
-              <Form.Control
-                as="input"
-                type='input'
-                placeholder='The url to redirect to, default is /mgmt/'
-                onChange={(e) => setHomepage(e.target.value)}
-              />
-            </Form.Group>
-            <Button variant="primary" type="submit" onClick={(e) => updateHomepage(e)}>
-              {t('helper.submit')}
-            </Button>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="2">
         <Accordion.Header>{t('settings.nginxProxyTitle')}</Accordion.Header>
         <Accordion.Body>
           <Form>
@@ -418,6 +381,7 @@ function SettingOpenApi({copyToClipboard}) {
 
 function SettingBeian() {
   const [beian, setBeian] = React.useState();
+  const [homepage, setHomepage] = React.useState();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
@@ -432,9 +396,45 @@ function SettingBeian() {
     }).catch(handleError);
   }, [handleError, beian, t]);
 
+  const updateHomepage = React.useCallback((e) => {
+    e.preventDefault();
+
+    if (!homepage) {
+      return alert(`${t('settings.nginxHomeRequired')}`);
+    }
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/nginx/homepage', {
+      ...token, homepage,
+    }).then(res => {
+      alert(t('helper.setOk'));
+    }).catch(handleError);
+
+  }, [handleError, t, homepage]);
+
   return (
-    <Accordion defaultActiveKey="0">
+    <Accordion defaultActiveKey="1">
       <Accordion.Item eventKey="0">
+        <Accordion.Header>{t('settings.nginxHomeTitle')}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3" controlId="formNginxHomepageInput">
+              <Form.Label>{t('settings.nginxHomeRedirect')}</Form.Label>
+              <Form.Text> * {t('settings.nginxHomeTip')}</Form.Text>
+              <Form.Control
+                as="input"
+                type='input'
+                placeholder='The url to redirect to, default is /mgmt/'
+                onChange={(e) => setHomepage(e.target.value)}
+              />
+            </Form.Group>
+            <Button variant="primary" type="submit" onClick={(e) => updateHomepage(e)}>
+              {t('helper.submit')}
+            </Button>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="1">
         <Accordion.Header>{t('settings.footerTitle')}</Accordion.Header>
         <Accordion.Body>
           <Form>
