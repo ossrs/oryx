@@ -56,6 +56,9 @@ async function execApi(action, args) {
     return data?.data?.data;
   } catch (e) {
     console.error(`exec server=${server}, action=${action}, args=${JSON.stringify(args)}, err`, e);
+
+    // When got error, we rethrow it to downstream.
+    throw e;
   }
 }
 exports.execApi = execApi;
