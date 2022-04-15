@@ -158,15 +158,19 @@ const handlers = {
     if (!key) throw utils.asError(errs.sys.empty, errs.status.args, 'no key');
     if (!crt) throw utils.asError(errs.sys.empty, errs.status.args, 'no crt');
 
-    if (!fs.existsSync('/etc/nginx/ssl/nginx.key')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
-    if (!fs.existsSync('/etc/nginx/ssl/nginx.crt')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
+    if (!fs.existsSync(`${process.cwd()}/containers/ssl/nginx.key`)) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no key file');
+    if (!fs.existsSync(`${process.cwd()}/containers/ssl/nginx.crt`)) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no crt file');
 
     // Remove the ssl file, because it might link to other file.
-    await execFile('rm', ['-f', '/etc/nginx/ssl/nginx.key', '/etc/nginx/ssl/nginx.crt']);
+    await execFile('rm', [
+      '-f',
+      `${process.cwd()}/containers/ssl/nginx.key`,
+      `${process.cwd()}/containers/ssl/nginx.crt`,
+    ]);
 
     // Write the ssl key and cert, and reload nginx when ready.
-    fs.writeFileSync('/etc/nginx/ssl/nginx.key', key);
-    fs.writeFileSync('/etc/nginx/ssl/nginx.crt', crt);
+    fs.writeFileSync(`${process.cwd()}/containers/ssl/nginx.key`, key);
+    fs.writeFileSync(`${process.cwd()}/containers/ssl/nginx.crt`, crt);
     await execFile('systemctl', ['reload', 'nginx.service']);
 
     ctx.body = utils.asResponse(0);
@@ -179,7 +183,7 @@ const handlers = {
     if (!domains) throw utils.asError(errs.sys.empty, errs.status.args, 'no domain');
 
     // Only require the SSL directory exists, beause user might remove the key and crt files.
-    if (!fs.existsSync('/etc/nginx/ssl/')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no ssl directory');
+    if (!fs.existsSync('${process.cwd()}/containers/ssl/')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no ssl directory');
 
     // Support multiple domains like domain.com;www.domain.com
     const domainConfs = domains.split(/[;, ]+/);
@@ -215,11 +219,15 @@ const handlers = {
     if (!fs.existsSync(crtFile)) throw utils.asError(errs.sys.ssl, errs.status.sys, `issue crt file ${crtFile}`);
 
     // Remove the ssl file, because it might link to other file.
-    await execFile('rm', ['-f', '/etc/nginx/ssl/nginx.key', '/etc/nginx/ssl/nginx.crt']);
+    await execFile('rm', [
+      '-f',
+      `${process.cwd()}/containers/ssl/nginx.key`,
+      `${process.cwd()}/containers/ssl/nginx.crt`,
+    ]);
 
     // Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
-    await execFile('ln', ['-sf', keyFile, '/etc/nginx/ssl/nginx.key']);
-    await execFile('ln', ['-sf', crtFile, '/etc/nginx/ssl/nginx.crt']);
+    await execFile('ln', ['-sf', keyFile, `${process.cwd()}/containers/ssl/nginx.key`]);
+    await execFile('ln', ['-sf', crtFile, `${process.cwd()}/containers/ssl/nginx.crt`]);
 
     // Restart the nginx service to reload the SSL files.
     await execFile('systemctl', ['reload', 'nginx.service']);
@@ -312,6 +320,15 @@ const handlers = {
       'proxy_pass http://127.0.0.1:8080$request_uri;',
     ];
 
+    const hlsConf = [
+      'location ~ /.+/.*\\.(m3u8)$ {',
+      ...m3u8Conf.map(e => `  ${e}`),
+      '}',
+      'location ~ /.+/.*\\.(ts)$ {',
+      ...tsConf.map(e => `  ${e}`),
+      '}',
+    ];
+
     // Build reverse proxy config for NGINX.
     const reverses = await redis.hgetall(keys.redis.SRS_HTTP_PROXY);
     const reversesConf = [];
@@ -325,17 +342,21 @@ const handlers = {
       return null;
     });
 
+    // For SSL/TLS configuration.
+    const sslConf = [
+      `ssl_certificate "${process.cwd()}/containers/ssl/nginx.crt";`,
+      `ssl_certificate_key "${process.cwd()}/containers/ssl/nginx.key";`,
+    ];
+
     // Build the config for NGINX.
     const confLines = [
       '# !!! Important: SRS will restore this file during each upgrade, please never modify it.',
       '',
+      '  # For SSL/TLS key and certificate',
+      ...sslConf.map(e => `  ${e}`),
+      '',
       '  # For HLS delivery',
-      '  location ~ /.+/.*\\.(m3u8)$ {',
-      ...m3u8Conf.map(e => `    ${e}`),
-      '  }',
-      '  location ~ /.+/.*\\.(ts)$ {',
-      ...tsConf.map(e => `    ${e}`),
-      '  }',
+      ...hlsConf.map(e => `  ${e}`),
       '',
       '  # For Reverse Proxy',
       ...reversesConf.map(e => `  ${e}`),

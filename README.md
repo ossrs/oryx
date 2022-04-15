@@ -160,7 +160,7 @@ The software we depend on:
 * Docker, `yum install -y docker`
 * Redis, `yum install -y redis`
 * Nginx, `yum install -y nginx`
-  * SSL: `/etc/nginx/ssl`
+  * SSL: `mgmt/containers/ssl`
 * [Certbot](https://github.com/ossrs/srs/issues/2864#lets-encrypt), `docker --name certbot`
   * Verify webroot: `mgmt/containers/www/.well-known/acme-challenge/`
   * Cert files: `mgmt/containers/etc/letsencrypt/live/`

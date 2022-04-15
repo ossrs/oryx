@@ -5,6 +5,11 @@ WORK_DIR=$(cd $(dirname $REALPATH)/../.. && pwd)
 echo "Run setup at $WORK_DIR from $0"
 cd $WORK_DIR
 
+# The main directory.
+DEPLOY_HOME=/usr/local/lighthouse/softwares
+SRS_HOME=${DEPLOY_HOME}/srs-cloud
+INSTALL_HOME=/usr/local/srs-cloud
+
 ########################################################################################################################
 # Check OS first, only support CentOS 7.
 yum --version >/dev/null 2>&1 && rpm --version >/dev/null 2>&1
@@ -41,9 +46,9 @@ if [[ $? -ne 0 ]]; then echo "Install dependencies failed"; exit 1; fi
 
 # Install files to lighthouse directory.
 mkdir -p /usr/local/lighthouse/softwares &&
-rm -rf /usr/local/lighthouse/softwares/srs-cloud &&
-(cd $(dirname $WORK_DIR) && cp -r $(basename $WORK_DIR) /usr/local/lighthouse/softwares/srs-cloud) &&
-cd /usr/local/lighthouse/softwares/srs-cloud &&
+rm -rf ${SRS_HOME} &&
+(cd $(dirname $WORK_DIR) && cp -r $(basename $WORK_DIR) ${SRS_HOME}) &&
+cd ${SRS_HOME} &&
 make build && make install
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 
@@ -68,45 +73,46 @@ docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/certbot
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
 # If install ok, the directory should exists.
-if [[ ! -d /usr/local/srs-cloud || ! -d /usr/local/srs-cloud/mgmt ]]; then
+if [[ ! -d ${INSTALL_HOME} || ! -d ${INSTALL_HOME}/mgmt ]]; then
   echo "Install srs-cloud failed"; exit 1;
 fi
 
-cd /usr/local && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
+# Compatible with previous version.
+cd $(dirname $INSTALL_HOME) && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
 if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
 
 # Create srs-cloud service, and the credential file.
 # Remark: Never start the service, because the IP will change for new machine created.
-cd /usr/local/srs-cloud &&
+cd ${INSTALL_HOME} &&
 cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
-touch /usr/local/srs-cloud/mgmt/.env &&
+touch ${INSTALL_HOME}/mgmt/.env &&
 systemctl enable srs-cloud
 if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
 
 # Choose default language.
-echo 'REACT_APP_LOCALE=zh' > /usr/local/srs-cloud/mgmt/.env
+echo 'REACT_APP_LOCALE=zh' > ${INSTALL_HOME}/mgmt/.env
 if [[ $? -ne 0 ]]; then echo "Setup language failed"; exit 1; fi
 
 # Generate self-sign HTTPS crt and file.
-if [[ ! -f /etc/nginx/ssl/nginx.key ]]; then
-  mkdir -p /etc/nginx/ssl &&
-  rm -f /etc/nginx/ssl/nginx.key /etc/nginx/ssl/nginx.crt &&
-  openssl genrsa -out /etc/nginx/ssl/nginx.key 2048 &&
-  openssl req -new -x509 -key /etc/nginx/ssl/nginx.key -out /etc/nginx/ssl/nginx.crt \
+if [[ ! -f containers/ssl/nginx.key ]]; then
+  mkdir -p containers/ssl &&
+  rm -f containers/ssl/nginx.key containers/ssl/nginx.crt &&
+  openssl genrsa -out containers/ssl/nginx.key 2048 &&
+  openssl req -new -x509 -key containers/ssl/nginx.key -out containers/ssl/nginx.crt \
     -days 3650 -subj "/C=CN/ST=Beijing/L=Beijing/O=Me/OU=Me/CN=ossrs.net"
   if [[ $? -ne 0 ]]; then echo "Create self-sign cert failed"; exit 1; fi
 fi
 
 # Setup the nginx configuration.
 rm -f /etc/nginx/nginx.conf &&
-cp /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/conf/nginx.conf /etc/nginx/nginx.conf &&
+cp ${SRS_HOME}/mgmt/containers/conf/nginx.conf /etc/nginx/nginx.conf &&
 rm -f /usr/share/nginx/html/index.html &&
-cp /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/www/nginx.html /usr/share/nginx/html/index.html &&
+cp ${SRS_HOME}/mgmt/containers/www/nginx.html /usr/share/nginx/html/index.html &&
 rm -f /usr/share/nginx/html/50x.html &&
-cp /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/www/50x.html /usr/share/nginx/html/50x.html
+cp ${SRS_HOME}/mgmt/containers/www/50x.html /usr/share/nginx/html/50x.html
 if [[ $? -ne 0 ]]; then echo "Setup nginx config failed"; exit 1; fi
 
-cd /usr/local/lighthouse/softwares/srs-cloud/mgmt &&
+cd ${SRS_HOME}/mgmt &&
 cp containers/conf/nginx.default.conf /etc/nginx/default.d/default.conf && echo "Refresh nginx default.conf ok" &&
 cp containers/conf/nginx.mgmt.conf /etc/nginx/default.d/mgmt.conf && echo "Refresh nginx mgmt.conf ok" &&
 cp containers/conf/nginx.srs.conf /etc/nginx/default.d/srs.conf && echo "Refresh nginx srs.conf ok" &&
@@ -148,12 +154,11 @@ update_sysctl net.core.wmem_default 16777216
 # Setup the mod and link.
 chown -R lighthouse:lighthouse /usr/local/lighthouse/softwares/ &&
 chown -R lighthouse:lighthouse /etc/nginx/default.d/ &&
-chown -R lighthouse:lighthouse /etc/nginx/ssl/ &&
-chown -R lighthouse:lighthouse /usr/local/srs-cloud/
+chown -R lighthouse:lighthouse ${INSTALL_HOME}/
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 
-rm -rf ~/lighthouse/ssl && ln -sf /etc/nginx/ssl ~lighthouse/ssl &&
-rm -rf ~lighthouse/credentials.txt && ln -sf /usr/local/srs-cloud/mgmt/.env ~lighthouse/credentials.txt &&
-rm -rf ~lighthouse/upgrade && ln -sf /usr/local/lighthouse/softwares/srs-cloud/mgmt/upgrade ~lighthouse/upgrade
+rm -rf ~/lighthouse/ssl && ln -sf ${SRS_HOME}/mgmt/containers/ssl ~lighthouse/ssl &&
+rm -rf ~lighthouse/credentials.txt && ln -sf ${INSTALL_HOME}/mgmt/.env ~lighthouse/credentials.txt &&
+rm -rf ~lighthouse/upgrade && ln -sf ${SRS_HOME}/mgmt/upgrade ~lighthouse/upgrade
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 

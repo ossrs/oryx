@@ -11,6 +11,24 @@ if [[ ! -d /etc/nginx/conf.d ]]; then
   exit 0
 fi
 
+# Migrate the previous SSL files.
+if [[ ! -f containers/ssl/nginx.key && -f /etc/nginx/ssl/nginx.key ]]; then
+  mkdir -p containers/ssl &&
+  ln -sf $(readlink -f /etc/nginx/ssl/nginx.key) containers/ssl/nginx.key &&
+  ln -sf $(readlink -f /etc/nginx/ssl/nginx.crt) containers/ssl/nginx.crt
+  if [[ $? -ne 0 ]]; then echo "Setup SSL/TLS files failed"; exit 1; fi
+fi
+
+# Generate self-sign HTTPS crt and file.
+if [[ ! -f containers/ssl/nginx.key ]]; then
+  mkdir -p containers/ssl &&
+  rm -f containers/ssl/nginx.key containers/ssl/nginx.crt &&
+  openssl genrsa -out containers/ssl/nginx.key 2048 &&
+  openssl req -new -x509 -key containers/ssl/nginx.key -out containers/ssl/nginx.crt \
+    -days 3650 -subj "/C=CN/ST=Beijing/L=Beijing/O=Me/OU=Me/CN=ossrs.net"
+  if [[ $? -ne 0 ]]; then echo "Create self-sign cert failed"; exit 1; fi
+fi
+
 # Overwrite the default nginx config.
 rm -f /etc/nginx/nginx.conf &&
 ln -sf $(pwd)/containers/conf/nginx.conf /etc/nginx/nginx.conf && echo "Refresh nginx.conf ok"

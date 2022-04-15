@@ -5,6 +5,9 @@ if [[ $(uname -s) == 'Darwin' ]]; then
   echo "Mac is not supported"; exit 1;
 fi
 
+# The main directory.
+DEPLOY_HOME=/usr/local/lighthouse/softwares
+
 echo "Install depends"
 apt-get install -y git gcc g++ gdb make tree dstat docker docker.io redis nginx curl net-tools &&
 apt-get -qqy clean
@@ -15,7 +18,7 @@ mkdir -p /etc/nginx/default.d
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 
 echo "Install srs-cloud"
-mkdir -p /usr/local/lighthouse/softwares && cd /usr/local/lighthouse/softwares
+mkdir -p ${DEPLOY_HOME} && cd ${DEPLOY_HOME}
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 
 # When droplet created, it might fail as:
@@ -30,7 +33,7 @@ if [[ $GIT_DONE != YES ]]; then
   echo "Clone srs-cloud failed"; exit 1;
 fi
 
-cd /usr/local/lighthouse/softwares && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
+cd ${DEPLOY_HOME} && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
 if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
 
 echo "Install nodejs 16"
@@ -39,7 +42,7 @@ apt-get install -y nodejs
 if [[ $? -ne 0 ]]; then echo "Install nodejs failed"; exit 1; fi
 
 # User should install nodejs, because we can't do it.
-cd /usr/local/lighthouse/softwares/srs-cloud &&
+cd ${DEPLOY_HOME}/srs-cloud &&
 (cd scripts/check-node-version && npm install && node .)
 if [[ $? -ne 0 ]]; then echo "Please install node from https://nodejs.org"; exit 1; fi
 
