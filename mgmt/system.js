@@ -321,6 +321,8 @@ const handlers = {
     ];
 
     const hlsConf = [
+      '',
+      '# For HLS delivery',
       'location ~ /.+/.*\\.(m3u8)$ {',
       ...m3u8Conf.map(e => `  ${e}`),
       '}',
@@ -332,6 +334,10 @@ const handlers = {
     // Build reverse proxy config for NGINX.
     const reverses = await redis.hgetall(keys.redis.SRS_HTTP_PROXY);
     const reversesConf = [];
+    reverses && reversesConf.push(
+      '',
+      '# For Reverse Proxy',
+    );
     reverses && Object.keys(reverses).map(location => {
       const backend = reverses[location];
       reversesConf.push(
@@ -342,29 +348,16 @@ const handlers = {
       return null;
     });
 
-    // For SSL/TLS configuration.
-    const sslConf = [
-      `ssl_certificate "${process.cwd()}/containers/ssl/nginx.crt";`,
-      `ssl_certificate_key "${process.cwd()}/containers/ssl/nginx.key";`,
-    ];
-
     // Build the config for NGINX.
     const confLines = [
       '# !!! Important: SRS will restore this file during each upgrade, please never modify it.',
-      '',
-      '  # For SSL/TLS key and certificate',
-      ...sslConf.map(e => `  ${e}`),
-      '',
-      '  # For HLS delivery',
-      ...hlsConf.map(e => `  ${e}`),
-      '',
-      '  # For Reverse Proxy',
-      ...reversesConf.map(e => `  ${e}`),
+      ...hlsConf,
+      ...reversesConf,
       '',
       '',
     ];
 
-    fs.writeFileSync('containers/conf/nginx.dynamic.conf', confLines.join(os.EOL));
+    fs.writeFileSync('containers/conf/default.d/nginx.dynamic.conf', confLines.join(os.EOL));
     await execFile('systemctl', ['reload', 'nginx.service']);
     console.log(`NGINX: Refresh dynamic.conf ok`);
 

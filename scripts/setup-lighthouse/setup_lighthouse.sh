@@ -93,30 +93,17 @@ if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
 echo 'REACT_APP_LOCALE=zh' > ${INSTALL_HOME}/mgmt/.env
 if [[ $? -ne 0 ]]; then echo "Setup language failed"; exit 1; fi
 
-# Generate self-sign HTTPS crt and file.
-if [[ ! -f containers/ssl/nginx.key ]]; then
-  mkdir -p containers/ssl &&
-  rm -f containers/ssl/nginx.key containers/ssl/nginx.crt &&
-  openssl genrsa -out containers/ssl/nginx.key 2048 &&
-  openssl req -new -x509 -key containers/ssl/nginx.key -out containers/ssl/nginx.crt \
-    -days 3650 -subj "/C=CN/ST=Beijing/L=Beijing/O=Me/OU=Me/CN=ossrs.net"
-  if [[ $? -ne 0 ]]; then echo "Create self-sign cert failed"; exit 1; fi
-fi
-
 # Setup the nginx configuration.
 rm -f /etc/nginx/nginx.conf &&
-cp ${SRS_HOME}/mgmt/containers/conf/nginx.conf /etc/nginx/nginx.conf &&
-rm -f /usr/share/nginx/html/index.html &&
-cp ${SRS_HOME}/mgmt/containers/www/nginx.html /usr/share/nginx/html/index.html &&
-rm -f /usr/share/nginx/html/50x.html &&
-cp ${SRS_HOME}/mgmt/containers/www/50x.html /usr/share/nginx/html/50x.html
+ln -sf ${SRS_HOME}/mgmt/containers/conf/nginx.conf /etc/nginx/nginx.conf
 if [[ $? -ne 0 ]]; then echo "Setup nginx config failed"; exit 1; fi
 
+# Build the mgmt/containers/conf/conf.d/nginx.vhost.conf
+cd ${SRS_HOME}/mgmt && bash auto/setup_vhost
+
 cd ${SRS_HOME}/mgmt &&
-cp containers/conf/nginx.default.conf /etc/nginx/default.d/default.conf && echo "Refresh nginx default.conf ok" &&
-cp containers/conf/nginx.mgmt.conf /etc/nginx/default.d/mgmt.conf && echo "Refresh nginx mgmt.conf ok" &&
-cp containers/conf/nginx.srs.conf /etc/nginx/default.d/srs.conf && echo "Refresh nginx srs.conf ok" &&
-cp containers/conf/nginx.dvr.preview.conf /etc/nginx/default.d/dvr.preview.conf && echo "Refresh nginx dvr.preview.conf ok"
+rm -f /etc/nginx/conf.d/nginx.vhost.conf /etc/nginx/conf.d/server.conf &&
+ln -sf ${SRS_HOME}/mgmt/containers/conf/conf.d/nginx.vhost.conf /etc/nginx/conf.d/vhost.conf
 if [[ $? -ne 0 ]]; then echo "Reload nginx failed"; exit 1; fi
 
 # Update sysctl.conf and add if not exists. For example:

@@ -14,7 +14,7 @@ apt-get -qqy clean
 if [[ $? -ne 0 ]]; then echo "Install depends failed"; exit 1; fi
 
 echo "Create nginx directory"
-mkdir -p /etc/nginx/default.d
+mkdir -p /etc/nginx/default.d /etc/nginx/conf.d
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 
 echo "Install srs-cloud"
