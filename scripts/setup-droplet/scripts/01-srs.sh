@@ -67,6 +67,7 @@ cp /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/www/50x.html /usr/s
 if [[ $? -ne 0 ]]; then echo "Setup nginx config failed"; exit 1; fi
 
 cd /usr/local/lighthouse/softwares/srs-cloud/mgmt &&
+cp containers/conf/nginx.server.conf /etc/nginx/conf.d/server.conf &&
 cp containers/conf/nginx.default.conf /etc/nginx/default.d/default.conf && echo "Refresh nginx default.conf ok" &&
 cp containers/conf/nginx.mgmt.conf /etc/nginx/default.d/mgmt.conf && echo "Refresh nginx mgmt.conf ok" &&
 cp containers/conf/nginx.srs.conf /etc/nginx/default.d/srs.conf && echo "Refresh nginx srs.conf ok" &&

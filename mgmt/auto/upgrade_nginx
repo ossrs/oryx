@@ -7,6 +7,9 @@ echo "Upgrade nginx script, CLOUD=$CLOUD"
 if [[ ! -d /etc/nginx/default.d ]]; then
   exit 0
 fi
+if [[ ! -d /etc/nginx/conf.d ]]; then
+  exit 0
+fi
 
 # Overwrite the default nginx config.
 rm -f /etc/nginx/nginx.conf &&
@@ -19,6 +22,12 @@ if [[ $CLOUD == DO ]];  then
   sed -i "s/user nginx;/user www-data;/g" /etc/nginx/nginx.conf
   if [[ $? -ne 0 ]]; then echo "Setup nginx.conf failed"; exit 1; fi
 fi
+
+# For nginx server config
+rm -f /etc/nginx/conf.d/server.conf &&
+ln -sf $(pwd)/containers/conf/nginx.server.conf /etc/nginx/conf.d/server.conf &&
+echo "Refresh nginx server.conf ok"
+if [[ $? -ne 0 ]]; then echo "Refresh nginx server.conf failed"; exit 1; fi
 
 # For nginx default config.
 rm -f /etc/nginx/default.d/default.conf &&
