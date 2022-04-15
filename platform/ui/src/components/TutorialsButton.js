@@ -31,6 +31,11 @@ function useTutorialsEn(mediumRef) {
       link: 'https://blog.ossrs.io/how-to-secure-srs-with-lets-encrypt-by-1-click-cb618777639f',
       title: 'How to Secure SRS Cloud with Let’s Encrypt by 1-Click',
     },
+    'ec18dfae7d6f': {
+      author: 'Roboin',
+      link: 'https://blog.ossrs.io/publish-your-srs-livestream-through-wordpress-ec18dfae7d6f',
+      title: 'How to Publish Your SRS Livestream Through WordPress',
+    },
   });
 
   const bvids = mediumRef?.current;

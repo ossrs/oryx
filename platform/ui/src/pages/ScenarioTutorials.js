@@ -19,6 +19,7 @@ export default function ScenarioTutorials() {
   ]), React.useRef([
     {id: 'e9fe6f314ac6'},
     {id: 'cb618777639f'},
+    {id: 'ec18dfae7d6f'},
   ]));
 
   return (
