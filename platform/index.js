@@ -19,6 +19,7 @@ const platform = require('./platform');
 const staticCache = require('koa-static-cache');
 const serve = require('koa-static');
 const mount  = require('koa-mount');
+const loadbalance = require('./loadbalance');
 
 const app = new Koa();
 
@@ -105,7 +106,7 @@ app.use(async (ctx, next) => {
 // For backend APIs, with specified path, by /terraform/v1/mgmt/
 const router = new Router();
 
-token.handle(system.handle(router));
+loadbalance.handle(token.handle(system.handle(router)));
 
 router.all('/terraform/v1/mgmt/versions', async (ctx) => {
   ctx.body = utils.asResponse(0, {version: pkg.version});

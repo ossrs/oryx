@@ -122,6 +122,7 @@ Platform:
 * `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
 * `/terraform/v1/mgmt/nginx/homepage` Setup the homepage redirection.
 * `/terraform/v1/mgmt/nginx/proxy` Setup a reverse proxy location.
+* `/terraform/v1/mgmt/dns/lb` HTTP-DNS for hls load balance.
 
 Market:
 
