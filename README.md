@@ -123,6 +123,7 @@ Platform:
 * `/terraform/v1/mgmt/nginx/homepage` Setup the homepage redirection.
 * `/terraform/v1/mgmt/nginx/proxy` Setup a reverse proxy location.
 * `/terraform/v1/mgmt/dns/lb` HTTP-DNS for hls load balance.
+* `/terraform/v1/mgmt/dns/backend/update` HTTP-DNS: Update the backend servers for hls load balance.
 
 Market:
 

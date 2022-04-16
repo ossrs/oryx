@@ -192,6 +192,11 @@ function SettingNginx() {
 }
 
 function SettingPlatform({defaultWindow}) {
+  const [backends, setBackends] = React.useState([
+    {id: Math.random().toString(16).slice(-6)},
+    {id: Math.random().toString(16).slice(-6)},
+    {id: Math.random().toString(16).slice(-6)},
+  ]);
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
@@ -227,6 +232,30 @@ function SettingPlatform({defaultWindow}) {
       console.log(`Setup upgrade window start=${start}, end=${end}, duration=${duration}`);
     }).catch(handleError);
   }, [handleError, upgradeWindowStart, upgradeWindowEnd, t]);
+
+  const onBackendChange = React.useCallback((id, value) => {
+    const values = backends.map((e) => {
+      return {...e, value: e.id === id ? value : e.value};
+    });
+    setBackends(values)
+  }, [backends]);
+
+  const updateLbBackends = React.useCallback((e) => {
+    e.preventDefault();
+
+    const backendServers = backends.filter(e => {
+      return e.value ? e : null;
+    }).map(e => e.value);
+    if (!backendServers.length) return alert(t('settings.platformLbRequired'));
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/dns/backend/update', {
+      ...token, backends: backendServers,
+    }).then(res => {
+      alert(t('helper.setOk'));
+      console.log(`Update LB ok, backends=${backends}`);
+    }).catch(handleError);
+  }, [handleError, t, backends]);
 
   return (
     <Accordion defaultActiveKey="0">
@@ -280,6 +309,25 @@ function SettingPlatform({defaultWindow}) {
             </InputGroup>
             <Button variant="primary" type="submit" onClick={(e) => setupUpgradeWindow(e)}>
               {t('settings.upgradeSubmit')}
+            </Button>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="2">
+        <Accordion.Header>{t('settings.platformLbTitle')}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('settings.platformLbServers')}</Form.Label>
+              <Form.Text> * {t('settings.platformLbTip')}</Form.Text>
+            </Form.Group>
+            {backends.map(backend =>
+              <Form.Group className="mb-3" key={backend.id}>
+                <Form.Control as="input" placeholder='https://example.com' onChange={(e) => onBackendChange(backend.id, e.target.value)} />
+              </Form.Group>
+            )}
+            <Button variant="primary" type="submit" onClick={(e) => updateLbBackends(e)}>
+              {t('helper.submit')}
             </Button>
           </Form>
         </Accordion.Body>

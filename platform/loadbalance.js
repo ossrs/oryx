@@ -14,6 +14,7 @@ const redis = require('js-core/redis').create({config: config.redis, redis: iore
 const keys = require('js-core/keys');
 const errs = require('js-core/errs');
 const utils = require('js-core/utils');
+const jwt = require('jsonwebtoken');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/dns/lb/:app/:stream', async (ctx) => {
@@ -23,7 +24,7 @@ exports.handle = (router) => {
     if (!stream) throw utils.asError(errs.sys.empty, errs.status.args, 'no stream');
 
     const url = `/${app}/${stream}`;
-    const r0 = await redis.hget(keys.redis.SRS_DNS_LB_BACKENDS, url);
+    const r0 = await redis.hget(keys.redis.SRS_DNS_LB_BACKENDS, 'backends');
     if (!r0) throw utils.asError(errs.sys.invalid, errs.status.args, `no lb for ${url}`);
 
     const backends = JSON.parse(r0);
@@ -31,11 +32,28 @@ exports.handle = (router) => {
     const selected = backends[seed % backends.length];
     const protocol = selected.indexOf('://') === -1 ? `${ctx.request.protocol}://` : '';
 
-    const redirectPath = `${protocol}${selected}${url}`;
+    const isLiveStream = selected.indexOf('.flv') > 0 || selected.indexOf('.m3u8') > 0;
+    const redirectPath = isLiveStream ? `${protocol}${selected}` : `${protocol}${selected}${url}`;
+
     const redirectUrl = ctx.request.querystring ? `${redirectPath}?${ctx.request.querystring}` : redirectPath;
-    console.log(`DNS LB url=${url}, seed=${seed}, redirectUrl=${redirectUrl}`);
+    console.log(`DNS: LB query url=${url}, seed=${seed}, live=${isLiveStream}, redirectUrl=${redirectUrl}`);
 
     ctx.response.redirect(redirectUrl);
+  });
+
+  router.all('/terraform/v1/mgmt/dns/backend/update', async(ctx) => {
+    const {token, backends} = ctx.request.body;
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
+
+    if (!backends || !Array.isArray(backends) || !backends.length) {
+      throw utils.asError(errs.sys.empty, errs.status.args, 'no backends');
+    }
+
+    const r0 = await redis.hset(keys.redis.SRS_DNS_LB_BACKENDS, 'backends', JSON.stringify(backends));
+    console.log(`DNS: Update ok, backends=${JSON.stringify(backends)}, r0=${JSON.stringify(r0)}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0);
   });
 };
 
