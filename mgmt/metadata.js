@@ -27,6 +27,7 @@ exports.market = {
       `${process.cwd()}/containers:/usr/local/srs-cloud/mgmt/containers`,
     ],
     extras: [
+      `--network=srs-cloud`,
       `--env=SRS_DOCKER=${process.env.SRS_DOCKER || ''}`,
       `--env=USE_DOCKER=${process.env.USE_DOCKER || ''}`,
       // If use docker, should always use production to connect to redis.

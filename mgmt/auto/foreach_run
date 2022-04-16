@@ -27,3 +27,7 @@ if [[ -f /etc/redis.conf || -f /etc/redis/redis.conf ]]; then
   if [[ $? -ne 0 ]]; then echo "Setup redis failed"; exit 1; fi
 fi
 
+# We setup the docker network.
+bash auto/setup_network
+if [[ $? -ne 0 ]]; then echo "Setup docker network failed"; exit 1; fi
+

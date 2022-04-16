@@ -142,7 +142,7 @@ async function firstRun() {
   // For each init stage changed, we could use a different redis key, to identify this special init workflow.
   // However, keep in mind that previous defined workflow always be executed, so these operations should be idempotent.
   const SRS_FIRST_BOOT = keys.redis.SRS_FIRST_BOOT;
-  const bootRelease = 'v15';
+  const bootRelease = 'v16';
 
   // Run once, record in redis.
   const r0 = await redis.hget(SRS_FIRST_BOOT, bootRelease);
@@ -162,11 +162,14 @@ async function firstRun() {
   // Generate the dynamic config for NGINX.
   await helper.execApi('nginxGenerateConfig');
 
-  // Remove containers for IP might change.
+  // Remove containers for IP might change, and use network srs-cloud.
   await helper.execApi('rmContainer', [metadata.market.srs.name]);
+  await helper.execApi('rmContainer', [metadata.market.srsDev.name]);
   await helper.execApi('rmContainer', [metadata.market.hooks.name]);
   await helper.execApi('rmContainer', [metadata.market.tencent.name]);
   await helper.execApi('rmContainer', [metadata.market.ffmpeg.name]);
+  await helper.execApi('rmContainer', [metadata.market.prometheus.name]);
+  await helper.execApi('rmContainer', [metadata.market.node_exporter.name]);
 
   console.log(`Thread #upgrade: boot done`);
   return true;

@@ -45,7 +45,9 @@ exports.market = {
       `${platform.cwd()}/containers/www/players:/usr/local/srs/www/players`,
       `${platform.cwd()}/containers/www/console:/usr/local/srs/www/console`,
     ],
-    extras: [],
+    extras: [
+      `--network=srs-cloud`,
+    ],
   },
   srsDev: {
     name: metadata.market.srsDev.name,
@@ -74,7 +76,9 @@ exports.market = {
       `${platform.cwd()}/containers/www/players:/usr/local/srs/www/players`,
       `${platform.cwd()}/containers/www/console:/usr/local/srs/www/console`,
     ],
-    extras: [],
+    extras: [
+      `--network=srs-cloud`,
+    ],
   },
   hooks: {
     name: metadata.market.hooks.name,
@@ -97,7 +101,9 @@ exports.market = {
       `${platform.cwd()}/containers/data/dvr:/usr/local/srs-cloud/mgmt/containers/data/dvr`,
       `${platform.cwd()}/containers/data/vod:/usr/local/srs-cloud/mgmt/containers/data/vod`,
     ],
-    extras: [],
+    extras: [
+      `--network=srs-cloud`,
+    ],
   },
   tencent: {
     name: metadata.market.tencent.name,
@@ -116,7 +122,9 @@ exports.market = {
     volumes: () => [
       `${platform.cwd()}/.env:/usr/local/srs-cloud/tencent/.env`,
     ],
-    extras: [],
+    extras: [
+      `--network=srs-cloud`,
+    ],
   },
   ffmpeg: {
     name: metadata.market.ffmpeg.name,
@@ -135,7 +143,9 @@ exports.market = {
     volumes: () => [
       `${platform.cwd()}/.env:/usr/local/srs-cloud/ffmpeg/.env`,
     ],
-    extras: [],
+    extras: [
+      `--network=srs-cloud`,
+    ],
   },
   prometheus: {
     name: 'prometheus',
@@ -159,7 +169,10 @@ exports.market = {
       `${platform.cwd()}/containers/conf/prometheus.yml:/etc/prometheus/prometheus.yml`,
       `${platform.cwd()}/containers/data/prometheus:/prometheus`,
     ],
-    extras: platform.isDarwin ? [] : ['--user=root'],
+    extras: [
+      `--network=srs-cloud`,
+      ...(platform.isDarwin ? [] : ['--user=root']),
+    ],
   },
   node_exporter: {
     name: 'node-exporter',
@@ -178,7 +191,10 @@ exports.market = {
     volumes: () => {
       return platform.isDarwin ? [] : ['/:/host:ro,rslave'];
     },
-    extras: () => platform.isDarwin ? [] : ['--net=host', '--pid=host'],
+    extras: [
+      platform.isDarwin ? '--network=host' : `--network=srs-cloud`,
+      ...(platform.isDarwin ? [] : ['--pid=host']),
+    ],
   },
   // It's only a hint. Itself is managed by mgmt.
   platform: {
