@@ -115,6 +115,7 @@ mgmt/containers/var/log/letsencrypt/*
 mgmt/containers/objs/nginx/html/*
 mgmt/containers/data/dvr/*
 mgmt/containers/data/vod/*
+mgmt/containers/data/redis/*
 mgmt/containers/www/*
 mgmt/containers/ssl/*
 mgmt/containers/conf/conf.d/nginx.vhost.conf
