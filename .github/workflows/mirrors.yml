@@ -61,6 +61,14 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/certbot/images"
 
+      - name: Mirror to ACR for redis:5.0
+        run: |
+          docker pull redis:5.0
+          docker tag redis:5.0 registry.cn-hangzhou.aliyuncs.com/ossrs/redis
+          docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/redis
+          echo "Release ok, please see:"
+          echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/redis/images"
+
       ################################################################################################
       ################################################################################################
       ################################################################################################
@@ -78,7 +86,7 @@ jobs:
           docker tag node:slim sgccr.ccs.tencentyun.com/ossrs/node:slim
           docker push --all-tags sgccr.ccs.tencentyun.com/ossrs/node
           echo "Release ok, please see:"
-          echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/node/1"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/sgccr/ossrs/node/1"
 
       - name: Mirror to TCR Singapore for prom/prometheus
         run: |
@@ -86,7 +94,7 @@ jobs:
           docker tag prom/prometheus sgccr.ccs.tencentyun.com/ossrs/prometheus
           docker push --all-tags sgccr.ccs.tencentyun.com/ossrs/prometheus
           echo "Release ok, please see:"
-          echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/prometheus/1"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/sgccr/ossrs/prometheus/1"
 
       - name: Mirror to TCR Singapore for oliver006/redis_exporter
         run: |
@@ -94,7 +102,7 @@ jobs:
           docker tag oliver006/redis_exporter sgccr.ccs.tencentyun.com/ossrs/redis_exporter
           docker push --all-tags sgccr.ccs.tencentyun.com/ossrs/redis_exporter
           echo "Release ok, please see:"
-          echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/redis_exporter/1"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/sgccr/ossrs/redis_exporter/1"
 
       - name: Mirror to TCR Singapore for prom/node-exporter
         run: |
@@ -102,7 +110,7 @@ jobs:
           docker tag prom/node-exporter sgccr.ccs.tencentyun.com/ossrs/node-exporter
           docker push --all-tags sgccr.ccs.tencentyun.com/ossrs/node-exporter
           echo "Release ok, please see:"
-          echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/node-exporter/1"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/sgccr/ossrs/node-exporter/1"
 
       - name: Mirror to TCR Singapore for certbot/certbot
         run: |
@@ -110,7 +118,15 @@ jobs:
           docker tag certbot/certbot sgccr.ccs.tencentyun.com/ossrs/certbot
           docker push --all-tags sgccr.ccs.tencentyun.com/ossrs/certbot
           echo "Release ok, please see:"
-          echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/certbot/1"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/sgccr/ossrs/certbot/1"
+
+      - name: Mirror to TCR Singapore for redis:5.0
+        run: |
+          docker pull redis:5.0
+          docker tag redis:5.0 sgccr.ccs.tencentyun.com/ossrs/redis
+          docker push --all-tags sgccr.ccs.tencentyun.com/ossrs/redis
+          echo "Release ok, please see:"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/sgccr/ossrs/redis/1"
 
       ################################################################################################
       ################################################################################################
@@ -162,3 +178,11 @@ jobs:
           docker push --all-tags ccr.ccs.tencentyun.com/ossrs/certbot
           echo "Release ok, please see:"
           echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/certbot/1"
+
+      - name: Mirror to TCR Beijing for redis:5.0
+        run: |
+          docker pull redis:5.0
+          docker tag redis:5.0 ccr.ccs.tencentyun.com/ossrs/redis
+          docker push --all-tags ccr.ccs.tencentyun.com/ossrs/redis
+          echo "Release ok, please see:"
+          echo "  https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/redis/1"
