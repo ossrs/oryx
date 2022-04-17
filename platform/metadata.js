@@ -45,8 +45,8 @@ exports.market = {
       `${platform.cwd()}/containers/www/players:/usr/local/srs/www/players`,
       `${platform.cwd()}/containers/www/console:/usr/local/srs/www/console`,
     ],
-    extras: [
-      `--network=srs-cloud`,
+    extras: () => [
+      ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
     ],
   },
   srsDev: {
@@ -76,8 +76,8 @@ exports.market = {
       `${platform.cwd()}/containers/www/players:/usr/local/srs/www/players`,
       `${platform.cwd()}/containers/www/console:/usr/local/srs/www/console`,
     ],
-    extras: [
-      `--network=srs-cloud`,
+    extras: () => [
+      ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
     ],
   },
   hooks: {
@@ -101,8 +101,9 @@ exports.market = {
       `${platform.cwd()}/containers/data/dvr:/usr/local/srs-cloud/mgmt/containers/data/dvr`,
       `${platform.cwd()}/containers/data/vod:/usr/local/srs-cloud/mgmt/containers/data/vod`,
     ],
-    extras: [
-      `--network=srs-cloud`,
+    extras: () => [
+      ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
+      ...(platform.isDarwin ? ['--env=REDIS_HOST=host.docker.internal'] : ['--env=REDIS_HOST=redis']),
     ],
   },
   tencent: {
@@ -122,8 +123,9 @@ exports.market = {
     volumes: () => [
       `${platform.cwd()}/.env:/usr/local/srs-cloud/tencent/.env`,
     ],
-    extras: [
-      `--network=srs-cloud`,
+    extras: () => [
+      ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
+      ...(platform.isDarwin ? ['--env=REDIS_HOST=host.docker.internal'] : ['--env=REDIS_HOST=redis']),
     ],
   },
   ffmpeg: {
@@ -143,8 +145,9 @@ exports.market = {
     volumes: () => [
       `${platform.cwd()}/.env:/usr/local/srs-cloud/ffmpeg/.env`,
     ],
-    extras: [
-      `--network=srs-cloud`,
+    extras: () => [
+      ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
+      ...(platform.isDarwin ? ['--env=REDIS_HOST=host.docker.internal'] : ['--env=REDIS_HOST=redis']),
     ],
   },
   prometheus: {
@@ -169,8 +172,8 @@ exports.market = {
       `${platform.cwd()}/containers/conf/prometheus.yml:/etc/prometheus/prometheus.yml`,
       `${platform.cwd()}/containers/data/prometheus:/prometheus`,
     ],
-    extras: [
-      `--network=srs-cloud`,
+    extras: () => [
+      ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
       ...(platform.isDarwin ? [] : ['--user=root']),
     ],
   },
@@ -191,14 +194,13 @@ exports.market = {
     volumes: () => {
       return platform.isDarwin ? [] : ['/:/host:ro,rslave'];
     },
-    extras: [
-      platform.isDarwin ? '--network=host' : `--network=srs-cloud`,
+    extras: () => [
+      platform.isDarwin ? '--network=host' : '--network=srs-cloud',
       ...(platform.isDarwin ? [] : ['--pid=host']),
     ],
   },
-  // It's only a hint. Itself is managed by mgmt.
-  platform: {
-    name: 'platform',
-  },
+  // The bellow configurations are only a hint, because they are managed by mgmt.
+  platform: {name: 'platform'},
+  redis: {name: 'redis'},
 };
 

@@ -87,6 +87,12 @@ if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
 # Setup nginx configuration.
 bash auto/upgrade_nginx $CLOUD
 
+# Compatible with previous redis.
+if [[ ! -f containers/data/redis/dump.rdb && -f /var/lib/redis/dump.rdb ]]; then
+  mkdir -p containers/data/redis && cp /var/lib/redis/dump.rdb containers/data/redis/dump.rdb
+  if [[ $? -ne 0 ]]; then echo "Copy redis database failed"; exit 1; fi
+fi
+
 # Execute script for each run.
 bash auto/foreach_run
 if [[ $? -ne 0 ]]; then echo "Execute for each run script failed"; exit 1; fi

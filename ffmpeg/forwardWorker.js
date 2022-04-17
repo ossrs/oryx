@@ -2,8 +2,11 @@
 
 // For components in docker, connect by host.
 const config = {
-  redis:{
+  node: {
     host: process.env.NODE_ENV === 'development' ? 'localhost' : 'mgmt.srs.local',
+  },
+  redis:{
+    host: process.env.NODE_ENV === 'development' ? 'localhost' : (process.env.REDIS_HOST || 'mgmt.srs.local'),
     port: process.env.REDIS_PORT || 6379,
     password: process.env.REDIS_PASSWORD || '',
   },
@@ -88,7 +91,7 @@ async function generateForwardRules() {
       const forwardObj = forward ? JSON.parse(forward) : {
         uuid: uuidv4(),
         platform: k,
-        input: `rtmp://${config.redis.host}/${streamObj.app}/${streamObj.stream}`,
+        input: `rtmp://${config.node.host}/${streamObj.app}/${streamObj.stream}`,
       };
 
       // Update the forward object.

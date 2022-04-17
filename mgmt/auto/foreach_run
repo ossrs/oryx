@@ -2,26 +2,13 @@
 
 echo "Foreach run script"
 
-# If memory smaller than 2GB, create swap to avoid OOM, please see
-# https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-18-04
-#
-# Note that another solution is to disable GENERATE_SOURCEMAP to avoid OOM, but it doesn't work sometimes, please see
-# https://create-react-app.dev/docs/advanced-configuration/
-#
-# Disable swap by: swapoff /srs-swapfile
-MEM_TOTAL=$(grep MemTotal /proc/meminfo |awk '{print $2}')
-if [[ $MEM_TOTAL -lt 2097152 ]]; then
-  swapon --show |grep "/srs-swapfile"
-  if [[ $? -ne 0 ]]; then
-    rm -rf /srs-swapfile && fallocate -l 2G /srs-swapfile && chmod 600 /srs-swapfile && ls -lh /srs-swapfile &&
-    mkswap /srs-swapfile && swapon /srs-swapfile && echo "Create swap /srs-swapfile for MEM_TOTAL=$MEM_TOTAL"
-  fi
+# Disable the swap, after migrate platform to docker.
+if [[ -f /srs-swapfile ]]; then
+  swapoff /srs-swapfile && rm -rf /srs-swapfile
+  if [[ $? -ne 0 ]]; then echo "Disable swap failed"; exit 1; fi
 fi
-if [[ $? -ne 0 ]]; then echo "Create swap failed"; exit 1; fi
 
-# We must setup the redis to listen at lo and eth0, to allow containers to access it.
-# Note that should never listen at * for security reason.
-# Note that we must check redis config for each run, to regenerate the config if corrupt.
+# Revert the redis config, after migrate to docker.
 if [[ -f /etc/redis.conf || -f /etc/redis/redis.conf ]]; then
   bash auto/setup_redis
   if [[ $? -ne 0 ]]; then echo "Setup redis failed"; exit 1; fi

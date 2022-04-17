@@ -9,19 +9,19 @@ cat <<EOF
 Welcome to DigitalOcean's 1-Click SRS Droplet.
 To keep this Droplet secure, the UFW firewall is enabled.
 All ports are BLOCKED except 22 (SSH), 80 (HTTP), 443 (HTTPS), 1935 (RTMP),
-8000/UDP (WebRTC), 10080/UDP (SRT), 9000/TCP+UDP (GB28181), 5060/TCP+UDP (SIP),
-2022 (MGMT) and 56379 (REDIS).
+8000/UDP (WebRTC), 10080/UDP (SRT), 9000/TCP+UDP (GB28181), 5060/TCP+UDP (SIP)
+and 2022 (MGMT).
 
 In a web browser, you can view:
-  * The SRS 1-Click Quickstart guide: https://github.com/ossrs/srs-cloud/wiki/Droplet
+  * The SRS 1-Click Quickstart guide: https://marketplace.digitalocean.com/apps/srs
   * Your SRS website: http://$myip/mgmt/
 
 On the server:
-  * The default web root is redirected to /mgmt/
+  * The web root is redirected to /mgmt/ by default.
   * The MGMT admin password is saved in /root/credentials.txt
   * Automatic HTTPS is supported.
 
-For help and more information, visit https://ossrs.io
+For help and more information, visit https://discord.gg/yZ4BnPmHAd
 
 ********************************************************************************
 To delete this message of the day: rm -rf $(readlink -f ${0})

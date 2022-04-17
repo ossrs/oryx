@@ -25,11 +25,9 @@ ufw allow 5060/tcp
 ufw allow 5060/udp
 
 # Note that we must expose these port listen at PrivateIP or lo, for container to access it.
-echo "ufw allow mgmt/redis"
+echo "ufw allow mgmt"
 # For srs-cloud API.
 ufw allow 2022/tcp
-# For srs-cloud redis.
-ufw allow 56379/tcp
 
 # Note that we must expose the exporter for prometheus to access it.
 echo "ufw allow exporter for prometheus"

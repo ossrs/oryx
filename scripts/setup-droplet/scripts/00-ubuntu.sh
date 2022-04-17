@@ -9,7 +9,7 @@ fi
 DEPLOY_HOME=/usr/local/lighthouse/softwares
 
 echo "Install depends"
-apt-get install -y git gcc g++ gdb make tree dstat docker docker.io redis nginx curl net-tools &&
+apt-get install -y git gcc g++ gdb make tree dstat docker docker.io nginx curl net-tools &&
 apt-get -qqy clean
 if [[ $? -ne 0 ]]; then echo "Install depends failed"; exit 1; fi
 

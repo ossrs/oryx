@@ -3,7 +3,7 @@
 // For components in docker, connect by host.
 const config = {
   redis:{
-    host: process.env.NODE_ENV === 'development' ? 'localhost' : 'mgmt.srs.local',
+    host: process.env.NODE_ENV === 'development' ? 'localhost' : (process.env.REDIS_HOST || 'mgmt.srs.local'),
     port: process.env.REDIS_PORT || 6379,
     password: process.env.REDIS_PASSWORD || '',
   },
@@ -58,7 +58,12 @@ async function doThreadMain() {
     if (!conf.image) continue;
 
     // Try to restart the container.
-    await doContainerMain(e, conf);
+    try {
+      await doContainerMain(e, conf);
+    } catch (e) {
+      console.log(`Thread $market: Restart container ${JSON.stringify(conf)} err ${e}`);
+      throw e;
+    }
   }
 }
 

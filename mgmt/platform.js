@@ -3,7 +3,7 @@
 // For mgmt, it's ok to connect to localhost.
 const config = {
   redis:{
-    host: 'localhost',
+    host: 'localhost', // For mgmt, we always use localhost, rather than docker container name.
     port: process.env.REDIS_PORT || 6379,
     password: process.env.REDIS_PASSWORD || '',
   },
@@ -36,6 +36,26 @@ exports.registry = async () => {
 exports.ipv4 = async () => {
   return await discoverPrivateIPv4();
 };
+
+// Initialize the source for redis, note that we don't change the env.
+exports.initOs = async() => {
+  // The redis is not available when os startup, so we must directly discover from env or network.
+  const {cloud, region} = await discoverRegion();
+  conf.cloud = cloud; conf.region = region;
+
+  // Always update the source, because it might change.
+  const source = await discoverSource(conf.cloud, conf.region);
+  conf.source = source;
+
+  // Always update the registry, because it might change.
+  discoverRegistry(source);
+};
+
+function discoverRegistry(source) {
+  const registry = (source === 'github') ? 'sgccr.ccs.tencentyun.com' : 'registry.cn-hangzhou.aliyuncs.com';
+  conf.registry = registry;
+  return registry;
+}
 
 // Initialize the platform before thread run.
 exports.init = async () => {
@@ -75,7 +95,7 @@ exports.init = async () => {
   });
 
   // Always update the registry, because it might change.
-  const registry = (source === 'github') ? 'sgccr.ccs.tencentyun.com' : 'registry.cn-hangzhou.aliyuncs.com';
+  const registry = discoverRegistry(source);
   conf.registry = registry;
   await redis.hset(keys.redis.SRS_TENCENT_LH, 'registry', registry);
 

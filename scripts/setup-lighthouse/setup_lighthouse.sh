@@ -40,8 +40,8 @@ fi
 
 ########################################################################################################################
 # Install depends services, except nodejs.
-yum install -y git gcc-c++ gdb make tree dstat docker redis nginx &&
-systemctl enable docker nginx redis
+yum install -y git gcc-c++ gdb make tree dstat docker nginx &&
+systemctl enable docker nginx
 if [[ $? -ne 0 ]]; then echo "Install dependencies failed"; exit 1; fi
 
 # Install files to lighthouse directory.
@@ -69,7 +69,8 @@ docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/redis_exporter &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/certbot
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/certbot &&
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/redis
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
 # If install ok, the directory should exists.

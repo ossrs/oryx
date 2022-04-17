@@ -30,6 +30,7 @@ function ComponentsImpl() {
   const [platform, setPlatform] = React.useState();
   const [prometheus, setPrometheus] = React.useState();
   const [nodeExporter, setNodeExporter] = React.useState();
+  const [redisServer, setRedisServer] = React.useState();
   const [strategyAutoUpgrade, setStrategyAutoUpgrade] = React.useState();
   const [userToggleStrategy, setUserToggleStrategy] = React.useState();
   const [searchParams] = useSearchParams();
@@ -96,6 +97,7 @@ function ComponentsImpl() {
         if (container.name === 'platform') setPlatform(container);
         if (container.name === 'prometheus') setPrometheus(container);
         if (container.name === 'node-exporter') setNodeExporter(container);
+        if (container.name === 'redis') setRedisServer(container);
         return null;
       });
       console.log(`SRS: Query ok, containers are ${JSON.stringify(containers)}`);
@@ -319,6 +321,32 @@ function ComponentsImpl() {
                     allow={allowDisableContainer && nodeExporter?.name}
                     enabled={nodeExporter?.enabled}
                     onClick={() => handleContainerChange(nodeExporter)}
+                  />
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs lg={3}>
+            <Card style={{ width: '18rem', marginTop: '16px' }}>
+              <Card.Header>{t('coms.redis')}</Card.Header>
+              <Card.Body>
+                <Card.Text as={Col}>
+                  {t('coms.containerName')}：{redisServer?.name} <br/>
+                  {t('coms.containerId')}：{redisServer?.container?.ID} <br/>
+                  {t('coms.containerState')}：{redisServer?.container.State} {redisServer?.container.Status}
+                  <p></p>
+                </Card.Text>
+                <div style={{display: 'inline-block'}}>
+                  <Button className='disabled'>
+                    {t('helper.restart')}
+                  </Button> &nbsp;
+                  <Button className='disabled'>
+                    {t('helper.upgrade')}
+                  </Button> &nbsp;
+                  <MgmtUpdateContainer
+                    allow={allowDisableContainer && redisServer?.name}
+                    enabled={redisServer?.enabled}
+                    onClick={() => handleContainerChange(redisServer)}
                   />
                 </div>
               </Card.Body>

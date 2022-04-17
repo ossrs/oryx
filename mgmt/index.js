@@ -20,6 +20,8 @@ const pkg = require('./package.json');
 const staticCache = require('koa-static-cache');
 const platform = require('./platform');
 const rewrite = require('./rewrite');
+const metadata = require('./metadata');
+const market = require('./market');
 
 // Start all workers threads first.
 threads.run();
@@ -131,6 +133,12 @@ app.use(router.routes());
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 const run = async () => {
+  // Wait for redis to be ready, updated by thread market.
+  while (!metadata.market.redis?.container?.ID) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+  }
+  console.log(`Redis is running, id=${metadata.market.redis?.container?.ID}`);
+
   const {region, registry} = await platform.init();
   console.log(`Run with cwd=${process.cwd()}, region=${region}, registry=${registry}`);
 

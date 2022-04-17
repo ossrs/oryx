@@ -29,7 +29,8 @@ docker pull sgccr.ccs.tencentyun.com/ossrs/srs-cloud:platform-1 &&
 docker pull sgccr.ccs.tencentyun.com/ossrs/prometheus &&
 docker pull sgccr.ccs.tencentyun.com/ossrs/redis_exporter &&
 docker pull sgccr.ccs.tencentyun.com/ossrs/node-exporter &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/certbot
+docker pull sgccr.ccs.tencentyun.com/ossrs/certbot &&
+docker pull sgccr.ccs.tencentyun.com/ossrs/redis
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
 # If install ok, the directory should exists.

@@ -112,14 +112,30 @@ const streamURL = (vhost, app, stream) => {
 exports.streamURL = streamURL;
 
 // Remove container, ignore any error.
-const removeContainerQuiet = async (execFile, name) => {
+const removeContainerQuiet = async (execFile, name, disableErrorLog) => {
   try {
     await execFile('docker', ['rm', '-f', name]);
   } catch (e) {
+    if (disableErrorLog) return;
     console.log('utils ignore remove container err', e);
   }
 };
 exports.removeContainerQuiet = removeContainerQuiet;
+
+// Stop container, ignore any error.
+const stopContainerQuiet = async (execFile, name, disableErrorLog, time) => {
+  try {
+    await execFile('docker', [
+      'stop',
+      ...(time ? ['-t', time] : []),
+      name,
+    ]);
+  } catch (e) {
+    if (disableErrorLog) return;
+    console.log('utils ignore stop container err', e);
+  }
+};
+exports.stopContainerQuiet = stopContainerQuiet;
 
 function reloadEnv(dotenv, fs, path) {
   ['.', '..', '../..', '../mgmt', '../../mgmt'].map(envDir => {
@@ -184,8 +200,12 @@ async function generateDockerArgs(platform, ipv4, conf) {
     return e;
   };
 
-  const tcpPorts = evalValue(conf.tcpPorts, []).map(e => ['-p', `${e}:${e}/tcp`]).flat();
-  const udpPorts = evalValue(conf.udpPorts, []).map(e => ['-p', `${e}:${e}/udp`]).flat();
+  const tcpPorts = evalValue(conf.tcpPorts, []).map(e => {
+    return e.toString().indexOf(':') > 0 ? ['-p', `${e}/tcp`] : ['-p', `${e}:${e}/tcp`];
+  }).flat();
+  const udpPorts = evalValue(conf.udpPorts, []).map(e => {
+    return e.toString().indexOf(':') > 0 ? ['-p', `${e}/udp`] : ['-p', `${e}:${e}/udp`];
+  }).flat();
   const volumes = evalValue(conf.volumes, []).map(e => ['-v', e]).flat();
   const command = evalValue(conf.command, []);
   const extras = evalValue(conf.extras, []);
@@ -199,7 +219,7 @@ async function generateDockerArgs(platform, ipv4, conf) {
   // Note that it's started by nodejs, so never use '-it'.
   const dockerArgs = [
     'run', '-d', '--restart=always', '--privileged', `--name=${evalValue(conf.name)}`,
-    `--add-host=mgmt.srs.local:${ipv4.address}`,
+    ...(ipv4 ? [`--add-host=mgmt.srs.local:${ipv4.address}`] : []),
     ...tcpPorts,
     ...udpPorts,
     ...logConfig,

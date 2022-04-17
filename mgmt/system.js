@@ -3,7 +3,7 @@
 // For mgmt, it's ok to connect to localhost.
 const config = {
   redis:{
-    host: 'localhost',
+    host: 'localhost', // For mgmt, we always use localhost, rather than docker container name.
     port: process.env.REDIS_PORT || 6379,
     password: process.env.REDIS_PASSWORD || '',
   },

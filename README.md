@@ -45,6 +45,15 @@ flowchart LR;
 
 > Note: It's a single node, also light-weighted, video cloud for tiny company, personal user and starter.
 
+```mermaid
+flowchart LR;
+  nginx --> mgmt(mgmt<br/>by nodejs);
+  aaPanel --> mgmt;
+  aaPanel --> nginx;
+```
+
+> Note: This is an optional workflow for user to use aaPanel to deploy srs-cloud.
+
 ## Ports
 
 The ports allocated:
@@ -60,6 +69,7 @@ The ports allocated:
 | ffmpeg | 2019 |  - | Mount at `/terraform/v1/ffmpeg/` |
 | prometheus | 9090 | - | Mount at `/prometheus/` |
 | node-exporter | 9100 | - | - |
+| redis | 56379 | - | - |
 
 ## Features
 
