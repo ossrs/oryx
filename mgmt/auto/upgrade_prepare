@@ -91,9 +91,3 @@ bash auto/upgrade_nginx $CLOUD
 bash auto/foreach_run
 if [[ $? -ne 0 ]]; then echo "Execute for each run script failed"; exit 1; fi
 
-# Compatible with previous redis. Note that we should copy data after stop redis, which save data to disk.
-if [[ ! -f containers/data/redis/dump.rdb && -f /var/lib/redis/dump.rdb ]]; then
-  mkdir -p containers/data/redis && cp /var/lib/redis/dump.rdb containers/data/redis/dump.rdb
-  if [[ $? -ne 0 ]]; then echo "Copy redis database failed"; exit 1; fi
-fi
-
