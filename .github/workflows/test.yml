@@ -2,7 +2,7 @@ name: Test for commits
 
 on:
   push:
-    branches: [main, lighthouse]
+    branches: [main]
 
 jobs:
   test:

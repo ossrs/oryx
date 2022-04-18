@@ -2,11 +2,11 @@ name: Test for upgrading
 
 on:
   push:
-    branches: [main, lighthouse]
+    branches: [main]
 
 jobs:
   test-release-4-3-stable:
-    name: Upgrading to stable from release 4.3
+    name: Upgrading to stable from release 4-3
     runs-on: ubuntu-20.04
 
     steps:
@@ -26,16 +26,15 @@ jobs:
             mgmt/package-lock.json
             mgmt/ui/package-lock.json
 
-      - name: Start Redis for mgmt
-        uses: supercharge/redis-github-action@1.4.0
-        with:
-          redis-version: 4
-          redis-port: 6379
+      - name: Discover upgrade target.
+        run: |
+          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          echo "TARGET=$TARGET" >> $GITHUB_ENV
 
       - name: Setup the service
         run: |
-          sudo ln -sf $(pwd) /usr/local/srs-cloud
-          sudo cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
+          sudo make install
+          sudo ln -sf /usr/local/srs-cloud/usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
           sudo systemctl enable srs-cloud nginx
 
           echo "Disable docker for test"
@@ -46,31 +45,22 @@ jobs:
       - name: Mock the environments for upgrading
         run: |
           echo 'REGION=ap-singapore' >> mgmt/.env
-          echo 'query_latest_version off;' >> mgmt/containers/conf/srs.conf
+          echo 'SOURCE=github' >> mgmt/.env
 
       - name: Upgrade to stable
         run: |
-          WHOAMI=$(whoami)
-          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
           sudo systemctl start nginx
 
-          echo "Reset to release 4.3 at v1.0.162"
+          echo "Reset to release 4-3 at v1.0.162"
           git reset --hard v1.0.162
-
-          (cd mgmt && npm install)
-          (cd mgmt/ui && npm install)
-          (cd mgmt && npm run build)
+          cd mgmt && npm install
 
           # See https://stackoverflow.com/a/8633575/17679565
-          echo "Upgrade to stable TARGET=$TARGET SRS_UTEST=$SRS_UTEST USER=${WHOAMI}"
-          sudo -E bash -c "./mgmt/upgrade $TARGET"
-          sudo chown -R ${WHOAMI}:${WHOAMI} mgmt
-
-          echo "Upgrade the react UI, run by current user"
-          (cd mgmt && bash auto/upgrade_ui)
+          echo "Upgrade to stable TARGET=$TARGET SRS_UTEST=$SRS_UTEST"
+          sudo -E bash -c "./upgrade $TARGET"
 
   test-release-4-3-latest:
-    name: Upgrading latest from release 4.3
+    name: Upgrading latest from release 4-3
     runs-on: ubuntu-20.04
 
     steps:
@@ -90,16 +80,15 @@ jobs:
             mgmt/package-lock.json
             mgmt/ui/package-lock.json
 
-      - name: Start Redis for mgmt
-        uses: supercharge/redis-github-action@1.4.0
-        with:
-          redis-version: 4
-          redis-port: 6379
+      - name: Discover upgrade target.
+        run: |
+          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          echo "TARGET=$TARGET" >> $GITHUB_ENV
 
       - name: Setup the service
         run: |
-          sudo ln -sf $(pwd) /usr/local/srs-cloud
-          sudo cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
+          sudo make install
+          sudo ln -sf /usr/local/srs-cloud/usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
           sudo systemctl enable srs-cloud nginx
 
           echo "Disable docker for test"
@@ -110,31 +99,22 @@ jobs:
       - name: Mock the environments for upgrading
         run: |
           echo 'REGION=ap-singapore' >> mgmt/.env
-          echo 'query_latest_version off;' >> mgmt/containers/conf/srs.conf
+          echo 'SOURCE=github' >> mgmt/.env
 
       - name: Upgrade to latest
         run: |
-          WHOAMI=$(whoami)
-          TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
           sudo systemctl start nginx
 
-          echo "Reset to release 4.3 at v1.0.162"
+          echo "Reset to release 4-3 at v1.0.162"
           git reset --hard v1.0.162
-
-          (cd mgmt && npm install)
-          (cd mgmt/ui && npm install)
-          (cd mgmt && npm run build)
+          cd mgmt && npm install
 
           # See https://stackoverflow.com/a/8633575/17679565
-          echo "Upgrade to latest TARGET=$TARGET SRS_UTEST=$SRS_UTEST USER=${WHOAMI}"
-          sudo -E bash -c "./mgmt/upgrade $TARGET"
-          sudo chown -R ${WHOAMI}:${WHOAMI} mgmt
+          echo "Upgrade to latest TARGET=$TARGET SRS_UTEST=$SRS_UTEST"
+          sudo -E bash -c "./upgrade $TARGET"
 
-          echo "Upgrade the react UI, run by current user"
-          (cd mgmt && bash auto/upgrade_ui)
-
-  test-release-4-2-stable:
-    name: Upgrading to stable from release 4.2
+  test-release-4-4-stable:
+    name: Upgrading to stable from release 4-4
     runs-on: ubuntu-20.04
 
     steps:
@@ -154,16 +134,15 @@ jobs:
             mgmt/package-lock.json
             mgmt/ui/package-lock.json
 
-      - name: Start Redis for mgmt
-        uses: supercharge/redis-github-action@1.4.0
-        with:
-          redis-version: 4
-          redis-port: 6379
+      - name: Discover upgrade target.
+        run: |
+          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          echo "TARGET=$TARGET" >> $GITHUB_ENV
 
       - name: Setup the service
         run: |
-          sudo ln -sf $(pwd) /usr/local/srs-cloud
-          sudo cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
+          sudo make install
+          sudo ln -sf /usr/local/srs-cloud/usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
           sudo systemctl enable srs-cloud nginx
 
           echo "Disable docker for test"
@@ -174,31 +153,22 @@ jobs:
       - name: Mock the environments for upgrading
         run: |
           echo 'REGION=ap-singapore' >> mgmt/.env
-          echo 'query_latest_version off;' >> mgmt/containers/conf/srs.conf
+          echo 'SOURCE=github' >> mgmt/.env
 
       - name: Upgrade to stable
         run: |
-          WHOAMI=$(whoami)
-          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
           sudo systemctl start nginx
 
-          echo "Reset to release 4.2 at v1.0.105"
-          git reset --hard v1.0.105
-
-          (cd mgmt && npm install)
-          (cd mgmt/ui && npm install)
-          (cd mgmt && npm run build)
+          echo "Reset to release 4-4 at v1.0.200"
+          git reset --hard v1.0.200
+          cd mgmt && npm install
 
           # See https://stackoverflow.com/a/8633575/17679565
-          echo "Upgrade to stable TARGET=$TARGET SRS_UTEST=$SRS_UTEST USER=${WHOAMI}"
-          sudo -E bash -c "./mgmt/upgrade $TARGET"
-          sudo chown -R ${WHOAMI}:${WHOAMI} mgmt
+          echo "Upgrade to stable TARGET=$TARGET SRS_UTEST=$SRS_UTEST"
+          sudo -E bash -c "./upgrade $TARGET"
 
-          echo "Upgrade the react UI, run by current user"
-          (cd mgmt && bash auto/upgrade_ui)
-
-  test-release-4-2-latest:
-    name: Upgrading latest from release 4.2
+  test-release-4-4-latest:
+    name: Upgrading latest from release 4-4
     runs-on: ubuntu-20.04
 
     steps:
@@ -218,16 +188,15 @@ jobs:
             mgmt/package-lock.json
             mgmt/ui/package-lock.json
 
-      - name: Start Redis for mgmt
-        uses: supercharge/redis-github-action@1.4.0
-        with:
-          redis-version: 4
-          redis-port: 6379
+      - name: Discover upgrade target.
+        run: |
+          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          echo "TARGET=$TARGET" >> $GITHUB_ENV
 
       - name: Setup the service
         run: |
-          sudo ln -sf $(pwd) /usr/local/srs-cloud
-          sudo cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
+          sudo make install
+          sudo ln -sf /usr/local/srs-cloud/usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
           sudo systemctl enable srs-cloud nginx
 
           echo "Disable docker for test"
@@ -238,25 +207,16 @@ jobs:
       - name: Mock the environments for upgrading
         run: |
           echo 'REGION=ap-singapore' >> mgmt/.env
-          echo 'query_latest_version off;' >> mgmt/containers/conf/srs.conf
+          echo 'SOURCE=github' >> mgmt/.env
 
       - name: Upgrade to latest
         run: |
-          WHOAMI=$(whoami)
-          TARGET=$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
           sudo systemctl start nginx
 
-          echo "Reset to release 4.2 at v1.0.105"
-          git reset --hard v1.0.105
-
-          (cd mgmt && npm install)
-          (cd mgmt/ui && npm install)
-          (cd mgmt && npm run build)
+          echo "Reset to release 4-4 at v1.0.200"
+          git reset --hard v1.0.200
+          cd mgmt && npm install
 
           # See https://stackoverflow.com/a/8633575/17679565
-          echo "Upgrade to latest TARGET=$TARGET SRS_UTEST=$SRS_UTEST USER=${WHOAMI}"
-          sudo -E bash -c "./mgmt/upgrade $TARGET"
-          sudo chown -R ${WHOAMI}:${WHOAMI} mgmt
-
-          echo "Upgrade the react UI, run by current user"
-          (cd mgmt && bash auto/upgrade_ui)
+          echo "Upgrade to latest TARGET=$TARGET SRS_UTEST=$SRS_UTEST"
+          sudo -E bash -c "./upgrade $TARGET"
