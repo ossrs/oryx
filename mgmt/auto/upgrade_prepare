@@ -70,7 +70,7 @@ fi
 
 # Use different docker registry.
 REGISTRY=registry.cn-hangzhou.aliyuncs.com
-if [[ $SOURCE == GITHUB || $SOURCE == github ]]; then REGISTRY=sgccr.ccs.tencentyun.com; fi
+if [[ $SOURCE == GITHUB || $SOURCE == github ]]; then REGISTRY=docker.io; fi
 echo "Detect REGISTRY=$REGISTRY"
 
 bash auto/upgrade_containers $REGISTRY

@@ -70,7 +70,7 @@ jobs:
           echo "Check stable release $STABLE_RELEASE"
 
           while true; do
-            docker pull sgccr.ccs.tencentyun.com/ossrs/srs-cloud:$STABLE_RELEASE >/dev/null 2>&1 && echo "done" && break
+            docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$STABLE_RELEASE >/dev/null 2>&1 && echo "done" && break
             echo "Image $STABLE_RELEASE not ready, wait..." && sleep 30
           done
 

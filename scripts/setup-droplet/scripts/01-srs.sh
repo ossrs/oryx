@@ -19,18 +19,18 @@ if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 # Cache the docker images for srs-cloud to startup faster.
 systemctl start docker &&
 echo "Cache docker images from TCR Singapore" &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/srs:4 &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/lighthouse:4 &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/node:slim &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/srs-cloud:hooks-1 &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/srs-cloud:tencent-1 &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/srs-cloud:ffmpeg-1 &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/srs-cloud:platform-1 &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/prometheus &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/redis_exporter &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/node-exporter &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/certbot &&
-docker pull sgccr.ccs.tencentyun.com/ossrs/redis
+docker pull docker.io/ossrs/srs:4 &&
+docker pull docker.io/ossrs/lighthouse:4 &&
+docker pull docker.io/ossrs/node:slim &&
+docker pull docker.io/ossrs/srs-cloud:hooks-1 &&
+docker pull docker.io/ossrs/srs-cloud:tencent-1 &&
+docker pull docker.io/ossrs/srs-cloud:ffmpeg-1 &&
+docker pull docker.io/ossrs/srs-cloud:platform-1 &&
+docker pull docker.io/ossrs/prometheus &&
+docker pull docker.io/ossrs/redis_exporter &&
+docker pull docker.io/ossrs/node-exporter &&
+docker pull docker.io/ossrs/certbot &&
+docker pull docker.io/ossrs/redis
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
 # If install ok, the directory should exists.

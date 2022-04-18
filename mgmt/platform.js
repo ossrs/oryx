@@ -52,7 +52,7 @@ exports.initOs = async() => {
 };
 
 function discoverRegistry(source) {
-  const registry = (source === 'github') ? 'sgccr.ccs.tencentyun.com' : 'registry.cn-hangzhou.aliyuncs.com';
+  const registry = (source === 'github') ? 'docker.io' : 'registry.cn-hangzhou.aliyuncs.com';
   conf.registry = registry;
   return registry;
 }
