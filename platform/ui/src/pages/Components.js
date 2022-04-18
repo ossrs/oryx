@@ -88,16 +88,23 @@ function ComponentsImpl() {
       ...token, action: 'query',
     }).then(res => {
       const containers = res.data.data;
-      containers.filter(container => {
-        if (container.name === 'srs-server') setSrsRelease(container);
-        if (container.name === 'srs-dev') setSrsDev(container);
-        if (container.name === 'srs-hooks') setHooks(container);
-        if (container.name === 'tencent-cloud') setTencent(container);
-        if (container.name === 'ffmpeg') setFFmpeg(container);
-        if (container.name === 'platform') setPlatform(container);
-        if (container.name === 'prometheus') setPrometheus(container);
-        if (container.name === 'node-exporter') setNodeExporter(container);
-        if (container.name === 'redis') setRedisServer(container);
+      containers.filter(m => {
+        if (m.container.State || m.container.Status) {
+          m.StatusMessage = `${m.container.State || ''} ${m.container.Status || ''}`.trim();
+        } else {
+          m.StatusMessage = 'Stopped';
+        }
+
+        if (m.name === 'srs-server') setSrsRelease(m);
+        if (m.name === 'srs-dev') setSrsDev(m);
+        if (m.name === 'srs-hooks') setHooks(m);
+        if (m.name === 'tencent-cloud') setTencent(m);
+        if (m.name === 'ffmpeg') setFFmpeg(m);
+        if (m.name === 'platform') setPlatform(m);
+        if (m.name === 'prometheus') setPrometheus(m);
+        if (m.name === 'node-exporter') setNodeExporter(m);
+        if (m.name === 'redis') setRedisServer(m);
+
         return null;
       });
       console.log(`SRS: Query ok, containers are ${JSON.stringify(containers)}`);
@@ -135,7 +142,7 @@ function ComponentsImpl() {
                 <Card.Text as={Col}>
                   {t('coms.containerName')}：{srsRelease?.name} <br/>
                   {t('coms.containerId')}：{srsRelease?.container?.ID ? srsRelease.container.ID : 'No Container'} <br/>
-                  {t('coms.containerState')}：{srsRelease?.container.State || srsRelease?.container.Status ? `${srsRelease?.container.State} ${srsRelease?.container.Status}` : 'Stopped'}
+                  {t('coms.containerState')}：{srsRelease?.StatusMessage}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
@@ -166,7 +173,7 @@ function ComponentsImpl() {
                 <Card.Text as={Col}>
                   {t('coms.containerName')}：{srsDev?.name} <br/>
                   {t('coms.containerId')}：{srsDev?.container?.ID ? srsDev.container.ID : 'No Container'} <br/>
-                  {t('coms.containerState')}：{srsDev?.container.State || srsDev?.container.Status ? `${srsDev?.container.State} ${srsDev?.container.Status}` : 'Stopped'}
+                  {t('coms.containerState')}：{srsDev?.StatusMessage}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
@@ -203,7 +210,7 @@ function ComponentsImpl() {
                 <Card.Text as={Col}>
                   {t('coms.containerName')}：{hooks?.name} <br/>
                   {t('coms.containerId')}：{hooks?.container?.ID} <br/>
-                  {t('coms.containerState')}：{hooks?.container.State} {hooks?.container.Status}
+                  {t('coms.containerState')}：{hooks?.StatusMessage}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
@@ -229,7 +236,7 @@ function ComponentsImpl() {
                 <Card.Text as={Col}>
                   {t('coms.containerName')}：{ffmpeg?.name} <br/>
                   {t('coms.containerId')}：{ffmpeg?.container?.ID} <br/>
-                  {t('coms.containerState')}：{ffmpeg?.container.State} {ffmpeg?.container.Status}
+                  {t('coms.containerState')}：{ffmpeg?.StatusMessage}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
@@ -255,7 +262,7 @@ function ComponentsImpl() {
                 <Card.Text as={Col}>
                   {t('coms.containerName')}：{tencent?.name} <br/>
                   {t('coms.containerId')}：{tencent?.container?.ID} <br/>
-                  {t('coms.containerState')}：{tencent?.container.State} {tencent?.container.Status}
+                  {t('coms.containerState')}：{tencent?.StatusMessage}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
@@ -281,7 +288,7 @@ function ComponentsImpl() {
                 <Card.Text as={Col}>
                   {t('coms.containerName')}：{prometheus?.name} <br/>
                   {t('coms.containerId')}：{prometheus?.container?.ID} <br/>
-                  {t('coms.containerState')}：{prometheus?.container.State} {prometheus?.container.Status}
+                  {t('coms.containerState')}：{prometheus?.StatusMessage}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
@@ -307,7 +314,7 @@ function ComponentsImpl() {
                 <Card.Text as={Col}>
                   {t('coms.containerName')}：{nodeExporter?.name} <br/>
                   {t('coms.containerId')}：{nodeExporter?.container?.ID} <br/>
-                  {t('coms.containerState')}：{nodeExporter?.container.State} {nodeExporter?.container.Status}
+                  {t('coms.containerState')}：{nodeExporter?.StatusMessage}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
@@ -333,7 +340,7 @@ function ComponentsImpl() {
                 <Card.Text as={Col}>
                   {t('coms.containerName')}：{redisServer?.name} <br/>
                   {t('coms.containerId')}：{redisServer?.container?.ID} <br/>
-                  {t('coms.containerState')}：{redisServer?.container.State} {redisServer?.container.Status}
+                  {t('coms.containerState')}：{redisServer?.StatusMessage}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
@@ -359,7 +366,7 @@ function ComponentsImpl() {
                 <Card.Text as={Col}>
                   {t('coms.containerName')}：{platform?.name} <br/>
                   {t('coms.containerId')}：{platform?.container?.ID} <br/>
-                  {t('coms.containerState')}：{platform?.container.State} {platform?.container.Status}
+                  {t('coms.containerState')}：{platform?.StatusMessage}
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
