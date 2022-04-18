@@ -96,6 +96,9 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
           <Tab eventKey="api" title="OpenAPI">
             <SettingOpenApi {...{copyToClipboard}}/>
           </Tab>
+          <Tab eventKey="tool" title={t('settings.tabTool')}>
+            <SettingTools {...{defaultWindow}} />
+          </Tab>
           <Tab eventKey="platform" title={t('settings.tabPlatform')}>
             <SettingPlatform {...{defaultWindow}} />
           </Tab>
@@ -191,7 +194,7 @@ function SettingNginx() {
   );
 }
 
-function SettingPlatform({defaultWindow}) {
+function SettingTools({defaultWindow}) {
   const [backends, setBackends] = React.useState([
     {id: Math.random().toString(16).slice(-6)},
     {id: Math.random().toString(16).slice(-6)},
@@ -199,10 +202,6 @@ function SettingPlatform({defaultWindow}) {
   ]);
   const handleError = useErrorHandler();
   const {t} = useTranslation();
-
-  const timeSeries = React.useRef([...Array(25).keys()]).current;
-  const [upgradeWindowStart, setUpgradeWindowStart] = React.useState(defaultWindow.start);
-  const [upgradeWindowEnd, setUpgradeWindowEnd] = React.useState(defaultWindow.end);
 
   const enablePlatformAccess = React.useCallback((e, enabled) => {
     e.preventDefault();
@@ -215,23 +214,6 @@ function SettingPlatform({defaultWindow}) {
       console.log(`PublicKey: Update ok, enabled=${enabled}`);
     }).catch(handleError);
   }, [handleError, t]);
-
-  const setupUpgradeWindow = React.useCallback((e) => {
-    e.preventDefault();
-
-    const [start, end] = [parseInt(upgradeWindowStart || 0), parseInt(upgradeWindowEnd || 0)];
-
-    const duration = start < end ? end - start : end + 24 - start;
-    if (duration <= 3) return alert(t('settings.upgradeWindowInvalid'));
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/window/update', {
-      ...token, start, duration,
-    }).then(res => {
-      alert(t('settings.upgradeWindowOk'));
-      console.log(`Setup upgrade window start=${start}, end=${end}, duration=${duration}`);
-    }).catch(handleError);
-  }, [handleError, upgradeWindowStart, upgradeWindowEnd, t]);
 
   const onBackendChange = React.useCallback((id, value) => {
     const values = backends.map((e) => {
@@ -278,6 +260,56 @@ function SettingPlatform({defaultWindow}) {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">
+        <Accordion.Header>{t('settings.platformLbTitle')}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('settings.platformLbServers')}</Form.Label>
+              <Form.Text> * {t('settings.platformLbTip')}</Form.Text>
+            </Form.Group>
+            {backends.map(backend =>
+              <Form.Group className="mb-3" key={backend.id}>
+                <Form.Control as="input" placeholder='https://example.com' onChange={(e) => onBackendChange(backend.id, e.target.value)} />
+              </Form.Group>
+            )}
+            <Button variant="primary" type="submit" onClick={(e) => updateLbBackends(e)}>
+              {t('helper.submit')}
+            </Button>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+    </Accordion>
+  );
+}
+
+function SettingPlatform({defaultWindow}) {
+  const handleError = useErrorHandler();
+  const {t} = useTranslation();
+
+  const timeSeries = React.useRef([...Array(25).keys()]).current;
+  const [upgradeWindowStart, setUpgradeWindowStart] = React.useState(defaultWindow.start);
+  const [upgradeWindowEnd, setUpgradeWindowEnd] = React.useState(defaultWindow.end);
+
+  const setupUpgradeWindow = React.useCallback((e) => {
+    e.preventDefault();
+
+    const [start, end] = [parseInt(upgradeWindowStart || 0), parseInt(upgradeWindowEnd || 0)];
+
+    const duration = start < end ? end - start : end + 24 - start;
+    if (duration <= 3) return alert(t('settings.upgradeWindowInvalid'));
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/window/update', {
+      ...token, start, duration,
+    }).then(res => {
+      alert(t('settings.upgradeWindowOk'));
+      console.log(`Setup upgrade window start=${start}, end=${end}, duration=${duration}`);
+    }).catch(handleError);
+  }, [handleError, upgradeWindowStart, upgradeWindowEnd, t]);
+
+  return (
+    <Accordion defaultActiveKey="0">
+      <Accordion.Item eventKey="0">
         <Accordion.Header>{t('settings.upgradeTitle')}</Accordion.Header>
         <Accordion.Body>
           <Form>
@@ -309,25 +341,6 @@ function SettingPlatform({defaultWindow}) {
             </InputGroup>
             <Button variant="primary" type="submit" onClick={(e) => setupUpgradeWindow(e)}>
               {t('settings.upgradeSubmit')}
-            </Button>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="2">
-        <Accordion.Header>{t('settings.platformLbTitle')}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('settings.platformLbServers')}</Form.Label>
-              <Form.Text> * {t('settings.platformLbTip')}</Form.Text>
-            </Form.Group>
-            {backends.map(backend =>
-              <Form.Group className="mb-3" key={backend.id}>
-                <Form.Control as="input" placeholder='https://example.com' onChange={(e) => onBackendChange(backend.id, e.target.value)} />
-              </Form.Group>
-            )}
-            <Button variant="primary" type="submit" onClick={(e) => updateLbBackends(e)}>
-              {t('helper.submit')}
             </Button>
           </Form>
         </Accordion.Body>
