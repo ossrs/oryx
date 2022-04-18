@@ -1,6 +1,6 @@
 {
   "name": "hooks",
-  "version":"1.0.41",
+  "version":"1.0.42",
   "description": "Hooks for srs-cloud modules",
   "main": "index.js",
   "scripts": {
