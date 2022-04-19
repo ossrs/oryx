@@ -1,7 +1,7 @@
 [Unit]
 Description=A control system for SRS, to terraform the open-source video platform
-After=network.target network-online.target docker.service nginx.service redis.service
-Wants=docker.service nginx.service redis.service
+After=network.target network-online.target docker.service
+Wants=docker.service
 
 [Service]
 Type=simple
