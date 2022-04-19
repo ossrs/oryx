@@ -61,10 +61,12 @@ fi
 # Setup the UDP kernel options for this session.
 # See https://www.jianshu.com/p/6d4a89359352
 if [[ $(uname -s) != 'Darwin' ]]; then
-  sysctl net.core.rmem_max=16777216 &&
-  sysctl net.core.rmem_default=16777216 &&
-  sysctl net.core.wmem_max=16777216 &&
-  sysctl net.core.wmem_default=16777216
+  if [[ -f /proc/sys/net/core/rmem_max ]]; then
+    sysctl net.core.rmem_max=16777216 &&
+    sysctl net.core.rmem_default=16777216 &&
+    sysctl net.core.wmem_max=16777216 &&
+    sysctl net.core.wmem_default=16777216
+  fi
   if [[ $? -ne 0 ]]; then echo "Setup the UDP kernel options failed"; exit 1; fi
 fi
 
@@ -77,6 +79,7 @@ bash auto/upgrade_containers $REGISTRY
 if [[ $? -ne 0 ]]; then echo "Update docker containers failed"; exit 1; fi
 
 # Setup git alias to make it convenient.
+# TODO: FIXME: Remove it because setup in image.
 echo "Setup git alias to make it more convenient" &&
 git config --local alias.co checkout &&
 git config --local alias.br branch &&

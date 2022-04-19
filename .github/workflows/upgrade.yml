@@ -37,15 +37,16 @@ jobs:
           sudo ln -sf /usr/local/srs-cloud/usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
           sudo systemctl enable srs-cloud nginx
 
-          echo "Disable docker for test"
-          echo "USE_DOCKER=false" >> $GITHUB_ENV
-          echo "SRS_DOCKER=srs" >> $GITHUB_ENV
-          echo "SRS_UTEST=true" >> $GITHUB_ENV
-
       - name: Mock the environments for upgrading
         run: |
+          echo "Use global source"
           echo 'REGION=ap-singapore' >> mgmt/.env
           echo 'SOURCE=github' >> mgmt/.env
+
+          echo "Disable docker for test"
+          echo "USE_DOCKER=false" >> mgmt/.env
+          echo "SRS_DOCKER=srs" >> mgmt/.env
+          echo "SRS_UTEST=true" >> mgmt/.env
 
       - name: Upgrade to stable
         run: |
@@ -56,7 +57,7 @@ jobs:
           cd mgmt && npm install
 
           # See https://stackoverflow.com/a/8633575/17679565
-          echo "Upgrade to stable TARGET=$TARGET SRS_UTEST=$SRS_UTEST"
+          echo "Upgrade to stable TARGET=$TARGET"
           sudo -E bash -c "./upgrade $TARGET"
 
   test-release-4-3-latest:

@@ -1,4 +1,4 @@
-.PHONY: default build install run uninstall upgrade test
+.PHONY: default build install run uninstall upgrade test npm
 
 SRS_PREFIX=/usr/local/srs-cloud
 __REAL_INSTALL=$(DESTDIR)$(SRS_PREFIX)
@@ -10,12 +10,14 @@ default:
 	@echo "     upgrade     Build for upgrade"
 	@echo "     test     	Run tests"
 
-build:
+npm:
+	@cd mgmt && npm install
+
+build: npm
 	@cd ffmpeg && npm install
 	@cd platform && npm install
 	@cd platform/ui && npm install
 	@cd hooks && npm install
-	@cd mgmt && npm install
 	@cd mgmt/ui && npm install
 	@cd releases && npm install
 	@cd tencent && npm install
@@ -26,7 +28,7 @@ upgrade:
 	@cd mgmt && npm install
 	@cd mgmt && npm run upgrade
 
-install:
+install: npm
 	@mkdir -p $(__REAL_INSTALL)
 	@rm -rf $(__REAL_INSTALL)/mgmt $(__REAL_INSTALL)/js-core
 	@ln -sf `pwd`/mgmt $(__REAL_INSTALL)/mgmt

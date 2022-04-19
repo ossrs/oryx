@@ -107,6 +107,15 @@ rm -f /etc/nginx/conf.d/nginx.vhost.conf /etc/nginx/conf.d/server.conf &&
 ln -sf ${SRS_HOME}/mgmt/containers/conf/conf.d/nginx.vhost.conf /etc/nginx/conf.d/vhost.conf
 if [[ $? -ne 0 ]]; then echo "Reload nginx failed"; exit 1; fi
 
+# Setup git alias to make it convenient.
+cd ${SRS_HOME}/mgmt &&
+echo "Setup git alias to make it more convenient" &&
+git config --local alias.co checkout &&
+git config --local alias.br branch &&
+git config --local alias.ci commit &&
+git config --local alias.st status
+if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
+
 # Update sysctl.conf and add if not exists. For example:
 #   update_sysctl net.ipv4.ip_forward 1 0 "# Controls IP packet forwarding"
 function update_sysctl() {
