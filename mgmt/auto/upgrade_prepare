@@ -90,15 +90,10 @@ if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
 # Setup nginx configuration.
 bash auto/upgrade_nginx $CLOUD
 
+# If systemctl config changed, reload it.
+bash auto/upgrade_systemctl
+
 # Execute script for each run.
 bash auto/foreach_run
 if [[ $? -ne 0 ]]; then echo "Execute for each run script failed"; exit 1; fi
-
-# If systemctl config changed, reload it.
-diff usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
-if [[ $? -ne 0 ]]; then
-  cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
-  systemctl daemon-reload
-  if [[ $? -ne 0 ]]; then echo "Update systemctl config failed"; exit 1; fi
-fi
 
