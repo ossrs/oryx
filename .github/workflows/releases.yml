@@ -71,7 +71,7 @@ jobs:
 
           while true; do
             docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$STABLE_RELEASE >/dev/null 2>&1 && echo "done" && break
-            echo "Image $STABLE_RELEASE not ready, wait..." && sleep 30
+            echo "Image $STABLE_RELEASE not ready, wait..." && sleep 5
           done
 
           kubectl set image deploy/srs-terraform-deploy releases=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
