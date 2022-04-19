@@ -437,7 +437,7 @@ function MgmtUpdateContainer({allow, enabled, onClick}) {
   );
 }
 
-const upgradeProgress = 120;
+const upgradeProgress = 300;
 
 function MgmtUpgradeButton({onStatus}) {
   const [startingUpgrade, setStartingUpgrade] = React.useState();
