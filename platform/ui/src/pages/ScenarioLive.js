@@ -22,14 +22,16 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
   const m3u8UrlShortCode = `[srs_player url="${m3u8Url}"]`;
   const rtcUrlShortCode = `[srs_player url="${rtcUrl}"]`;
 
-  const movieTutorials = useTutorials(React.useRef([
-    {author: '徐光磊', id: 'BV1RS4y1G7tb'},
-    {author: 'SRS', id: 'BV1Nb4y1t7ij'},
-    {author: '瓦全', id: 'BV1SF411t7Li'},
-    {author: '王大江', id: 'BV16r4y1q7ZT'},
-    {author: '骆合祥', id: 'BV16T4y1U7CN'},
-    {author: '周亮', id: 'BV1gT4y1U76d'},
-  ]));
+  const movieTutorials = useTutorials({
+    bilibili: React.useRef([
+      {author: '徐光磊', id: 'BV1RS4y1G7tb'},
+      {author: 'SRS', id: 'BV1Nb4y1t7ij'},
+      {author: '瓦全', id: 'BV1SF411t7Li'},
+      {author: '王大江', id: 'BV16r4y1q7ZT'},
+      {author: '骆合祥', id: 'BV16T4y1U7CN'},
+      {author: '周亮', id: 'BV1gT4y1U76d'},
+    ])
+  });
 
   return (
     <Accordion defaultActiveKey="1">

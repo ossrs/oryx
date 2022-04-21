@@ -54,9 +54,11 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
-  const vodTutorials = useTutorials(React.useRef([
-    {author: '唐为', id: 'BV14S4y1k7gr'},
-  ]));
+  const vodTutorials = useTutorials({
+    bilibili: React.useRef([
+      {author: '唐为', id: 'BV14S4y1k7gr'},
+    ])
+  });
 
   React.useEffect(() => {
     const refreshVodFiles = () => {

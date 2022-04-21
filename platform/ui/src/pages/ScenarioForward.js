@@ -66,9 +66,11 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
   const [forwards, setForwards] = React.useState();
   const handleError = useErrorHandler();
 
-  const forwardTutorials = useTutorials(React.useRef([
-    {author: 'SRS', id: 'BV1KY411V7uc'},
-  ]));
+  const forwardTutorials = useTutorials({
+    bilibili: React.useRef([
+      {author: 'SRS', id: 'BV1KY411V7uc'},
+    ])
+  });
 
   React.useEffect(() => {
     const refreshStreams = () => {

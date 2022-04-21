@@ -153,7 +153,6 @@
         "tokenEmpty": "没有Token，请先运行"
       },
       "tutorials": {
-        "media": "Bilibili",
         "view": "播放次数",
         "like": "点赞次数",
         "share": "分享次数"
@@ -332,7 +331,6 @@
         "tokenEmpty": "No Token, please run "
       },
       "tutorials": {
-        "media": "Medium",
         "view": "View",
         "like": "Like",
         "share": "Share"

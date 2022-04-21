@@ -8,10 +8,15 @@ import Container from "react-bootstrap/Container";
 import {useTranslation} from "react-i18next";
 import {useSrsLanguage} from "./LanguageSwitch";
 
-function useTutorials(bvidsRef, mediumRef) {
+/**
+ * Fetch the video tutorials from bilibili, for example:
+ * @param bilibili The ref for video id of bilibili, must be a ref to avoid duplicated loading.
+ * @returns A state of tutorials.
+ */
+function useTutorials({bilibili, medium}) {
   const language = useSrsLanguage();
-  const cn = useTutorialsCn(bvidsRef);
-  const en = useTutorialsEn(mediumRef);
+  const cn = useTutorialsCn(bilibili);
+  const en = useTutorialsEn(medium);
   return language === 'zh' ? cn : en;
 }
 
@@ -43,8 +48,11 @@ function useTutorialsEn(mediumRef) {
     if (!bvids || !bvids.length) return;
     if (language !== 'en') return;
     bvids.map(tutorial => {
-      ref.current.tutorials.push(dict.current[tutorial.id]);
-      setTutorials([...ref.current.tutorials].sort((a, b) => b.view - a.view));
+      ref.current.tutorials.push({
+        media: 'Medium',
+        ...dict.current[tutorial.id],
+      });
+      setTutorials([...ref.current.tutorials]);
       return null;
     });
   }, [bvids, language]);
@@ -52,18 +60,6 @@ function useTutorialsEn(mediumRef) {
   return tutorials;
 }
 
-/**
- * Fetch the video tutorials from bilibili, for example:
- * @param bvidsRef The ref for video id of bilibili, must be a ref to avoid duplicated loading.
- * @returns A state of tutorials.
- *
- * For example:
-      const sslTutorials = useTutorials(React.useRef([
-        {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
-      ]));
- * Then, use the state in TutorialsButton:
-      return <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
- */
 function useTutorialsCn(bvidsRef) {
   const language = useSrsLanguage();
   const [tutorials, setTutorials] = React.useState([]);
@@ -87,6 +83,7 @@ function useTutorialsCn(bvidsRef) {
         cancelToken: source.token,
       }).then(res => {
         const data = res.data.data;
+        tutorial.media = 'Bilibili';
         tutorial.title = data.title;
         tutorial.desc = data.desc;
         tutorial.view = parseInt(data.stat.view);
@@ -125,7 +122,7 @@ function TutorialsToast({tutorials, onClose}) {
             <Toast onClose={onClose}>
               <Toast.Header>
                 <img src={logo} className="rounded me-2" width={56} alt=''/>
-                <strong className="me-auto">{t('tutorials.media')}</strong>
+                <strong className="me-auto">{tutorial.media}</strong>
                 {tutorial.view && <> <span title={t('tutorials.view')}><Icon.Play /> {tutorial.view}</span> &nbsp; </>}
                 {tutorial.like && <> <span title={t('tutorials.like')}><Icon.HandThumbsUp /> {tutorial.like}</span> &nbsp; </>}
                 {tutorial.share && <> <span title={t('tutorials.share')}><Icon.Share /> {tutorial.share}</span> &nbsp; </>}
