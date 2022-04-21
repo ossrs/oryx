@@ -66,6 +66,7 @@ if [[ $? -ne 0 ]]; then echo "Setup nginx.conf failed"; exit 1; fi
 
 # Build the mgmt/containers/conf/conf.d/nginx.vhost.conf
 cd ${SRS_HOME}/mgmt && bash auto/setup_vhost
+if [[ $? -ne 0 ]]; then echo "Build nginx vhost failed"; exit 1; fi
 
 cd ${SRS_HOME}/mgmt &&
 rm -f /etc/nginx/conf.d/nginx.vhost.conf /etc/nginx/conf.d/server.conf &&
