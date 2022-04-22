@@ -3,29 +3,37 @@
 REALPATH=$(realpath $0)
 WORK_DIR=$(cd $(dirname $REALPATH)/.. && pwd)
 
+# Get the metadata of machine.
+if [[ -f ${WORK_DIR}/.env ]]; then source ${WORK_DIR}/.env; fi
+echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
+
 # For CentOS 7, it's /etc/redis.conf
 # For Ubuntu 20, it's /etc/redis/redis.conf
 REDIS_CONF=/etc/redis.conf
 if [[ ! -f $REDIS_CONF ]]; then REDIS_CONF=/etc/redis/redis.conf; fi
-if [[ ! -f $REDIS_CONF ]]; then echo "no redis config"; exit 1; fi
+if [[ ! -f $REDIS_CONF ]]; then echo "no redis config"; fi
 
 # If redis also listen at 56379, stop it.
-grep -q "^port 56379" $REDIS_CONF; STOP_REDIS=$?
-systemctl status redis > /dev/null; REDIS_ALIVE=$?
-if [[ $STOP_REDIS -eq 0 && $REDIS_ALIVE -eq 0 ]]; then
+grep -q "^port 56379" $REDIS_CONF 2>/dev/null; SRS_REDIS_EXISTS=$?
+systemctl status redis >/dev/null 2>&1; REDIS_ALIVE=$?
+if [[ $SRS_REDIS_EXISTS -eq 0 && $REDIS_ALIVE -eq 0 ]]; then
   systemctl stop redis; if [[ $? -ne 0 ]]; then echo "Stop redis failed"; exit 1; fi
 fi
 
 # Compatible with previous redis. Note that we should copy data after stop redis, which save data to disk.
-if [[ ! -f ${WORK_DIR}/containers/data/redis/dump.rdb && -f /var/lib/redis/dump.rdb ]]; then
-  mkdir -p ${WORK_DIR}/containers/data/redis && cp /var/lib/redis/dump.rdb ${WORK_DIR}/containers/data/redis/dump.rdb
-  if [[ $? -ne 0 ]]; then echo "Copy redis database failed"; exit 1; fi
+if [[ $SRS_REDIS_EXISTS -eq 0 ]]; then
+  if [[ ! -f ${WORK_DIR}/containers/data/redis/dump.rdb && -f /var/lib/redis/dump.rdb ]]; then
+    mkdir -p ${WORK_DIR}/containers/data/redis && cp /var/lib/redis/dump.rdb ${WORK_DIR}/containers/data/redis/dump.rdb
+    if [[ $? -ne 0 ]]; then echo "Copy redis database failed"; exit 1; fi
+  fi
 fi
 
 # Always write all cli tools to /root
 # Note that it's not required tool, so we only need a place to save the script.
-REDIS_CLI=/root/redis-cli
-API_SECRET_CLI=/root/api-secret
+if [[ $CLOUD != 'BT' ]]; then
+  REDIS_CLI=/root/redis-cli
+  API_SECRET_CLI=/root/api-secret
+fi
 echo "Setup redis script, REDIS_CONF=${REDIS_CONF}, REDIS_CLI=${REDIS_CLI}, API_SECRET_CLI=${API_SECRET_CLI}"
 
 # Save host to .env

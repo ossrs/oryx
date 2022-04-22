@@ -65,13 +65,21 @@ exports.handle = (router) => {
     const r0 = await redis.hget(keys.redis.SRS_AUTH_SECRET, 'pubSecret');
     const r1 = await redis.hlen(keys.redis.SRS_FIRST_BOOT);
     const r2 = await redis.hlen(keys.redis.SRS_TENCENT_LH);
-    if (!r0 || !r1 || !r2) throw utils.asError(errs.sys.redis, errs.status.sys, `redis corrupt`);
+    if (!r0 || !r1 || !r2) throw utils.asError(errs.sys.redis, errs.status.sys, `Redis is not ready`);
 
     const upgrading = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
 
     console.log(`system check ok, r0=${r0}, r1=${r1}, r2=${r2}`);
     ctx.body = utils.asResponse(0, {
       upgrading: upgrading === "1",
+    });
+  });
+
+  router.all('/terraform/v1/mgmt/envs', async (ctx) => {
+    const secret = await redis.hget(keys.redis.SRS_PLATFORM_SECRET, 'token');
+    ctx.body = utils.asResponse(0, {
+      secret: !!secret,
+      https: process.env.SRS_HTTPS,
     });
   });
 

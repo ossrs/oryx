@@ -14,8 +14,14 @@ cd $WORK_DIR
 if [[ -f .env ]]; then source .env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 
-# Execute script for each run, to make sure system is all right.
-# Note that we must run in script, never run in code, because if system corrupt, we could restart it to fix it.
+# When env is ok, we try to load extra envs. Note that these envs is only for mgmt, we should pass to container if
+# container wants to use it.
+if [[ -f $WORK_DIR/containers/bin/bootstrap ]]; then
+  source $WORK_DIR/containers/bin/bootstrap
+fi
+
+# Execute script for each run, to make sure system is all right. Note that we must run in script, never run in code,
+# because if system corrupt, we could restart it to fix it.
 bash auto/foreach_run
 if [[ $? -ne 0 ]]; then echo "Execute for each run script failed"; exit 1; fi
 

@@ -17,14 +17,19 @@ import Contact from "./pages/Contact";
 import {ErrorBoundary, useErrorHandler} from 'react-error-boundary';
 import {SrsErrorBoundary} from "./components/SrsErrorBoundary";
 import resources from "./resources/locale.json";
+import {SrsEnvContext} from "./components/SrsEnvContext";
 
 function App() {
+  const [env, setEnv] = React.useState();
+
   return (
-    <ErrorBoundary FallbackComponent={(RootError)}>
-      <SrsErrorBoundary>
-        <AppImpl />
-      </SrsErrorBoundary>
-    </ErrorBoundary>
+    <SrsEnvContext.Provider value={[env, setEnv]}>
+      <ErrorBoundary FallbackComponent={(RootError)}>
+        <SrsErrorBoundary>
+          <AppImpl/>
+        </SrsErrorBoundary>
+      </ErrorBoundary>
+    </SrsEnvContext.Provider>
   );
 }
 
@@ -37,6 +42,7 @@ function AppImpl() {
   const [initialized, setInitialized] = React.useState();
   const [tokenUpdated, setTokenUpdated] = React.useState();
   const [token, setToken] = React.useState();
+  const setEnv = React.useContext(SrsEnvContext)[1];
   const handleError = useErrorHandler();
 
   React.useEffect(() => {
@@ -52,6 +58,15 @@ function AppImpl() {
       console.log(`Check ok, ${JSON.stringify(res.data)}`);
     }).catch(handleError);
   }, [handleError]);
+
+  React.useEffect(() => {
+    if (!setEnv) return;
+
+    axios.get('/terraform/v1/mgmt/envs').then(res => {
+      setEnv(res.data.data);
+      console.log(`Env ok, ${JSON.stringify(res.data)}`);
+    }).catch(handleError);
+  }, [handleError, setEnv]);
 
   React.useEffect(() => {
     setToken(Token.load());

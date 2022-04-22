@@ -118,6 +118,7 @@ mgmt/containers/data/vod/*
 mgmt/containers/data/redis/*
 mgmt/containers/www/*
 mgmt/containers/ssl/*
+mgmt/containers/bin/*
 mgmt/containers/conf/conf.d/nginx.vhost.conf
 mgmt/containers/conf/nginx.dynamic.conf
 mgmt/containers/conf/default.d/nginx.dynamic.conf

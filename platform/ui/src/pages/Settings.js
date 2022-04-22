@@ -8,6 +8,7 @@ import SetupCamSecret from '../components/SetupCamSecret';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
+import {SrsEnvContext} from "../components/SrsEnvContext";
 
 export default function Systems() {
   return (
@@ -55,6 +56,7 @@ function SystemsImpl() {
 
 function SettingsImpl2({defaultActiveTab, defaultWindow}) {
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
+  const [env] = React.useContext(SrsEnvContext);
   const setSearchParams = useSearchParams()[1];
   const {t} = useTranslation();
 
@@ -82,7 +84,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
             <SettingAuth />
           </Tab>
           <Tab eventKey="https" title="HTTPS">
-            <SettingHttps />
+            { env?.https === 'off' ? <SettingHttpsDisabled /> : <SettingHttps /> }
           </Tab>
           <Tab eventKey="nginx" title="NGINX">
             <SettingNginx />
@@ -601,6 +603,11 @@ function SettingAuth() {
       </>}
     </Accordion>
   );
+}
+
+function SettingHttpsDisabled() {
+  const {t} = useTranslation();
+  return <span style={{color: 'red'}}>{t('errs.btHttps1')}</span>;
 }
 
 function SettingHttps() {

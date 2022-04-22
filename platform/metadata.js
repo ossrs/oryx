@@ -22,6 +22,7 @@ exports.market = {
       let image = 'ossrs/srs';
       if (cloud === 'TENCENT') image = 'ossrs/lighthouse';
       if (cloud === 'DO') image = 'ossrs/droplet';
+      if (cloud === 'BT') image = 'ossrs/srs';
       if (process.env.NODE_ENV === 'development') image = 'ossrs/srs';
       if (process.env.SRS_DOCKER === 'srs') image = 'ossrs/srs';
 
@@ -96,6 +97,8 @@ exports.market = {
     ],
     volumes: () => [
       `${platform.cwd()}/.env:/usr/local/srs-cloud/hooks/.env`,
+      // We mount the containers to mgmt in platform container, which links to platform.
+      `${platform.cwd()}/containers:/usr/local/srs-cloud/mgmt/containers`,
       // We mount the containers to mgmt in hooks container, which links to hooks.
       `${platform.cwd()}/containers/objs/nginx/html:/usr/local/srs-cloud/mgmt/containers/objs/nginx/html`,
       `${platform.cwd()}/containers/data/dvr:/usr/local/srs-cloud/mgmt/containers/data/dvr`,
@@ -122,6 +125,8 @@ exports.market = {
     ],
     volumes: () => [
       `${platform.cwd()}/.env:/usr/local/srs-cloud/tencent/.env`,
+      // We mount the containers to mgmt in platform container, which links to platform.
+      `${platform.cwd()}/containers:/usr/local/srs-cloud/mgmt/containers`,
     ],
     extras: () => [
       ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
@@ -144,6 +149,8 @@ exports.market = {
     ],
     volumes: () => [
       `${platform.cwd()}/.env:/usr/local/srs-cloud/ffmpeg/.env`,
+      // We mount the containers to mgmt in platform container, which links to platform.
+      `${platform.cwd()}/containers:/usr/local/srs-cloud/mgmt/containers`,
     ],
     extras: () => [
       ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
@@ -168,10 +175,13 @@ exports.market = {
       '--log-opt', 'max-size=1g',
       '--log-opt', 'max-file=3',
     ],
-    volumes: () => [
-      `${platform.cwd()}/containers/conf/prometheus.yml:/etc/prometheus/prometheus.yml`,
-      `${platform.cwd()}/containers/data/prometheus:/prometheus`,
-    ],
+    volumes: () => {
+      const config = platform.isDarwin ? 'prometheus.darwin.yml' : 'prometheus.yml';
+      return [
+        `${platform.cwd()}/containers/conf/${config}:/etc/prometheus/prometheus.yml`,
+        `${platform.cwd()}/containers/data/prometheus:/prometheus`,
+      ];
+    },
     extras: () => [
       ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
       ...(platform.isDarwin ? [] : ['--user=root']),

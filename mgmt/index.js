@@ -21,7 +21,6 @@ const staticCache = require('koa-static-cache');
 const platform = require('./platform');
 const rewrite = require('./rewrite');
 const metadata = require('./metadata');
-const market = require('./market');
 
 // Start all workers threads first.
 threads.run();

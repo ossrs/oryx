@@ -70,12 +70,14 @@ app.use(async (ctx, next) => {
 // Note that should never create the directory .well-known/acme-challenge/ because it's auto created by certbot.
 // See https://eff-certbot.readthedocs.io/en/stable/using.html#webroot
 // See https://github.com/ossrs/srs/issues/2864#issuecomment-1027944527
-app.use(
-  mount(
-    '/.well-known/acme-challenge/',
-    serve('./containers/www/.well-known/acme-challenge/'),
-  ),
-);
+if (process.env.SRS_HTTPS !== 'off') {
+  app.use(
+    mount(
+      '/.well-known/acme-challenge/',
+      serve('./containers/www/.well-known/acme-challenge/'),
+    ),
+  );
+}
 
 // For homepage from root, use mgmt.
 app.use(async (ctx, next) => {

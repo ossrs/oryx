@@ -171,7 +171,7 @@ const handlers = {
     // Write the ssl key and cert, and reload nginx when ready.
     fs.writeFileSync(`${process.cwd()}/containers/ssl/nginx.key`, key);
     fs.writeFileSync(`${process.cwd()}/containers/ssl/nginx.crt`, crt);
-    await execFile('systemctl', ['reload', 'nginx.service']);
+    await utils.reloadNginx()
 
     ctx.body = utils.asResponse(0);
   },
@@ -182,8 +182,10 @@ const handlers = {
 
     if (!domains) throw utils.asError(errs.sys.empty, errs.status.args, 'no domain');
 
-    // Only require the SSL directory exists, beause user might remove the key and crt files.
-    if (!fs.existsSync('${process.cwd()}/containers/ssl/')) throw utils.asError(errs.sys.ssl, errs.status.sys, 'no ssl directory');
+    // Only require the SSL directory exists, because user might remove the key and crt files.
+    if (!fs.existsSync(`${process.cwd()}/containers/ssl/`)) {
+      throw utils.asError(errs.sys.ssl, errs.status.sys, 'no ssl directory');
+    }
 
     // Support multiple domains like domain.com;www.domain.com
     const domainConfs = domains.split(/[;, ]+/);
@@ -230,7 +232,7 @@ const handlers = {
     await execFile('ln', ['-sf', crtFile, `${process.cwd()}/containers/ssl/nginx.crt`]);
 
     // Restart the nginx service to reload the SSL files.
-    await execFile('systemctl', ['reload', 'nginx.service']);
+    await utils.reloadNginx(fs, execFile);
 
     ctx.body = utils.asResponse(0);
   },
@@ -264,7 +266,7 @@ const handlers = {
 
     // Restart the nginx service to reload the SSL files.
     const renewOk = fs.existsSync(signalFile);
-    if (renewOk) await execFile('systemctl', ['reload', 'nginx.service']);
+    if (renewOk) await utils.reloadNginx(fs, execFile);
     console.log(`certbot renew updated=${renewOk}, args=${args}, message is ${stdout}`);
 
     ctx.body = utils.asResponse(0, {stdout, renewOk});
@@ -297,6 +299,7 @@ const handlers = {
 
   // Generate dynamic.conf for NGINX.
   nginxGenerateConfig: async ({ctx, action, args}) => {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Build HLS config for NGINX.
     const hls = await redis.hget(keys.redis.SRS_STREAM_NGINX, 'hls');
 
@@ -323,14 +326,15 @@ const handlers = {
     const hlsConf = [
       '',
       '# For HLS delivery',
-      'location ~ /.+/.*\\.(m3u8)$ {',
+      'location ~ ^/.+/.*\\.(m3u8)$ {',
       ...m3u8Conf.map(e => `  ${e}`),
       '}',
-      'location ~ /.+/.*\\.(ts)$ {',
+      'location ~ ^/.+/.*\\.(ts)$ {',
       ...tsConf.map(e => `  ${e}`),
       '}',
     ];
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Build reverse proxy config for NGINX.
     const reverses = await redis.hgetall(keys.redis.SRS_HTTP_PROXY);
     const reversesConf = [];
@@ -340,17 +344,44 @@ const handlers = {
     );
     reverses && Object.keys(reverses).map(location => {
       const backend = reverses[location];
+      const suffix = backend.indexOf('$') === -1 ? '$request_uri' : '';
       reversesConf.push(
         `location ${location} {`,
-        `  proxy_pass ${backend};`,
+        [`proxy_pass ${backend}`, suffix, ';'].join(''),
         '}',
       );
       return null;
     });
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Build the SSL/TLS config.
+    const sslConf = [];
+    const ssl = await redis.get(keys.redis.SRS_HTTPS);
+    if (ssl === 'ssl' || ssl === 'lets') {
+      sslConf.push(
+        '',
+        '# For SSL/TLS config.',
+        'listen       443 ssl http2 default_server;',
+        'listen       [::]:443 ssl http2 default_server;',
+        'ssl_session_cache shared:SSL:1m;',
+        'ssl_session_timeout  10m;',
+        'ssl_ciphers HIGH:!aNULL:!MD5;',
+        'ssl_prefer_server_ciphers on;',
+        `ssl_certificate "${process.cwd()}/containers/ssl/nginx.crt";`,
+        `ssl_certificate_key "${process.cwd()}/containers/ssl/nginx.key";`,
+        '',
+        '# For automatic HTTPS.',
+        'location /.well-known/acme-challenge/ {',
+        '  proxy_pass http://127.0.0.1:2022$request_uri;',
+        '}',
+      );
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Build the config for NGINX.
     const confLines = [
       '# !!! Important: SRS will restore this file during each upgrade, please never modify it.',
+      ...sslConf,
       ...hlsConf,
       ...reversesConf,
       '',
@@ -358,7 +389,7 @@ const handlers = {
     ];
 
     fs.writeFileSync('containers/conf/default.d/nginx.dynamic.conf', confLines.join(os.EOL));
-    await execFile('systemctl', ['reload', 'nginx.service']);
+    await utils.reloadNginx(fs, execFile);
     console.log(`NGINX: Refresh dynamic.conf ok`);
 
     ctx.body = utils.asResponse(0);

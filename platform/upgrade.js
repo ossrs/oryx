@@ -25,6 +25,7 @@ const helper = require('./helper');
 const metadata = require('./metadata');
 const moment = require('moment');
 const semver = require('semver');
+const releases = require('./releases');
 
 if (!isMainThread) {
   threadMain();
@@ -67,7 +68,7 @@ async function doThreadMain() {
   await firstRun();
 
   // For development, request the releases from itself which proxy to the releases service.
-  const releases = await helper.queryLatestVersion();
+  const releases = await releases.queryLatestVersion();
   if (!releases) {
     return console.log(`Thread #upgrade: Ignore empty releases`);
   }

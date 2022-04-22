@@ -3,11 +3,8 @@
 const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
-['.', '..', '../..', '../mgmt', '../../mgmt'].map(envDir => {
-  if (fs.existsSync(path.join(envDir, '.env'))) {
-    dotenv.config({path: path.join(envDir, '.env')});
-  }
-});
+const utils = require('js-core/utils');
+utils.reloadEnv(dotenv, fs, path);
 console.log(`load envs MGMT_PASSWORD=${'*'.repeat(process.env.MGMT_PASSWORD?.length)}`);
 
 const Koa = require('koa');
@@ -16,7 +13,6 @@ const Cors = require('koa2-cors');
 const BodyParser = require('koa-bodyparser');
 const settings = require('./settings');
 const pkg = require('./package.json');
-const utils = require('js-core/utils');
 const manager = require('./manager');
 
 const app = new Koa();

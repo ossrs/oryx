@@ -29,10 +29,6 @@ server {
   # We serve the home at local files.
   root ${WORK_DIR}/containers/www;
 
-  # For SSL/TLS key and certificate
-  ssl_certificate "${WORK_DIR}/containers/ssl/nginx.crt";
-  ssl_certificate_key "${WORK_DIR}/containers/ssl/nginx.key";
-
   # Load configuration files for the default server block.
   include ${WORK_DIR}/containers/conf/default.d/*.conf;
 }

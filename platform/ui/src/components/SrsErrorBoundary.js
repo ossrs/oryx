@@ -35,12 +35,15 @@ function ErrorDetail({error}) {
   );
 
   const err = error?.response?.data;
-  if (err?.code === Errors.auth) {
+  if (err?.code === Errors.auth || err?.code === Errors.redis || err?.code === Errors.btHttps) {
     return (
       <>
-        <p>
-          {t('errs.expire1')}<NavLink to='/routers-logout'>{t('errs.expire2')}</NavLink>
-        </p>
+        {
+          err?.code === Errors.auth &&
+          <p>{t('errs.expire1')}<NavLink to='/routers-logout'>{t('errs.expire2')}</NavLink></p>
+        }
+        { err?.code === Errors.redis && <p>{t('errs.redis1')}</p> }
+        { err?.code === Errors.btHttps && <p>{t('errs.btHttps1')}</p> }
         <p>
           Error Code: {err?.code}
         </p>

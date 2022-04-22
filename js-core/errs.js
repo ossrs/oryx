@@ -39,5 +39,7 @@ exports.auth = {
 exports.srs = {
   // Verify the secret in hooks.
   verify: 3000,
+  // Please use BT to configure HTTPS.
+  btHttps: 3001,
 };
 

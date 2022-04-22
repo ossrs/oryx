@@ -74,7 +74,9 @@ export const Clipboard = {
 };
 
 export const Errors = {
+  redis: 1007, // Redis is not ready.
   auth: 2001, // Verify token failed.
+  btHttps: 3001, // Please use BT to configure HTTPS.
 };
 
 export const StreamURL = {

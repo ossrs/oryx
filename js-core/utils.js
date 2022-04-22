@@ -138,7 +138,8 @@ const stopContainerQuiet = async (execFile, name, disableErrorLog, time) => {
 exports.stopContainerQuiet = stopContainerQuiet;
 
 function reloadEnv(dotenv, fs, path) {
-  ['.', '..', '../..', '../mgmt', '../../mgmt'].map(envDir => {
+  // The path ../mgmt is for development, others is for release.
+  ['../mgmt', '.', './containers/bin'].map(envDir => {
     if (fs.existsSync(path.join(envDir, '.env'))) {
       dotenv.config({path: path.join(envDir, '.env'), override: true});
     }
@@ -234,4 +235,19 @@ async function generateDockerArgs(platform, ipv4, conf) {
   return dockerArgs;
 }
 exports.generateDockerArgs = generateDockerArgs;
+
+// Reload nginx, try to use systemctl, or kill -1 {pid}, or killall -1 nginx.
+async function reloadNginx(fs, execFile) {
+  if (fs.existsSync('/usr/lib/systemd/system/nginx.service')) {
+    return await execFile('systemctl', ['reload', 'nginx.service']);
+  }
+
+  if (process.env.NGINX_PID && fs.existsSync(process.env.NGINX_PID)) {
+    const pid = fs.readFileSync(process.env.NGINX_PID).toString().trim();
+    if (pid) return await execFile('kill', ['-s', 'SIGHUP', pid]);
+  }
+
+  throw new Error(`Can't reload NGINX, no service or pid=${process.env.NGINX_PID}`);
+}
+exports.reloadNginx = reloadNginx;
 

@@ -45,14 +45,14 @@ systemctl enable docker nginx
 if [[ $? -ne 0 ]]; then echo "Install dependencies failed"; exit 1; fi
 
 # Install files to lighthouse directory.
-mkdir -p /usr/local/lighthouse/softwares &&
+mkdir -p $DEPLOY_HOME &&
 rm -rf ${SRS_HOME} &&
 (cd $(dirname $WORK_DIR) && cp -r $(basename $WORK_DIR) ${SRS_HOME}) &&
 cd ${SRS_HOME} &&
 make build && make install
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 
-cd /usr/local/lighthouse/softwares && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
+cd $DEPLOY_HOME && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
 if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
 
 ########################################################################################################################

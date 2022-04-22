@@ -30,4 +30,4 @@ scrape_configs:
     metrics_path: "/metrics"
     scrape_interval: 5s
     static_configs:
-      - targets: ["node-exporter:9100"]
+      - targets: ["mgmt.srs.local:9100"]

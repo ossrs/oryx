@@ -3,11 +3,8 @@
 const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
-['.', '..', '../..', '../mgmt', '../../mgmt'].map(envDir => {
-  if (fs.existsSync(path.join(envDir, '.env'))) {
-    dotenv.config({path: path.join(envDir, '.env')});
-  }
-});
+const utils = require('js-core/utils');
+utils.reloadEnv(dotenv, fs, path);
 // Compatible with previous mgmt versions.
 if (fs.existsSync('/srs-terraform/hooks/.env')) {
   dotenv.config({path: '/srs-terraform/hooks/.env'});
@@ -20,7 +17,6 @@ const Cors = require('koa2-cors');
 const BodyParser = require('koa-bodyparser');
 const hooks = require('./hooks');
 const pkg = require('./package.json');
-const utils = require('js-core/utils');
 const hls = require('./hls');
 const dvr = require('./dvr');
 const vod = require('./vod');

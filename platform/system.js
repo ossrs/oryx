@@ -20,6 +20,7 @@ const keys = require('js-core/keys');
 const helper = require('./helper');
 const metadata = require('./metadata');
 const axios = require('axios');
+const releases = require('./releases');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/mgmt/upgrade', async (ctx) => {
@@ -32,7 +33,7 @@ exports.handle = (router) => {
     const uwDuration = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'duration');
     const inUpgradeWindow = helper.inUpgradeWindow(uwStart, uwDuration, moment());
 
-    const releases = await helper.queryLatestVersion();
+    const releases = await releases.queryLatestVersion();
     metadata.upgrade.releases = releases;
 
     const {version, latest} = releases;
@@ -68,7 +69,7 @@ exports.handle = (router) => {
     const apiSecret = await utils.apiSecret(redis);
     const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
-    const releases = await helper.queryLatestVersion();
+    const releases = await releases.queryLatestVersion();
     metadata.upgrade.releases = releases;
 
     const upgrading = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
@@ -87,12 +88,19 @@ exports.handle = (router) => {
     const apiSecret = await utils.apiSecret(redis);
     const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
+    if (process.env.SRS_HTTPS === 'off') {
+      throw utils.asError(errs.srs.btHttps, errs.status.sys, 'Please use BT to configure HTTPS');
+    }
+
     if (!key) throw utils.asError(errs.sys.empty, errs.status.args, 'no key');
     if (!crt) throw utils.asError(errs.sys.empty, errs.status.args, 'no crt');
     await helper.execApi('updateSslFile', [key, crt]);
 
     // Setup the HTTPS information.
     await redis.set(keys.redis.SRS_HTTPS, 'ssl');
+
+    // Update the NGINX configuration and reload it.
+    await helper.execApi('nginxGenerateConfig');
 
     console.log(`ssl ok, key=${key.length}B, crt=${crt.length}B, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0);
@@ -104,11 +112,18 @@ exports.handle = (router) => {
     const apiSecret = await utils.apiSecret(redis);
     const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
+    if (process.env.SRS_HTTPS === 'off') {
+      throw utils.asError(errs.srs.btHttps, errs.status.sys, 'Please use BT to configure HTTPS');
+    }
+
     if (!domain) throw utils.asError(errs.sys.empty, errs.status.args, 'no domain');
     await helper.execApi('updateLetsEncrypt', [domain]);
 
     // Setup the HTTPS information.
     await redis.set(keys.redis.SRS_HTTPS, 'lets');
+
+    // Update the NGINX configuration and reload it.
+    await helper.execApi('nginxGenerateConfig');
 
     const keyFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domain}/privkey.pem`;
     const crtFile = `${process.cwd()}/containers/etc/letsencrypt/live/${domain}/cert.pem`;
