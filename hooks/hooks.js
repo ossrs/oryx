@@ -32,7 +32,16 @@ exports.handle = (router) => {
     const {action, param, vhost, app, stream, server_id, client_id} = ctx.request.body;
     if (action === 'on_publish') {
       const publish = await redis.hget(keys.redis.SRS_AUTH_SECRET, 'pubSecret');
-      if (publish && param.indexOf(publish) === -1) {
+
+      // Note that we allow pass secret by params or in stream name, for example, some encoder does not support params
+      // with ?secret=xxx, so it will fail when url is:
+      //      rtmp://ip/live/livestream?secret=xxx
+      // so user could change the url to bellow to get around of it:
+      //      rtmp://ip/live/livestreamxxx
+      // or simply use secret as stream:
+      //      rtmp://ip/live/xxx
+      // in this situation, the secret is part of stream name.
+      if (publish && param.indexOf(publish) === -1 && stream.indexOf(publish) === -1) {
         throw utils.asError(errs.srs.verify, errs.status.auth, `invalid params=${param} action=${action}`);
       }
     }
