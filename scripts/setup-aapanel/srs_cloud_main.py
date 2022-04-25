@@ -28,6 +28,7 @@ class srs_cloud_main:
         status['r0'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
         status['srs'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
         status['nginx'] = public.ExecShell('ls {}/nginx/sbin/nginx >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
+        status['docker_manager'] = public.ExecShell('ls {}/panel/plugin/docker >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
         status['docker'] = public.ExecShell('ls /usr/lib/systemd/system/docker.service >/dev/null 2>&1 && echo -n ok')[0]
         status['docker_running'] = public.ExecShell('systemctl status docker.service >/dev/null 2>&1 && echo -n ok')[0]
         status['node_manager'] = public.ExecShell('ls {}/panel/plugin/pm2 >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]

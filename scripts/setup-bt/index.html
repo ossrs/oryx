@@ -257,8 +257,11 @@
     const deps = [
       ...(services?.nginx ? [] : [{id: 'nginx', title: 'NGINX', call: 'bt.soft.install'}]),
       ...(services?.node_manager ? [] : [{id: 'pm2', title: 'Node.js 16+', call: 'bt.soft.install'}]),
-      ...(services?.docker ? [] : [{id: 'docker', title: 'Docker', call: 'bt.soft.install'}]),
     ];
+    // If no docker manager plugin, or docker service, install the plugin.
+    if (!services?.docker_manager || !services?.docker) {
+      deps.push({id: 'docker', title: 'Docker', call: 'bt.soft.install'});
+    }
     // For nodejs, user might not install any node version.
     if (services?.node_manager && !services?.node) {
       deps.push({id: 'nodejs', title: 'Node.js 16+', call: 'bt.soft.set_lib_config'});
