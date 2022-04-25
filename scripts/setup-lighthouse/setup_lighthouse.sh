@@ -151,14 +151,10 @@ update_sysctl net.core.wmem_max 16777216
 update_sysctl net.core.wmem_default 16777216
 
 ########################################################################################################################
-# Setup the mod and link.
-chown -R lighthouse:lighthouse /usr/local/lighthouse/softwares/ &&
-chown -R lighthouse:lighthouse /etc/nginx/default.d/ &&
-chown -R lighthouse:lighthouse ${INSTALL_HOME}/
+# Note that we keep files as root, because we run srs-cloud as root, see https://stackoverflow.com/a/70953525/17679565
+chown lighthouse:lighthouse ${INSTALL_HOME}/mgmt/.env
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 
-rm -rf ~/lighthouse/ssl && ln -sf ${SRS_HOME}/mgmt/containers/ssl ~lighthouse/ssl &&
 rm -rf ~lighthouse/credentials.txt && ln -sf ${INSTALL_HOME}/mgmt/.env ~lighthouse/credentials.txt &&
-rm -rf ~lighthouse/upgrade && ln -sf ${SRS_HOME}/mgmt/upgrade ~lighthouse/upgrade
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 

@@ -13,7 +13,7 @@ const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
 const keys = require('js-core/keys');
 const metadata = require('js-core/metadata');
-const platform = require('./platform');
+const helper = require('./helper');
 
 async function queryLatestVersion() {
   // Request release api with params.
@@ -97,7 +97,7 @@ async function queryLatestVersion() {
   const region = await redis.hget(keys.redis.SRS_TENCENT_LH, 'region');
   if (region) params.region = region;
 
-  return await execApi('refreshVersion', [params]);
+  return await helper.execApi('refreshVersion', [params]);
 }
 exports.queryLatestVersion = queryLatestVersion;
 

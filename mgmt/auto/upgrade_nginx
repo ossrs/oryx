@@ -14,8 +14,8 @@ fi
 # Migrate the previous SSL files.
 if [[ ! -f containers/ssl/nginx.key && -f /etc/nginx/ssl/nginx.key ]]; then
   mkdir -p containers/ssl &&
-  ln -sf $(readlink -f /etc/nginx/ssl/nginx.key) containers/ssl/nginx.key &&
-  ln -sf $(readlink -f /etc/nginx/ssl/nginx.crt) containers/ssl/nginx.crt
+  ln -sf "$(readlink -f /etc/nginx/ssl/nginx.key)" containers/ssl/nginx.key &&
+  ln -sf "$(readlink -f /etc/nginx/ssl/nginx.crt)" containers/ssl/nginx.crt
   if [[ $? -ne 0 ]]; then echo "Setup SSL/TLS files failed"; exit 1; fi
 fi
 
@@ -27,7 +27,7 @@ fi
 
 # Overwrite the default nginx config.
 rm -f /etc/nginx/nginx.conf &&
-ln -sf $(pwd)/containers/conf/nginx.conf /etc/nginx/nginx.conf && echo "Refresh nginx.conf ok"
+ln -sf "$(pwd)/containers/conf/nginx.conf" /etc/nginx/nginx.conf && echo "Refresh nginx.conf ok"
 if [[ $? -ne 0 ]]; then echo "Refresh nginx.conf failed"; exit 1; fi
 
 # For DO Ubuntu20, use www-data as nginx user.
@@ -43,7 +43,7 @@ if [[ $? -ne 0 ]]; then echo "Build nginx vhost failed"; exit 1; fi
 
 # For nginx server config
 rm -f /etc/nginx/conf.d/nginx.vhost.conf /etc/nginx/conf.d/server.conf &&
-ln -sf $(pwd)/containers/conf/conf.d/nginx.vhost.conf /etc/nginx/conf.d/vhost.conf
+ln -sf "$(pwd)/containers/conf/conf.d/nginx.vhost.conf" /etc/nginx/conf.d/vhost.conf
 if [[ $? -ne 0 ]]; then echo "Refresh nginx vhost.conf failed"; exit 1; fi
 
 # Reload nginx service.

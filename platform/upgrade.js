@@ -68,14 +68,14 @@ async function doThreadMain() {
   await firstRun();
 
   // For development, request the releases from itself which proxy to the releases service.
-  const releases = await releases.queryLatestVersion();
-  if (!releases) {
-    return console.log(`Thread #upgrade: Ignore empty releases`);
+  const versions = await releases.queryLatestVersion();
+  if (!versions) {
+    return console.log(`Thread #upgrade: Ignore empty versions`);
   }
 
-  metadata.upgrade.releases = releases;
+  metadata.upgrade.releases = versions;
   parentPort.postMessage({metadata: {upgrade: metadata.upgrade}});
-  console.log(`Thread #upgrade: query done, version=${releases.version}, response=${JSON.stringify(releases)}`);
+  console.log(`Thread #upgrade: query done, version=${versions.version}, response=${JSON.stringify(versions)}`);
 
   // Whether force to upgrading.
   const force = await redis.hget(keys.redis.SRS_UPGRADING, 'force');
@@ -84,9 +84,9 @@ async function doThreadMain() {
   }
 
   // Try to upgrade mgmt itself.
-  const higherStable = semver.lt(releases.version, releases.stable);
-  if (force || releases?.stable && higherStable) {
-    const upgradingMessage = `upgrade current=${releases.version}, stable=${releases.stable}, force=${force}`;
+  const higherStable = semver.lt(versions.version, versions.stable);
+  if (force || versions?.stable && higherStable) {
+    const upgradingMessage = `upgrade current=${versions.version}, stable=${versions.stable}, force=${force}`;
     console.log(`Thread #upgrade: ${upgradingMessage}`);
 
     const uwStart = await redis.hget(keys.redis.SRS_UPGRADE_WINDOW, 'start');
@@ -115,8 +115,8 @@ async function doThreadMain() {
     await redis.hset(keys.redis.SRS_UPGRADING, 'upgrading', 1);
     await redis.hset(keys.redis.SRS_UPGRADING, 'desc', `${upgradingMessage}`);
 
-    await helper.execApi('execUpgrade', [force || releases.stable]);
-    console.log(`Thread #upgrade: Upgrade to stable=${releases.stable}, force=${force} done`);
+    await helper.execApi('execUpgrade', [force || versions.stable]);
+    console.log(`Thread #upgrade: Upgrade to stable=${versions.stable}, force=${force} done`);
   }
 }
 

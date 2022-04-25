@@ -40,10 +40,9 @@ else
   # Change permissions before restart.
   if [[ $(id -un lighthouse 2>/dev/null) == 'lighthouse' ]]; then
     echo "Change permissions for generated files"
-    chown -R lighthouse:lighthouse /usr/local/lighthouse/softwares/ &&
-    chown -R lighthouse:lighthouse /etc/nginx/default.d/ &&
-    chown -R lighthouse:lighthouse /usr/local/srs-cloud/
-    if [[ $? -ne 0 ]]; then echo "Change owner failed"; exit 1; fi
+    # Note that we keep files as root, because we run srs-cloud as root, see https://stackoverflow.com/a/70953525/17679565
+    chown lighthouse:lighthouse /usr/local/srs-cloud/mgmt/.env
+    if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
   fi
 
   echo "Restart service"
