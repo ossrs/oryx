@@ -122,6 +122,10 @@ async function discoverRegion() {
     return {cloud: 'BT', region: 'ap-beijing'};
   }
 
+  if (process.env.CLOUD === 'AAPANEL') {
+    return {cloud: 'AAPANEL', region: 'ap-singapore'};
+  }
+
   if (process.env.CLOUD && process.env.REGION) {
     return {cloud: process.env.CLOUD, region: process.env.REGION};
   }
@@ -147,6 +151,7 @@ async function discoverSource(cloud, region) {
   if (cloud === 'DEV') return 'gitee';
   if (cloud === 'DO') return 'github';
   if (cloud === 'BT') return 'gitee';
+  if (cloud == 'AAPANEL') return 'github';
 
   let source = 'github';
   if (cloud === 'TENCENT') {
@@ -163,6 +168,7 @@ async function discoverPlatform(cloud) {
   if (cloud === 'DEV') return 'dev';
   if (cloud === 'DO') return 'droplet';
   if (cloud === 'BT') return 'bt';
+  if (cloud == 'AAPANEL') return 'aapanel';
 
   const {data} = await axios.get(`http://metadata.tencentyun.com/latest/meta-data/instance-name`);
   return data.indexOf('-lhins-') > 0 ? 'lighthouse' : 'cvm';

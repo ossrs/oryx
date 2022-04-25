@@ -58,7 +58,7 @@ if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
 ########################################################################################################################
 # Cache the docker images for srs-cloud to startup faster.
 systemctl start docker &&
-echo "Cache docker images from TCR Singapore" &&
+echo "Cache docker images" &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs:4 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:4 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim &&
@@ -91,7 +91,9 @@ systemctl enable srs-cloud
 if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
 
 # Choose default language.
-echo 'REACT_APP_LOCALE=zh' > ${INSTALL_HOME}/mgmt/.env
+cat << END > ${SRS_HOME}/mgmt/.env
+REACT_APP_LOCALE=zh
+END
 if [[ $? -ne 0 ]]; then echo "Setup language failed"; exit 1; fi
 
 # Setup the nginx configuration.

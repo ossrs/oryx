@@ -41,8 +41,8 @@ if [[ $? -ne 0 ]]; then echo "Setup bootstrap failed"; exit 1; fi
 
 # For BT, we use special env, to disable discover of platform.
 cat << END > ${SRS_HOME}/mgmt/.env
-CLOUD=BT
-REACT_APP_LOCALE=zh
+CLOUD=AAPANEL
+REACT_APP_LOCALE=en
 END
 if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
 
@@ -77,18 +77,18 @@ if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
 ########################################################################################################################
 # Update the docker images.
 echo "Cache docker images" &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs:4 &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/lighthouse:4 &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:hooks-1 &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:tencent-1 &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:ffmpeg-1 &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1 &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/redis_exporter &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/certbot &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/redis
+docker pull docker.io/ossrs/srs:4 &&
+docker pull docker.io/ossrs/lighthouse:4 &&
+docker pull docker.io/ossrs/node:slim &&
+docker pull docker.io/ossrs/srs-cloud:hooks-1 &&
+docker pull docker.io/ossrs/srs-cloud:tencent-1 &&
+docker pull docker.io/ossrs/srs-cloud:ffmpeg-1 &&
+docker pull docker.io/ossrs/srs-cloud:platform-1 &&
+docker pull docker.io/ossrs/prometheus &&
+docker pull docker.io/ossrs/redis_exporter &&
+docker pull docker.io/ossrs/node-exporter &&
+docker pull docker.io/ossrs/certbot &&
+docker pull docker.io/ossrs/redis
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
 # If install ok, the directory should exists.

@@ -20,138 +20,138 @@
 <div class="bt-form">
     <div class="bt-w-main">
         <div class="bt-w-menu">
-            <p class="bgw" name="service">服务状态</p>
-            <p name="mgmt">管理面板</p>
-            <p name="install">安装版本</p>
+            <p class="bgw" name="service">Service</p>
+            <p name="mgmt">Dashboard</p>
+            <p name="install">Install</p>
         </div>
         <div class="bt-w-con pd15">
             <div class="plugin_body">
                 <div class="conter_box srs_service_box" name="service">
                     <div class="soft-man-con bt-form">
-                        <p class="status">当前状态：
-                            <span>开启</span>
+                        <p class="status">Status：
+                            <span>Enabled</span>
                             <span style="color: #20a53a; margin-left: 3px;"
                                   class="glyphicon glyphicon glyphicon-play"></span>
                         </p>
                         <div class="sfm-opt">
                             <button class="btn btn-default btn-sm btn_server_start" style="display: none"
-                                    onclick="bt.pub.set_server_status('srs_cloud','start')">启动
+                                    onclick="bt.pub.set_server_status('srs_cloud','start')">Start
                             </button>
                             <button class="btn btn-default btn-sm btn_server_stop"
-                                    onclick="bt.pub.set_server_status('srs_cloud','stop')">停止
+                                    onclick="bt.pub.set_server_status('srs_cloud','stop')">Stop
                             </button>
                             <button class="btn btn-default btn-sm"
-                                    onclick="bt.pub.set_server_status('srs_cloud','restart')">重启
+                                    onclick="bt.pub.set_server_status('srs_cloud','restart')">Restart
                             </button>
                         </div>
                     </div>
                 </div>
                 <div class="conter_box install_version_box" name="install">
-                    <button class="btn btn-success btn-sm va0 ml5 btn_install_srs">安装云SRS</button>
+                    <button class="btn btn-success btn-sm va0 ml5 btn_install_srs">Install SRS Cloud</button>
                     <textarea class="install_log tomcat_log" style="display:none"></textarea>
                     <ul class="help-info-text c7">
-                        <li style="color:red">安装云SRS版本会耗时比较久，请耐心等候。</li>
-                        <li style="color:red">若需要卸载云SRS，请直接删除云SRS插件。</li>
+                        <li style="color:red">It will take a long time to install SRS Cloud, please be patient.</li>
+                        <li style="color:red">Pelease uninstall the plugin if want to remove SRS Cloud.</li>
                     </ul>
                 </div>
                 <div class="conter_box srs_mgmt_box" name="mgmt">
-                    <a href="#" class="btn btn-link srs_mgmt_link" target="_blank" rel="noreferrer">云SRS管理面板</a>
+                    <a href="#" class="btn btn-link srs_mgmt_link" target="_blank" rel="noreferrer">SRS Cloud Dashboard</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 <script type="text/javascript">
-  // Request the backend api by functionName with args.
-  // @param timeout The timeout in ms, default to 300s.
-  async function srs_cloud_request(functionName, args, timeout) {
-    try {
-      return await new Promise((resolve, reject) => {
-        $.ajax({
-          type: 'POST',
-          url: `/plugin?action=a&s=${functionName}&name=srs_cloud`,
-          data: args,
-          timeout: timeout || 300 * 1000,
-          success: function (res, status, xhr) {
-            if (!res?.status) {
-              return reject({xhr, err: JSON.stringify(res)});
-            }
-            return resolve(JSON.parse(res.msg));
-          },
-          error: function (xhr, status, err) {
-            reject({xhr, err});
-          },
-        });
+// Request the backend api by functionName with args.
+// @param timeout The timeout in ms, default to 300s.
+async function srs_cloud_request(functionName, args, timeout) {
+  try {
+    return await new Promise((resolve, reject) => {
+      $.ajax({
+        type: 'POST',
+        url: `/plugin?action=a&s=${functionName}&name=srs_cloud`,
+        data: args,
+        timeout: timeout || 300 * 1000,
+        success: function (res, status, xhr) {
+          if (!res?.status) {
+            return reject({xhr, err: JSON.stringify(res)});
+          }
+          return resolve(JSON.parse(res.msg));
+        },
+        error: function (xhr, status, err) {
+          reject({xhr, err});
+        },
       });
-    } catch ({xhr, err}) {
-      console.error(`Call ${functionName} with args=${JSON.stringify(args)} err`, status, err, xhr);
-      layer.msg(`Call ${functionName} with args=${JSON.stringify(args)} err ${err}`, {icon: 2});
-      throw xhr;
-    }
+    });
+  } catch ({xhr, err}) {
+    console.error(`Call ${functionName} with args=${JSON.stringify(args)} err`, status, err, xhr);
+    layer.msg(`Call ${functionName} with args=${JSON.stringify(args)} err ${err}`, {icon: 2});
+    throw xhr;
   }
+}
 
-  async function install_dependence(deps) {
-    const depsContent = deps.map((dep, index) => {
-      return `
+async function install_dependence(deps) {
+  const depsContent = deps.map((dep, index) => {
+    return `
           <li>
             ${index + 1}:
             <a href="javascript:void(0);" class="btlink" onclick="${dep.call}('${dep.id}')">
-                安装${dep.title}
+                Install ${dep.title}
             </a>
           </li>
     `;
-    }).join('\n');
+  }).join('\n');
 
-    layer.closeAll();
-    return new Promise((resolve, reject) => {
-      layer.open({
-        icon: 0,
-        closeBtn: 0,
-        title: 'Install SRS Cloud',
-        area: '400px',
-        btn: [],
-        content: `
+  layer.closeAll();
+  return new Promise((resolve, reject) => {
+    layer.open({
+      icon: 0,
+      closeBtn: 0,
+      title: 'Install SRS Cloud',
+      area: '400px',
+      btn: [],
+      content: `
         <p>Please install the dependencies:</p>
         <ul>${depsContent}</ul>
         <p style="color: red; font-weight: bold;">Please retry after all installed.</p>
       `,
-        success: function (layero, index) {
-          // Note that this is called when the window is open, not closed or finished.
-          resolve();
-        },
-      });
+      success: function (layero, index) {
+        // Note that this is called when the window is open, not closed or finished.
+        resolve();
+      },
     });
-  }
+  });
+}
 
-  async function installing_dependence(deps) {
-    const depsContent = deps.map((dep, index) => {
-      const desc = `Installing <a href="javascript:void(0)" class="btlink" onclick="messagebox()">${dep.title}</a>`;
-      return `<li>${index + 1}: ${desc}</li>`;
-    }).join('\n');
+async function installing_dependence(deps) {
+  const depsContent = deps.map((dep, index) => {
+    const desc = `Installing <a href="javascript:void(0)" class="btlink" onclick="messagebox()">${dep.title}</a>`;
+    return `<li>${index + 1}: ${desc}</li>`;
+  }).join('\n');
 
-    layer.closeAll();
-    return new Promise((resolve, reject) => {
-      layer.open({
-        icon: 0,
-        closeBtn: 0,
-        title: 'Install SRS Cloud',
-        area: '400px',
-        btn: [],
-        content: `
+  layer.closeAll();
+  return new Promise((resolve, reject) => {
+    layer.open({
+      icon: 0,
+      closeBtn: 0,
+      title: 'Install SRS Cloud',
+      area: '400px',
+      btn: [],
+      content: `
         <p>Installing dependencies：</p>
         <ul>${depsContent}</ul>
         Please retry after all installed, click <a href="javascript:void(0)" class="btlink" onclick="messagebox()">here</a> for detail.
       `,
-        success: function (layero, index) {
-          // Note that this is called when the window is open, not closed or finished.
-          resolve();
-        },
-      });
+      success: function (layero, index) {
+        // Note that this is called when the window is open, not closed or finished.
+        resolve();
+      },
     });
-  }
+  });
+}
 </script>
 <script type="text/javascript">
-  async function srs_cloud_init() {
+async function srs_cloud_init() {
     $(".bt-w-menu p").click(function () {
       srs_cloud_dispatch($(this));
     });
@@ -182,7 +182,7 @@
 
     const services = await srs_cloud_request('serviceStatus');
     if (!services?.srs || services?.r0) {
-      if (menuName !== 'install') layer.msg('请先安装云SRS', {icon: 7});
+      if (menuName !== 'install') layer.msg('Please install SRS Cloud first', {icon: 7});
       return console.log(`service not ready ${JSON.stringify(services)}`);
     }
 
@@ -202,7 +202,7 @@
     const pid = await srs_cloud_request('querySrs');
     console.log(`installing pid is ${JSON.stringify(pid)}`);
     if (pid?.srs || pid?.running) {
-      $('.btn_install_srs').html(pid?.srs ? '安装完成' : '正在安装').attr({'disabled': 'disabled'}).show();
+      $('.btn_install_srs').html(pid?.srs ? 'Installed' : 'Installing').attr({'disabled': 'disabled'}).show();
       if (pid?.srs) {
         $('.install_log').hide();
       } else {
@@ -211,7 +211,7 @@
       return;
     }
 
-    $('.btn_install_srs').html(pid?.r0 ? '重新安装云SRS' : '安装云SRS').removeAttr('disabled').show();
+    $('.btn_install_srs').html(pid?.r0 ? 'Reinstall SRS Cloud' : 'Install SRS Cloud').removeAttr('disabled').show();
     if (pid.tail) {
       const elem = $('.install_log').val($('.install_log').val() + pid.tail).show();
       elem.get(0).scrollTop = elem.get(0)?.scrollHeight;
@@ -227,7 +227,7 @@
       .addClass(status ? 'glyphicon-play' : 'glyphicon-pause').css('color', (status ? '#20a53a' : 'red'))
     $(!status ? '.btn_server_start' : '.btn_server_stop').show();
     $(status ? '.btn_server_start' : '.btn_server_stop').hide();
-    $('.srs_service_box .status span:eq(0)').html(status ? '开启' : '停止');
+    $('.srs_service_box .status span:eq(0)').html(status ? 'Active' : 'Inactive');
   }
 
   async function srs_cloud_setup_mgmt_view() {
@@ -241,14 +241,14 @@
       $('.install_log').show().val('Installing...\n');
     }
 
-    let tips = layer.msg('检测服务状态', {icon: 16});
+    let tips = layer.msg('Detecting service status', {icon: 16});
     const services = await srs_cloud_request('serviceStatus');
     console.log(`services status is ${JSON.stringify(services)}`);
     layer.close(tips);
 
     // We use default site, so it must be available.
     if (services?.default_site_available !== 'ok') {
-      const msg = `默认站点不可用，请先将默认站点设置为空，当前站点${services?.site}`;
+      const msg = `The default website is unavailable, please reset it. Current is ${services?.site}`;
       layer.msg(msg, {icon: 2});
       throw msg;
     }
@@ -282,14 +282,14 @@
 
     // Try to start docker service.
     if (!services?.docker_running) {
-      layer.msg('启动Docker服务', {icon: 1});
+      layer.msg('Starting docker service', {icon: 1});
       await srs_cloud_request('restartService', {service: 'docker'});
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     // Try to create site for srs cloud.
     if (!services?.site) {
-      layer.msg('创建云SRS站点', {icon: 1});
+      layer.msg('Create SRS Cloud website', {icon: 1});
       const site = await srs_cloud_request('createSrsSite');
       console.log(`Create site ${JSON.stringify(site)}`);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -297,7 +297,7 @@
 
     // Setup the website. Note that it depends on http configuration files.
     if (!services?.site_setup) {
-      layer.msg('设置云SRS站点', {icon: 1});
+      layer.msg('Setup SRS Cloud website', {icon: 1});
       const data = await srs_cloud_request('setupSrsSite');
       console.log('setup site', data);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -305,7 +305,7 @@
 
     // Setup the firewall.
     if (!services?.firewall) {
-      layer.msg('设置防火墙', {icon: 1});
+      layer.msg('Setup firewall', {icon: 1});
       const data = await srs_cloud_request('setupFirewall');
       console.log('setup firewall', data);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -319,7 +319,7 @@
 
   async function do_srs_cloud_install() {
     const installing = async (resolve, reject) => {
-      $('.btn_install_srs').html('正在安装').attr({'disabled': 'disabled'});
+      $('.btn_install_srs').html('Installing').attr({'disabled': 'disabled'});
       let pos = 1;
       for (; ;) {
         try {
@@ -335,7 +335,7 @@
           if (pid.srs) return resolve();
 
           if (pid.r0) {
-            layer.msg('安装云SRS失败', {icon: 2});
+            layer.msg('Install SRS Cloud failed', {icon: 2});
             return reject(pid);
           }
 
@@ -357,8 +357,8 @@
       installing(resolve, reject);
     });
 
-    layer.msg('云SRS安装成功', {icon: 1});
-    $('.btn_install_srs').html('安装完成').attr({'disabled': 'disabled'});
+    layer.msg('Install SRS Cloud successfully', {icon: 1});
+    $('.btn_install_srs').html('Installed').attr({'disabled': 'disabled'});
   }
 
   $(function () {
