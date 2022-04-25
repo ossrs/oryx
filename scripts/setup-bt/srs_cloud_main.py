@@ -60,6 +60,12 @@ class srs_cloud_main:
         tasks = echoMsg['task']
         return public.returnMsg(True, json.dumps(tasks))
 
+    def installService(self, args):
+        if args.service != 'docker':
+            return public.returnMsg(False, 'invalid service {}'.format(args.service))
+        public.ExecShell('bash {}/do_docker.sh'.format(self.__plugin_path))
+        return public.returnMsg(True, json.dumps('ok'))
+
     def restartService(self, args):
         if args.service != 'docker':
             return public.returnMsg(False, 'invalid service {}'.format(args.service))

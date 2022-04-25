@@ -19,15 +19,6 @@ if [[ $OS_NAME == 'Ubuntu' ]]; then
   Ubuntu_VERSION=$(cat /etc/os-release |grep VERSION_ID |awk -F '"' '{print $2}' |awk -F '.' '{print $1}')
   if [[ $Ubuntu_VERSION -lt 18 ]]; then echo "Only support Ubuntu 18+, yours is $Ubuntu_VERSION"; exit 1; fi
 
-  if [[ $OS_NAME == 'Ubuntu' ]]; then
-    # Install docker if not installed. Note that we must install docker here because the bt.soft.install can't install it,
-    # and we could get around of it after installed manually.
-    if [[ ! -f /usr/lib/systemd/system/docker.service ]];then
-      apt-get install -y docker docker.io
-      if [[ $? -ne 0 ]]; then echo "Install docker failed"; exit 1; fi
-    fi
-  fi
-
   apt-get install -y git make
   if [[ $? -ne 0 ]]; then echo "Install dependencies failed"; exit 1; fi
 fi

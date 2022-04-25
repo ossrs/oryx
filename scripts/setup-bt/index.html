@@ -259,7 +259,7 @@
       ...(services?.node_manager ? [] : [{id: 'pm2', title: 'Node.js 16+', call: 'bt.soft.install'}]),
     ];
     // If no docker manager plugin, or docker service, install the plugin.
-    if (!services?.docker_manager || !services?.docker) {
+    if (!services?.docker_manager) {
       deps.push({id: 'docker', title: 'Docker', call: 'bt.soft.install'});
     }
     // For nodejs, user might not install any node version.
@@ -281,6 +281,13 @@
     }
     if (deps.length) {
       return await installing_dependence(deps);
+    }
+
+    // Try to install docker service.
+    if (!services?.docker) {
+      layer.msg('安装Docker服务', {icon: 1});
+      await srs_cloud_request('installService', {service: 'docker'});
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     // Try to start docker service.
