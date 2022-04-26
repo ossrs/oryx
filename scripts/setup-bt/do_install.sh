@@ -43,6 +43,10 @@ Install() {
   cd $install_path/srs-cloud && chmod 755 mgmt/bootstrap mgmt/upgrade scripts/remove-containers.sh
   if [[ $? -ne 0 ]]; then echo "Change file permissions failed"; exit 1; fi
 
+  # Restore files from git again, after changing file permisisons.
+  cd $install_path/srs-cloud && git reset --hard HEAD
+  if [[ $? -ne 0 ]]; then echo "Reset files failed"; exit 1; fi
+
   # Move srs-cloud to its home.
   mkdir -p $DEPLOY_HOME
   if [[ -d $install_path/srs-cloud && ! -d $SRS_HOME/.git ]]; then
@@ -50,6 +54,10 @@ Install() {
     ln -sf $SRS_HOME $install_path/srs-cloud
     if [[ $? -ne 0 ]]; then echo "Create srs-cloud failed"; exit 1; fi
   fi
+
+  # We must create the .env to avoid docker mountint as a dir.
+  touch ${SRS_HOME}/mgmt/.env &&
+  if [[ $? -ne 0 ]]; then echo "Create ${SRS_HOME}/mgmt/.env failed"; exit 1; fi
 
   # Allow network forwarding, required by docker.
   # See https://stackoverflow.com/a/41453306/17679565

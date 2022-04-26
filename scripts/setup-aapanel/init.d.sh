@@ -17,8 +17,8 @@ start() {
 }
 
 stop() {
-  systemctl stop srs-cloud.service &&
-  $SRS_HOME/scripts/remove-containers.sh
+  systemctl stop srs-cloud.service
+  bash $SRS_HOME/scripts/remove-containers.sh
 }
 
 status() {

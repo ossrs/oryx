@@ -86,7 +86,7 @@ if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
 # Remark: Never start the service, because the IP will change for new machine created.
 cd ${INSTALL_HOME} &&
 cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
-touch ${INSTALL_HOME}/mgmt/.env &&
+touch ${SRS_HOME}/mgmt/.env &&
 systemctl enable srs-cloud
 if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
 
