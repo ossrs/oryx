@@ -1,6 +1,6 @@
 {
   "name": "tencent",
-  "version":"1.0.12",
+  "version":"1.0.13",
   "description": "Tencent cloud API for srs-cloud modules",
   "main": "index.js",
   "scripts": {
