@@ -161,7 +161,7 @@
         "expire1": "Token过期，请",
         "expire2": "重新登录",
         "btHttps1": "你用宝塔安装的云SRS，请直接在宝塔中配置域名和SSL证书",
-        "redis1": "Redis还没准备好，请稍后再试"
+        "redis1": "正在启动Redis中，请等会儿再刷新页面试试"
       },
       "helper": {
         "changeStream": "更换流名称成功",
