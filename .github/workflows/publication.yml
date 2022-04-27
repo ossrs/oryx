@@ -1,0 +1,94 @@
+name: "Release publication"
+
+# @see https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#onpushpull_requestbranchestags
+on:
+  push:
+    tags:
+      - publication-v4*
+
+jobs:
+  plugin:
+    name: release-publication
+    runs-on: ubuntu-20.04
+
+    steps:
+      ##################################################################################################################
+      ##################################################################################################################
+      ##################################################################################################################
+      # Git checkout
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # The github.ref is, for example, refs/tags/v5.0.145 or refs/tags/v5.0-r8
+      # Generate variables like:
+      #   SRS_TAG=publication-v4.4
+      #   SRS_TAG=publication-v4.4.1
+      # @see https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
+      - name: Generate varaiables
+        run: |
+          SRS_TAG=$(echo ${{ github.ref }}| awk -F '/' '{print $3}')
+          SRS_VERSION=$(echo $SRS_TAG|awk -F '-' '{print $2}')
+          echo "SRS_TAG=$SRS_TAG" >> $GITHUB_ENV
+          echo "SRS_VERSION=$SRS_VERSION" >> $GITHUB_ENV
+
+      ##################################################################################################################
+      ##################################################################################################################
+      ##################################################################################################################
+      # Create source tar for release. Note that it's for OpenWRT package srs-server, so the filename MUST be
+      # srs-server-xxx.tar.gz, because the package is named srs-server.
+      # Generate variables like:
+      #   SRS_BT_SOURCE_FILE=srs_cloud.zip
+      #   SRS_BT_SOURCE_MD5=83e38700a80a26e30b2df054e69956e5
+      #   SRS_SOURCE_PATH=/tmp/srs_cloud-asserts/*.zip
+      - name: Create source tar.gz
+        run: |
+          #
+          # For BT
+          bash scripts/setup-bt/auto/zip.sh && SRS_BT_SOURCE_FILE=bt-srs_cloud.zip &&
+          echo "SRS_BT_SOURCE_FILE=${SRS_BT_SOURCE_FILE}" >> $GITHUB_ENV &&
+          echo "SRS_BT_SOURCE_MD5=$(md5sum /tmp/zip-for-bt-srs_cloud/${SRS_BT_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
+          #
+          # For aaPanel
+          bash scripts/setup-aapanel/auto/zip.sh  && SRS_AAPANEL_SOURCE_FILE=aapanel-srs_cloud.zip &&
+          echo "SRS_AAPANEL_SOURCE_FILE=${SRS_AAPANEL_SOURCE_FILE}" >> $GITHUB_ENV &&
+          echo "SRS_AAPANEL_SOURCE_MD5=$(md5sum /tmp/zip-for-aapanel-srs_cloud/${SRS_AAPANEL_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
+          #
+          echo "Gather asserts"
+          SRS_SOURCE_PATH=/tmp/srs_cloud-asserts && rm -rf $SRS_SOURCE_PATH && mkdir -p $SRS_SOURCE_PATH &&
+          mv /tmp/zip-for-bt-srs_cloud/${SRS_BT_SOURCE_FILE} $SRS_SOURCE_PATH &&
+          mv /tmp/zip-for-aapanel-srs_cloud/${SRS_AAPANEL_SOURCE_FILE} $SRS_SOURCE_PATH &&
+          ls -lh $SRS_SOURCE_PATH &&
+          echo "SRS_SOURCE_PATH=${SRS_SOURCE_PATH}/*.zip" >> $GITHUB_ENV
+
+      # Create release.
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release SRS Cloud ${{ env.SRS_VERSION }}
+          body: |
+            [${{ github.event.head_commit.message }}](https://github.com/ossrs/WordPress-Plugin-SrsPlayer/commit/${{ github.sha }})
+            ## Platform
+            * [DigitalOcean](https://marketplace.digitalocean.com/apps/srs): [Tutorial](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-1-click-e9fe6f314ac6)
+            * [Lighthouse](https://mp.weixin.qq.com/s/fWmdkw-2AoFD_pEmE_EIkA): [Tutorial](https://www.bilibili.com/video/BV1844y1L7dL)
+            * [BT](https://bt.cn) Plugin: ${{ env.SRS_BT_SOURCE_MD5 }} [${{ env.SRS_BT_SOURCE_FILE }}](https://github.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_BT_SOURCE_FILE }})
+            * [aaPanel](https://aapanel.com) Plugin: ${{ env.SRS_AAPANEL_SOURCE_MD5 }} [${{ env.SRS_AAPANEL_SOURCE_FILE }}](https://github.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_AAPANEL_SOURCE_FILE }})
+            ## Docs
+            * [Changelog](https://github.com/ossrs/srs/issues/2856#issuecomment-1023269807)
+            * [Mileston](https://github.com/ossrs/srs/issues/2856#issue-1096915239)
+            * [Features](https://github.com/ossrs/srs-cloud#features)
+          draft: false
+          prerelease: false
+
+      # Upload release source files
+      - name: Upload Release Assets Source
+        id: upload-release-assets-source
+        uses: dwenegar/upload-release-assets@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ steps.create_release.outputs.id }}
+          assets_path: ${{ env.SRS_SOURCE_PATH }}

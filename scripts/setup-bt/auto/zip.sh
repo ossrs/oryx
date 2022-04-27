@@ -2,7 +2,8 @@
 
 TMP_DIR=/tmp/zip-for-bt-srs_cloud
 PLUGIN=srs_cloud
-echo "Zip at TMP_DIR=$TMP_DIR, PLUGIN=$PLUGIN"
+ZIP_FILE=bt-$PLUGIN.zip
+echo "Zip at TMP_DIR=$TMP_DIR, PLUGIN=$PLUGIN, ZIP_FILE=$ZIP_FILE"
 
 rm -rf $TMP_DIR/$PLUGIN && mkdir -p $TMP_DIR/$PLUGIN &&
 echo "Zip TMP_DIR=$TMP_DIR"
@@ -36,12 +37,15 @@ zip -q -r $PLUGIN.zip $PLUGIN &&
 echo "Zip generated at $TMP_DIR/$PLUGIN.zip"
 if [[ $? -ne 0 ]]; then echo "Zip plugin failed"; exit 1; fi
 
-if [[ -f ~/Downloads/bt/$PLUGIN.zip ]]; then
-  mv $TMP_DIR/$PLUGIN.zip ~/Downloads/bt/$PLUGIN.zip
+mv $TMP_DIR/$PLUGIN.zip $TMP_DIR/$ZIP_FILE &&
+echo "Rename to $TMP_DIR/$ZIP_FILE"
+
+if [[ -f ~/Downloads/$ZIP_FILE ]]; then
+  mv $TMP_DIR/$ZIP_FILE ~/Downloads/$ZIP_FILE
   echo "Plugin OK:"
-  echo "    Zip moved to ~/Downloads/bt/$PLUGIN.zip"
+  echo "    Zip moved to ~/Downloads/$ZIP_FILE"
 else
   echo "You could move it by:"
-  echo "    mv $TMP_DIR/$PLUGIN.zip ~/Downloads/bt/$PLUGIN.zip"
+  echo "    mv $TMP_DIR/$ZIP_FILE ~/Downloads/$ZIP_FILE"
 fi
 
