@@ -57,6 +57,7 @@ Install() {
 
   # We must create the .env to avoid docker mountint as a dir.
   touch ${SRS_HOME}/mgmt/.env &&
+  ln -sf ${SRS_HOME}/mgmt/.env ~/credentials.txt
   if [[ $? -ne 0 ]]; then echo "Create ${SRS_HOME}/mgmt/.env failed"; exit 1; fi
 
   # Allow network forwarding, required by docker.
