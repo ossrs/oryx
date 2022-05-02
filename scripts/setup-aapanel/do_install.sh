@@ -38,14 +38,21 @@ Install() {
   if [[ $? -ne 0 ]]; then echo "Reset files failed"; exit 1; fi
 
   # Change file permissions.
-  find $install_path -type d -not -path '*.git*' -not -path '*node_modules*' -exec chmod 0755 {} \; &&
-  find $install_path -type f -not -path '*.git*' -not -path '*node_modules*' -exec chmod 0644 {} \; &&
+  find $install_path -type d -exec chmod 0755 {} \; &&
+  find $install_path -type f -exec chmod 0644 {} \; &&
   cd $install_path/srs-cloud && chmod 755 mgmt/bootstrap mgmt/upgrade scripts/remove-containers.sh
   if [[ $? -ne 0 ]]; then echo "Change file permissions failed"; exit 1; fi
 
   # Restore files from git again, after changing file permisisons.
   cd $install_path/srs-cloud && git reset --hard HEAD
   if [[ $? -ne 0 ]]; then echo "Reset files failed"; exit 1; fi
+
+  # We also process for git clone --depth=1, see https://stackoverflow.com/a/23987039/17679565
+  GIT_DEPTH=$(git rev-list --all --count)
+  if [[ $GIT_DEPTH -eq 1 ]]; then
+    git pull --unshallow
+    if [[ $? -ne 0 ]]; then echo "Git unshallow failed"; exit 1; fi
+  fi
 
   # Move srs-cloud to its home.
   mkdir -p $DEPLOY_HOME
