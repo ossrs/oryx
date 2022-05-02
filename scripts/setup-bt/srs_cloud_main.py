@@ -25,16 +25,16 @@ class srs_cloud_main:
 
     def serviceStatus(self, args):
         status = {}
-        status['r0'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
-        status['srs'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
-        status['nginx'] = public.ExecShell('ls {}/nginx/sbin/nginx >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
-        status['docker_manager'] = public.ExecShell('ls {}/panel/plugin/docker >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
+        status['r0'] = public.ExecShell('ls "{}" >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
+        status['srs'] = public.ExecShell('ls "{}" >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
+        status['nginx'] = public.ExecShell('ls "{}/nginx/sbin/nginx" >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
+        status['docker_manager'] = public.ExecShell('ls "{}/panel/plugin/docker" >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
         status['docker'] = public.ExecShell('ls /usr/lib/systemd/system/docker.service >/dev/null 2>&1 && echo -n ok')[0]
         status['docker_running'] = public.ExecShell('systemctl status docker.service >/dev/null 2>&1 && echo -n ok')[0]
-        status['node_manager'] = public.ExecShell('ls {}/panel/plugin/pm2 >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
+        status['node_manager'] = public.ExecShell('ls "{}/panel/plugin/pm2" >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
         status['node'] = self.__node()[0]
-        status['firewall'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__firewall))[0]
-        status['site'] = public.ExecShell('ls {root}/{site} >/dev/null 2>&1 && echo -n ok'.format(
+        status['firewall'] = public.ExecShell('ls "{}" >/dev/null 2>&1 && echo -n ok'.format(self.__firewall))[0]
+        status['site'] = public.ExecShell('ls "{root}/{site}" >/dev/null 2>&1 && echo -n ok'.format(
             root=public.get_site_path(), site=self.__site,
         ))[0]
 
@@ -45,7 +45,7 @@ class srs_cloud_main:
             status['default_site_available'] = 'ok'
 
         # Whether site is setup ok.
-        status['site_setup'] = public.ExecShell('grep -q \'{pattern}\' {www}/{site}.conf >/dev/null 2>&1 && echo -n ok'.format(
+        status['site_setup'] = public.ExecShell('grep -q \'{pattern}\' "{www}/{site}.conf" >/dev/null 2>&1 && echo -n ok'.format(
             pattern='{}/mgmt/containers/conf/default.d'.format(self.__srs_home),
             www='{}/nginx'.format(public.get_vhost_path()), site=self.__site,
         ))[0]
@@ -63,13 +63,13 @@ class srs_cloud_main:
     def installService(self, args):
         if args.service != 'docker':
             return public.returnMsg(False, 'invalid service {}'.format(args.service))
-        public.ExecShell('bash {}/do_docker.sh'.format(self.__plugin_path))
+        public.ExecShell('bash "{}/do_docker.sh"'.format(self.__plugin_path))
         return public.returnMsg(True, json.dumps('ok'))
 
     def restartService(self, args):
         if args.service != 'docker':
             return public.returnMsg(False, 'invalid service {}'.format(args.service))
-        public.ExecShell('systemctl restart {}'.format(args.service))
+        public.ExecShell('systemctl restart "{}"'.format(args.service))
         return public.returnMsg(True, json.dumps('ok'))
 
     def installSrs(self, args):
@@ -86,13 +86,13 @@ class srs_cloud_main:
         if public.GetWebServer() != 'nginx':
             return public.returnMsg(False, 'not nginx, but {}'.format(public.GetWebServer()))
 
-        srs = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
+        srs = public.ExecShell('ls "{}" >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
         running = public.ExecShell('ps aux |grep -v grep |grep srs_cloud |grep setup >/dev/null 2>&1 && echo -n ok')[0]
 
         [tail, wc] = ['', 0]
-        r0 = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
+        r0 = public.ExecShell('ls "{}" >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
         if running != 'ok' and srs != 'ok' and r0 != 'failed':
-            public.ExecShell('nohup bash {plugin}/setup.sh {r0} {node} {nginx} {www} {site} 1>{log} 2>&1 &'.format(
+            public.ExecShell('nohup bash {plugin}/setup.sh "{r0}" "{node}" "{nginx}" "{www}" "{site}" 1>{log} 2>&1 &'.format(
                 plugin=self.__plugin_path, r0=self.__r0_file, node=nodejs, nginx=nginx, www=public.get_site_path(),
                 site=self.__site, log=self.__log_file,
             ))
@@ -100,21 +100,21 @@ class srs_cloud_main:
             tail = public.ExecShell('sed -n "{start},{end}p" {log}'.format(
                 start=args.start, end=args.end, log=self.__log_file,
             ))[0]
-            wc = public.ExecShell('wc -l {}'.format(self.__log_file))[0]
+            wc = public.ExecShell('wc -l "{}"'.format(self.__log_file))[0]
 
         return public.returnMsg(True, json.dumps({'srs': srs, 'running': running, 'r0': r0, 'wc': wc, 'tail': tail}))
 
     def querySrs(self, args):
-        srs = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
+        srs = public.ExecShell('ls "{}" >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
         running = public.ExecShell('ps aux |grep -v grep |grep srs_cloud |grep setup >/dev/null 2>&1 && echo -n ok')[0]
 
-        r0 = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
-        tail = public.ExecShell('tail {}'.format(self.__log_file))[0]
+        r0 = public.ExecShell('ls "{}" >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
+        tail = public.ExecShell('tail "{}"'.format(self.__log_file))[0]
 
         return public.returnMsg(True, json.dumps({'srs': srs, 'running': running, 'r0': r0, 'tail': tail}))
 
     def cleanupIntall(self, args):
-        public.ExecShell('rm -f {}'.format(self.__r0_file))
+        public.ExecShell('rm -f "{}"'.format(self.__r0_file))
         return public.returnMsg(True, json.dumps('ok'))
 
     def createSrsSite(self, args):
@@ -195,7 +195,7 @@ class srs_cloud_main:
         gb = firewalls().AddAcceptPortAll('9000', None)
         mgmt = firewalls().AddAcceptPortAll('2022', None)
         if rtmp is True and webrtc is True and srt is True and sip is True and gb is True and mgmt is True:
-            public.ExecShell('touch {}'.format(self.__firewall))
+            public.ExecShell('touch "{}"'.format(self.__firewall))
         return public.returnMsg(True, json.dumps({
             'rtmp': rtmp, 'webrtc': webrtc, 'srt': srt, 'sip': sip, 'gb': gb,
         }))
@@ -212,13 +212,15 @@ class srs_cloud_main:
         if ok != 'ok':
             ok = public.ExecShell('which node >/dev/null 2>&1 && echo -n ok')[0]
             node = public.ExecShell('which node 2>/dev/null')[0]
+        if node is not None:
+            node = node.strip()
         return [ok, node]
 
     def __discover_path(self, general_path):
         real_path = None
-        ok = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(general_path))[0]
+        ok = public.ExecShell('ls "{}" >/dev/null 2>&1 && echo -n ok'.format(general_path))[0]
         if ok == 'ok':
-            real_path = public.ExecShell('ls {}'.format(general_path))[0]
+            real_path = public.ExecShell('ls "{}"'.format(general_path))[0]
         if real_path is not None:
             real_path = real_path.strip()
         return [ok, real_path]
