@@ -171,7 +171,7 @@ const handlers = {
     // Write the ssl key and cert, and reload nginx when ready.
     fs.writeFileSync(`${process.cwd()}/containers/ssl/nginx.key`, key);
     fs.writeFileSync(`${process.cwd()}/containers/ssl/nginx.crt`, crt);
-    await utils.reloadNginx()
+    await utils.reloadNginx(fs, execFile);
 
     ctx.body = utils.asResponse(0);
   },

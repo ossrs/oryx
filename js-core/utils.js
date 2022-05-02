@@ -238,16 +238,30 @@ exports.generateDockerArgs = generateDockerArgs;
 
 // Reload nginx, try to use systemctl, or kill -1 {pid}, or killall -1 nginx.
 async function reloadNginx(fs, execFile) {
-  if (fs.existsSync('/usr/lib/systemd/system/nginx.service')) {
-    return await execFile('systemctl', ['reload', 'nginx.service']);
+  const nginxServiceExists = fs.existsSync('/usr/lib/systemd/system/nginx.service');
+  const nginxPidExists = process.env.NGINX_PID && fs.existsSync(process.env.NGINX_PID);
+  if (!nginxServiceExists && !nginxPidExists) {
+    throw new Error(`Can't reload NGINX, no service or pid=${process.env.NGINX_PID}`);
   }
 
-  if (process.env.NGINX_PID && fs.existsSync(process.env.NGINX_PID)) {
+  const reloadByService = async () => {
+    return await execFile('systemctl', ['reload', 'nginx.service']);
+  };
+  const reloadByPid = async () => {
     const pid = fs.readFileSync(process.env.NGINX_PID).toString().trim();
     if (pid) return await execFile('kill', ['-s', 'SIGHUP', pid]);
+  };
+
+  // Try to reload by service if exists, try pid if failed.
+  try {
+    if (nginxServiceExists) return await reloadByService();
+  } catch (e) {
+    if (nginxPidExists) return await reloadByPid();
+    throw e;
   }
 
-  throw new Error(`Can't reload NGINX, no service or pid=${process.env.NGINX_PID}`);
+  // Try to reload by pid if no service.
+  if (nginxPidExists) return await reloadByPid();
 }
 exports.reloadNginx = reloadNginx;
 
