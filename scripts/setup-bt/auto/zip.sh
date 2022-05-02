@@ -12,20 +12,30 @@ rm -rf $TMP_DIR/$PLUGIN && mkdir -p $TMP_DIR/$PLUGIN &&
 echo "Zip TMP_DIR=$TMP_DIR"
 if [[ $? -ne 0 ]]; then echo "Setup temporary directory failed"; exit 1; fi
 
-mkdir -p $TMP_DIR/source
+mkdir -p $TMP_DIR/source && cd $TMP_DIR/source &&
+if [[ ! -d srs-cloud ]]; then
+  if [[ -z $GITHUB_ACTIONS ]]; then
+    git clone https://gitee.com/ossrs/srs-cloud.git;
+  else
+    git clone --depth=1 https://github.com/ossrs/srs-cloud.git
+  fi
+fi
+if [[ $? -ne 0 ]]; then echo "Cache source failed"; exit 1; fi
+
+# For github actions, clone from github and set to gitee.
 if [[ -z $GITHUB_ACTIONS ]]; then
-  cd $TMP_DIR/source &&
-  if [[ ! -d srs-cloud ]]; then git clone https://gitee.com/ossrs/srs-cloud.git; fi &&
-  cd $TMP_DIR/source/srs-cloud && git reset --hard HEAD~10 >/dev/null && git pull | grep files &&
-  git branch -vv |grep '*' &&
-  echo "Cache at $TMP_DIR/source/srs-cloud"
-  if [[ $? -ne 0 ]]; then echo "Cache source failed"; exit 1; fi
-else
-  ln -sf $WORK_DIR $TMP_DIR/source/srs-cloud &&
-  cd $TMP_DIR/source/srs-cloud && git remote set-url origin https://gitee.com/ossrs/srs-cloud.git &&
-  echo "Link $WORK_DIR to $TMP_DIR/source/srs-cloud" &&
-  ls -lh $TMP_DIR/source
-  if [[ $? -ne 0 ]]; then echo "Cache source failed"; exit 1; fi
+  cd $TMP_DIR/source/srs-cloud && git remote set-url origin https://gitee.com/ossrs/srs-cloud.git
+  if [[ $? -ne 0 ]]; then echo "Setup source remote failed"; exit 1; fi
+fi
+
+cd $TMP_DIR/source/srs-cloud && git reset --hard HEAD~10 >/dev/null && git pull | grep files &&
+git branch -vv |grep '*' &&
+echo "Cache at $TMP_DIR/source/srs-cloud"
+if [[ $? -ne 0 ]]; then echo "Cache source failed"; exit 1; fi
+
+if [[ -z $GITHUB_ACTIONS ]]; then
+  cd $TMP_DIR/source/srs-cloud && git remote set-url origin https://gitee.com/ossrs/srs-cloud.git
+  if [[ $? -ne 0 ]]; then echo "Setup source remote failed"; exit 1; fi
 fi
 
 mkdir -p $TMP_DIR/$PLUGIN/srs-cloud && cd $TMP_DIR/$PLUGIN/srs-cloud &&
