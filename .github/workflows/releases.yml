@@ -16,6 +16,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      # Generate variables like:
+      #   SRS_DROPLET_EIP=1.2.3.4
+      - name: Build droplet variables
+        run: |
+          SRS_DROPLET_EIP=$(dig +short lh.ossrs.net)
+          echo "SRS_DROPLET_EIP=$SRS_DROPLET_EIP" >> $GITHUB_ENV
+
       ################################################################
       # Build
       # The github.ref is, for example, refs/tags/v1.0.52
@@ -74,5 +81,33 @@ jobs:
             echo "Image $STABLE_RELEASE not ready, wait..." && sleep 5
           done
 
-          kubectl set image deploy/srs-terraform-deploy releases=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
-          kubectl describe deploy/srs-terraform-deploy
+          echo "Image is ready, lets update the releases."
+
+      ################################################################
+      # Execute command in a ssh, because ufw limit the rate.
+      - name: Restart the containers
+        env:
+          SEARCH_APIKEY: ${{ secrets.SEARCH_APIKEY }}
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SRS_DROPLET_EIP }}
+          username: root
+          key: ${{ secrets.DIGITALOCEAN_SSHKEY }}
+          port: 22
+          envs: SRS_TAG,SRS_MAJOR
+          timeout: 60s
+          command_timeout: 30m
+          script: |
+            #
+            #ufw allow 8101
+            #
+            export SRS_DROPLET_PIP=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
+            echo "SRS_DROPLET_PIP=$SRS_DROPLET_PIP"
+            #
+            # Restart srs-cloud releases
+            for ((i=0; i < 5; i++)); do
+              if [[ $(docker ps -f name=docs-cloudversion |wc -l) -eq 1 ]]; then echo "Killed"; break; fi;
+              docker rm -f docs-cloudversion; sleep 0.3;
+            done
+            docker run -d -it --restart always --name docs-cloudversion -p 8101:9000 \
+              registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
