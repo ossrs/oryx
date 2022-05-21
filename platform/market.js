@@ -135,6 +135,8 @@ async function startContainer(conf) {
     console.log(`Thread #market: docker run remove ID=${all.ID}`);
   }
 
+  // TODO: FIXME: Cleanup temporarily files for srs or srs-dev.
+
   await exec(`docker run ${dockerArgs}`);
   console.log(`Thread #market: docker run ok`);
 }
