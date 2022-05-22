@@ -1,6 +1,6 @@
 {
   "name": "releases",
-  "version":"1.0.310",
+  "version":"1.0.311",
   "description": "API for srs-cloud releases",
   "main": "index.js",
   "scripts": {
