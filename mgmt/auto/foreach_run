@@ -25,6 +25,13 @@ if [[ MEM_TOTAL -lt 2097152 ]]; then
   fi
 fi
 
+# Generate coredump, see https://stackoverflow.com/a/47694315/17679565
+if [[ -f /proc/sys/kernel/core_pattern && ! -d /cores ]]; then
+  echo '/cores/core.%e.%p' | tee /proc/sys/kernel/core_pattern &&
+  mkdir -p /cores && echo "Create dirs for coredump"
+  if [[ $? -ne 0 ]]; then echo "Create dirs failed"; exit 1; fi
+fi
+
 # Revert the redis config, after migrate to docker.
 # Also setup the redis password, so we must keep running this script.
 bash auto/setup_redis

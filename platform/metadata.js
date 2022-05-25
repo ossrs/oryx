@@ -45,9 +45,12 @@ exports.market = {
       // We must mount the player and console because the HTTP home of SRS is overwrite by DVR.
       `${platform.cwd()}/containers/www/players:/usr/local/srs/www/players`,
       `${platform.cwd()}/containers/www/console:/usr/local/srs/www/console`,
+      // For coredump, save to /cores.
+      ...(platform.isDarwin ? [] : ['/cores:/cores']),
     ],
     extras: () => [
       ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
+      ...(platform.isDarwin ? [] : ['--ulimit', 'core=-1']),
     ],
   },
   srsDev: {
@@ -76,9 +79,12 @@ exports.market = {
       // We must mount the player and console because the HTTP home of SRS is overwrite by DVR.
       `${platform.cwd()}/containers/www/players:/usr/local/srs/www/players`,
       `${platform.cwd()}/containers/www/console:/usr/local/srs/www/console`,
+      // For coredump, save to /cores.
+      ...(platform.isDarwin ? [] : ['/cores:/cores']),
     ],
     extras: () => [
       ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
+      ...(platform.isDarwin ? [] : ['--ulimit', 'core=-1']),
     ],
   },
   hooks: {
