@@ -11,11 +11,15 @@ export default function ScenarioLive(props) {
 }
 
 function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
-  const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcUrl, rtcPlayer, cnConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
+  const {
+    flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcUrl, rtcPlayer, cnConsole, rtcPublisher,
+    srtPublishUrl, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2,
+  } = urls;
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
   const xgFlvPlayerUrl = flvPlayer?.replace('player.html', 'xgplayer.html');
   const xgHlsPlayerUrl = hlsPlayer?.replace('player.html', 'xgplayer.html');
   const ffmpegPublishCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv ${rtmpPublishUrl}`;
+  const ffmpegSrtCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f mpegts '${srtPublishUrl}'`;
 
   // Shortcodes of WordPress.
   const flvUrlShortCode = `[srs_player url="${flvUrl}"]`;
@@ -133,6 +137,16 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
                 </li>
               </ul>
             </li>
+            <li>
+              可选，SRT推流地址（服务器）：<br/>
+              <code>{srtPublishUrl}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
+                <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+              </div> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPublishUrl)} />
+              </div>
+            </li>
             <li>可选，点击进入<a id="cnConsole" href={cnConsole}>SRS控制台</a>查看流信息</li>
           </ol>
         </Accordion.Body>
@@ -149,9 +163,7 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
             <li>请<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>下载FFmpeg</a>工具</li>
             <li>
               FFmpeg推流命令：<br/>
-              <code>
-                ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv {rtmpPublishUrl}
-              </code> &nbsp;
+              <code>{ffmpegPublishCli}</code> &nbsp;
               <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
                 <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
               </div> &nbsp;
@@ -220,6 +232,16 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
                   </div>
                 </li>
               </ul>
+            </li>
+            <li>
+              可选，SRT推流：<br/>
+              <code>{ffmpegSrtCli}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
+                <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+              </div> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffmpegSrtCli)} />
+              </div>
             </li>
             <li>可选，点击进入<a id="cnConsole" href={cnConsole}>SRS控制台</a>查看流信息</li>
           </ol>
