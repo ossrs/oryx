@@ -347,7 +347,7 @@ const handlers = {
       const suffix = backend.indexOf('$') === -1 ? '$request_uri' : '';
       reversesConf.push(
         `location ${location} {`,
-        [`proxy_pass ${backend}`, suffix, ';'].join(''),
+        [`  proxy_pass ${backend}`, suffix, ';'].join(''),
         '}',
       );
       return null;
@@ -378,12 +378,27 @@ const handlers = {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Build the default root.
+    const rootConf = [];
+    const defaultRoot = await redis.hget(keys.redis.SRS_HTTP_PROXY, "/");
+    if (!defaultRoot) {
+      rootConf.push(
+        '',
+        '# For default root.',
+        'location / {',
+        '  proxy_pass http://127.0.0.1:2022$request_uri;',
+        '}',
+      );
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Build the config for NGINX.
     const confLines = [
       '# !!! Important: SRS will restore this file during each upgrade, please never modify it.',
       ...sslConf,
       ...hlsConf,
       ...reversesConf,
+      ...rootConf,
       '',
       '',
     ];
