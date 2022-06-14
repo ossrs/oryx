@@ -17,7 +17,7 @@ const keys = require('js-core/keys');
 async function handleFavicon(ctx, next) {
   ctx.type = 'image/x-icon';
   ctx.set('Cache-Control', 'public, max-age=31536000');
-  ctx.body = fs.readFileSync('./ui/build/favicon.ico');
+  ctx.body = fs.readFileSync('./ui/favicon.ico');
   return;
 }
 
