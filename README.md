@@ -16,7 +16,7 @@ A lightweight open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
 - [x] [DVR to Cloud Storage or VoD](https://mp.weixin.qq.com/s/UXR5EBKZ-LnthwKN_rlIjg).
 - [x] [Support WordPress Plugin](https://mp.weixin.qq.com/s/YjTkcJLkErMcZYHIjzsW_w) or [here](https://wordpress.org/plugins/srs-player).
 - [x] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
-- [ ] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
+- [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
 
