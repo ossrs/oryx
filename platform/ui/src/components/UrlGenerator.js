@@ -44,12 +44,13 @@ export default function useUrls({secret, streamName}) {
 
     // The player url.
     if (true) {
+      const secretQuery = secret ? `?secret=${secret.publish}` : '';
       const schema = window.location.protocol.replace(':', '');
       const httpPort = window.location.port || (window.location.protocol === 'http:' ? 80 : 443);
       setFlvUrl(`${schema}://${window.location.hostname}/live/${streamName}.flv`);
       setM3u8Url(`${schema}://${window.location.hostname}/live/${streamName}.m3u8`);
       setRtcUrl(`webrtc://${window.location.hostname}/live/${streamName}`);
-      setRtcPublishUrl(`webrtc://${window.location.hostname}/live/${streamName}?secret=${secret.publish}`);
+      setRtcPublishUrl(`webrtc://${window.location.hostname}/live/${streamName}${secretQuery}`);
       // /tools/player.html?url=http://localhost:3000/live/livestream.m3u8
       setFlvPlayer(`/tools/player.html?url=${schema}://${window.location.host}/live/${streamName}.flv`);
       setHlsPlayer(`/tools/player.html?url=${schema}://${window.location.host}/live/${streamName}.m3u8`);
