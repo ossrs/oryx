@@ -8,6 +8,7 @@ export default function useUrls({secret, streamName}) {
   const [flvUrl, setFlvUrl] = React.useState();
   const [m3u8Url, setM3u8Url] = React.useState();
   const [rtcUrl, setRtcUrl] = React.useState();
+  const [rtcPublishUrl, setRtcPublishUrl] = React.useState();
   const [cnConsole, setCnConsole] = React.useState();
   const [enConsole, setEnConsole] = React.useState();
   const [flvPlayer, setFlvPlayer] = React.useState();
@@ -48,6 +49,7 @@ export default function useUrls({secret, streamName}) {
       setFlvUrl(`${schema}://${window.location.hostname}/live/${streamName}.flv`);
       setM3u8Url(`${schema}://${window.location.hostname}/live/${streamName}.m3u8`);
       setRtcUrl(`webrtc://${window.location.hostname}/live/${streamName}`);
+      setRtcPublishUrl(`webrtc://${window.location.hostname}/live/${streamName}?secret=${secret.publish}`);
       // /tools/player.html?url=http://localhost:3000/live/livestream.m3u8
       setFlvPlayer(`/tools/player.html?url=${schema}://${window.location.host}/live/${streamName}.flv`);
       setHlsPlayer(`/tools/player.html?url=${schema}://${window.location.host}/live/${streamName}.m3u8`);
@@ -74,6 +76,7 @@ export default function useUrls({secret, streamName}) {
     flvUrl,
     m3u8Url,
     rtcUrl,
+    rtcPublishUrl,
     cnConsole,
     enConsole,
     flvPlayer,

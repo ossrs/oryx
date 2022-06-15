@@ -13,7 +13,7 @@ export default function ScenarioLive(props) {
 function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
   const {
     flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcUrl, rtcPlayer, cnConsole, rtcPublisher,
-    srtPublishUrl, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2,
+    srtPublishUrl, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2, rtcPublishUrl,
   } = urls;
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
   const xgFlvPlayerUrl = flvPlayer?.replace('player.html', 'xgplayer.html');
@@ -25,6 +25,7 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
   const flvUrlShortCode = `[srs_player url="${flvUrl}"]`;
   const m3u8UrlShortCode = `[srs_player url="${m3u8Url}"]`;
   const rtcUrlShortCode = `[srs_player url="${rtcUrl}"]`;
+  const rtc2UrlShortCode = `[srs_publisher url="${rtcPublishUrl}"]`;
 
   const movieTutorials = useTutorials({
     bilibili: React.useRef([
@@ -266,6 +267,21 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
               <code>注意先停止掉FFmpeg/OBS推流。</code>
             </li>
             <li>
+              使用WordPress页面推流：
+              <ul>
+                <li>
+                  简码 &nbsp;
+                  <code>{rtc2UrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
+                    <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+                  </div> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtc2UrlShortCode)} />
+                  </div>
+                </li>
+              </ul>
+            </li>
+            <li>
               请选择播放的流：
               <ul>
                 <li>播放<a href={flvPlayer2} target='_blank' rel='noreferrer'>HTTP-FLV流</a> <code>{flvUrl2}</code></li>
@@ -308,7 +324,10 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
 }
 
 function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
-  const {flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcUrl, rtcPlayer, enConsole, rtcPublisher, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2} = urls;
+  const {
+    flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcUrl, rtcPlayer, enConsole, rtcPublisher,
+    flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2, rtcPublishUrl,
+  } = urls;
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
   const ffmpegPublishCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv ${rtmpPublishUrl}`;
 
@@ -316,6 +335,7 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
   const flvUrlShortCode = `[srs_player url="${flvUrl}"]`;
   const m3u8UrlShortCode = `[srs_player url="${m3u8Url}"]`;
   const rtcUrlShortCode = `[srs_player url="${rtcUrl}"]`;
+  const rtc2UrlShortCode = `[srs_publisher url="${rtcPublishUrl}"]`;
 
   return (
     <Accordion defaultActiveKey="1">
@@ -501,6 +521,21 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
               </div>
               <br/>
               <code>Please stop FFmpeg/OBS before publishing.</code>
+            </li>
+            <li>
+              Publish by WordPress:
+              <ul>
+                <li>
+                  Shortcode &nbsp;
+                  <code>{rtc2UrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Change'>
+                    <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+                  </div> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtc2UrlShortCode)} />
+                  </div>
+                </li>
+              </ul>
             </li>
             <li>
               Play stream by:
