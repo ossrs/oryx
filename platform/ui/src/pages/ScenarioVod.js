@@ -3,7 +3,7 @@ import {Accordion, Form, Button, Table} from "react-bootstrap";
 import {Token, StreamURL, Clipboard} from "../utils";
 import axios from "axios";
 import SetupCamSecret from '../components/SetupCamSecret';
-import useDvrVodStatus from "../components/DvrVodStatus";
+import useDvrVodStatus from "../components/DvrStatus";
 import moment from "moment";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import {useErrorHandler} from "react-error-boundary";

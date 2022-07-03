@@ -17,6 +17,7 @@ A lightweight open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
 - [x] [Support WordPress Plugin](https://mp.weixin.qq.com/s/YjTkcJLkErMcZYHIjzsW_w) or [here](https://wordpress.org/plugins/srs-player).
 - [x] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
 - [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
+- [x] [Support DVR to local disk](https://github.com/ossrs/srs-cloud/issues/42).
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
 
@@ -146,6 +147,7 @@ Market:
 * `/terraform/v1/hooks/srs/secret/update` Hooks: Update the secret to generate stream URL.
 * `/terraform/v1/hooks/srs/secret/disable` Hooks: Disable the secret for authentication.
 * `/terraform/v1/hooks/srs/hls` Hooks: Handle the `on_hls` event.
+* `/terraform/v1/hooks/record/query` Hooks: Query the Record pattern.
 * `/terraform/v1/hooks/dvr/apply` Hooks: Apply the DVR pattern.
 * `/terraform/v1/hooks/dvr/query` Hooks: Query the DVR pattern.
 * `/terraform/v1/hooks/dvr/files` Hooks: List the DVR files.

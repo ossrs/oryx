@@ -5,7 +5,7 @@ import axios from "axios";
 import SetupCamSecret from '../components/SetupCamSecret';
 import moment from "moment";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
-import useDvrVodStatus from "../components/DvrVodStatus";
+import useDvrVodStatus from "../components/DvrStatus";
 import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
 import {useSrsLanguage} from "../components/LanguageSwitch";

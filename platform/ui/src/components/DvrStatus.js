@@ -47,3 +47,28 @@ export default function useDvrVodStatus() {
   return [dvrStatus, vodStatus];
 }
 
+export function useRecordStatus() {
+  const navigate = useNavigate();
+  const [recordStatus, setRecordStatus] = React.useState();
+
+  React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/hooks/record/query', {
+      ...token,
+    }).then(res => {
+      console.log(`RecordPattern: Query ok, ${JSON.stringify(res.data.data)}`);
+      setRecordStatus(res.data.data);
+    }).catch(e => {
+      const err = e.response.data;
+      if (err.code === Errors.auth) {
+        alert(`Token过期，请重新登录，${err.code}: ${err.data.message}`);
+        navigate('/routers-logout');
+      } else {
+        alert(`服务器错误，${err.code}: ${err.data.message}`);
+      }
+    });
+  }, [navigate]);
+
+  return recordStatus;
+}
+

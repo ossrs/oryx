@@ -58,11 +58,17 @@ async function handleMessage(msg) {
   const m3u8 = await redis.hget(keys.redis.SRS_DVR_M3U8_ACTIVE, m3u8_url);
   const m3u8Obj = m3u8 ? JSON.parse(m3u8) : {update: null, uuid: uuidv4()};
   m3u8Obj.update = moment().format();
-  const r0 = await redis.hset(keys.redis.SRS_DVR_M3U8_ACTIVE, m3u8_url, JSON.stringify(m3u8Obj));
 
   // Append ts files to local m3u8 object.
   const local = await redis.hget(keys.redis.SRS_DVR_M3U8_LOCAL, m3u8_url);
-  const localObj = local ? JSON.parse(local) : {nn: 0, update: null, done: null, uuid: m3u8Obj.uuid, uuids: [], files: []};
+  const localObj = local ? JSON.parse(local) : {
+    nn: 0,
+    update: null,
+    done: null,
+    uuid: m3u8Obj.uuid,
+    uuids: [],
+    files: [],
+  };
   if (!local || localObj.uuid !== m3u8Obj.uuid) {
     localObj.done = null;
     localObj.uuid = m3u8Obj.uuid;
@@ -72,7 +78,10 @@ async function handleMessage(msg) {
   localObj.files.push({m3u8_url, tsid, tsfile, ...msg});
   localObj.nn = localObj.files.length;
   localObj.update = moment().format();
+
+  // We update the local m3u8 object, then update the active m3u8 stream list, to make sure the localObj is ready.
   const r1 = await redis.hset(keys.redis.SRS_DVR_M3U8_LOCAL, m3u8_url, JSON.stringify(localObj));
+  const r0 = await redis.hset(keys.redis.SRS_DVR_M3U8_ACTIVE, m3u8_url, JSON.stringify(m3u8Obj));
   console.log(`Thread #dvrWorker: local dvr task m3u8=${m3u8_url}, files=${localObj.files.length}, uuid=${m3u8Obj.uuid}, file=${file}, tsfile=${tsfile}, duration=${duration}, seqno=${seqno}, r0=${r0}, r1=${r1}`);
 }
 

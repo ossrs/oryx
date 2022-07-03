@@ -113,6 +113,7 @@ mgmt/containers/etc/letsencrypt/*
 mgmt/containers/var/lib/letsencrypt/*
 mgmt/containers/var/log/letsencrypt/*
 mgmt/containers/objs/nginx/html/*
+mgmt/containers/data/record/*
 mgmt/containers/data/dvr/*
 mgmt/containers/data/vod/*
 mgmt/containers/data/redis/*

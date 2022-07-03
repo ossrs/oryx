@@ -15,6 +15,7 @@ import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import ScenarioTutorials from './ScenarioTutorials';
 import {useTranslation} from "react-i18next";
 import {useSrsLanguage} from "../components/LanguageSwitch";
+import ScenarioRecord from "./ScenarioRecord";
 
 export default function Scenario() {
   const [searchParams] = useSearchParams();
@@ -91,6 +92,9 @@ function ScenarioImpl({defaultActiveTab}) {
           </Tab>
           <Tab eventKey="forward" title={t('scenario.restream')}>
             { activeTab === 'forward' && <ScenarioForward /> }
+          </Tab>
+          <Tab eventKey="record" title={t('scenario.record')}>
+            { activeTab === 'record' && <ScenarioRecord /> }
           </Tab>
           <Tab eventKey="dvr" title={t('scenario.dvr')}>
             { activeTab === 'dvr' && <ScenarioDvr /> }

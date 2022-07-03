@@ -49,11 +49,23 @@ exports.handle = (router) => {
       });
     }
 
+    // Create a Record task if enabled.
+    const recordAll = await redis.hget(keys.redis.SRS_RECORD_PATTERNS, 'all');
+    let record = 'ignore';
+    if (recordAll === 'true') {
+      record = 'task_created';
+      console.log(`create record task file=${file}, duration=${duration}, seqno=${seqno}, m3u8_url=${m3u8_url}, url=${url}`);
+      manager.postMessage({
+        action: 'on_record_file', file, duration, seqno, m3u8_url, url, params: ctx.request.body,
+      });
+    }
+
     const update = moment().format();
     const r0 = await redis.hset(keys.redis.SRS_DVR_PATTERNS, m3u8_url, JSON.stringify({dvr, update}));
     const r1 = await redis.hset(keys.redis.SRS_VOD_PATTERNS, m3u8_url, JSON.stringify({vod, update}));
+    const r2 = await redis.hset(keys.redis.SRS_RECORD_PATTERNS, m3u8_url, JSON.stringify({record, update}));
 
-    console.log(`srs hooks ok, dvr=${dvrAll}/${dvr}/${r0}, vod=${vodAll}/${vod}/${r1}, ${JSON.stringify(ctx.request.body)}`);
+    console.log(`srs hooks ok, dvr=${dvrAll}/${dvr}/${r0}, vod=${vodAll}/${vod}/${r1}, record=${recordAll}/${record}/${r2}, ${JSON.stringify(ctx.request.body)}`);
     ctx.body = utils.asResponse(0);
   });
 

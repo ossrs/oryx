@@ -2,7 +2,7 @@
 
 const { Worker } = require("worker_threads");
 
-let dvrWorker, vodWorker;
+let dvrWorker, vodWorker, recordWorker;
 
 exports.run = async () => {
   // The DVR worker, for cloud storage.
@@ -42,6 +42,25 @@ exports.run = async () => {
       resolve();
     });
   });
+
+  // The Record worker, for cloud storage.
+  new Promise((resolve, reject) => {
+    recordWorker = new Worker("./recordWorker.js");
+
+    recordWorker.on('message', (msg) => {
+      console.log('Thread #manager:', msg);
+    });
+
+    recordWorker.on('error', reject);
+
+    recordWorker.on('exit', (code) => {
+      console.log(`Thread #manager: exit with ${code}`);
+      if (code !== 0) {
+        return reject(new Error(`Thread #manager: stopped with exit code ${code}`));
+      }
+      resolve();
+    });
+  });
 };
 
 exports.postMessage = (msg) => {
@@ -49,6 +68,8 @@ exports.postMessage = (msg) => {
     dvrWorker?.postMessage(msg);
   } else if (msg.action === 'on_vod_file') {
     vodWorker?.postMessage(msg);
+  } else if (msg.action === 'on_record_file') {
+    recordWorker?.postMessage(msg);
   } else {
     console.error(`Thread #manager: Ignore message ${JSON.stringify(msg)}`);
   }

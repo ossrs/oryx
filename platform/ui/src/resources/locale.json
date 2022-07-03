@@ -31,6 +31,7 @@
         "live": "私人直播间",
         "srt": "超清实时直播",
         "restream": "多平台转播",
+        "record": "本地录制",
         "dvr": "云录制",
         "vod": "云点播",
         "code": "源代码"
@@ -211,6 +212,7 @@
         "live": "Streaming",
         "srt": "Low Latency",
         "restream": "Restreaming",
+        "record": "Record",
         "dvr": "DVR",
         "vod": "VoD",
         "code": "Source"
