@@ -1,5 +1,5 @@
 import React from "react";
-import {Accordion, Form, Button, Table} from "react-bootstrap";
+import {Accordion, Form, Button, Table, OverlayTrigger, Popover} from "react-bootstrap";
 import {Token, StreamURL, Clipboard} from "../utils";
 import axios from "axios";
 import moment from "moment";
@@ -8,6 +8,7 @@ import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 import * as Icon from "react-bootstrap-icons";
+import PopoverConfirm from "../components/PopoverConfirm";
 
 export default function ScenarioRecord() {
   const language = useSrsLanguage();
@@ -40,6 +41,7 @@ function ScenarioRecordCn() {
 function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
   const [recordAll, setRecordAll] = React.useState(defaultApplyAll);
   const [recordFiles, setRecordFiles] = React.useState();
+  const [refreshNow, setRefreshNow] = React.useState();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
@@ -80,7 +82,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
     refreshRecordFiles();
     const timer = setInterval(() => refreshRecordFiles(), 10 * 1000);
     return () => clearInterval(timer);
-  }, [handleError]);
+  }, [handleError, refreshNow]);
 
   const setupRecordPattern = (e) => {
     e.preventDefault();
@@ -93,6 +95,16 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
       console.log(`Record: Apply patterns ok, all=${recordAll}`);
     }).catch(handleError);
   };
+
+  const removeRecord = React.useCallback((file) => {
+    const token = Token.load();
+    axios.post('/terraform/v1/hooks/record/remove', {
+      ...token, uuid: file.uuid,
+    }).then(res => {
+      setRefreshNow(!refreshNow);
+      console.log(`Record: Remove file ok, file=${JSON.stringify(file)}`);
+    }).catch(handleError);
+  }, [refreshNow]);
 
   const copyToClipboard = React.useCallback((e, text) => {
     e.preventDefault();
@@ -167,7 +179,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
                   <th>大小</th>
                   <th>切片</th>
                   <th>地址</th>
-                  <th>预览</th>
+                  <th>操作</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -182,7 +194,18 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
                       <td>{`${file.size.toFixed(1)}`}MB</td>
                       <td>{file.nn}</td>
                       <td><a href={file.location} onClick={(e) => copyToClipboard(e, file.location)} target='_blank' rel='noreferrer'>复制</a></td>
-                      <td><a href={file.preview} target='_blank' rel='noreferrer'>预览</a></td>
+                      <td>
+                        <a href={file.preview} target='_blank' rel='noreferrer'>预览</a> &nbsp;
+                        <PopoverConfirm trigger={ <a href='#' hidden={file.progress}>删除</a> } onClick={() => removeRecord(file)}>
+                          <p>
+                            {t('scenario.rmFileTip1')}
+                            <span className='text-danger'><strong>
+                              {t('scenario.rmFileTip2')}
+                            </strong></span>
+                            {t('scenario.rmFileTip3')}
+                          </p>
+                        </PopoverConfirm>
+                      </td>
                     </tr>;
                   })
                 }

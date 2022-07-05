@@ -12,7 +12,6 @@ const config = {
 const { isMainThread, parentPort } = require("worker_threads");
 const util = require('util');
 const execFile = util.promisify(require('child_process').execFile);
-const exec = util.promisify(require('child_process').exec);
 const { v4: uuidv4 } = require('uuid');
 const ioredis = require('ioredis');
 const redis = require('js-core/redis').create({config: config.redis, redis: ioredis});
@@ -55,6 +54,7 @@ async function handleMessage(msg) {
   const tsid = uuidv4();
   const tsfile = `vod/${tsid}.ts`;
   // Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
+  // Note that should never use fs.copyFileSync(file, tsfile, fs.constants.COPYFILE_FICLONE_FORCE) which fails in macOS.
   await execFile('cp', ['-f', file, tsfile]);
 
   // Create or update active m3u8 object, for worker to scan.
@@ -75,6 +75,7 @@ async function handleMessage(msg) {
   if (!local || localObj.uuid !== m3u8Obj.uuid) {
     localObj.done = null;
     localObj.uuid = m3u8Obj.uuid;
+    localObj.m3u8_url = m3u8_url;
     localObj.uuids.push(m3u8Obj.uuid);
     console.log(`Thread #vodWorker: local start new m3u8=${m3u8_url}, uuid=${m3u8Obj.uuid}, uuids=${localObj.uuids.length}`);
   }
@@ -241,6 +242,7 @@ async function updateMetadataObject(cosTokenObj, localKey, localObj, localFile, 
     bucket: cosTokenObj.bucket,
     region: cosTokenObj.region,
     uuid: localObj.uuid,
+    m3u8_url: localObj.m3u8_url,
     vhost: localFile.params.vhost,
     app: localFile.params.app,
     stream: localFile.params.stream,

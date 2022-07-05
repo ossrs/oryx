@@ -6,7 +6,7 @@
 
 A lightweight open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
 
-## Usage: LightHouse
+## Usage
 
 - [x] [Getting Started](https://mp.weixin.qq.com/s/fWmdkw-2AoFD_pEmE_EIkA).
 - [x] [Live Streaming](https://mp.weixin.qq.com/s/AKqVWIdk3SBD-6uiTMliyA).
@@ -91,7 +91,10 @@ The features that we're developing:
 * [x] Change redis port and use randomly password.
 * [x] Support integrity with tencent cloud VoD.
 * [x] Forward stream to multiple platforms, see [#2676](https://github.com/ossrs/srs/issues/2676).
-* [ ] Support install script for CentOS 7. 
+- [x] [Support WordPress Plugin](https://mp.weixin.qq.com/s/YjTkcJLkErMcZYHIjzsW_w) or [here](https://wordpress.org/plugins/srs-player).
+- [x] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
+- [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
+- [x] [Support DVR to local disk](https://github.com/ossrs/srs-cloud/issues/42).
 * [ ] Support GB28181 by SRS 5.0 container.
 * [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
 * [ ] Support virtual live streaming, covert file or other resource to live.
@@ -148,14 +151,20 @@ Market:
 * `/terraform/v1/hooks/srs/secret/disable` Hooks: Disable the secret for authentication.
 * `/terraform/v1/hooks/srs/hls` Hooks: Handle the `on_hls` event.
 * `/terraform/v1/hooks/record/query` Hooks: Query the Record pattern.
+* `/terraform/v1/hooks/record/apply` Hooks: Apply the Record pattern.
+* `/terraform/v1/hooks/record/remove` Hooks: Remove the Record files.
+* `/terraform/v1/hooks/record/files` Hooks: List the Record files.
+* `/terraform/v1/hooks/record/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.
+* `/terraform/v1/hooks/record/hls/:uuid/index.m3u8` Hooks: Serve HLS m3u8 files.
+* `/terraform/v1/hooks/record/hls/:dir/:m3u8/:uuid.ts` Hooks: Serve HLS ts files.
 * `/terraform/v1/hooks/dvr/apply` Hooks: Apply the DVR pattern.
 * `/terraform/v1/hooks/dvr/query` Hooks: Query the DVR pattern.
 * `/terraform/v1/hooks/dvr/files` Hooks: List the DVR files.
-* `/terraform/v1/hooks/dvr/hls` Hooks: Generate HLS/m3u8 url to preview or download.
+* `/terraform/v1/hooks/dvr/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.
 * `/terraform/v1/hooks/vod/query` Hooks: Query the VoD pattern.
 * `/terraform/v1/hooks/vod/apply` Hooks: Apply the VoD pattern.
 * `/terraform/v1/hooks/vod/files` Hooks: List the VoD files.
-* `/terraform/v1/hooks/vod/hls` Hooks: Generate HLS/m3u8 url to preview or download.
+* `/terraform/v1/hooks/vod/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.
 * `/terraform/v1/tencent/cam/secret` Tencent: Setup the CAM SecretId and SecretKey.
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.

@@ -19,7 +19,6 @@ const keys = require('js-core/keys');
 const moment = require('moment');
 const fs = require('fs');
 const m3u8Generator = require('./m3u8Generator');
-const os = require("os");
 
 if (!isMainThread) {
   threadMain();
@@ -52,6 +51,7 @@ async function handleMessage(msg) {
   const tsid = uuidv4();
   const tsfile = `record/${tsid}.ts`;
   // Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
+  // Note that should never use fs.copyFileSync(file, tsfile, fs.constants.COPYFILE_FICLONE_FORCE) which fails in macOS.
   await execFile('cp', ['-f', file, tsfile]);
 
   // Create or update active m3u8 object, for worker to scan.
@@ -72,6 +72,7 @@ async function handleMessage(msg) {
   if (!local || localObj.uuid !== m3u8Obj.uuid) {
     localObj.done = null;
     localObj.uuid = m3u8Obj.uuid;
+    localObj.m3u8_url = m3u8_url;
     localObj.uuids.push(m3u8Obj.uuid);
     console.log(`Thread #recordWorker: local start new m3u8=${m3u8_url}, uuid=${m3u8Obj.uuid}, uuids=${localObj.uuids.length}`);
   }
@@ -134,8 +135,8 @@ async function handleLocalFile(localKey, localObj, localFile) {
 
   const stats = fs.statSync(localFile.tsfile);
   const key = `record/${localObj.uuid}/${localFile.tsid}.ts`;
-  await execFile('mkdir', ['-p', `record/${localObj.uuid}`]);
-  await execFile('mv', ['-f', localFile.tsfile, key]);
+  fs.mkdirSync(`record/${localObj.uuid}`, {recursive: true});
+  fs.renameSync(localFile.tsfile, key)
 
   // Update the metadata for m3u8.
   await updateMetadataObject(localKey, localObj, localFile, key, stats);
@@ -153,6 +154,7 @@ async function updateMetadataObject(localKey, localObj, localFile, key, stats) {
     nn: 0,
     update: moment().format(),
     uuid: localObj.uuid,
+    m3u8_url: localObj.m3u8_url,
     vhost: localFile.params.vhost,
     app: localFile.params.app,
     stream: localFile.params.stream,

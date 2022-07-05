@@ -51,6 +51,53 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0);
   });
 
+  // Remove record file.
+  router.all('/terraform/v1/hooks/record/remove', async (ctx) => {
+    const {uuid, token} = ctx.request.body;
+
+    const apiSecret = await utils.apiSecret(redis);
+    const decoded = await utils.verifyToken(jwt, token, apiSecret);
+
+    if (!uuid) throw utils.asError(errs.sys.empty, errs.status.args, `no param uuid`);
+
+    const metadata = await redis.hget(keys.redis.SRS_RECORD_M3U8_METADATA, uuid);
+    if (!metadata) throw utils.asError(errs.sys.invalid, errs.status.args, `no hls for uuid=${uuid}`);
+    const metadataObj = JSON.parse(metadata);
+
+    // Remove all ts files.
+    metadataObj.files.map(f => {
+      if (fs.existsSync(f.key)) {
+        fs.rmSync(f.key);
+      }
+    });
+
+    // Remove m3u8 file.
+    const m3u8 = `record/${uuid}/index.m3u8`;
+    if (fs.existsSync(m3u8)) {
+      fs.rmSync(m3u8);
+    }
+
+    // Remove ts directory.
+    if (fs.existsSync(`record/${uuid}`)) {
+      fs.rmdirSync(`record/${uuid}`);
+    }
+
+    // Remove HLS from local object.
+    let r1 = null;
+    const local = await redis.hget(keys.redis.SRS_RECORD_M3U8_LOCAL, metadataObj.m3u8_url);
+    const localObj = local ? JSON.parse(local) : null;
+    if (localObj) {
+      localObj.uuids = localObj.uuids.filter(e => e !== uuid);
+      r1 = await redis.hset(keys.redis.SRS_RECORD_M3U8_LOCAL, metadataObj.m3u8_url, JSON.stringify(localObj));
+    }
+
+    // Remove HLS from list.
+    const r0 = await redis.hdel(keys.redis.SRS_RECORD_M3U8_METADATA, uuid);
+
+    console.log(`record remove ok, uuid=${uuid}， done=${metadataObj.done}, files=${metadataObj.files.length}, r0=${JSON.stringify(r0)}, r1=${JSON.stringify(r1)}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
+    ctx.body = utils.asResponse(0);
+  });
+
   // List the record files.
   router.all('/terraform/v1/hooks/record/files', async (ctx) => {
     const {token} = ctx.request.body;
