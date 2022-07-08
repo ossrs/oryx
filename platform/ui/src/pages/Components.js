@@ -37,23 +37,26 @@ function ComponentsImpl() {
   const [allowManuallyUpgrade, setAllowManuallyUpgrade] = React.useState();
   const [allowDisableContainer, setAllowDisableContainer] = React.useState();
   const [refreshContainers, setRefreshContainers] = React.useState();
-  const [allowSwitchContainer, setAllowSwitchContainer] = React.useState();
+  const [allowSwitchContainer, setAllowSwitchContainer] = React.useState(true);
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
   React.useEffect(() => {
+    if (!searchParams.get('allow-manual')) return; // Ignore if not specified.
     const allowManuallyUpgrade = searchParams.get('allow-manual') === 'true';
     console.log(`?allow-manual=true|false, current=${allowManuallyUpgrade}, Whether allow manually upgrade`);
     setAllowManuallyUpgrade(allowManuallyUpgrade);
   }, [searchParams]);
 
   React.useEffect(() => {
+    if (!searchParams.get('allow-disable')) return; // Ignore if not specified.
     const allowDisableContainer = searchParams.get('allow-disable') === 'true';
     console.log(`?allow-disable=true|false, current=${allowDisableContainer}, Whether allow disable container`);
     setAllowDisableContainer(allowDisableContainer);
   }, [searchParams]);
 
   React.useEffect(() => {
+    if (!searchParams.get('allow-switch')) return; // Ignore if not specified.
     const allowSwitchContainer = searchParams.get('allow-switch') === 'true';
     console.log(`?allow-switch=true|false, current=${allowSwitchContainer}, Whether allow switch srs server`);
     setAllowSwitchContainer(allowSwitchContainer);
@@ -93,6 +96,9 @@ function ComponentsImpl() {
           m.StatusMessage = `${m.container.State || ''} ${m.container.Status || ''}`.trim();
         } else {
           m.StatusMessage = 'Stopped';
+        }
+        if (!m.enabled) {
+          m.StatusMessage = 'Disabled';
         }
 
         if (m.name === 'srs-server') setSrsRelease(m);
