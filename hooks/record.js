@@ -166,6 +166,46 @@ exports.handle = (router) => {
     ctx.body = fs.readFileSync(tsfile);
   });
 
+  // Serve mp4 to play.
+  router.all('/terraform/v1/hooks/record/hls/:uuid/index.mp4', async (ctx) => {
+    const {uuid} = ctx.params;
+    if (!uuid) throw utils.asError(errs.sys.empty, errs.status.args, `no param uuid`);
+
+    const metadata = await redis.hget(keys.redis.SRS_RECORD_M3U8_METADATA, uuid);
+    if (!metadata) throw utils.asError(errs.sys.invalid, errs.status.args, `no mp4 for uuid=${uuid}`);
+
+    const mp4 = `record/${uuid}/index.mp4`;
+    if ((!fs.existsSync(mp4))) {
+      throw utils.asError(errs.sys.invalid, errs.status.not, `no mp4 file ${mp4}`)
+    }
+
+    // No range request.
+    if (!ctx.req.headers.range) {
+      console.log(`record serve full mp4=${mp4}`);
+      ctx.type = 'video/mp4';
+      ctx.body = fs.readFileSync(mp4);
+      return;
+    }
+
+    // Support range request.
+    let start, end;
+    const stats = fs.statSync(mp4);
+    if (true) {
+      const [sStart, sEnd] = ctx.req.headers.range.replace(/bytes=/, '').split('-');
+      start = Number(sStart || 0);
+      end = Number(sEnd || stats.size - 1);
+    }
+
+    ctx.set('Accept-Ranges', 'bytes');
+    ctx.set('Content-Length', end + 1 - start);
+    ctx.set('Content-Range', `bytes ${start}-${end}/${stats.size}`)
+
+    console.log(`record serve partial mp4=${mp4}, start=${start}, end=${end}, file=${stats.size}`);
+    ctx.status = 206; // Partial Content.
+    ctx.type = 'video/mp4';
+    ctx.body = fs.createReadStream(mp4, {start, end});
+  });
+
   return router;
 };
 

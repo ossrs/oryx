@@ -19,6 +19,7 @@ const keys = require('js-core/keys');
 const moment = require('moment');
 const fs = require('fs');
 const m3u8Generator = require('./m3u8Generator');
+const { spawn } = require('child_process');
 
 if (!isMainThread) {
   threadMain();
@@ -238,12 +239,38 @@ async function finishM3u8(localKey, localObj) {
 
   const metadataObj = metadata && JSON.parse(metadata);
   const [contentType, m3u8Body, duration] = m3u8Generator.buildVodM3u8(
-    metadataObj, false, null, true, '/terraform/v1/hooks/record/hls',
+    metadataObj, false, null, false,
   );
 
-  const key = `record/${localObj.uuid}/index.m3u8`;
-  fs.writeFileSync(key, m3u8Body);
-  console.log(`Thread #recordWorker: Record m3u8=${key}, contentType=${contentType}`);
+  const hls = `record/${localObj.uuid}/index.m3u8`;
+  const mp4 = `record/${localObj.uuid}/index.mp4`;
+  fs.writeFileSync(hls, m3u8Body);
+  console.log(`Thread #recordWorker: Record m3u8=${hls}, mp4=${mp4}, contentType=${contentType}`);
+
+  // Start a child process to transmux HLS to MP4.
+  const child = spawn('ffmpeg', ['-i', hls, '-c', 'copy', mp4]);
+  console.log(`Thread #forwardWorker: Start task=${child.pid}, input=${hls}, output=${mp4}`);
+
+  await new Promise((resolve, reject) => {
+    let nnLogs = 0;
+    child.stdout.on('data', (chunk) => {
+      console.log(chunk.toString());
+    });
+    child.stderr.on('data', (chunk) => {
+      if ((nnLogs++ % 3) !== 0) return;
+      const log = chunk.toString().trim().replace(/= +/g, '=');
+      if (log.indexOf('frame=') < 0) return;
+      console.log(`Thread #forwardWorker: Active task=${child.pid}, hls=${hls}, ${log}`);
+    });
+    child.on('close', (code) => {
+      console.log(`Thread #forwardWorker: Close task=${child.pid}, hls=${hls}, code=${code}`);
+      if (code !== 0) {
+        reject(code);
+      } else {
+        resolve();
+      }
+    });
+  });
 
   metadataObj.progress = false;
   metadataObj.done = moment().format();

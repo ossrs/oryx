@@ -1,4 +1,4 @@
-FROM registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim
+FROM registry.cn-hangzhou.aliyuncs.com/ossrs/srs:node-av
 
 COPY js-core /usr/local/srs-cloud/js-core
 COPY hooks /usr/local/srs-cloud/hooks

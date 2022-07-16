@@ -60,8 +60,8 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
             file.location = `${l.protocol}//${l.host}/terraform/v1/hooks/record/hls/${file.uuid}.m3u8`;
             file.preview = `/players/srs_player.html?schema=${schema}&port=${httpPort}&autostart=true&app=terraform/v1/hooks/record/hls&stream=${file.uuid}.m3u8`;
           } else {
-            file.location = `${l.protocol}//${l.host}/terraform/v1/hooks/record/hls/${file.uuid}/index.m3u8`;
-            file.preview = `/players/srs_player.html?schema=${schema}&port=${httpPort}&autostart=true&app=terraform/v1/hooks/record/hls/${file.uuid}&stream=index.m3u8`;
+            file.location = `${l.protocol}//${l.host}/terraform/v1/hooks/record/hls/${file.uuid}/index.mp4`;
+            file.preview = `/terraform/v1/hooks/record/hls/${file.uuid}/index.mp4`;
           }
 
           return {

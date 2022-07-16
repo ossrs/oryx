@@ -38,7 +38,7 @@ exports.buildVodM3u8 = (metadataObj, absUrl, domain, useKey, prefix) => {
       } else {
         desc.push([
           ...(prefix ? [prefix] : []),
-          ...(useKey ? [e.key] : `${e.tsid}.ts`),
+          ...(useKey ? [e.key] : [`${e.tsid}.ts`]),
         ].join('/'));
       }
 
