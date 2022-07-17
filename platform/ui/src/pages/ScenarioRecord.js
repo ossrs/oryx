@@ -1,5 +1,5 @@
 import React from "react";
-import {Accordion, Form, Button, Table, OverlayTrigger, Popover} from "react-bootstrap";
+import {Accordion, Form, Button, Table} from "react-bootstrap";
 import {Token, StreamURL, Clipboard} from "../utils";
 import axios from "axios";
 import moment from "moment";
@@ -105,7 +105,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
       setRefreshNow(!refreshNow);
       console.log(`Record: Remove file ok, file=${JSON.stringify(file)}`);
     }).catch(handleError);
-  }, [refreshNow]);
+  }, [refreshNow, handleError]);
 
   const copyToClipboard = React.useCallback((e, text) => {
     e.preventDefault();
@@ -189,7 +189,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
                 <tbody>
                 {
                   recordFiles?.map(file => {
-                    return <tr key={file.uuid}>
+                    return <tr key={file.uuid} name={file.uuid}>
                       <td>{file.i}</td>
                       <td title='若300秒没有流，会自动完成录制'>{file.progress ? '录制中' : '已完成'}</td>
                       <td>{`${file.update.format('YYYY-MM-DD HH:mm:ss')}`}</td>
@@ -200,7 +200,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
                       <td><a href={file.location} onClick={(e) => copyToClipboard(e, file.location)} target='_blank' rel='noreferrer'>复制</a></td>
                       <td>
                         <a href={file.preview} target='_blank' rel='noreferrer'>预览</a> &nbsp;
-                        <PopoverConfirm trigger={ <a href='#' hidden={file.progress}>删除</a> } onClick={() => removeRecord(file)}>
+                        <PopoverConfirm trigger={ <a href={`#${file.uuid}`} hidden={file.progress}>删除</a> } onClick={() => removeRecord(file)}>
                           <p>
                             {t('scenario.rmFileTip1')}
                             <span className='text-danger'><strong>

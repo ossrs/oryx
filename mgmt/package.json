@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "env NODE_ENV=development node .",
+    "build": "exit 0",
     "test": "jest --watchAll=false --passWithNoTests",
     "testWatch": "jest --watchAll=true --passWithNoTests"
   },
