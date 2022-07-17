@@ -104,7 +104,7 @@ function ScenarioImpl({defaultActiveTab, defaultActiveChildTab}) {
           <Tab eventKey="forward" title={t('scenario.restream')}>
             {activeTab === 'forward' && <ScenarioForward/>}
           </Tab>
-          <Tab eventKey="rgroup" title={t('scenario.record')}>
+          <Tab eventKey="rgroup" title={t('scenario.rgroup')}>
             <Tabs defaultActiveKey={activeChildTab} id="ctab0" className="mb-3"
                   onSelect={(k) => onSelectChildTab('rgroup', k)}>
               <Tab eventKey="record" title={t('scenario.record')}>
@@ -117,15 +117,6 @@ function ScenarioImpl({defaultActiveTab, defaultActiveChildTab}) {
                 {activeChildTab === 'vod' && <ScenarioVod/>}
               </Tab>
             </Tabs>
-          </Tab>
-          <Tab eventKey="record" title={t('scenario.record')}>
-            {activeTab === 'record' && <ScenarioRecord/>}
-          </Tab>
-          <Tab eventKey="dvr" title={t('scenario.dvr')}>
-            {activeTab === 'dvr' && <ScenarioDvr/>}
-          </Tab>
-          <Tab eventKey="vod" title={t('scenario.vod')}>
-            {activeTab === 'vod' && <ScenarioVod/>}
           </Tab>
           <Tab eventKey="source" title={t('scenario.code')}>
             {activeTab === 'source' && <ScenarioSource/>}
