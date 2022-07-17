@@ -18,7 +18,6 @@ build: npm
 	@cd platform && npm install
 	@cd platform/ui && npm install
 	@cd hooks && npm install
-	@cd mgmt/ui && npm install
 	@cd releases && npm install
 	@cd tencent && npm install
 	@cd mgmt && npm run build
@@ -47,7 +46,6 @@ test:
 	@cd platform/ui && npm test
 	@cd hooks && npm test
 	@cd mgmt && npm test
-	@cd mgmt/ui && npm test
 	@cd releases && npm test
 	@cd tencent && npm test
 

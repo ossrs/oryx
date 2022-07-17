@@ -24,7 +24,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: |
             mgmt/package-lock.json
-            mgmt/ui/package-lock.json
 
       - name: Discover upgrade target.
         run: |
@@ -79,7 +78,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: |
             mgmt/package-lock.json
-            mgmt/ui/package-lock.json
 
       - name: Discover upgrade target.
         run: |
@@ -133,7 +131,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: |
             mgmt/package-lock.json
-            mgmt/ui/package-lock.json
 
       - name: Discover upgrade target.
         run: |
@@ -187,7 +184,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: |
             mgmt/package-lock.json
-            mgmt/ui/package-lock.json
 
       - name: Discover upgrade target.
         run: |

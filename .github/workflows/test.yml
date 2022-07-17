@@ -21,7 +21,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: |
             mgmt/package-lock.json
-            mgmt/ui/package-lock.json
             platform/package-lock.json
             platform/ui/package-lock.json
             releases/package-lock.json
