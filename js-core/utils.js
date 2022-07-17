@@ -238,6 +238,8 @@ exports.generateDockerArgs = generateDockerArgs;
 
 // Reload nginx, try to use systemctl, or kill -1 {pid}, or killall -1 nginx.
 async function reloadNginx(fs, execFile) {
+  if (process.platform === 'darwin') return;
+
   const nginxServiceExists = fs.existsSync('/usr/lib/systemd/system/nginx.service');
   const nginxPidExists = process.env.NGINX_PID && fs.existsSync(process.env.NGINX_PID);
   if (!nginxServiceExists && !nginxPidExists) {

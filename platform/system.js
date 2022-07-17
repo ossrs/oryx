@@ -337,7 +337,7 @@ exports.handle = (router) => {
     });
 
     // Homepage / conflicts with proxy /, both need to write / in nginx config.
-    const defaultHomepage = await redis.hset(keys.redis.SRS_HTTP_REWRITE, '/', homepage);
+    const defaultHomepage = await redis.hget(keys.redis.SRS_HTTP_REWRITE, '/');
     if (defaultHomepage) throw utils.asError(errs.sys.invalid, errs.status.sys, `already set homepage /`);
 
     const r0 = await redis.hset(keys.redis.SRS_HTTP_PROXY, location, backend);
