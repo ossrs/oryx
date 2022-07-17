@@ -77,6 +77,12 @@ exports.handle = (router) => {
       fs.rmSync(m3u8);
     }
 
+    // Remove mp4 file.
+    const mp4 = `record/${uuid}/index.mp4`;
+    if (fs.existsSync(mp4)) {
+      fs.rmSync(mp4);
+    }
+
     // Remove ts directory.
     if (fs.existsSync(`record/${uuid}`)) {
       fs.rmdirSync(`record/${uuid}`);
