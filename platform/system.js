@@ -308,7 +308,13 @@ exports.handle = (router) => {
     const decoded = await utils.verifyToken(jwt, token, apiSecret);
 
     if (!homepage) throw utils.asError(errs.sys.empty, errs.status.args, `no param homepage`);
+
+    // Homepage / conflicts with proxy /, both need to write / in nginx config.
+    const defaultRoot = await redis.hget(keys.redis.SRS_HTTP_PROXY, "/");
+    if (defaultRoot) throw utils.asError(errs.sys.invalid, errs.status.sys, `already proxy /`);
+
     const r0 = await redis.hset(keys.redis.SRS_HTTP_REWRITE, '/', homepage);
+    await helper.execApi('nginxGenerateConfig');
 
     console.log(`nginx homepage ok, homepage=${homepage}, r0=${r0}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
     ctx.body = utils.asResponse(0);
@@ -329,6 +335,10 @@ exports.handle = (router) => {
       }
       return null;
     });
+
+    // Homepage / conflicts with proxy /, both need to write / in nginx config.
+    const defaultHomepage = await redis.hset(keys.redis.SRS_HTTP_REWRITE, '/', homepage);
+    if (defaultHomepage) throw utils.asError(errs.sys.invalid, errs.status.sys, `already set homepage /`);
 
     const r0 = await redis.hset(keys.redis.SRS_HTTP_PROXY, location, backend);
     await helper.execApi('nginxGenerateConfig');
