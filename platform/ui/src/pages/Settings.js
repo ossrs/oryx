@@ -352,6 +352,7 @@ function SettingPlatform({defaultWindow}) {
 }
 
 function SettingOpenApi({copyToClipboard}) {
+  const [apiSecretCopied, setAPISecretCopied] = React.useState();
   const [apiSecret, setAPISecret] = React.useState();
   const [apiToken, setApiToken] = React.useState();
   const handleError = useErrorHandler();
@@ -378,8 +379,13 @@ function SettingOpenApi({copyToClipboard}) {
     }).catch(handleError);
   }, [handleError, apiSecret]);
 
+  const copyApiSecret = React.useCallback((e, apiSecret) => {
+    copyToClipboard(e, apiSecret);
+    setAPISecretCopied(true);
+  }, [copyToClipboard, setAPISecretCopied]);
+
   return (
-    <Accordion defaultActiveKey="2">
+    <Accordion defaultActiveKey="0">
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('openapi.title')}</Accordion.Header>
         <Accordion.Body>
@@ -391,6 +397,7 @@ function SettingOpenApi({copyToClipboard}) {
           <ul>
             <li> {t('openapi.usage1')} </li>
             <li> {t('openapi.usage2')} </li>
+            <li> {t('openapi.usage3')} </li>
           </ul>
         </Accordion.Body>
       </Accordion.Item>
@@ -403,7 +410,7 @@ function SettingOpenApi({copyToClipboard}) {
               <Form.Text> * {t('openapi.secretTip')}</Form.Text>
               <Form.Control as="input" type='password' rows={1} defaultValue={apiSecret} readOnly={true}/>
             </Form.Group>
-            <Button variant="primary" type="submit" onClick={(e) => copyToClipboard(e, apiSecret)}>
+            <Button variant="primary" type="submit" onClick={(e) => copyApiSecret(e, apiSecret)}>
               {t('openapi.secretCopy')}
             </Button>
           </Form>
@@ -412,24 +419,34 @@ function SettingOpenApi({copyToClipboard}) {
       <Accordion.Item eventKey="2">
         <Accordion.Header>{t('openapi.token')}</Accordion.Header>
         <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>API</Form.Label>
-              <Form.Control as="textarea" rows={1} defaultValue='POST /terraform/v1/mgmt/secret/token' readOnly={true} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Body</Form.Label>
-              <pre>
-                        {JSON.stringify({apiSecret: `${'*'.repeat(apiSecret?.length)}`}, null, 2)}
+          {
+            !apiSecretCopied ?
+              <div>
+                {t('openapi.secretEmpty')}<code>{t('openapi.secret')}</code>
+              </div>
+              :
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>API</Form.Label>
+                  <Form.Control as="textarea" rows={1} defaultValue='POST /terraform/v1/mgmt/secret/token'
+                                readOnly={true}/>
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Body</Form.Label>
+                  <pre>
+                        {JSON.stringify({apiSecret}, null, 2)}
                       </pre>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              { apiToken && <><Form.Label>Response</Form.Label><pre>{JSON.stringify(apiToken, null, 2)}</pre></> }
-            </Form.Group>
-            <Button variant="primary" type="submit" onClick={(e) => createApiToken(e)}>
-              Run
-            </Button> &nbsp;
-          </Form>
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  {apiToken && <><Form.Label>Response</Form.Label>
+                    <pre>{JSON.stringify(apiToken, null, 2)}</pre>
+                  </>}
+                </Form.Group>
+                <Button variant="primary" type="submit" onClick={(e) => createApiToken(e)}>
+                  Run
+                </Button> &nbsp;
+              </Form>
+          }
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="3">

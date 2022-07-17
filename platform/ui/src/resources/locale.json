@@ -150,12 +150,14 @@
         "summary": "向开发者提供 OpenAPI, 方便开发者对接",
         "usage1": "Token是OpenAPI接口调用凭据, 调用各接口时都需要使用Token",
         "usage2": "使用ApiSecret，调用接口可创建Token, 默认有效期为1年",
-        "secret": "获取ApiSecret",
+        "usage3": "请按照下面的步骤，依次点击，可以看到调用的步骤",
+        "secret": "第1步：拷贝ApiSecret",
         "secretTip": "使用ApiSecret生成Token，用于访问OpenAPI",
         "secretCopy": "复制ApiSecret",
-        "token": "API: 创建Token",
-        "apiPublishSecret": "API: 获取推流密钥",
-        "tokenEmpty": "没有Token，请先运行"
+        "token": "第2步：[API] 创建Token",
+        "apiPublishSecret": "第3步：[API] 获取推流密钥",
+        "tokenEmpty": "没有Token，请先运行",
+        "secretEmpty": "没有ApiSecret，请先运行"
       },
       "tutorials": {
         "view": "播放次数",
@@ -335,12 +337,14 @@
         "summary": "For developer to call OpenAPI of SRS Cloud",
         "usage1": "Token is used for authentication of OpenAPI",
         "usage2": "Use ApiSecret to create Token, expired in 1 year",
-        "secret": "Get ApiSecret",
+        "usage3": "Please click the bellow steps",
+        "secret": "Step 1: Copy ApiSecret",
         "secretTip": "Use ApiSecret to create Token",
         "secretCopy": "Copy ApiSecret",
-        "token": "API: Create Token",
-        "apiPublishSecret": "API: Query Publish Secret",
-        "tokenEmpty": "No Token, please run "
+        "token": "Step 2: [API] Create Token",
+        "apiPublishSecret": "Step 3: [API] Query Publish Secret",
+        "tokenEmpty": "No Token, please run ",
+        "secretEmpty": "No ApiSecret, please run "
       },
       "tutorials": {
         "view": "View",
