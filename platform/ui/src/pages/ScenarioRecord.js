@@ -9,6 +9,7 @@ import {useTranslation} from "react-i18next";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 import * as Icon from "react-bootstrap-icons";
 import PopoverConfirm from "../components/PopoverConfirm";
+import TutorialsText from "../components/TutorialsText";
 
 export default function ScenarioRecord() {
   const language = useSrsLanguage();
@@ -147,7 +148,10 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
           保存路径： <code>{recordHome}</code> &nbsp;
           <div role='button' style={{display: 'inline-block'}} title='拷贝'>
             <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, recordHome)} />
-          </div>
+          </div> &nbsp;
+          <TutorialsText prefixLine={true} title='如何修改目录?'>
+            你可以使用软链接，将本目录软链到其他磁盘的目录
+          </TutorialsText>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="2">

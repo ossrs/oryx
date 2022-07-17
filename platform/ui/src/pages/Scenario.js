@@ -20,25 +20,30 @@ import ScenarioRecord from "./ScenarioRecord";
 export default function Scenario() {
   const [searchParams] = useSearchParams();
   const [defaultActiveTab, setDefaultActiveTab] = React.useState();
+  const [defaultActiveChildTab, setDefaultActiveChildTab] = React.useState();
   const language = useSrsLanguage();
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'tutorials';
-    console.log(`?tab=tutorials|live|srt|dvr|source, current=${tab}, Select the tab to render`);
+    const ctab = searchParams.get('ctab') || 'record';
+    console.log(`?tab=tutorials|live|srt|rgroup|source, current=${tab}, Select the tab to render`);
+    console.log(`?ctab=record|dvr|vod, current=${tab}, Select the child tab to render`);
     setDefaultActiveTab(tab);
+    setDefaultActiveChildTab(ctab);
   }, [searchParams, language]);
 
   return (
     <SrsErrorBoundary>
-      { defaultActiveTab && <ScenarioImpl defaultActiveTab={defaultActiveTab} /> }
+      { defaultActiveTab && <ScenarioImpl {...{defaultActiveTab, defaultActiveChildTab}} /> }
     </SrsErrorBoundary>
   );
 }
 
-function ScenarioImpl({defaultActiveTab}) {
+function ScenarioImpl({defaultActiveTab, defaultActiveChildTab}) {
   const [secret, setSecret] = React.useState();
   const [streamName, setStreamName] = React.useState('livestream');
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
+  const [activeChildTab, setActiveChildTab] = React.useState(defaultActiveChildTab);
   const setSearchParams = useSearchParams()[1];
   const handleError = useErrorHandler();
   const urls = useUrls({secret, streamName});
@@ -57,6 +62,12 @@ function ScenarioImpl({defaultActiveTab}) {
   const onSelectTab = React.useCallback((k) => {
     setSearchParams({'tab': k});
     setActiveTab(k);
+  }, [setSearchParams]);
+
+  const onSelectChildTab = React.useCallback((pk, k) => {
+    setSearchParams({'tab': pk, 'ctab': k});
+    setActiveTab(pk);
+    setActiveChildTab(k);
   }, [setSearchParams]);
 
   const updateStreamName = React.useCallback(() => {
@@ -80,30 +91,44 @@ function ScenarioImpl({defaultActiveTab}) {
     <>
       <p></p>
       <Container>
-        <Tabs defaultActiveKey={activeTab} id="uncontrolled-tab-example" className="mb-3" onSelect={(k) => onSelectTab(k)}>
+        <Tabs defaultActiveKey={activeTab} id="tab0" className="mb-3" onSelect={(k) => onSelectTab(k)}>
           <Tab eventKey="tutorials" title={t('scenario.tutorials')}>
-            { activeTab === 'tutorials' && <ScenarioTutorials /> }
+            {activeTab === 'tutorials' && <ScenarioTutorials/>}
           </Tab>
           <Tab eventKey="live" title={t('scenario.live')}>
-            { activeTab === 'live' && <ScenarioLive {...{updateStreamName, copyToClipboard, urls}} /> }
+            {activeTab === 'live' && <ScenarioLive {...{updateStreamName, copyToClipboard, urls}} />}
           </Tab>
           <Tab eventKey="srt" title={t('scenario.srt')}>
-            { activeTab === 'srt' && <ScenarioSrt {...{updateStreamName, copyToClipboard, urls}} /> }
+            {activeTab === 'srt' && <ScenarioSrt {...{updateStreamName, copyToClipboard, urls}} />}
           </Tab>
           <Tab eventKey="forward" title={t('scenario.restream')}>
-            { activeTab === 'forward' && <ScenarioForward /> }
+            {activeTab === 'forward' && <ScenarioForward/>}
+          </Tab>
+          <Tab eventKey="rgroup" title={t('scenario.record')}>
+            <Tabs defaultActiveKey={activeChildTab} id="ctab0" className="mb-3"
+                  onSelect={(k) => onSelectChildTab('rgroup', k)}>
+              <Tab eventKey="record" title={t('scenario.record')}>
+                {activeChildTab === 'record' && <ScenarioRecord/>}
+              </Tab>
+              <Tab eventKey="dvr" title={t('scenario.dvr')}>
+                {activeChildTab === 'dvr' && <ScenarioDvr/>}
+              </Tab>
+              <Tab eventKey="vod" title={t('scenario.vod')}>
+                {activeChildTab === 'vod' && <ScenarioVod/>}
+              </Tab>
+            </Tabs>
           </Tab>
           <Tab eventKey="record" title={t('scenario.record')}>
-            { activeTab === 'record' && <ScenarioRecord /> }
+            {activeTab === 'record' && <ScenarioRecord/>}
           </Tab>
           <Tab eventKey="dvr" title={t('scenario.dvr')}>
-            { activeTab === 'dvr' && <ScenarioDvr /> }
+            {activeTab === 'dvr' && <ScenarioDvr/>}
           </Tab>
           <Tab eventKey="vod" title={t('scenario.vod')}>
-            { activeTab === 'vod' && <ScenarioVod /> }
+            {activeTab === 'vod' && <ScenarioVod/>}
           </Tab>
           <Tab eventKey="source" title={t('scenario.code')}>
-            { activeTab === 'source' && <ScenarioSource /> }
+            {activeTab === 'source' && <ScenarioSource/>}
           </Tab>
         </Tabs>
       </Container>
