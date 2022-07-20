@@ -103,10 +103,10 @@ exports.market = {
     ],
     volumes: () => [
       `${platform.cwd()}/.env:/usr/local/srs-cloud/hooks/.env`,
-      // We mount the containers to mgmt in platform container, which links to platform.
-      `${platform.cwd()}/containers:/usr/local/srs-cloud/mgmt/containers`,
       // We mount the containers to mgmt in hooks container, which links to hooks.
+      // Note that we MUST NOT mount the containers directory, to allow user to use symbol link for record.
       `${platform.cwd()}/containers/objs/nginx/html:/usr/local/srs-cloud/mgmt/containers/objs/nginx/html`,
+      `${platform.cwd()}/containers/data/record:/usr/local/srs-cloud/mgmt/containers/data/record`,
       `${platform.cwd()}/containers/data/dvr:/usr/local/srs-cloud/mgmt/containers/data/dvr`,
       `${platform.cwd()}/containers/data/vod:/usr/local/srs-cloud/mgmt/containers/data/vod`,
     ],
