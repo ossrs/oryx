@@ -4,7 +4,7 @@ REALPATH=$(realpath $0)
 WORK_DIR=$(cd $(dirname $REALPATH)/.. && pwd)
 cd $WORK_DIR
 
-TAG=publication-v4.4
+TAG=publication-v4.5
 echo "Publication TAG=$TAG, WORK_DIR=$WORK_DIR"
 
 git tag -d $TAG
