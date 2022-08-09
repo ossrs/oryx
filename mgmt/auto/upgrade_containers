@@ -17,9 +17,7 @@ if [[ $? -ne 0 ]]; then echo "Update the containers failed"; exit 1; fi
 
 # Remove the containers if need upgrade
 #   update_containers registry image as_image
-#   update_containers ccr.ccs.tencentyun.com ossrs/lighthouse:4 ossrs/lighthouse:4
-#   update_containers registry.cn-hangzhou.aliyuncs.com ossrs/lighthouse:4 ossrs/lighthouse:4
-#   update_containers registry.cn-hangzhou.aliyuncs.com ossrs/lighthouse:4 ossrs/lighthouse:4
+#   update_containers registry.cn-hangzhou.aliyuncs.com ossrs/srs:4 ossrs/srs:4
 #   update_containers registry.cn-hangzhou.aliyuncs.com ossrs/srs-terraform:hooks-1 ossrs/srs-cloud:hooks-1
 #   update_containers registry.cn-hangzhou.aliyuncs.com ossrs/srs-cloud:hooks-1 ossrs/srs-cloud:hooks-1
 function update_containers() {
@@ -58,10 +56,6 @@ function update_containers() {
 echo "Upgrading all containers by images" &&
 update_containers $REGISTRY ossrs/srs:4 ossrs/srs:4 &&
 update_containers $REGISTRY ossrs/srs:5 ossrs/srs:5 &&
-update_containers $REGISTRY ossrs/lighthouse:4 ossrs/lighthouse:4 &&
-update_containers $REGISTRY ossrs/lighthouse:5 ossrs/lighthouse:5 &&
-update_containers $REGISTRY ossrs/droplet:4 ossrs/droplet:4 &&
-update_containers $REGISTRY ossrs/droplet:5 ossrs/droplet:5 &&
 # Compatible for previous versions.
 update_containers $REGISTRY ossrs/srs-terraform:hooks-1 ossrs/srs-cloud:hooks-1 &&
 update_containers $REGISTRY ossrs/srs-terraform:tencent-1 ossrs/srs-cloud:tencent-1 &&

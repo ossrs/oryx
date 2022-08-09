@@ -14,18 +14,12 @@ exports.upgrade = {
 exports.market = {
   srs: {
     name: metadata.market.srs.name,
-    // For China, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/1
-    // For Global, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/9
+    // For China, see https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/srs/images
+    // For Global, see https://hub.docker.com/r/ossrs/srs/tags
     image: async () => {
       const cloud = await platform.cloud();
 
-      let image = 'ossrs/srs';
-      if (cloud === 'TENCENT') image = 'ossrs/lighthouse';
-      if (cloud === 'DO') image = 'ossrs/droplet';
-      if (cloud === 'BT') image = 'ossrs/srs';
-      if (process.env.NODE_ENV === 'development') image = 'ossrs/srs';
-      if (process.env.SRS_DOCKER === 'srs') image = 'ossrs/srs';
-
+      const image = 'ossrs/srs';
       const registry = await platform.registry();
       return `${registry}/${image}:4`;
     },
@@ -55,12 +49,10 @@ exports.market = {
   },
   srsDev: {
     name: metadata.market.srsDev.name,
-    // For China, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/1
-    // For Global, see https://console.cloud.tencent.com/tcr/repository/details/ccr/ossrs/lighthouse/9
+    // For China, see https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/srs/images
+    // For Global, see https://hub.docker.com/r/ossrs/srs/tags
     image: async () => {
-      let image = 'ossrs/lighthouse';
-      if (process.env.NODE_ENV === 'development') image = 'ossrs/srs';
-      if (process.env.SRS_DOCKER === 'srs') image = 'ossrs/srs';
+      const image = 'ossrs/srs';
       const registry = await platform.registry();
       return `${registry}/${image}:5`;
     },
