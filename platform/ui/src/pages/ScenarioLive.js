@@ -19,7 +19,7 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
   const xgFlvPlayerUrl = flvPlayer?.replace('player.html', 'xgplayer.html');
   const xgHlsPlayerUrl = hlsPlayer?.replace('player.html', 'xgplayer.html');
   const ffmpegPublishCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv ${rtmpPublishUrl}`;
-  const ffmpegSrtCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f mpegts '${srtPublishUrl}'`;
+  const ffmpegSrtCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -pes_payload_size 0 -f mpegts '${srtPublishUrl}'`;
 
   // Shortcodes of WordPress.
   const flvUrlShortCode = `[srs_player url="${flvUrl}"]`;
