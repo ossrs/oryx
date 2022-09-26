@@ -223,10 +223,10 @@ exports.handle = (router) => {
   });
 
   router.all('/terraform/v1/mgmt/beian/query', async (ctx) => {
-    const icp = await redis.hget(keys.redis.SRS_BEIAN, 'icp');
+    const beian = await redis.hgetall(keys.redis.SRS_BEIAN);
 
-    console.log(`beian: query ok, miit=${JSON.stringify(icp)}`);
-    ctx.body = utils.asResponse(0, {icp});
+    console.log(`beian: query ok, miit=${JSON.stringify(beian)}`);
+    ctx.body = utils.asResponse(0, beian);
   });
 
   router.all('/terraform/v1/mgmt/secret/query', async (ctx) => {

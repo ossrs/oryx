@@ -461,6 +461,7 @@ function SettingOpenApi({copyToClipboard}) {
 
 function SettingBeian() {
   const [beian, setBeian] = React.useState();
+  const [siteTitle, setSiteTitle] = React.useState();
   const [homepage, setHomepage] = React.useState();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
@@ -475,6 +476,17 @@ function SettingBeian() {
       alert(t('settings.footer'));
     }).catch(handleError);
   }, [handleError, beian, t]);
+
+  const updateSiteTitle = React.useCallback((e) => {
+    e.preventDefault();
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/beian/update', {
+      ...token, beian: 'title', text: siteTitle,
+    }).then(res => {
+      alert(t('settings.header'));
+    }).catch(handleError);
+  }, [handleError, siteTitle, t]);
 
   const updateHomepage = React.useCallback((e) => {
     e.preventDefault();
@@ -524,6 +536,20 @@ function SettingBeian() {
             </Form.Group>
             <Button variant="primary" type="submit" onClick={(e) => updateBeian(e)}>
               {t('settings.footerSubmit')}
+            </Button>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="2">
+        <Accordion.Header>{t('settings.headerTitle')}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('settings.headerIcp')}</Form.Label>
+              <Form.Control as="input" defaultValue={siteTitle} placeholder={t('settings.headerHolder')} onChange={(e) => setSiteTitle(e.target.value)}/>
+            </Form.Group>
+            <Button variant="primary" type="submit" onClick={(e) => updateSiteTitle(e)}>
+              {t('settings.headerSubmit')}
             </Button>
           </Form>
         </Accordion.Body>

@@ -26,6 +26,7 @@ function FooterImpl() {
     axios.get('/terraform/v1/mgmt/beian/query')
       .then(res => {
         setBeian(res.data.data);
+        document.title = res.data.data.title || 'SRS Cloud';
         console.log(`Beian: query ${JSON.stringify(res.data.data)}`);
       }).catch(handleError);
   }, [handleError]);
