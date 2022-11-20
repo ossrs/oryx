@@ -9,7 +9,7 @@
       },
       "login": {
         "passwordLabel": "请输入密码",
-        "passwordTip": "忘记密码？可登录机器查看文件 ~lighthouse/credentials.txt",
+        "passwordTip": "忘记密码？可登录机器查看文件 /usr/local/srs-cloud/mgmt/.env",
         "labelShow": "显示密码",
         "labelLogin": "登录"
       },
@@ -201,7 +201,7 @@
       },
       "login": {
         "passwordLabel": "Password",
-        "passwordTip": "Please remember your password",
+        "passwordTip": "The password is store at /usr/local/srs-cloud/mgmt/.env",
         "labelShow": "Show Password",
         "labelLogin": "Submit"
       },
