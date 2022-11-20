@@ -1,6 +1,6 @@
 import React from "react";
 import {ErrorBoundary} from 'react-error-boundary';
-import {Alert, Container} from "react-bootstrap";
+import {Alert, Button, Container} from "react-bootstrap";
 import {Errors} from "../utils";
 import {NavLink} from "react-router-dom";
 import {useTranslation} from "react-i18next";
@@ -13,8 +13,13 @@ export function SrsErrorBoundary({children}) {
   );
 }
 
-function ErrorFallback({error}) {
+function ErrorFallback({error, resetErrorBoundary}) {
   const [show, setShow] = React.useState(true);
+
+  const onResetError = React.useCallback(() => {
+    setShow(false);
+    resetErrorBoundary();
+  }, [setShow, resetErrorBoundary]);
 
   if (!show) return <></>;
   return (
@@ -22,6 +27,7 @@ function ErrorFallback({error}) {
       <Alert variant="danger" onClose={() => setShow(false)} dismissible>
         <Alert.Heading>You got an error!</Alert.Heading>
         <ErrorDetail error={error} />
+        <Button variant="success" type="button" onClick={onResetError}>OK</Button>
       </Alert>
     </Container>
   );

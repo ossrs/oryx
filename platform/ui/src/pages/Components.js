@@ -453,7 +453,8 @@ function MgmtUpgradeButton({onStatus}) {
   const [progress, setProgress] = React.useState(upgradeProgress);
   const {t} = useTranslation();
 
-  // For callback to use state.
+  // For callback to update state, because in callback we can only get the copy, so we need a ref to point to the latest
+  // copy of state of variant objects.
   const ref = React.useRef({});
   React.useEffect(() => {
     ref.current.startingUpgrade = startingUpgrade;

@@ -1,6 +1,7 @@
 import React from 'react';
 import axios from "axios";
 import './App.css'
+import {Container} from "react-bootstrap";
 import {BrowserRouter, Routes, Route, useParams, Outlet, useNavigate, useLocation} from "react-router-dom";
 import Footer from './pages/Footer';
 import Login from './pages/Login';
@@ -10,7 +11,6 @@ import Setup from './pages/Setup';
 import {Locale, Token} from "./utils";
 import Components from "./pages/Components";
 import Scenario from "./pages/Scenario";
-import {Container} from "react-bootstrap";
 import Settings from "./pages/Settings";
 import Dashboard from './pages/Dashboard';
 import Contact from "./pages/Contact";
