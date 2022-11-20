@@ -4,6 +4,7 @@ REALPATH=$(realpath $0)
 WORK_DIR=$(cd $(dirname $REALPATH)/.. && pwd)
 cd $WORK_DIR
 
+# Please update the release version for each major version.
 TAG=publication-v4.5
 echo "Publication TAG=$TAG, WORK_DIR=$WORK_DIR"
 
