@@ -8,8 +8,8 @@ cd $WORK_DIR
 TAG=publication-v4.6
 echo "Publication TAG=$TAG, WORK_DIR=$WORK_DIR"
 
-git tag -d $TAG
-git push origin :$TAG
+git tag -d $TAG 2>/dev/null
+git push origin :$TAG 2>/dev/null
 git tag $TAG
 git push origin $TAG
 echo "Publication ok, please visit"
