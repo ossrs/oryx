@@ -315,3 +315,24 @@ Run the platform react ui:
 
 Access the browser: http://localhost:3000
 
+## Release
+
+Release bugfix:
+
+* For mgmt or platform: `./mgmt/auto/pub.sh`
+* For ffmpeg: `./ffmpeg/auto/pub.sh`
+* For hooks: `./hooks/auto/pub.sh`
+* For tencent: `./tencent/auto/pub.sh`
+
+Release stable version:
+
+* For stable version: `./releases/auto/pub.sh`
+
+Release major or minor version:
+
+* For github release(MUST update the version manually): `./auto/publication.sh`
+
+> Note: The github release also trigger packager for BT or aaPanel.
+
+2022.11
+
