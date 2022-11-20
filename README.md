@@ -326,7 +326,7 @@ Release bugfix:
 
 Release stable version:
 
-* For stable version: `./releases/auto/pub.sh`
+* For stable version(MUST update the stable verison manually): `./releases/auto/pub.sh`
 
 Release major or minor version:
 
