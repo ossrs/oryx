@@ -324,7 +324,7 @@ Release bugfix:
 * For hooks: `./hooks/auto/pub.sh`
 * For tencent: `./tencent/auto/pub.sh`
 
-Release stable version:
+Release [stable version](https://api.ossrs.net/terraform/v1/releases):
 
 * For stable version(MUST update the stable verison manually): `./releases/auto/pub.sh`
 
