@@ -34,7 +34,7 @@ function ComponentsImpl() {
   const [strategyAutoUpgrade, setStrategyAutoUpgrade] = React.useState();
   const [userToggleStrategy, setUserToggleStrategy] = React.useState();
   const [searchParams] = useSearchParams();
-  const [allowManuallyUpgrade, setAllowManuallyUpgrade] = React.useState();
+  const [allowManuallyUpgrade, setAllowManuallyUpgrade] = React.useState(true);
   const [allowDisableContainer, setAllowDisableContainer] = React.useState();
   const [refreshContainers, setRefreshContainers] = React.useState();
   const [allowSwitchContainer, setAllowSwitchContainer] = React.useState(true);
