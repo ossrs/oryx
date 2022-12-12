@@ -14,6 +14,7 @@ if [[ $? -ne 0 ]]; then echo "Setup temporary directory failed"; exit 1; fi
 
 mkdir -p $TMP_DIR/source && cd $TMP_DIR/source &&
 if [[ ! -d srs-cloud ]]; then
+  echo "Clone srs-cloud to $TMP_DIR/source/srs-cloud"
   if [[ -z $GITHUB_ACTIONS ]]; then
     git clone https://gitee.com/ossrs/srs-cloud.git;
   else

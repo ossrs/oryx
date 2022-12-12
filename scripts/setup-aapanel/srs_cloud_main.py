@@ -206,9 +206,9 @@ class srs_cloud_main:
 
     def __node(self):
         # Try to detect node by pm2 manager, if not ok, detect by nodejs manager.
-        [ok, node] = self.__discover_path('{}/nvm/versions/node/v16*/bin/node'.format(public.get_setup_path()))
+        [ok, node] = self.__discover_path('{}/nvm/versions/node/v*/bin/node'.format(public.get_setup_path()))
         if ok != 'ok':
-            [ok, node] = self.__discover_path('{}/nodejs/v16*/bin/node'.format(public.get_setup_path()))
+            [ok, node] = self.__discover_path('{}/nodejs/v*/bin/node'.format(public.get_setup_path()))
         if ok != 'ok':
             ok = public.ExecShell('which node >/dev/null 2>&1 && echo -n ok')[0]
             node = public.ExecShell('which node 2>/dev/null')[0]
