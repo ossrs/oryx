@@ -11,6 +11,10 @@ echo "Foreach run script"
 # Disable swap by: swapoff /srs-swapfile
 MEM_TOTAL=$(grep MemTotal /proc/meminfo |awk '{print $2}')
 if [[ MEM_TOTAL -lt 2097152 ]]; then
+  if [[ -f /swapfile ]]; then
+    swapoff /swapfile; rm -f /swapfile; echo "Remove /swapfile"
+  fi
+
   if [[ ! -f /srs-swapfile ]]; then
     fallocate -l 2G /srs-swapfile && chmod 600 /srs-swapfile && ls -lh /srs-swapfile && mkswap /srs-swapfile &&
     echo "Create swap file ok"

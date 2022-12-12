@@ -367,6 +367,10 @@
       installing(resolve, reject);
     });
 
+    layer.msg('云SRS启动中，请稍后......', {icon: 1});
+    $('.btn_install_srs').html('正在启动').attr({'disabled': 'disabled'});
+    await new Promise(resolve => setTimeout(resolve, 30000));
+
     layer.msg('云SRS安装成功', {icon: 1});
     $('.btn_install_srs').html('安装完成').attr({'disabled': 'disabled'});
   }
