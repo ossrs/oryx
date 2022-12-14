@@ -235,8 +235,8 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
                       <td>{file.i}</td>
                       <td>{file.name}</td>
                       <td>
-                        <Badge bg={file.enabled ? 'success' : 'secondary'}>
-                          {file.enabled ? '转发中' : '未开启'}
+                        <Badge bg={file.enabled ? (file.frame ? 'success' : 'primary') : 'secondary'}>
+                          {file.enabled ? (file.frame ? '转发中' : '等待中') : '未开启'}
                         </Badge>
                       </td>
                       <td>{file.update && `${file.update?.format('YYYY-MM-DD HH:mm:ss')}`}</td>
