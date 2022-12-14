@@ -12,3 +12,19 @@ bash auto/zip.sh
 
 Upload the zip to BT panel, and install SRS.
 
+## Log
+
+Install log saved at `/tmp/srs_cloud_install.log`
+
+```bash
+cat /tmp/srs_cloud_install.log
+```
+
+When install SRS ready, there should be a file at:
+
+```bash
+ls -lh /www/server/panel/plugin/srs_cloud/.bt_ready
+```
+
+> Note: If not ready, you're not able to install srs cloud in BT or aaPanel.
+

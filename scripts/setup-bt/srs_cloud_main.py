@@ -11,6 +11,10 @@ from files import files
 from firewalls import firewalls
 
 class srs_cloud_main:
+    # Normally the plugin is at:
+    #       /www/server/panel/plugin/srs_cloud
+    # And public.get_setup_path() is:
+    #       /www/server
     __plugin_path = "{}/panel/plugin/srs_cloud".format(public.get_setup_path())
     __srs_service = "/usr/lib/systemd/system/srs-cloud.service"
     __deploy = '/usr/local/lighthouse/softwares'
@@ -18,6 +22,7 @@ class srs_cloud_main:
     __r0_file = '/tmp/srs_cloud_install.r0'
     __firewall = '/tmp/srs_cloud_install.fw'
     __log_file = '/tmp/srs_cloud_install.log'
+    __ready_file = '{}/.bt_ready'.format(__plugin_path)
     __site = 'srs.cloud.local'
 
     def __init__(self):
@@ -26,6 +31,7 @@ class srs_cloud_main:
     def serviceStatus(self, args):
         status = {}
         status['r0'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
+        status['ready'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__ready_file))[0]
         status['srs'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
         status['nginx'] = public.ExecShell('ls {}/nginx/sbin/nginx >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
         status['docker_manager'] = public.ExecShell('ls {}/panel/plugin/docker >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]

@@ -232,7 +232,11 @@
 
   async function srs_cloud_setup_mgmt_view() {
     const l = window.location;
-    const url = `${l.protocol}//${l.hostname}/mgmt/`;
+
+    // Always use HTTP, because HTTPS might not be available.
+    //const url = `${l.protocol}//${l.hostname}/mgmt/`;
+    const url = `http://${l.hostname}/mgmt/`;
+
     $('.srs_mgmt_link').attr('href', url);
   }
 
@@ -245,6 +249,13 @@
     const services = await srs_cloud_request('serviceStatus');
     console.log(`services status is ${JSON.stringify(services)}`);
     layer.close(tips);
+
+    // If BT or aaPanel not ready to install SRS, should wait.
+    if (services?.ready !== 'ok') {
+      const msg = `正在安装SRS插件，请稍后再试`;
+      layer.msg(msg, {icon: 2});
+      throw msg;
+    }
 
     // We use default site, so it must be available.
     if (services?.default_site_available !== 'ok') {

@@ -78,6 +78,10 @@ Install() {
   update_sysctl net.core.wmem_max 16777216
   update_sysctl net.core.wmem_default 16777216
 
+  # Now, we're ready to install by aaPanel.
+  echo 'Wait for srs-cloud plugin ready...'; sleep 10;
+  touch ${install_path}/.bt_ready
+
   echo 'Install OK'
 }
 
