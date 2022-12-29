@@ -210,7 +210,8 @@ class srs_cloud_main:
         return public.returnMsg(True, json.dumps({'active': ok}))
 
     def __node(self):
-        node = public.ExecShell('find {} -name node -type f 2>/dev/null |head -n 1'.format(public.get_setup_path()))[0]
+        # We try to find the first available node in /www/server then find by 'which node'.
+        node = public.ExecShell('for file in $(find {} -name node -type f); do $file --version >/dev/null 2>/dev/null && echo $file && break; done'.format(public.get_setup_path()))[0]
         if node is not None and node != '':
             ok = 'ok'
         else:
