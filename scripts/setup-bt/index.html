@@ -94,10 +94,7 @@
     const depsContent = deps.map((dep, index) => {
       return `
           <li>
-            ${index + 1}:
-            <a href="javascript:void(0);" class="btlink" onclick="${dep.call}('${dep.id}')">
-                安装${dep.title}
-            </a>
+            ${index + 1}: 安装${dep.title}
           </li>
     `;
     }).join('\n');
@@ -267,14 +264,13 @@
     // Request to install depends services.
     const deps = [
       ...(services?.nginx ? [] : [{id: 'nginx', title: 'NGINX', call: 'bt.soft.install'}]),
-      ...(services?.node_manager ? [] : [{id: 'pm2', title: 'Node.js 16+', call: 'bt.soft.install'}]),
     ];
     // If no docker manager plugin, or docker service, install the plugin.
     if (!services?.docker_manager) {
       deps.push({id: 'docker', title: 'Docker', call: 'bt.soft.install'});
     }
     // For nodejs, user might not install any node version.
-    if (services?.node_manager && !services?.node) {
+    if (!services?.node) {
       deps.push({id: 'nodejs', title: 'Node.js 16+', call: 'bt.soft.set_lib_config'});
     }
 
@@ -380,7 +376,7 @@
 
     layer.msg('云SRS启动中，请稍后......', {icon: 1});
     $('.btn_install_srs').html('正在启动').attr({'disabled': 'disabled'});
-    await new Promise(resolve => setTimeout(resolve, 30000));
+    await new Promise(resolve => setTimeout(resolve, 60000));
 
     layer.msg('云SRS安装成功', {icon: 1});
     $('.btn_install_srs').html('安装完成').attr({'disabled': 'disabled'});

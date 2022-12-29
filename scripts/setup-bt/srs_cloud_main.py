@@ -37,7 +37,6 @@ class srs_cloud_main:
         status['docker_manager'] = public.ExecShell('ls {}/panel/plugin/docker >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
         status['docker'] = public.ExecShell('ls /usr/lib/systemd/system/docker.service >/dev/null 2>&1 && echo -n ok')[0]
         status['docker_running'] = public.ExecShell('systemctl status docker.service >/dev/null 2>&1 && echo -n ok')[0]
-        status['node_manager'] = public.ExecShell('ls {}/panel/plugin/pm2 >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
         status['node'] = self.__node()[0]
         status['firewall'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__firewall))[0]
         status['site'] = public.ExecShell('ls {root}/{site} >/dev/null 2>&1 && echo -n ok'.format(
@@ -211,11 +210,10 @@ class srs_cloud_main:
         return public.returnMsg(True, json.dumps({'active': ok}))
 
     def __node(self):
-        # Try to detect node by pm2 manager, if not ok, detect by nodejs manager.
-        [ok, node] = self.__discover_path('{}/nvm/versions/node/v*/bin/node'.format(public.get_setup_path()))
-        if ok != 'ok':
-            [ok, node] = self.__discover_path('{}/nodejs/v*/bin/node'.format(public.get_setup_path()))
-        if ok != 'ok':
+        node = public.ExecShell('find {} -name node -type f 2>/dev/null |head -n 1'.format(public.get_setup_path()))[0]
+        if node is not None and node != '':
+            ok = 'ok'
+        else:
             ok = public.ExecShell('which node >/dev/null 2>&1 && echo -n ok')[0]
             node = public.ExecShell('which node 2>/dev/null')[0]
         if node is not None:

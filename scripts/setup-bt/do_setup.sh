@@ -6,8 +6,9 @@
 #   /usr/lib/systemd/system/srs-cloud.service
 
 R0_FILE=$1; NODEJS=$2; NGINX_PID=$3; WWW_HOME=$4; SITE_NAME=$5
-if [[ -z $NODEJS ]]; then echo "No nodejs installed"; exit 1; fi
-if [[ -z $NGINX_PID ]]; then echo "No nginx installed"; exit 1; fi
+if [[ -z $NODEJS ]]; then echo "The nodejs is empty"; exit 1; fi
+if [[ ! -f $NODEJS ]]; then echo "No nodejs installed"; exit 1; fi
+if [[ -z $NGINX_PID ]]; then echo "The nginx is empty"; exit 1; fi
 if [[ ! -f $NGINX_PID ]]; then echo "No nginx pid at $NGINX_PID"; exit 1; fi
 if [[ ! -f /etc/init.d/nginx ]]; then echo "No nginx file at /etc/init.d/nginx"; exit 1; fi
 if [[ -z $WWW_HOME ]]; then echo "No www home"; exit 1; fi
