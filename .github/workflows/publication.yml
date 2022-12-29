@@ -70,7 +70,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Release SRS Cloud ${{ env.SRS_VERSION }}
           body: |
-            [${{ github.event.head_commit.message }}](https://github.com/ossrs/WordPress-Plugin-SrsPlayer/commit/${{ github.sha }})
+            [${{ github.event.head_commit.message }}](https://github.com/ossrs/srs-cloud/commit/${{ github.sha }})
             ## Platform
             * [DigitalOcean](https://marketplace.digitalocean.com/apps/srs): [Tutorial](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-1-click-e9fe6f314ac6)
             * [Lighthouse](https://mp.weixin.qq.com/s/fWmdkw-2AoFD_pEmE_EIkA): [Tutorial](https://www.bilibili.com/video/BV1844y1L7dL)

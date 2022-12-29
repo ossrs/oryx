@@ -326,11 +326,11 @@ Release bugfix:
 
 Release [stable version](https://api.ossrs.net/terraform/v1/releases):
 
-* For stable version(MUST update the stable verison manually): `./releases/auto/pub.sh`
+* For stable version(MUST update the stable verison manually) in `releases/releases.js` then run: `./releases/auto/pub.sh`
 
 Release major or minor version:
 
-* For github release(MUST update the version manually): `./auto/publication.sh`
+* For github release(MUST update the version manually) in `auto/publication.sh` then run: `./auto/publication.sh`
 
 > Note: The github release also trigger packager for BT or aaPanel.
 
