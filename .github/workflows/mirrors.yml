@@ -6,14 +6,8 @@ on:
 
 jobs:
   docker:
-    name: releases-by-docker
     runs-on: ubuntu-20.04
-
     steps:
-
-      ################################################################################################
-      ################################################################################################
-      ################################################################################################
       # Docker hub for global user
       - name: Login docker hub
         uses: docker/login-action@v1
@@ -29,10 +23,11 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://hub.docker.com/r/ossrs/node/tags"
 
-      - name: Mirror for prom/prometheus
+      - name: Mirror for prom/prometheus:v2.40.7
         run: |
-          docker pull prom/prometheus
-          docker tag prom/prometheus ossrs/prometheus
+          docker pull prom/prometheus:v2.40.7
+          docker tag prom/prometheus:v2.40.7 ossrs/prometheus:v2.40.7
+          docker tag prom/prometheus:v2.40.7 ossrs/prometheus
           docker push --all-tags ossrs/prometheus
           echo "Release ok, please see:"
           echo "  https://hub.docker.com/r/ossrs/prometheus/tags"
@@ -64,22 +59,31 @@ jobs:
       - name: Mirror for redis:5.0
         run: |
           docker pull redis:5.0
+          docker tag redis:5.0 ossrs/redis:5.0
           docker tag redis:5.0 ossrs/redis
           docker push --all-tags ossrs/redis
           echo "Release ok, please see:"
           echo "  https://hub.docker.com/r/ossrs/redis/tags"
 
-      ################################################################################################
-      ################################################################################################
-      ################################################################################################
-      # Aliyun ACR
+      - name: Mirror for grafana:9.3.1
+        run: |
+          docker pull grafana/grafana:9.3.1
+          docker tag grafana/grafana:9.3.1 ossrs/grafana:9.3.1
+          docker tag grafana/grafana:9.3.1 ossrs/grafana
+          docker push --all-tags ossrs/grafana
+          echo "Release ok, please see:"
+          echo "  https://hub.docker.com/r/ossrs/grafana/tags"
+
+  aliyun-node:
+    runs-on: ubuntu-20.04
+    needs: docker
+    steps:
       - name: Login Aliyun docker hub
         uses: docker/login-action@v1
         with:
           registry: registry.cn-hangzhou.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
           password: "${{ secrets.ACR_PASSWORD }}"
-
       - name: Mirror to ACR for node:slim
         run: |
           docker pull node:slim
@@ -88,14 +92,35 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/node/images"
 
-      - name: Mirror to ACR for prom/prometheus
+  aliyun-prom:
+    runs-on: ubuntu-20.04
+    needs: aliyun-node
+    steps:
+      - name: Login Aliyun docker hub
+        uses: docker/login-action@v1
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
+      - name: Mirror to ACR for prom/prometheus:v2.40.7
         run: |
-          docker pull prom/prometheus
-          docker tag prom/prometheus registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus
+          docker pull prom/prometheus:v2.40.7
+          docker tag prom/prometheus:v2.40.7 registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus:v2.40.7
+          docker tag prom/prometheus:v2.40.7 registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus
           docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/prometheus/images"
 
+  aliyun-redis-exporter:
+    runs-on: ubuntu-20.04
+    needs: aliyun-prom
+    steps:
+      - name: Login Aliyun docker hub
+        uses: docker/login-action@v1
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
       - name: Mirror to ACR for oliver006/redis_exporter
         run: |
           docker pull oliver006/redis_exporter
@@ -104,6 +129,16 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/redis_exporter/images"
 
+  aliyun-node-exporter:
+    runs-on: ubuntu-20.04
+    needs: aliyun-redis-exporter
+    steps:
+      - name: Login Aliyun docker hub
+        uses: docker/login-action@v1
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
       - name: Mirror to ACR for prom/node-exporter
         run: |
           docker pull prom/node-exporter
@@ -112,6 +147,16 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/node-exporter/images"
 
+  aliyun-certbot:
+    runs-on: ubuntu-20.04
+    needs: aliyun-node-exporter
+    steps:
+      - name: Login Aliyun docker hub
+        uses: docker/login-action@v1
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
       - name: Mirror to ACR for certbot/certbot
         run: |
           docker pull certbot/certbot
@@ -120,11 +165,41 @@ jobs:
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/certbot/images"
 
+  aliyun-redis-server:
+    runs-on: ubuntu-20.04
+    needs: aliyun-certbot
+    steps:
+      - name: Login Aliyun docker hub
+        uses: docker/login-action@v1
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
       - name: Mirror to ACR for redis:5.0
         run: |
           docker pull redis:5.0
+          docker tag redis:5.0 registry.cn-hangzhou.aliyuncs.com/ossrs/redis:5.0
           docker tag redis:5.0 registry.cn-hangzhou.aliyuncs.com/ossrs/redis
           docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/redis
           echo "Release ok, please see:"
           echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/redis/images"
+
+  aliyun-grafana:
+    runs-on: ubuntu-20.04
+    needs: aliyun-redis-server
+    steps:
+      - name: Login Aliyun docker hub
+        uses: docker/login-action@v1
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
+      - name: Mirror to ACR for grafana:9.3.1
+        run: |
+          docker pull grafana/grafana:9.3.1
+          docker tag grafana/grafana:9.3.1 registry.cn-hangzhou.aliyuncs.com/ossrs/grafana:9.3.1
+          docker tag grafana/grafana:9.3.1 registry.cn-hangzhou.aliyuncs.com/ossrs/grafana
+          docker push --all-tags registry.cn-hangzhou.aliyuncs.com/ossrs/grafana
+          echo "Release ok, please see:"
+          echo "  https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/grafana/images"
 
