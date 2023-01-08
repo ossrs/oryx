@@ -1,7 +1,6 @@
 import React from "react";
 import {Container, Carousel} from "react-bootstrap";
 import srsCloud from "../resources/srs-cloud-1296x648.png";
-import srsServer from "../resources/srs-server-1296x648.png";
 import srsVideo from "../resources/srs-xingqiu-1296x648.png";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 
