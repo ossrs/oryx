@@ -2,7 +2,7 @@ import React from "react";
 import {Container, Carousel} from "react-bootstrap";
 import srsCloud from "../resources/srs-cloud-1296x648.png";
 import srsServer from "../resources/srs-server-1296x648.png";
-import srsVideo from "../resources/srs-video-1296x648.png";
+import srsVideo from "../resources/srs-xingqiu-1296x648.png";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 
 export default function Contact() {
@@ -32,15 +32,16 @@ function ContactCn() {
           <img
             className="d-block w-100"
             src={srsVideo}
-            alt="SRS每周答疑"
+            alt="SRS付费星球"
           />
           <Carousel.Caption>
-            <h5>欢迎关注SRS视频号</h5>
+            <h5>欢迎加入SRS付费星球</h5>
             <p>
-              每周六晚上20点答疑哦，有问必答，欢迎来问。
+              加入SRS付费星球后，可以和SRS维护者建立直接和长期的联系；还有每月一次线上交流的机会；也可以提疑惑和需求，我们会慎重和优先考虑。
             </p>
           </Carousel.Caption>
         </Carousel.Item>
+        {/*
         <Carousel.Item>
           <img
             className="d-block w-100"
@@ -54,6 +55,7 @@ function ContactCn() {
             </p>
           </Carousel.Caption>
         </Carousel.Item>
+        */}
       </Carousel>
     </Container>
   );
