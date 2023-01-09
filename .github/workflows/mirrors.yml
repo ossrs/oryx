@@ -30,6 +30,14 @@ jobs:
           dst: |
             ossrs/prometheus:v2.40.7
             ossrs/prometheus
+      # See https://hub.docker.com/r/ossrs/pushgateway/tags
+      - name: Mirror for prom/pushgateway:v1.4.3
+        uses: akhilerm/tag-push-action@v2.1.0
+        with:
+          src: prom/pushgateway:v1.4.3
+          dst: |
+            ossrs/pushgateway:v1.4.3
+            ossrs/pushgateway
       # See https://hub.docker.com/r/ossrs/redis_exporter/tags
       - name: Mirror for oliver006/redis_exporter
         uses: akhilerm/tag-push-action@v2.1.0
@@ -91,7 +99,7 @@ jobs:
             registry.cn-hangzhou.aliyuncs.com/ossrs/node:hydrogen-slim
             registry.cn-hangzhou.aliyuncs.com/ossrs/node:18
     runs-on: ubuntu-20.04
-      
+
   # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/prometheus/images
   aliyun-prom:
     needs: aliyun-node
@@ -111,9 +119,28 @@ jobs:
             registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus
     runs-on: ubuntu-20.04
 
+  # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/pushgateway/images
+  aliyun-pushgateway:
+    needs: aliyun-prom
+    steps:
+      - name: Login Aliyun docker hub
+        uses: docker/login-action@v2
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
+      - name: Mirror for prom/pushgateway:v1.4.3
+        uses: akhilerm/tag-push-action@v2.1.0
+        with:
+          src: prom/pushgateway:v1.4.3
+          dst: |
+            registry.cn-hangzhou.aliyuncs.com/ossrs/pushgateway:v1.4.3
+            registry.cn-hangzhou.aliyuncs.com/ossrs/pushgateway
+    runs-on: ubuntu-20.04
+
   # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/redis_exporter/images
   aliyun-redis-exporter:
-    needs: aliyun-prom
+    needs: aliyun-pushgateway
     steps:
       - name: Login Aliyun docker hub
         uses: docker/login-action@v2
