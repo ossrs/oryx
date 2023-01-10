@@ -87,9 +87,12 @@ docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/redis_exporter &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/certbot &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/redis
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
+
+# The certbot tool is optional, and might fail on arm server because no arm image.
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/certbot
+if [[ $? -ne 0 ]]; then echo "Ignore certbot fail"; fi
 
 # If install ok, the directory should exists.
 if [[ ! -d ${INSTALL_HOME} || ! -d ${INSTALL_HOME}/mgmt ]]; then

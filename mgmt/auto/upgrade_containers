@@ -10,10 +10,13 @@ docker pull ${REGISTRY}/ossrs/node:slim &&
 docker pull ${REGISTRY}/ossrs/prometheus &&
 docker pull ${REGISTRY}/ossrs/redis_exporter &&
 docker pull ${REGISTRY}/ossrs/node-exporter &&
-docker pull ${REGISTRY}/ossrs/certbot &&
 docker pull ${REGISTRY}/ossrs/redis &&
 docker pull ${REGISTRY}/ossrs/srs:node-av
 if [[ $? -ne 0 ]]; then echo "Update the containers failed"; exit 1; fi
+
+# The certbot tool is optional, and might fail on arm server because no arm image.
+docker pull ${REGISTRY}/ossrs/certbot
+if [[ $? -ne 0 ]]; then echo "Ignore certbot fail"; fi
 
 # Remove the containers if need upgrade
 #   update_containers registry image as_image
