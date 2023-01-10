@@ -10,8 +10,5 @@ exports.market = {
   tencent: {
     name: 'tencent-cloud',
   },
-  ffmpeg: {
-    name: 'ffmpeg',
-  },
 };
 

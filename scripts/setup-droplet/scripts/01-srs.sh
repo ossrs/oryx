@@ -22,7 +22,6 @@ echo "Cache docker images" &&
 docker pull docker.io/ossrs/srs:4 &&
 docker pull docker.io/ossrs/node:slim &&
 docker pull docker.io/ossrs/srs-cloud:tencent-1 &&
-docker pull docker.io/ossrs/srs-cloud:ffmpeg-1 &&
 docker pull docker.io/ossrs/srs-cloud:platform-1 &&
 docker pull docker.io/ossrs/prometheus &&
 docker pull docker.io/ossrs/redis_exporter &&

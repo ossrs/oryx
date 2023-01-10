@@ -103,30 +103,6 @@ exports.market = {
       ...(platform.isDarwin ? ['--env=REDIS_HOST=host.docker.internal'] : ['--env=REDIS_HOST=redis']),
     ],
   },
-  ffmpeg: {
-    name: metadata.market.ffmpeg.name,
-    image: async () => {
-      const registry = await platform.registry();
-      return `${registry}/ossrs/srs-cloud:ffmpeg-1`;
-    },
-    tcpPorts: [2019],
-    udpPorts: [],
-    command: ['node', '.'],
-    logConfig: [
-      '--log-driver=json-file',
-      '--log-opt', 'max-size=1g',
-      '--log-opt', 'max-file=3',
-    ],
-    volumes: () => [
-      `${platform.cwd()}/.env:/usr/local/srs-cloud/ffmpeg/.env`,
-      // We mount the containers to mgmt in platform container, which links to platform.
-      `${platform.cwd()}/containers:/usr/local/srs-cloud/mgmt/containers`,
-    ],
-    extras: () => [
-      ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
-      ...(platform.isDarwin ? ['--env=REDIS_HOST=host.docker.internal'] : ['--env=REDIS_HOST=redis']),
-    ],
-  },
   prometheus: {
     name: 'prometheus',
     image: async () => {

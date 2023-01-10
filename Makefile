@@ -14,7 +14,6 @@ npm:
 	@cd mgmt && npm install
 
 build: npm
-	@cd ffmpeg && npm install
 	@cd platform && npm install
 	@cd platform/ui && npm install
 	@cd releases && npm install
@@ -40,7 +39,6 @@ uninstall:
 	@rm -rf $(SRS_PREFIX)
 
 test:
-	@cd ffmpeg && npm test
 	@cd platform && npm test
 	@cd platform/ui && npm test
 	@cd mgmt && npm test

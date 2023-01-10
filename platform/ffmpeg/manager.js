@@ -7,7 +7,8 @@ let forwardWorker;
 exports.run = async () => {
   // The DVR worker, for cloud storage.
   new Promise((resolve, reject) => {
-    forwardWorker = new Worker("./forwardWorker.js");
+    // Note that current work directory is platform, so we use ./ffmpeg/xxx.js
+    forwardWorker = new Worker("./ffmpeg/forwardWorker.js");
 
     forwardWorker.on('message', (msg) => {
       console.log('Thread #manager:', msg);

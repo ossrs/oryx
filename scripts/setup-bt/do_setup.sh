@@ -81,7 +81,6 @@ echo "Cache docker images" &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs:4 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:tencent-1 &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:ffmpeg-1 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/redis_exporter &&

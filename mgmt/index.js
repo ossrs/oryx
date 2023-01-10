@@ -72,7 +72,7 @@ utils.srsProxy(staticCache, app, path.join(__dirname, 'containers/www/tools/'), 
 app.use(proxy('/terraform/v1/tencent/', withLogs({target: 'http://127.0.0.1:2020/'})));
 
 // For registered modules, by /terraform/v1/ffmpeg/
-app.use(proxy('/terraform/v1/ffmpeg/', withLogs({target: 'http://127.0.0.1:2019/'})));
+app.use(proxy('/terraform/v1/ffmpeg/', withLogs({target: 'http://127.0.0.1:2024/'})));
 
 // For platform apis, by /terraform/v1/mgmt/
 // TODO: FIXME: Proxy all mgmt APIs to platform.

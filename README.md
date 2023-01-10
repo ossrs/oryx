@@ -24,7 +24,7 @@ Other more use scenarios is on the way, please read [this post](https://github.c
 ## Architecture
 
 The architecture of [srs-cloud](https://github.com/ossrs/srs-cloud#architecture) by 
-[mermaid](https://mermaid.live/edit#pako:eNptkk1vwjAMhv9KlMNUJAo7bBc2ISEKQtoXKoxLyyFtTNvRJFXqMhDivy9JxzbQDnX88cSvY_VIU8WBDuimVJ9pzjSS5_AhloTIrJB74vtDIjKBnjWPie4PkwOR5spH3XFY3SSZZlVOFuHCJYj1wsgYcte7dVcWyJIS1r_lwJXvv8sB7KBUVVsHye1h5Zy4BX0_V2pb23BmHa8qGW6UFp0WQQ1MjBrMyQ0JVqGxKxW4bjayyPitHe6n7XQqKsj-5nxy7uqyra7_Dzgk75V5Mgfnh1ACq-ESGIPGRLX-bLmcX4kvQaYgcVyqhrf86CUyX9-M2Tejry_xuVYCMIemdhO9mu1P9pXSCPoSDFS6vc5N5C7yeiB3btWpBm6UC1bWPdxj50opBF7UkecO8rQyZdqlArRgBTf_yNHCMTWjCIjpwLgcNqwpMaaxPBm0qThDmPAClaYD1A10KWtQLQ4yPcctExTM7FDQwcaMAqcvlcPL8w)
+[mermaid](https://mermaid.live/edit#pako:eNqNUsluwjAQ_RXLhwokAj20F1ohIQJC6oYC5ZJwcOLJUmI7ciYUhPj32k5pC6ceMtt7M_Ns50gTxYEOaVqqzyRnGslz8BBJQmRWyD3xvBERmcCONY-xHoziA5Gm5aPuOlrdxJlmVU6WwdIViI2C0Bhy1791LUtkcQmbX9h38P037MMOSlW1OEhunV3nllui9XOltnWnKhmmSotBbtNuy0ANTIwbzMkN8deBsWvlu2E2s5TJW6vtZ-psJirIfselqc27f0keOaOu2urw_tM5Iu-VuRMOLg6gBFbDJWECGmPVxvPVanElbwUyAYmTUjW85Y9fQvMNzEEG5nCbS_pCKwGYQ1M7ia_meab7SmkEfUn0VbK9rk3lLuz0Qe7cWyQauNlcsLLu4x67V5sC4EUddpwjT2sD0x4VoAUruPmJjpYcUSNFQESHJuSQsqbEiEbyZKhNxRnClBeoNB2ibqBHWYNqeZDJOW85fsHMHQo6TI0UOH0BlLfYfA)
 
 ```mermaid
 flowchart LR;
@@ -33,11 +33,11 @@ flowchart LR;
     SRSR[SRS 4.0<br/>Stable];
     SRSD[SRS 5.0<br/>Develop];
   end
-  mgmt --> SRS --hooks--> Hooks(platform) --> StreamAuth & DVR & VoD;
+  mgmt --> SRS --> Hooks(platform/hooks) --> StreamAuth & DVR & VoD;
   DVR --> COS;
-  mgmt --> FFmpeg;
+  mgmt --> FFmpeg(platform/ffmpeg);
   mgmt --- platform;
-  SRS --- FFmpeg;
+  SRS --- FFmpeg(platform/ffmpeg);
   mgmt --> Upgrade --> Release;
   mgmt --> Certbot --> HTTPS;
   mgmt --> TencentCloud --> CAM[CAM/COS/VoD];
@@ -65,16 +65,16 @@ The ports allocated:
 | Module | TCP Ports | UDP Ports | Notes                                                                                   |
 | ------ | --------- | --------- |-----------------------------------------------------------------------------------------|
 | SRS | 1935, 1985, 8080,<br/> 8088, 1990, 554,<br/> 8936 | 8000, 8935, 10080,<br/> 1989 | See [SRS ports](https://github.com/ossrs/srs/blob/develop/trunk/doc/Resources.md#ports) |
-| platform | 2024 |  - | Mount at `/terraform/v1/mgmt/` and `/terraform/v1/hooks/`                               |
+| platform | 2024 |  - | Mount at `/terraform/v1/mgmt/`, `/terraform/v1/hooks/` and `/terraform/v1/ffmpeg/`      |
 | releases | 2023 |  - | Mount at `/terraform/v1/releases`                                                       |
 | mgmt | 2022 |  - | Mount at `/mgmt/` and `/terraform/v1/mgmt/`                                             |
 | tencent-cloud | 2020 |  - | Mount at `/terraform/v1/tencent/`                                                       |
-| ffmpeg | 2019 |  - | Mount at `/terraform/v1/ffmpeg/`                                                        |
 | prometheus | 9090 | - | Mount at `/prometheus/`                                                                 |
 | node-exporter | 9100 | - | -                                                                                       |
 | redis | 56379 | - | -                                                                                       |
 
 > Note: Hooks(2021) has been migrated to platform(2024).
+> Note: FFmpeg(2019) has been migrated to platform(2024).
 
 ## Features
 
