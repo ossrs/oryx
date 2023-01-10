@@ -7,7 +7,8 @@ let dvrWorker, vodWorker, recordWorker;
 exports.run = async () => {
   // The DVR worker, for cloud storage.
   new Promise((resolve, reject) => {
-    dvrWorker = new Worker("./dvrWorker.js");
+    // Note that current work directory is platform, so we use ./hooks/xxx.js
+    dvrWorker = new Worker("./hooks/dvrWorker.js");
 
     dvrWorker.on('message', (msg) => {
       console.log('Thread #manager:', msg);
@@ -26,7 +27,8 @@ exports.run = async () => {
 
   // The VoD worker, for cloud VoD.
   new Promise((resolve, reject) => {
-    vodWorker = new Worker("./vodWorker.js");
+    // Note that current work directory is platform, so we use ./hooks/xxx.js
+    vodWorker = new Worker("./hooks/vodWorker.js");
 
     vodWorker.on('message', (msg) => {
       console.log('Thread #manager:', msg);
@@ -45,7 +47,8 @@ exports.run = async () => {
 
   // The Record worker, for cloud storage.
   new Promise((resolve, reject) => {
-    recordWorker = new Worker("./recordWorker.js");
+    // Note that current work directory is platform, so we use ./hooks/xxx.js
+    recordWorker = new Worker("./hooks/recordWorker.js");
 
     recordWorker.on('message', (msg) => {
       console.log('Thread #manager:', msg);

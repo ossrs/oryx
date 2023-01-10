@@ -24,7 +24,6 @@ function ComponentsImpl() {
   const [status, setStatus] = React.useState();
   const [srsRelease, setSrsRelease] = React.useState();
   const [srsDev, setSrsDev] = React.useState();
-  const [hooks, setHooks] = React.useState();
   const [tencent, setTencent] = React.useState();
   const [ffmpeg, setFFmpeg] = React.useState();
   const [platform, setPlatform] = React.useState();
@@ -103,7 +102,6 @@ function ComponentsImpl() {
 
         if (m.name === 'srs-server') setSrsRelease(m);
         if (m.name === 'srs-dev') setSrsDev(m);
-        if (m.name === 'srs-hooks') setHooks(m);
         if (m.name === 'tencent-cloud') setTencent(m);
         if (m.name === 'ffmpeg') setFFmpeg(m);
         if (m.name === 'platform') setPlatform(m);
@@ -205,32 +203,6 @@ function ComponentsImpl() {
                       {t('coms.switchConfirm3')}
                     </p>
                   </SwitchConfirmButton>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xs lg={3}>
-            <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>{t('coms.hooks')}</Card.Header>
-              <Card.Body>
-                <Card.Text as={Col}>
-                  {t('coms.containerName')}：{hooks?.name} <br/>
-                  {t('coms.containerId')}：{hooks?.container?.ID} <br/>
-                  {t('coms.containerState')}：{hooks?.StatusMessage}
-                  <p></p>
-                </Card.Text>
-                <div style={{display: 'inline-block'}}>
-                  <Button className='disabled'>
-                    {t('helper.restart')}
-                  </Button> &nbsp;
-                  <Button className='disabled'>
-                    {t('helper.upgrade')}
-                  </Button> &nbsp;
-                  <MgmtUpdateContainer
-                    allow={allowDisableContainer && hooks?.name}
-                    enabled={hooks?.enabled}
-                    onClick={() => handleContainerChange(hooks)}
-                  />
                 </div>
               </Card.Body>
             </Card>

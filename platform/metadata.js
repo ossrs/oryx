@@ -79,34 +79,6 @@ exports.market = {
       ...(platform.isDarwin ? [] : ['--ulimit', 'core=-1']),
     ],
   },
-  hooks: {
-    name: metadata.market.hooks.name,
-    image: async () => {
-      const registry = await platform.registry();
-      return `${registry}/ossrs/srs-cloud:hooks-1`;
-    },
-    tcpPorts: [2021],
-    udpPorts: [],
-    command: ['node', '.'],
-    logConfig: [
-      '--log-driver=json-file',
-      '--log-opt', 'max-size=1g',
-      '--log-opt', 'max-file=3',
-    ],
-    volumes: () => [
-      `${platform.cwd()}/.env:/usr/local/srs-cloud/hooks/.env`,
-      // We mount the containers to mgmt in hooks container, which links to hooks.
-      // Note that we MUST NOT mount the containers directory, to allow user to use symbol link for record.
-      `${platform.cwd()}/containers/objs/nginx/html:/usr/local/srs-cloud/mgmt/containers/objs/nginx/html`,
-      `${platform.cwd()}/containers/data/record:/usr/local/srs-cloud/mgmt/containers/data/record`,
-      `${platform.cwd()}/containers/data/dvr:/usr/local/srs-cloud/mgmt/containers/data/dvr`,
-      `${platform.cwd()}/containers/data/vod:/usr/local/srs-cloud/mgmt/containers/data/vod`,
-    ],
-    extras: () => [
-      ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
-      ...(platform.isDarwin ? ['--env=REDIS_HOST=host.docker.internal'] : ['--env=REDIS_HOST=redis']),
-    ],
-  },
   tencent: {
     name: metadata.market.tencent.name,
     image: async () => {

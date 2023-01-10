@@ -80,7 +80,6 @@ if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
 echo "Cache docker images" &&
 docker pull docker.io/ossrs/srs:4 &&
 docker pull docker.io/ossrs/node:slim &&
-docker pull docker.io/ossrs/srs-cloud:hooks-1 &&
 docker pull docker.io/ossrs/srs-cloud:tencent-1 &&
 docker pull docker.io/ossrs/srs-cloud:ffmpeg-1 &&
 docker pull docker.io/ossrs/srs-cloud:platform-1 &&

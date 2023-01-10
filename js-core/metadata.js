@@ -7,9 +7,6 @@ exports.market = {
   srsDev: {
     name: 'srs-dev',
   },
-  hooks: {
-    name: 'srs-hooks',
-  },
   tencent: {
     name: 'tencent-cloud',
   },

@@ -49,6 +49,15 @@ exports.initOs = async() => {
 
   // Always update the registry, because it might change.
   discoverRegistry(source);
+
+  // Create directories for data, allow user to link it.
+  [
+    "containers/data/dvr", "containers/data/prometheus", "containers/data/record", "containers/data/vod",
+  ].forEach((f) => {
+    if (!fs.existsSync(f)) {
+      fs.mkdirSync(f, {recursive: true})
+    }
+  })
 };
 
 function discoverRegistry(source) {

@@ -18,8 +18,9 @@ const system = require('./system');
 const platform = require('./platform');
 const staticCache = require('koa-static-cache');
 const serve = require('koa-static');
-const mount  = require('koa-mount');
+const mount = require('koa-mount');
 const loadbalance = require('./loadbalance');
+const hooks = require('./hooks')
 
 const app = new Koa();
 
@@ -109,6 +110,7 @@ app.use(async (ctx, next) => {
 const router = new Router();
 
 loadbalance.handle(token.handle(system.handle(router)));
+hooks.handle(router);
 
 router.all('/terraform/v1/mgmt/versions', async (ctx) => {
   ctx.body = utils.asResponse(0, {version: pkg.version});
@@ -122,6 +124,7 @@ const run = async () => {
   console.log(`Run with cwd=${process.cwd()}`);
 
   thread.run();
+  hooks.run();
 
   app.listen(2024, () => {
     console.log(`Server start on http://localhost:2024`);

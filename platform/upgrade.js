@@ -166,7 +166,6 @@ async function firstRun() {
   // Remove containers for IP might change, and use network srs-cloud.
   await helper.execApi('rmContainer', [metadata.market.srs.name]);
   await helper.execApi('rmContainer', [metadata.market.srsDev.name]);
-  await helper.execApi('rmContainer', [metadata.market.hooks.name]);
   await helper.execApi('rmContainer', [metadata.market.tencent.name]);
   await helper.execApi('rmContainer', [metadata.market.ffmpeg.name]);
   await helper.execApi('rmContainer', [metadata.market.prometheus.name]);

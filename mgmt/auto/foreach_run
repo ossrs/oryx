@@ -45,7 +45,3 @@ if [[ $? -ne 0 ]]; then echo "Setup redis failed"; exit 1; fi
 bash auto/setup_network
 if [[ $? -ne 0 ]]; then echo "Setup docker network failed"; exit 1; fi
 
-# Create directories for data, allow user to link it.
-mkdir -p containers/data/dvr containers/data/prometheus containers/data/record containers/data/vod
-
-

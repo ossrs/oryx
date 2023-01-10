@@ -24,7 +24,6 @@ jobs:
             platform/package-lock.json
             platform/ui/package-lock.json
             releases/package-lock.json
-            hooks/package-lock.json
             ffmpeg/package-lock.json
             tecent/package-lock.json
 
