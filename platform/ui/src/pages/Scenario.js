@@ -4,7 +4,6 @@ import React from "react";
 import {Clipboard, Token} from "../utils";
 import axios from "axios";
 import ScenarioDvr from './ScenarioDvr';
-import ScenarioSource from './ScenarioSource';
 import ScenarioSrt from './ScenarioSrt';
 import ScenarioLive from './ScenarioLive';
 import useUrls from "../components/UrlGenerator";
@@ -117,9 +116,6 @@ function ScenarioImpl({defaultActiveTab, defaultActiveChildTab}) {
                 {activeChildTab === 'vod' && <ScenarioVod/>}
               </Tab>
             </Tabs>
-          </Tab>
-          <Tab eventKey="source" title={t('scenario.code')}>
-            {activeTab === 'source' && <ScenarioSource/>}
           </Tab>
         </Tabs>
       </Container>
