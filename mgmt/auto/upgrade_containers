@@ -64,13 +64,7 @@ function update_containers() {
 # container if need to change the startup arguments.
 echo "Upgrading all containers by images" &&
 update_containers $REGISTRY ossrs/srs:4 ossrs/srs:4 &&
-update_containers $REGISTRY ossrs/srs:5 ossrs/srs:5 &&
-# Compatible for previous versions.
-update_containers $REGISTRY ossrs/srs-terraform:hooks-1 ossrs/srs-cloud:hooks-1 &&
-update_containers $REGISTRY ossrs/srs-terraform:tencent-1 ossrs/srs-cloud:tencent-1 &&
-# For new versions.
-update_containers $REGISTRY ossrs/srs-cloud:hooks-1 ossrs/srs-cloud:hooks-1 &&
-update_containers $REGISTRY ossrs/srs-cloud:tencent-1 ossrs/srs-cloud:tencent-1 &&
+update_containers $REGISTRY ossrs/srs:5 ossrs/srs:5
 if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
 
 # Note that we should update the platform image, so we could fast startup the container, because mgmt use another tag

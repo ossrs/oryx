@@ -17,7 +17,6 @@ build: npm
 	@cd platform && npm install
 	@cd platform/ui && npm install
 	@cd releases && npm install
-	@cd tencent && npm install
 	@cd mgmt && npm run build
 	@cd platform && npm run build
 
@@ -43,5 +42,4 @@ test:
 	@cd platform/ui && npm test
 	@cd mgmt && npm test
 	@cd releases && npm test
-	@cd tencent && npm test
 

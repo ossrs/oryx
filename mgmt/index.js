@@ -52,6 +52,7 @@ app.use(proxy('/terraform/v1/releases', withLogs({target: 'http://127.0.0.1:2023
 app.use(proxy('/prometheus', withLogs({target: 'http://127.0.0.1:9090/'})));
 
 // For registered modules, by /terraform/v1/hooks/
+// Note that this module has been migrated to platform.
 app.use(proxy('/terraform/v1/hooks/', withLogs({target: 'http://127.0.0.1:2024/'})));
 // Compatible with old APIs, to work with running SRS wihtout restart them.
 // TODO: FIXME: Remove it when all SRS container restarted.
@@ -69,9 +70,11 @@ utils.srsProxy(staticCache, app, path.join(__dirname, 'containers/www/tools/'), 
 ]);
 
 // For registered modules, by /terraform/v1/tencent/
-app.use(proxy('/terraform/v1/tencent/', withLogs({target: 'http://127.0.0.1:2020/'})));
+// Note that this module has been migrated to platform.
+app.use(proxy('/terraform/v1/tencent/', withLogs({target: 'http://127.0.0.1:2024/'})));
 
 // For registered modules, by /terraform/v1/ffmpeg/
+// Note that this module has been migrated to platform.
 app.use(proxy('/terraform/v1/ffmpeg/', withLogs({target: 'http://127.0.0.1:2024/'})));
 
 // For platform apis, by /terraform/v1/mgmt/

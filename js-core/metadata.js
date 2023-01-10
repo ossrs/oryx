@@ -7,8 +7,5 @@ exports.market = {
   srsDev: {
     name: 'srs-dev',
   },
-  tencent: {
-    name: 'tencent-cloud',
-  },
 };
 

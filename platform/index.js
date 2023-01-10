@@ -22,6 +22,7 @@ const mount = require('koa-mount');
 const loadbalance = require('./loadbalance');
 const hooks = require('./hooks');
 const ffmpeg = require('./ffmpeg');
+const tencent = require('./tencent');
 
 const app = new Koa();
 
@@ -113,6 +114,7 @@ const router = new Router();
 loadbalance.handle(token.handle(system.handle(router)));
 hooks.handle(router);
 ffmpeg.handle(router);
+tencent.handle(router);
 
 router.all('/terraform/v1/mgmt/versions', async (ctx) => {
   ctx.body = utils.asResponse(0, {version: pkg.version});
@@ -128,6 +130,7 @@ const run = async () => {
   thread.run();
   hooks.run();
   ffmpeg.run();
+  tencent.run();
 
   app.listen(2024, () => {
     console.log(`Server start on http://localhost:2024`);

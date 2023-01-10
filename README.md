@@ -24,7 +24,7 @@ Other more use scenarios is on the way, please read [this post](https://github.c
 ## Architecture
 
 The architecture of [srs-cloud](https://github.com/ossrs/srs-cloud#architecture) by 
-[mermaid](https://mermaid.live/edit#pako:eNqNUsluwjAQ_RXLhwokAj20F1ohIQJC6oYC5ZJwcOLJUmI7ciYUhPj32k5pC6ceMtt7M_Ns50gTxYEOaVqqzyRnGslz8BBJQmRWyD3xvBERmcCONY-xHoziA5Gm5aPuOlrdxJlmVU6WwdIViI2C0Bhy1791LUtkcQmbX9h38P037MMOSlW1OEhunV3nllui9XOltnWnKhmmSotBbtNuy0ANTIwbzMkN8deBsWvlu2E2s5TJW6vtZ-psJirIfselqc27f0keOaOu2urw_tM5Iu-VuRMOLg6gBFbDJWECGmPVxvPVanElbwUyAYmTUjW85Y9fQvMNzEEG5nCbS_pCKwGYQ1M7ia_meab7SmkEfUn0VbK9rk3lLuz0Qe7cWyQauNlcsLLu4x67V5sC4EUddpwjT2sD0x4VoAUruPmJjpYcUSNFQESHJuSQsqbEiEbyZKhNxRnClBeoNB2ibqBHWYNqeZDJOW85fsHMHQo6TI0UOH0BlLfYfA)
+[mermaid](https://mermaid.live/edit#pako:eNqNUktvwjAM_itRDhOVeOywXdiEhCgIaS_UMi6UQ9q4tKNJqtRlIMR_X5KO8TjtUMf299n-nPRAE8WB9mlaqO8kYxrJa_AUSULkOpc70ukMiFgLbFnzHOveIN4TaUq-Ks_Rqjpea1ZmJAxClyDWC5bGkIfuvSsJkcUFrM6w7-DHX9iHLRSqbHCQ3B52nBtuifacKrWpWmXBMFVa9DIbeg0DNTAxrDEjd8RfBMYulO-a2chSRh-Ntr-uk4koYX1ul6Y29i5JHXJCXbbR0flP5YB8luZOODg_gAJYBdeEEWiMVeNP5_PZjbw5yAQkjgpV8_Ooy2yz-mj4tjRfz-zXMzuvrrvMtBKAGdSVU_5uXm28K5VG0NdEXyWb29xYbpetLsite6JEAzejc1ZUXdyhdzMpAJ5Xy5Y7yMvCwLRNBWjBcm7-rYMlR9RIERDRvnE5pKwuMKKRPBpqXXKGMOY5Kk37qGtoU1ajCvcyOcUNx8-ZuVpB-6mRAscfoGvhKQ)
 
 ```mermaid
 flowchart LR;
@@ -40,7 +40,7 @@ flowchart LR;
   SRS --- FFmpeg(platform/ffmpeg);
   mgmt --> Upgrade --> Release;
   mgmt --> Certbot --> HTTPS;
-  mgmt --> TencentCloud --> CAM[CAM/COS/VoD];
+  mgmt --> TencentCloud(platform/TencentCloud) --> CAM[CAM/COS/VoD];
   mgmt --> Prometheus --- NodeExporter;
   mgmt --> Docker;
   mgmt --> Env[(.env<br/>credentials.txt)];
@@ -65,16 +65,18 @@ The ports allocated:
 | Module | TCP Ports | UDP Ports | Notes                                                                                   |
 | ------ | --------- | --------- |-----------------------------------------------------------------------------------------|
 | SRS | 1935, 1985, 8080,<br/> 8088, 1990, 554,<br/> 8936 | 8000, 8935, 10080,<br/> 1989 | See [SRS ports](https://github.com/ossrs/srs/blob/develop/trunk/doc/Resources.md#ports) |
-| platform | 2024 |  - | Mount at `/terraform/v1/mgmt/`, `/terraform/v1/hooks/` and `/terraform/v1/ffmpeg/`      |
+| platform | 2024 |  - | Mount at `/terraform/v1/mgmt/`, `/terraform/v1/hooks/`, `/terraform/v1/ffmpeg/` and `/terraform/v1/tencent/`    |
 | releases | 2023 |  - | Mount at `/terraform/v1/releases`                                                       |
 | mgmt | 2022 |  - | Mount at `/mgmt/` and `/terraform/v1/mgmt/`                                             |
-| tencent-cloud | 2020 |  - | Mount at `/terraform/v1/tencent/`                                                       |
 | prometheus | 9090 | - | Mount at `/prometheus/`                                                                 |
 | node-exporter | 9100 | - | -                                                                                       |
 | redis | 56379 | - | -                                                                                       |
 
 > Note: Hooks(2021) has been migrated to platform(2024).
+
 > Note: FFmpeg(2019) has been migrated to platform(2024).
+
+> Note: TencentCloud(2020) has been migrated to platform(2024).
 
 ## Features
 
@@ -166,12 +168,12 @@ Also by platform module:
 * `/terraform/v1/hooks/vod/apply` Hooks: Apply the VoD pattern.
 * `/terraform/v1/hooks/vod/files` Hooks: List the VoD files.
 * `/terraform/v1/hooks/vod/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.
-
-Market:
-
 * `/terraform/v1/tencent/cam/secret` Tencent: Setup the CAM SecretId and SecretKey.
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
+
+Market:
+
 * `/prometheus` Prometheus: Time-series database and monitor.
 * `/api/` SRS: HTTP API of SRS media server.
 * `/rtc/` SRS: HTTP API for WebERTC of SRS media server.
@@ -324,9 +326,6 @@ Access the browser: http://localhost:3000
 Release bugfix:
 
 * For mgmt or platform: `./mgmt/auto/pub.sh`
-* For ffmpeg: `./ffmpeg/auto/pub.sh`
-* For hooks: `./hooks/auto/pub.sh`
-* For tencent: `./tencent/auto/pub.sh`
 
 Release [stable version](https://api.ossrs.net/terraform/v1/releases):
 

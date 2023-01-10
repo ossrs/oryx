@@ -24,7 +24,6 @@ function ComponentsImpl() {
   const [status, setStatus] = React.useState();
   const [srsRelease, setSrsRelease] = React.useState();
   const [srsDev, setSrsDev] = React.useState();
-  const [tencent, setTencent] = React.useState();
   const [platform, setPlatform] = React.useState();
   const [prometheus, setPrometheus] = React.useState();
   const [nodeExporter, setNodeExporter] = React.useState();
@@ -101,7 +100,6 @@ function ComponentsImpl() {
 
         if (m.name === 'srs-server') setSrsRelease(m);
         if (m.name === 'srs-dev') setSrsDev(m);
-        if (m.name === 'tencent-cloud') setTencent(m);
         if (m.name === 'platform') setPlatform(m);
         if (m.name === 'prometheus') setPrometheus(m);
         if (m.name === 'node-exporter') setNodeExporter(m);
@@ -201,32 +199,6 @@ function ComponentsImpl() {
                       {t('coms.switchConfirm3')}
                     </p>
                   </SwitchConfirmButton>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xs lg={3}>
-            <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>{t('coms.tencent')}</Card.Header>
-              <Card.Body>
-                <Card.Text as={Col}>
-                  {t('coms.containerName')}：{tencent?.name} <br/>
-                  {t('coms.containerId')}：{tencent?.container?.ID} <br/>
-                  {t('coms.containerState')}：{tencent?.StatusMessage}
-                  <p></p>
-                </Card.Text>
-                <div style={{display: 'inline-block'}}>
-                  <Button className='disabled'>
-                    {t('helper.restart')}
-                  </Button> &nbsp;
-                  <Button className='disabled'>
-                    {t('helper.upgrade')}
-                  </Button> &nbsp;
-                  <MgmtUpdateContainer
-                    allow={allowDisableContainer && tencent?.name}
-                    enabled={tencent?.enabled}
-                    onClick={() => handleContainerChange(tencent)}
-                  />
                 </div>
               </Card.Body>
             </Card>
