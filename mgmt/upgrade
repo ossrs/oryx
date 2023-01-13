@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [[ $(uname -s) == 'Darwin' ]]; then
+  echo "Ignore upgrade for Darwin"
+  exit 0
+fi
+
 if [[ $WORK_DIR == '' ]]; then
   REALPATH=$(realpath $0)
   WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
