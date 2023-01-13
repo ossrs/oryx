@@ -42,23 +42,23 @@ function ComponentsImpl() {
   const {t} = useTranslation();
 
   React.useEffect(() => {
-    if (!searchParams.get('allow-manual')) return; // Ignore if not specified.
     const allowManuallyUpgrade = searchParams.get('allow-manual') === 'true';
     console.log(`?allow-manual=true|false, current=${allowManuallyUpgrade}, Whether allow manually upgrade`);
+    if (!searchParams.get('allow-manual')) return; // Ignore if not specified.
     setAllowManuallyUpgrade(allowManuallyUpgrade);
   }, [searchParams]);
 
   React.useEffect(() => {
-    if (!searchParams.get('allow-disable')) return; // Ignore if not specified.
     const allowDisableContainer = searchParams.get('allow-disable') === 'true';
     console.log(`?allow-disable=true|false, current=${allowDisableContainer}, Whether allow disable container`);
+    if (!searchParams.get('allow-disable')) return; // Ignore if not specified.
     setAllowDisableContainer(allowDisableContainer);
   }, [searchParams]);
 
   React.useEffect(() => {
-    if (!searchParams.get('allow-switch')) return; // Ignore if not specified.
     const allowSwitchContainer = searchParams.get('allow-switch') === 'true';
     console.log(`?allow-switch=true|false, current=${allowSwitchContainer}, Whether allow switch srs server`);
+    if (!searchParams.get('allow-switch')) return; // Ignore if not specified.
     setAllowSwitchContainer(allowSwitchContainer);
   }, [searchParams]);
 
