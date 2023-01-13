@@ -1,6 +1,6 @@
 {
   "name": "platform",
-  "version":"1.0.266",
+  "version":"1.0.267",
   "description": "Platform API for srs-cloud modules",
   "main": "index.js",
   "scripts": {
