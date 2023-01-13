@@ -75,7 +75,7 @@ REGISTRY=registry.cn-hangzhou.aliyuncs.com
 if [[ $SOURCE == GITHUB || $SOURCE == github ]]; then REGISTRY=docker.io; fi
 echo "Detect REGISTRY=$REGISTRY"
 
-bash auto/upgrade_containers $REGISTRY
+bash auto/upgrade_containers $REGISTRY $@
 if [[ $? -ne 0 ]]; then echo "Update docker containers failed"; exit 1; fi
 
 # Setup git alias to make it convenient.

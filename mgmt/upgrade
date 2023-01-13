@@ -16,8 +16,8 @@ if [[ $TARGET_VERSION == '' && $TAG_NAME == '' ]]; then
   echo "Usage: $0 <branch|tag>"
   echo "    branch|tag    The branch or tag to upgrade to."
   echo "For example:"
-  echo "    $0 lighthouse"
   echo "    $0 v1.2.3"
+  echo "    $0 main"
   echo "Remark:"
   echo "    You will lost local changes by git checkout"
   exit 1

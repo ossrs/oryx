@@ -54,6 +54,13 @@ Install() {
     if [[ $? -ne 0 ]]; then echo "Git unshallow failed"; exit 1; fi
   fi
 
+  # Reset to stable version.
+  RELEASE=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+  if [[ $RELEASE != '' ]]; then
+    git reset --hard $RELEASE
+    if [[ $? -ne 0 ]]; then echo "Reset to $RELEASE failed"; exit 1; fi
+  fi
+
   # Move srs-cloud to its home.
   mkdir -p $DEPLOY_HOME
   if [[ -d $install_path/srs-cloud && ! -d $SRS_HOME/.git ]]; then
