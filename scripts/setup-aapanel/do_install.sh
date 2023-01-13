@@ -34,20 +34,24 @@ Install() {
   if [[ $? -ne 0 ]]; then echo "Setup OS failed"; exit 1; fi
 
   # Restore files from git.
+  echo "Git reset files"
   cd $install_path/srs-cloud && git reset --hard HEAD
   if [[ $? -ne 0 ]]; then echo "Reset files failed"; exit 1; fi
 
   # Change file permissions.
+  echo "Change files permissions"
   find $install_path -type d -exec chmod 0755 {} \; &&
   find $install_path -type f -exec chmod 0644 {} \; &&
   cd $install_path/srs-cloud && chmod 755 mgmt/bootstrap mgmt/upgrade scripts/remove-containers.sh
   if [[ $? -ne 0 ]]; then echo "Change file permissions failed"; exit 1; fi
 
   # Restore files from git again, after changing file permisisons.
+  echo "Git reset files"
   cd $install_path/srs-cloud && git reset --hard HEAD
   if [[ $? -ne 0 ]]; then echo "Reset files failed"; exit 1; fi
 
   # We also process for git clone --depth=1, see https://stackoverflow.com/a/23987039/17679565
+  echo "Git unshallow"
   GIT_DEPTH=$(git rev-list --all --count)
   if [[ $GIT_DEPTH -eq 1 ]]; then
     git pull --unshallow
@@ -56,12 +60,14 @@ Install() {
 
   # Reset to stable version.
   RELEASE=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+  echo "Reset to stable version $RELEASE"
   if [[ $RELEASE != '' ]]; then
     git reset --hard $RELEASE
     if [[ $? -ne 0 ]]; then echo "Reset to $RELEASE failed"; exit 1; fi
   fi
 
   # Move srs-cloud to its home.
+  echo "Move srs-cloud to $SRS_HOME"
   mkdir -p $DEPLOY_HOME
   if [[ -d $install_path/srs-cloud && ! -d $SRS_HOME/.git ]]; then
     rm -rf $SRS_HOME && mv $install_path/srs-cloud $SRS_HOME &&
@@ -69,17 +75,20 @@ Install() {
     if [[ $? -ne 0 ]]; then echo "Create srs-cloud failed"; exit 1; fi
   fi
 
-  # We must create the .env to avoid docker mountint as a dir.
+  # We must create the .env to avoid docker mount as a dir.
+  echo "Create config file"
   touch ${SRS_HOME}/mgmt/.env &&
   ln -sf ${SRS_HOME}/mgmt/.env ~/credentials.txt
   if [[ $? -ne 0 ]]; then echo "Create ${SRS_HOME}/mgmt/.env failed"; exit 1; fi
 
   # Allow network forwarding, required by docker.
   # See https://stackoverflow.com/a/41453306/17679565
+  echo "Controls IP packet forwarding"
   update_sysctl net.ipv4.ip_forward 1 1 "# Controls IP packet forwarding"
 
   # Setup the UDP buffer for WebRTC and SRT.
   # See https://www.jianshu.com/p/6d4a89359352
+  echo "Setup kernel UDP buffer"
   update_sysctl net.core.rmem_max 16777216 1 "# For RTC/SRT over UDP"
   update_sysctl net.core.rmem_default 16777216
   update_sysctl net.core.wmem_max 16777216
