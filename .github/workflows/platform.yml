@@ -55,10 +55,11 @@ jobs:
           username: "${{ secrets.DOCKER_USERNAME }}"
           password: "${{ secrets.DOCKER_PASSWORD }}"
       # Build SRS image
+      # TODO: FIXME: Nodejs build failed on linux/arm/v7,linux/arm64/v8
       - name: Build SRS docker image
         run: |
           echo "Release ossrs/srs-cloud:$SRS_TAG"
-          docker buildx build --platform linux/arm/v7,linux/arm64/v8,linux/amd64 \
+          docker buildx build --platform linux/amd64 \
             --output "type=image,push=true" \
             --tag ossrs/srs-cloud:$SRS_TAG -f platform/Dockerfile .
       - name: Docker alias images for ossrs/srs-cloud
