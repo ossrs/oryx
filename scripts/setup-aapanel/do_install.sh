@@ -62,7 +62,7 @@ Install() {
   RELEASE=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
   echo "Reset to stable version $RELEASE"
   if [[ $RELEASE != '' ]]; then
-    git reset --hard $RELEASE
+    git pull && git reset --hard $RELEASE
     if [[ $? -ne 0 ]]; then echo "Reset to $RELEASE failed"; exit 1; fi
   fi
 
