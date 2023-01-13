@@ -2,7 +2,8 @@
 ############################################################
 # build
 ############################################################
-FROM registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:nodejs-1 AS build
+ARG ARCH
+FROM ${ARCH}ossrs/srs:node-av AS build
 
 COPY js-core /usr/local/srs-cloud/js-core
 COPY platform /usr/local/srs-cloud/platform
@@ -16,7 +17,7 @@ RUN env PUBLIC_URL=/mgmt REACT_APP_LOCALE=en BUILD_PATH=build/en npm run buildDo
 ############################################################
 # dist
 ############################################################
-FROM node:slim as dist
+FROM ${ARCH}node:slim as dist
 
 COPY --from=build /usr/local/srs-cloud /usr/local/srs-cloud
 
