@@ -18,7 +18,7 @@ const keys = require('js-core/keys');
 
 exports.handle = (router) => {
   router.all('/terraform/v1/ffmpeg/forward/secret', async (ctx) => {
-    const {token, action, platform, server, secret, enabled} = ctx.request.body;
+    const {token, action, platform, server, secret, enabled, custom, label} = ctx.request.body;
 
     const apiSecret = await utils.apiSecret(redis);
     const decoded = await utils.verifyToken(jwt, token, apiSecret);
@@ -38,12 +38,13 @@ exports.handle = (router) => {
       if (!server) return utils.asError(errs.sys.empty, errs.status.args, 'no server');
       if (!server && !secret) return utils.asError(errs.sys.empty, errs.status.args, 'no secret');
       if (enabled === undefined) return utils.asError(errs.sys.empty, errs.status.args, 'no enabled');
+      if (custom === undefined) return utils.asError(errs.sys.empty, errs.status.args, 'no custom');
     }
 
     let res = null;
     if (action === 'update') {
       const r0 = await redis.hset(keys.redis.SRS_FORWARD_CONFIG, platform, JSON.stringify({
-        platform, server, secret, enabled,
+        platform, server, secret, enabled, custom, label: label,
       }));
 
       // Restart the forwarding if exists.
@@ -91,6 +92,8 @@ exports.handle = (router) => {
       return {
         platform: conf.platform,
         enabled: conf.enabled,
+        custom: !!conf.custom,
+        label: conf.label,
         stream,
         frame: frame ? JSON.parse(frame) : null,
       };
