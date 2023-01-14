@@ -19,6 +19,7 @@ RUN env PUBLIC_URL=/mgmt REACT_APP_LOCALE=en BUILD_PATH=build/en npm run buildDo
 ############################################################
 FROM ${ARCH}node:slim as dist
 
+COPY --from=build /usr/local/bin /usr/local/bin
 COPY --from=build /usr/local/srs-cloud /usr/local/srs-cloud
 
 ENV NODE_ENV=production
