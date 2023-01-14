@@ -50,6 +50,7 @@ if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
 
 # Choose default language.
 cat << END > ${SRS_HOME}/mgmt/.env
+CLOUD=DO
 REACT_APP_LOCALE=en
 END
 if [[ $? -ne 0 ]]; then echo "Setup language failed"; exit 1; fi

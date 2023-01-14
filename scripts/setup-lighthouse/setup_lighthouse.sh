@@ -90,6 +90,7 @@ if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
 
 # Choose default language.
 cat << END > ${SRS_HOME}/mgmt/.env
+CLOUD=TENCENT
 REACT_APP_LOCALE=zh
 END
 if [[ $? -ne 0 ]]; then echo "Setup language failed"; exit 1; fi

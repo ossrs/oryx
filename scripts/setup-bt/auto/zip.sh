@@ -23,23 +23,18 @@ if [[ ! -d srs-cloud ]]; then
 fi
 if [[ $? -ne 0 ]]; then echo "Cache source failed"; exit 1; fi
 
-# For github actions, clone from github and set to gitee.
+# For development, not GitHub Actions, set to gitee and refresh the code.
 if [[ -z $GITHUB_ACTIONS ]]; then
-  cd $TMP_DIR/source/srs-cloud && git remote set-url origin https://gitee.com/ossrs/srs-cloud.git
-  if [[ $? -ne 0 ]]; then echo "Setup source remote failed"; exit 1; fi
-fi
-
-if [[ -z $GITHUB_ACTIONS ]]; then
+  cd $TMP_DIR/source/srs-cloud && git remote set-url origin https://gitee.com/ossrs/srs-cloud.git &&
   cd $TMP_DIR/source/srs-cloud && git reset --hard HEAD~10 >/dev/null && git pull | grep files &&
   git branch -vv |grep '*' &&
   echo "Cache at $TMP_DIR/source/srs-cloud"
   if [[ $? -ne 0 ]]; then echo "Cache source failed"; exit 1; fi
 fi
 
-if [[ -z $GITHUB_ACTIONS ]]; then
-  cd $TMP_DIR/source/srs-cloud && git remote set-url origin https://gitee.com/ossrs/srs-cloud.git
-  if [[ $? -ne 0 ]]; then echo "Setup source remote failed"; exit 1; fi
-fi
+# For aaPanel, reset the repository to GitHub.
+cd $TMP_DIR/source/srs-cloud && git remote set-url origin https://gitee.com/ossrs/srs-cloud.git
+if [[ $? -ne 0 ]]; then echo "Setup source remote failed"; exit 1; fi
 
 mkdir -p $TMP_DIR/$PLUGIN/srs-cloud && cd $TMP_DIR/$PLUGIN/srs-cloud &&
 ln -sf $TMP_DIR/source/srs-cloud source &&
