@@ -25,9 +25,8 @@ echo "publish version $VERSION as tag $TAG"
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
 cat package.json |sed "s|\"version\":.*|\"version\":\"$VERSION\",|g" > tmp.json && mv tmp.json package.json &&
-cat ../platform/package.json |sed "s|\"version\":.*|\"version\":\"$VERSION\",|g" > tmp.json && mv tmp.json ../platform/package.json &&
-cat ../releases/releases.js |sed "s|const\ latest\ =.*|const latest = 'v$VERSION';|g" > tmp.js && mv tmp.js ../releases/releases.js &&
-bash ../releases/auto/update.sh &&
+cat platform/package.json |sed "s|\"version\":.*|\"version\":\"$VERSION\",|g" > tmp.json && mv tmp.json platform/package.json &&
+cat releases/releases.js |sed "s|const\ latest\ =.*|const latest = 'v$VERSION';|g" > tmp.js && mv tmp.js releases/releases.js &&
 git ci -am "Update mgmt version to $TAG"
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
@@ -52,9 +51,6 @@ git remote |grep -q gitee && git push gitee && git push gitee $TAG
 git remote |grep -q cloud && git push cloud && git push cloud $TAG
 
 echo "publish $TAG ok"
-
-######################################################################
-echo -e "\n\n"
-echo "now, update the releases"
-bash ../releases/auto/tag.sh
+echo "    Please test it after https://github.com/ossrs/srs-cloud/actions/workflows/platform.yml done"
+echo "    Then release new latest version by: ./auto/releases_pub.sh"
 

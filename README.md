@@ -325,17 +325,24 @@ Access the browser: http://localhost:3000
 
 Release bugfix:
 
-* For mgmt or platform: `./mgmt/auto/pub.sh`
+* For mgmt or platform: `./auto/mgmt_platform_pub.sh`
+* Then test the specified version of mgmt and platform.
+* Finally, run `./auto/releases_pub.sh` if test ok.
+
+> Note: The [features](https://github.com/ossrs/srs-cloud/issues/4) might need to be updated.
 
 Release [stable version](https://api.ossrs.net/terraform/v1/releases):
 
-* For stable version(MUST update the stable verison manually) in `releases/releases.js` then run: `./releases/auto/pub.sh`
+* MUST update the stable version manually in `releases/releases.js`
+* Then run `./auto/releases_pub.sh`
 
-Release major or minor version:
+Release version for BT and aaPanel:
 
-* For github release(MUST update the version manually) in `auto/publication.sh` then run: `./auto/publication.sh`
+* MUST update the version manually in `auto/bt_aapanel_pub.sh`
+* Then run `./auto/bt_aapanel_pub.sh`
+* Finally, download [bt-srs_cloud.zip](https://github.com/ossrs/srs-cloud/releases) then submit to [bt.cn](https://www.bt.cn/developer/details.html?id=600801805)
 
-> Note: The github release also trigger packager for BT or aaPanel.
+> Note: The [BT forum](https://www.bt.cn/bbs/thread-90890-1-1.html) and [FAQ](https://github.com/ossrs/srs-cloud/issues/4) might need to be updated.
 
 2022.11
 
