@@ -27,18 +27,18 @@ exports.handle = (router) => {
     const allowedPlatforms = ['wx', 'bilibili', 'kuaishou'];
     if (action) {
       if (!allowedActions.includes(action)) {
-        return utils.asError(errs.sys.invalid, errs.status.args, `invalid action ${action}`);
+        throw utils.asError(errs.sys.invalid, errs.status.args, `invalid action ${action}`);
       }
 
-      if (!platform) return utils.asError(errs.sys.empty, errs.status.args, 'no platform');
+      if (!platform) throw utils.asError(errs.sys.empty, errs.status.args, 'no platform');
       if (!allowedPlatforms.includes(platform)) {
-        return utils.asError(errs.sys.invalid, errs.status.args, `invalid platform ${platform}`);
+        throw utils.asError(errs.sys.invalid, errs.status.args, `invalid platform ${platform}`);
       }
 
-      if (!server) return utils.asError(errs.sys.empty, errs.status.args, 'no server');
-      if (!server && !secret) return utils.asError(errs.sys.empty, errs.status.args, 'no secret');
-      if (enabled === undefined) return utils.asError(errs.sys.empty, errs.status.args, 'no enabled');
-      if (custom === undefined) return utils.asError(errs.sys.empty, errs.status.args, 'no custom');
+      if (!server) throw utils.asError(errs.sys.empty, errs.status.args, 'no server');
+      if (!server && !secret) throw utils.asError(errs.sys.empty, errs.status.args, 'no secret');
+      if (enabled === undefined) throw utils.asError(errs.sys.empty, errs.status.args, 'no enabled');
+      if (custom === undefined) throw utils.asError(errs.sys.empty, errs.status.args, 'no custom');
     }
 
     let res = null;

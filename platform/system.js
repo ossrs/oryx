@@ -276,8 +276,8 @@ exports.handle = (router) => {
 
     if (isNaN(parseInt(start))) throw utils.asError(errs.sys.empty, errs.status.args, `no param start`);
     if (!duration) throw utils.asError(errs.sys.empty, errs.status.args, `no param end`);
-    if (duration <= 3) return utils.asError(errs.sys.invalid, errs.status.args, `window should greater than 3 hours`);
-    if (duration > 24) return utils.asError(errs.sys.invalid, errs.status.args, `window should smaller than 24 hours`);
+    if (duration <= 3) throw utils.asError(errs.sys.invalid, errs.status.args, `window should greater than 3 hours`);
+    if (duration > 24) throw utils.asError(errs.sys.invalid, errs.status.args, `window should smaller than 24 hours`);
 
     const r0 = await redis.hset(keys.redis.SRS_UPGRADE_WINDOW, 'start', start);
     const r1 = await redis.hset(keys.redis.SRS_UPGRADE_WINDOW, 'duration', duration);
