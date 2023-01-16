@@ -15,6 +15,7 @@ import ScenarioTutorials from './ScenarioTutorials';
 import {useTranslation} from "react-i18next";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 import ScenarioRecord from "./ScenarioRecord";
+import ScenarioVLive from "./ScenarioVLive";
 
 export default function Scenario() {
   const [searchParams] = useSearchParams();
@@ -116,6 +117,9 @@ function ScenarioImpl({defaultActiveTab, defaultActiveChildTab}) {
                 {activeChildTab === 'vod' && <ScenarioVod/>}
               </Tab>
             </Tabs>
+          </Tab>
+          <Tab eventKey="vlive" title={t('scenario.vlive')}>
+            {activeTab === 'vlive' && <ScenarioVLive/>}
           </Tab>
         </Tabs>
       </Container>

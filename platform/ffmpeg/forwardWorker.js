@@ -142,7 +142,7 @@ async function handleForwardTasks() {
 }
 
 function generateOutput(svr, secret) {
-  const server = svr.trim();
+  const server = svr.trim().replace(/localhost/g, config.node.host);
   const seperator = (server.endsWith('/') || !secret || secret.startsWith('/')) ? '' : '/';
   return `${server}${seperator}${secret || ''}`;
 }
@@ -160,7 +160,7 @@ async function startNewTask(activeKey, forwardObj, configObj) {
   forwardObj.output = generateOutput(configObj.server, configObj.secret);
 
   // Start a child process to forward stream.
-  const child = spawn('ffmpeg', ['-f', 'flv', '-i', forwardObj.input, '-c', 'copy', '-f', 'flv', forwardObj.output]);
+  const child = spawn('ffmpeg', ['-i', forwardObj.input, '-c', 'copy', '-f', 'flv', forwardObj.output]);
   forwardObj.task = child.pid;
   const previousPid = forwardObj.pid;
   forwardObj.pid = process.pid;

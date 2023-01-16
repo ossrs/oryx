@@ -39,6 +39,39 @@ export const Tools = {
   mask(data) {
     const mask = `***${data.token.length}B***`;
     return JSON.stringify({...data, token: mask});
+  },
+
+  // Copy object, with optional extras fields, for example:
+  //    copy({id: 0}, ['msg': 'hi'])
+  // Return an object:
+  //    {id: 0, msg: 'hi'}
+  copy(from, extras) {
+    let cp = Tools.merge({}, from);
+
+    for (let i = 0; i < extras?.length; i += 2) {
+      const k = extras[i];
+      const v = extras[i + 1];
+      const ov = cp[k];
+
+      const obj = {};
+      obj[k] = Tools.merge(ov, v);
+      cp = Tools.merge(cp, obj);
+    }
+    return cp;
+  },
+  // Merge two object, rewrite dst by src fields.
+  merge(dst, src) {
+    if (typeof dst !== 'object') return src;
+    if (typeof src !== 'object') return src;
+
+    const cp = {};
+    for (const k in dst) {
+      cp[k] = dst[k];
+    }
+    for (const k in src) {
+      cp[k] = src[k];
+    }
+    return cp;
   }
 };
 
