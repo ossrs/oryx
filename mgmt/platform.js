@@ -214,11 +214,13 @@ async function discoverPrivateIPv4() {
   privateIPv4Update = moment();
 
   // Best match the en or eth network, for example, eth0 or en0.
-  Object.keys(networks).map(e => {
-    if (e.indexOf('en') === 0 || e.indexOf('eth') === 0) {
-      privateIPv4 = networks[e];
-    }
-  });
+  if (privateIPv4?.name?.indexOf('en') !== 0 && privateIPv4?.name?.indexOf('eth') !== 0) {
+    Object.keys(networks).map(e => {
+      if (e.indexOf('en') === 0 || e.indexOf('eth') === 0) {
+        privateIPv4 = networks[e];
+      }
+    });
+  }
   console.log(`discover ip privateIPv4=${JSON.stringify(privateIPv4)}, update=${privateIPv4Update.format()}`);
 
   return privateIPv4;
