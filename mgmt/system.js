@@ -392,12 +392,18 @@ const handlers = {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Build the
+    // Build the upload limit for uploader(vLive).
+    const uploadLimit = [
+      '',
+      '# Limit for upload file size',
+      'client_max_body_size 100g;',
+    ];
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Build the config for NGINX.
     const confLines = [
       '# !!! Important: SRS will restore this file during each upgrade, please never modify it.',
+      ...uploadLimit,
       ...sslConf,
       ...hlsConf,
       ...reversesConf,
