@@ -9,12 +9,12 @@ import FileUploader from "../components/FileUploader";
 import {useTranslation} from "react-i18next";
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 
-export default function ScenarioVLive() {
+export default function ScenarioVFile() {
   const language = useSrsLanguage();
-  return language === 'zh' ? <ScenarioVLiveCn /> : <ScenarioVLiveEn />;
+  return language === 'zh' ? <ScenarioVFileCn /> : <ScenarioVFileEn />;
 }
 
-function ScenarioVLiveCn() {
+function ScenarioVFileCn() {
   const [init, setInit] = React.useState();
   const [activeKey, setActiveKey] = React.useState();
   const [secrets, setSecrets] = React.useState();
@@ -51,11 +51,11 @@ function ScenarioVLiveCn() {
   }, [init, secrets]);
 
   return <>
-    {activeKey && <ScenarioVLiveImpl defaultActiveKey={activeKey} defaultSecrets={secrets}/>}
+    {activeKey && <ScenarioVFileImpl defaultActiveKey={activeKey} defaultSecrets={secrets}/>}
   </>;
 }
 
-function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
+function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
   const [wxEnabled, setWxEnabled] = React.useState(defaultSecrets?.wx?.enabled);
   const [wxServer, setWxServer] = React.useState(defaultSecrets?.wx?.server);
   const [wxSecret, setWxSecret] = React.useState(defaultSecrets?.wx?.secret);
@@ -336,7 +336,7 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
   );
 }
 
-function ScenarioVLiveEn() {
+function ScenarioVFileEn() {
   return (
     <span>On the way...</span>
   );

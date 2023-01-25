@@ -15,35 +15,30 @@ import ScenarioTutorials from './ScenarioTutorials';
 import {useTranslation} from "react-i18next";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 import ScenarioRecord from "./ScenarioRecord";
-import ScenarioVLive from "./ScenarioVLive";
+import ScenarioVFile from "./ScenarioVFile";
 
 export default function Scenario() {
   const [searchParams] = useSearchParams();
   const [defaultActiveTab, setDefaultActiveTab] = React.useState();
-  const [defaultActiveChildTab, setDefaultActiveChildTab] = React.useState();
   const language = useSrsLanguage();
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'tutorials';
-    const ctab = searchParams.get('ctab') || 'record';
     console.log(`?tab=tutorials|live|srt|rgroup|source, current=${tab}, Select the tab to render`);
-    console.log(`?ctab=record|dvr|vod, current=${tab}, Select the child tab to render`);
     setDefaultActiveTab(tab);
-    setDefaultActiveChildTab(ctab);
   }, [searchParams, language]);
 
   return (
     <SrsErrorBoundary>
-      { defaultActiveTab && <ScenarioImpl {...{defaultActiveTab, defaultActiveChildTab}} /> }
+      { defaultActiveTab && <ScenarioImpl {...{defaultActiveTab}} /> }
     </SrsErrorBoundary>
   );
 }
 
-function ScenarioImpl({defaultActiveTab, defaultActiveChildTab}) {
+function ScenarioImpl({defaultActiveTab}) {
   const [secret, setSecret] = React.useState();
   const [streamName, setStreamName] = React.useState('livestream');
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
-  const [activeChildTab, setActiveChildTab] = React.useState(defaultActiveChildTab);
   const setSearchParams = useSearchParams()[1];
   const handleError = useErrorHandler();
   const urls = useUrls({secret, streamName});
@@ -62,12 +57,6 @@ function ScenarioImpl({defaultActiveTab, defaultActiveChildTab}) {
   const onSelectTab = React.useCallback((k) => {
     setSearchParams({'tab': k});
     setActiveTab(k);
-  }, [setSearchParams]);
-
-  const onSelectChildTab = React.useCallback((pk, k) => {
-    setSearchParams({'tab': pk, 'ctab': k});
-    setActiveTab(pk);
-    setActiveChildTab(k);
   }, [setSearchParams]);
 
   const updateStreamName = React.useCallback(() => {
@@ -105,25 +94,85 @@ function ScenarioImpl({defaultActiveTab, defaultActiveChildTab}) {
             {activeTab === 'forward' && <ScenarioForward/>}
           </Tab>
           <Tab eventKey="rgroup" title={t('scenario.rgroup')}>
-            <Tabs defaultActiveKey={activeChildTab} id="ctab0" className="mb-3"
-                  onSelect={(k) => onSelectChildTab('rgroup', k)}>
-              <Tab eventKey="record" title={t('scenario.record')}>
-                {activeChildTab === 'record' && <ScenarioRecord/>}
-              </Tab>
-              <Tab eventKey="dvr" title={t('scenario.dvr')}>
-                {activeChildTab === 'dvr' && <ScenarioDvr/>}
-              </Tab>
-              <Tab eventKey="vod" title={t('scenario.vod')}>
-                {activeChildTab === 'vod' && <ScenarioVod/>}
-              </Tab>
-            </Tabs>
+            {activeTab === 'rgroup' && <ScenarioRxGroup/>}
           </Tab>
-          <Tab eventKey="vlive" title={t('scenario.vlive')}>
-            {activeTab === 'vlive' && <ScenarioVLive/>}
+          <Tab eventKey="vgroup" title={t('scenario.vgroup')}>
+            {activeTab === 'vgroup' && <ScenarioVxGroup/>}
           </Tab>
         </Tabs>
       </Container>
     </>
   );
+}
+
+function ScenarioRxGroup() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeChildTab, setActiveChildTab] = React.useState();
+  const language = useSrsLanguage();
+  const {t} = useTranslation();
+
+  React.useEffect(() => {
+    const ctab = searchParams.get('ctab') || 'record';
+    console.log(`?ctab=record|dvr|vod, current=${ctab}, Select the child tab to render`);
+    setActiveChildTab(ctab);
+  }, [searchParams, language, setActiveChildTab]);
+
+  const onSelectChildTab = React.useCallback((k) => {
+    setSearchParams({...searchParams, 'tab': 'rgroup', 'ctab': k});
+    setActiveChildTab(k);
+  }, [setSearchParams, activeChildTab]);
+
+  return <>
+    {activeChildTab &&
+      <Tabs defaultActiveKey={activeChildTab} id="ctab0" className="mb-3"
+            onSelect={(k) => onSelectChildTab(k)}>
+        <Tab eventKey="record" title={t('scenario.record')}>
+          {activeChildTab === 'record' && <ScenarioRecord/>}
+        </Tab>
+        <Tab eventKey="dvr" title={t('scenario.dvr')}>
+          {activeChildTab === 'dvr' && <ScenarioDvr/>}
+        </Tab>
+        <Tab eventKey="vod" title={t('scenario.vod')}>
+          {activeChildTab === 'vod' && <ScenarioVod/>}
+        </Tab>
+      </Tabs>
+    }
+  </>;
+}
+
+function ScenarioVxGroup() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeChildTab, setActiveChildTab] = React.useState();
+  const language = useSrsLanguage();
+  const {t} = useTranslation();
+
+  React.useEffect(() => {
+    const ctab = searchParams.get('ctab') || 'vfile';
+    console.log(`?ctab=vfile|vstream, current=${ctab}, Select the child tab to render`);
+    setActiveChildTab(ctab);
+  }, [searchParams, language, setActiveChildTab]);
+
+  const onSelectChildTab = React.useCallback((k) => {
+    setSearchParams({...searchParams, 'tab': 'vgroup', 'ctab': k});
+    setActiveChildTab(k);
+  }, [setSearchParams, activeChildTab]);
+
+  return <>
+    {activeChildTab &&
+      <Tabs defaultActiveKey={activeChildTab} id="ctab1" className="mb-3"
+            onSelect={(k) => onSelectChildTab(k)}>
+        <Tab eventKey="vfile" title={t('scenario.vfile')}>
+          {activeChildTab === 'vfile' && <ScenarioVFile/>}
+        </Tab>
+        <Tab eventKey="vstream" title={t('scenario.vstream')}>
+          {activeChildTab === 'vstream' && <ScenarioVStream/>}
+        </Tab>
+      </Tabs>
+    }
+  </>;
+}
+
+function ScenarioVStream() {
+  return <>On the way.</>
 }
 
