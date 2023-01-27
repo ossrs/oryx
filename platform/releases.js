@@ -49,6 +49,10 @@ async function queryLatestVersion() {
   const forward = await redis.hlen(keys.redis.SRS_FORWARD_STREAM);
   if (forward) params.forward = forward;
 
+  // Report about FFmpeg virtual live from file source.
+  const vfile = await redis.hlen(keys.redis.SRS_VLIVE_STREAM);
+  if (vfile) params.vfile = vfile;
+
   // Report about active streams.
   const streams = await redis.hget(keys.redis.SRS_STAT_COUNTER, 'publish');
   if (streams) {
