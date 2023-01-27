@@ -218,6 +218,15 @@ async function removeDisabledTask(activeKey, forwardObj, configObj) {
     const codeObj = code && JSON.parse(code);
     if (codeObj?.close) break;
 
+    // Ignore if process not exists. Because if not exists, the code never update.
+    // See https://stackoverflow.com/a/21296291/17679565
+    try {
+      process.kill(forwardObj.task, 0);
+    } catch (e) {
+      console.warn(`Thread #forwardWorker: Ignore task=${forwardObj.task} for process not exists`);
+      break;
+    }
+
     // Kill the process if not exited.
     try {
       process.kill(forwardObj.task, 'SIGKILL');

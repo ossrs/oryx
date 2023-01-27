@@ -75,6 +75,7 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
   const [kuaishouLabel, setKuaishouLabel] = React.useState(defaultSecrets?.kuaishou?.label);
   const [kuaishouFiles, setKuaishoudFiles] = React.useState(defaultSecrets?.kuaishou?.files);
   const [vLives, setVLives] = React.useState();
+  const [submiting, setSubmiting] = React.useState();
   const handleError = useErrorHandler();
 
   React.useEffect(() => {
@@ -111,13 +112,19 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
     if (!server) return alert('请输入推流地址');
     if (custom && !label) return alert('自定义平台请输入名称，否则不好区分虚拟直播状态');
 
-    const token = Token.load();
-    axios.post('/terraform/v1/ffmpeg/vlive/secret', {
-      ...token, action, platform, server, secret, enabled: !!enabled, custom: !!custom, label, files,
-    }).then(res => {
-      alert('虚拟直播设置成功');
-    }).catch(handleError);
-  }, [handleError]);
+    try {
+      setSubmiting(true);
+
+      const token = Token.load();
+      axios.post('/terraform/v1/ffmpeg/vlive/secret', {
+        ...token, action, platform, server, secret, enabled: !!enabled, custom: !!custom, label, files,
+      }).then(res => {
+        alert('虚拟直播设置成功');
+      }).catch(handleError);
+    } finally {
+      new Promise(resolve => setTimeout(resolve, 3000)).then(() => setSubmiting(false));
+    }
+  }, [handleError, setSubmiting]);
 
   return (
     <Accordion defaultActiveKey={defaultActiveKey}>
@@ -180,6 +187,7 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
             <Button
               variant="primary"
               type="submit"
+              disabled={submiting}
               onClick={(e) => updateSecrets(e, 'update', 'wx', wxServer, wxSecret, wxEnabled, wxCustom, wxLabel, wxFiles)}
             >
               更新配置
@@ -229,6 +237,7 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
             <Button
               variant="primary"
               type="submit"
+              disabled={submiting}
               onClick={(e) => updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, bilibiliEnabled, bilibiliCustom, bilibiliLabel, bilibiliFiles)}
             >
               更新配置
@@ -278,6 +287,7 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
             <Button
               variant="primary"
               type="submit"
+              disabled={submiting}
               onClick={(e) => updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, kuaishouEnabled, kuaishouCustom, kuaishouLabel, kuaishouFiles)}
             >
               更新配置

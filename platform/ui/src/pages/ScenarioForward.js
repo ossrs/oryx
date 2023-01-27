@@ -70,6 +70,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
   const [kuaishouCustom, setKuaishouCustom] = React.useState(defaultSecrets?.kuaishou?.custom);
   const [kuaishouLabel, setKuaishouLabel] = React.useState(defaultSecrets?.kuaishou?.label);
   const [forwards, setForwards] = React.useState();
+  const [submiting, setSubmiting] = React.useState();
   const handleError = useErrorHandler();
 
   const forwardTutorials = useTutorials({
@@ -104,13 +105,19 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
     if (!server) return alert('请输入推流地址');
     if (custom && !label) return alert('自定义平台请输入名称，否则不好区分转推状态');
 
-    const token = Token.load();
-    axios.post('/terraform/v1/ffmpeg/forward/secret', {
-      ...token, action, platform, server, secret, enabled: !!enabled, custom: !!custom, label,
-    }).then(res => {
-      alert('转推设置成功');
-    }).catch(handleError);
-  }, [handleError]);
+    try {
+      setSubmiting(true);
+
+      const token = Token.load();
+      axios.post('/terraform/v1/ffmpeg/forward/secret', {
+        ...token, action, platform, server, secret, enabled: !!enabled, custom: !!custom, label,
+      }).then(res => {
+        alert('转推设置成功');
+      }).catch(handleError);
+    } finally {
+      new Promise(resolve => setTimeout(resolve, 3000)).then(() => setSubmiting(false));
+    }
+  }, [handleError, setSubmiting]);
 
   return (
     <Accordion defaultActiveKey={defaultActiveKey}>
@@ -166,6 +173,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
             <Button
               variant="primary"
               type="submit"
+              disabled={submiting}
               onClick={(e) => updateSecrets(e, 'update', 'wx', wxServer, wxSecret, wxEnabled, wxCustom, wxLabel)}
             >
               更新配置
@@ -209,6 +217,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
             <Button
               variant="primary"
               type="submit"
+              disabled={submiting}
               onClick={(e) => updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, bilibiliEnabled, bilibiliCustom, bilibiliLabel)}
             >
               更新配置
@@ -252,6 +261,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
             <Button
               variant="primary"
               type="submit"
+              disabled={submiting}
               onClick={(e) => updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, kuaishouEnabled, kuaishouCustom, kuaishouLabel)}
             >
               更新配置

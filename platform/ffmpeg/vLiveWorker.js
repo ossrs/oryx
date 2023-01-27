@@ -216,6 +216,15 @@ async function removeDisabledTask(activeKey, vLiveObj, configObj) {
     const codeObj = code && JSON.parse(code);
     if (codeObj?.close) break;
 
+    // Ignore if process not exists. Because if not exists, the code never update.
+    // See https://stackoverflow.com/a/21296291/17679565
+    try {
+      process.kill(vLiveObj.task, 0);
+    } catch (e) {
+      console.warn(`Thread #vLiveWorker: Ignore task=${vLiveObj.task} for process not exists`);
+      break;
+    }
+
     // Kill the process if not exited.
     try {
       process.kill(vLiveObj.task, 'SIGKILL');
