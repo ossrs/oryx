@@ -84,26 +84,3 @@ for image in $(docker images |grep '<none>' |awk '{print $3}'); do
   echo "Remove image $image, r0=$?"
 done
 
-# Try to eliminate other images, except current registry.
-#   [IN USE] docker.io
-#   [IN USE] registry.cn-hangzhou.aliyuncs.com
-#   [NO USE] sgccr.ccs.tencentyun.com
-#   [NO USE] ccr.ccs.tencentyun.com
-SOURCES=("docker.io" "registry.cn-hangzhou.aliyuncs.com" "sgccr.ccs.tencentyun.com" "ccr.ccs.tencentyun.com")
-FILTER="keepit"
-for SOURCE in ${SOURCES[*]}; do
-  FILTER="$FILTER|$SOURCE"
-  if [[ $REGISTRY == $SOURCE ]]; then continue; fi
-  for IMAGE in $(docker images | grep "^$SOURCE"| awk '{print $1":"$2}'); do
-    echo "Try to eliminate $IMAGE in quiet"
-    docker rmi $IMAGE >/dev/null 2>&1
-  done
-done
-# Process for docker.io, without any prefix.
-if [[ $REGISTRY != 'docker.io' ]]; then
-  for IMAGE in $(docker images | grep -vE "$FILTER"| awk 'NR>1 {print $1":"$2}'); do
-    echo "Try to eliminate $IMAGE in quiet"
-    docker rmi $IMAGE >/dev/null 2>&1
-  done
-fi
-
