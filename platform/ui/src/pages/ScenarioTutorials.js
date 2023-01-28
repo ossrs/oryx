@@ -15,7 +15,8 @@ export default function ScenarioTutorials() {
       {author: '崔国栋', id: 'BV1aS4y1G7iG'},
       {author: 'SRS', id: 'BV1KY411V7uc'},
       {author: '唐为', id: 'BV14S4y1k7gr'},
-      {author: 'SRS', id: "BV1cq4y1e7Au"}
+      {author: 'SRS', id: "BV1cq4y1e7Au"},
+      {author: '宝哥', id: 'BV1G3411d7Gb'},
     ]),
     medium: React.useRef([
       {id: 'e9fe6f314ac6'},

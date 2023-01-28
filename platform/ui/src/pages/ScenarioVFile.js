@@ -8,6 +8,7 @@ import {useSrsLanguage} from "../components/LanguageSwitch";
 import FileUploader from "../components/FileUploader";
 import {useTranslation} from "react-i18next";
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
+import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 
 export default function ScenarioVFile() {
   const language = useSrsLanguage();
@@ -78,6 +79,12 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
   const [submiting, setSubmiting] = React.useState();
   const handleError = useErrorHandler();
 
+  const vLiveTutorials = useTutorials({
+    bilibili: React.useRef([
+      {author: '宝哥', id: 'BV1G3411d7Gb'},
+    ])
+  });
+
   React.useEffect(() => {
     const refreshStreams = () => {
       const token = Token.load();
@@ -132,7 +139,7 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
         <Accordion.Header>场景介绍</Accordion.Header>
         <Accordion.Body>
           <div>
-            虚拟直播，是将一个视频文件，用FFmpeg转成直播流，推送到云SRS或其他平台。
+            虚拟直播<TutorialsButton prefixLine={true} tutorials={vLiveTutorials} />，是将一个视频文件，用FFmpeg转成直播流，推送到云SRS或其他平台。
             <p></p>
           </div>
           <p>可应用的具体场景包括：</p>
