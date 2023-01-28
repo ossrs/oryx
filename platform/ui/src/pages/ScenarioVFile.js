@@ -394,9 +394,9 @@ function VLiveFileUploader({platform, vLiveFiles, setVLiveFiles}) {
       }),
     }).then(res => {
       console.log(`虚拟直播文件源设置成功, ${JSON.stringify(res.data.data)}`);
-      setVLiveFiles(res.data.data.files);
+      setFiles(res.data.data.files);
     }).catch(handleError);
-  }, [handleError, setVLiveFiles]);
+  }, [handleError]);
 
   return (<>
     <Form.Control as='div'>
