@@ -26,7 +26,7 @@ if (!isMainThread) {
 
 async function threadMain() {
   // We must initialize the thread first.
-  console.log(`Thread #vLiveWorker: initialize`);
+  console.log(`Thread #vFileWorker: initialize`);
 
   parentPort.on('message', (msg) => {
     handleMessage(msg);
@@ -36,7 +36,7 @@ async function threadMain() {
     try {
       await doThreadMain();
     } catch (e) {
-      console.error(`Thread #vLiveWorker: err`, e);
+      console.error(`Thread #vFileWorker: err`, e);
     } finally {
       await new Promise(resolve => setTimeout(resolve, 30 * 1000));
     }
@@ -44,7 +44,7 @@ async function threadMain() {
 }
 
 async function handleMessage(msg) {
-  console.error(`Thread #vLiveWorker: Ignore msg ${JSON.stringify(msg)}`);
+  console.error(`Thread #vFileWorker: Ignore msg ${JSON.stringify(msg)}`);
 }
 
 async function doThreadMain() {
@@ -65,7 +65,7 @@ async function generateVLiveRules() {
   }
 
   const platforms = nnPlatformEnabled ? Object.values(configs).map(e => `${e.platform}:${e.enabled}`) : Object.keys(configs);
-  console.log(`Thread #vLiveWorker: Active channels enabled=${nnPlatformEnabled}, platforms=${JSON.stringify(platforms)}`);
+  console.log(`Thread #vFileWorker: Active channels enabled=${nnPlatformEnabled}, platforms=${JSON.stringify(platforms)}`);
 
   if (!nnPlatformEnabled) return;
 
@@ -99,7 +99,7 @@ async function generateVLiveRules() {
     logs.push(`${k}@${sourceObj.uuid}, platform=${k}, uuid=${vLiveObj.uuid} enabled=${configObj?.enabled}, r0=${r0}, r1=${r1}`);
   }
 
-  if (logs?.length) console.log(`Thread #vLiveWorker: Update the vLives, map is ${JSON.stringify(logs)}`);
+  if (logs?.length) console.log(`Thread #vFileWorker: Update the vLives, map is ${JSON.stringify(logs)}`);
 }
 
 async function handleVLiveTasks() {
@@ -165,7 +165,7 @@ async function startNewTask(activeKey, vLiveObj, configObj) {
   const r0 = await redis.hset(keys.redis.SRS_VLIVE_STREAM, activeKey, JSON.stringify(vLiveObj));
   const r1 = await redis.hdel(keys.redis.SRS_VLIVE_CODE, activeKey);
   const r2 = await redis.hdel(keys.redis.SRS_VLIVE_FRAME, activeKey);
-  console.log(`Thread #vLiveWorker: Start task=${child.pid}, pid=${previousPid}/${vLiveObj.pid}, stream=${activeKey}, input=${vLiveObj.input}, output=${vLiveObj.output}, r0=${r0}, r1=${r1}, r2=${r2}`);
+  console.log(`Thread #vFileWorker: Start task=${child.pid}, pid=${previousPid}/${vLiveObj.pid}, stream=${activeKey}, input=${vLiveObj.input}, output=${vLiveObj.output}, r0=${r0}, r1=${r1}, r2=${r2}`);
 
   let nnLogs = 0;
   child.stdout.on('data', (chunk) => {
@@ -176,11 +176,11 @@ async function startNewTask(activeKey, vLiveObj, configObj) {
     const log = chunk.toString().trim().replace(/= +/g, '=');
     if (log.indexOf('frame=') < 0) return;
     redis.hset(keys.redis.SRS_VLIVE_FRAME, activeKey, JSON.stringify({log, update: moment().format()}));
-    console.log(`Thread #vLiveWorker: Active task=${child.pid}, stream=${activeKey}, ${log}`);
+    console.log(`Thread #vFileWorker: Active task=${child.pid}, stream=${activeKey}, ${log}`);
   });
   child.on('close', (code) => {
     redis.hset(keys.redis.SRS_VLIVE_CODE, activeKey, JSON.stringify({close: true, code, update: moment().format()}));
-    console.log(`Thread #vLiveWorker: Close task=${child.pid}, stream=${activeKey}, code=${code}`);
+    console.log(`Thread #vFileWorker: Close task=${child.pid}, stream=${activeKey}, code=${code}`);
   });
 }
 
@@ -202,7 +202,7 @@ async function restartDeadTasks(activeKey, vLiveObj, configObj) {
   const previousPid = vLiveObj.task;
   vLiveObj.task = null;
   const r0 = await redis.hset(keys.redis.SRS_VLIVE_STREAM, activeKey, JSON.stringify(vLiveObj));
-  console.log(`Thread #vLiveWorker: Reset task=${previousPid}, stream=${activeKey}, code=${codeObj.code}, at=${codeObj?.update}, r0=${r0}`);
+  console.log(`Thread #vFileWorker: Reset task=${previousPid}, stream=${activeKey}, code=${codeObj.code}, at=${codeObj?.update}, r0=${r0}`);
 }
 
 async function removeDisabledTask(activeKey, vLiveObj, configObj) {
@@ -221,7 +221,7 @@ async function removeDisabledTask(activeKey, vLiveObj, configObj) {
     try {
       process.kill(vLiveObj.task, 0);
     } catch (e) {
-      console.warn(`Thread #vLiveWorker: Ignore task=${vLiveObj.task} for process not exists`);
+      console.warn(`Thread #vFileWorker: Ignore task=${vLiveObj.task} for process not exists`);
       break;
     }
 
@@ -230,7 +230,7 @@ async function removeDisabledTask(activeKey, vLiveObj, configObj) {
       process.kill(vLiveObj.task, 'SIGKILL');
     } catch (e) {
     }
-    console.log(`Thread #vLiveWorker: Kill task=${vLiveObj.task}, stream=${activeKey}, code=${codeObj?.code}, at=${codeObj?.update}`);
+    console.log(`Thread #vFileWorker: Kill task=${vLiveObj.task}, stream=${activeKey}, code=${codeObj?.code}, at=${codeObj?.update}`);
 
     await new Promise(resolve => setTimeout(resolve, 800));
   }
@@ -240,7 +240,7 @@ async function removeDisabledTask(activeKey, vLiveObj, configObj) {
   const r1 = await redis.hdel(keys.redis.SRS_VLIVE_FRAME, activeKey);
   const r2 = await redis.hdel(keys.redis.SRS_VLIVE_CODE, activeKey);
   const r3 = await redis.hdel(keys.redis.SRS_VLIVE_MAP, vLiveObj.platform);
-  console.log(`Thread #vLiveWorker: Cleanup task=${vLiveObj.task}, platform=${vLiveObj.platform}, stream=${activeKey}, r0=${r0}, r1=${r1}, r2=${r2}, r3=${r3}`);
+  console.log(`Thread #vFileWorker: Cleanup task=${vLiveObj.task}, platform=${vLiveObj.platform}, stream=${activeKey}, r0=${r0}, r1=${r1}, r2=${r2}, r3=${r3}`);
 
   // Skip any options.
   return true;
@@ -266,8 +266,7 @@ async function terminateTaskForNoStream(activeKey, vLiveObj, configObj) {
 
   // Expired, terminate the task.
   configObj.enabled = false;
-  console.log(`Thread #vLiveWorker: Expire task=${vLiveObj.task}, platform=${vLiveObj.platform}, stream=${activeKey}, update=${vLiveObj.update}, expired=${expired.format()}, now=${moment().format()}`);
+  console.log(`Thread #vFileWorker: Expire task=${vLiveObj.task}, platform=${vLiveObj.platform}, stream=${activeKey}, update=${vLiveObj.update}, expired=${expired.format()}, now=${moment().format()}`);
 
   return await removeDisabledTask(activeKey, vLiveObj, configObj);
 }
-

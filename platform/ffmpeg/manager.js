@@ -2,7 +2,7 @@
 
 const { Worker } = require("worker_threads");
 
-let forwardWorker, vLiveWorker;
+let forwardWorker, vFileWorker;
 
 exports.run = async () => {
   // The DVR worker, for cloud storage.
@@ -28,15 +28,15 @@ exports.run = async () => {
   // The DVR worker, for cloud storage.
   new Promise((resolve, reject) => {
     // Note that current work directory is platform, so we use ./ffmpeg/xxx.js
-    vLiveWorker = new Worker("./ffmpeg/vLiveWorker.js");
+    vFileWorker = new Worker("./ffmpeg/vFileWorker.js");
 
-    vLiveWorker.on('message', (msg) => {
+    vFileWorker.on('message', (msg) => {
       console.log('Thread #manager:', msg);
     });
 
-    vLiveWorker.on('error', reject);
+    vFileWorker.on('error', reject);
 
-    vLiveWorker.on('exit', (code) => {
+    vFileWorker.on('exit', (code) => {
       console.log(`Thread #manager: exit with ${code}`);
       if (code !== 0) {
         return reject(new Error(`Thread #manager: stopped with exit code ${code}`));
