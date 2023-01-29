@@ -94,13 +94,9 @@ jobs:
         run: |
           echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
-      ################################################################
-      # K8S
-      - name: Setup KUBECONFIG for Aliyun ACK
-        run: |-
-          KUBECONFIG=$RUNNER_TEMP/kubeconfig_$(date +%s)
-          echo "${{ secrets.KUBECONFIG }}" > $KUBECONFIG
-          echo "KUBECONFIG=$KUBECONFIG" >> $GITHUB_ENV
+      # Git checkout
+      - name: Checkout repository
+        uses: actions/checkout@v2
       # K8S for terraform versions
       - name: Release terraform versions to Aliyun ACK
         run: |-
