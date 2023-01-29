@@ -79,58 +79,6 @@ exports.market = {
       ...(platform.isDarwin ? [] : ['--ulimit', 'core=-1']),
     ],
   },
-  prometheus: {
-    name: 'prometheus',
-    image: async () => {
-      const registry = await platform.registry();
-      return `${registry}/ossrs/prometheus`;
-    },
-    tcpPorts: [9090],
-    udpPorts: [],
-    command: [
-      '--storage.tsdb.path=/prometheus',
-      '--config.file=/etc/prometheus/prometheus.yml',
-      '--web.external-url=http://localhost:9090/prometheus/',
-    ],
-    logConfig: [
-      '--log-driver=json-file',
-      '--log-opt', 'max-size=1g',
-      '--log-opt', 'max-file=3',
-    ],
-    volumes: () => {
-      const config = platform.isDarwin ? 'prometheus.darwin.yml' : 'prometheus.yml';
-      return [
-        `${platform.cwd()}/containers/conf/${config}:/etc/prometheus/prometheus.yml`,
-        `${platform.cwd()}/containers/data/prometheus:/prometheus`,
-      ];
-    },
-    extras: () => [
-      ...(platform.isDarwin ? [] : ['--network=srs-cloud']),
-      ...(platform.isDarwin ? [] : ['--user=root']),
-    ],
-  },
-  node_exporter: {
-    name: 'node-exporter',
-    image: async () => {
-      const registry = await platform.registry();
-      return `${registry}/ossrs/node-exporter`;
-    },
-    tcpPorts: () => platform.isDarwin ? [9100] : [],
-    udpPorts: [],
-    command: () => platform.isDarwin ? [] : ['--path.rootfs=/host'],
-    logConfig: [
-      '--log-driver=json-file',
-      '--log-opt', 'max-size=1g',
-      '--log-opt', 'max-file=3',
-    ],
-    volumes: () => {
-      return platform.isDarwin ? [] : ['/:/host:ro,rslave'];
-    },
-    extras: () => [
-      platform.isDarwin ? '--network=host' : '--network=srs-cloud',
-      ...(platform.isDarwin ? [] : ['--pid=host']),
-    ],
-  },
   // The bellow configurations are only a hint, because they are managed by mgmt.
   platform: {name: 'platform'},
   redis: {name: 'redis'},

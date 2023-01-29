@@ -12,7 +12,6 @@ import {Locale, Token} from "./utils";
 import Components from "./pages/Components";
 import Scenario from "./pages/Scenario";
 import Settings from "./pages/Settings";
-import Dashboard from './pages/Dashboard';
 import Contact from "./pages/Contact";
 import {ErrorBoundary, useErrorHandler} from 'react-error-boundary';
 import {SrsErrorBoundary} from "./components/SrsErrorBoundary";
@@ -98,7 +97,6 @@ function AppImpl() {
               {initialized && token && <>
                 <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
                 <Route path="routers-login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
-                <Route path="routers-dashboard" element={<Dashboard/>}/>
                 <Route path="routers-scenario" element={<Scenario/>}/>
                 <Route path="routers-settings" element={<Settings/>}/>
                 <Route path="routers-contact" element={<Contact/>}/>

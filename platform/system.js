@@ -332,7 +332,7 @@ exports.handle = (router) => {
     if (!location) throw utils.asError(errs.sys.empty, errs.status.args, `no param location`);
     if (!backend) throw utils.asError(errs.sys.empty, errs.status.args, `no param backend`);
 
-    ['/terraform/', '/mgmt/', '/prometheus/', '/.well-known/'].map(forbidden => {
+    ['/terraform/', '/mgmt/', '/.well-known/'].map(forbidden => {
       if (location.indexOf(forbidden) === 0) {
         throw utils.asError(errs.sys.invalid, errs.status.args, `location ${location} or ${forbidden} is reserved`);
       }

@@ -12,12 +12,7 @@ TAG_NAME=$(echo $TARGET_VERSION|grep '^v')
 echo "The REGISTRY=$REGISTRY TARGET_VERSION=$TARGET_VERSION TAG_NAME=$TAG_NAME"
 
 echo "Update the docker containers."
-docker pull ${REGISTRY}/ossrs/node:slim &&
-docker pull ${REGISTRY}/ossrs/prometheus &&
-docker pull ${REGISTRY}/ossrs/redis_exporter &&
-docker pull ${REGISTRY}/ossrs/node-exporter &&
-docker pull ${REGISTRY}/ossrs/redis &&
-docker pull ${REGISTRY}/ossrs/srs:node-av
+docker pull ${REGISTRY}/ossrs/redis
 if [[ $? -ne 0 ]]; then echo "Update the containers failed"; exit 1; fi
 
 # The certbot tool is optional, and might fail on arm server because no arm image.

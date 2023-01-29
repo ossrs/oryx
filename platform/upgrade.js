@@ -102,7 +102,7 @@ async function firstRun() {
   // For each init stage changed, we could use a different redis key, to identify this special init workflow.
   // However, keep in mind that previous defined workflow always be executed, so these operations should be idempotent.
   const SRS_FIRST_BOOT = keys.redis.SRS_FIRST_BOOT;
-  const bootRelease = 'v21';
+  const bootRelease = 'v23';
 
   // Run once, record in redis.
   const r0 = await redis.hget(SRS_FIRST_BOOT, bootRelease);
@@ -125,9 +125,9 @@ async function firstRun() {
   // Remove containers for IP might change, and use network srs-cloud.
   await helper.execApi('rmContainer', [metadata.market.srs.name]);
   await helper.execApi('rmContainer', [metadata.market.srsDev.name]);
-  await helper.execApi('rmContainer', [metadata.market.prometheus.name]);
-  await helper.execApi('rmContainer', [metadata.market.node_exporter.name]);
   // Remove the unused containers.
+  await helper.execApi('rmContainer', ['prometheus']);
+  await helper.execApi('rmContainer', ['node-exporter']);
   await helper.execApi('rmContainer', ['srs-hooks']);
   await helper.execApi('rmContainer', ['ffmpeg']);
   await helper.execApi('rmContainer', ['tencent-cloud']);

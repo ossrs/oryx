@@ -52,7 +52,7 @@ exports.initOs = async() => {
 
   // Create directories for data, allow user to link it.
   [
-    "containers/data/dvr", "containers/data/prometheus", "containers/data/record", "containers/data/vod",
+    "containers/data/dvr", "containers/data/record", "containers/data/vod",
     "containers/data/upload", "containers/data/vlive",
   ].forEach((f) => {
     if (!fs.existsSync(f)) {

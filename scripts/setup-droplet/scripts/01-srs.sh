@@ -21,9 +21,6 @@ systemctl start docker &&
 echo "Cache docker images" &&
 docker pull docker.io/ossrs/srs:4 &&
 docker pull docker.io/ossrs/srs-cloud:platform-1 &&
-docker pull docker.io/ossrs/prometheus &&
-docker pull docker.io/ossrs/redis_exporter &&
-docker pull docker.io/ossrs/node-exporter &&
 docker pull docker.io/ossrs/redis
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 

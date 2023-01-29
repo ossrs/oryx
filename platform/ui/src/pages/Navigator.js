@@ -21,7 +21,6 @@ export default function Navigator({initialized, token, localChanged}) {
 
     const r0 = `${location.pathname}${location.search}`;
     setNavs([
-      {eventKey: '1', to: '/routers-dashboard', text: t('nav.dashboard')},
       {eventKey: '2', to: '/routers-scenario', text: t('nav.scenario')},
       {eventKey: '3', to: '/routers-settings', text: t('nav.system')},
       {eventKey: '4', to: '/routers-components', text: t('nav.component')},

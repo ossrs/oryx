@@ -25,8 +25,6 @@ function ComponentsImpl() {
   const [srsRelease, setSrsRelease] = React.useState();
   const [srsDev, setSrsDev] = React.useState();
   const [platform, setPlatform] = React.useState();
-  const [prometheus, setPrometheus] = React.useState();
-  const [nodeExporter, setNodeExporter] = React.useState();
   const [redisServer, setRedisServer] = React.useState();
   const [searchParams] = useSearchParams();
   const [allowDisableContainer, setAllowDisableContainer] = React.useState();
@@ -90,8 +88,6 @@ function ComponentsImpl() {
         if (m.name === 'srs-server') setSrsRelease(m);
         if (m.name === 'srs-dev') setSrsDev(m);
         if (m.name === 'platform') setPlatform(m);
-        if (m.name === 'prometheus') setPrometheus(m);
-        if (m.name === 'node-exporter') setNodeExporter(m);
         if (m.name === 'redis') setRedisServer(m);
 
         return null;
@@ -184,52 +180,6 @@ function ComponentsImpl() {
                       {t('coms.switchConfirm3')}
                     </p>
                   </SwitchConfirmButton>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xs lg={3}>
-            <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>{t('coms.prometheus')}</Card.Header>
-              <Card.Body>
-                <Card.Text as={Col}>
-                  {t('coms.containerName')}：{prometheus?.name} <br/>
-                  {t('coms.containerId')}：{prometheus?.container?.ID} <br/>
-                  {t('coms.containerState')}：{prometheus?.StatusMessage}
-                  <p></p>
-                </Card.Text>
-                <div style={{display: 'inline-block'}}>
-                  <Button className='disabled'>
-                    {t('helper.restart')}
-                  </Button> &nbsp;
-                  <MgmtUpdateContainer
-                    allow={allowDisableContainer && prometheus?.name}
-                    enabled={prometheus?.enabled}
-                    onClick={() => handleContainerChange(prometheus)}
-                  />
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xs lg={3}>
-            <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>{t('coms.node')}</Card.Header>
-              <Card.Body>
-                <Card.Text as={Col}>
-                  {t('coms.containerName')}：{nodeExporter?.name} <br/>
-                  {t('coms.containerId')}：{nodeExporter?.container?.ID} <br/>
-                  {t('coms.containerState')}：{nodeExporter?.StatusMessage}
-                  <p></p>
-                </Card.Text>
-                <div style={{display: 'inline-block'}}>
-                  <Button className='disabled'>
-                    {t('helper.restart')}
-                  </Button> &nbsp;
-                  <MgmtUpdateContainer
-                    allow={allowDisableContainer && nodeExporter?.name}
-                    enabled={nodeExporter?.enabled}
-                    onClick={() => handleContainerChange(nodeExporter)}
-                  />
                 </div>
               </Card.Body>
             </Card>

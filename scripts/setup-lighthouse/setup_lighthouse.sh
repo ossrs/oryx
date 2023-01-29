@@ -61,9 +61,6 @@ systemctl start docker &&
 echo "Cache docker images" &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs:4 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1 &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/redis_exporter &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/redis
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 

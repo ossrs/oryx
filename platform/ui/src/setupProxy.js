@@ -11,7 +11,6 @@ module.exports = function(app) {
   // Note that should never mount the root, because the mgmt will be overwrite.
   app.use('/console/', createProxyMiddleware({target: 'http://127.0.0.1:2022/'}));
   app.use('/players/', createProxyMiddleware({target: 'http://127.0.0.1:2022/'}));
-  app.use('/prometheus/', createProxyMiddleware({target: 'http://127.0.0.1:2022/'}));
   app.use('/terraform/', createProxyMiddleware({target: 'http://127.0.0.1:2022/'}));
   app.use('/tools/', createProxyMiddleware({target: 'http://127.0.0.1:2022/'}));
 

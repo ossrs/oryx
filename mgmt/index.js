@@ -47,10 +47,6 @@ function withLogs(options) {
 // For version management.
 app.use(proxy('/terraform/v1/releases', withLogs({target: 'http://127.0.0.1:2023/'})));
 
-// For prometheus.
-// TODO: FIXME: Do authentication for api.
-app.use(proxy('/prometheus', withLogs({target: 'http://127.0.0.1:9090/'})));
-
 // For registered modules, by /terraform/v1/hooks/
 // Note that this module has been migrated to platform.
 app.use(proxy('/terraform/v1/hooks/', withLogs({target: 'http://127.0.0.1:2024/'})));

@@ -12,12 +12,12 @@ A lightweight open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
 - [x] [Live Streaming](https://mp.weixin.qq.com/s/AKqVWIdk3SBD-6uiTMliyA).
 - [x] [Realtime SRT Streaming](https://mp.weixin.qq.com/s/HQb3gLRyJHHu56pnyHerxA).
 - [x] [Automatical HTTPS](https://mp.weixin.qq.com/s/O70Fz-mxNedZpxgGXQ8DsA).
-- [x] [Dashboard by Prometheus](https://mp.weixin.qq.com/s/ub9ZGmntOy_-S11oxFkxvg).
 - [x] [DVR to Cloud Storage or VoD](https://mp.weixin.qq.com/s/UXR5EBKZ-LnthwKN_rlIjg).
 - [x] [Support WordPress Plugin](https://mp.weixin.qq.com/s/YjTkcJLkErMcZYHIjzsW_w) or [here](https://wordpress.org/plugins/srs-player).
 - [x] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
 - [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
 - [x] [Support DVR to local disk](https://github.com/ossrs/srs-cloud/issues/42).
+- [ ] [Dashboard by Prometheus](https://mp.weixin.qq.com/s/ub9ZGmntOy_-S11oxFkxvg).
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
 
@@ -41,7 +41,6 @@ flowchart LR;
   mgmt --> Upgrade --> Release;
   mgmt --> Certbot --> HTTPS;
   mgmt --> TencentCloud(platform/TencentCloud) --> CAM[CAM/COS/VoD];
-  mgmt --> Prometheus --- NodeExporter;
   mgmt --> Docker;
   mgmt --> Env[(.env<br/>credentials.txt)];
   mgmt --> Redis[(Redis KV)];
@@ -68,7 +67,6 @@ The ports allocated:
 | platform | 2024 |  - | Mount at `/terraform/v1/mgmt/`, `/terraform/v1/hooks/`, `/terraform/v1/ffmpeg/` and `/terraform/v1/tencent/`    |
 | releases | 2023 |  - | Mount at `/terraform/v1/releases`                                                       |
 | mgmt | 2022 |  - | Mount at `/mgmt/` and `/terraform/v1/mgmt/`                                             |
-| prometheus | 9090 | - | Mount at `/prometheus/`                                                                 |
 | node-exporter | 9100 | - | -                                                                                       |
 | redis | 56379 | - | -                                                                                       |
 
@@ -89,7 +87,6 @@ The features that we're developing:
 * [x] Support high-resolution and realtime(200~500ms) live streaming by SRT.
 * [x] Run SRS hooks in docker, to callback by SRS server.
 * [x] Support publish by SRT, play by RTMP/HTTP-FLV/HLS/WebRTC/SRT.
-* [x] Integrate with prometheus and node-exporter.
 * [x] Support DVR to tencent cloud storage, see [#1193](https://github.com/ossrs/srs/issues/1193).
 * [x] Change redis port and use randomly password.
 * [x] Support integrity with tencent cloud VoD.
@@ -108,6 +105,7 @@ The features that we're developing:
 * [ ] Stop, restart and upgrade containers.
 * [ ] Support logrotate to manage the logs.
 * [ ] Enhance prometheus API with authentication.
+* [ ] Integrate with prometheus and node-exporter.
 
 ## APIs
 
@@ -174,10 +172,10 @@ Also by platform module:
 Removed API:
 
 * `/terraform/v1/mgmt/strategy` Toggle the upgrade strategy.
+* `/prometheus` Prometheus: Time-series database and monitor.
 
 Market:
 
-* `/prometheus` Prometheus: Time-series database and monitor.
 * `/api/` SRS: HTTP API of SRS media server.
 * `/rtc/` SRS: HTTP API for WebERTC of SRS media server.
 * `/*/*.(flv|m3u8|ts|aac|mp3)` SRS: Media stream for HTTP-FLV, HLS, HTTP-TS, HTTP-AAC, HTTP-MP3.
@@ -209,10 +207,6 @@ The software we depend on:
   * [CAM](https://console.cloud.tencent.com/cam/overview) Authentication by secretId and secretKey.
 * [ffmpeg](https://github.com/ossrs/srs-cloud/tree/lighthouse/ffmpeg), `docker --name ffmpeg`
   * [FFmpeg and ffprobe](https://ffmpeg.org) tools in `ossrs/srs:node-av`
-* [Prometheus](https://github.com/prometheus/prometheus#install), `docker --name prometheus`
-  * Config: `mgmt/containers/conf/prometheus.yml`
-  * Data directory: `mgmt/containers/data/prometheus`
-* [NodeExporter](https://github.com/prometheus/node_exporter), `docker --name node-exporter`
 
 ## Upgrade Workflow
 
