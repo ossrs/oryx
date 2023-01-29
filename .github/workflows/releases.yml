@@ -87,6 +87,7 @@ jobs:
 
   k8s:
     needs:
+      - envs
       - aliyun
     steps:
       - name: Covert output to env
