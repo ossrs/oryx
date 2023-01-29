@@ -59,7 +59,7 @@ Install() {
   fi
 
   # Reset to stable version.
-  RELEASE=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+  RELEASE=$(cat releases/main.go |grep 'const stable' |awk -F '"' '{print $2}')
   echo "Reset to stable version $RELEASE"
   if [[ $RELEASE != '' ]]; then
     git pull && git reset --hard $RELEASE
