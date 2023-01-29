@@ -89,6 +89,10 @@ jobs:
     needs:
       - aliyun
     steps:
+      - name: Covert output to env
+        run: |
+          echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
+          echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       ################################################################
       # K8S
       - name: Setup KUBECONFIG for Aliyun ACK
