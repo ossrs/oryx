@@ -104,7 +104,7 @@ jobs:
       # K8S for terraform versions
       - name: Release terraform versions to Aliyun ACK
         run: |-
-          STABLE_RELEASE=platform-$(cat releases/releases.js |grep 'const latest' |awk -F "'" '{print $2}')
+          STABLE_RELEASE=platform-$(cat releases/main.go |grep 'const latest' |awk -F '"' '{print $2}')
           echo "Check stable release $STABLE_RELEASE"
 
           while true; do
