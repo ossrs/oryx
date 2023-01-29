@@ -2,7 +2,7 @@
   "title": "SRS音视频服务器",
   "name": "srs_cloud",
   "ps": "直播和WebRTC音视频能力，支持RTMP、WebRTC、HLS、HTTP-FLV、SRT和MPEG-DASH等常用协议",
-  "versions": "4.6.7",
+  "versions": "4.6.8",
   "checks": "/www/server/panel/plugin/srs_cloud",
   "author": "Winlin",
   "home": "https://github.com/ossrs/srs"
