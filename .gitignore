@@ -123,4 +123,5 @@ mgmt/containers/conf/default.d/nginx.dynamic.conf
 mgmt/ui/build
 /tmp*.sh
 /*logger
+releases/releases
 
