@@ -120,7 +120,7 @@ function ScenarioRxGroup() {
   const onSelectChildTab = React.useCallback((k) => {
     setSearchParams({...searchParams, 'tab': 'rgroup', 'ctab': k});
     setActiveChildTab(k);
-  }, [searchParams, setSearchParams, activeChildTab]);
+  }, [searchParams, setSearchParams, setActiveChildTab]);
 
   return <>
     {activeChildTab &&
@@ -155,7 +155,7 @@ function ScenarioVxGroup() {
   const onSelectChildTab = React.useCallback((k) => {
     setSearchParams({...searchParams, 'tab': 'vgroup', 'ctab': k});
     setActiveChildTab(k);
-  }, [searchParams, setSearchParams, activeChildTab]);
+  }, [searchParams, setSearchParams, setActiveChildTab]);
 
   return <>
     {activeChildTab &&
