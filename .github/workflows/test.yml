@@ -23,8 +23,13 @@ jobs:
             mgmt/package-lock.json
             platform/package-lock.json
             platform/ui/package-lock.json
-            releases/package-lock.json
             tecent/package-lock.json
+
+      # See https://github.com/actions/setup-go
+      - name: Setup the Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '>=1.16.0'
 
       - name: Install and build
         run: |

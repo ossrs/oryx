@@ -16,7 +16,7 @@ npm:
 build: npm
 	@cd platform && npm install
 	@cd platform/ui && npm install
-	@cd releases && npm install
+	@cd releases && make
 	@cd mgmt && npm run build
 	@cd platform && npm run build
 
@@ -41,5 +41,5 @@ test:
 	@cd platform && npm test
 	@cd platform/ui && npm test
 	@cd mgmt && npm test
-	@cd releases && npm test
+	@cd releases && go test ./...
 

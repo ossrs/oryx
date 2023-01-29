@@ -27,7 +27,7 @@ jobs:
 
       - name: Discover upgrade target.
         run: |
-          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          TARGET=$(cat releases/main.go |grep 'const stable' |awk -F '"' '{print $2}')
           echo "TARGET=$TARGET" >> $GITHUB_ENV
 
       - name: Setup the service
@@ -81,7 +81,7 @@ jobs:
 
       - name: Discover upgrade target.
         run: |
-          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          TARGET=$(cat releases/main.go |grep 'const stable' |awk -F '"' '{print $2}')
           echo "TARGET=$TARGET" >> $GITHUB_ENV
 
       - name: Setup the service
@@ -134,7 +134,7 @@ jobs:
 
       - name: Discover upgrade target.
         run: |
-          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          TARGET=$(cat releases/main.go |grep 'const stable' |awk -F '"' '{print $2}')
           echo "TARGET=$TARGET" >> $GITHUB_ENV
 
       - name: Setup the service
@@ -187,7 +187,7 @@ jobs:
 
       - name: Discover upgrade target.
         run: |
-          TARGET=$(cat releases/releases.js |grep 'const stable' |awk -F "'" '{print $2}')
+          TARGET=$(cat releases/main.go |grep 'const stable' |awk -F '"' '{print $2}')
           echo "TARGET=$TARGET" >> $GITHUB_ENV
 
       - name: Setup the service
