@@ -28,22 +28,12 @@ function ComponentsImpl() {
   const [prometheus, setPrometheus] = React.useState();
   const [nodeExporter, setNodeExporter] = React.useState();
   const [redisServer, setRedisServer] = React.useState();
-  const [strategyAutoUpgrade, setStrategyAutoUpgrade] = React.useState();
-  const [userToggleStrategy, setUserToggleStrategy] = React.useState();
   const [searchParams] = useSearchParams();
-  const [allowManuallyUpgrade, setAllowManuallyUpgrade] = React.useState(true);
   const [allowDisableContainer, setAllowDisableContainer] = React.useState();
   const [refreshContainers, setRefreshContainers] = React.useState();
   const [allowSwitchContainer, setAllowSwitchContainer] = React.useState(true);
   const handleError = useErrorHandler();
   const {t} = useTranslation();
-
-  React.useEffect(() => {
-    const allowManuallyUpgrade = searchParams.get('allow-manual') === 'true';
-    console.log(`?allow-manual=true|false, current=${allowManuallyUpgrade}, Whether allow manually upgrade`);
-    if (!searchParams.get('allow-manual')) return; // Ignore if not specified.
-    setAllowManuallyUpgrade(allowManuallyUpgrade);
-  }, [searchParams]);
 
   React.useEffect(() => {
     const allowDisableContainer = searchParams.get('allow-disable') === 'true';
@@ -59,28 +49,27 @@ function ComponentsImpl() {
     setAllowSwitchContainer(allowSwitchContainer);
   }, [searchParams]);
 
-  // Because the onStatus always change during rendering, so we use a callback so that the useEffect() could depends on
-  // it to avoid infinitely loops. That is callback is not changed, while onStatus changed(not null) mnay times during
-  // each rendering of components.
-  const onStatus = React.useCallback((status) => {
-    setStrategyAutoUpgrade(status.strategy === 'auto');
-    setStatus(status);
-  }, []);
+  React.useEffect(() => {
+    const refreshMgmtStatus = () => {
+      const token = Token.load();
+      axios.post('/terraform/v1/mgmt/status', {
+        ...token,
+      }).then(res => {
+        const status = res.data.data;
 
-  const handleUpgradeStrategyChange = React.useCallback((e) => {
-    if (strategyAutoUpgrade && !window.confirm(t('coms.disableUpgrade'))) {
-      e.preventDefault();
-      return;
-    }
+        // Normally state.
+        setStatus(status);
 
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/strategy', {
-      ...token,
-    }).then(res => {
-      setUserToggleStrategy(!userToggleStrategy);
-      console.log(`Strategy: Change ok`);
-    }).catch(handleError);
-  }, [handleError, strategyAutoUpgrade, userToggleStrategy, t]);
+        console.log(`${moment().format()}: Status: Query ok, status=${JSON.stringify(status)}`);
+      }).catch(e => {
+        console.log('ignore any error during status', e);
+      });
+    };
+
+    refreshMgmtStatus();
+    const timer = setInterval(() => refreshMgmtStatus(), 10 * 1000);
+    return () => clearInterval(timer);
+  }, [setStatus]);
 
   React.useEffect(() => {
     const token = Token.load();
@@ -149,7 +138,6 @@ function ComponentsImpl() {
                   {srsDev?.enabled || <>
                     <Button className='disabled'>{t('helper.restart')}</Button> &nbsp;
                   </>}
-                  <Button className='disabled'>{t('helper.upgrade')}</Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && srsRelease?.name}
                     enabled={srsRelease?.enabled}
@@ -180,9 +168,6 @@ function ComponentsImpl() {
                   {srsRelease?.enabled || <>
                     <Button className='disabled'>{t('helper.restart')}</Button> &nbsp;
                   </>}
-                  <Button className='disabled'>
-                    {t('helper.upgrade')}
-                  </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && srsDev?.name}
                     enabled={srsDev?.enabled}
@@ -217,9 +202,6 @@ function ComponentsImpl() {
                   <Button className='disabled'>
                     {t('helper.restart')}
                   </Button> &nbsp;
-                  <Button className='disabled'>
-                    {t('helper.upgrade')}
-                  </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && prometheus?.name}
                     enabled={prometheus?.enabled}
@@ -242,9 +224,6 @@ function ComponentsImpl() {
                 <div style={{display: 'inline-block'}}>
                   <Button className='disabled'>
                     {t('helper.restart')}
-                  </Button> &nbsp;
-                  <Button className='disabled'>
-                    {t('helper.upgrade')}
                   </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && nodeExporter?.name}
@@ -269,9 +248,6 @@ function ComponentsImpl() {
                   <Button className='disabled'>
                     {t('helper.restart')}
                   </Button> &nbsp;
-                  <Button className='disabled'>
-                    {t('helper.upgrade')}
-                  </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && redisServer?.name}
                     enabled={redisServer?.enabled}
@@ -295,9 +271,6 @@ function ComponentsImpl() {
                   <Button className='disabled'>
                     {t('helper.restart')}
                   </Button> &nbsp;
-                  <Button className='disabled'>
-                    {t('helper.upgrade')}
-                  </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && platform?.name}
                     enabled={platform?.enabled}
@@ -312,22 +285,15 @@ function ComponentsImpl() {
               <Card.Header>{t('coms.host')}</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
+                  <p>
                   {t('coms.version')}: {status?.version} <br/>
-                  {t('coms.stable')}: {status?.releases?.stable} &nbsp;
-                  <Form.Check
-                    type='switch'
-                    label={t('coms.autoUpgrade')}
-                    style={{display: 'inline-block'}}
-                    title={t('coms.autoUpgradeTip')}
-                    disabled={!allowManuallyUpgrade}
-                    defaultChecked={strategyAutoUpgrade}
-                    onClick={(e) => handleUpgradeStrategyChange(e)}
-                  />
-                  <br/>
+                  {t('coms.stable')}: {status?.releases?.stable}<br/>
                   {t('coms.latest')}: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
-                  <p></p>
+                  </p>
+                  <footer className="blockquote-footer">
+                    {t('coms.upgradeManually')}
+                  </footer>
                 </Card.Text>
-                <MgmtUpgradeButton onStatus={onStatus}/>
               </Card.Body>
             </Card>
           </Col>
@@ -356,116 +322,6 @@ function MgmtUpdateContainer({allow, enabled, onClick}) {
     >
       {enabled ? t('helper.disable') : t('helper.enable')}
     </Button>
-  );
-}
-
-const upgradeProgress = 300;
-
-function MgmtUpgradeButton({onStatus}) {
-  const [startingUpgrade, setStartingUpgrade] = React.useState();
-  const [isUpgrading, setIsUpgrading] = React.useState();
-  const [releaseAvailable, setReleaseAvailable] = React.useState();
-  const [upgradeDone, setUpgradeDone] = React.useState();
-  const [progress, setProgress] = React.useState(upgradeProgress);
-  const {t} = useTranslation();
-
-  // For callback to update state, because in callback we can only get the copy, so we need a ref to point to the latest
-  // copy of state of variant objects.
-  const ref = React.useRef({});
-  React.useEffect(() => {
-    ref.current.startingUpgrade = startingUpgrade;
-    ref.current.progress = progress;
-    ref.current.upgradeDone = upgradeDone;
-  }, [startingUpgrade, progress, upgradeDone]);
-
-  React.useEffect(() => {
-    const refreshMgmtStatus = () => {
-      const token = Token.load();
-      axios.post('/terraform/v1/mgmt/status', {
-        ...token,
-      }).then(res => {
-        const status = res.data.data;
-
-        // Normally state.
-        setIsUpgrading(status.upgrading);
-        onStatus(status);
-
-        // Whether upgrade is available.
-        if (status && status.releases && status.releases.latest) {
-          setReleaseAvailable(semver.lt(status.version, status.releases.latest));
-        }
-
-        // If upgradeDone is false, we're in the upgrading progress, so it's done when upgrading changed to false.
-        if (ref.current.upgradeDone === false && !status.upgrading && ref.current.progress < upgradeProgress) {
-          setStartingUpgrade(false);
-          setUpgradeDone(true);
-        }
-
-        // If state not set, but already upgrading, it's restore from the previous state.
-        if (status.upgrading && ref.current.upgradeDone === undefined && ref.current.startingUpgrade === undefined) {
-          setStartingUpgrade(true);
-          setUpgradeDone(false);
-        }
-
-        console.log(`${moment().format()}: Status: Query ok, startingUpgrade=${ref.current.startingUpgrade}, upgradeDone=${ref.current.upgradeDone}, status=${JSON.stringify(status)}`);
-      }).catch(e => {
-        console.log('ignore any error during status', e);
-      });
-    };
-
-    refreshMgmtStatus();
-    const timer = setInterval(() => refreshMgmtStatus(), 10 * 1000);
-    return () => clearInterval(timer);
-  }, [startingUpgrade, onStatus]);
-
-  const handleStartUpgrade = () => {
-    if (isUpgrading) return;
-
-    setUpgradeDone(false);
-    setStartingUpgrade(true);
-    setProgress(upgradeProgress);
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/upgrade', {
-      ...token,
-    }).then(res => {
-      console.log(`upgrade ok, ${JSON.stringify(res.data.data)}`);
-    }).catch(e => {
-      console.log('ignore any error during upgrade', e);
-    });
-  };
-
-  React.useEffect(() => {
-    if (!isUpgrading) return;
-    const timer = setInterval(() => {
-      if (ref.current.progress <= 0) return;
-      if (ref.current.progress <= 10) setUpgradeDone(true);
-      setProgress(ref.current.progress - 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isUpgrading]);
-
-  React.useEffect(() => {
-    if (!upgradeDone) return;
-    alert(t('coms.upgradeOk'));
-  }, [upgradeDone, t]);
-
-  return (
-    <UpgradeConfirmButton
-      releaseAvailable={releaseAvailable}
-      upgrading={startingUpgrade || isUpgrading}
-      progress={`${progress}s`}
-      onClick={handleStartUpgrade}
-      text={t('helper.upgrade')}
-    >
-      <p>
-        {t('coms.upgradeTip1')}
-        <span className='text-danger'><strong>
-          {t('coms.upgradeTip2')}
-        </strong></span>
-        {t('coms.upgradeTip3')}
-      </p>
-    </UpgradeConfirmButton>
   );
 }
 

@@ -128,7 +128,6 @@ Platform:
 * `/terraform/v1/mgmt/status` Query the version of mgmt.
 * `/terraform/v1/mgmt/envs` Query the envs of mgmt.
 * `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
-* `/terraform/v1/mgmt/strategy` Toggle the upgrade strategy.
 * `/terraform/v1/mgmt/ssl` Config the system SSL config.
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
 * `/terraform/v1/mgmt/pubkey` Update the access for platform administrator pubkey.
@@ -172,6 +171,10 @@ Also by platform module:
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 
+Removed API:
+
+* `/terraform/v1/mgmt/strategy` Toggle the upgrade strategy.
+
 Market:
 
 * `/prometheus` Prometheus: Time-series database and monitor.
@@ -213,33 +216,7 @@ The software we depend on:
 
 ## Upgrade Workflow
 
-When upgrading automatically or manually by user:
-
-* `bash upgrade` for each upgrade.
-* `bash auto/upgrade_region` to setup the source by region.
-* `git checkout` to checkout to specified tag or branch.
-* `bash upgrade_living` to run with the updated scripts.
-* `bash auto/upgrade_prepare` do upgrade for previous images.
-* `bash auto/upgrade_nginx` to upgrade the nginx configuration.
-* `bash auto/foreach_run` to setup swap and redis configuration.
-* `bash auto/upgrade_ui` to upgrade the ui.
-* `systemctl restart srs-terraform` to restart the mgmt service.
-
-When system start, check the flag `SRS_FIRST_BOOT` in redis, if not set:
-
-* Always restart container platform to use the correct image version, which should be same to mgmt.
-* Restart containers for the host ip might change.
-
-They are not mutually exclusive. To force to upgrade to a branch:
-
-```bash
-~lighthouse/redis-cli hset SRS_UPGRADING force main
-systemctl restart srs-terraform
-```
-
-> Note: Please set the upgrade window to [0, 24] to allow upgrade full time.
-
-It will trigger the upgrading process immediately.
+No automatically upgrading, instead, user should reinstall srs-cloud or pull the specified version of docker.
 
 ## System Boot
 

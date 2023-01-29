@@ -151,7 +151,8 @@
         "stable": "稳定版本",
         "latest": "最新版本",
         "autoUpgrade": "自动更新",
-        "autoUpgradeTip": "是否自动更新到稳定版本"
+        "autoUpgradeTip": "是否自动更新到稳定版本",
+        "upgradeManually": "若需要升级，请手动重装，或者更新镜像版本"
       },
       "openapi": {
         "title": "使用场景",
@@ -348,7 +349,8 @@
         "stable": "Stable",
         "latest": "Latest",
         "autoUpgrade": "Auto",
-        "autoUpgradeTip": "Whether automatically upgrade"
+        "autoUpgradeTip": "Whether automatically upgrade",
+        "upgradeManually": "Please upgrade manually by reinstall or docker pull"
       },
       "openapi": {
         "title": "Introduction",

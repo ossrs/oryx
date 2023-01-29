@@ -41,6 +41,7 @@ exports.handle = (router) => {
     const upgradingMessage = `upgrade to target=${target}, current=${version}, latest=${latest}, window=${inUpgradeWindow}`;
     console.log(`Start ${upgradingMessage}`);
 
+    // TODO: FIXME: Should remove it.
     const r0 = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
     if (r0 === "1") {
       const r1 = await redis.hget(keys.redis.SRS_UPGRADING, 'desc');
@@ -63,6 +64,7 @@ exports.handle = (router) => {
     });
   });
 
+  // TODO: FIXME: Remove this API.
   router.all('/terraform/v1/mgmt/strategy', async (ctx) => {
     const {token} = ctx.request.body;
 
@@ -72,6 +74,7 @@ exports.handle = (router) => {
     const versions = await releases.queryLatestVersion();
     metadata.upgrade.releases = versions;
 
+    // TODO: FIXME: Should remove it.
     const upgrading = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
     const r0 = await redis.hget(keys.redis.SRS_UPGRADE_STRATEGY, 'strategy');
     const strategy = r0 || 'auto';

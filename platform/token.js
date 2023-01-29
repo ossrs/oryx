@@ -67,6 +67,7 @@ exports.handle = (router) => {
     const r2 = await redis.hlen(keys.redis.SRS_TENCENT_LH);
     if (!r0 || !r1 || !r2) throw utils.asError(errs.sys.redis, errs.status.sys, `Redis is not ready`);
 
+    // TODO: FIXME: Should remove it.
     const upgrading = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
 
     console.log(`system check ok, r0=${r0}, r1=${r1}, r2=${r2}`);
@@ -139,6 +140,7 @@ exports.handle = (router) => {
     const {version} = await helper.execApi('queryVersion');
     const {stable, latest} = metadata.upgrade.releases;
 
+    // TODO: FIXME: Should remove it.
     const upgrading = await redis.hget(keys.redis.SRS_UPGRADING, 'upgrading');
     const r0 = await redis.hget(keys.redis.SRS_UPGRADE_STRATEGY, 'strategy');
     const strategy = r0 || 'auto';
