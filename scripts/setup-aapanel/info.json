@@ -2,7 +2,7 @@
   "title": "SRS Cloud",
   "name": "srs_cloud",
   "ps": "SRS is a simple, high efficiency and realtime video server, supports RTMP, WebRTC, HLS, HTTP-FLV and SRT.",
-  "versions": "4.6.8",
+  "versions": "4.6.9",
   "checks": "/www/server/panel/plugin/srs_cloud",
   "author": "Winlin",
   "home": "https://github.com/ossrs/srs"
