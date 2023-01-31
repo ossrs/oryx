@@ -323,33 +323,6 @@ exports.handle = (router) => {
     ctx.body = utils.asResponse(0);
   });
 
-  router.all('/terraform/v1/mgmt/nginx/proxy', async (ctx) => {
-    const {token, location, backend} = ctx.request.body;
-
-    const apiSecret = await utils.apiSecret(redis);
-    const decoded = await utils.verifyToken(jwt, token, apiSecret);
-
-    if (!location) throw utils.asError(errs.sys.empty, errs.status.args, `no param location`);
-    if (!backend) throw utils.asError(errs.sys.empty, errs.status.args, `no param backend`);
-
-    ['/terraform/', '/mgmt/', '/.well-known/'].map(forbidden => {
-      if (location.indexOf(forbidden) === 0) {
-        throw utils.asError(errs.sys.invalid, errs.status.args, `location ${location} or ${forbidden} is reserved`);
-      }
-      return null;
-    });
-
-    // Homepage / conflicts with proxy /, both need to write / in nginx config.
-    const defaultHomepage = await redis.hget(keys.redis.SRS_HTTP_REWRITE, '/');
-    if (defaultHomepage) throw utils.asError(errs.sys.invalid, errs.status.sys, `already set homepage /`);
-
-    const r0 = await redis.hset(keys.redis.SRS_HTTP_PROXY, location, backend);
-    await helper.execApi('nginxGenerateConfig');
-
-    console.log(`nginx reverse proxy ok, location=${location}, backend=${backend}, r0=${r0}, decoded=${JSON.stringify(decoded)}, token=${token.length}B`);
-    ctx.body = utils.asResponse(0);
-  });
-
   return router;
 };
 

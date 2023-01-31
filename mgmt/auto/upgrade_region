@@ -4,9 +4,9 @@ SOURCE=$1
 echo "Upgrade region script, SOURCE=$SOURCE"
 
 # Ignore darwin
-if [[ ! -d /usr/local/srs-cloud && $(uname -s) == 'Darwin' ]]; then
+if [[ $(uname -s) == 'Darwin' ]]; then
   echo "Directly finish upgrade for macOS development"
-  sleep 3; exit 0;
+  exit 0;
 fi
 
 # Switch the remote for git

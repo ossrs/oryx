@@ -10,21 +10,16 @@ default:
 	@echo "     upgrade     Build for upgrade"
 	@echo "     test     	Run tests"
 
-npm:
-	@cd mgmt && npm install
-
-build: npm
+build:
 	@cd platform && npm install
-	@cd platform/ui && npm install
 	@cd releases && make
-	@cd mgmt && npm run build
+	@cd mgmt && make
 	@cd platform && npm run build
 
 upgrade:
-	@cd mgmt && npm install
-	@cd mgmt && npm run upgrade
+	@echo "ignore for upgrade"
 
-install: npm
+install:
 	@mkdir -p $(__REAL_INSTALL)
 	@rm -rf $(__REAL_INSTALL)/mgmt $(__REAL_INSTALL)/js-core
 	@ln -sf `pwd`/mgmt $(__REAL_INSTALL)/mgmt
@@ -39,7 +34,6 @@ uninstall:
 
 test:
 	@cd platform && npm test
-	@cd platform/ui && npm test
-	@cd mgmt && npm test
+	@cd mgmt && go test ./...
 	@cd releases && go test ./...
 

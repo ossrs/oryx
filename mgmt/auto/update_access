@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # Ignore darwin
-if [[ ! -d /usr/local/srs-cloud && $(uname -s) == 'Darwin' ]]; then
+if [[ $(uname -s) == 'Darwin' ]]; then
   echo "Directly finish upgrade for macOS development"
-  sleep 3; exit 0;
+  exit 0;
 fi
 
 # Always write SSH keys to root.

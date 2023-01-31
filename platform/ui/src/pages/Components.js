@@ -3,10 +3,7 @@ import Container from "react-bootstrap/Container";
 import React from "react";
 import {Token} from "../utils";
 import axios from "axios";
-import {Row, Col, Card, Button, Form} from "react-bootstrap";
-import UpgradeConfirmButton from '../components/UpgradeConfirmButton';
-import SwitchConfirmButton from '../components/SwitchConfirmButton';
-import * as semver from 'semver';
+import {Row, Col, Card, Button} from "react-bootstrap";
 import * as moment from 'moment';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
@@ -23,13 +20,11 @@ export default function Components() {
 function ComponentsImpl() {
   const [status, setStatus] = React.useState();
   const [srsRelease, setSrsRelease] = React.useState();
-  const [srsDev, setSrsDev] = React.useState();
   const [platform, setPlatform] = React.useState();
   const [redisServer, setRedisServer] = React.useState();
   const [searchParams] = useSearchParams();
   const [allowDisableContainer, setAllowDisableContainer] = React.useState();
   const [refreshContainers, setRefreshContainers] = React.useState();
-  const [allowSwitchContainer, setAllowSwitchContainer] = React.useState(true);
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
@@ -38,13 +33,6 @@ function ComponentsImpl() {
     console.log(`?allow-disable=true|false, current=${allowDisableContainer}, Whether allow disable container`);
     if (!searchParams.get('allow-disable')) return; // Ignore if not specified.
     setAllowDisableContainer(allowDisableContainer);
-  }, [searchParams]);
-
-  React.useEffect(() => {
-    const allowSwitchContainer = searchParams.get('allow-switch') === 'true';
-    console.log(`?allow-switch=true|false, current=${allowSwitchContainer}, Whether allow switch srs server`);
-    if (!searchParams.get('allow-switch')) return; // Ignore if not specified.
-    setAllowSwitchContainer(allowSwitchContainer);
   }, [searchParams]);
 
   React.useEffect(() => {
@@ -86,7 +74,6 @@ function ComponentsImpl() {
         }
 
         if (m.name === 'srs-server') setSrsRelease(m);
-        if (m.name === 'srs-dev') setSrsDev(m);
         if (m.name === 'platform') setPlatform(m);
         if (m.name === 'redis') setRedisServer(m);
 
@@ -106,16 +93,6 @@ function ComponentsImpl() {
     }).catch(handleError);
   }, [handleError]);
 
-  const handleSwitch = React.useCallback((container) => {
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/containers', {
-      ...token, action: 'switch', name: container.name,
-    }).then(res => {
-      console.log(`SRS: Switch ok, name=${container.name}`);
-      setRefreshContainers(Math.random());
-    }).catch(handleError);
-  }, [handleError]);
-
   return (
     <>
       <Container>
@@ -131,55 +108,11 @@ function ComponentsImpl() {
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
-                  {srsDev?.enabled || <>
-                    <Button className='disabled'>{t('helper.restart')}</Button> &nbsp;
-                  </>}
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && srsRelease?.name}
                     enabled={srsRelease?.enabled}
                     onClick={() => handleContainerChange(srsRelease)}
-                  /> &nbsp;
-                  <SwitchConfirmButton
-                    enabled={srsDev?.enabled}
-                    onClick={() => handleSwitch(srsRelease)}
-                    allowSwitchContainer={allowSwitchContainer}
-                  >
-                    <p>{t('coms.switchConfirm')}</p>
-                  </SwitchConfirmButton>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xs lg={3}>
-            <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>{t('coms.srs5')}</Card.Header>
-              <Card.Body>
-                <Card.Text as={Col}>
-                  {t('coms.containerName')}：{srsDev?.name} <br/>
-                  {t('coms.containerId')}：{srsDev?.container?.ID ? srsDev.container.ID : 'No Container'} <br/>
-                  {t('coms.containerState')}：{srsDev?.StatusMessage}
-                  <p></p>
-                </Card.Text>
-                <div style={{display: 'inline-block'}}>
-                  {srsRelease?.enabled || <>
-                    <Button className='disabled'>{t('helper.restart')}</Button> &nbsp;
-                  </>}
-                  <MgmtUpdateContainer
-                    allow={allowDisableContainer && srsDev?.name}
-                    enabled={srsDev?.enabled}
-                    onClick={() => handleContainerChange(srsDev)}
-                  /> &nbsp;
-                  <SwitchConfirmButton
-                    enabled={srsRelease?.enabled}
-                    onClick={() => handleSwitch(srsDev)}
-                    allowSwitchContainer={allowSwitchContainer}
-                  >
-                    <p>
-                      {t('coms.switchConfirm1')}
-                      <font color='red'>{t('coms.switchConfirm2')}</font>
-                      {t('coms.switchConfirm3')}
-                    </p>
-                  </SwitchConfirmButton>
+                  />
                 </div>
               </Card.Body>
             </Card>
@@ -195,9 +128,6 @@ function ComponentsImpl() {
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
-                  <Button className='disabled'>
-                    {t('helper.restart')}
-                  </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && redisServer?.name}
                     enabled={redisServer?.enabled}
@@ -218,9 +148,6 @@ function ComponentsImpl() {
                   <p></p>
                 </Card.Text>
                 <div style={{display: 'inline-block'}}>
-                  <Button className='disabled'>
-                    {t('helper.restart')}
-                  </Button> &nbsp;
                   <MgmtUpdateContainer
                     allow={allowDisableContainer && platform?.name}
                     enabled={platform?.enabled}

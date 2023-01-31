@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# Ignore darwin
+if [[ $(uname -s) == 'Darwin' ]]; then
+  echo "Directly finish upgrade for macOS development"
+  exit 0;
+fi
+
 REALPATH=$(realpath $0)
 WORK_DIR=$(cd $(dirname $REALPATH)/.. && pwd)
 

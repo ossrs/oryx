@@ -125,7 +125,6 @@ Platform:
 * `/terraform/v1/mgmt/login` System auth with password.
 * `/terraform/v1/mgmt/status` Query the version of mgmt.
 * `/terraform/v1/mgmt/envs` Query the envs of mgmt.
-* `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
 * `/terraform/v1/mgmt/ssl` Config the system SSL config.
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
 * `/terraform/v1/mgmt/pubkey` Update the access for platform administrator pubkey.
@@ -133,15 +132,9 @@ Platform:
 * `/terraform/v1/mgmt/bilibili` Query the video information.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
-* `/terraform/v1/mgmt/window/query` Query the upgrade time window.
-* `/terraform/v1/mgmt/window/update` Update the upgrade time window.
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
 * `/terraform/v1/mgmt/secret/token` Create token for OpenAPI.
 * `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
-* `/terraform/v1/mgmt/nginx/homepage` Setup the homepage redirection.
-* `/terraform/v1/mgmt/nginx/proxy` Setup a reverse proxy location.
-* `/terraform/v1/mgmt/dns/lb` HTTP-DNS for hls load balance.
-* `/terraform/v1/mgmt/dns/backend/update` HTTP-DNS: Update the backend servers for hls load balance.
 
 Also by platform module:
 
@@ -173,6 +166,13 @@ Removed API:
 
 * `/terraform/v1/mgmt/strategy` Toggle the upgrade strategy.
 * `/prometheus` Prometheus: Time-series database and monitor.
+* `/terraform/v1/mgmt/nginx/proxy` Setup a reverse proxy location.
+* `/terraform/v1/mgmt/dns/lb` HTTP-DNS for hls load balance.
+* `/terraform/v1/mgmt/dns/backend/update` HTTP-DNS: Update the backend servers for hls load balance.
+* `/terraform/v1/mgmt/nginx/homepage` Setup the homepage redirection.
+* `/terraform/v1/mgmt/window/query` Query the upgrade time window.
+* `/terraform/v1/mgmt/window/update` Update the upgrade time window.
+* `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
 
 Market:
 
@@ -237,6 +237,7 @@ The optional environments defined by `mgmt/.env`:
 * `CLOUD`: The cloud platform name, DEV for development.
 * `REGION`: `ap-guangzhou|ap-singapore|sgp1`, The region for upgrade source.
 * `SOURCE`: `github|gitee`, The source code for upgrading. 
+* `MGMT_LISTEN`: The listen port for mgmt HTTP server. Default: 2024
 
 For testing the specified service:
 
@@ -267,7 +268,6 @@ Environments for react ui:
 Install dependencies:
 
 ```bash
-(cd mgmt && npm install)
 (cd platform && npm install)
 (cd platform/ui && npm install)
 ```
@@ -275,7 +275,7 @@ Install dependencies:
 Run the mgmt backend:
 
 ```
-(cd mgmt && npm start)
+(cd mgmt && go run .)
 ```
 
 Run the platform backend:
@@ -296,16 +296,11 @@ Access the browser: http://localhost:3000
 
 Release bugfix:
 
-* For mgmt or platform: `./auto/mgmt_platform_pub.sh`
-* Then test the specified version of mgmt and platform.
+* For mgmt: `./auto/mgmt_pub.sh`
+* Then test the specified version of mgmt.
 * Finally, run `./auto/releases_pub.sh` if test ok.
 
 > Note: The [features](https://github.com/ossrs/srs-cloud/issues/4) might need to be updated.
-
-Release [stable version](https://api.ossrs.net/terraform/v1/releases):
-
-* MUST update the stable version manually in `releases/releases.js`
-* Then run `./auto/releases_pub.sh`
 
 Release version for BT and aaPanel:
 
@@ -314,6 +309,15 @@ Release version for BT and aaPanel:
 * Finally, download [bt-srs_cloud.zip](https://github.com/ossrs/srs-cloud/releases) then submit to [bt.cn](https://www.bt.cn/developer/details.html?id=600801805)
 
 > Note: The [BT forum](https://www.bt.cn/bbs/thread-90890-1-1.html) and [FAQ](https://github.com/ossrs/srs-cloud/issues/4) might need to be updated.
+
+## Deprecated
+
+Release [stable version](https://api.ossrs.net/terraform/v1/releases):
+
+* MUST update the stable version manually in `releases/main.go`
+* Then run `./auto/releases_pub.sh`
+
+> Note: We disable the upgrade feature, so should never update the stable version.
 
 2022.11
 

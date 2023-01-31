@@ -10,9 +10,9 @@ if [[ -f .env ]]; then source .env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 
 # Ignore darwin
-if [[ ! -d /usr/local/srs-cloud && $(uname -s) == 'Darwin' ]]; then
+if [[ $(uname -s) == 'Darwin' ]]; then
   echo "Directly finish upgrade for macOS development"
-  sleep 3; exit 0;
+  exit 0;
 fi
 
 # Prepare the OS again.
