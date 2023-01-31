@@ -33,6 +33,10 @@ Install() {
   source do_os.sh
   if [[ $? -ne 0 ]]; then echo "Setup OS failed"; exit 1; fi
 
+  # Remember the commit to restore.
+  cd $install_path/srs-cloud && CURRENT_COMMIT=$(git log --pretty=format:'%h' -n 1)
+  echo "CURRENT_COMMIT=${CURRENT_COMMIT}" && git log $CURRENT_COMMIT
+
   # Restore files from git.
   echo "Git reset files"
   cd $install_path/srs-cloud && git reset --hard HEAD
@@ -45,7 +49,7 @@ Install() {
   cd $install_path/srs-cloud && chmod 755 mgmt/bootstrap mgmt/upgrade scripts/remove-containers.sh
   if [[ $? -ne 0 ]]; then echo "Change file permissions failed"; exit 1; fi
 
-  # Restore files from git again, after changing file permisisons.
+  # Restore files from git again, after changing file permissions.
   echo "Git reset files"
   cd $install_path/srs-cloud && git reset --hard HEAD
   if [[ $? -ne 0 ]]; then echo "Reset files failed"; exit 1; fi
@@ -58,13 +62,10 @@ Install() {
     if [[ $? -ne 0 ]]; then echo "Git unshallow failed"; exit 1; fi
   fi
 
-  # Reset to stable version.
-  RELEASE=$(cat releases/main.go |grep 'const stable' |awk -F '"' '{print $2}')
-  echo "Reset to stable version $RELEASE"
-  if [[ $RELEASE != '' ]]; then
-    git pull && git reset --hard $RELEASE
-    if [[ $? -ne 0 ]]; then echo "Reset to $RELEASE failed"; exit 1; fi
-  fi
+  # Reset to current release version.
+  cd $install_path/srs-cloud && git reset --hard $CURRENT_COMMIT &&
+  echo "Reset to commit $CURRENT_COMMIT"
+  if [[ $? -ne 0 ]]; then echo "Reset to $RELEASE failed"; exit 1; fi
 
   # Move srs-cloud to its home.
   echo "Move srs-cloud to $SRS_HOME"
