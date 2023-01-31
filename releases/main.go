@@ -9,7 +9,7 @@ import (
 
 const stable = "v1.0.256"
 const latest = "v1.0.280";
-const api = "v1.0.364";
+const api = "v1.0.365";
 
 func main() {
 	listen := os.Getenv("PORT")
