@@ -2,31 +2,9 @@
 
 echo "Foreach run script"
 
-# If memory smaller than 2GB, create swap to avoid OOM, please see
-# https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-18-04
-#
-# Note that another solution is to disable GENERATE_SOURCEMAP to avoid OOM, but it doesn't work sometimes, please see
-# https://create-react-app.dev/docs/advanced-configuration/
-#
-# Disable swap by: swapoff /srs-swapfile
-MEM_TOTAL=$(grep MemTotal /proc/meminfo |awk '{print $2}')
-if [[ MEM_TOTAL -lt 2097152 ]]; then
-  if [[ -f /swapfile ]]; then
-    swapoff /swapfile; rm -f /swapfile; echo "Remove /swapfile"
-  fi
-
-  if [[ ! -f /srs-swapfile ]]; then
-    fallocate -l 2G /srs-swapfile && chmod 600 /srs-swapfile && ls -lh /srs-swapfile && mkswap /srs-swapfile &&
-    echo "Create swap file ok"
-    if [[ $? -ne 0 ]]; then echo "Create swap file failed"; exit 1; fi
-  fi
-
-  swapon --show |grep "/srs-swapfile"
-  if [[ $? -ne 0 ]]; then
-    swapon /srs-swapfile &&
-    echo "Turn on swap /srs-swapfile for MEM_TOTAL=$MEM_TOTAL"
-    if [[ $? -ne 0 ]]; then echo "Turn on swap memory failed"; exit 1; fi
-  fi
+# Do not use swap, for some OS it fails.
+if [[ -f /swapfile ]]; then
+  swapoff /swapfile; rm -f /swapfile; echo "Remove /swapfile"
 fi
 
 # Generate coredump, see https://stackoverflow.com/a/47694315/17679565
