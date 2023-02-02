@@ -11,10 +11,10 @@ default:
 	@echo "     test     	Run tests"
 
 build:
-	@cd platform && npm install
 	@cd releases && make
 	@cd mgmt && make
-	@cd platform && npm run build
+	@cd platform && make
+	@cd platform && make ui-install && make ui-build
 
 upgrade:
 	@echo "ignore for upgrade"
@@ -33,7 +33,7 @@ uninstall:
 	@rm -rf $(SRS_PREFIX)
 
 test:
-	@cd platform && npm test
+	@cd platform && go test ./...
 	@cd mgmt && go test ./...
 	@cd releases && go test ./...
 

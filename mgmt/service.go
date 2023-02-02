@@ -280,7 +280,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 	// Current host platform name.
 	handlers["hostPlatform"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
 		// The platform must be the os name, such as darwin or linux, equals to nodejs process.platform, for Go it
-		// should be runtime.GOOS, not the conf.Platform
+		// should be runtime.GOOS, not the conf.Platform which is for statistic only.
 		ohttp.WriteData(ctx, w, r, &struct {
 			Platform string `json:"platform"`
 		}{
@@ -290,11 +290,11 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		return nil
 	}
 
-	// Fetch the container, build the market if exists.
+	// Fetch the container.
 	handlers["fetchContainer"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
-		name, marketName := sr.ArgsAsString()[0], sr.ArgsAsString()[1]
+		name := sr.ArgsAsString()[0]
 		if name == "" {
-			return errors.Errorf("no name, market=%v", marketName)
+			return errors.New("no name")
 		}
 
 		all, running := queryContainer(ctx, name)
@@ -306,6 +306,23 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		})
 
 		logger.Tf(ctx, "execApi req=%v, all=%v, running=%v", sr, all, running)
+		return nil
+	}
+
+	// Remove the container.
+	handlers["removeContainer"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
+		name := sr.ArgsAsString()[0]
+		if name == "" {
+			return errors.New("no name")
+		}
+
+		err := removeContainer(ctx, name)
+		if err != nil {
+			return errors.Wrapf(err, "remove container %v", name)
+		}
+
+    ohttp.WriteData(ctx, w, r, nil)
+		logger.Tf(ctx, "execApi req=%v", sr)
 		return nil
 	}
 
@@ -593,6 +610,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			return errors.Wrapf(err, "docker %v", strings.Join(args, " "))
 		}
 
+		ohttp.WriteData(ctx, w, r, nil)
 		logger.Tf(ctx, "execApi req=%v", sr)
 		return nil
 	}
@@ -754,7 +772,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		}
 
 		// The UI proxy to platform UI, system mgmt UI.
-		if strings.HasPrefix(r.URL.Path, "/mgmt/") {
+		if strings.HasPrefix(r.URL.Path, "/mgmt") {
 			logger.Tf(ctx, "Proxy %v to backend 2024", r.URL.Path)
 			proxy2024.ServeHTTP(w, r)
 			return

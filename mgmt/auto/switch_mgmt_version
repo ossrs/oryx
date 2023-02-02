@@ -19,6 +19,10 @@ fi
 # Use different docker registry.
 REGISTRY=registry.cn-hangzhou.aliyuncs.com
 if [[ $SOURCE == GITHUB || $SOURCE == github ]]; then REGISTRY=docker.io; fi
+if [[ $SOURCE == ""  && $(git remote -v |grep origin |grep -q github.com && echo yes) == yes ]]; then
+  echo "guess by git repository"
+  REGISTRY=docker.io
+fi
 echo "Detect REGISTRY=$REGISTRY"
 
 echo "Switch $CURRENT_VERSION to $TARGET_VERSION"

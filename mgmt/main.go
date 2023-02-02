@@ -166,7 +166,7 @@ func initOS(ctx context.Context) (err error) {
 		return errors.Wrapf(err, "discover registry")
 	}
 
-	// Discover the platform.
+	// Discover the platform, not the GOOS, for report and statistic only.
 	if conf.Platform, err = discoverPlatform(ctx, conf.Cloud); err != nil {
 		return errors.Wrapf(err, "discover platform")
 	}

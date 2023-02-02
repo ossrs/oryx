@@ -237,7 +237,8 @@ The optional environments defined by `mgmt/.env`:
 * `CLOUD`: The cloud platform name, DEV for development.
 * `REGION`: `ap-guangzhou|ap-singapore|sgp1`, The region for upgrade source.
 * `SOURCE`: `github|gitee`, The source code for upgrading. 
-* `MGMT_LISTEN`: The listen port for mgmt HTTP server. Default: 2024
+* `MGMT_LISTEN`: The listen port for mgmt HTTP server. Default: 2022
+* `PLATFORM_LISTEN`: The listen port for platform HTTP server. Default: 2024
 
 For testing the specified service:
 

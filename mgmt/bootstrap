@@ -10,6 +10,9 @@ echo "Program args: $APP_ARGS"
 # Do everything at the same work directory.
 cd $WORK_DIR
 
+# Create .env if not exists.
+if [[ ! -f .env ]]; then touch .env; fi
+
 # Get the metadata of machine.
 if [[ -f .env ]]; then source .env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"

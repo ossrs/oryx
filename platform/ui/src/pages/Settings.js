@@ -19,8 +19,6 @@ export default function Systems() {
 function SystemsImpl() {
   const [searchParams] = useSearchParams();
   const [defaultActiveTab, setDefaultActiveTab] = React.useState();
-  const [upgradeWindow, setUpgradeWindow] = React.useState();
-  const handleError = useErrorHandler();
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'auth';
@@ -28,31 +26,15 @@ function SystemsImpl() {
     setDefaultActiveTab(tab);
   }, [searchParams]);
 
-  React.useEffect(() => {
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/window/query', {
-      ...token,
-    }).then(res => {
-      const data = res.data.data;
-      const win = {
-        ...data,
-        end: data.start ? (data.start + data.duration)%24 : data.duration,
-      };
-
-      setUpgradeWindow(win);
-      console.log(`Query upgrade window ${JSON.stringify(win)}`);
-    }).catch(handleError);
-  }, [handleError]);
-
   return (<>
     {
-      defaultActiveTab && upgradeWindow &&
-      <SettingsImpl2 defaultActiveTab={defaultActiveTab} defaultWindow={upgradeWindow} />
+      defaultActiveTab &&
+      <SettingsImpl2 defaultActiveTab={defaultActiveTab} />
     }
   </>);
 }
 
-function SettingsImpl2({defaultActiveTab, defaultWindow}) {
+function SettingsImpl2({defaultActiveTab}) {
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
   const setSearchParams = useSearchParams()[1];
   const {t} = useTranslation();
