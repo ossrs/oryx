@@ -1,9 +1,9 @@
-name: "Release MGMT for SRS"
+name: "Release Alpine for SRS"
 
 on:
   push:
     tags:
-      - mgmt-v1*
+      - focal-v1*
 
 jobs:
   envs:
@@ -54,13 +54,12 @@ jobs:
         with:
           username: "${{ secrets.DOCKER_USERNAME }}"
           password: "${{ secrets.DOCKER_PASSWORD }}"
-      # Build SRS image
       - name: Build SRS docker image
         run: |
           echo "Release ossrs/srs-cloud:$SRS_TAG"
           docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
             --output "type=image,push=true" \
-            --tag ossrs/srs-cloud:$SRS_TAG -f mgmt/Dockerfile .
+            --tag ossrs/srs-cloud:$SRS_TAG -f focal/Dockerfile .
       - name: Docker alias images for ossrs/srs-cloud
         uses: akhilerm/tag-push-action@v2.1.0
         with:
@@ -82,7 +81,7 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       # Aliyun ACR
       - name: Login Aliyun docker hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v1
         with:
           registry: registry.cn-hangzhou.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
