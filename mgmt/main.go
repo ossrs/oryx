@@ -224,6 +224,15 @@ func refreshIPv4(ctx context.Context) error {
 
 // Initialize the platform before thread run.
 func initMmgt(ctx context.Context) error {
+	// Cancel upgrading.
+	if upgrading, err := rdb.HGet(ctx, SRS_UPGRADING, "upgrading").Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hget %v upgrading", SRS_UPGRADING)
+	} else if upgrading == "1" {
+		if err = rdb.HSet(ctx, SRS_UPGRADING, "upgrading", "0").Err(); err != nil && err != redis.Nil {
+			return errors.Wrapf(err, "hset %v upgrading 0", SRS_UPGRADING)
+		}
+	}
+
 	// Initialize the node id.
 	if nid, err := rdb.HGet(ctx, SRS_TENCENT_LH, "node").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v node", SRS_TENCENT_LH)

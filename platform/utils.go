@@ -334,7 +334,7 @@ const (
 	SRS_FORWARD_TASK   = "SRS_FORWARD_TASK"
 	// For virtual live channel/stream.
 	SRS_VLIVE_CONFIG = "SRS_VLIVE_CONFIG"
-	SRS_VLIVE_TASK    = "SRS_VLIVE_TASK"
+	SRS_VLIVE_TASK   = "SRS_VLIVE_TASK"
 	// For SRS stream status.
 	SRS_STREAM_ACTIVE     = "SRS_STREAM_ACTIVE"
 	SRS_STREAM_SRT_ACTIVE = "SRS_STREAM_SRT_ACTIVE"
@@ -347,6 +347,7 @@ const (
 	SRS_SECRET_PUBLISH  = "SRS_SECRET_PUBLISH"
 	SRS_AUTH_SECRET     = "SRS_AUTH_SECRET"
 	SRS_FIRST_BOOT      = "SRS_FIRST_BOOT"
+	SRS_UPGRADING       = "SRS_UPGRADING"
 	SRS_UPGRADE_WINDOW  = "SRS_UPGRADE_WINDOW"
 	SRS_PLATFORM_SECRET = "SRS_PLATFORM_SECRET"
 	SRS_CACHE_BILIBILI  = "SRS_CACHE_BILIBILI"
@@ -362,7 +363,7 @@ const (
 
 // For vLive upload directory.
 var dirUploadPath = path.Join(".", "upload")
-var dirVLivePath = path.Join(".", "vlive");
+var dirVLivePath = path.Join(".", "vlive")
 
 // rdb is a global redis client object.
 var rdb *redis.Client
@@ -802,7 +803,7 @@ type M3u8VoDArtifact struct {
 	FileID   string `json:"fileId"`
 	MediaURL string `json:"mediaUrl"`
 	// The remux task of VoD.
-	Definition string `json:"definition"`
+	Definition uint64 `json:"definition"`
 	TaskID     string `json:"taskId"`
 	// The remux task result.
 	Task *VodTaskArtifact `json:"taskObj"`
@@ -825,7 +826,7 @@ func (v *M3u8VoDArtifact) String() string {
 	if v.MediaURL != "" {
 		sb.WriteString(fmt.Sprintf(", mediaUrl=%v", v.MediaURL))
 	}
-	if v.Definition != "" {
+	if v.Definition != 0 {
 		sb.WriteString(fmt.Sprintf(", definition=%v", v.Definition))
 	}
 	if v.TaskID != "" {

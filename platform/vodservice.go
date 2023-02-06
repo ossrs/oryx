@@ -157,7 +157,7 @@ func (v *VodWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "vod query ok, token=%vB", len(token))
+			logger.Tf(ctx, "vod apply ok, token=%vB", len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -204,7 +204,7 @@ func (v *VodWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 					return errors.Wrapf(err, "json parse %v", keys[i+1])
 				}
 
-				if metadata.Definition != "" && metadata.TaskID != "" && metadata.Task == nil {
+				if metadata.Definition != 0 && metadata.TaskID != "" && metadata.Task == nil {
 					pendingArtifacts = append(pendingArtifacts, &metadata)
 				}
 
@@ -246,7 +246,7 @@ func (v *VodWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 
 					var matched *vod.MediaTranscodeItem
 					for _, ts := range mis.TranscodeInfo.TranscodeSet {
-						if ts.Definition == nil || fmt.Sprintf("%v", *ts.Definition) != artifact.Definition {
+						if ts.Definition == nil || uint64(*ts.Definition) != artifact.Definition {
 							continue
 						}
 
@@ -503,6 +503,30 @@ func (v *VodWorker) Start(ctx context.Context) error {
 		}
 	}()
 
+	// Load tencent cloud credentials.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		for ctx.Err() == nil {
+			var duration time.Duration
+
+			if err := v.updateCredential(ctx); err != nil {
+				logger.Wf(ctx, "ignore err %+v", err)
+				duration = 30 * time.Second
+			} else if !v.ready() {
+				duration = 1 * time.Second
+			} else {
+				duration = 3 * time.Second
+			}
+
+			select {
+			case <-ctx.Done():
+			case <-time.After(duration):
+			}
+		}
+	}()
+
 	return nil
 }
 
@@ -523,7 +547,7 @@ func (v *VodWorker) updateCredential(ctx context.Context) error {
 		v.secretKey = secretKey
 	}
 
-	if service, err := rdb.HGet(ctx, SRS_TENCENT_VOD, "service").Result(); err == nil {
+	if service, err := rdb.HGet(ctx, SRS_TENCENT_VOD, "service").Result(); err == nil && service != "ok" {
 		if tv, err := strconv.ParseInt(service, 10, 64); err != nil {
 			return errors.Wrapf(err, "parse vod appid %v", service)
 		} else {
@@ -542,6 +566,7 @@ func (v *VodWorker) updateCredential(ctx context.Context) error {
 			return errors.Wrapf(err, "create vod sdk client, region=%v", conf.Region)
 		}
 		v.vodClient = client
+		logger.Tf(ctx, "create vod client ok, appid=%v", v.vodAppID)
 	}
 	return nil
 }
@@ -681,7 +706,7 @@ func (v *VodM3u8Stream) vodCommit(ctx context.Context, artifact *M3u8VoDArtifact
 	artifact.MediaURL = mediaURL
 }
 
-func (v *VodM3u8Stream) vodRemux(ctx context.Context, artifact *M3u8VoDArtifact, definition, taskID string) {
+func (v *VodM3u8Stream) vodRemux(ctx context.Context, artifact *M3u8VoDArtifact, definition uint64, taskID string) {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
@@ -1069,7 +1094,7 @@ func (v *VodM3u8Stream) finishM3u8(ctx context.Context, cosClient *cos.Client, c
 	}
 
 	if definition > 0 || taskID != "" {
-		v.vodRemux(ctx, v.artifact, fmt.Sprintf("%v", definition), taskID)
+		v.vodRemux(ctx, v.artifact, uint64(definition), taskID)
 		logger.Tf(ctx, "vod remux ok, definition=%v, taskID=%v", definition, taskID)
 	}
 

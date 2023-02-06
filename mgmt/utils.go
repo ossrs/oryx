@@ -71,7 +71,7 @@ type Config struct {
 	ipv4  net.IP
 	Iface string
 
-  // The platform for SRS cloud, not the GOOS, for report and statistic only.
+	// The platform for SRS cloud, not the GOOS, for report and statistic only.
 	Platform string
 }
 
@@ -286,8 +286,10 @@ func discoverPrivateIPv4(ctx context.Context) (string, net.IP, error) {
 const redisDockerName = "redis"
 const platformDockerName = "platform"
 const srsDockerName = "srs-server"
+
 // Note that we only enable srs-server, never enable srs-dev.
 const srsDevDockerName = "srs-dev"
+
 // Note that we only use the docker to release binary for different CPU archs.
 const mgmtDockerName = "mgmt"
 
@@ -296,13 +298,14 @@ const (
 	// For LightHouse information, like region or source.
 	SRS_TENCENT_LH = "SRS_TENCENT_LH"
 	// For SRS stream status.
-	SRS_STREAM_NGINX      = "SRS_STREAM_NGINX"
+	SRS_STREAM_NGINX = "SRS_STREAM_NGINX"
 	// For container and images.
 	SRS_CONTAINER_DISABLED = "SRS_CONTAINER_DISABLED"
 	SRS_DOCKER_IMAGES      = "SRS_DOCKER_IMAGES"
 	// For system settings.
-	SRS_PLATFORM_SECRET  = "SRS_PLATFORM_SECRET"
-	SRS_HTTPS            = "SRS_HTTPS"
+	SRS_PLATFORM_SECRET = "SRS_PLATFORM_SECRET"
+	SRS_UPGRADING       = "SRS_UPGRADING"
+	SRS_HTTPS           = "SRS_HTTPS"
 )
 
 // rdb is a global redis client object.

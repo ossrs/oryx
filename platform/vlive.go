@@ -626,7 +626,7 @@ type VLiveFileAudio struct {
 
 func (v *VLiveFileAudio) String() string {
 	return fmt.Sprintf("codec=%v, profile=%v, fmt=%v, rate=%v, channels=%v, layout=%v, bitrate=%v",
-		v.CodecName, v.Profile, v.SampleFormat, v.Channels, v.ChannelLayout, v.Bitrate,
+		v.CodecName, v.Profile, v.SampleFormat, v.SampleRate, v.Channels, v.ChannelLayout, v.Bitrate,
 	)
 }
 

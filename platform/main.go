@@ -356,6 +356,27 @@ func initPlatform(ctx context.Context) error {
 		}
 	}
 
+	// Migrate from previous versions.
+	for _, migrate := range []struct{
+		PVK string
+		CVK string
+	}{
+		{"SRS_RECORD_M3U8_METADATA", SRS_RECORD_M3U8_ARTIFACT},
+		{"SRS_DVR_M3U8_METADATA", SRS_DVR_M3U8_ARTIFACT},
+		{"SRS_VOD_M3U8_METADATA", SRS_VOD_M3U8_ARTIFACT},
+	} {
+		pv, _ := rdb.HLen(ctx, migrate.PVK).Result()
+		cv, _ := rdb.HLen(ctx, migrate.CVK).Result()
+		if pv > 0 && cv == 0 {
+			if vs, err := rdb.HGetAll(ctx, migrate.PVK).Result(); err == nil {
+				for k, v := range vs {
+					_ = rdb.HSet(ctx, migrate.CVK, k, v)
+				}
+				logger.Tf(ctx, "migrate %v to %v with %v keys", migrate.PVK, migrate.CVK, len(vs))
+			}
+		}
+	}
+
 	return nil
 }
 

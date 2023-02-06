@@ -475,6 +475,7 @@ func (v *DvrWorker) updateCredential(ctx context.Context) error {
 		v.cosClient = cos.NewClient(&cos.BaseURL{BucketURL: u}, &http.Client{
 			Transport: &cos.AuthorizationTransport{SecretID: v.secretId, SecretKey: v.secretKey},
 		})
+		logger.Tf(ctx, "create dvr client ok, bucket=%v, location=%v", v.bucketName, location)
 	}
 	return nil
 }

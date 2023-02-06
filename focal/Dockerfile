@@ -11,6 +11,8 @@ COPY --from=build /usr/local/bin/ffprobe /usr/local/bin/ffprobe
 COPY --from=build /etc/ssl/certs /etc/ssl/certs
 COPY --from=build /usr/share/ca-certificates /usr/share/ca-certificates
 
+# We write the common config for platform to base image, however you can
+# overwrite it if not for platform, for example, used in releases.
 ENV PORT=":2024"
 RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform
 WORKDIR /usr/local/srs-cloud/platform

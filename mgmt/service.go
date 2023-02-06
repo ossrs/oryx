@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -625,10 +626,48 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 	}
 
 	// Start upgrade.
-	// TODO: FIXME: Remove it because the upgrade feature is removed.
 	handlers["execUpgrade"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
+		target := sr.ArgsAsString()[0]
+		if target == "" {
+			return errors.New("no target")
+		}
+
+		cmd := exec.CommandContext(ctx, "bash", "upgrade", target)
+
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return errors.Wrapf(err, "pipe stdout")
+		}
+
+		stderr, err := cmd.StderrPipe()
+		if err != nil {
+			return errors.Wrapf(err, "pipe stderr")
+		}
+
+		logger.Tf(ctx, "start upgrade to %v", target)
+		if err = cmd.Start(); err != nil {
+			return errors.Wrapf(err, "start upgrade")
+		}
+
+		rs := io.MultiReader(stdout, stderr)
+		buf := make([]byte, 4096)
+		for {
+			if nn, err := rs.Read(buf); err != nil || nn == 0 {
+				if err != io.EOF {
+					logger.Tf(ctx, "read nn=%v, err %v", nn, err)
+				}
+				break
+			} else if s := buf[:nn]; true {
+				logger.Tf(ctx, "%v", string(s))
+			}
+		}
+
+		if err = cmd.Wait(); err != nil {
+			logger.Tf(ctx, "wait err %v", err)
+		}
+
 		ohttp.WriteData(ctx, w, r, nil)
-		logger.Tf(ctx, "execApi req=%v ignored", sr)
+		logger.Tf(ctx, "execApi req=%v target=%v", sr, target)
 		return nil
 	}
 
@@ -808,7 +847,9 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 }
 
 func NewDockerBackendService(r RedisManager, p PlatformManager) BackendService {
-	return &dockerBackendService{redisManager: r, platformManager: p}
+	return &dockerBackendService{
+		redisManager: r, platformManager: p,
+	}
 }
 
 type dockerBackendService struct {
