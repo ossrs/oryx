@@ -17,7 +17,7 @@ if [[ ! -d srs-cloud ]]; then
   if [[ -z $GITHUB_ACTIONS ]]; then
     git clone https://gitee.com/ossrs/srs-cloud.git;
   else
-    git clone --depth=1 https://github.com/ossrs/srs-cloud.git
+    git clone https://github.com/ossrs/srs-cloud.git
   fi
 fi
 if [[ $? -ne 0 ]]; then echo "Cache source failed"; exit 1; fi

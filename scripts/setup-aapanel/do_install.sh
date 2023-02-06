@@ -33,10 +33,6 @@ Install() {
   source do_os.sh
   if [[ $? -ne 0 ]]; then echo "Setup OS failed"; exit 1; fi
 
-  # Remember the commit to restore.
-  cd $install_path/srs-cloud && CURRENT_COMMIT=$(git log --pretty=format:'%h' -n 1)
-  echo "CURRENT_COMMIT=${CURRENT_COMMIT}" && git log $CURRENT_COMMIT
-
   # Restore files from git.
   echo "Git reset files"
   cd $install_path/srs-cloud && git reset --hard HEAD
@@ -53,19 +49,6 @@ Install() {
   echo "Git reset files"
   cd $install_path/srs-cloud && git reset --hard HEAD
   if [[ $? -ne 0 ]]; then echo "Reset files failed"; exit 1; fi
-
-  # We also process for git clone --depth=1, see https://stackoverflow.com/a/23987039/17679565
-  echo "Git unshallow"
-  GIT_DEPTH=$(git rev-list --all --count)
-  if [[ $GIT_DEPTH -eq 1 ]]; then
-    git pull --unshallow
-    if [[ $? -ne 0 ]]; then echo "Git unshallow failed"; exit 1; fi
-  fi
-
-  # Reset to current release version.
-  cd $install_path/srs-cloud && git reset --hard $CURRENT_COMMIT &&
-  echo "Reset to commit $CURRENT_COMMIT"
-  if [[ $? -ne 0 ]]; then echo "Reset to $RELEASE failed"; exit 1; fi
 
   # Move srs-cloud to its home.
   echo "Move srs-cloud to $SRS_HOME"
