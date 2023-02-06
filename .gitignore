@@ -124,4 +124,6 @@ mgmt/ui/build
 /tmp*.sh
 /*logger
 releases/releases
+mgmt/mgmt
+platform/platform
 

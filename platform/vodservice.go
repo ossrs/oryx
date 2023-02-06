@@ -514,24 +514,21 @@ func (v *VodWorker) updateCredential(ctx context.Context) error {
 		SecretId: v.secretId, SecretKey: v.secretKey, VodAppID: v.vodAppID,
 	}
 
-	if secretId, err := rdb.HGet(ctx, SRS_TENCENT_CAM, "secretId").Result(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hget %v secretId", SRS_TENCENT_CAM)
-	} else {
+	// The credential might not be ready, so we ignore error.
+	if secretId, err := rdb.HGet(ctx, SRS_TENCENT_CAM, "secretId").Result(); err == nil {
 		v.secretId = secretId
 	}
 
-	if secretKey, err := rdb.HGet(ctx, SRS_TENCENT_CAM, "secretKey").Result(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hget %v secretKey", SRS_TENCENT_CAM)
-	} else {
+	if secretKey, err := rdb.HGet(ctx, SRS_TENCENT_CAM, "secretKey").Result(); err == nil {
 		v.secretKey = secretKey
 	}
 
-	if service, err := rdb.HGet(ctx, SRS_TENCENT_VOD, "service").Result(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hget %v service", SRS_TENCENT_VOD)
-	} else if tv, err := strconv.ParseInt(service, 10, 64); err != nil {
-		return errors.Wrapf(err, "parse vod appid %v", service)
-	} else {
-		v.vodAppID = uint64(tv)
+	if service, err := rdb.HGet(ctx, SRS_TENCENT_VOD, "service").Result(); err == nil {
+		if tv, err := strconv.ParseInt(service, 10, 64); err != nil {
+			return errors.Wrapf(err, "parse vod appid %v", service)
+		} else {
+			v.vodAppID = uint64(tv)
+		}
 	}
 
 	changed := v.secretId != previous.SecretId || v.secretKey != previous.SecretKey || v.vodAppID != previous.VodAppID

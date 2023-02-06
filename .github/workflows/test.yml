@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # See https://github.com/actions/setup-node
       - name: Setup the npm node
@@ -20,10 +20,7 @@ jobs:
           node-version: '16'
           cache: 'npm'
           cache-dependency-path: |
-            mgmt/package-lock.json
-            platform/package-lock.json
             platform/ui/package-lock.json
-            tecent/package-lock.json
 
       # See https://github.com/actions/setup-go
       - name: Setup the Go

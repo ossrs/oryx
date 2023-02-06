@@ -1,8 +1,19 @@
-.PHONY: default clean alpine ui-install ui-build ui-build-cn ui-build-en ui-build-docker ui-clean
+.PHONY: default clean alpine ui-install ui-build ui-build-cn ui-build-en ui-build-docker ui-clean build help
 
 default: ./platform
 
-clean:
+help:
+	@echo "Usage: make build|clean"
+	@echo "     default     Build the platform only"
+	@echo "     build       Build the platform and ui"
+	@echo "     clean       Cleanup the platform and ui"
+	@echo "     ui-install	Use npm install for dependencies for ui"
+	@echo "     ui-build	Use npm run build for building ui"
+	@echo "     ui-clean	Cleanup the ui"
+
+build: ./platform ui-install ui-build
+
+clean: ui-clean
 	rm -f platform
 
 ./platform: *.go Makefile go.mod
@@ -10,7 +21,7 @@ clean:
 
 # Build for alpine, see https://www.cloudbees.com/blog/building-minimal-docker-containers-for-go-applications
 alpine:
-	CGO_ENABLED=0 GOOS=linux go build -mod=vendor -a -installsuffix cgo  -o platform .
+	CGO_ENABLED=0 GOOS=linux go build -mod=vendor -a -installsuffix cgo -o platform .
 
 ui-install:
 	cd ui && npm install

@@ -12,15 +12,6 @@ WORKDIR /g/mgmt
 
 RUN make alpine
 
-# To use if in RUN, see https://github.com/moby/moby/issues/7281#issuecomment-389440503
-# Note that only exists issue like "/bin/sh: 1: [[: not found" for Ubuntu20, no such problem in CentOS7.
-#SHELL ["/bin/bash", "-c"]
-#RUN if [[ $TARGETPLATFORM != 'linux/arm/v7' && $TARGETPLATFORM != 'linux/arm64/v8' && $TARGETPLATFORM != 'linux/arm64' ]]; then \
-#        make alpine; \
-#    else \
-#        make alpine-$(echo $TARGETPLATFORM |sed 's|/|-|g'); \
-#    fi
-
 FROM ${ARCH}alpine:3.16 AS dist
 
 COPY --from=build /g/mgmt /usr/local/srs-cloud/mgmt

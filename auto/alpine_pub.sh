@@ -11,20 +11,15 @@ if [[ $? -ne 0 ]]; then
   exit 1
 fi
 
-RELEASE=$(git describe --tags --abbrev=0 --match releases-*)
+RELEASE=$(git describe --tags --abbrev=0 --match alpine-*)
 REVISION=$(echo $RELEASE|awk -F . '{print $3}')
 let NEXT=$REVISION+1
 echo "Last release is $RELEASE, revision is $REVISION, next is $NEXT"
 
 VERSION="1.0.$NEXT"
-TAG="releases-v$VERSION"
+TAG="alpine-v$VERSION"
 echo "publish version $VERSION as tag $TAG"
 
-cat releases/version.go |sed "s|const\ api\ =.*|const api = \"v$VERSION\";|g" > tmp.go && mv tmp.go releases/version.go &&
-git ci -am "Update version to $TAG"
-if [[ $? -ne 0 ]]; then echo "Release: Update package failed"; exit 1; fi
-
-git push
 git tag -d $TAG 2>/dev/null && git push origin :$TAG
 git tag $TAG
 git push origin $TAG
@@ -33,5 +28,5 @@ git remote |grep -q gitee && git push gitee && git push gitee $TAG
 git remote |grep -q cloud && git push cloud && git push cloud $TAG
 
 echo "publish $TAG ok"
-echo "    Please test it after https://github.com/ossrs/srs-cloud/actions/workflows/releases.yml done"
+echo "    Please test it after https://github.com/ossrs/srs-cloud/actions/workflows/alpine.yml done"
 

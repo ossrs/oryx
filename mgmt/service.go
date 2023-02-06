@@ -140,8 +140,6 @@ func (v *dockerPlatformManager) Start(ctx context.Context) error {
 	}
 	args = append(args,
 		fmt.Sprintf("%v/ossrs/srs-cloud:platform-%v", conf.Registry, version),
-		"node",
-		".",
 	)
 
 	cmd := exec.CommandContext(ctx, "docker", args...)

@@ -40,7 +40,7 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       # Git checkout
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       # See https://github.com/crazy-max/ghaction-docker-buildx#moved-to-docker-organization
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
