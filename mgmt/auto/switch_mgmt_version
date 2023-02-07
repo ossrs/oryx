@@ -25,9 +25,12 @@ if [[ $SOURCE == ""  && $(git remote -v |grep origin |grep -q github.com && echo
 fi
 echo "Detect REGISTRY=$REGISTRY"
 
-echo "Switch $CURRENT_VERSION to $TARGET_VERSION"
-docker run --rm $REGISTRY/ossrs/srs-cloud:mgmt-v$TARGET_VERSION cat mgmt > mgmt
-if [[ $? -ne 0 ]]; then echo "Switch MGMT failed"; exit 1; fi
+# Ignore if utest, because the docker is not ready util the utest is passed.
+if [[ $SRS_UTEST != true ]]; then
+  echo "Switch $CURRENT_VERSION to $TARGET_VERSION"
+  docker run --rm $REGISTRY/ossrs/srs-cloud:mgmt-v$TARGET_VERSION cat mgmt > mgmt
+  if [[ $? -ne 0 ]]; then echo "Switch MGMT failed"; exit 1; fi
+fi
 
 chmod +x mgmt
 echo "Switch to $TARGET_VERSION ok, version is $(./mgmt -v)"
