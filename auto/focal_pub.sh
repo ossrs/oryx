@@ -20,7 +20,7 @@ VERSION="1.0.$NEXT"
 TAG="focal-v$VERSION"
 echo "publish version $VERSION as tag $TAG"
 
-git tag -d $TAG 2>/dev/null && git push origin :$TAG
+git tag -d $TAG 2>/dev/null && (git push origin :$TAG; git push gitee :$TAG)
 git tag $TAG
 git push origin $TAG
 
