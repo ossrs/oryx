@@ -55,13 +55,10 @@ func doMain(ctx context.Context) error {
 			return errors.Wrapf(err, "getpwd")
 		}
 
+		// Note that we only use .env in mgmt.
 		envFile := path.Join(pwd, "../mgmt/.env")
-		if _, err := os.Stat(envFile); err == nil {
-			if err := godotenv.Load(envFile); err != nil {
-				return errors.Wrapf(err, "load %v", envFile)
-			}
-		} else {
-			return errors.Errorf("no .env or %v", envFile)
+		if err := godotenv.Load(envFile); err != nil {
+			return errors.Wrapf(err, "load %v", envFile)
 		}
 	}
 
