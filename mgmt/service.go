@@ -121,7 +121,7 @@ func (v *dockerPlatformManager) Start(ctx context.Context) error {
 		"--env", fmt.Sprintf("SRS_REGION=%v", conf.Region),
 		"--env", fmt.Sprintf("SRS_SOURCE=%v", conf.Source),
 		"--log-driver=json-file", "--log-opt=max-size=1g", "--log-opt=max-file=3",
-		"-v", fmt.Sprintf("%v/.env:/usr/local/srs-cloud/platform/.env", conf.Pwd),
+		"-v", fmt.Sprintf("%v/.env:/usr/local/srs-cloud/mgmt/.env", conf.Pwd),
 		// We mount the containers to mgmt in platform container, which links to platform.
 		"-v", fmt.Sprintf("%v/containers:/usr/local/srs-cloud/mgmt/containers", conf.Pwd),
 		"--env", fmt.Sprintf("SRS_DOCKER=%v", os.Getenv("SRS_DOCKER")),

@@ -24,8 +24,8 @@ TAG="v$VERSION" &&
 echo "publish version $VERSION as tag $TAG"
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
-cat mgmt/version.go |sed "s|const\ version\ =.*|const version = \"v$VERSION\";|g" > tmp.go && mv tmp.go mgmt/version.go &&
-cat releases/version.go |sed "s|const\ latest\ =.*|const latest = \"v$VERSION\";|g" > tmp.go && mv tmp.go releases/version.go &&
+cat mgmt/version.go |sed "s|const\ version\ =.*|const version = \"v$VERSION\"|g" > tmp.go && mv tmp.go mgmt/version.go &&
+cat releases/version.go |sed "s|const\ latest\ =.*|const latest = \"v$VERSION\"|g" > tmp.go && mv tmp.go releases/version.go &&
 git ci -am "Update mgmt version to $TAG"
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 

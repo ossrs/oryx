@@ -56,11 +56,7 @@ func doMain(ctx context.Context) error {
 		}
 
 		envFile := path.Join(pwd, "../mgmt/.env")
-		if _, err := os.Stat(".env"); err == nil {
-			if err := godotenv.Load(".env"); err != nil {
-				return errors.Wrapf(err, "load .env")
-			}
-		} else if _, err := os.Stat(envFile); err == nil {
+		if _, err := os.Stat(envFile); err == nil {
 			if err := godotenv.Load(envFile); err != nil {
 				return errors.Wrapf(err, "load %v", envFile)
 			}
