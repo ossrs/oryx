@@ -22,10 +22,10 @@ echo "publish version $VERSION as tag $TAG"
 
 git tag -d $TAG 2>/dev/null && (git push origin :$TAG; git push gitee :$TAG)
 git tag $TAG
-git push origin $TAG
+git push origin $TAG -f
 
-git remote |grep -q gitee && git push gitee && git push gitee $TAG
-git remote |grep -q cloud && git push cloud && git push cloud $TAG
+git remote |grep -q gitee && git push gitee && git push gitee $TAG -f
+git remote |grep -q cloud && git push cloud && git push cloud $TAG -f
 
 echo "publish $TAG ok"
 echo "    Please test it after https://github.com/ossrs/srs-cloud/actions/workflows/alpine.yml done"
