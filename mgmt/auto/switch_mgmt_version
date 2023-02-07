@@ -6,7 +6,7 @@ echo "Try to switch mgmt version"
 if [[ -f .env ]]; then source .env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 
-TARGET_VERSION=$(cat version.go |grep 'const version' |awk '{print $4}' |sed 's/["v]//g')
+TARGET_VERSION=$(cat version.go |grep 'const version' |awk '{print $4}' |sed 's/["v;]//g')
 CURRENT_VERSION=$(./mgmt -v 2>/dev/null)
 echo "Detect TARGET_VERSION=$TARGET_VERSION, CURRENT_VERSION=$CURRENT_VERSION"
 
@@ -28,6 +28,11 @@ echo "Detect REGISTRY=$REGISTRY"
 # Ignore if utest, because the docker is not ready util the utest is passed.
 if [[ $SRS_UTEST != true ]]; then
   echo "Switch $CURRENT_VERSION to $TARGET_VERSION"
+  # We must stop the service first, or the mgmt will be busy.
+  systemctl stop srs-cloud
+
+  # Generate new mgmt binary from docker image.
+  echo "Generate binary for $TARGET_VERSION"
   docker run --rm $REGISTRY/ossrs/srs-cloud:mgmt-v$TARGET_VERSION cat mgmt > mgmt
   if [[ $? -ne 0 ]]; then echo "Switch MGMT failed"; exit 1; fi
 fi
