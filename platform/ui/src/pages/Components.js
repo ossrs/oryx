@@ -174,7 +174,7 @@ function ComponentsImpl() {
                   <p>
                   {t('coms.version')}: {status?.version} <br/>
                   {t('coms.stable')}: {status?.releases?.stable}<br/>
-                  {t('coms.latest')}: <a href='https://github.com/ossrs/srs/issues/2856#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
+                  {t('coms.latest')}: <a href='https://github.com/ossrs/srs-cloud/issues/4#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
                   </p>
                   {status?.upgrading === undefined &&
                     <footer className="blockquote-footer">

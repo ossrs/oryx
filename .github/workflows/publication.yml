@@ -83,9 +83,8 @@ jobs:
             * [aaPanel](https://aapanel.com) Plugin: ${{ env.SRS_AAPANEL_SOURCE_MD5 }} [${{ env.SRS_AAPANEL_SOURCE_FILE }}](https://gitee.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_AAPANEL_SOURCE_FILE }})
             
             ## Docs
-            * [Changelog](https://github.com/ossrs/srs/issues/2856#issuecomment-1023269807)
-            * [Mileston](https://github.com/ossrs/srs/issues/2856#issue-1096915239)
-            * [Features](https://github.com/ossrs/srs-cloud#features)
+            * [Changelog](https://github.com/ossrs/srs-cloud/issues/4#changelog)
+            * [Features](https://github.com/ossrs/srs-cloud/issues/4#features)
           draft: false
           prerelease: false
 
