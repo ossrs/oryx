@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+echo "Try to switch mgmt version"
+
+# Get the metadata of machine.
+if [[ -f .env ]]; then source .env; fi
+echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
+
+TARGET_VERSION=$(cat version.go |grep 'const version' |awk '{print $4}' |sed 's/["v]//g')
+CURRENT_VERSION=$(./mgmt -v 2>/dev/null)
+echo "Detect TARGET_VERSION=$TARGET_VERSION, CURRENT_VERSION=$CURRENT_VERSION"
+
+# Version ok.
+if [[ $TARGET_VERSION == $CURRENT_VERSION ]]; then
+  echo "MGMT version is ok"
+  exit 0
+fi
+
+# Use different docker registry.
+REGISTRY=registry.cn-hangzhou.aliyuncs.com
+if [[ $SOURCE == GITHUB || $SOURCE == github ]]; then REGISTRY=docker.io; fi
+if [[ $SOURCE == ""  && $(git remote -v |grep origin |grep -q github.com && echo yes) == yes ]]; then
+  echo "guess by git repository"
+  REGISTRY=docker.io
+fi
+echo "Detect REGISTRY=$REGISTRY"
+
+echo "Switch $CURRENT_VERSION to $TARGET_VERSION"
+docker run --rm $REGISTRY/ossrs/srs-cloud:mgmt-v$TARGET_VERSION cat mgmt > mgmt
+if [[ $? -ne 0 ]]; then echo "Switch MGMT failed"; exit 1; fi
+
+chmod +x mgmt
+echo "Switch to $TARGET_VERSION ok, version is $(./mgmt -v)"
+

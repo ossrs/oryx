@@ -31,7 +31,7 @@ fi
 cd $WORK_DIR && git remote -v && git branch -vva
 if [[ $? -ne 0 ]]; then echo "Prepare upgrade failed"; exit 1; fi
 
-if [[ ! -d /usr/local/srs-cloud && $(uname -s) == 'Darwin' ]]; then
+if [[ $(uname -s) == 'Darwin' ]]; then
   echo "Directly finish upgrade for macOS development"
   sleep 30; exit 0;
 fi

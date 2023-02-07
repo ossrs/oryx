@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# Ignore darwin
+if [[ $(uname -s) == 'Darwin' ]]; then
+  echo "Directly finish upgrade for macOS development"
+  exit 0;
+fi
+
 REALPATH=$(realpath $0)
 WORK_DIR=$(cd $(dirname $REALPATH)/.. && pwd)
 
@@ -11,7 +17,6 @@ echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 # For Ubuntu 20, it's /etc/redis/redis.conf
 REDIS_CONF=/etc/redis.conf
 if [[ ! -f $REDIS_CONF ]]; then REDIS_CONF=/etc/redis/redis.conf; fi
-if [[ ! -f $REDIS_CONF ]]; then echo "no redis config"; fi
 
 # If redis also listen at 56379, stop it.
 grep -q "^port 56379" $REDIS_CONF 2>/dev/null; SRS_REDIS_EXISTS=$?

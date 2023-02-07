@@ -1,14 +1,12 @@
 import React from "react";
-import {Accordion, Container, Form, Button, Tabs, Tab, InputGroup} from "react-bootstrap";
-import {Clipboard, Token, PlatformPublicKey} from "../utils";
+import {Accordion, Container, Form, Button, Tabs, Tab} from "react-bootstrap";
+import {Clipboard, Token} from "../utils";
 import axios from "axios";
 import {useSearchParams} from "react-router-dom";
-import {TutorialsButton, useTutorials} from '../components/TutorialsButton';
 import SetupCamSecret from '../components/SetupCamSecret';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
-import {SrsEnvContext} from "../components/SrsEnvContext";
 
 export default function Systems() {
   return (
@@ -21,8 +19,6 @@ export default function Systems() {
 function SystemsImpl() {
   const [searchParams] = useSearchParams();
   const [defaultActiveTab, setDefaultActiveTab] = React.useState();
-  const [upgradeWindow, setUpgradeWindow] = React.useState();
-  const handleError = useErrorHandler();
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'auth';
@@ -30,33 +26,16 @@ function SystemsImpl() {
     setDefaultActiveTab(tab);
   }, [searchParams]);
 
-  React.useEffect(() => {
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/window/query', {
-      ...token,
-    }).then(res => {
-      const data = res.data.data;
-      const win = {
-        ...data,
-        end: data.start ? (data.start + data.duration)%24 : data.duration,
-      };
-
-      setUpgradeWindow(win);
-      console.log(`Query upgrade window ${JSON.stringify(win)}`);
-    }).catch(handleError);
-  }, [handleError]);
-
   return (<>
     {
-      defaultActiveTab && upgradeWindow &&
-      <SettingsImpl2 defaultActiveTab={defaultActiveTab} defaultWindow={upgradeWindow} />
+      defaultActiveTab &&
+      <SettingsImpl2 defaultActiveTab={defaultActiveTab} />
     }
   </>);
 }
 
-function SettingsImpl2({defaultActiveTab, defaultWindow}) {
+function SettingsImpl2({defaultActiveTab}) {
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
-  const [env] = React.useContext(SrsEnvContext);
   const setSearchParams = useSearchParams()[1];
   const {t} = useTranslation();
 
@@ -84,7 +63,7 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
             <SettingAuth />
           </Tab>
           <Tab eventKey="https" title="HTTPS">
-            { env?.https === 'off' ? <SettingHttpsDisabled /> : <SettingHttps /> }
+            <SettingHttpsDisabled />
           </Tab>
           <Tab eventKey="nginx" title="NGINX">
             <SettingNginx />
@@ -98,12 +77,6 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
           <Tab eventKey="api" title="OpenAPI">
             <SettingOpenApi {...{copyToClipboard}}/>
           </Tab>
-          <Tab eventKey="tool" title={t('settings.tabTool')}>
-            <SettingTools {...{defaultWindow}} />
-          </Tab>
-          <Tab eventKey="platform" title={t('settings.tabPlatform')}>
-            <SettingPlatform {...{defaultWindow}} />
-          </Tab>
         </Tabs>
       </Container>
     </>
@@ -112,8 +85,6 @@ function SettingsImpl2({defaultActiveTab, defaultWindow}) {
 
 function SettingNginx() {
   const [hlsDelivery, setHlsDelivery] = React.useState();
-  const [reverseProxy, setReverseProxy] = React.useState();
-  const [reverseBackend, setReverseBackend] = React.useState();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
@@ -128,25 +99,6 @@ function SettingNginx() {
     }).catch(handleError);
   }, [handleError, hlsDelivery, t]);
 
-  const updateReverseProxy = React.useCallback((e) => {
-    e.preventDefault();
-
-    if (!reverseProxy) {
-      return alert(`${t('settings.nginxProxyRequired')}`);
-    }
-    if (!reverseBackend) {
-      return alert(`${t('settings.nginxBackendRequired')}`);
-    }
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/nginx/proxy', {
-      ...token, location: reverseProxy, backend: reverseBackend,
-    }).then(res => {
-      alert(t('helper.setOk'));
-    }).catch(handleError);
-
-  }, [handleError, t, reverseProxy, reverseBackend]);
-
   return (
     <Accordion defaultActiveKey="0">
       <Accordion.Item eventKey="0">
@@ -158,191 +110,6 @@ function SettingNginx() {
             </Form.Group>
             <Button variant="primary" type="submit" onClick={(e) => updateHlsDelivery(e)}>
               {t('helper.submit')}
-            </Button>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="1">
-        <Accordion.Header>{t('settings.nginxProxyTitle')}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3" controlId="formNginxReverseProxyLocationInput">
-              <Form.Label>{t('settings.nginxProxyLocation')}</Form.Label>
-              <Form.Text> * {t('settings.nginxProxyTip')}</Form.Text>
-              <Form.Control
-                as="input"
-                type='input'
-                placeholder='For example, /app/'
-                onChange={(e) => setReverseProxy(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="formNginxReverseProxyBackendInput">
-              <Form.Label>{t('settings.nginxBackendLocation')}</Form.Label>
-              <Form.Text> * {t('settings.nginxBackendTip')}</Form.Text>
-              <Form.Control
-                as="input"
-                type='input'
-                placeholder='For example, http://127.0.0.1:8000'
-                onChange={(e) => setReverseBackend(e.target.value)}
-              />
-            </Form.Group>
-            <Button variant="primary" type="submit" onClick={(e) => updateReverseProxy(e)}>
-              {t('helper.submit')}
-            </Button>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
-  );
-}
-
-function SettingTools({defaultWindow}) {
-  const [backends, setBackends] = React.useState([
-    {id: Math.random().toString(16).slice(-6)},
-    {id: Math.random().toString(16).slice(-6)},
-    {id: Math.random().toString(16).slice(-6)},
-  ]);
-  const handleError = useErrorHandler();
-  const {t} = useTranslation();
-
-  const enablePlatformAccess = React.useCallback((e, enabled) => {
-    e.preventDefault();
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/pubkey', {
-      ...token, enabled,
-    }).then(res => {
-      alert(enabled ? t('settings.sshEnable') : t('settings.sshDisable'));
-      console.log(`PublicKey: Update ok, enabled=${enabled}`);
-    }).catch(handleError);
-  }, [handleError, t]);
-
-  const onBackendChange = React.useCallback((id, value) => {
-    const values = backends.map((e) => {
-      return {...e, value: e.id === id ? value : e.value};
-    });
-    setBackends(values)
-  }, [backends]);
-
-  const updateLbBackends = React.useCallback((e) => {
-    e.preventDefault();
-
-    const backendServers = backends.filter(e => {
-      return e.value ? e : null;
-    }).map(e => e.value);
-    if (!backendServers.length) return alert(t('settings.platformLbRequired'));
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/dns/backend/update', {
-      ...token, backends: backendServers,
-    }).then(res => {
-      alert(t('helper.setOk'));
-      console.log(`Update LB ok, backends=${backends}`);
-    }).catch(handleError);
-  }, [handleError, t, backends]);
-
-  return (
-    <Accordion defaultActiveKey="0">
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>{t('settings.platformSsh')}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('settings.platformPubkey')}</Form.Label>
-              <Form.Text> * {t('settings.platformPubkeyTip')}</Form.Text>
-              <Form.Control as="textarea" rows={2} defaultValue={PlatformPublicKey} readOnly={true} />
-            </Form.Group>
-            <Button variant="primary" type="submit" onClick={(e) => enablePlatformAccess(e, true)}>
-              {t('settings.platformAccessEnable')}
-            </Button> &nbsp;
-            <Button variant="primary" type="submit" onClick={(e) => enablePlatformAccess(e, false)}>
-              {t('settings.platformAccessDisable')}
-            </Button>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="1">
-        <Accordion.Header>{t('settings.platformLbTitle')}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('settings.platformLbServers')}</Form.Label>
-              <Form.Text> * {t('settings.platformLbTip')}</Form.Text>
-            </Form.Group>
-            {backends.map(backend =>
-              <Form.Group className="mb-3" key={backend.id}>
-                <Form.Control as="input" placeholder='https://example.com' onChange={(e) => onBackendChange(backend.id, e.target.value)} />
-              </Form.Group>
-            )}
-            <Button variant="primary" type="submit" onClick={(e) => updateLbBackends(e)}>
-              {t('helper.submit')}
-            </Button>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
-  );
-}
-
-function SettingPlatform({defaultWindow}) {
-  const handleError = useErrorHandler();
-  const {t} = useTranslation();
-
-  const timeSeries = React.useRef([...Array(25).keys()]).current;
-  const [upgradeWindowStart, setUpgradeWindowStart] = React.useState(defaultWindow.start);
-  const [upgradeWindowEnd, setUpgradeWindowEnd] = React.useState(defaultWindow.end);
-
-  const setupUpgradeWindow = React.useCallback((e) => {
-    e.preventDefault();
-
-    const [start, end] = [parseInt(upgradeWindowStart || 0), parseInt(upgradeWindowEnd || 0)];
-
-    const duration = start < end ? end - start : end + 24 - start;
-    if (duration <= 3) return alert(t('settings.upgradeWindowInvalid'));
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/window/update', {
-      ...token, start, duration,
-    }).then(res => {
-      alert(t('settings.upgradeWindowOk'));
-      console.log(`Setup upgrade window start=${start}, end=${end}, duration=${duration}`);
-    }).catch(handleError);
-  }, [handleError, upgradeWindowStart, upgradeWindowEnd, t]);
-
-  return (
-    <Accordion defaultActiveKey="0">
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>{t('settings.upgradeTitle')}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Label htmlFor="basic-url">{t('settings.upgradeWindow')}</Form.Label>
-            <Form.Text> * {t('settings.upgradeTip')}</Form.Text>
-            <InputGroup className="mb-3">
-              <InputGroup.Text>{t('settings.upgradeStart')}</InputGroup.Text>
-              <Form.Select
-                aria-label="Start time"
-                defaultValue={upgradeWindowStart}
-                onChange={(e) => setUpgradeWindowStart(e.target.value)}
-              >
-                {timeSeries.map((e) => {
-                  return <option key={e} value={e}>{`${String(e).padStart(2, '0')}:00`}</option>;
-                })}
-              </Form.Select>
-            </InputGroup>
-            <InputGroup className="mb-3">
-              <InputGroup.Text>{t('settings.upgradeEnd')}</InputGroup.Text>
-              <Form.Select
-                aria-label="End time"
-                defaultValue={upgradeWindowEnd}
-                onChange={(e) => setUpgradeWindowEnd(e.target.value)}
-              >
-                {timeSeries.map((e) => {
-                  return <option key={e} value={e}>{`${String(e).padStart(2, '0')}:00`}</option>;
-                })}
-              </Form.Select>
-            </InputGroup>
-            <Button variant="primary" type="submit" onClick={(e) => setupUpgradeWindow(e)}>
-              {t('settings.upgradeSubmit')}
             </Button>
           </Form>
         </Accordion.Body>
@@ -462,7 +229,6 @@ function SettingOpenApi({copyToClipboard}) {
 function SettingBeian() {
   const [beian, setBeian] = React.useState();
   const [siteTitle, setSiteTitle] = React.useState();
-  const [homepage, setHomepage] = React.useState();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
@@ -488,44 +254,8 @@ function SettingBeian() {
     }).catch(handleError);
   }, [handleError, siteTitle, t]);
 
-  const updateHomepage = React.useCallback((e) => {
-    e.preventDefault();
-
-    if (!homepage) {
-      return alert(`${t('settings.nginxHomeRequired')}`);
-    }
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/nginx/homepage', {
-      ...token, homepage,
-    }).then(res => {
-      alert(t('helper.setOk'));
-    }).catch(handleError);
-
-  }, [handleError, t, homepage]);
-
   return (
     <Accordion defaultActiveKey="1">
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>{t('settings.nginxHomeTitle')}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3" controlId="formNginxHomepageInput">
-              <Form.Label>{t('settings.nginxHomeRedirect')}</Form.Label>
-              <Form.Text> * {t('settings.nginxHomeTip')}</Form.Text>
-              <Form.Control
-                as="input"
-                type='input'
-                placeholder='The url to redirect to, default is /mgmt/'
-                onChange={(e) => setHomepage(e.target.value)}
-              />
-            </Form.Group>
-            <Button variant="primary" type="submit" onClick={(e) => updateHomepage(e)}>
-              {t('helper.submit')}
-            </Button>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
       <Accordion.Item eventKey="1">
         <Accordion.Header>{t('settings.footerTitle')}</Accordion.Header>
         <Accordion.Body>
@@ -651,99 +381,6 @@ function SettingAuth() {
 function SettingHttpsDisabled() {
   const {t} = useTranslation();
   return <span style={{color: 'red'}}>{t('errs.btHttps1')}</span>;
-}
-
-function SettingHttps() {
-  const [key, setKey] = React.useState();
-  const [crt, setCrt] = React.useState();
-  const [domain, setDomain] = React.useState();
-  const handleError = useErrorHandler();
-  const {t} = useTranslation();
-
-  const sslTutorials = useTutorials({
-    bilibili: React.useRef([
-      {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
-    ]),
-    medium: React.useRef([
-      {id: 'cb618777639f'},
-    ])
-  });
-
-  const updateSSL = React.useCallback((e) => {
-    e.preventDefault();
-
-    if (!key || !crt) {
-      alert(t('settings.sslNoFile'));
-      return;
-    }
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/ssl', {
-      ...token, key, crt,
-    }).then(res => {
-      alert(t('settings.sslOk'));
-      console.log(`SSL: Update ok`);
-    }).catch(handleError);
-  }, [handleError, key, crt, t]);
-
-  const requestLetsEncrypt = React.useCallback((e) => {
-    e.preventDefault();
-
-    if (!domain) {
-      alert(t('settings.sslNoDomain'));
-      return;
-    }
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/letsencrypt', {
-      ...token, domain,
-    }).then(res => {
-      alert(t('settings.sslLetsOk'));
-      console.log(`SSL: Let's Encrypt SSL ok`);
-    }).catch(handleError);
-  }, [handleError, domain, t]);
-
-  return (
-    <Accordion defaultActiveKey="0">
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>{t('settings.letsTitle')}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('settings.letsDomain')}</Form.Label>
-              <Form.Text> * {t('settings.letsDomainTip')}</Form.Text>
-              <Form.Control as="input" defaultValue={domain} onChange={(e) => setDomain(e.target.value)} />
-            </Form.Group>
-            <Button variant="primary" type="submit" onClick={(e) => requestLetsEncrypt(e)}>
-              {t('settings.letsDomainSubmit')}
-            </Button> &nbsp;
-            <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="1">
-        <Accordion.Header>{t('settings.sslFileTitle')}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('settings.sslFileKey')}</Form.Label>
-              <Form.Text> * {t('settings.sslFileKeyTip')}</Form.Text>
-              <Form.Control as="textarea" rows={5} defaultValue={key} onChange={(e) => setKey(e.target.value)} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('settings.sslFileCert')}</Form.Label>
-              <Form.Text> * {t('settings.sslFileCertTip')}</Form.Text>
-              <Form.Control as="textarea" rows={5} defaultValue={crt} onChange={(e) => setCrt(e.target.value)} />
-            </Form.Group>
-            <Button variant="primary" type="submit" onClick={(e) => updateSSL(e)}>
-              {t('settings.sslFileSubmit')}
-            </Button> &nbsp;
-            <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
-  );
 }
 
 function RunOpenAPI(props) {

@@ -151,7 +151,8 @@
         "stable": "稳定版本",
         "latest": "最新版本",
         "autoUpgrade": "自动更新",
-        "autoUpgradeTip": "是否自动更新到稳定版本"
+        "autoUpgradeTip": "是否自动更新到稳定版本",
+        "upgradeManually": "若需要升级，请手动重装，或者更新镜像版本"
       },
       "openapi": {
         "title": "使用场景",
@@ -175,7 +176,7 @@
       "errs": {
         "expire1": "Token过期，请",
         "expire2": "重新登录",
-        "btHttps1": "你用宝塔安装的云SRS，请直接在宝塔中配置域名和SSL证书",
+        "btHttps1": "请在宝塔中配置域名和SSL证书",
         "redis1": "正在启动Redis中，请等会儿再刷新页面试试"
       },
       "helper": {
@@ -348,7 +349,8 @@
         "stable": "Stable",
         "latest": "Latest",
         "autoUpgrade": "Auto",
-        "autoUpgradeTip": "Whether automatically upgrade"
+        "autoUpgradeTip": "Whether automatically upgrade",
+        "upgradeManually": "Please upgrade manually by reinstall or docker pull"
       },
       "openapi": {
         "title": "Introduction",

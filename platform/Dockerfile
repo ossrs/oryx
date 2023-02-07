@@ -1,28 +1,24 @@
-
-############################################################
-# build
-############################################################
 ARG ARCH
-FROM ${ARCH}ossrs/srs:node-av AS build
 
-COPY js-core /usr/local/srs-cloud/js-core
-COPY platform /usr/local/srs-cloud/platform
+FROM ${ARCH}ossrs/srs:ubuntu20 AS build
 
-WORKDIR /usr/local/srs-cloud/platform
-RUN npm install && (cd ui && npm install)
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG TARGETARCH
+RUN echo "BUILDPLATFORM: $BUILDPLATFORM, TARGETPLATFORM: $TARGETPLATFORM, TARGETARCH: $TARGETARCH"
 
-RUN env PUBLIC_URL=/mgmt REACT_APP_LOCALE=zh BUILD_PATH=build/zh npm run buildDocker
-RUN env PUBLIC_URL=/mgmt REACT_APP_LOCALE=en BUILD_PATH=build/en npm run buildDocker
+ADD mgmt /g/mgmt
+ADD platform /g/platform
+WORKDIR /g/platform
 
-############################################################
-# dist
-############################################################
-FROM ${ARCH}node:slim as dist
+RUN make
+RUN cd /g/platform/ui && rm -rf js-core node_modules package* public src
 
-COPY --from=build /usr/local/bin /usr/local/bin
-COPY --from=build /usr/local/srs-cloud /usr/local/srs-cloud
+# http://releases.ubuntu.com/focal/
+#FROM ${ARCH}ubuntu:focal AS dist
+FROM ${ARCH}ossrs/srs-cloud:focal-1 AS dist
 
-ENV NODE_ENV=production
-RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform
-WORKDIR /usr/local/srs-cloud/platform
-CMD ["node", "."]
+COPY --from=build /g/mgmt /usr/local/srs-cloud/mgmt
+COPY --from=build /g/platform /usr/local/srs-cloud/platform
+
+CMD ["./platform"]

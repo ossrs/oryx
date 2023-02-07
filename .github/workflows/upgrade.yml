@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           # See https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
           fetch-depth: 0
@@ -23,11 +23,11 @@ jobs:
           node-version: '16'
           cache: 'npm'
           cache-dependency-path: |
-            mgmt/package-lock.json
+            platform/ui/package-lock.json
 
       - name: Discover upgrade target.
         run: |
-          TARGET=$(cat releases/main.go |grep 'const stable' |awk -F '"' '{print $2}')
+          TARGET=$(cat releases/version.go |grep 'const stable' |awk -F '"' '{print $2}')
           echo "TARGET=$TARGET" >> $GITHUB_ENV
 
       - name: Setup the service
@@ -65,7 +65,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           # See https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
           fetch-depth: 0
@@ -77,11 +77,11 @@ jobs:
           node-version: '16'
           cache: 'npm'
           cache-dependency-path: |
-            mgmt/package-lock.json
+            platform/ui/package-lock.json
 
       - name: Discover upgrade target.
         run: |
-          TARGET=$(cat releases/main.go |grep 'const stable' |awk -F '"' '{print $2}')
+          TARGET=$(cat releases/version.go |grep 'const latest' |awk -F '"' '{print $2}')
           echo "TARGET=$TARGET" >> $GITHUB_ENV
 
       - name: Setup the service
@@ -118,7 +118,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           # See https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
           fetch-depth: 0
@@ -130,11 +130,11 @@ jobs:
           node-version: '16'
           cache: 'npm'
           cache-dependency-path: |
-            mgmt/package-lock.json
+            platform/ui/package-lock.json
 
       - name: Discover upgrade target.
         run: |
-          TARGET=$(cat releases/main.go |grep 'const stable' |awk -F '"' '{print $2}')
+          TARGET=$(cat releases/version.go |grep 'const stable' |awk -F '"' '{print $2}')
           echo "TARGET=$TARGET" >> $GITHUB_ENV
 
       - name: Setup the service
@@ -171,7 +171,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           # See https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
           fetch-depth: 0
@@ -183,11 +183,11 @@ jobs:
           node-version: '16'
           cache: 'npm'
           cache-dependency-path: |
-            mgmt/package-lock.json
+            platform/ui/package-lock.json
 
       - name: Discover upgrade target.
         run: |
-          TARGET=$(cat releases/main.go |grep 'const stable' |awk -F '"' '{print $2}')
+          TARGET=$(cat releases/version.go |grep 'const latest' |awk -F '"' '{print $2}')
           echo "TARGET=$TARGET" >> $GITHUB_ENV
 
       - name: Setup the service
@@ -212,6 +212,114 @@ jobs:
 
           echo "Reset to release 4-4 at v1.0.200"
           git reset --hard v1.0.200
+          cd mgmt && npm install
+
+          # See https://stackoverflow.com/a/8633575/17679565
+          echo "Upgrade to latest TARGET=$TARGET SRS_UTEST=$SRS_UTEST"
+          sudo -E bash -c "./upgrade $TARGET"
+
+  # Note that from 4.5, we do not use stable now, only support latest version.
+  test-release-4-5-latest:
+    name: Upgrading latest from release 4-5
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          # See https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
+          fetch-depth: 0
+
+      # See https://github.com/actions/setup-node
+      - name: Setup the npm node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'npm'
+          cache-dependency-path: |
+            platform/ui/package-lock.json
+
+      - name: Discover upgrade target.
+        run: |
+          TARGET=$(cat releases/version.go |grep 'const latest' |awk -F '"' '{print $2}')
+          echo "TARGET=$TARGET" >> $GITHUB_ENV
+
+      - name: Setup the service
+        run: |
+          sudo make install
+          sudo ln -sf /usr/local/srs-cloud/usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
+          sudo systemctl enable srs-cloud nginx
+
+          echo "Disable docker for test"
+          echo "USE_DOCKER=false" >> $GITHUB_ENV
+          echo "SRS_DOCKER=srs" >> $GITHUB_ENV
+          echo "SRS_UTEST=true" >> $GITHUB_ENV
+
+      - name: Mock the environments for upgrading
+        run: |
+          echo 'REGION=ap-singapore' >> mgmt/.env
+          echo 'SOURCE=github' >> mgmt/.env
+
+      - name: Upgrade to latest
+        run: |
+          sudo systemctl start nginx
+
+          echo "Reset to release 4-5 at v1.0.240"
+          git reset --hard v1.0.240
+          cd mgmt && npm install
+
+          # See https://stackoverflow.com/a/8633575/17679565
+          echo "Upgrade to latest TARGET=$TARGET SRS_UTEST=$SRS_UTEST"
+          sudo -E bash -c "./upgrade $TARGET"
+
+  # Note that from 4.5, we do not use stable now, only support latest version.
+  test-release-4-6-latest:
+    name: Upgrading latest from release 4-6
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          # See https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
+          fetch-depth: 0
+
+      # See https://github.com/actions/setup-node
+      - name: Setup the npm node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'npm'
+          cache-dependency-path: |
+            platform/ui/package-lock.json
+
+      - name: Discover upgrade target.
+        run: |
+          TARGET=$(cat releases/version.go |grep 'const latest' |awk -F '"' '{print $2}')
+          echo "TARGET=$TARGET" >> $GITHUB_ENV
+
+      - name: Setup the service
+        run: |
+          sudo make install
+          sudo ln -sf /usr/local/srs-cloud/usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service
+          sudo systemctl enable srs-cloud nginx
+
+          echo "Disable docker for test"
+          echo "USE_DOCKER=false" >> $GITHUB_ENV
+          echo "SRS_DOCKER=srs" >> $GITHUB_ENV
+          echo "SRS_UTEST=true" >> $GITHUB_ENV
+
+      - name: Mock the environments for upgrading
+        run: |
+          echo 'REGION=ap-singapore' >> mgmt/.env
+          echo 'SOURCE=github' >> mgmt/.env
+
+      - name: Upgrade to latest
+        run: |
+          sudo systemctl start nginx
+
+          echo "Reset to release 4-6 at v1.0.256"
+          git reset --hard v1.0.256
           cd mgmt && npm install
 
           # See https://stackoverflow.com/a/8633575/17679565

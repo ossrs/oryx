@@ -20,7 +20,7 @@ VERSION="1.0.$NEXT"
 TAG="releases-v$VERSION"
 echo "publish version $VERSION as tag $TAG"
 
-cat releases/main.go |sed "s|const\ api\ =.*|const api = \"v$VERSION\";|g" > tmp.go && mv tmp.go releases/main.go &&
+cat releases/version.go |sed "s|const\ api\ =.*|const api = \"v$VERSION\";|g" > tmp.go && mv tmp.go releases/version.go &&
 git ci -am "Update version to $TAG"
 if [[ $? -ne 0 ]]; then echo "Release: Update package failed"; exit 1; fi
 

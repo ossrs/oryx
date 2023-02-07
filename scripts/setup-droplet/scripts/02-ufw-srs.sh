@@ -29,11 +29,6 @@ echo "ufw allow mgmt"
 # For srs-cloud API.
 ufw allow 2022/tcp
 
-# Note that we must expose the exporter for prometheus to access it.
-echo "ufw allow exporter for prometheus"
-# For node_exporter
-ufw allow 9100/tcp
-
 # Apply force firewall.
 echo "ufw apply force"
 ufw --force enable

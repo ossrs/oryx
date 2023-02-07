@@ -12,12 +12,12 @@ A lightweight open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
 - [x] [Live Streaming](https://mp.weixin.qq.com/s/AKqVWIdk3SBD-6uiTMliyA).
 - [x] [Realtime SRT Streaming](https://mp.weixin.qq.com/s/HQb3gLRyJHHu56pnyHerxA).
 - [x] [Automatical HTTPS](https://mp.weixin.qq.com/s/O70Fz-mxNedZpxgGXQ8DsA).
-- [x] [Dashboard by Prometheus](https://mp.weixin.qq.com/s/ub9ZGmntOy_-S11oxFkxvg).
 - [x] [DVR to Cloud Storage or VoD](https://mp.weixin.qq.com/s/UXR5EBKZ-LnthwKN_rlIjg).
 - [x] [Support WordPress Plugin](https://mp.weixin.qq.com/s/YjTkcJLkErMcZYHIjzsW_w) or [here](https://wordpress.org/plugins/srs-player).
 - [x] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
 - [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
 - [x] [Support DVR to local disk](https://github.com/ossrs/srs-cloud/issues/42).
+- [ ] [Dashboard by Prometheus](https://mp.weixin.qq.com/s/ub9ZGmntOy_-S11oxFkxvg).
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
 
@@ -41,7 +41,6 @@ flowchart LR;
   mgmt --> Upgrade --> Release;
   mgmt --> Certbot --> HTTPS;
   mgmt --> TencentCloud(platform/TencentCloud) --> CAM[CAM/COS/VoD];
-  mgmt --> Prometheus --- NodeExporter;
   mgmt --> Docker;
   mgmt --> Env[(.env<br/>credentials.txt)];
   mgmt --> Redis[(Redis KV)];
@@ -68,7 +67,6 @@ The ports allocated:
 | platform | 2024 |  - | Mount at `/terraform/v1/mgmt/`, `/terraform/v1/hooks/`, `/terraform/v1/ffmpeg/` and `/terraform/v1/tencent/`    |
 | releases | 2023 |  - | Mount at `/terraform/v1/releases`                                                       |
 | mgmt | 2022 |  - | Mount at `/mgmt/` and `/terraform/v1/mgmt/`                                             |
-| prometheus | 9090 | - | Mount at `/prometheus/`                                                                 |
 | node-exporter | 9100 | - | -                                                                                       |
 | redis | 56379 | - | -                                                                                       |
 
@@ -89,7 +87,6 @@ The features that we're developing:
 * [x] Support high-resolution and realtime(200~500ms) live streaming by SRT.
 * [x] Run SRS hooks in docker, to callback by SRS server.
 * [x] Support publish by SRT, play by RTMP/HTTP-FLV/HLS/WebRTC/SRT.
-* [x] Integrate with prometheus and node-exporter.
 * [x] Support DVR to tencent cloud storage, see [#1193](https://github.com/ossrs/srs/issues/1193).
 * [x] Change redis port and use randomly password.
 * [x] Support integrity with tencent cloud VoD.
@@ -108,6 +105,7 @@ The features that we're developing:
 * [ ] Stop, restart and upgrade containers.
 * [ ] Support logrotate to manage the logs.
 * [ ] Enhance prometheus API with authentication.
+* [ ] Integrate with prometheus and node-exporter.
 
 ## APIs
 
@@ -127,8 +125,6 @@ Platform:
 * `/terraform/v1/mgmt/login` System auth with password.
 * `/terraform/v1/mgmt/status` Query the version of mgmt.
 * `/terraform/v1/mgmt/envs` Query the envs of mgmt.
-* `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
-* `/terraform/v1/mgmt/strategy` Toggle the upgrade strategy.
 * `/terraform/v1/mgmt/ssl` Config the system SSL config.
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
 * `/terraform/v1/mgmt/pubkey` Update the access for platform administrator pubkey.
@@ -136,15 +132,9 @@ Platform:
 * `/terraform/v1/mgmt/bilibili` Query the video information.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
-* `/terraform/v1/mgmt/window/query` Query the upgrade time window.
-* `/terraform/v1/mgmt/window/update` Update the upgrade time window.
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
 * `/terraform/v1/mgmt/secret/token` Create token for OpenAPI.
 * `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
-* `/terraform/v1/mgmt/nginx/homepage` Setup the homepage redirection.
-* `/terraform/v1/mgmt/nginx/proxy` Setup a reverse proxy location.
-* `/terraform/v1/mgmt/dns/lb` HTTP-DNS for hls load balance.
-* `/terraform/v1/mgmt/dns/backend/update` HTTP-DNS: Update the backend servers for hls load balance.
 
 Also by platform module:
 
@@ -172,9 +162,20 @@ Also by platform module:
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 
+Removed API:
+
+* `/terraform/v1/mgmt/strategy` Toggle the upgrade strategy.
+* `/prometheus` Prometheus: Time-series database and monitor.
+* `/terraform/v1/mgmt/nginx/proxy` Setup a reverse proxy location.
+* `/terraform/v1/mgmt/dns/lb` HTTP-DNS for hls load balance.
+* `/terraform/v1/mgmt/dns/backend/update` HTTP-DNS: Update the backend servers for hls load balance.
+* `/terraform/v1/mgmt/nginx/homepage` Setup the homepage redirection.
+* `/terraform/v1/mgmt/window/query` Query the upgrade time window.
+* `/terraform/v1/mgmt/window/update` Update the upgrade time window.
+* `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
+
 Market:
 
-* `/prometheus` Prometheus: Time-series database and monitor.
 * `/api/` SRS: HTTP API of SRS media server.
 * `/rtc/` SRS: HTTP API for WebERTC of SRS media server.
 * `/*/*.(flv|m3u8|ts|aac|mp3)` SRS: Media stream for HTTP-FLV, HLS, HTTP-TS, HTTP-AAC, HTTP-MP3.
@@ -206,40 +207,10 @@ The software we depend on:
   * [CAM](https://console.cloud.tencent.com/cam/overview) Authentication by secretId and secretKey.
 * [ffmpeg](https://github.com/ossrs/srs-cloud/tree/lighthouse/ffmpeg), `docker --name ffmpeg`
   * [FFmpeg and ffprobe](https://ffmpeg.org) tools in `ossrs/srs:node-av`
-* [Prometheus](https://github.com/prometheus/prometheus#install), `docker --name prometheus`
-  * Config: `mgmt/containers/conf/prometheus.yml`
-  * Data directory: `mgmt/containers/data/prometheus`
-* [NodeExporter](https://github.com/prometheus/node_exporter), `docker --name node-exporter`
 
 ## Upgrade Workflow
 
-When upgrading automatically or manually by user:
-
-* `bash upgrade` for each upgrade.
-* `bash auto/upgrade_region` to setup the source by region.
-* `git checkout` to checkout to specified tag or branch.
-* `bash upgrade_living` to run with the updated scripts.
-* `bash auto/upgrade_prepare` do upgrade for previous images.
-* `bash auto/upgrade_nginx` to upgrade the nginx configuration.
-* `bash auto/foreach_run` to setup swap and redis configuration.
-* `bash auto/upgrade_ui` to upgrade the ui.
-* `systemctl restart srs-terraform` to restart the mgmt service.
-
-When system start, check the flag `SRS_FIRST_BOOT` in redis, if not set:
-
-* Always restart container platform to use the correct image version, which should be same to mgmt.
-* Restart containers for the host ip might change.
-
-They are not mutually exclusive. To force to upgrade to a branch:
-
-```bash
-~lighthouse/redis-cli hset SRS_UPGRADING force main
-systemctl restart srs-terraform
-```
-
-> Note: Please set the upgrade window to [0, 24] to allow upgrade full time.
-
-It will trigger the upgrading process immediately.
+No automatically upgrading, instead, user should reinstall srs-cloud or pull the specified version of docker.
 
 ## System Boot
 
@@ -266,6 +237,8 @@ The optional environments defined by `mgmt/.env`:
 * `CLOUD`: The cloud platform name, DEV for development.
 * `REGION`: `ap-guangzhou|ap-singapore|sgp1`, The region for upgrade source.
 * `SOURCE`: `github|gitee`, The source code for upgrading. 
+* `MGMT_LISTEN`: The listen port for mgmt HTTP server. Default: 2022
+* `PLATFORM_LISTEN`: The listen port for platform HTTP server. Default: 2024
 
 For testing the specified service:
 
@@ -296,7 +269,6 @@ Environments for react ui:
 Install dependencies:
 
 ```bash
-(cd mgmt && npm install)
 (cd platform && npm install)
 (cd platform/ui && npm install)
 ```
@@ -304,7 +276,7 @@ Install dependencies:
 Run the mgmt backend:
 
 ```
-(cd mgmt && npm start)
+(cd mgmt && go run .)
 ```
 
 Run the platform backend:
@@ -325,16 +297,11 @@ Access the browser: http://localhost:3000
 
 Release bugfix:
 
-* For mgmt or platform: `./auto/mgmt_platform_pub.sh`
-* Then test the specified version of mgmt and platform.
+* For mgmt: `./auto/mgmt_pub.sh`
+* Then test the specified version of mgmt.
 * Finally, run `./auto/releases_pub.sh` if test ok.
 
 > Note: The [features](https://github.com/ossrs/srs-cloud/issues/4) might need to be updated.
-
-Release [stable version](https://api.ossrs.net/terraform/v1/releases):
-
-* MUST update the stable version manually in `releases/releases.js`
-* Then run `./auto/releases_pub.sh`
 
 Release version for BT and aaPanel:
 
@@ -343,6 +310,21 @@ Release version for BT and aaPanel:
 * Finally, download [bt-srs_cloud.zip](https://github.com/ossrs/srs-cloud/releases) then submit to [bt.cn](https://www.bt.cn/developer/details.html?id=600801805)
 
 > Note: The [BT forum](https://www.bt.cn/bbs/thread-90890-1-1.html) and [FAQ](https://github.com/ossrs/srs-cloud/issues/4) might need to be updated.
+
+To refresh current tag for mgmt:
+
+* Run `./scripts/refresh-current-tag.sh `
+
+> Note: It does not update the tag for release.
+
+## Deprecated
+
+Release [stable version](https://api.ossrs.net/terraform/v1/releases):
+
+* MUST update the stable version manually in `releases/version.go`
+* Then run `./auto/releases_pub.sh`
+
+> Note: We disable the upgrade feature, so should never update the stable version.
 
 2022.11
 

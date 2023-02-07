@@ -40,7 +40,7 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       # Git checkout
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       # Build SRS image
       - name: Build SRS docker image
         run: |
@@ -69,7 +69,7 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       # Aliyun ACR
       - name: Login Aliyun docker hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: registry.cn-hangzhou.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
@@ -96,11 +96,11 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       # Git checkout
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       # K8S for terraform versions
       - name: Release terraform versions to Aliyun ACK
         run: |-
-          STABLE_RELEASE=platform-$(cat releases/main.go |grep 'const latest' |awk -F '"' '{print $2}')
+          STABLE_RELEASE=platform-$(cat releases/version.go |grep 'const latest' |awk -F '"' '{print $2}')
           echo "Check stable release $STABLE_RELEASE"
 
           while true; do

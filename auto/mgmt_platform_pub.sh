@@ -11,8 +11,8 @@ if [[ $? -ne 0 ]]; then
   exit 1
 fi
 
-# Note that the mgmt should always use v1.2.3 without any prefix, to be compatible with previous upgrade script.
-RELEASE=$(git describe --tags --abbrev=0 --match v*) &&
+# We increase version from the platform-v* base.
+RELEASE=$(git describe --tags --abbrev=0 --match platform-v*) &&
 REVISION=$(echo $RELEASE|awk -F . '{print $3}') &&
 let NEXT=$REVISION+1 &&
 echo "Last release is $RELEASE, revision is $REVISION, next is $NEXT"
@@ -24,13 +24,14 @@ TAG="v$VERSION" &&
 echo "publish version $VERSION as tag $TAG"
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
-cat mgmt/package.json |sed "s|\"version\":.*|\"version\":\"$VERSION\",|g" > tmp.json && mv tmp.json mgmt/package.json &&
-cat platform/package.json |sed "s|\"version\":.*|\"version\":\"$VERSION\",|g" > tmp.json && mv tmp.json platform/package.json &&
-cat releases/main.go |sed "s|const\ latest\ =.*|const latest = \"v$VERSION\";|g" > tmp.go && mv tmp.go releases/main.go &&
+cat mgmt/version.go |sed "s|const\ version\ =.*|const version = \"v$VERSION\";|g" > tmp.go && mv tmp.go mgmt/version.go &&
+cat platform/version.go |sed "s|const\ version\ =.*|const version = \"v$VERSION\";|g" > tmp.go && mv tmp.go platform/version.go &&
+cat releases/version.go |sed "s|const\ latest\ =.*|const latest = \"v$VERSION\";|g" > tmp.go && mv tmp.go releases/version.go &&
 git ci -am "Update mgmt version to $TAG"
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
 ######################################################################
+# Note that the mgmt should always use v1.2.3 without any prefix, to be compatible with previous upgrade script.
 echo -e "\n\n"
 git push
 git tag -d $TAG 2>/dev/null && git push origin :$TAG
@@ -44,6 +45,15 @@ echo "publish $TAG ok"
 ######################################################################
 echo -e "\n\n"
 TAG="platform-v$VERSION"
+git tag -d $TAG 2>/dev/null && git push origin :$TAG
+git tag $TAG; git push origin $TAG
+
+git remote |grep -q gitee && git push gitee && git push gitee $TAG
+git remote |grep -q cloud && git push cloud && git push cloud $TAG
+
+######################################################################
+echo -e "\n\n"
+TAG="mgmt-v$VERSION"
 git tag -d $TAG 2>/dev/null && git push origin :$TAG
 git tag $TAG; git push origin $TAG
 
