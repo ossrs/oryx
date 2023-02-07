@@ -1,4 +1,4 @@
-name: "Release Alpine for SRS"
+name: "Release Focal for SRS"
 
 on:
   push:
