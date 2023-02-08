@@ -9,4 +9,4 @@ package main
 // this feature is actually not used, but we should keep a specified version for compatibility.
 const stable = "v1.0.256"
 const latest = "v1.0.284"
-const api = "v1.0.369"
+const api = "v1.0.370"
