@@ -10,7 +10,7 @@
 # Description:       https://github.com/ossrs/srs-cloud
 ### END INIT INFO
 
-SRS_HOME=/usr/local/lighthouse/softwares/srs-cloud
+SRS_HOME=/usr/local/srs-cloud
 
 start() {
   systemctl start srs-cloud.service

@@ -16,8 +16,7 @@ if [[ -z $SITE_NAME ]]; then echo "No site name"; exit 1; fi
 
 # Setup the path.
 install_path=/www/server/panel/plugin/srs_cloud
-DEPLOY_HOME=/usr/local/lighthouse/softwares
-SRS_HOME=${DEPLOY_HOME}/srs-cloud
+SRS_HOME=/usr/local/srs-cloud
 INSTALL_HOME=/usr/local/srs-cloud
 echo "Setup SRS at install_path=$install_path, SRS_HOME=$SRS_HOME, INSTALL_HOME=$INSTALL_HOME, NODEJS=$NODEJS, NGINX_PID=$NGINX_PID, WWW_HOME=$WWW_HOME, SITE_NAME=$SITE_NAME"
 
@@ -56,14 +55,10 @@ END
 if [[ $? -ne 0 ]]; then echo "Setup extra env failed"; exit 1; fi
 
 ########################################################################################################################
-# User should install nodejs, because we can't do it.
-(cd $SRS_HOME/scripts/check-node-version && npm install && node .)
-if [[ $? -ne 0 ]]; then echo "Please install node from https://nodejs.org"; exit 1; fi
-
 cd ${SRS_HOME} && make install
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 
-cd $DEPLOY_HOME && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
+cd `dirname $SRS_HOME` && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
 if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
 
 # Setup git alias to make it convenient.

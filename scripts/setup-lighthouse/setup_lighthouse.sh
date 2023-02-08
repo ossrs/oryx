@@ -19,10 +19,6 @@ if [[ $? -ne 0 ]]; then echo "Only support CentOS 7"; exit 1; fi
 CentOS_VERSION=$(rpm --eval '%{centos_ver}')
 if [[ $CentOS_VERSION -ne 7 ]]; then echo "Only support CentOS 7, yours is $CentOS_VERSION"; exit 1; fi
 
-# User should install nodejs, because we can't do it.
-(cd scripts/check-node-version && npm install && node .)
-if [[ $? -ne 0 ]]; then echo "Please install node from https://nodejs.org"; exit 1; fi
-
 # Check user lighthouse
 if [[ $(id -un lighthouse 2>/dev/null) == '' ]]; then
   echo "No user lighthouse"; exit 1;

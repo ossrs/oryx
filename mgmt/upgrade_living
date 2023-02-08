@@ -27,16 +27,6 @@ else
   # Note that new UI is built in platform docker image, so it's kept only for compatible reason.
   bash auto/upgrade_ui
 
-  # Compatible with previous version.
-  if [[ -d /usr/local/lighthouse/softwares/srs-terraform && ! -d /usr/local/lighthouse/softwares/srs-cloud ]]; then
-    echo "Create link /usr/local/lighthouse/softwares/srs-cloud"
-    ln -sf /usr/local/lighthouse/softwares/srs-terraform /usr/local/lighthouse/softwares/srs-cloud
-  fi
-  if [[ -d /usr/local/srs-terraform && ! -d /usr/local/srs-cloud ]]; then
-    echo "Create link /usr/local/srs-cloud"
-    ln -sf /usr/local/srs-terraform /usr/local/srs-cloud
-  fi
-
   # Change permissions before restart.
   if [[ $(id -un lighthouse 2>/dev/null) == 'lighthouse' ]]; then
     echo "Change permissions for generated files"

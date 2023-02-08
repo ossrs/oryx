@@ -6,8 +6,7 @@ if [[ $(uname -s) == 'Darwin' ]]; then
 fi
 
 # The main directory.
-DEPLOY_HOME=/usr/local/lighthouse/softwares
-SRS_HOME=${DEPLOY_HOME}/srs-cloud
+SRS_HOME=/usr/local/srs-cloud
 INSTALL_HOME=/usr/local/srs-cloud
 
 # Install files to lighthouse directory.

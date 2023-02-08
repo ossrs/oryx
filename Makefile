@@ -14,31 +14,36 @@ help:
 	@echo "     test     	Run tests"
 
 build:
-	@cd releases && make
-	@cd mgmt && make
-	@cd platform && make build
+	cd releases && make
+	cd mgmt && make
+	cd platform && make build
 
 clean:
-	@cd releases && make clean
-	@cd mgmt && make clean
-	@cd platform && make clean
+	cd releases && make clean
+	cd mgmt && make clean
+	cd platform && make clean
 
 upgrade:
 	@echo "ignore for upgrade"
 
+ifeq ($(shell pwd), $(__REAL_INSTALL))
 install:
-	@mkdir -p $(__REAL_INSTALL)
-	@ln -sf `pwd`/mgmt $(__REAL_INSTALL)/mgmt
-	@rm -rf $(__REAL_INSTALL)/usr
-	@cp -rf usr $(__REAL_INSTALL)/usr
-	@sed -i "s|/usr/local/srs-cloud|$(SRS_PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/srs-cloud.service
+	@echo "Install ok for $(__REAL_INSTALL)"
+else
+install:
+	mkdir -p $(__REAL_INSTALL)
+	ln -sf `pwd`/mgmt $(__REAL_INSTALL)/mgmt
+	rm -rf $(__REAL_INSTALL)/usr
+	cp -rf usr $(__REAL_INSTALL)/usr
+	sed -i "s|/usr/local/srs-cloud|$(SRS_PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/srs-cloud.service
+endif
 
 uninstall:
 	@echo "rmdir $(SRS_PREFIX)"
-	@rm -rf $(SRS_PREFIX)
+	rm -rf $(SRS_PREFIX)
 
 test:
-	@cd platform && go test ./...
-	@cd mgmt && go test ./...
-	@cd releases && go test ./...
+	cd platform && go test ./...
+	cd mgmt && go test ./...
+	cd releases && go test ./...
 

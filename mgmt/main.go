@@ -358,10 +358,8 @@ func initMmgt(ctx context.Context) error {
 			return err
 		}
 		if previousImage != "" && previousImage != newImage {
-			logger.Tf(ctx, "remove previous image %v", previousImage)
-			if err = exec.CommandContext(ctx, "docker", "rmi", previousImage).Run(); err != nil {
-				return err
-			}
+			r0 := exec.CommandContext(ctx, "docker", "rmi", previousImage).Run()
+			logger.Tf(ctx, "remove previous mgmt image %v, err %v", previousImage, r0)
 		}
 	}
 

@@ -4,8 +4,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 
 install_path=/www/server/panel/plugin/srs_cloud
-DEPLOY_HOME=/usr/local/lighthouse/softwares
-SRS_HOME=${DEPLOY_HOME}/srs-cloud
+SRS_HOME=/usr/local/srs-cloud
 
 # Update sysctl.conf and add if not exists. For example:
 #   update_sysctl net.ipv4.ip_forward 1 0 "# Controls IP packet forwarding"
@@ -52,7 +51,7 @@ Install() {
 
   # Move srs-cloud to its home.
   echo "Move srs-cloud to $SRS_HOME"
-  mkdir -p $DEPLOY_HOME
+  mkdir -p `dirname $SRS_HOME`
   if [[ -d $install_path/srs-cloud && ! -d $SRS_HOME/.git ]]; then
     rm -rf $SRS_HOME && mv $install_path/srs-cloud $SRS_HOME &&
     ln -sf $SRS_HOME $install_path/srs-cloud
@@ -103,9 +102,16 @@ Uninstall() {
   rm -rf $INSTALL_HOME
   echo "Remove install $INSTALL_HOME ok"
 
-  SRS_ALIAS=/usr/local/lighthouse/softwares/srs-terraform
+  SRS_ALIAS=/usr/local/srs-terraform
 	rm -rf $SRS_HOME $SRS_ALIAS
 	echo "Remove srs home $SRS_HOME ok"
+
+	rm -f ~/credentials.txt
+	echo "Remove credentials.txt"
+
+	rmdir /usr/local/lighthouse/softwares 2>/dev/null
+	rmdir /usr/local/lighthouse 2>/dev/null
+	echo "Remove empty lighthouse directory"
 
   rm -rf $install_path
   echo "Remove plugin path $install_path ok"

@@ -6,7 +6,7 @@ if [[ $(uname -s) == 'Darwin' ]]; then
 fi
 
 # The main directory.
-DEPLOY_HOME=/usr/local/lighthouse/softwares
+DEPLOY_HOME=/usr/local/srs-cloud
 
 echo "Install depends"
 apt-get install -y git gcc g++ gdb make tree dstat docker docker.io nginx curl net-tools &&
@@ -40,9 +40,4 @@ echo "Install nodejs 16"
 curl -sL https://deb.nodesource.com/setup_16.x -o /tmp/nodesource_setup.sh && bash /tmp/nodesource_setup.sh &&
 apt-get install -y nodejs
 if [[ $? -ne 0 ]]; then echo "Install nodejs failed"; exit 1; fi
-
-# User should install nodejs, because we can't do it.
-cd ${DEPLOY_HOME}/srs-cloud &&
-(cd scripts/check-node-version && npm install && node .)
-if [[ $? -ne 0 ]]; then echo "Please install node from https://nodejs.org"; exit 1; fi
 

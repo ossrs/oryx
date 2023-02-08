@@ -17,8 +17,7 @@ class srs_cloud_main:
     #       /www/server
     __plugin_path = "{}/panel/plugin/srs_cloud".format(public.get_setup_path())
     __srs_service = "/usr/lib/systemd/system/srs-cloud.service"
-    __deploy = '/usr/local/lighthouse/softwares'
-    __srs_home = '{}/srs-cloud'.format(__deploy)
+    __srs_home = '/usr/local/srs-cloud'
     __r0_file = '/tmp/srs_cloud_install.r0'
     __firewall = '/tmp/srs_cloud_install.fw'
     __log_file = '/tmp/srs_cloud_install.log'
@@ -156,6 +155,9 @@ class srs_cloud_main:
         )
         conf = files().GetFileBody(Params(path=confPath))
         confData = conf['data'];
+
+        # Replace the directory to new home, because the site is kept when uninstall.
+        confData = confData.replace('/usr/local/lighthouse/softwares/srs-cloud', '/usr/local/srs-cloud')
 
         # Process the http section of nginx.
         if confData.find('#SRS-HTTP-START') == -1:

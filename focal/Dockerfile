@@ -14,10 +14,14 @@ COPY --from=build /usr/share/ca-certificates /usr/share/ca-certificates
 # We write the common config for platform to base image, however you can
 # overwrite it if not for platform, for example, used in releases.
 ENV PORT=":2024"
+
 # Create link for compatible reason.
 RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform
+
 # Create directory for compatible reason.
+# TODO: FIXME: Remove it when upgrade to new versions.
 RUN mkdir -p /usr/local/lighthouse/softwares
 RUN ln -sf /usr/local/srs-cloud /usr/local/lighthouse/softwares/srs-cloud
+
 # Setup the work directory to platform.
 WORKDIR /usr/local/srs-cloud/platform
