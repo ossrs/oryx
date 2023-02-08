@@ -80,32 +80,33 @@ The ports allocated:
 
 The features that we're developing:
 
-* [x] A mgmt support authentication and automatic updates.
-* [x] Run SRS in docker, query status by docker and SRS API.
-* [x] Support publish by RTMP/WebRTC, play by RTMP/HTTP-FLV/HLS/WebRTC.
-* [x] SRS container use docker logs `json-file` and rotate for logging.
-* [x] Support high-resolution and realtime(200~500ms) live streaming by SRT.
-* [x] Run SRS hooks in docker, to callback by SRS server.
-* [x] Support publish by SRT, play by RTMP/HTTP-FLV/HLS/WebRTC/SRT.
-* [x] Support DVR to tencent cloud storage, see [#1193](https://github.com/ossrs/srs/issues/1193).
-* [x] Change redis port and use randomly password.
-* [x] Support integrity with tencent cloud VoD.
-* [x] Forward stream to multiple platforms, see [#2676](https://github.com/ossrs/srs/issues/2676).
+- [x] A mgmt support authentication and automatic updates.
+- [x] Run SRS in docker, query status by docker and SRS API.
+- [x] Support publish by RTMP/WebRTC, play by RTMP/HTTP-FLV/HLS/WebRTC.
+- [x] SRS container use docker logs `json-file` and rotate for logging.
+- [x] Support high-resolution and realtime(200~500ms) live streaming by SRT.
+- [x] Run SRS hooks in docker, to callback by SRS server.
+- [x] Support publish by SRT, play by RTMP/HTTP-FLV/HLS/WebRTC/SRT.
+- [x] Support DVR to tencent cloud storage, see [#1193](https://github.com/ossrs/srs/issues/1193).
+- [x] Change redis port and use randomly password.
+- [x] Support integrity with tencent cloud VoD.
+- [x] Forward stream to multiple platforms, see [#2676](https://github.com/ossrs/srs/issues/2676).
 - [x] [Support WordPress Plugin](https://mp.weixin.qq.com/s/YjTkcJLkErMcZYHIjzsW_w) or [here](https://wordpress.org/plugins/srs-player).
 - [x] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
 - [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
 - [x] [Support DVR to local disk](https://github.com/ossrs/srs-cloud/issues/42).
-* [ ] Support GB28181 by SRS 5.0 container.
-* [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
-* [ ] Support virtual live streaming, covert file or other resource to live.
-* [ ] Support WebRTC face to face chat, see [#2857](https://github.com/ossrs/srs/issues/2857).
-* [ ] Support WebRTC video chat room, see [#2924](https://github.com/ossrs/srs/issues/2924).
-* [ ] Support a set of tools for developer, see [#2891](https://github.com/ossrs/srs/issues/2891).
-* [ ] Collect logs of mgmt and containers together.
-* [ ] Stop, restart and upgrade containers.
-* [ ] Support logrotate to manage the logs.
-* [ ] Enhance prometheus API with authentication.
-* [ ] Integrate with prometheus and node-exporter.
+- [x] Support upgrade to latest version manually.
+- [ ] Support GB28181 by SRS 5.0 container.
+- [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
+- [ ] Support virtual live streaming, covert file or other resource to live.
+- [ ] Support WebRTC face to face chat, see [#2857](https://github.com/ossrs/srs/issues/2857).
+- [ ] Support WebRTC video chat room, see [#2924](https://github.com/ossrs/srs/issues/2924).
+- [ ] Support a set of tools for developer, see [#2891](https://github.com/ossrs/srs/issues/2891).
+- [ ] Collect logs of mgmt and containers together.
+- [ ] Stop, restart and upgrade containers.
+- [ ] Support logrotate to manage the logs.
+- [ ] Enhance prometheus API with authentication.
+- [ ] Integrate with prometheus and node-exporter.
 
 ## APIs
 
@@ -135,6 +136,7 @@ Platform:
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
 * `/terraform/v1/mgmt/secret/token` Create token for OpenAPI.
 * `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
+* `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
 
 Also by platform module:
 
@@ -162,18 +164,6 @@ Also by platform module:
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 
-Removed API:
-
-* `/terraform/v1/mgmt/strategy` Toggle the upgrade strategy.
-* `/prometheus` Prometheus: Time-series database and monitor.
-* `/terraform/v1/mgmt/nginx/proxy` Setup a reverse proxy location.
-* `/terraform/v1/mgmt/dns/lb` HTTP-DNS for hls load balance.
-* `/terraform/v1/mgmt/dns/backend/update` HTTP-DNS: Update the backend servers for hls load balance.
-* `/terraform/v1/mgmt/nginx/homepage` Setup the homepage redirection.
-* `/terraform/v1/mgmt/window/query` Query the upgrade time window.
-* `/terraform/v1/mgmt/window/update` Update the upgrade time window.
-* `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
-
 Market:
 
 * `/api/` SRS: HTTP API of SRS media server.
@@ -186,6 +176,17 @@ Static Files:
 * `/console/` The SRS console, serve by mgmt.
 * `/players/` The SRS player, serve by mgmt.
 * `/mgmt/` The ui for mgmt, serve by mgmt.
+
+**Removed** API:
+
+* `/terraform/v1/mgmt/strategy` Toggle the upgrade strategy.
+* `/prometheus` Prometheus: Time-series database and monitor.
+* `/terraform/v1/mgmt/nginx/proxy` Setup a reverse proxy location.
+* `/terraform/v1/mgmt/dns/lb` HTTP-DNS for hls load balance.
+* `/terraform/v1/mgmt/dns/backend/update` HTTP-DNS: Update the backend servers for hls load balance.
+* `/terraform/v1/mgmt/nginx/homepage` Setup the homepage redirection.
+* `/terraform/v1/mgmt/window/query` Query the upgrade time window.
+* `/terraform/v1/mgmt/window/update` Update the upgrade time window.
 
 ## Depends
 
