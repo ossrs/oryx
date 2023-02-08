@@ -538,6 +538,11 @@ func (v *ForwardTask) Run(ctx context.Context) error {
 			}
 		}
 
+		// Ignore if no active stream.
+		if best == nil {
+			return nil, nil
+		}
+
 		logger.Tf(ctx, "forward use best=%v as input for platform=%v", best.StreamURL(), v.Platform)
 		return best, nil
 	}
