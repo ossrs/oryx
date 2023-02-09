@@ -18,8 +18,8 @@ ENV PORT=":2024"
 # Setup the default node env, for both Go and nodejs env.
 ENV NODE_ENV=production
 
-# Run mgmt in docker.
-ENV MGMT_DOCKERIZED=true
+# Run application in docker.
+ENV SRS_DOCKERIZED=true
 
 # Create link for compatible reason.
 RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform

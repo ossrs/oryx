@@ -34,7 +34,8 @@ if [[ $SRS_UTEST != true ]]; then
   # Generate new mgmt binary from docker image.
   echo "Generate binary for $TARGET_VERSION" &&
   docker pull $REGISTRY/ossrs/srs-cloud:platform-v$TARGET_VERSION &&
-  docker run --rm $REGISTRY/ossrs/srs-cloud:platform-v$TARGET_VERSION cat mgmt > mgmt
+  docker run --rm -it $REGISTRY/ossrs/srs-cloud:platform-v$TARGET_VERSION \
+    cat /usr/local/srs-cloud/mgmt/mgmt > mgmt
   if [[ $? -ne 0 ]]; then echo "Switch MGMT failed"; exit 1; fi
 fi
 

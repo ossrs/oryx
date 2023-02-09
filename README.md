@@ -240,7 +240,7 @@ The optional environments defined by `mgmt/.env`:
 * `SOURCE`: `github|gitee`, The source code for upgrading. 
 * `MGMT_LISTEN`: The listen port for mgmt HTTP server. Default: 2022
 * `PLATFORM_LISTEN`: The listen port for platform HTTP server. Default: 2024
-* `MGMT_DOCKERIZED`: `true|false` Run mgmt in docker.
+* `SRS_DOCKERIZED`: `true|false` Run application in docker.
 
 For testing the specified service:
 
@@ -299,7 +299,7 @@ Access the browser: http://localhost:3000
 
 Release bugfix:
 
-* For mgmt: `./auto/mgmt_pub.sh`
+* For mgmt: `./auto/mgmt_platform_pub.sh`
 * Then test the specified version of mgmt.
 * Finally, run `./auto/releases_pub.sh` if test ok.
 

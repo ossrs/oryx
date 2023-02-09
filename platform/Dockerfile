@@ -11,7 +11,8 @@ ADD mgmt /g/mgmt
 ADD platform /g/platform
 
 WORKDIR /g/mgmt
-RUN make
+# We might run mgmt in Linux host machine, so we build for alpine, statically link.
+RUN make alpine
 
 WORKDIR /g/platform
 RUN make
