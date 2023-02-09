@@ -326,64 +326,6 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		return nil
 	}
 
-	// Refresh the version from api.
-	handlers["refreshVersion"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
-		params := sr.ArgsAsMap()[0]
-		if params == nil {
-			return errors.Errorf("no params")
-		}
-
-		params["version"] = version
-		params["ts"] = time.Now().UnixNano() / int64(time.Millisecond)
-		releaseServer := "https://api.ossrs.net"
-		if os.Getenv("LOCAL_RELEASE") != "" {
-			releaseServer = "http://localhost:2022"
-		}
-		logger.Tf(ctx, "Query %v with %v", releaseServer, params)
-
-		queries := []string{}
-		for k, v := range params {
-			queries = append(queries, fmt.Sprintf("%v=%v", k, v))
-		}
-		requestURL := fmt.Sprintf("%v/terraform/v1/releases?%v", releaseServer, strings.Join(queries, "&"))
-		res, err := http.Get(requestURL)
-		if err != nil {
-			return errors.Wrapf(err, "request %v", requestURL)
-		}
-		defer res.Body.Close()
-
-		b, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			return errors.Wrapf(err, "read %v", requestURL)
-		}
-
-		r0 := &struct {
-			Version string `json:"version"`
-			Stable  string `json:"stable"`
-			Latest  string `json:"latest"`
-		}{}
-		if err := json.Unmarshal(b, r0); err != nil {
-			return errors.Wrapf(err, "parse %v of %v", string(b), requestURL)
-		}
-
-		r0.Version = version
-		ohttp.WriteData(ctx, w, r, r0)
-
-		logger.Tf(ctx, "execApi req=%v, r0=%v", sr, r0)
-		return nil
-	}
-
-	// Query the cached version.
-	handlers["queryVersion"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
-		ohttp.WriteData(ctx, w, r, &struct {
-			Version string `json:"version"`
-		}{
-			Version: version,
-		})
-		logger.Tf(ctx, "execApi req=%v, version=%v", sr, version)
-		return nil
-	}
-
 	// Query all the containers, ignore if not exists.
 	handlers["queryContainers"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
 		names := sr.ArgsAsString()
@@ -440,114 +382,8 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		return nil
 	}
 
-	// Generate dynamic.conf for NGINX.
-	handlers["nginxGenerateConfig"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
-		prefixSpace := func(elems []string) []string {
-			var nElems []string
-			for _, elem := range elems {
-				nElems = append(nElems, fmt.Sprintf("  %v", elem))
-			}
-			return nElems
-		}
-
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// Build HLS config for NGINX.
-		m3u8Conf := []string{
-			"proxy_pass http://127.0.0.1:8080$request_uri;",
-		}
-		tsConf := []string{
-			"proxy_pass http://127.0.0.1:8080$request_uri;",
-		}
-		if hls, err := rdb.HGet(ctx, SRS_STREAM_NGINX, "hls").Result(); err != nil && err != redis.Nil {
-			return errors.Wrapf(err, "hget %v hls", SRS_STREAM_NGINX)
-		} else if hls == "true" {
-			m3u8Conf = []string{
-				// Use NGINX to deliver m3u8 files.
-				fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.Pwd),
-				// Set the cache control, see http://nginx.org/en/docs/http/ngx_http_headers_module.html
-				`add_header Cache-Control "public, max-age=10";`,
-				// Allow CORS for all domain, see https://ubiq.co/tech-blog/enable-cors-nginx/
-				"add_header Access-Control-Allow-Origin *;",
-			}
-			tsConf = []string{
-				fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.Pwd),
-				`add_header Cache-Control "public, max-age=86400";`,
-				// Allow CORS for all domain, see https://ubiq.co/tech-blog/enable-cors-nginx/
-				"add_header Access-Control-Allow-Origin *;",
-			}
-		}
-
-		hlsConf := []string{
-			"",
-			"# For HLS delivery",
-			`location ~ ^/.+/.*\.(m3u8)$ {`,
-		}
-		hlsConf = append(hlsConf, prefixSpace(m3u8Conf)...)
-		hlsConf = append(hlsConf, "}")
-		hlsConf = append(hlsConf, `location ~ ^/.+/.*\.(ts)$ {`)
-		hlsConf = append(hlsConf, prefixSpace(tsConf)...)
-		hlsConf = append(hlsConf, "}")
-
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// Build reverse proxy config for NGINX.
-		// Note that it's been removed, see SRS_HTTP_PROXY.
-
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// Build the SSL/TLS config.
-		sslConf := []string{}
-		if ssl, err := rdb.Get(ctx, SRS_HTTPS).Result(); err != nil && err != redis.Nil {
-			return errors.Wrapf(err, "get %v", SRS_HTTPS)
-		} else if ssl == "ssl" || ssl == "lets" {
-			sslConf = []string{
-				"",
-				"# For SSL/TLS config.",
-				"listen       443 ssl http2 default_server;",
-				"listen       [::]:443 ssl http2 default_server;",
-				"ssl_session_cache shared:SSL:1m;",
-				"ssl_session_timeout  10m;",
-				"ssl_ciphers HIGH:!aNULL:!MD5;",
-				"ssl_prefer_server_ciphers on;",
-				fmt.Sprintf(`ssl_certificate "%v/containers/ssl/nginx.crt";`, conf.Pwd),
-				fmt.Sprintf(`ssl_certificate_key "%v/containers/ssl/nginx.key";`, conf.Pwd),
-				"",
-				"# For automatic HTTPS.",
-				"location /.well-known/acme-challenge/ {",
-				"  proxy_pass http://127.0.0.1:2022$request_uri;",
-				"}",
-			}
-		}
-
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// Build the default root.
-		// Note that it's been removed, see SRS_HTTP_PROXY.
-
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// Build the upload limit for uploader(vLive).
-		uploadLimit := []string{
-			"",
-			"# Limit for upload file size",
-			"client_max_body_size 100g;",
-		}
-
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// Build the config for NGINX.
-		confLines := []string{
-			"# !!! Important: SRS will restore this file during each upgrade, please never modify it.",
-		}
-		confLines = append(confLines, uploadLimit...)
-		confLines = append(confLines, sslConf...)
-		confLines = append(confLines, hlsConf...)
-		confLines = append(confLines, "", "")
-
-		confData := strings.Join(confLines, "\n")
-
-		fileName := "containers/conf/default.d/nginx.dynamic.conf"
-		if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
-			return errors.Wrapf(err, "open file %v", fileName)
-		} else if _, err = f.Write([]byte(confData)); err != nil {
-			return errors.Wrapf(err, "write file %v with %v", fileName, confData)
-		}
-
+	// Reload NGINX.
+	handlers["reloadNginx"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
 		if err := reloadNginx(ctx); err != nil {
 			return errors.Wrapf(err, "reload nginx")
 		}
@@ -672,23 +508,6 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		return nil
 	}
 
-	// Whether use NGINX to deliver HLS.
-	handlers["nginxHlsDelivery"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
-		enabled := sr.ArgsAsString()[0]
-		if enabled == "" {
-			return errors.New("no enabled")
-		}
-
-		enabledValue := fmt.Sprintf("%v", enabled == "enable")
-		if err := rdb.HSet(ctx, SRS_STREAM_NGINX, "hls", enabledValue).Err(); err != nil && err != redis.Nil {
-			return errors.Wrapf(err, "hset %v hls %v", SRS_STREAM_NGINX, enabledValue)
-		}
-
-		ohttp.WriteData(ctx, w, r, nil)
-		logger.Tf(ctx, "execApi req=%v enabled=%v", sr, enabledValue)
-		return nil
-	}
-
 	ep = "/terraform/v1/host/exec"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
@@ -767,14 +586,6 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			return
 		}
 
-		// For registered modules, by /terraform/v1/hooks/
-		// Note that this module has been migrated to platform.
-		if strings.HasPrefix(r.URL.Path, "/terraform/v1/hooks/") {
-			logger.Tf(ctx, "Proxy %v to backend 2024", r.URL.Path)
-			proxy2024.ServeHTTP(w, r)
-			return
-		}
-
 		// We directly serve the static files, because we overwrite the www for DVR.
 		if strings.HasPrefix(r.URL.Path, "/console/") || strings.HasPrefix(r.URL.Path, "/players/") ||
 			strings.HasPrefix(r.URL.Path, "/tools/") {
@@ -787,23 +598,13 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 
 		// For registered modules, by /terraform/v1/tencent/
 		// Note that this module has been migrated to platform.
-		if strings.HasPrefix(r.URL.Path, "/terraform/v1/tencent/") {
-			logger.Tf(ctx, "Proxy %v to backend 2024", r.URL.Path)
-			proxy2024.ServeHTTP(w, r)
-			return
-		}
-
 		// For registered modules, by /terraform/v1/ffmpeg/
 		// Note that this module has been migrated to platform.
-		if strings.HasPrefix(r.URL.Path, "/terraform/v1/ffmpeg/") {
-			logger.Tf(ctx, "Proxy %v to backend 2024", r.URL.Path)
-			proxy2024.ServeHTTP(w, r)
-			return
-		}
-
 		// For platform apis, by /terraform/v1/mgmt/
 		// TODO: FIXME: Proxy all mgmt APIs to platform.
-		if strings.HasPrefix(r.URL.Path, "/terraform/v1/mgmt/") {
+		// For registered modules, by /terraform/v1/hooks/
+		// Note that this module has been migrated to platform.
+		if strings.HasPrefix(r.URL.Path, "/terraform/") {
 			logger.Tf(ctx, "Proxy %v to backend 2024", r.URL.Path)
 			proxy2024.ServeHTTP(w, r)
 			return
@@ -811,13 +612,6 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 
 		// The UI proxy to platform UI, system mgmt UI.
 		if strings.HasPrefix(r.URL.Path, "/mgmt") {
-			logger.Tf(ctx, "Proxy %v to backend 2024", r.URL.Path)
-			proxy2024.ServeHTTP(w, r)
-			return
-		}
-
-		// For automatic HTTPS by letsencrypt, for certbot to verify the domain.
-		if strings.HasPrefix(r.URL.Path, "/.well-known/acme-challenge/") {
 			logger.Tf(ctx, "Proxy %v to backend 2024", r.URL.Path)
 			proxy2024.ServeHTTP(w, r)
 			return

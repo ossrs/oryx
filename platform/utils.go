@@ -311,6 +311,8 @@ const mgmtDockerName = "mgmt"
 const (
 	// For LightHouse information, like region or source.
 	SRS_TENCENT_LH = "SRS_TENCENT_LH"
+	// For SRS stream status.
+	SRS_STREAM_NGINX = "SRS_STREAM_NGINX"
 	// For tencent cloud products.
 	SRS_TENCENT_CAM = "SRS_TENCENT_CAM"
 	SRS_TENCENT_COS = "SRS_TENCENT_COS"
@@ -497,6 +499,133 @@ func setEnvDefault(key, value string) {
 	}
 }
 
+// nginxGenerateConfig is to build NGINX configuration and reload NGINX.
+func nginxGenerateConfig(ctx context.Context) error {
+	prefixSpace := func(elems []string) []string {
+		var nElems []string
+		for _, elem := range elems {
+			nElems = append(nElems, fmt.Sprintf("  %v", elem))
+		}
+		return nElems
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Build HLS config for NGINX.
+	m3u8Conf := []string{
+		"proxy_pass http://127.0.0.1:8080$request_uri;",
+	}
+	tsConf := []string{
+		"proxy_pass http://127.0.0.1:8080$request_uri;",
+	}
+	if hls, err := rdb.HGet(ctx, SRS_STREAM_NGINX, "hls").Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hget %v hls", SRS_STREAM_NGINX)
+	} else if hls == "true" {
+		m3u8Conf = []string{
+			// Use NGINX to deliver m3u8 files.
+			fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.Pwd),
+			// Set the cache control, see http://nginx.org/en/docs/http/ngx_http_headers_module.html
+			`add_header Cache-Control "public, max-age=10";`,
+			// Allow CORS for all domain, see https://ubiq.co/tech-blog/enable-cors-nginx/
+			"add_header Access-Control-Allow-Origin *;",
+		}
+		tsConf = []string{
+			fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.Pwd),
+			`add_header Cache-Control "public, max-age=86400";`,
+			// Allow CORS for all domain, see https://ubiq.co/tech-blog/enable-cors-nginx/
+			"add_header Access-Control-Allow-Origin *;",
+		}
+	}
+
+	hlsConf := []string{
+		"",
+		"# For HLS delivery",
+		`location ~ ^/.+/.*\.(m3u8)$ {`,
+	}
+	hlsConf = append(hlsConf, prefixSpace(m3u8Conf)...)
+	hlsConf = append(hlsConf, "}")
+	hlsConf = append(hlsConf, `location ~ ^/.+/.*\.(ts)$ {`)
+	hlsConf = append(hlsConf, prefixSpace(tsConf)...)
+	hlsConf = append(hlsConf, "}")
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Build reverse proxy config for NGINX.
+	// Note that it's been removed, see SRS_HTTP_PROXY.
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Build the SSL/TLS config.
+	sslConf := []string{}
+	if ssl, err := rdb.Get(ctx, SRS_HTTPS).Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "get %v", SRS_HTTPS)
+	} else if ssl == "ssl" || ssl == "lets" {
+		sslConf = []string{
+			"",
+			"# For SSL/TLS config.",
+			"listen       443 ssl http2 default_server;",
+			"listen       [::]:443 ssl http2 default_server;",
+			"ssl_session_cache shared:SSL:1m;",
+			"ssl_session_timeout  10m;",
+			"ssl_ciphers HIGH:!aNULL:!MD5;",
+			"ssl_prefer_server_ciphers on;",
+			fmt.Sprintf(`ssl_certificate "%v/containers/ssl/nginx.crt";`, conf.Pwd),
+			fmt.Sprintf(`ssl_certificate_key "%v/containers/ssl/nginx.key";`, conf.Pwd),
+			"",
+			"# For automatic HTTPS.",
+			"location /.well-known/acme-challenge/ {",
+			"  proxy_pass http://127.0.0.1:2022$request_uri;",
+			"}",
+		}
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Build the default root.
+	// Note that it's been removed, see SRS_HTTP_PROXY.
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Build the upload limit for uploader(vLive).
+	uploadLimit := []string{
+		"",
+		"# Limit for upload file size",
+		"client_max_body_size 100g;",
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Build the config for NGINX.
+	confLines := []string{
+		"# !!! Important: SRS will restore this file during each upgrade, please never modify it.",
+	}
+	confLines = append(confLines, uploadLimit...)
+	confLines = append(confLines, sslConf...)
+	confLines = append(confLines, hlsConf...)
+	confLines = append(confLines, "", "")
+
+	confData := strings.Join(confLines, "\n")
+
+	fileName := "containers/conf/default.d/nginx.dynamic.conf"
+	if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
+		return errors.Wrapf(err, "open file %v", fileName)
+	} else if _, err = f.Write([]byte(confData)); err != nil {
+		return errors.Wrapf(err, "write file %v with %v", fileName, confData)
+	}
+
+	if err := execApi(ctx, "reloadNginx", nil, nil); err != nil {
+		return errors.Wrapf(err, "reload nginx")
+	}
+	logger.Tf(ctx, "NGINX: Refresh dynamic.conf ok")
+
+	return nil
+}
+
+// nginxHlsDelivery is to set whether deliver HLS by NGINX.
+func nginxHlsDelivery(ctx context.Context, enabled bool) error {
+	enabledValue := fmt.Sprintf("%v", enabled)
+	if err := rdb.HSet(ctx, SRS_STREAM_NGINX, "hls", enabledValue).Err(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hset %v hls %v", SRS_STREAM_NGINX, enabledValue)
+	}
+
+	logger.Tf(ctx, "nginxHlsDelivery enabled=%v", enabledValue)
+	return nil
+}
+
 // queryLatestVersion is to query the latest and stable version from SRS cloud API.
 func queryLatestVersion(ctx context.Context) (*Versions, error) {
 	// Request release api with params.
@@ -645,8 +774,48 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		params["region"] = r0
 	}
 
-	versions := &Versions{}
-	if err := execApi(ctx, "refreshVersion", []map[string]string{params}, versions); err != nil {
+	// Refresh the version from api.
+	refreshVersion := func(ctx context.Context, params map[string]string, resObj interface{}) error {
+		if params == nil {
+			return errors.Errorf("no params")
+		}
+
+		params["version"] = version
+		params["ts"] = fmt.Sprintf("%v", time.Now().UnixNano() / int64(time.Millisecond))
+		releaseServer := "https://api.ossrs.net"
+		if os.Getenv("LOCAL_RELEASE") != "" {
+			releaseServer = "http://localhost:2022"
+		}
+		logger.Tf(ctx, "Query %v with %v", releaseServer, params)
+
+		queries := []string{}
+		for k, v := range params {
+			queries = append(queries, fmt.Sprintf("%v=%v", k, v))
+		}
+		requestURL := fmt.Sprintf("%v/terraform/v1/releases?%v", releaseServer, strings.Join(queries, "&"))
+		res, err := http.Get(requestURL)
+		if err != nil {
+			return errors.Wrapf(err, "request %v", requestURL)
+		}
+		defer res.Body.Close()
+
+		b, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return errors.Wrapf(err, "read %v", requestURL)
+		}
+
+		if err := json.Unmarshal(b, resObj); err != nil {
+			return errors.Wrapf(err, "parse %v of %v", string(b), requestURL)
+		}
+
+		logger.Tf(ctx, "execApi req=%v, res is %v", params, resObj)
+		return nil
+	}
+
+	versions := &Versions{
+		Version: version,
+	}
+	if err := refreshVersion(ctx, params, versions); err != nil {
 		return nil, errors.Wrapf(err, "refresh version with %v", params)
 	}
 	return versions, nil

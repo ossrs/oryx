@@ -132,8 +132,6 @@ jobs:
           command_timeout: 30m
           script: |
             #
-            #ufw allow 8101
-            #
             export SRS_DROPLET_PIP=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
             echo "SRS_DROPLET_PIP=$SRS_DROPLET_PIP"
             #
@@ -142,6 +140,9 @@ jobs:
               if [[ $(docker ps -f name=docs-cloudversion |wc -l) -eq 1 ]]; then echo "Killed"; break; fi;
               docker rm -f docs-cloudversion; sleep 0.3;
             done
+            # Remove the old versions.
+            docker images |grep -q releases && docker rmi $(docker images |grep releases |awk '{print $2}')
+            # Start new releases.
             docker run -d -it --restart always --name docs-cloudversion -p 8101:9000 \
               registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
     runs-on: ubuntu-20.04

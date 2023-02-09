@@ -1,8 +1,6 @@
 const SRS_TERRAFORM_TOKEN = 'SRS_TERRAFORM_TOKEN';
 const SRS_CLOUD_LOCALE = 'SRS_CLOUD_LOCALE';
 
-const utils = require('js-core/utils');
-
 export const Token = {
   save(data) {
     localStorage.setItem(SRS_TERRAFORM_TOKEN, JSON.stringify(data));
@@ -112,9 +110,17 @@ export const Errors = {
   btHttps: 3001, // Please use BT to configure HTTPS.
 };
 
+function buildStreamURL (vhost, app, stream) {
+  if (vhost === '__defaultVhost__') {
+    return `${app}/${stream}`;
+  } else {
+    return `${vhost}/${app}/${stream}`;
+  }
+};
+
 export const StreamURL = {
   build: (vhost, app, stream) => {
-    return utils.streamURL(vhost, app, stream);
+    return buildStreamURL(vhost, app, stream);
   },
 };
 

@@ -749,19 +749,15 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Wrapf(err, "verify token %v", token)
 			}
 
-			enabledValue := "enable"
-			if !enabled {
-				enabledValue = "disable"
+			if err := nginxHlsDelivery(ctx, enabled); err != nil {
+				return errors.Wrapf(err, "nginxHlsDelivery %v", enabled)
 			}
-			if err := execApi(ctx, "nginxHlsDelivery", []string{enabledValue}, nil); err != nil {
-				return errors.Wrapf(err, "exec api nginxHlsDelivery %v", enabledValue)
-			}
-			if err := execApi(ctx, "nginxGenerateConfig", nil, nil); err != nil {
-				return errors.Wrapf(err, "exec api nginxGenerateConfig")
+			if err := nginxGenerateConfig(ctx); err != nil {
+				return errors.Wrapf(err, "nginx config and reload")
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "nginx hls ok, enabled=%v/%v, token=%vB", enabled, enabledValue, len(token))
+			logger.Tf(ctx, "nginx hls ok, enabled=%v, token=%vB", enabled, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

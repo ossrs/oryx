@@ -297,8 +297,6 @@ const mgmtDockerName = "mgmt"
 const (
 	// For LightHouse information, like region or source.
 	SRS_TENCENT_LH = "SRS_TENCENT_LH"
-	// For SRS stream status.
-	SRS_STREAM_NGINX = "SRS_STREAM_NGINX"
 	// For container and images.
 	SRS_CONTAINER_DISABLED = "SRS_CONTAINER_DISABLED"
 	SRS_DOCKER_IMAGES      = "SRS_DOCKER_IMAGES"

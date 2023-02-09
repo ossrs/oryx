@@ -288,8 +288,8 @@ func initPlatform(ctx context.Context) error {
 		logger.Tf(ctx, "boot setup, v=%v, key=%v", bootRelease, SRS_FIRST_BOOT)
 
 		// Generate the dynamic config for NGINX.
-		if err := execApi(ctx, "nginxGenerateConfig", nil, nil); err != nil {
-			return errors.Wrapf(err, "execApi nginxGenerateConfig")
+		if err := nginxGenerateConfig(ctx); err != nil {
+			return errors.Wrapf(err, "nginx config and reload")
 		}
 
 		// Remove containers for IP might change, and use network srs-cloud.

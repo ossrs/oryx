@@ -115,7 +115,6 @@ Mgmt:
 * `/terraform/v1/host/versions` Public version api.
 * `/terraform/v1/host/exec` Exec command sync, response the stdout and stderr.
 * `/terraform/v1/releases` Version management for all components.
-* `/.well-known/acme-challenge/` HTTPS verify mount for letsencrypt.
 
 Platform:
 
@@ -126,9 +125,6 @@ Platform:
 * `/terraform/v1/mgmt/login` System auth with password.
 * `/terraform/v1/mgmt/status` Query the version of mgmt.
 * `/terraform/v1/mgmt/envs` Query the envs of mgmt.
-* `/terraform/v1/mgmt/ssl` Config the system SSL config.
-* `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
-* `/terraform/v1/mgmt/pubkey` Update the access for platform administrator pubkey.
 * `/terraform/v1/mgmt/containers` Query and upgrade SRS container.
 * `/terraform/v1/mgmt/bilibili` Query the video information.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
@@ -187,6 +183,10 @@ Static Files:
 * `/terraform/v1/mgmt/nginx/homepage` Setup the homepage redirection.
 * `/terraform/v1/mgmt/window/query` Query the upgrade time window.
 * `/terraform/v1/mgmt/window/update` Update the upgrade time window.
+* `/.well-known/acme-challenge/` HTTPS verify mount for letsencrypt.
+* `/terraform/v1/mgmt/ssl` Config the system SSL config.
+* `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
+* `/terraform/v1/mgmt/pubkey` Update the access for platform administrator pubkey.
 
 ## Depends
 
