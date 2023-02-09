@@ -126,4 +126,5 @@ mgmt/ui/build
 releases/releases
 mgmt/mgmt
 platform/platform
+mgmt/mgmt.*
 

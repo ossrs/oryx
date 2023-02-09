@@ -28,6 +28,10 @@ fi
 bash auto/foreach_run
 if [[ $? -ne 0 ]]; then echo "Execute for each run script failed"; exit 1; fi
 
+# Switch target version in version.go
+bash auto/switch_mgmt_version
+if [[ $? -ne 0 ]]; then echo "Switch MGMT failed"; exit 1; fi
+
 # Start the application server.
 if [[ $(uname -s) == 'Darwin' ]]; then
   env NODE_ENV=development ./mgmt $APP_ARGS

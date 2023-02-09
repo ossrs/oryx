@@ -23,7 +23,3 @@ if [[ $? -ne 0 ]]; then echo "Setup redis failed"; exit 1; fi
 bash auto/setup_network
 if [[ $? -ne 0 ]]; then echo "Setup docker network failed"; exit 1; fi
 
-# Target version in version.go
-bash auto/switch_mgmt_version
-if [[ $? -ne 0 ]]; then echo "Switch MGMT failed"; exit 1; fi
-

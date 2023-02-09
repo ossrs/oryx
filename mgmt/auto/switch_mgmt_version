@@ -2,43 +2,25 @@
 
 echo "Try to switch mgmt version"
 
-# Get the metadata of machine.
-if [[ -f .env ]]; then source .env; fi
-echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
-
-TARGET_VERSION=$(cat version.go |grep 'const version' |awk '{print $4}' |sed 's/["v;]//g')
-CURRENT_VERSION=$(./mgmt -v 2>/dev/null)
-echo "Detect TARGET_VERSION=$TARGET_VERSION, CURRENT_VERSION=$CURRENT_VERSION"
-
-# Version ok.
-if [[ $TARGET_VERSION == $CURRENT_VERSION ]]; then
-  echo "MGMT version is ok"
-  exit 0
+# If no mgmt binary, create it from docker.
+if [[ ! -f mgmt ]]; then
+  # Prepare target version in version.go
+  bash auto/prepare_next_version
+  if [[ $? -ne 0 ]]; then echo "Prepare MGMT failed"; exit 1; fi
 fi
 
-# Use different docker registry.
-REGISTRY=registry.cn-hangzhou.aliyuncs.com
-if [[ $SOURCE == GITHUB || $SOURCE == github ]]; then REGISTRY=docker.io; fi
-if [[ $SOURCE == ""  && $(git remote -v |grep origin |grep -q github.com && echo yes) == yes ]]; then
-  echo "guess by git repository"
-  REGISTRY=docker.io
-fi
-echo "Detect REGISTRY=$REGISTRY"
+# If already prepared, switch to next version.
+if [[ -f mgmt.next ]]; then
+  # Remove current version file.
+  if [[ -f mgmt.current ]]; then
+    echo "Remove current version $(readlink mgmt.current)"
+    rm -f mgmt $(readlink mgmt.current 2>/dev/null)
+  fi
 
-# Ignore if utest, because the docker is not ready util the utest is passed.
-if [[ $SRS_UTEST != true ]]; then
-  echo "Switch $CURRENT_VERSION to $TARGET_VERSION"
-  # We must stop the service first, or the mgmt will be busy.
-  systemctl stop srs-cloud
-
-  # Generate new mgmt binary from docker image.
-  echo "Generate binary for $TARGET_VERSION" &&
-  docker pull $REGISTRY/ossrs/srs-cloud:platform-v$TARGET_VERSION &&
-  docker run --rm $REGISTRY/ossrs/srs-cloud:platform-v$TARGET_VERSION \
-    cat /usr/local/srs-cloud/mgmt/mgmt > mgmt
-  if [[ $? -ne 0 ]]; then echo "Switch MGMT failed"; exit 1; fi
+  echo "Create current version $(readlink mgmt.next)"
+  rm -f mgmt.current && ln -sf $(readlink mgmt.next) mgmt.current && rm -f mgmt.next
+  rm -f mgmt && ln -sf $(readlink mgmt.current) mgmt
 fi
 
-chmod +x mgmt
-echo "Switch to $TARGET_VERSION ok, version is $(./mgmt -v)"
+echo "Switch to $(./mgmt -v) ok"
 
