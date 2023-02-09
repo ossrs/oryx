@@ -15,6 +15,12 @@ COPY --from=build /usr/share/ca-certificates /usr/share/ca-certificates
 # overwrite it if not for platform, for example, used in releases.
 ENV PORT=":2024"
 
+# Setup the default node env, for both Go and nodejs env.
+ENV NODE_ENV=production
+
+# Run mgmt in docker.
+ENV MGMT_DOCKERIZED=true
+
 # Create link for compatible reason.
 RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform
 

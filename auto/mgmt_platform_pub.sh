@@ -51,15 +51,6 @@ git tag $TAG; git push origin $TAG
 git remote |grep -q gitee && git push gitee && git push gitee $TAG
 git remote |grep -q cloud && git push cloud && git push cloud $TAG
 
-######################################################################
-echo -e "\n\n"
-TAG="mgmt-v$VERSION"
-git tag -d $TAG 2>/dev/null && (git push origin :$TAG; git push gitee :$TAG)
-git tag $TAG; git push origin $TAG
-
-git remote |grep -q gitee && git push gitee && git push gitee $TAG
-git remote |grep -q cloud && git push cloud && git push cloud $TAG
-
 echo "publish $TAG ok"
 echo "    Please test it after https://github.com/ossrs/srs-cloud/actions/workflows/platform.yml done"
 echo "    Then release new latest version by: ./auto/releases_pub.sh"

@@ -9,8 +9,11 @@ RUN echo "BUILDPLATFORM: $BUILDPLATFORM, TARGETPLATFORM: $TARGETPLATFORM, TARGET
 
 ADD mgmt /g/mgmt
 ADD platform /g/platform
-WORKDIR /g/platform
 
+WORKDIR /g/mgmt
+RUN make
+
+WORKDIR /g/platform
 RUN make
 RUN cd /g/platform/ui && rm -rf js-core node_modules package* public src
 

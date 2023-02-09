@@ -17,7 +17,4 @@ FROM ${ARCH}ossrs/srs-cloud:alpine-1 AS dist
 
 COPY --from=build /g/mgmt /usr/local/srs-cloud/mgmt
 
-# TODO: FIXME: Implements it.
-#CMD ["./bootstrap"]
-CMD ["bash"]
-
+CMD ["./mgmt"]

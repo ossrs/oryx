@@ -11,5 +11,13 @@ RUN apk add bash
 # We write the common config for mgmt to base image, however you can
 # overwrite it if not for mgmt.
 ENV PORT=":2022"
+
+# Setup the default node env, for both Go and nodejs env.
+ENV NODE_ENV=production
+
+# Run mgmt in docker.
+ENV MGMT_DOCKERIZED=true
+
+# For compatibility.
 RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform
 WORKDIR /usr/local/srs-cloud/mgmt
