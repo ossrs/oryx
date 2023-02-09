@@ -269,10 +269,6 @@
     if (!services?.docker_manager) {
       deps.push({id: 'docker', title: 'Docker', call: 'bt.soft.install'});
     }
-    // For nodejs, user might not install any node version.
-    if (!services?.node) {
-      deps.push({id: 'nodejs', title: 'Node.js 16+', call: 'bt.soft.set_lib_config'});
-    }
 
     const tasks = await srs_cloud_request('installTasks');
     const notInstalledDeps = deps.filter(dep => {

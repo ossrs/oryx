@@ -36,8 +36,3 @@ fi
 cd ${DEPLOY_HOME} && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
 if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
 
-echo "Install nodejs 16"
-curl -sL https://deb.nodesource.com/setup_16.x -o /tmp/nodesource_setup.sh && bash /tmp/nodesource_setup.sh &&
-apt-get install -y nodejs
-if [[ $? -ne 0 ]]; then echo "Install nodejs failed"; exit 1; fi
-

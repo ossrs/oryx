@@ -35,7 +35,7 @@ if [[ $(uname -s) == 'Darwin' ]]; then
 fi
 
 ########################################################################################################################
-# Install depends services, except nodejs.
+# Install depends services.
 yum install -y git gcc-c++ gdb make tree dstat docker nginx &&
 systemctl enable docker nginx
 if [[ $? -ne 0 ]]; then echo "Install dependencies failed"; exit 1; fi

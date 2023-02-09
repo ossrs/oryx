@@ -36,7 +36,6 @@ class srs_cloud_main:
         status['docker_manager'] = public.ExecShell('ls {}/panel/plugin/docker >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
         status['docker'] = public.ExecShell('ls /usr/lib/systemd/system/docker.service >/dev/null 2>&1 && echo -n ok')[0]
         status['docker_running'] = public.ExecShell('systemctl status docker.service >/dev/null 2>&1 && echo -n ok')[0]
-        status['node'] = self.__node()[0]
         status['firewall'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__firewall))[0]
         status['site'] = public.ExecShell('ls {root}/{site} >/dev/null 2>&1 && echo -n ok'.format(
             root=public.get_site_path(), site=self.__site,
@@ -80,10 +79,6 @@ class srs_cloud_main:
         if 'start' not in args: args.start = 0
         if 'end' not in args: args.end = 0
 
-        nodejs = self.__node()[1]
-        if nodejs is None:
-            return public.returnMsg(False, 'no nodejs')
-
         nginx = '{}/nginx/logs/nginx.pid'.format(public.get_setup_path())
         if not os.path.exists(nginx):
             return public.returnMsg(False, 'no nginx')
@@ -96,8 +91,8 @@ class srs_cloud_main:
         [tail, wc] = ['', 0]
         r0 = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
         if running != 'ok' and srs != 'ok' and r0 != 'failed':
-            public.ExecShell('nohup bash {plugin}/setup.sh "{r0}" "{node}" "{nginx}" "{www}" "{site}" 1>{log} 2>&1 &'.format(
-                plugin=self.__plugin_path, r0=self.__r0_file, node=nodejs, nginx=nginx, www=public.get_site_path(),
+            public.ExecShell('nohup bash {plugin}/setup.sh "{r0}" "{nginx}" "{www}" "{site}" 1>{log} 2>&1 &'.format(
+                plugin=self.__plugin_path, r0=self.__r0_file, nginx=nginx, www=public.get_site_path(),
                 site=self.__site, log=self.__log_file,
             ))
         elif os.path.exists('/tmp/srs_cloud_install.log'):
@@ -210,18 +205,6 @@ class srs_cloud_main:
     def querySrsService(self, args):
         ok = public.ExecShell('systemctl status srs-cloud.service >/dev/null 2>&1 && echo -n ok')[0]
         return public.returnMsg(True, json.dumps({'active': ok}))
-
-    def __node(self):
-        # We try to find the first available node in /www/server then find by 'which node'.
-        node = public.ExecShell('for file in $(find {} -name node -type f); do $file --version >/dev/null 2>/dev/null && echo $file && break; done'.format(public.get_setup_path()))[0]
-        if node is not None and node != '':
-            ok = 'ok'
-        else:
-            ok = public.ExecShell('which node >/dev/null 2>&1 && echo -n ok')[0]
-            node = public.ExecShell('which node 2>/dev/null')[0]
-        if node is not None:
-            node = node.strip()
-        return [ok, node]
 
     def __discover_path(self, general_path):
         real_path = None

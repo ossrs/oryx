@@ -1,13 +1,11 @@
 #!/bin/bash
 
 # Install srs-cloud, for example:
-#   bash /www/server/panel/plugin/srs_cloud/setup.sh /tmp/srs_cloud_install.r0 /www/server/nodejs/v16.9.0/bin/node /www/server/nginx/logs/nginx.pid /www/wwwroot srs.cloud.local
+#   bash /www/server/panel/plugin/srs_cloud/setup.sh /tmp/srs_cloud_install.r0 /www/server/nginx/logs/nginx.pid /www/wwwroot srs.cloud.local
 # If ok, we will create systemctl service at:
 #   /usr/lib/systemd/system/srs-cloud.service
 
-R0_FILE=$1; NODEJS=$2; NGINX_PID=$3; WWW_HOME=$4; SITE_NAME=$5
-if [[ -z $NODEJS ]]; then echo "The nodejs is empty"; exit 1; fi
-if [[ ! -f $NODEJS ]]; then echo "No nodejs installed"; exit 1; fi
+R0_FILE=$1; NGINX_PID=$2; WWW_HOME=$3; SITE_NAME=$4
 if [[ -z $NGINX_PID ]]; then echo "The nginx is empty"; exit 1; fi
 if [[ ! -f $NGINX_PID ]]; then echo "No nginx pid at $NGINX_PID"; exit 1; fi
 if [[ ! -f /etc/init.d/nginx ]]; then echo "No nginx file at /etc/init.d/nginx"; exit 1; fi
@@ -18,21 +16,16 @@ if [[ -z $SITE_NAME ]]; then echo "No site name"; exit 1; fi
 install_path=/www/server/panel/plugin/srs_cloud
 SRS_HOME=/usr/local/srs-cloud
 INSTALL_HOME=/usr/local/srs-cloud
-echo "Setup SRS at install_path=$install_path, SRS_HOME=$SRS_HOME, INSTALL_HOME=$INSTALL_HOME, NODEJS=$NODEJS, NGINX_PID=$NGINX_PID, WWW_HOME=$WWW_HOME, SITE_NAME=$SITE_NAME"
+echo "Setup SRS at install_path=$install_path, SRS_HOME=$SRS_HOME, INSTALL_HOME=$INSTALL_HOME, NGINX_PID=$NGINX_PID, WWW_HOME=$WWW_HOME, SITE_NAME=$SITE_NAME"
 
 source do_os.sh
 if [[ $? -ne 0 ]]; then echo "Setup OS failed"; exit 1; fi
 
 ########################################################################################################################
-# Setup the PATH for nodejs.
-export PATH=$PATH:$(dirname $NODEJS)
-
-# Generate PATH for node.
+# Generate PATH for nginx.
 mkdir -p $SRS_HOME/mgmt/containers/bin &&
 cat << END > $SRS_HOME/mgmt/containers/bin/bootstrap
 #!/bin/bash
-NODEJS=$(dirname $NODEJS)
-export PATH=\$PATH:\$NODEJS
 
 NGINX_PID=$NGINX_PID
 export NGINX_PID=\$NGINX_PID
