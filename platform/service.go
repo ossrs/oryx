@@ -1010,6 +1010,7 @@ func (v *dockerSrsManager) Start(ctx context.Context) error {
 		// We must mount the player and console because the HTTP home of SRS is overwrite by DVR.
 		"-v", fmt.Sprintf("%v/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html", conf.Pwd),
 		"-v", fmt.Sprintf("%v/containers/www/console:/usr/local/srs/www/console", conf.Pwd),
+		"-v", fmt.Sprintf("%v/containers/www/players:/usr/local/srs/www/players", conf.Pwd),
 		"-p", "1935:1935/tcp", "-p", "1985:1985/tcp", "-p", "8080:8080/tcp",
 		"-p", "8000:8000/udp", "-p", "10080:10080/udp",
 		// Append env which might not be used by SRS.
