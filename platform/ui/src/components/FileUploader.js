@@ -41,7 +41,7 @@ export default function FileUploader({onFilesUploaded}) {
         console.log(`Uploader: start to upload ${file.name} ${JSON.stringify(fileInfo)}`);
 
         const formData = new FormData();
-        const sessionName = 'attach-file-0';
+        const sessionName = file.name;
         formData.append(sessionName, file);
 
         axios.post(`/terraform/v1/ffmpeg/vlive/upload/${sessionName}`, formData, {

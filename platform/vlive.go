@@ -238,30 +238,50 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 	ep = "/terraform/v1/ffmpeg/vlive/upload/"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
-		if err := func() error {
+		if err := func(ctx context.Context) error {
 			filename := r.URL.Path[len("/terraform/v1/ffmpeg/vlive/upload/"):]
 
-			// Allow 99GB
-			if err := r.ParseMultipartForm(99 * 1024 * 1024 * 1024); err != nil {
-				return errors.Wrapf(err, "parse multi form for %v", filename)
-			}
-
-			f, h, err := r.FormFile(filename)
-			if err != nil {
-				return errors.Wrapf(err, "get form file %v %v", filename, h.Filename)
-			}
-			defer f.Close()
-
 			targetUUID := uuid.NewString()
-			targetFileName := path.Join(dirUploadPath, fmt.Sprintf("%v%v", targetUUID, path.Ext(h.Filename)))
+			targetFileName := path.Join(dirUploadPath, fmt.Sprintf("%v%v", targetUUID, path.Ext(filename)))
+			logger.Tf(ctx, "create %v for %v", targetFileName, filename)
+
 			targetFile, err := os.OpenFile(targetFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 			if err != nil {
 				return errors.Wrapf(err, "open file %v", targetFileName)
 			}
 			defer targetFile.Close()
 
-			if _, err = io.Copy(targetFile, f); err != nil {
-				return errors.Wrapf(err, "copy %v to %v", targetFile, h.Filename)
+			// See https://github.com/rfielding/uploader/blob/master/uploader.go#L170
+			mr, err := r.MultipartReader()
+			if err != nil {
+				return errors.Wrapf(err, "multi reader")
+			}
+
+			starttime := time.Now()
+			var written int64
+			for {
+				part, err := mr.NextPart()
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+					return errors.Wrapf(err, "next part")
+				}
+
+				if filename != part.FileName() {
+					return errors.Errorf("filename=%v mismatch %v", part.FileName(), filename)
+				}
+				logger.Tf(ctx, "start part for %v", targetFileName)
+
+				partStarttime := time.Now()
+				if nn, err := io.Copy(targetFile, part); err != nil {
+					return errors.Wrapf(err, "copy %v to %v", targetFile, filename)
+				} else {
+					written += nn
+					logger.Tf(ctx, "finish part for %v, nn=%v, writen=%v, cost=%v",
+						targetFileName, nn, written, time.Now().Sub(partStarttime),
+					)
+				}
 			}
 
 			ohttp.WriteData(ctx, w, r, &struct {
@@ -270,9 +290,9 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}{
 				UUID: targetUUID, Target: targetFileName,
 			})
-			logger.Tf(ctx, "Got vlive target=%v, size=%v", targetFileName, h.Size)
+			logger.Tf(ctx, "Got vlive target=%v, size=%v, cost=%v", targetFileName, written, time.Now().Sub(starttime))
 			return nil
-		}(); err != nil {
+		}(logger.WithContext(ctx)); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
@@ -374,7 +394,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					return errors.Wrapf(err, "parse format %v", stdout)
 				}
 
-				videos := struct{
+				videos := struct {
 					Streams []VLiveFileVideo `json:"streams"`
 				}{}
 				if err = json.Unmarshal([]byte(stdout), &videos); err != nil {
@@ -389,7 +409,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					}
 				}
 
-				audios := struct{
+				audios := struct {
 					Streams []VLiveFileAudio `json:"streams"`
 				}{}
 				if err = json.Unmarshal([]byte(stdout), &audios); err != nil {
@@ -449,8 +469,8 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}
 
 			ohttp.WriteData(ctx, w, r, &struct {
-				Platform string `json:"platform"`
-				Files []*VLiveSourceFile `json:"files"`
+				Platform string             `json:"platform"`
+				Files    []*VLiveSourceFile `json:"files"`
 			}{
 				Platform: platform, Files: parsedFiles,
 			})
@@ -898,7 +918,7 @@ func (v *VLiveTask) doVLive(ctx context.Context, input *VLiveSourceFile) error {
 		// If we got a PID, sleep for a while, to avoid too fast restart.
 		if v.PID > 0 {
 			select {
-			case <- ctx.Done():
+			case <-ctx.Done():
 			case <-time.After(1 * time.Second):
 			}
 		}
