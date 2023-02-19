@@ -20,7 +20,6 @@ import (
 	"path"
 	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ossrs/go-oryx-lib/errors"
@@ -71,7 +70,7 @@ func (v Versions) String() string {
 // TODO: FIXME: Should be merged to mgmt.
 type Config struct {
 	IsDarwin bool
-	Pwd      string
+	MgmtPwd  string
 
 	Cloud    string
 	Region   string
@@ -81,8 +80,6 @@ type Config struct {
 	ipv4  net.IP
 	Iface string
 
-	// The platform for SRS cloud, not the GOOS, for report and statistic only.
-	Platform string
 	// The latest and stable version from SRS cloud API.
 	Versions Versions
 }
@@ -100,121 +97,14 @@ func (v *Config) IPv4() string {
 
 func (v *Config) String() string {
 	return fmt.Sprintf("darwin=%v, cloud=%v, region=%v, source=%v, registry=%v, iface=%v, ipv4=%v, pwd=%v, "+
-		"platform=%v, version=%v, latest=%v, stable=%v",
-		v.IsDarwin, v.Cloud, v.Region, v.Source, v.Registry, v.Iface, v.IPv4(), v.Pwd, v.Platform, v.Versions.Version,
+		"version=%v, latest=%v, stable=%v",
+		v.IsDarwin, v.Cloud, v.Region, v.Source, v.Registry, v.Iface, v.IPv4(), v.MgmtPwd, v.Versions.Version,
 		v.Versions.Latest, v.Versions.Stable,
 	)
 }
 
 // conf is a global config object.
 var conf *Config
-
-func discoverRegion(ctx context.Context) (cloud, region string, err error) {
-	if conf.IsDarwin {
-		return "DEV", "ap-beijing", nil
-	}
-
-	if os.Getenv("CLOUD") == "BT" {
-		return "BT", "ap-beijing", nil
-	}
-
-	if os.Getenv("CLOUD") == "AAPANEL" {
-		return "AAPANEL", "ap-singapore", nil
-	}
-
-	if os.Getenv("CLOUD") != "" && os.Getenv("REGION") != "" {
-		return os.Getenv("CLOUD"), os.Getenv("REGION"), nil
-	}
-
-	logger.Tf(ctx, "Initialize start to discover region")
-
-	var wg sync.WaitGroup
-	defer wg.Wait()
-
-	discoverCtx, discoverCancel := context.WithCancel(ctx)
-	result := make(chan Config, 2)
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		res, err := http.Get("http://metadata.tencentyun.com/latest/meta-data/placement/region")
-		if err != nil {
-			logger.Tf(ctx, "Ignore tencent region err %v", err)
-			return
-		}
-		defer res.Body.Close()
-
-		b, err := io.ReadAll(res.Body)
-		if err != nil {
-			logger.Tf(ctx, "Ignore tencent region err %v", err)
-			return
-		}
-
-		select {
-		case <-discoverCtx.Done():
-		case result <- Config{Cloud: "TENCENT", Region: string(b)}:
-			discoverCancel()
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		// See https://docs.digitalocean.com/reference/api/metadata-api/#operation/getRegion
-		res, err := http.Get("http://169.254.169.254/metadata/v1/region")
-		if err != nil {
-			logger.Tf(ctx, "Ignore do region err %v", err)
-			return
-		}
-		defer res.Body.Close()
-
-		b, err := io.ReadAll(res.Body)
-		if err != nil {
-			logger.Tf(ctx, "Ignore do region err %v", err)
-			return
-		}
-
-		select {
-		case <-discoverCtx.Done():
-		case result <- Config{Cloud: "DO", Region: string(b)}:
-			discoverCancel()
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-	case r := <-result:
-		return r.Cloud, r.Region, nil
-	}
-	return
-}
-
-func discoverSource(ctx context.Context, cloud, region string) (source string, err error) {
-	switch cloud {
-	case "DEV", "BT":
-		return "gitee", nil
-	case "DO", "AAPANEL":
-		return "github", nil
-	}
-
-	for _, r := range []string{
-		"ap-guangzhou", "ap-shanghai", "ap-nanjing", "ap-beijing", "ap-chengdu", "ap-chongqing",
-	} {
-		if strings.HasPrefix(region, r) {
-			return "gitee", nil
-		}
-	}
-	return "github", nil
-}
-
-func discoverRegistry(ctx context.Context, source string) (registry string, err error) {
-	if source == "github" {
-		return "docker.io", nil
-	}
-	return "registry.cn-hangzhou.aliyuncs.com", nil
-}
 
 func discoverPlatform(ctx context.Context, cloud string) (platform string, err error) {
 	switch cloud {
@@ -248,54 +138,6 @@ func discoverPlatform(ctx context.Context, cloud string) (platform string, err e
 	return "cvm", nil
 }
 
-func discoverPrivateIPv4(ctx context.Context) (string, net.IP, error) {
-	candidates := make(map[string]net.IP)
-
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		return "", nil, err
-	}
-	for _, iface := range ifaces {
-		addrs, err := iface.Addrs()
-		if err != nil {
-			return "", nil, err
-		}
-
-		for _, addr := range addrs {
-			if addr, ok := addr.(*net.IPNet); ok {
-				if addr.IP.To4() != nil && !addr.IP.IsLoopback() {
-					candidates[iface.Name] = addr.IP
-				}
-			}
-		}
-	}
-
-	var bestMatch string
-	for name, _ := range candidates {
-		if strings.HasPrefix(name, "en") || strings.HasPrefix(name, "eth") {
-			bestMatch = name
-			break
-		}
-	}
-
-	if bestMatch == "" {
-		for name, _ := range candidates {
-			bestMatch = name
-			break
-		}
-	}
-
-	var privateIPv4 net.IP
-	if bestMatch != "" {
-		if addr, ok := candidates[bestMatch]; ok {
-			privateIPv4 = addr
-		}
-	}
-
-	logger.Tf(ctx, "Refresh ipv4=%v, bestMatch=%v, candidates=%v", privateIPv4, bestMatch, candidates)
-	return bestMatch, privateIPv4, nil
-}
-
 // Docker container names.
 const redisDockerName = "redis"
 const platformDockerName = "platform"
@@ -303,9 +145,6 @@ const srsDockerName = "srs-server"
 
 // Note that we only enable srs-server, never enable srs-dev.
 const srsDevDockerName = "srs-dev"
-
-// Note that we only use the docker to release binary for different CPU archs.
-const mgmtDockerName = "mgmt"
 
 // Redis keys.
 const (
@@ -522,14 +361,14 @@ func nginxGenerateConfig(ctx context.Context) error {
 	} else if hls == "true" {
 		m3u8Conf = []string{
 			// Use NGINX to deliver m3u8 files.
-			fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.Pwd),
+			fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.MgmtPwd),
 			// Set the cache control, see http://nginx.org/en/docs/http/ngx_http_headers_module.html
 			`add_header Cache-Control "public, max-age=10";`,
 			// Allow CORS for all domain, see https://ubiq.co/tech-blog/enable-cors-nginx/
 			"add_header Access-Control-Allow-Origin *;",
 		}
 		tsConf = []string{
-			fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.Pwd),
+			fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.MgmtPwd),
 			`add_header Cache-Control "public, max-age=86400";`,
 			// Allow CORS for all domain, see https://ubiq.co/tech-blog/enable-cors-nginx/
 			"add_header Access-Control-Allow-Origin *;",
@@ -566,8 +405,8 @@ func nginxGenerateConfig(ctx context.Context) error {
 			"ssl_session_timeout  10m;",
 			"ssl_ciphers HIGH:!aNULL:!MD5;",
 			"ssl_prefer_server_ciphers on;",
-			fmt.Sprintf(`ssl_certificate "%v/containers/ssl/nginx.crt";`, conf.Pwd),
-			fmt.Sprintf(`ssl_certificate_key "%v/containers/ssl/nginx.key";`, conf.Pwd),
+			fmt.Sprintf(`ssl_certificate "%v/containers/ssl/nginx.crt";`, conf.MgmtPwd),
+			fmt.Sprintf(`ssl_certificate_key "%v/containers/ssl/nginx.key";`, conf.MgmtPwd),
 			"",
 			"# For automatic HTTPS.",
 			"location /.well-known/acme-challenge/ {",
@@ -781,7 +620,7 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		}
 
 		params["version"] = version
-		params["ts"] = fmt.Sprintf("%v", time.Now().UnixNano() / int64(time.Millisecond))
+		params["ts"] = fmt.Sprintf("%v", time.Now().UnixNano()/int64(time.Millisecond))
 		releaseServer := "https://api.ossrs.net"
 		if os.Getenv("LOCAL_RELEASE") != "" {
 			releaseServer = "http://localhost:2022"

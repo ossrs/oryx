@@ -157,7 +157,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 
 			// Initialize the system password, save to env.
 			// Please note that the conf.Pwd is the work directory of mgmt, not platform.
-			envFile := path.Join(conf.Pwd, ".env")
+			envFile := path.Join(conf.MgmtPwd, ".env")
 			if envs, err := godotenv.Read(envFile); err != nil {
 				return errors.Wrapf(err, "load envs from %v", envFile)
 			} else {
@@ -1004,13 +1004,13 @@ func (v *dockerSrsManager) Start(ctx context.Context) error {
 	args := []string{
 		"run", "-d", "--restart=always", "--privileged", fmt.Sprintf("--name=%v", srsDockerName),
 		"--log-driver=json-file", "--log-opt=max-size=1g", "--log-opt=max-file=3",
-		"-v", fmt.Sprintf("%v/containers/conf/srs.release.conf:/usr/local/srs/conf/lighthouse.conf", conf.Pwd),
+		"-v", fmt.Sprintf("%v/containers/conf/srs.release.conf:/usr/local/srs/conf/lighthouse.conf", conf.MgmtPwd),
 		// Note that we mount the whole www directory, so we must build the static files such as players.
-		"-v", fmt.Sprintf("%v/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html", conf.Pwd),
+		"-v", fmt.Sprintf("%v/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html", conf.MgmtPwd),
 		// We must mount the player and console because the HTTP home of SRS is overwrite by DVR.
-		"-v", fmt.Sprintf("%v/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html", conf.Pwd),
-		"-v", fmt.Sprintf("%v/containers/www/console:/usr/local/srs/www/console", conf.Pwd),
-		"-v", fmt.Sprintf("%v/containers/www/players:/usr/local/srs/www/players", conf.Pwd),
+		"-v", fmt.Sprintf("%v/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html", conf.MgmtPwd),
+		"-v", fmt.Sprintf("%v/containers/www/console:/usr/local/srs/www/console", conf.MgmtPwd),
+		"-v", fmt.Sprintf("%v/containers/www/players:/usr/local/srs/www/players", conf.MgmtPwd),
 		"-p", "1935:1935/tcp", "-p", "1985:1985/tcp", "-p", "8080:8080/tcp",
 		"-p", "8000:8000/udp", "-p", "10080:10080/udp",
 		// Append env which might not be used by SRS.

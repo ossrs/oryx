@@ -21,7 +21,6 @@ import (
 
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
-	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
 
@@ -45,6 +44,12 @@ func doMain(ctx context.Context) error {
 	if showVersion {
 		fmt.Println(strings.TrimPrefix(version, "v"))
 		os.Exit(0)
+	}
+
+	setEnvDefault := func (key, value string) {
+		if os.Getenv(key) == "" {
+			os.Setenv(key, value)
+		}
 	}
 
 	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
@@ -166,23 +171,6 @@ func initOS(ctx context.Context) (err error) {
 		return errors.Wrapf(err, "discover registry")
 	}
 
-	// Discover the platform, not the GOOS, for report and statistic only.
-	if conf.Platform, err = discoverPlatform(ctx, conf.Cloud); err != nil {
-		return errors.Wrapf(err, "discover platform")
-	}
-
-	// Create directories for data, allow user to link it.
-	for _, dir := range []string{
-		"containers/data/dvr", "containers/data/record", "containers/data/vod",
-		"containers/data/upload", "containers/data/vlive",
-	} {
-		if _, err := os.Stat(dir); err != nil && os.IsNotExist(err) {
-			if err = os.MkdirAll(dir, os.ModeDir|os.FileMode(0755)); err != nil {
-				return errors.Wrapf(err, "create dir %v", dir)
-			}
-		}
-	}
-
 	// Start a goroutine to update ipv4 of config.
 	if err := refreshIPv4(ctx); err != nil {
 		return errors.Wrapf(err, "refresh ipv4")
@@ -224,42 +212,6 @@ func refreshIPv4(ctx context.Context) error {
 
 // Initialize the platform before thread run.
 func initMmgt(ctx context.Context) error {
-	// Cancel upgrading.
-	if upgrading, err := rdb.HGet(ctx, SRS_UPGRADING, "upgrading").Result(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hget %v upgrading", SRS_UPGRADING)
-	} else if upgrading == "1" {
-		if err = rdb.HSet(ctx, SRS_UPGRADING, "upgrading", "0").Err(); err != nil && err != redis.Nil {
-			return errors.Wrapf(err, "hset %v upgrading 0", SRS_UPGRADING)
-		}
-	}
-
-	// Initialize the node id.
-	if nid, err := rdb.HGet(ctx, SRS_TENCENT_LH, "node").Result(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hget %v node", SRS_TENCENT_LH)
-	} else if nid == "" {
-		nid = uuid.NewString()
-		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "node", nid).Err(); err != nil {
-			return errors.Wrapf(err, "hset %v node %v", SRS_TENCENT_LH, nid)
-		}
-		logger.Tf(ctx, "Update node nid=%v", nid)
-	}
-
-	// Create api secret if not exists, see setupApiSecret
-	if token, err := rdb.HGet(ctx, SRS_PLATFORM_SECRET, "token").Result(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hget %v token", SRS_PLATFORM_SECRET)
-	} else if token == "" {
-		token = fmt.Sprintf("srs-v1-%v", strings.ReplaceAll(uuid.NewString(), "-", ""))
-		if err = rdb.HSet(ctx, SRS_PLATFORM_SECRET, "token", token).Err(); err != nil {
-			return errors.Wrapf(err, "hset %v token %v", SRS_PLATFORM_SECRET, token)
-		}
-
-		update := time.Now().Format(time.RFC3339)
-		if err = rdb.HSet(ctx, SRS_PLATFORM_SECRET, "update", update).Err(); err != nil {
-			return errors.Wrapf(err, "hset %v update %v", SRS_PLATFORM_SECRET, update)
-		}
-		logger.Tf(ctx, "Platform api secret update, token=%vB, update=%v", len(token), update)
-	}
-
 	// Load the cloud first, because it never changed.
 	if cloud, err := rdb.HGet(ctx, SRS_TENCENT_LH, "cloud").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v cloud", SRS_TENCENT_LH)
@@ -300,16 +252,6 @@ func initMmgt(ctx context.Context) error {
 		logger.Tf(ctx, "Update registry=%v", conf.Registry)
 	}
 
-	// Load the platform first, because it never changed.
-	if platform, err := rdb.HGet(ctx, SRS_TENCENT_LH, "platform").Result(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hget %v platform", SRS_TENCENT_LH)
-	} else if platform == "" || conf.Platform != platform {
-		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "platform", conf.Platform).Err(); err != nil {
-			return errors.Wrapf(err, "hset %v platform %v", SRS_TENCENT_LH, conf.Platform)
-		}
-		logger.Tf(ctx, "Update platform=%v", conf.Platform)
-	}
-
 	// Refresh the env file.
 	if envs, err := godotenv.Read(".env"); err != nil {
 		return errors.Wrapf(err, "load envs")
@@ -335,18 +277,6 @@ func initMmgt(ctx context.Context) error {
 			os.Setenv("SRS_PLATFORM_SECRET", token)
 			logger.Tf(ctx, "Update api secret to %vB", len(token))
 		}
-	}
-
-	// Disable srs-dev, only enable srs-server.
-	if srsDevEnabled, err := rdb.HGet(ctx, SRS_CONTAINER_DISABLED, srsDevDockerName).Result(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hget %v %v", SRS_CONTAINER_DISABLED, srsDevDockerName)
-	} else if srsEnabled, err := rdb.HGet(ctx, SRS_CONTAINER_DISABLED, srsDockerName).Result(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hget %v %v", SRS_CONTAINER_DISABLED, srsDockerName)
-	} else if srsDevEnabled != "true" && srsEnabled == "true" {
-		r0 := rdb.HSet(ctx, SRS_CONTAINER_DISABLED, srsDevDockerName, "true").Err()
-		r1 := rdb.HSet(ctx, SRS_CONTAINER_DISABLED, srsDockerName, "false").Err()
-		r2 := removeContainer(ctx, srsDevDockerName)
-		logger.Wf(ctx, "Disable srs-dev r0=%v, r2=%v, only enable srs-server r1=%v", r0, r2, r1)
 	}
 
 	// Cleanup the previous unused images.

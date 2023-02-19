@@ -9,7 +9,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"net"
 	"os"
 	"os/signal"
@@ -21,6 +20,8 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	"github.com/ossrs/go-oryx-lib/logger"
 
+	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
+	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
@@ -184,7 +185,7 @@ func initOS(ctx context.Context) (err error) {
 	if err = execApi(ctx, "cwd", nil, &struct {
 		Cwd *string `json:"cwd"`
 	}{
-		Cwd: &conf.Pwd,
+		Cwd: &conf.MgmtPwd,
 	}); err != nil {
 		return errors.Wrapf(err, "get pwd")
 	}
@@ -212,6 +213,16 @@ func initOS(ctx context.Context) (err error) {
 		return errors.Wrapf(err, "hget %v registry", SRS_TENCENT_LH)
 	} else {
 		conf.Registry = registry
+	}
+
+	// Discover and update the platform for stat only, not the OS platform.
+	if platform, err := discoverPlatform(ctx, conf.Cloud); err != nil {
+		return errors.Wrapf(err, "discover platform by cloud=%v", conf.Cloud)
+	} else {
+		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "platform", platform).Err(); err != nil {
+			return errors.Wrapf(err, "hset %v platform %v", SRS_TENCENT_LH, platform)
+		}
+		logger.Tf(ctx, "Update platform=%v", platform)
 	}
 
 	// Request the host platform OS, whether the OS is Darwin.
@@ -280,6 +291,18 @@ func initPlatform(ctx context.Context) error {
 		os.Setenv("PATH", fmt.Sprintf("%v:/usr/local/bin", os.Getenv("PATH")))
 	}
 
+	// Create directories for data, allow user to link it.
+	for _, dir := range []string{
+		"containers/data/dvr", "containers/data/record", "containers/data/vod",
+		"containers/data/upload", "containers/data/vlive",
+	} {
+		if _, err := os.Stat(dir); err != nil && os.IsNotExist(err) {
+			if err = os.MkdirAll(dir, os.ModeDir|os.FileMode(0755)); err != nil {
+				return errors.Wrapf(err, "create dir %v", dir)
+			}
+		}
+	}
+
 	// Run only once for a special version.
 	bootRelease := "v23"
 	if firstRun, err := rdb.HGet(ctx, SRS_FIRST_BOOT, bootRelease).Result(); err != nil && err != redis.Nil {
@@ -325,6 +348,18 @@ func initPlatform(ctx context.Context) error {
 		return errors.Wrapf(err, "refresh latest version")
 	}
 
+	// Disable srs-dev, only enable srs-server.
+	if srsDevEnabled, err := rdb.HGet(ctx, SRS_CONTAINER_DISABLED, srsDevDockerName).Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hget %v %v", SRS_CONTAINER_DISABLED, srsDevDockerName)
+	} else if srsEnabled, err := rdb.HGet(ctx, SRS_CONTAINER_DISABLED, srsDockerName).Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hget %v %v", SRS_CONTAINER_DISABLED, srsDockerName)
+	} else if srsDevEnabled != "true" && srsEnabled == "true" {
+		r0 := rdb.HSet(ctx, SRS_CONTAINER_DISABLED, srsDevDockerName, "true").Err()
+		r1 := rdb.HSet(ctx, SRS_CONTAINER_DISABLED, srsDockerName, "false").Err()
+		r2 := execApi(ctx, "rmContainer", []string{srsDevDockerName}, nil)
+		logger.Wf(ctx, "Disable srs-dev r0=%v, r2=%v, only enable srs-server r1=%v", r0, r2, r1)
+	}
+
 	// For SRS, if release enabled, disable dev automatically.
 	if srsReleaseDisabled, err := rdb.HGet(ctx, SRS_CONTAINER_DISABLED, srsDockerName).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v %v", SRS_CONTAINER_DISABLED, srsDockerName)
@@ -368,6 +403,42 @@ func initPlatform(ctx context.Context) error {
 				logger.Tf(ctx, "migrate %v to %v with %v keys", migrate.PVK, migrate.CVK, len(vs))
 			}
 		}
+	}
+
+	// Cancel upgrading.
+	if upgrading, err := rdb.HGet(ctx, SRS_UPGRADING, "upgrading").Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hget %v upgrading", SRS_UPGRADING)
+	} else if upgrading == "1" {
+		if err = rdb.HSet(ctx, SRS_UPGRADING, "upgrading", "0").Err(); err != nil && err != redis.Nil {
+			return errors.Wrapf(err, "hset %v upgrading 0", SRS_UPGRADING)
+		}
+	}
+
+	// Initialize the node id.
+	if nid, err := rdb.HGet(ctx, SRS_TENCENT_LH, "node").Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hget %v node", SRS_TENCENT_LH)
+	} else if nid == "" {
+		nid = uuid.NewString()
+		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "node", nid).Err(); err != nil {
+			return errors.Wrapf(err, "hset %v node %v", SRS_TENCENT_LH, nid)
+		}
+		logger.Tf(ctx, "Update node nid=%v", nid)
+	}
+
+	// Create api secret if not exists, see setupApiSecret
+	if token, err := rdb.HGet(ctx, SRS_PLATFORM_SECRET, "token").Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hget %v token", SRS_PLATFORM_SECRET)
+	} else if token == "" {
+		token = fmt.Sprintf("srs-v1-%v", strings.ReplaceAll(uuid.NewString(), "-", ""))
+		if err = rdb.HSet(ctx, SRS_PLATFORM_SECRET, "token", token).Err(); err != nil {
+			return errors.Wrapf(err, "hset %v token %v", SRS_PLATFORM_SECRET, token)
+		}
+
+		update := time.Now().Format(time.RFC3339)
+		if err = rdb.HSet(ctx, SRS_PLATFORM_SECRET, "update", update).Err(); err != nil {
+			return errors.Wrapf(err, "hset %v update %v", SRS_PLATFORM_SECRET, update)
+		}
+		logger.Tf(ctx, "Platform api secret update, token=%vB, update=%v", len(token), update)
 	}
 
 	return nil
