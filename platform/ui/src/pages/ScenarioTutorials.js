@@ -8,7 +8,6 @@ export default function ScenarioTutorials() {
       {author: '徐光磊', id: 'BV1RS4y1G7tb'},
       {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
       {author: 'SRS', id: 'BV1Nb4y1t7ij'},
-      {author: '瓦全', id: 'BV1SF411t7Li'},
       {author: '王大江', id: 'BV16r4y1q7ZT'},
       {author: '马景瑞', id: 'BV1c341177e7'},
       {author: '周亮', id: 'BV1gT4y1U76d'},
