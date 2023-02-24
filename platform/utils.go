@@ -139,7 +139,6 @@ func discoverPlatform(ctx context.Context, cloud string) (platform string, err e
 }
 
 // Docker container names.
-const redisDockerName = "redis"
 const platformDockerName = "platform"
 const srsDockerName = "srs-server"
 
@@ -186,6 +185,7 @@ const (
 	SRS_CONTAINER_DISABLED = "SRS_CONTAINER_DISABLED"
 	// For system settings.
 	SRS_SECRET_PUBLISH  = "SRS_SECRET_PUBLISH"
+	SRS_DOCKER_IMAGES      = "SRS_DOCKER_IMAGES"
 	SRS_AUTH_SECRET     = "SRS_AUTH_SECRET"
 	SRS_FIRST_BOOT      = "SRS_FIRST_BOOT"
 	SRS_UPGRADING       = "SRS_UPGRADING"
@@ -257,13 +257,15 @@ func createToken(ctx context.Context, apiSecret string) (expireAt, createAt time
 
 // For platform to execute RPC by HTTP API.
 func execApi(ctx context.Context, action string, args interface{}, resObj interface{}) error {
-	_, _, token, err := createToken(ctx, os.Getenv("SRS_PLATFORM_SECRET"))
+	// Note that we use mgmt password, because redis is not available for mgmt.
+	_, _, token, err := createToken(ctx, os.Getenv("MGMT_PASSWORD"))
 	if err != nil {
 		return errors.Wrapf(err, "build token")
 	}
 
 	server := "localhost"
-	if os.Getenv("NODE_ENV") != "development" {
+	// If not development or in docker, we use the virtual host.
+	if os.Getenv("NODE_ENV") != "development" || os.Getenv("SRS_DOCKERIZED") == "true" {
 		server = "mgmt.srs.local"
 	}
 

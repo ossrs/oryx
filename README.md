@@ -234,13 +234,17 @@ When user setup the system, the admin password for the first boot:
 The optional environments defined by `mgmt/.env`:
 
 * `MGMT_PASSWORD`: The mgmt administrator password.
-* `SRS_PLATFORM_SECRET`: The mgmt api secret for token generating and verifying.
 * `CLOUD`: The cloud platform name, DEV for development.
 * `REGION`: `ap-guangzhou|ap-singapore|sgp1`, The region for upgrade source.
 * `SOURCE`: `github|gitee`, The source code for upgrading. 
+* `REGISTRY`: `docker.io|registry.cn-hangzhou.aliyuncs.com`, The docker registry.
 * `MGMT_LISTEN`: The listen port for mgmt HTTP server. Default: 2022
 * `PLATFORM_LISTEN`: The listen port for platform HTTP server. Default: 2024
-* `SRS_DOCKERIZED`: `true|false` Run application in docker.
+* `SRS_DOCKERIZED`: `true|false` Indicates the OS is in docker.
+
+For mgmt to start platform in docker, because it can't access redis which is started by platform:
+
+* `PLATFORM_DOCKER`: Whether run platform in docker. Default: true
 
 For testing the specified service:
 
@@ -265,6 +269,10 @@ Environments for react ui:
 * `REACT_APP_LOCALE`: The i18n config for ui, `en` or `zh`, default to `zh`.
 
 > Note: The env for react must start with `REACT_APP_`, please read [this post](https://create-react-app.dev/docs/adding-custom-environment-variables/#referencing-environment-variables-in-the-html).
+
+Removed variables in .env:
+
+* `SRS_PLATFORM_SECRET`: The mgmt api secret for token generating and verifying.
 
 ## Develop
 
@@ -294,6 +302,65 @@ Run the platform react ui:
 ```
 
 Access the browser: http://localhost:3000
+
+## Develop in Docker
+
+If develop and test platform in docker.
+
+First, build a local image for development:
+
+```bash
+cd ~/git/srs-cloud
+docker build -t platform-dev -f platform/Dockerfile.dev .
+```
+
+Then, setup the IP of mgmt for platform to connect to:
+
+```bash
+CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}')
+```
+
+> Note: Please replace CANDIDATE to your mgmt IP.
+
+Then start the development docker:
+
+```bash
+docker run --rm -it -p 2024:2024 --name platform \
+  -v $(pwd)/mgmt:/usr/local/srs-cloud/mgmt \
+  -v $(pwd)/platform:/usr/local/srs-cloud/platform \
+  -v $(pwd)/mgmt/containers/data/redis:/data \
+  -v $(pwd)/mgmt/containers/conf/redis.conf:/etc/redis/redis.conf \
+  -v $(readlink -f mgmt/containers/data/record):/usr/local/srs-cloud/mgmt/containers/data/record \
+  --add-host redis:127.0.0.1 --add-host mgmt.srs.local:$CANDIDATE \
+  --env NODE_ENV=development --env SRS_DOCKERIZED=true --env REDIS_HOST=127.0.0.1 \
+  platform-dev bash
+```
+
+Start redis only in docker:
+
+```bash
+env NO_START_PLATFORM=true NO_STOP_REDIS=true ./bootstrap
+```
+
+Stop redis server in docker:
+
+```bash
+kill $(pidof redis-server)
+```
+
+Build platform in docker:
+
+```bash
+make clean && make
+```
+
+Run platform only in docker:
+
+```bash
+make && ./platform
+```
+
+It's the same as production online.
 
 ## Release
 

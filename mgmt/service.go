@@ -27,8 +27,6 @@ import (
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
 
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
-	"github.com/go-redis/redis/v8"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
 )
@@ -254,36 +252,8 @@ func discoverPrivateIPv4(ctx context.Context) (string, net.IP, error) {
 }
 
 // Docker container names.
-const redisDockerName = "redis"
 const platformDockerName = "platform"
 const srsDockerName = "srs-server"
-
-// Note that we only use the docker to release binary for different CPU archs.
-const mgmtDockerName = "mgmt"
-
-// Redis keys.
-const (
-	// For LightHouse information, like region or source.
-	SRS_TENCENT_LH = "SRS_TENCENT_LH"
-	// For container and images.
-	SRS_CONTAINER_DISABLED = "SRS_CONTAINER_DISABLED"
-	SRS_DOCKER_IMAGES      = "SRS_DOCKER_IMAGES"
-	// For system settings.
-	SRS_PLATFORM_SECRET = "SRS_PLATFORM_SECRET"
-)
-
-// rdb is a global redis client object.
-var rdb *redis.Client
-
-// InitRdb create and init global rdb, which is a redis client.
-func InitRdb() error {
-	rdb = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("localhost:%v", os.Getenv("REDIS_PORT")),
-		Password: os.Getenv("REDIS_PASSWORD"),
-		DB:       0,
-	})
-	return nil
-}
 
 // For docker state.
 type dockerInfo struct {
@@ -352,6 +322,15 @@ func removeContainer(ctx context.Context, name string) error {
 	return nil
 }
 
+// removeImage used to remove the docker image.
+func removeImage(ctx context.Context, name string) error {
+	cmd := exec.CommandContext(ctx, "docker", "rmi", name)
+	if err := cmd.Run(); err != nil {
+		return errors.Wrapf(err, "docker rmi %v", name)
+	}
+	return nil
+}
+
 // reloadNginx is used to reload the NGINX server.
 func reloadNginx(ctx context.Context) error {
 	if conf.IsDarwin {
@@ -393,81 +372,31 @@ func reloadNginx(ctx context.Context) error {
 	return nil
 }
 
-func NewDockerRedisManager() RedisManager {
-	return &dockerRedisManager{}
+func NewEmptyRedisManager() RedisManager {
+	return &emptyRedisManager{}
 }
 
-type dockerRedisManager struct {
+type emptyRedisManager struct {
 }
 
-func (v *dockerRedisManager) Stop(ctx context.Context, timeout time.Duration) error {
-	args := []string{"stop", "-t", fmt.Sprintf("%v", int64(timeout/time.Second)), redisDockerName}
-	cmd := exec.CommandContext(ctx, "docker", args...)
-
-	if err := cmd.Run(); err != nil {
-		return errors.Wrapf(err, "docker %v", strings.Join(args, " "))
-	}
+func (v *emptyRedisManager) Stop(ctx context.Context, timeout time.Duration) error {
 	return nil
 }
 
-func (v *dockerRedisManager) Start(ctx context.Context) error {
-	all, _ := queryContainer(ctx, redisDockerName)
-	if all != nil && all.ID != "" {
-		err := removeContainer(ctx, redisDockerName)
-		logger.Tf(ctx, "docker remove name=%v, id=%v, err=%v", redisDockerName, all.ID, err)
-	}
-
-	args := []string{
-		"run", "-d", "--restart=always", "--privileged", fmt.Sprintf("--name=%v", redisDockerName),
-		"--env", fmt.Sprintf("SRS_REGION=%v", conf.Region),
-		"--env", fmt.Sprintf("SRS_SOURCE=%v", conf.Source),
-		"--log-driver=json-file", "--log-opt=max-size=1g", "--log-opt=max-file=3",
-		"-v", fmt.Sprintf("%v/containers/data/redis:/data", conf.Pwd),
-		"-v", fmt.Sprintf("%v/containers/conf/redis.conf:/etc/redis/redis.conf", conf.Pwd),
-		"-p", fmt.Sprintf("%v:%v/tcp", os.Getenv("REDIS_PORT"), os.Getenv("REDIS_PORT")),
-	}
-	if !conf.IsDarwin {
-		args = append(args, "--network=srs-cloud")
-	}
-	args = append(args,
-		fmt.Sprintf("%v/ossrs/redis", conf.Registry),
-		"redis-server",
-		"/etc/redis/redis.conf",
-	)
-	if os.Getenv("REDIS_PASSWORD") != "" {
-		args = append(args, "--requirepass", os.Getenv("REDIS_PASSWORD"))
-	}
-	args = append(args, "--port", os.Getenv("REDIS_PORT"))
-
-	cmd := exec.CommandContext(ctx, "docker", args...)
-	if err := cmd.Run(); err != nil {
-		return errors.Wrapf(err, "docker %v", strings.Join(args, " "))
-	}
-
-	logger.Tf(ctx, "docker %v", strings.Join(args, " "))
+func (v *emptyRedisManager) Start(ctx context.Context) error {
 	return nil
 }
 
-func (v *dockerRedisManager) Ready(ctx context.Context) error {
-	for {
-		all, running := queryContainer(ctx, redisDockerName)
-		if all != nil && all.ID != "" && running != nil && running.ID != "" {
-			return nil
-		}
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(300 * time.Millisecond):
-		}
-	}
+func (v *emptyRedisManager) Ready(ctx context.Context) error {
+	return nil
 }
 
-func NewDockerPlatformManager() PlatformManager {
-	return &dockerPlatformManager{}
+func NewDockerPlatformManager(redisManager RedisManager) PlatformManager {
+	return &dockerPlatformManager{redisManager: redisManager}
 }
 
 type dockerPlatformManager struct {
+	redisManager RedisManager
 }
 
 func (v *dockerPlatformManager) Start(ctx context.Context) error {
@@ -492,14 +421,30 @@ func (v *dockerPlatformManager) Start(ctx context.Context) error {
 		"--env", "NODE_ENV=production",
 		"-p", "2024:2024/tcp",
 		"--add-host", fmt.Sprintf("mgmt.srs.local:%v", conf.IPv4()),
+		// For redis server.
+		"--add-host", "redis:127.0.0.1", "--env", "REDIS_HOST=127.0.0.1",
+		"-v", fmt.Sprintf("%v/containers/data/redis:/data", conf.Pwd),
+		"-v", fmt.Sprintf("%v/containers/conf/redis.conf:/etc/redis/redis.conf", conf.Pwd),
+	}
+	if os.Getenv("REDIS_PASSWORD") != "" {
+		args = append(args, "--env", fmt.Sprintf("REDIS_PASSWORD=%v", os.Getenv("REDIS_PASSWORD")))
+	}
+	if os.Getenv("REDIS_PORT") != "" {
+		args = append(args, "--env", fmt.Sprintf("REDIS_PORT=%v", os.Getenv("REDIS_PORT")))
+		args = append(args, "-p", fmt.Sprintf("%v:%v/tcp", os.Getenv("REDIS_PORT"), os.Getenv("REDIS_PORT")))
+	}
+	// Because user might soft link the record directory, we must read it. See https://stackoverflow.com/a/18062079/17679565
+	if recordDirectory := "containers/data/record"; true {
+		if fi, err := os.Lstat(recordDirectory); err == nil && (fi.Mode()&os.ModeSymlink) != 0 {
+			if lk, err := os.Readlink(recordDirectory); err != nil {
+				return errors.Wrapf(err, "read link of %v", recordDirectory)
+			} else {
+				args = append(args, "-v", fmt.Sprintf("%v:/usr/local/srs-cloud/mgmt/%v", lk, recordDirectory))
+			}
+		}
 	}
 	if !conf.IsDarwin {
 		args = append(args, "--network=srs-cloud")
-	}
-	if conf.IsDarwin {
-		args = append(args, "--env", "REDIS_HOST=host.docker.internal")
-	} else {
-		args = append(args, "--env", "REDIS_HOST=redis")
 	}
 	args = append(args,
 		fmt.Sprintf("%v/ossrs/srs-cloud:platform-%v", conf.Registry, version),
@@ -682,7 +627,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			return errors.Wrapf(err, "remove container %v", name)
 		}
 
-    ohttp.WriteData(ctx, w, r, nil)
+		ohttp.WriteData(ctx, w, r, nil)
 		logger.Tf(ctx, "execApi req=%v", sr)
 		return nil
 	}
@@ -708,11 +653,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 
 		containers := []interface{}{}
 		for _, name := range dockerNames {
-			disabled, err := rdb.HGet(ctx, SRS_CONTAINER_DISABLED, name).Result()
-			if err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hget %v %v", SRS_CONTAINER_DISABLED, name)
-			}
-
+			// Note that the enabled is load from redis by platform.
 			r0 := &struct {
 				Name      string `json:"name"`
 				Enabled   bool   `json:"enabled"`
@@ -722,8 +663,9 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 					Status string `json:"Status"`
 				} `json:"container"`
 			}{
-				Name: name, Enabled: disabled != "true",
+				Name: name,
 			}
+
 			all, _ := queryContainer(ctx, name)
 			if all != nil {
 				r0.Container.ID = all.ID
@@ -764,6 +706,22 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 
 		if err := removeContainer(ctx, name); err != nil {
 			return errors.Wrapf(err, "remove container name=%v", name)
+		}
+
+		ohttp.WriteData(ctx, w, r, nil)
+		logger.Tf(ctx, "execApi req=%v", sr)
+		return nil
+	}
+
+	// Remove the specified docker image.
+	handlers["rmImage"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
+		name := sr.ArgsAsString()[0]
+		if name == "" {
+			return errors.Errorf("no name")
+		}
+
+		if err := removeImage(ctx, name); err != nil {
+			return errors.Wrapf(err, "remove image name=%v", name)
 		}
 
 		ohttp.WriteData(ctx, w, r, nil)
@@ -884,7 +842,16 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			}
 			logger.Tf(ctx, "exec action=%v, token=%v, args=%v", req.Action, req.Token, req.Args)
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			// Load the .env if MGMT is empty for system init.
+			if os.Getenv("MGMT_PASSWORD") == "" {
+				if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
+					return errors.Wrapf(err, "load .env")
+				}
+			}
+
+			// Note that we use mgmt password, because redis is not available for mgmt.
+			apiSecret := os.Getenv("MGMT_PASSWORD")
+
 			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
 			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
 			if _, err := jwt.Parse(req.Token, func(token *jwt.Token) (interface{}, error) {
@@ -1034,46 +1001,6 @@ func (v *dockerBackendService) Start(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	v.ctx, v.cancel = context.WithCancel(ctx)
 
-	// Manage the redis service by docker.
-	v.wg.Add(1)
-	go func() {
-		defer v.wg.Done()
-
-		for ctx.Err() == nil {
-			duration := 10 * time.Second
-			if err := func() error {
-				all, running := queryContainer(ctx, redisDockerName)
-				if all != nil && all.ID != "" && running != nil && running.ID != "" {
-					logger.Tf(ctx, "query ID=%v, State=%v, Status=%v, running=%v", all.ID, all.State, all.Status, running.ID)
-					return nil
-				}
-
-				if disabled, err := rdb.HGet(ctx, SRS_CONTAINER_DISABLED, redisDockerName).Result(); err != nil && err != redis.Nil {
-					return err
-				} else if disabled == "true" {
-					logger.Tf(ctx, "container %v disabled", redisDockerName)
-					return nil
-				}
-
-				logger.Tf(ctx, "restart redis container")
-				if err := v.redisManager.Start(ctx); err != nil {
-					return err
-				}
-
-				return nil
-			}(); err != nil {
-				duration = 30 * time.Second
-				logger.Tf(ctx, "ignore err %v", err)
-			}
-
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(duration):
-			}
-		}
-	}()
-
 	// Manage the platform service by docker.
 	v.wg.Add(1)
 	go func() {
@@ -1088,9 +1015,7 @@ func (v *dockerBackendService) Start(ctx context.Context) error {
 					return nil
 				}
 
-				if disabled, err := rdb.HGet(ctx, SRS_CONTAINER_DISABLED, platformDockerName).Result(); err != nil && err != redis.Nil {
-					return err
-				} else if disabled == "true" {
+				if os.Getenv("PLATFORM_DOCKER") == "false" {
 					logger.Tf(ctx, "container %v disabled", platformDockerName)
 					return nil
 				}
@@ -1098,20 +1023,6 @@ func (v *dockerBackendService) Start(ctx context.Context) error {
 				logger.Tf(ctx, "restart platform container")
 				if err := v.platformManager.Start(ctx); err != nil {
 					return err
-				}
-
-				// Cleanup the previous unused images.
-				newImage := fmt.Sprintf("%v/ossrs/srs-cloud:platform-%v", conf.Registry, version)
-				if previousImage, err := rdb.HGet(ctx, SRS_DOCKER_IMAGES, platformDockerName).Result(); err != nil && err != redis.Nil {
-					return err
-				} else {
-					if err = rdb.HSet(ctx, SRS_DOCKER_IMAGES, platformDockerName, newImage).Err(); err != nil {
-						return err
-					}
-					if previousImage != "" && previousImage != newImage {
-						r0 := exec.CommandContext(ctx, "docker", "rmi", previousImage).Run()
-						logger.Tf(ctx, "remove previous platform image %v, err %v", previousImage, r0)
-					}
 				}
 
 				return nil

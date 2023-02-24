@@ -169,11 +169,11 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			logger.Tf(ctx, "init mgmt password %vB ok, file=%v", len(password), envFile)
 
 			// Refresh the local token.
-			if err := execApi(ctx, "reloadEnv", nil, nil); err != nil {
-				return errors.Wrapf(err, "reload env for mgmt")
-			}
 			if err := godotenv.Load(envFile); err != nil {
 				return errors.Wrapf(err, "load %v", envFile)
+			}
+			if err := execApi(ctx, "reloadEnv", nil, nil); err != nil {
+				return errors.Wrapf(err, "reload env for mgmt")
 			}
 
 			expireAt, createAt, token, err := createToken(ctx, os.Getenv("SRS_PLATFORM_SECRET"))
@@ -819,7 +819,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			// Query containers
 			var names []string
 			if name == "" {
-				names = []string{srsDockerName, redisDockerName, platformDockerName}
+				names = []string{srsDockerName, platformDockerName}
 			} else {
 				names = []string{name}
 			}
@@ -830,6 +830,31 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 				Containers: &containers,
 			}); err != nil {
 				return errors.Wrapf(err, "query containers of %v", names)
+			}
+
+			// Fill the enabled for containers.
+			for _, container := range containers {
+				kv, ok := container.(map[string]interface{})
+				if !ok {
+					continue
+				}
+
+				name, ok := kv["name"]
+				if !ok {
+					continue
+				}
+
+				vname, ok := name.(string)
+				if !ok {
+					continue
+				}
+
+				disabled, err := rdb.HGet(ctx, SRS_CONTAINER_DISABLED, vname).Result()
+				if err != nil && err != redis.Nil {
+					return errors.Wrapf(err, "hget %v %v", SRS_CONTAINER_DISABLED, vname)
+				}
+
+				kv["enabled"] = disabled != "true"
 			}
 
 			ohttp.WriteData(ctx, w, r, containers)

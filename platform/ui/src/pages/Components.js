@@ -23,7 +23,6 @@ function ComponentsImpl() {
   const [status, setStatus] = React.useState();
   const [srsRelease, setSrsRelease] = React.useState();
   const [platform, setPlatform] = React.useState();
-  const [redisServer, setRedisServer] = React.useState();
   const [searchParams] = useSearchParams();
   const [allowDisableContainer, setAllowDisableContainer] = React.useState();
   const [refreshContainers, setRefreshContainers] = React.useState();
@@ -77,7 +76,6 @@ function ComponentsImpl() {
 
         if (m.name === 'srs-server') setSrsRelease(m);
         if (m.name === 'platform') setPlatform(m);
-        if (m.name === 'redis') setRedisServer(m);
 
         return null;
       });
@@ -121,26 +119,6 @@ function ComponentsImpl() {
                     allow={allowDisableContainer && srsRelease?.name}
                     enabled={srsRelease?.enabled}
                     onClick={() => handleContainerChange(srsRelease)}
-                  />
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xs lg={3}>
-            <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>{t('coms.redis')}</Card.Header>
-              <Card.Body>
-                <Card.Text as={Col}>
-                  {t('coms.containerName')}：{redisServer?.name} <br/>
-                  {t('coms.containerId')}：{redisServer?.container?.ID} <br/>
-                  {t('coms.containerState')}：{redisServer?.StatusMessage}
-                  <p></p>
-                </Card.Text>
-                <div style={{display: 'inline-block'}}>
-                  <MgmtUpdateContainer
-                    allow={allowDisableContainer && redisServer?.name}
-                    enabled={redisServer?.enabled}
-                    onClick={() => handleContainerChange(redisServer)}
                   />
                 </div>
               </Card.Body>

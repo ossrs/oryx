@@ -7,6 +7,9 @@ if [[ -f /swapfile ]]; then
   swapoff /swapfile; rm -f /swapfile; echo "Remove /swapfile"
 fi
 
+# Do not use redis container, we run redis in platform now.
+docker rm -f redis 2>/dev/null; echo "Remove redis container"
+
 # Generate coredump, see https://stackoverflow.com/a/47694315/17679565
 if [[ -f /proc/sys/kernel/core_pattern && ! -d /cores ]]; then
   echo '/cores/core.%e.%p' | tee /proc/sys/kernel/core_pattern &&

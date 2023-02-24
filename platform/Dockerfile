@@ -12,10 +12,10 @@ ADD platform /g/platform
 
 WORKDIR /g/mgmt
 # We might run mgmt in Linux host machine, so we build for alpine, statically link.
-RUN make alpine
+RUN make clean && make alpine
 
 WORKDIR /g/platform
-RUN make
+RUN make clean && make
 RUN cd /g/platform/ui && rm -rf js-core node_modules package* public src
 
 # http://releases.ubuntu.com/focal/
@@ -25,4 +25,4 @@ FROM ${ARCH}ossrs/srs-cloud:focal-1 AS dist
 COPY --from=build /g/mgmt /usr/local/srs-cloud/mgmt
 COPY --from=build /g/platform /usr/local/srs-cloud/platform
 
-CMD ["./platform"]
+CMD ["./bootstrap"]

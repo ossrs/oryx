@@ -150,7 +150,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
             <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, recordHome)} />
           </div> &nbsp;
           <TutorialsText prefixLine={true} title='如何修改目录?'>
-            你可以使用软链接，将本目录软链到其他磁盘的目录
+            你可以使用软链接，将本目录软链到其他磁盘的目录，然后<font color='red'>重启服务</font>(必须)
           </TutorialsText>
         </Accordion.Body>
       </Accordion.Item>

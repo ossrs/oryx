@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+REALPATH=$(realpath $0)
+WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
+echo "Run srs-cloud at $WORK_DIR from $0"
+
+APP_ARGS=$@
+echo "Program args: $APP_ARGS"
+
+# Do everything at the same work directory.
+cd $WORK_DIR
+
+# Get the metadata of machine.
+if [[ -f ../mgmt/.env ]]; then source ../mgmt/.env; fi
+echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE, NO_START_PLATFORM=$NO_START_PLATFORM, NO_STOP_REDIS=$NO_STOP_REDIS"
+
+# Start redis.
+REDIS_PARAMS="/etc/redis/redis.conf --daemonize yes"
+if [[ ! -z $REDIS_PASSWORD ]]; then REDIS_PARAMS="${REDIS_PARAMS} --requirepass $REDIS_PASSWORD"; fi
+if [[ ! -z $REDIS_PORT ]]; then REDIS_PARAMS="${REDIS_PARAMS} --port $REDIS_PORT"; fi
+if [[ -f /etc/redis/redis.conf ]]; then
+  echo "Run redis-server $REDIS_PARAMS"
+
+  mkdir -p /var/run/redis &&
+  redis-server $REDIS_PARAMS &&
+  REDIS_PID_FILE="/var/run/redis/redis-server.pid"
+  if [[ $? -ne 0 ]]; then echo "Start redis failed"; exit 1; fi
+
+  for ((i=0; i<10; i++)); do
+    if [[ -f $REDIS_PID_FILE ]]; then
+      ps -p `cat $REDIS_PID_FILE` 1>/dev/null 2>/dev/null &&
+      echo "Redis server started, pid=`cat $REDIS_PID_FILE`" &&
+      break
+    fi
+    sleep 0.3
+  done
+
+  ps -p `cat $REDIS_PID_FILE` 1>/dev/null 2>/dev/null
+  if [[ $? -ne 0 ]]; then echo "Check redis failed"; exit 1; fi
+fi
+
+# Start the application server.
+if [[ $NO_START_PLATFORM != "true" ]]; then
+  ./platform $APP_ARGS
+fi
+
+# Stop redis.
+if [[ -f $REDIS_PID_FILE && $NO_STOP_REDIS != "true" ]]; then
+  REDIS_PID=`cat $REDIS_PID_FILE`
+  echo "Stopping redis, pid=$REDIS_PID"
+  kill $REDIS_PID
+
+  # See https://stackoverflow.com/a/41613532/17679565
+  timeout 10 tail --pid=$REDIS_PID -f /dev/null
+  echo "Stopped redis, pid=$REDIS_PID"
+fi

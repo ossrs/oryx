@@ -71,12 +71,13 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("REDIS_PORT", "6379")
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, "+
 		"NODE_ENV=%v, LOCAL_RELEASE=%v, SRS_DOCKER=%v, USE_DOCKER=%v, SRS_UTEST=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, "+
-		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v",
+		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, SRS_DOCKERIZED=%v",
 		len(os.Getenv("MGMT_PASSWORD")), len(os.Getenv("SRS_PLATFORM_SECRET")), os.Getenv("CLOUD"),
 		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("NODE_ENV"), os.Getenv("LOCAL_RELEASE"),
 		os.Getenv("SRS_DOCKER"), os.Getenv("USE_DOCKER"), os.Getenv("SRS_UTEST"),
 		len(os.Getenv("REDIS_PASSWORD")), os.Getenv("REDIS_PORT"), os.Getenv("PUBLIC_URL"),
 		os.Getenv("BUILD_PATH"), os.Getenv("REACT_APP_LOCALE"), os.Getenv("PLATFORM_LISTEN"),
+		os.Getenv("SRS_DOCKERIZED"),
 	)
 
 	// Install signals.
@@ -167,6 +168,15 @@ func doMain(ctx context.Context) error {
 
 // Initialize the source for redis, note that we don't change the env.
 func initOS(ctx context.Context) (err error) {
+	// Initialize global config.
+	conf = NewConfig()
+	// Load some configurations from env, which is set by mgmt.
+	conf.Cloud = os.Getenv("CLOUD")
+	conf.Region = os.Getenv("REGION")
+	conf.Source = os.Getenv("SOURCE")
+	conf.MgmtPwd = os.Getenv("MGMT_PASSWORD")
+	conf.Registry = os.Getenv("REGISTRY")
+
 	// For platform, we must use the secret to access API of mgmt.
 	// Query the api secret from redis, cache it to env.
 	if os.Getenv("SRS_PLATFORM_SECRET") == "" {
@@ -178,9 +188,6 @@ func initOS(ctx context.Context) (err error) {
 		}
 	}
 
-	// Initialize global config.
-	conf = NewConfig()
-
 	// Initialize pwd.
 	if err = execApi(ctx, "cwd", nil, &struct {
 		Cwd *string `json:"cwd"`
@@ -191,22 +198,33 @@ func initOS(ctx context.Context) (err error) {
 	}
 
 	// Load the platform from redis, initialized by mgmt.
-	if cloud, err := rdb.HGet(ctx, SRS_TENCENT_LH, "cloud").Result(); err != nil {
+	if cloud, err := rdb.HGet(ctx, SRS_TENCENT_LH, "cloud").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v cloud", SRS_TENCENT_LH)
-	} else {
-		conf.Cloud = cloud
+	} else if cloud == "" || conf.Cloud != cloud {
+		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "cloud", conf.Cloud).Err(); err != nil {
+			return errors.Wrapf(err, "hset %v cloud %v", SRS_TENCENT_LH, conf.Cloud)
+		}
+		logger.Tf(ctx, "Update cloud=%v", conf.Cloud)
 	}
 
-	if region, err := rdb.HGet(ctx, SRS_TENCENT_LH, "region").Result(); err != nil {
+	// Load the region first, because it never changed.
+	if region, err := rdb.HGet(ctx, SRS_TENCENT_LH, "region").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v region", SRS_TENCENT_LH)
-	} else {
-		conf.Region = region
+	} else if region == "" || conf.Region != region {
+		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "region", conf.Region).Err(); err != nil {
+			return errors.Wrapf(err, "hset %v region %v", SRS_TENCENT_LH, conf.Region)
+		}
+		logger.Tf(ctx, "Update region=%v", conf.Region)
 	}
 
-	if source, err := rdb.HGet(ctx, SRS_TENCENT_LH, "source").Result(); err != nil {
+	// Always update the source, because it might change.
+	if source, err := rdb.HGet(ctx, SRS_TENCENT_LH, "source").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v source", SRS_TENCENT_LH)
-	} else {
-		conf.Source = source
+	} else if source == "" || conf.Source != source {
+		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "source", conf.Source).Err(); err != nil {
+			return errors.Wrapf(err, "hset %v source %v", SRS_TENCENT_LH, conf.Source)
+		}
+		logger.Tf(ctx, "Update source=%v", conf.Source)
 	}
 
 	if registry, err := rdb.HGet(ctx, SRS_TENCENT_LH, "registry").Result(); err != nil {
@@ -223,6 +241,16 @@ func initOS(ctx context.Context) (err error) {
 			return errors.Wrapf(err, "hset %v platform %v", SRS_TENCENT_LH, platform)
 		}
 		logger.Tf(ctx, "Update platform=%v", platform)
+	}
+
+	// Always update the registry, because it might change.
+	if registry, err := rdb.HGet(ctx, SRS_TENCENT_LH, "registry").Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hget %v registry", SRS_TENCENT_LH)
+	} else if registry == "" || conf.Registry != registry {
+		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "registry", conf.Registry).Err(); err != nil {
+			return errors.Wrapf(err, "hset %v registry %v", SRS_TENCENT_LH, conf.Registry)
+		}
+		logger.Tf(ctx, "Update registry=%v", conf.Registry)
 	}
 
 	// Request the host platform OS, whether the OS is Darwin.
@@ -439,6 +467,21 @@ func initPlatform(ctx context.Context) error {
 			return errors.Wrapf(err, "hset %v update %v", SRS_PLATFORM_SECRET, update)
 		}
 		logger.Tf(ctx, "Platform api secret update, token=%vB, update=%v", len(token), update)
+	}
+
+	// Cleanup the previous unused images.
+	newImage := fmt.Sprintf("%v/ossrs/srs-cloud:platform-%v", conf.Registry, version)
+	if previousImage, err := rdb.HGet(ctx, SRS_DOCKER_IMAGES, platformDockerName).Result(); err != nil && err != redis.Nil {
+		return err
+	} else {
+		if err = rdb.HSet(ctx, SRS_DOCKER_IMAGES, platformDockerName, newImage).Err(); err != nil {
+			return err
+		}
+		if previousImage != "" && previousImage != newImage {
+			if err := execApi(ctx, "rmImage", []string{previousImage}, nil); err != nil {
+				logger.Wf(ctx, "ignore rmi %v err %v", previousImage, err)
+			}
+		}
 	}
 
 	return nil
