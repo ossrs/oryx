@@ -141,7 +141,8 @@ jobs:
               docker rm -f docs-cloudversion; sleep 0.3;
             done
             # Remove the old versions.
-            docker images |grep -q releases && docker rmi $(docker images |grep releases |awk '{print $2}')
+            OLD_IMAGE=$(docker images |grep releases |awk '{print $1":"$2}' 1>/dev/null 2>/dev/null)
+            if [[ ! -z $OLD_IMAGE ]]; then docker rmi $OLD_IMAGE; echo "Remove old image $OLD_IMAGE"; fi
             # Start new releases.
             docker run -d -it --restart always --name docs-cloudversion -p 8101:9000 \
               registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG

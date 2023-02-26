@@ -11,14 +11,6 @@ fi
 TAG_NAME=$(echo $TARGET_VERSION|grep '^v')
 echo "The REGISTRY=$REGISTRY TARGET_VERSION=$TARGET_VERSION TAG_NAME=$TAG_NAME"
 
-echo "Update the docker containers."
-docker pull ${REGISTRY}/ossrs/redis
-if [[ $? -ne 0 ]]; then echo "Update the containers failed"; exit 1; fi
-
-# The certbot tool is optional, and might fail on arm server because no arm image.
-docker pull ${REGISTRY}/ossrs/certbot
-if [[ $? -ne 0 ]]; then echo "Ignore certbot fail"; fi
-
 # Remove the containers if need upgrade
 #   update_containers registry image as_image
 #   update_containers registry.cn-hangzhou.aliyuncs.com ossrs/srs:4 ossrs/srs:4
