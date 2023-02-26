@@ -114,13 +114,6 @@ func doMain(ctx context.Context) error {
 		logger.Tf(ctx, "ignore restart SRS err %v", err)
 	}
 
-	// Create backend service manager.
-	service := NewDockerBackendService(NewDockerSrsManager())
-	if err := service.Start(ctx); err != nil {
-		return errors.Wrapf(err, "start service manager")
-	}
-	defer service.Close()
-
 	// Create worker for RECORD, covert live stream to local file.
 	recordWorker = NewRecordWorker()
 	defer recordWorker.Close()

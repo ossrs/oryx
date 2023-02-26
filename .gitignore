@@ -127,4 +127,5 @@ releases/releases
 mgmt/mgmt
 platform/platform
 mgmt/mgmt.*
+srs.id
 

@@ -598,9 +598,6 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 
 	// Build input URL.
 	host := "localhost"
-	if os.Getenv("NODE_ENV") != "development" {
-		host = "mgmt.srs.local"
-	}
 	inputURL := fmt.Sprintf("rtmp://%v/%v/%v", host, input.App, input.Stream)
 
 	// Build output URL.

@@ -274,31 +274,38 @@ Removed variables in .env:
 
 * `SRS_PLATFORM_SECRET`: The mgmt api secret for token generating and verifying.
 
-## Develop
+Please restart service when `.env` changed.
 
-Install dependencies:
+## Develop in macOS
 
-```bash
-(cd platform && npm install)
-(cd platform/ui && npm install)
-```
-
-Run the mgmt backend:
+Run the mgmt backend, or run in GoLand:
 
 ```
 (cd mgmt && go run .)
 ```
 
-Run the platform backend:
+Run the platform backend, or run in GoLand:
 
 ```
-(cd platform && npm start)
+(cd platform && go run .)
 ```
 
-Run the platform react ui:
+Run the platform react ui, or run in WebStorm:
 
 ```
-(cd platform/ui && npm start)
+(cd platform/ui && npm install && npm start)
+```
+
+Start redis by brew:
+
+```bash
+brew services start redis
+```
+
+Start SRS in macOS:
+
+```bash
+cd ~/git/srs-cloud/platform && ~/git/srs/trunk/objs/srs -c containers/conf/srs.release-local.conf
 ```
 
 Access the browser: http://localhost:3000
@@ -325,36 +332,37 @@ CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}')
 Then start the development docker:
 
 ```bash
+source mgmt/.env &&
 docker run --rm -it -p 2024:2024 --name platform \
   -v $(pwd)/mgmt:/usr/local/srs-cloud/mgmt \
   -v $(pwd)/platform:/usr/local/srs-cloud/platform \
   -v $(pwd)/mgmt/containers/data/redis:/data \
   -v $(pwd)/mgmt/containers/conf/redis.conf:/etc/redis/redis.conf \
+  --add-host redis:127.0.0.1 --env SRS_DOCKERIZED=true --env REDIS_HOST=127.0.0.1 \
   -v $(readlink -f mgmt/containers/data/record):/usr/local/srs-cloud/mgmt/containers/data/record \
-  --add-host redis:127.0.0.1 --add-host mgmt.srs.local:$CANDIDATE \
-  --env NODE_ENV=development --env SRS_DOCKERIZED=true --env REDIS_HOST=127.0.0.1 \
+  --add-host mgmt.srs.local:$CANDIDATE --env NODE_ENV=development \
+  -v $(pwd)/mgmt/containers/conf/srs.release.conf:/usr/local/srs/conf/lighthouse.conf \
+  -v $(pwd)/mgmt/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html \
+  -v $(pwd)/mgmt/containers/www/console:/usr/local/srs/www/console \
+  -v $(pwd)/mgmt/containers/www/players:/usr/local/srs/www/players \
+  --env SRS_SOURCE=$SOURCE --env SRS_REGION=$REGION \
+  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
   platform-dev bash
 ```
 
-Start redis only in docker:
+Start redis and SRS only in docker:
 
 ```bash
-env NO_START_PLATFORM=true NO_STOP_REDIS=true ./bootstrap
+bash auto/start_redis && bash auto/start_srs
 ```
 
-Stop redis server in docker:
+Stop redis and SRS server in docker:
 
 ```bash
-kill $(pidof redis-server)
+bash auto/stop_redis && bash auto/stop_srs
 ```
 
-Build platform in docker:
-
-```bash
-make clean && make
-```
-
-Run platform only in docker:
+Build and run platform only in docker:
 
 ```bash
 make && ./platform

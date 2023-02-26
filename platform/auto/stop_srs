@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+echo "Stop SRS server"
+
+SRS_PID_FILE="/usr/local/srs/objs/srs.pid"
+if [[ -f $SRS_PID_FILE ]]; then
+  SRS_PID=`cat $SRS_PID_FILE`
+  echo "Stopping SRS, pid=$SRS_PID"
+  kill $SRS_PID
+
+  # See https://stackoverflow.com/a/41613532/17679565
+  timeout 10 tail --pid=$SRS_PID -f /dev/null
+  echo "Stopped SRS, pid=$SRS_PID"
+fi
+

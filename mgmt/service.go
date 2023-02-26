@@ -49,19 +49,6 @@ type PlatformManager interface {
 	Start(ctx context.Context) error
 }
 
-// RedisManager is Redis based on docker or CLI.
-type RedisManager interface {
-	// Stop the redis server.
-	// Note that we should never use 'docker rm -f redis" or data maybe discard. Instead, we should use command similar
-	// to 'docker stop redis' to allow redis to save data to disk.
-	Stop(ctx context.Context, timeout time.Duration) error
-	// Start the redis server.
-	// Now we start redis again, to keep it with the latest configurations and params.
-	Start(ctx context.Context) error
-	// Ready to wait for redis server ready.
-	Ready(ctx context.Context) error
-}
-
 // Config is for configuration.
 type Config struct {
 	IsDarwin bool
@@ -372,31 +359,11 @@ func reloadNginx(ctx context.Context) error {
 	return nil
 }
 
-func NewEmptyRedisManager() RedisManager {
-	return &emptyRedisManager{}
-}
-
-type emptyRedisManager struct {
-}
-
-func (v *emptyRedisManager) Stop(ctx context.Context, timeout time.Duration) error {
-	return nil
-}
-
-func (v *emptyRedisManager) Start(ctx context.Context) error {
-	return nil
-}
-
-func (v *emptyRedisManager) Ready(ctx context.Context) error {
-	return nil
-}
-
-func NewDockerPlatformManager(redisManager RedisManager) PlatformManager {
-	return &dockerPlatformManager{redisManager: redisManager}
+func NewDockerPlatformManager() PlatformManager {
+	return &dockerPlatformManager{}
 }
 
 type dockerPlatformManager struct {
-	redisManager RedisManager
 }
 
 func (v *dockerPlatformManager) Start(ctx context.Context) error {
@@ -421,11 +388,16 @@ func (v *dockerPlatformManager) Start(ctx context.Context) error {
 		"--env", "NODE_ENV=production",
 		"-p", "2024:2024/tcp",
 		"--add-host", fmt.Sprintf("mgmt.srs.local:%v", conf.IPv4()),
-		// For redis server.
-		"--add-host", "redis:127.0.0.1", "--env", "REDIS_HOST=127.0.0.1",
-		"-v", fmt.Sprintf("%v/containers/data/redis:/data", conf.Pwd),
-		"-v", fmt.Sprintf("%v/containers/conf/redis.conf:/etc/redis/redis.conf", conf.Pwd),
 	}
+	if !conf.IsDarwin {
+		args = append(args, "--network=srs-cloud")
+	}
+  // For redis server.
+  args = append(args,
+    "--add-host", "redis:127.0.0.1", "--env", "REDIS_HOST=127.0.0.1",
+    "-v", fmt.Sprintf("%v/containers/data/redis:/data", conf.Pwd),
+    "-v", fmt.Sprintf("%v/containers/conf/redis.conf:/etc/redis/redis.conf", conf.Pwd),
+  )
 	if os.Getenv("REDIS_PASSWORD") != "" {
 		args = append(args, "--env", fmt.Sprintf("REDIS_PASSWORD=%v", os.Getenv("REDIS_PASSWORD")))
 	}
@@ -443,8 +415,23 @@ func (v *dockerPlatformManager) Start(ctx context.Context) error {
 			}
 		}
 	}
+	// For SRS server.
+	args = append(args,
+		"-v", fmt.Sprintf("%v/containers/conf/srs.release.conf:/usr/local/srs/conf/lighthouse.conf", conf.Pwd),
+		// We must mount the player and console because the HTTP home of SRS is overwrite by DVR.
+		"-v", fmt.Sprintf("%v/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html", conf.Pwd),
+		// Note that we mount the whole www directory, so we must build the static files such as players.
+		"-v", fmt.Sprintf("%v/containers/www/console:/usr/local/srs/www/console", conf.Pwd),
+		"-v", fmt.Sprintf("%v/containers/www/players:/usr/local/srs/www/players", conf.Pwd),
+		"-p", "1935:1935/tcp", "-p", "1985:1985/tcp", "-p", "8080:8080/tcp",
+		"-p", "8000:8000/udp", "-p", "10080:10080/udp",
+		// Append env which might not be used by SRS.
+		"--env", fmt.Sprintf("SRS_REGION=%v", conf.Region),
+		"--env", fmt.Sprintf("SRS_SOURCE=%v", conf.Source),
+	)
 	if !conf.IsDarwin {
-		args = append(args, "--network=srs-cloud")
+		// For coredump, save to /cores.
+		args = append(args, "--ulimit", "core=-1", "-v", "/cores:/cores")
 	}
 	args = append(args,
 		fmt.Sprintf("%v/ossrs/srs-cloud:platform-%v", conf.Registry, version),
@@ -969,9 +956,8 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 	return nil
 }
 
-func NewDockerBackendService(r RedisManager, p PlatformManager) BackendService {
+func NewDockerBackendService(p PlatformManager) BackendService {
 	return &dockerBackendService{
-		redisManager: r, platformManager: p,
 	}
 }
 
@@ -981,7 +967,6 @@ type dockerBackendService struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	redisManager    RedisManager
 	platformManager PlatformManager
 }
 

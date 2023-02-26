@@ -82,31 +82,8 @@ func doMain(ctx context.Context) error {
 		return errors.Wrapf(err, "init os")
 	}
 
-	// Always restart the redis container.
-	redisManager := NewEmptyRedisManager()
-
-	stopRedisTime := time.Now()
-	redisStopCtx, _ := context.WithTimeout(ctx, 15*time.Second)
-	if err := redisManager.Stop(redisStopCtx, 15*time.Second); err != nil {
-		logger.Tf(ctx, "ignore stop redis err %v", err)
-	}
-
-	startRedisTime := time.Now()
-	if err := redisManager.Start(ctx); err != nil {
-		return errors.Wrapf(err, "start redis")
-	}
-	logger.Tf(ctx, "restart redis container, stop=%vms, start=%vms",
-		startRedisTime.Sub(stopRedisTime), time.Now().Sub(startRedisTime))
-
-	// Wait for redis to be ready.
-	redisStartCtx, _ := context.WithTimeout(ctx, 30*time.Second)
-	if err := redisManager.Ready(redisStartCtx); err != nil {
-		return errors.Wrapf(err, "wait redis ready")
-	}
-	logger.Tf(ctx, "redis is running")
-
 	// We must initialize the mgmt after redis is ready.
-	if err := initMmgt(ctx, redisManager); err != nil {
+	if err := initMmgt(ctx); err != nil {
 		return errors.Wrapf(err, "init mgmt")
 	}
 	logger.Tf(ctx, "initialize mgmt region=%v, registry=%v, version=%v", conf.Region, conf.Registry, version)
@@ -117,7 +94,7 @@ func doMain(ctx context.Context) error {
 	}
 
 	// Create backend service manager.
-	service := NewDockerBackendService(redisManager, NewDockerPlatformManager(redisManager))
+	service := NewDockerBackendService(NewDockerPlatformManager())
 	if err := service.Start(ctx); err != nil {
 		return errors.Wrapf(err, "start service manager")
 	}
@@ -204,7 +181,7 @@ func refreshIPv4(ctx context.Context) error {
 }
 
 // Initialize the platform before thread run.
-func initMmgt(ctx context.Context, redisManager RedisManager) error {
+func initMmgt(ctx context.Context) error {
 	// Refresh the env file.
 	if envs, err := godotenv.Read(".env"); err != nil {
 		return errors.Wrapf(err, "load envs")

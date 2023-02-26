@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+REALPATH=$(realpath $0)
+WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
+echo "Start SRS server at $WORK_DIR from $0"
+
+# Do everything at the same work directory.
+cd $WORK_DIR
+
+# Get the metadata of machine.
+if [[ -f ../../mgmt/.env ]]; then source ../../mgmt/.env; fi
+echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
+
+if [[ -d /usr/local/srs ]]; then
+  SRS_PARAMS="-c conf/lighthouse.conf"
+  echo "Run srs-server $SRS_PARAMS"
+
+  (cd /usr/local/srs && ./objs/srs $SRS_PARAMS) &&
+  SRS_PID_FILE="/usr/local/srs/objs/srs.pid"
+  if [[ $? -ne 0 ]]; then echo "Start SRS failed"; exit 1; fi
+
+  for ((i=0; i<10; i++)); do
+    if [[ -f $SRS_PID_FILE ]]; then
+      ps -p `cat $SRS_PID_FILE` 1>/dev/null 2>/dev/null &&
+      echo "SRS server started, pid=`cat $SRS_PID_FILE`" &&
+      break
+    fi
+    sleep 0.3
+  done
+
+  ps -p `cat $SRS_PID_FILE` 1>/dev/null 2>/dev/null
+  if [[ $? -ne 0 ]]; then echo "Check SRS failed"; exit 1; fi
+fi
+

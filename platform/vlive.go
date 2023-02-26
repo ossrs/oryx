@@ -886,9 +886,6 @@ func (v *VLiveTask) doVLive(ctx context.Context, input *VLiveSourceFile) error {
 
 	// Build input URL.
 	host := "localhost"
-	if os.Getenv("NODE_ENV") != "development" {
-		host = "mgmt.srs.local"
-	}
 
 	// Build output URL.
 	outputServer := strings.ReplaceAll(v.config.Server, "localhost", host)

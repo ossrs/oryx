@@ -2,11 +2,15 @@ ARG ARCH
 
 FROM ${ARCH}redis:5.0 AS redis
 
+FROM ${ARCH}ossrs/srs:4 AS srs
+
 FROM ${ARCH}ossrs/srs:ubuntu20 AS dist
 
 # For redis server and tools.
 COPY --from=redis /usr/local/bin/redis-cli /usr/local/bin/redis-cli
 COPY --from=redis /usr/local/bin/redis-server /usr/local/bin/redis-server
+# For SRS server.
+COPY --from=srs /usr/local/srs /usr/local/srs
 
 # Setup the work directory to platform.
 WORKDIR /usr/local/srs-cloud/platform

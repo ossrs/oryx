@@ -30,12 +30,6 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-// BackendService is a manager for backend service, like redis and platform.
-type BackendService interface {
-	Start(ctx context.Context) error
-	Close() error
-}
-
 // HttpService is a HTTP server for mgmt and platform.
 type HttpService interface {
 	Close() error
@@ -212,14 +206,6 @@ var rdb *redis.Client
 // InitRdb create and init global rdb, which is a redis client.
 func InitRdb() error {
 	addr := "localhost"
-	if os.Getenv("NODE_ENV") != "development" {
-		if os.Getenv("REDIS_HOST") != "" {
-			addr = os.Getenv("REDIS_HOST")
-		} else {
-			addr = "mgmt.srs.local"
-		}
-	}
-
 	rdb = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%v:%v", addr, os.Getenv("REDIS_PORT")),
 		Password: os.Getenv("REDIS_PASSWORD"),

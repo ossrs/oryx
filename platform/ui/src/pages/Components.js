@@ -21,7 +21,6 @@ export default function Components() {
 
 function ComponentsImpl() {
   const [status, setStatus] = React.useState();
-  const [srsRelease, setSrsRelease] = React.useState();
   const [platform, setPlatform] = React.useState();
   const [searchParams] = useSearchParams();
   const [allowDisableContainer, setAllowDisableContainer] = React.useState();
@@ -74,7 +73,6 @@ function ComponentsImpl() {
           m.StatusMessage = 'Disabled';
         }
 
-        if (m.name === 'srs-server') setSrsRelease(m);
         if (m.name === 'platform') setPlatform(m);
 
         return null;
@@ -104,26 +102,6 @@ function ComponentsImpl() {
     <>
       <Container>
         <Row>
-          <Col xs lg={3}>
-            <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>{t('coms.srs4')}</Card.Header>
-              <Card.Body>
-                <Card.Text as={Col}>
-                  {t('coms.containerName')}：{srsRelease?.name} <br/>
-                  {t('coms.containerId')}：{srsRelease?.container?.ID ? srsRelease.container.ID : 'No Container'} <br/>
-                  {t('coms.containerState')}：{srsRelease?.StatusMessage}
-                  <p></p>
-                </Card.Text>
-                <div style={{display: 'inline-block'}}>
-                  <MgmtUpdateContainer
-                    allow={allowDisableContainer && srsRelease?.name}
-                    enabled={srsRelease?.enabled}
-                    onClick={() => handleContainerChange(srsRelease)}
-                  />
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
               <Card.Header>{t('coms.platform')}</Card.Header>
