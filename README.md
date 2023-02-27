@@ -429,6 +429,18 @@ docker exec -it platform bash -c 'make && ./platform'
 
 It's the same as production online.
 
+## Run in One Docker
+
+Run srs-cloud in one docker:
+
+```bash
+docker run --rm -it -p 2022:2022 -p 2024:2024 \
+  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  ossrs/srs-cloud:platform-v1.0.292
+```
+
+Then open http://localhost:2022/mgmt in browser.
+
 ## Release
 
 Release bugfix:

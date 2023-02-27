@@ -251,8 +251,10 @@ func execApi(ctx context.Context, action string, args interface{}, resObj interf
 
 	server := "localhost"
 	// If not development or in docker, we use the virtual host.
-	if os.Getenv("NODE_ENV") != "development" || os.Getenv("SRS_DOCKERIZED") == "true" {
-		server = "mgmt.srs.local"
+	if os.Getenv("MGMT_DOCKER") != "true" {
+    if os.Getenv("NODE_ENV") != "development" || os.Getenv("SRS_DOCKERIZED") == "true" {
+      server = "mgmt.srs.local"
+    }
 	}
 
 	body, err := json.Marshal(&struct {

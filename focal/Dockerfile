@@ -29,6 +29,10 @@ ENV NODE_ENV=production
 
 # Run application in docker.
 ENV SRS_DOCKERIZED=true
+# Run mgmt in docker by default.
+ENV MGMT_DOCKER=true
+# Run platform in docker by default.
+ENV PLATFORM_DOCKER=true
 
 # Create link for compatible reason.
 RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform
