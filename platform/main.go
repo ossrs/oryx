@@ -71,13 +71,14 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("REDIS_PORT", "6379")
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, "+
 		"NODE_ENV=%v, LOCAL_RELEASE=%v, SRS_DOCKER=%v, USE_DOCKER=%v, SRS_UTEST=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, "+
-		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, SRS_DOCKERIZED=%v, MGMT_DOCKER=%v",
+		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, SRS_DOCKERIZED=%v, MGMT_DOCKER=%v, " +
+		"REGISTRY=%v",
 		len(os.Getenv("MGMT_PASSWORD")), len(os.Getenv("SRS_PLATFORM_SECRET")), os.Getenv("CLOUD"),
 		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("NODE_ENV"), os.Getenv("LOCAL_RELEASE"),
 		os.Getenv("SRS_DOCKER"), os.Getenv("USE_DOCKER"), os.Getenv("SRS_UTEST"),
 		len(os.Getenv("REDIS_PASSWORD")), os.Getenv("REDIS_PORT"), os.Getenv("PUBLIC_URL"),
 		os.Getenv("BUILD_PATH"), os.Getenv("REACT_APP_LOCALE"), os.Getenv("PLATFORM_LISTEN"),
-		os.Getenv("SRS_DOCKERIZED"), os.Getenv("MGMT_DOCKER"),
+		os.Getenv("SRS_DOCKERIZED"), os.Getenv("MGMT_DOCKER"), os.Getenv("REGISTRY"),
 	)
 
 	// Install signals.
@@ -194,7 +195,7 @@ func initOS(ctx context.Context) (err error) {
 	if cloud, err := rdb.HGet(ctx, SRS_TENCENT_LH, "cloud").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v cloud", SRS_TENCENT_LH)
 	} else if cloud == "" || conf.Cloud != cloud {
-		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "cloud", conf.Cloud).Err(); err != nil {
+		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "cloud", conf.Cloud).Err(); err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "hset %v cloud %v", SRS_TENCENT_LH, conf.Cloud)
 		}
 		logger.Tf(ctx, "Update cloud=%v", conf.Cloud)
@@ -204,7 +205,7 @@ func initOS(ctx context.Context) (err error) {
 	if region, err := rdb.HGet(ctx, SRS_TENCENT_LH, "region").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v region", SRS_TENCENT_LH)
 	} else if region == "" || conf.Region != region {
-		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "region", conf.Region).Err(); err != nil {
+		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "region", conf.Region).Err(); err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "hset %v region %v", SRS_TENCENT_LH, conf.Region)
 		}
 		logger.Tf(ctx, "Update region=%v", conf.Region)
@@ -214,13 +215,13 @@ func initOS(ctx context.Context) (err error) {
 	if source, err := rdb.HGet(ctx, SRS_TENCENT_LH, "source").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v source", SRS_TENCENT_LH)
 	} else if source == "" || conf.Source != source {
-		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "source", conf.Source).Err(); err != nil {
+		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "source", conf.Source).Err(); err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "hset %v source %v", SRS_TENCENT_LH, conf.Source)
 		}
 		logger.Tf(ctx, "Update source=%v", conf.Source)
 	}
 
-	if registry, err := rdb.HGet(ctx, SRS_TENCENT_LH, "registry").Result(); err != nil {
+	if registry, err := rdb.HGet(ctx, SRS_TENCENT_LH, "registry").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v registry", SRS_TENCENT_LH)
 	} else {
 		conf.Registry = registry
@@ -230,7 +231,7 @@ func initOS(ctx context.Context) (err error) {
 	if platform, err := discoverPlatform(ctx, conf.Cloud); err != nil {
 		return errors.Wrapf(err, "discover platform by cloud=%v", conf.Cloud)
 	} else {
-		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "platform", platform).Err(); err != nil {
+		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "platform", platform).Err(); err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "hset %v platform %v", SRS_TENCENT_LH, platform)
 		}
 		logger.Tf(ctx, "Update platform=%v", platform)
@@ -240,7 +241,7 @@ func initOS(ctx context.Context) (err error) {
 	if registry, err := rdb.HGet(ctx, SRS_TENCENT_LH, "registry").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v registry", SRS_TENCENT_LH)
 	} else if registry == "" || conf.Registry != registry {
-		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "registry", conf.Registry).Err(); err != nil {
+		if err = rdb.HSet(ctx, SRS_TENCENT_LH, "registry", conf.Registry).Err(); err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "hset %v registry %v", SRS_TENCENT_LH, conf.Registry)
 		}
 		logger.Tf(ctx, "Update registry=%v", conf.Registry)

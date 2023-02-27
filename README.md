@@ -398,7 +398,7 @@ docker run --rm -it -p 2022:2022 -p 2024:2024 --name platform \
   -v $(pwd)/mgmt/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html \
   -v $(pwd)/mgmt/containers/www/console:/usr/local/srs/www/console \
   -v $(pwd)/mgmt/containers/www/players:/usr/local/srs/www/players \
-  --env SRS_SOURCE=$SOURCE --env SRS_REGION=$REGION --env PLATFORM_DOCKER=true --env MGMT_DOCKER=true \
+  --env CLOUD=DOCKER --env MGMT_DOCKER=true \
   -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
   platform-dev bash
 ```

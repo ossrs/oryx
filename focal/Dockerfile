@@ -33,6 +33,8 @@ ENV SRS_DOCKERIZED=true
 ENV MGMT_DOCKER=true
 # Run platform in docker by default.
 ENV PLATFORM_DOCKER=true
+# Setup the .env to docker.
+ENV CLOUD=DOCKER
 
 # Create link for compatible reason.
 RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform

@@ -110,6 +110,8 @@ func discoverPlatform(ctx context.Context, cloud string) (platform string, err e
 		return "bt", nil
 	case "AAPANEL":
 		return "aapanel", nil
+	case "DOCKER":
+		return "docker", nil
 	}
 
 	// Discover CVM or lighthouse.

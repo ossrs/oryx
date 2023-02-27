@@ -96,6 +96,10 @@ func discoverRegion(ctx context.Context) (cloud, region string, err error) {
 		return "AAPANEL", "ap-singapore", nil
 	}
 
+	if os.Getenv("CLOUD") == "DOCKER" {
+		return "DOCKER", "ap-beijing", nil
+	}
+
 	if os.Getenv("CLOUD") != "" && os.Getenv("REGION") != "" {
 		return os.Getenv("CLOUD"), os.Getenv("REGION"), nil
 	}
@@ -167,7 +171,7 @@ func discoverRegion(ctx context.Context) (cloud, region string, err error) {
 
 func discoverSource(ctx context.Context, cloud, region string) (source string, err error) {
 	switch cloud {
-	case "DEV", "BT":
+	case "DEV", "BT", "DOCKER":
 		return "gitee", nil
 	case "DO", "AAPANEL":
 		return "github", nil
