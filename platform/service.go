@@ -819,7 +819,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			// Query containers
 			var names []string
 			if name == "" {
-				names = []string{srsDockerName, platformDockerName}
+				names = []string{platformDockerName}
 			} else {
 				names = []string{name}
 			}

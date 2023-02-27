@@ -958,6 +958,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 
 func NewDockerBackendService(p PlatformManager) BackendService {
 	return &dockerBackendService{
+		platformManager: p,
 	}
 }
 
