@@ -10,6 +10,9 @@ RUN echo "BUILDPLATFORM: $BUILDPLATFORM, TARGETPLATFORM: $TARGETPLATFORM, TARGET
 ADD mgmt /g/mgmt
 ADD platform /g/platform
 
+# Create .env to force it as file when mount, see https://stackoverflow.com/a/47099098/17679565
+RUN touch /g/mgmt/.env
+
 WORKDIR /g/mgmt
 # We might run mgmt in Linux host machine, so we build for alpine, statically link.
 RUN make clean && make alpine
