@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+REALPATH=$(realpath $0)
+WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
+echo "Start redis server at $WORK_DIR from $0"
+
+# Do everything at the same work directory.
+cd $WORK_DIR/../../mgmt
+
+if [[ ! -f .env ]]; then
+  touch .env && echo "MGMT create .env"
+  if [[ $? -ne 0 ]]; then echo "MGMT create .env failed"; exit 1; fi
+fi
+
+if [[ ! -f /etc/redis/redis.conf ]]; then
+  mkdir -p /etc/redis &&
+  ln -sf $(pwd)/containers/conf/redis.conf /etc/redis/redis.conf &&
+  echo "MGMT create redis configuration"
+  if [[ $? -ne 0 ]]; then echo "MGMT create redis configuration failed"; exit 1; fi
+fi
+
+if [[ ! -d /data ]]; then
+  mkdir -p containers/data/redis &&
+  ln -sf $(pwd)/containers/data/redis /data &&
+  echo "MGMT create redis data directory"
+  if [[ $? -ne 0 ]]; then echo "MGMT create redis data directory failed"; exit 1; fi
+fi
+
+if [[ ! -f /usr/local/srs/conf/lighthouse.conf ]]; then
+  mkdir -p /usr/local/srs/conf &&
+  ln -sf $(pwd)/containers/conf/srs.release.conf /usr/local/srs/conf/lighthouse.conf &&
+  echo "MGMT create srs configuration"
+  if [[ $? -ne 0 ]]; then echo "MGMT create srs configuration failed"; exit 1; fi
+fi
+

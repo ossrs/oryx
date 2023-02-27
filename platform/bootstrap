@@ -10,6 +10,11 @@ echo "Program args: $APP_ARGS"
 # Do everything at the same work directory.
 cd $WORK_DIR
 
+# Create .env when run mgmt from docker.
+if [[ $MGMT_DOCKER == "true" ]]; then
+  bash auto/init_mgmt && echo "Init mgmt ok."
+fi
+
 # Get the metadata of machine.
 if [[ -f ../mgmt/.env ]]; then source ../mgmt/.env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"

@@ -12,7 +12,7 @@ if [[ -f .env ]]; then source .env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE, MGMT_DOCKER=$MGMT_DOCKER"
 
 if [[ $MGMT_DOCKER == "true" ]]; then
-  ./bootstrap &
+  ./mgmt &
 
   for ((i=0; i<10; i++)); do
     if [[ -f $REDIS_PID_FILE ]]; then
