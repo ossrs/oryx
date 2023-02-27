@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 
+REALPATH=$(realpath $0)
+WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
+echo "Start SRS server at $WORK_DIR from $0"
+
+# Do everything at the same work directory.
+cd $WORK_DIR/..
+
 echo "Stop SRS server"
 
-SRS_PID_FILE="/usr/local/srs/objs/srs.pid"
+SRS_PID_FILE="./objs/srs.pid"
 if [[ -f $SRS_PID_FILE ]]; then
   SRS_PID=`cat $SRS_PID_FILE`
   echo "Stopping SRS, pid=$SRS_PID"
