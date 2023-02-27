@@ -46,14 +46,6 @@ function update_containers() {
   done
 }
 
-# Update the containers before restart. Note that the containers are normally started by previous mgmt, with the
-# upgraded image. So we only upgrade the images for all containers, and it's the responsibility for mgmt to restart the
-# container if need to change the startup arguments.
-echo "Upgrading all containers by images" &&
-update_containers $REGISTRY ossrs/srs:4 ossrs/srs:4 &&
-update_containers $REGISTRY ossrs/srs:5 ossrs/srs:5
-if [[ $? -ne 0 ]]; then echo "Upgrade containers failed"; exit 1; fi
-
 # Note that we should update the platform image, so we could fast startup the container, because mgmt use another tag
 # which has the same hash.
 echo "Update platform image" && docker pull $REGISTRY/ossrs/srs-cloud:platform-1

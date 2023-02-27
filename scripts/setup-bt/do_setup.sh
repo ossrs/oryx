@@ -66,7 +66,6 @@ if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
 ########################################################################################################################
 # Update the docker images.
 echo "Cache docker images" &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs:4 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 

@@ -14,6 +14,7 @@ WORKDIR /g/mgmt
 # We might run mgmt in Linux host machine, so we build for alpine, statically link.
 RUN make clean && make alpine
 
+# Note that we only build the platform without ui, because already build ui for all OS.
 WORKDIR /g/platform
 RUN make clean && make
 RUN cd /g/platform/ui && rm -rf js-core node_modules package* public src

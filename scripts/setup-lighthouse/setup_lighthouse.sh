@@ -55,7 +55,6 @@ if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
 # Cache the docker images for srs-cloud to startup faster.
 systemctl start docker &&
 echo "Cache docker images" &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs:4 &&
 docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 

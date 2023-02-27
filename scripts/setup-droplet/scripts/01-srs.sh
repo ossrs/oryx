@@ -18,13 +18,8 @@ if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 # Cache the docker images for srs-cloud to startup faster.
 systemctl start docker &&
 echo "Cache docker images" &&
-docker pull docker.io/ossrs/srs:4 &&
 docker pull docker.io/ossrs/srs-cloud:platform-1
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
-
-# The certbot tool is optional, and might fail on arm server because no arm image.
-docker pull docker.io/ossrs/certbot
-if [[ $? -ne 0 ]]; then echo "Ignore certbot fail"; fi
 
 # If install ok, the directory should exists.
 if [[ ! -d ${INSTALL_HOME} || ! -d ${INSTALL_HOME}/mgmt ]]; then
