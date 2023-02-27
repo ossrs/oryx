@@ -144,7 +144,7 @@ function ComponentsImpl() {
                     </footer>
                   }
                 </Card.Text> &nbsp;
-                <MgmtUpgradeButton onStatus={onStatus}/>
+                {!env?.mgmtDocker && <MgmtUpgradeButton onStatus={onStatus}/>}
               </Card.Body>
             </Card>
           </Col>
