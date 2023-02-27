@@ -439,6 +439,22 @@ docker run --rm -it -p 2022:2022 \
   ossrs/srs-cloud:platform-v1.0.292
 ```
 
+To save redis data to `/tmp/data`:
+
+```bash
+docker run --rm -it -p 2022:2022 -v /tmp/data:/data \
+  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  ossrs/srs-cloud:platform-v1.0.292
+```
+
+To mount the record directory to `/tmp/record`:
+
+```bash
+docker run --rm -it -p 2022:2022 -v /tmp/record:/usr/local/srs-cloud/mgmt/containers/data/record \
+  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  ossrs/srs-cloud:platform-v1.0.292
+```
+
 Then open http://localhost:2022/mgmt in browser.
 
 ## Release
