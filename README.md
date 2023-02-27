@@ -277,7 +277,7 @@ Removed variables in .env:
 
 Please restart service when `.env` changed.
 
-## Develop All in macOS
+## Run All in macOS
 
 Run the mgmt backend, or run in GoLand:
 
@@ -311,7 +311,55 @@ cd ~/git/srs-cloud/platform && ~/git/srs/trunk/objs/srs -c containers/conf/srs.r
 
 Access the browser: http://localhost:3000
 
+## Run All in One Docker
+
+Run srs-cloud in one docker:
+
+```bash
+docker run --rm -it -p 2022:2022 \
+  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  ossrs/srs-cloud:platform-v1.0.292
+```
+
+To save redis data to `/tmp/data`:
+
+```bash
+docker run --rm -it -p 2022:2022 -v /tmp/data:/data \
+  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  ossrs/srs-cloud:platform-v1.0.292
+```
+
+To mount the record directory to `/tmp/record`:
+
+```bash
+docker run --rm -it -p 2022:2022 -v /tmp/record:/usr/local/srs-cloud/mgmt/containers/data/record \
+  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  ossrs/srs-cloud:platform-v1.0.292
+```
+
+To mount the `.env` in local disk:
+
+```bash
+docker run --rm -it -p 2022:2022 -v $(pwd)/mgmt/.env:/usr/local/srs-cloud/mgmt/.env \
+  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  ossrs/srs-cloud:platform-v1.0.292
+```
+
+Then open http://localhost:2022/mgmt in browser.
+
 ## Develop Platform in Docker
+
+Run mgmt in macOS or GoLand:
+
+```bash
+cd ~/git/srs-cloud/mgmt && make && ./mgmt
+```
+
+Run the platform react ui, or run in WebStorm:
+
+```
+(cd ~/git/srs-cloud/platform/ui && npm install && npm start)
+```
 
 If develop and test platform in docker.
 
@@ -428,34 +476,6 @@ docker exec -it platform bash -c 'make && ./platform'
 ```
 
 It's the same as production online.
-
-## Run in One Docker
-
-Run srs-cloud in one docker:
-
-```bash
-docker run --rm -it -p 2022:2022 \
-  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  ossrs/srs-cloud:platform-v1.0.292
-```
-
-To save redis data to `/tmp/data`:
-
-```bash
-docker run --rm -it -p 2022:2022 -v /tmp/data:/data \
-  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  ossrs/srs-cloud:platform-v1.0.292
-```
-
-To mount the record directory to `/tmp/record`:
-
-```bash
-docker run --rm -it -p 2022:2022 -v /tmp/record:/usr/local/srs-cloud/mgmt/containers/data/record \
-  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  ossrs/srs-cloud:platform-v1.0.292
-```
-
-Then open http://localhost:2022/mgmt in browser.
 
 ## Release
 
