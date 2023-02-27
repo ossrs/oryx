@@ -10,6 +10,7 @@ import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
 import * as semver from "semver";
+import {SrsEnvContext} from "../components/SrsEnvContext";
 
 export default function Components() {
   return (
@@ -27,6 +28,7 @@ function ComponentsImpl() {
   const [refreshContainers, setRefreshContainers] = React.useState();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
+  const env = React.useContext(SrsEnvContext)[0];
 
   React.useEffect(() => {
     const allowDisableContainer = searchParams.get('allow-disable') === 'true';
@@ -55,9 +57,11 @@ function ComponentsImpl() {
     refreshMgmtStatus();
     const timer = setInterval(() => refreshMgmtStatus(), 10 * 1000);
     return () => clearInterval(timer);
-  }, [setStatus]);
+  }, [setStatus, env]);
 
   React.useEffect(() => {
+    if (env?.mgmtDocker) return;
+
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/containers', {
       ...token, action: 'query',
@@ -79,7 +83,7 @@ function ComponentsImpl() {
       });
       console.log(`SRS: Query ok, containers are ${JSON.stringify(containers)}`);
     }).catch(handleError);
-  }, [refreshContainers, handleError]);
+  }, [refreshContainers, handleError, env]);
 
   const handleContainerChange = React.useCallback((container) => {
     const token = Token.load();
@@ -102,29 +106,31 @@ function ComponentsImpl() {
     <>
       <Container>
         <Row>
+          {!env?.mgmtDocker &&
+            <Col xs lg={3}>
+              <Card style={{width: '18rem', marginTop: '16px'}}>
+                <Card.Header>{t('coms.platform')}</Card.Header>
+                <Card.Body>
+                  <Card.Text as={Col}>
+                    {t('coms.containerName')}：{platform?.name} <br/>
+                    {t('coms.containerId')}：{platform?.container?.ID} <br/>
+                    {t('coms.containerState')}：{platform?.StatusMessage}
+                    <p></p>
+                  </Card.Text>
+                  <div style={{display: 'inline-block'}}>
+                    <MgmtUpdateContainer
+                      allow={allowDisableContainer && platform?.name}
+                      enabled={platform?.enabled}
+                      onClick={() => handleContainerChange(platform)}
+                    />
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          }
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>{t('coms.platform')}</Card.Header>
-              <Card.Body>
-                <Card.Text as={Col}>
-                  {t('coms.containerName')}：{platform?.name} <br/>
-                  {t('coms.containerId')}：{platform?.container?.ID} <br/>
-                  {t('coms.containerState')}：{platform?.StatusMessage}
-                  <p></p>
-                </Card.Text>
-                <div style={{display: 'inline-block'}}>
-                  <MgmtUpdateContainer
-                    allow={allowDisableContainer && platform?.name}
-                    enabled={platform?.enabled}
-                    onClick={() => handleContainerChange(platform)}
-                  />
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xs lg={3}>
-            <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>{t('coms.host')}</Card.Header>
+              <Card.Header>{env?.mgmtDocker ? t('coms.platform') : t('coms.host')}</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
                   <p>
@@ -180,6 +186,7 @@ function MgmtUpgradeButton({onStatus}) {
   const [upgradeDone, setUpgradeDone] = React.useState();
   const [progress, setProgress] = React.useState(upgradeProgress);
   const {t} = useTranslation();
+  const env = React.useContext(SrsEnvContext)[0];
 
   // For callback to update state, because in callback we can only get the copy, so we need a ref to point to the latest
   // copy of state of variant objects.
@@ -230,7 +237,7 @@ function MgmtUpgradeButton({onStatus}) {
     const timeout = startingUpgrade ? 1.3 * 1000 : 8.5 * 1000;
     const timer = setInterval(() => refreshMgmtStatus(), timeout);
     return () => clearInterval(timer);
-  }, [startingUpgrade, requestStatus, onStatus]);
+  }, [startingUpgrade, requestStatus, onStatus, env]);
 
   const handleStartUpgrade =() => {
     if (isUpgrading) return;

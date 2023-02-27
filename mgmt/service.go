@@ -240,7 +240,6 @@ func discoverPrivateIPv4(ctx context.Context) (string, net.IP, error) {
 
 // Docker container names.
 const platformDockerName = "platform"
-const srsDockerName = "srs-server"
 
 // For docker state.
 type dockerInfo struct {
@@ -267,8 +266,67 @@ func (v *dockerInfo) String() string {
 	return fmt.Sprintf("ID=%v, State=%v, Status=%v", v.ID, v.State, v.Status)
 }
 
+// execUpgrade run upgrade.
+func execUpgrade(ctx context.Context, target string) error {
+	if os.Getenv("MGMT_DOCKER") == "true" {
+		return nil
+	}
+
+	cmd := exec.CommandContext(ctx, "bash", "upgrade", target)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return errors.Wrapf(err, "pipe stdout")
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return errors.Wrapf(err, "pipe stderr")
+	}
+
+	logger.Tf(ctx, "start upgrade to %v", target)
+	if err = cmd.Start(); err != nil {
+		return errors.Wrapf(err, "start upgrade")
+	}
+
+	rs := io.MultiReader(stdout, stderr)
+	buf := make([]byte, 4096)
+	for {
+		if nn, err := rs.Read(buf); err != nil || nn == 0 {
+			if err != io.EOF {
+				logger.Tf(ctx, "read nn=%v, err %v", nn, err)
+			}
+			break
+		} else if s := buf[:nn]; true {
+			logger.Tf(ctx, "%v", string(s))
+		}
+	}
+
+	if err = cmd.Wait(); err != nil {
+		logger.Tf(ctx, "wait err %v", err)
+	}
+
+	return nil
+}
+
+// startContainer start container.
+func startContainer(ctx context.Context, args []string) error {
+	if os.Getenv("MGMT_DOCKER") == "true" {
+		return nil
+	}
+
+	if err := exec.CommandContext(ctx, "docker", args...).Run(); err != nil {
+		return errors.Wrapf(err, "docker %v", strings.Join(args, " "))
+	}
+	return nil
+}
+
 // queryContainer used to query the state of docker container.
 func queryContainer(ctx context.Context, name string) (all, running *dockerInfo) {
+	if os.Getenv("MGMT_DOCKER") == "true" {
+		return nil, nil
+	}
+
 	if true {
 		cmd := exec.CommandContext(ctx, "docker",
 			"ps", "-a", "-f", fmt.Sprintf("name=%v", name), "--format", "'{{json .}}'",
@@ -302,6 +360,10 @@ func queryContainer(ctx context.Context, name string) (all, running *dockerInfo)
 
 // removeContainer used to remove the docker container.
 func removeContainer(ctx context.Context, name string) error {
+	if os.Getenv("MGMT_DOCKER") == "true" {
+		return nil
+	}
+
 	cmd := exec.CommandContext(ctx, "docker", "rm", "-f", name)
 	if err := cmd.Run(); err != nil {
 		return errors.Wrapf(err, "docker rm -f %v", name)
@@ -311,6 +373,10 @@ func removeContainer(ctx context.Context, name string) error {
 
 // removeImage used to remove the docker image.
 func removeImage(ctx context.Context, name string) error {
+	if os.Getenv("MGMT_DOCKER") == "true" {
+		return nil
+	}
+
 	cmd := exec.CommandContext(ctx, "docker", "rmi", name)
 	if err := cmd.Run(); err != nil {
 		return errors.Wrapf(err, "docker rmi %v", name)
@@ -320,6 +386,9 @@ func removeImage(ctx context.Context, name string) error {
 
 // reloadNginx is used to reload the NGINX server.
 func reloadNginx(ctx context.Context) error {
+	if os.Getenv("MGMT_DOCKER") == "true" {
+		return nil
+	}
 	if conf.IsDarwin {
 		return nil
 	}
@@ -367,6 +436,10 @@ type dockerPlatformManager struct {
 }
 
 func (v *dockerPlatformManager) Start(ctx context.Context) error {
+	if os.Getenv("MGMT_DOCKER") == "true" {
+		return nil
+	}
+
 	all, _ := queryContainer(ctx, platformDockerName)
 	if all != nil && all.ID != "" {
 		err := removeContainer(ctx, platformDockerName)
@@ -386,7 +459,11 @@ func (v *dockerPlatformManager) Start(ctx context.Context) error {
 		"--env", fmt.Sprintf("USE_DOCKER=%v", os.Getenv("USE_DOCKER")),
 		// If use docker, should always use production to connect to redis.
 		"--env", "NODE_ENV=production",
+		// Note that mgmt not in docker by default.
+		"--env", "MGMT_DOCKER=false",
+		// The port that platform listen at.
 		"-p", "2024:2024/tcp",
+		// The host to connect to mgmt.
 		"--add-host", fmt.Sprintf("mgmt.srs.local:%v", conf.IPv4()),
 	}
 	if !conf.IsDarwin {
@@ -626,20 +703,8 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			return errors.Errorf("no name")
 		}
 
-		// Convert names to docker names.
-		var dockerNames []string
-		for _, name := range names {
-			if name == "srs" {
-				dockerNames = append(dockerNames, srsDockerName)
-			} else if name == "srsDev" {
-				return errors.New("srs dev is not supported")
-			} else {
-				dockerNames = append(dockerNames, name)
-			}
-		}
-
 		containers := []interface{}{}
-		for _, name := range dockerNames {
+		for _, name := range names {
 			// Note that the enabled is load from redis by platform.
 			r0 := &struct {
 				Name      string `json:"name"`
@@ -748,8 +813,8 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		if err := removeContainer(ctx, name); err != nil {
 			logger.Tf(ctx, "ignore remove docker name=%v err %v", name, err)
 		}
-		if err := exec.CommandContext(ctx, "docker", args...).Run(); err != nil {
-			return errors.Wrapf(err, "docker %v", strings.Join(args, " "))
+		if err := startContainer(ctx, args); err != nil {
+			return errors.Wrapf(err, "start")
 		}
 
 		ohttp.WriteData(ctx, w, r, nil)
@@ -775,38 +840,8 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			return errors.New("no target")
 		}
 
-		cmd := exec.CommandContext(ctx, "bash", "upgrade", target)
-
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			return errors.Wrapf(err, "pipe stdout")
-		}
-
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			return errors.Wrapf(err, "pipe stderr")
-		}
-
-		logger.Tf(ctx, "start upgrade to %v", target)
-		if err = cmd.Start(); err != nil {
-			return errors.Wrapf(err, "start upgrade")
-		}
-
-		rs := io.MultiReader(stdout, stderr)
-		buf := make([]byte, 4096)
-		for {
-			if nn, err := rs.Read(buf); err != nil || nn == 0 {
-				if err != io.EOF {
-					logger.Tf(ctx, "read nn=%v, err %v", nn, err)
-				}
-				break
-			} else if s := buf[:nn]; true {
-				logger.Tf(ctx, "%v", string(s))
-			}
-		}
-
-		if err = cmd.Wait(); err != nil {
-			logger.Tf(ctx, "wait err %v", err)
+		if err := execUpgrade(ctx, target); err != nil {
+			return errors.Wrapf(err, "upgrade to %v", target)
 		}
 
 		ohttp.WriteData(ctx, w, r, nil)
@@ -984,6 +1019,10 @@ func (v *dockerBackendService) Close() error {
 }
 
 func (v *dockerBackendService) Start(ctx context.Context) error {
+	if os.Getenv("MGMT_DOCKER") == "true" {
+		return nil
+	}
+
 	ctx = logger.WithContext(ctx)
 	v.ctx, v.cancel = context.WithCancel(ctx)
 

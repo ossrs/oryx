@@ -245,6 +245,7 @@ The optional environments defined by `mgmt/.env`:
 For mgmt to start platform in docker, because it can't access redis which is started by platform:
 
 * `PLATFORM_DOCKER`: Whether run platform in docker. Default: true
+* `MGMT_DOCKER`: Whether run mgmt in docker. Default: false
 
 For testing the specified service:
 
@@ -276,7 +277,7 @@ Removed variables in .env:
 
 Please restart service when `.env` changed.
 
-## Develop in macOS
+## Develop All in macOS
 
 Run the mgmt backend, or run in GoLand:
 
@@ -310,7 +311,7 @@ cd ~/git/srs-cloud/platform && ~/git/srs/trunk/objs/srs -c containers/conf/srs.r
 
 Access the browser: http://localhost:3000
 
-## Develop in Docker
+## Develop Platform in Docker
 
 If develop and test platform in docker.
 
@@ -345,7 +346,7 @@ docker run --rm -it -p 2024:2024 --name platform \
   -v $(pwd)/mgmt/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html \
   -v $(pwd)/mgmt/containers/www/console:/usr/local/srs/www/console \
   -v $(pwd)/mgmt/containers/www/players:/usr/local/srs/www/players \
-  --env SRS_SOURCE=$SOURCE --env SRS_REGION=$REGION \
+  --env SRS_SOURCE=$SOURCE --env SRS_REGION=$REGION --env PLATFORM_DOCKER=true \
   -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
   platform-dev bash
 ```
@@ -353,19 +354,77 @@ docker run --rm -it -p 2024:2024 --name platform \
 Start redis and SRS only in docker:
 
 ```bash
-bash auto/start_redis && bash auto/start_srs
+docker exec -it platform bash -c 'bash auto/start_redis && bash auto/start_srs'
 ```
 
 Stop redis and SRS server in docker:
 
 ```bash
-bash auto/stop_redis && bash auto/stop_srs
+docker exec -it platform bash -c 'bash auto/stop_redis && bash auto/stop_srs'
 ```
 
 Build and run platform only in docker:
 
 ```bash
-make && ./platform
+docker exec -it platform bash -c 'make && ./platform'
+```
+
+It's the same as production online.
+
+## Develop All in One Docker
+
+Run srs-cloud in a docker.
+
+First, build image:
+
+```bash
+cd ~/git/srs-cloud
+docker build -t platform-dev -f platform/Dockerfile.dev .
+```
+
+Then start the development docker:
+
+```bash
+source mgmt/.env &&
+docker run --rm -it -p 2022:2022 -p 2024:2024 --name platform \
+  -v $(pwd)/mgmt:/usr/local/srs-cloud/mgmt \
+  -v $(pwd)/platform:/usr/local/srs-cloud/platform \
+  -v $(pwd)/mgmt/containers/data/redis:/data \
+  -v $(pwd)/mgmt/containers/conf/redis.conf:/etc/redis/redis.conf \
+  --add-host redis:127.0.0.1 --env SRS_DOCKERIZED=true --env REDIS_HOST=127.0.0.1 \
+  -v $(readlink -f mgmt/containers/data/record):/usr/local/srs-cloud/mgmt/containers/data/record \
+  --add-host mgmt.srs.local:127.0.0.1 --env NODE_ENV=development \
+  -v $(pwd)/mgmt/containers/conf/srs.release.conf:/usr/local/srs/conf/lighthouse.conf \
+  -v $(pwd)/mgmt/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html \
+  -v $(pwd)/mgmt/containers/www/console:/usr/local/srs/www/console \
+  -v $(pwd)/mgmt/containers/www/players:/usr/local/srs/www/players \
+  --env SRS_SOURCE=$SOURCE --env SRS_REGION=$REGION --env PLATFORM_DOCKER=true --env MGMT_DOCKER=true \
+  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  platform-dev bash
+```
+
+Start redis and SRS only in docker:
+
+```bash
+docker exec -it platform bash -c 'bash auto/start_redis && bash auto/start_srs'
+```
+
+Stop redis and SRS server in docker:
+
+```bash
+docker exec -it platform bash -c 'bash auto/stop_redis && bash auto/stop_srs'
+```
+
+Build and run mgmt only in docker:
+
+```bash
+docker exec -it -w /usr/local/srs-cloud/mgmt platform bash -c 'make && ./mgmt'
+```
+
+Build and run platform only in docker:
+
+```bash
+docker exec -it platform bash -c 'make && ./platform'
 ```
 
 It's the same as production online.

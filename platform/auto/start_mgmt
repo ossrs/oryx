@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+REALPATH=$(realpath $0)
+WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
+echo "Start redis server at $WORK_DIR from $0"
+
+# Do everything at the same work directory.
+cd $WORK_DIR/../../mgmt
+
+# Get the metadata of machine.
+if [[ -f .env ]]; then source .env; fi
+echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE, MGMT_DOCKER=$MGMT_DOCKER"
+
+if [[ $MGMT_DOCKER == "true" ]]; then
+  ./bootstrap &
+
+  for ((i=0; i<10; i++)); do
+    if [[ -f $REDIS_PID_FILE ]]; then
+      curl http://localhost:2022/terraform/v1/host/versions 1>/dev/null 2>/dev/null &&
+      echo "mgmt server started" &&
+      break
+    fi
+    sleep 0.3
+  done
+
+  curl http://localhost:2022/terraform/v1/host/versions 1>/dev/null 2>/dev/null
+  if [[ $? -ne 0 ]]; then echo "Check mgmt failed"; exit 1; fi
+fi
+

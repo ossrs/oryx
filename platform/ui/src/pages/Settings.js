@@ -7,6 +7,7 @@ import SetupCamSecret from '../components/SetupCamSecret';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
+import {SrsEnvContext} from "../components/SrsEnvContext";
 
 export default function Systems() {
   return (
@@ -87,6 +88,7 @@ function SettingNginx() {
   const [hlsDelivery, setHlsDelivery] = React.useState();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
+  const env = React.useContext(SrsEnvContext)[0];
 
   const updateHlsDelivery = React.useCallback((e) => {
     e.preventDefault();
@@ -98,6 +100,10 @@ function SettingNginx() {
       alert(t('helper.setOk'));
     }).catch(handleError);
   }, [handleError, hlsDelivery, t]);
+
+  if (env?.mgmtDocker) {
+    return <span style={{color: 'red'}}>{t('errs.noNginx')}</span>;
+  }
 
   return (
     <Accordion defaultActiveKey="0">

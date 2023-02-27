@@ -20,6 +20,9 @@ bash auto/start_redis
 # Start SRS.
 bash auto/start_srs
 
+# Start mgmt if run in docker.
+bash auto/start_mgmt
+
 # Start the application server.
 ./platform $APP_ARGS
 

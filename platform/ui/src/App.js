@@ -19,13 +19,13 @@ import resources from "./resources/locale.json";
 import {SrsEnvContext} from "./components/SrsEnvContext";
 
 function App() {
-  const [env, setEnv] = React.useState();
+  const [env, setEnv] = React.useState(null);
 
   return (
     <SrsEnvContext.Provider value={[env, setEnv]}>
       <ErrorBoundary FallbackComponent={(RootError)}>
         <SrsErrorBoundary>
-          <AppImpl/>
+          <AppPreImpl/>
         </SrsErrorBoundary>
       </ErrorBoundary>
     </SrsEnvContext.Provider>
@@ -36,12 +36,27 @@ function RootError({error}) {
   return <Container>{error?.message}</Container>;
 }
 
+function AppPreImpl() {
+  const [env, setEnv] = React.useContext(SrsEnvContext);
+  const handleError = useErrorHandler();
+
+  React.useEffect(() => {
+    if (!setEnv) return;
+
+    axios.get('/terraform/v1/mgmt/envs').then(res => {
+      setEnv(res.data.data);
+      console.log(`Env ok, ${JSON.stringify(res.data)}`);
+    }).catch(handleError);
+  }, [handleError, setEnv]);
+
+  return <>{env && <AppImpl/>}</>;
+}
+
 function AppImpl() {
   const [loading, setLoading] = React.useState(true);
   const [initialized, setInitialized] = React.useState();
   const [tokenUpdated, setTokenUpdated] = React.useState();
   const [token, setToken] = React.useState();
-  const setEnv = React.useContext(SrsEnvContext)[1];
   const handleError = useErrorHandler();
 
   React.useEffect(() => {
@@ -57,15 +72,6 @@ function AppImpl() {
       console.log(`Check ok, ${JSON.stringify(res.data)}`);
     }).catch(handleError);
   }, [handleError]);
-
-  React.useEffect(() => {
-    if (!setEnv) return;
-
-    axios.get('/terraform/v1/mgmt/envs').then(res => {
-      setEnv(res.data.data);
-      console.log(`Env ok, ${JSON.stringify(res.data)}`);
-    }).catch(handleError);
-  }, [handleError, setEnv]);
 
   React.useEffect(() => {
     setToken(Token.load());
@@ -85,11 +91,11 @@ function AppImpl() {
         <BrowserRouter basename={window.PUBLIC_URL}>
           <Navigator {...{initialized, token}} />
           <Routes>
-            <Route path="/" element={<AppRoot />}/>
-            <Route path=':locale' element={<AppLocale />}>
+            <Route path="/" element={<AppRoot/>}/>
+            <Route path=':locale' element={<AppLocale/>}>
               {!initialized && <>
-                <Route path="*" element={<Setup onInit={onInit} />}/>
-                <Route path="routers-setup" element={<Setup onInit={onInit} />}/>
+                <Route path="*" element={<Setup onInit={onInit}/>}/>
+                <Route path="routers-setup" element={<Setup onInit={onInit}/>}/>
               </>}
               {initialized && !token && <>
                 <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
@@ -101,11 +107,11 @@ function AppImpl() {
                 <Route path="routers-settings" element={<Settings/>}/>
                 <Route path="routers-contact" element={<Contact/>}/>
                 <Route path="routers-components" element={<Components/>}/>
-                <Route path="routers-logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)} />}/>
+                <Route path="routers-logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)}/>}/>
               </>}
             </Route>
           </Routes>
-          <Footer />
+          <Footer/>
         </BrowserRouter>
       </>}
     </>
@@ -131,7 +137,7 @@ function AppLocale() {
     return navigate(to);
   }, [navigate, params, location]);
 
-  return <Outlet />;
+  return <Outlet/>;
 }
 
 function AppRoot() {

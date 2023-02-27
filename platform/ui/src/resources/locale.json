@@ -177,7 +177,8 @@
         "expire1": "Token过期，请",
         "expire2": "重新登录",
         "btHttps1": "请使用宝塔或其他工具，配置域名和SSL证书",
-        "redis1": "正在启动Redis中，请等会儿再刷新页面试试"
+        "redis1": "正在启动Redis中，请等会儿再刷新页面试试",
+        "noNginx": "纯Docker启动时，不支持Nginx分发"
       },
       "helper": {
         "changeStream": "更换流名称成功",
@@ -375,7 +376,8 @@
         "expire1": "Token expired, please ",
         "expire2": "login",
         "btHttps1": "Please use aaPanel or certbot to configure HTTPS",
-        "redis1": "Redis is not ready now, please retry later"
+        "redis1": "Redis is not ready now, please retry later",
+        "noNginx": "No nginx support for docker"
       },
       "helper": {
         "changeStream": "Stream name changed",

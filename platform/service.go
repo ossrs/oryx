@@ -235,9 +235,11 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteData(ctx, w, r, &struct {
 				Secret bool   `json:"secret"`
 				HTTPS  string `json:"https"`
+				MgmtDocker bool `json:"mgmtDocker"`
 			}{
 				Secret: r0 != "",
 				HTTPS:  os.Getenv("SRS_HTTPS"),
+				MgmtDocker: os.Getenv("MGMT_DOCKER") == "true",
 			})
 			return nil
 		}(); err != nil {
