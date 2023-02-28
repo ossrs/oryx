@@ -326,7 +326,7 @@ All data will be reset when restarting, so please mount volumes if want to save 
 
 ```bash
 docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  -v $HOME/data:/data -v $HOME/record:/usr/local/srs-cloud/mgmt/containers/data/record -v $HOME/config:/usr/local/srs-cloud/mgmt/containers/data/config \
+  -v $HOME/db/data:/data -v $HOME/db/record:/usr/local/srs-cloud/mgmt/containers/data/record -v $HOME/db/config:/usr/local/srs-cloud/mgmt/containers/data/config \
   ossrs/srs-cloud:platform-v1.0.292
 ```
 
