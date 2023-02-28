@@ -7,10 +7,8 @@ echo "Start redis server at $WORK_DIR from $0"
 # Do everything at the same work directory.
 cd $WORK_DIR/../../mgmt
 
-if [[ ! -f .env ]]; then
-  touch .env && echo "MGMT create .env"
-  if [[ $? -ne 0 ]]; then echo "MGMT create .env failed"; exit 1; fi
-fi
+# Initialize global configuration.
+bash auto/init_global
 
 if [[ ! -f /etc/redis/redis.conf ]]; then
   mkdir -p /etc/redis &&

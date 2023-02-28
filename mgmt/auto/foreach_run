@@ -13,13 +13,8 @@ docker rm -f redis 2>/dev/null; echo "Remove redis container"
 # Do not use SRS container, we run SRS in platform now.
 docker rm -f srs-server 2>/dev/null; echo "Remove SRS container"
 
-# Migrate .env to containers/data/config
-if [[ ! -f containers/data/config/.env ]]; then
-  touch .env && mkdir -p containers/data/config &&
-  mv .env containers/data/config/.env &&
-  ln -sf containers/data/config/.env .env &&
-  echo "Migrate .env to containers/data/config/.env"
-fi
+# Initialize global configuration.
+bash auto/init_global
 
 # Generate coredump, see https://stackoverflow.com/a/47694315/17679565
 if [[ -f /proc/sys/kernel/core_pattern && ! -d /cores ]]; then

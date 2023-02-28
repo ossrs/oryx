@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+echo "Init global script"
+
+# Migrate .env to containers/data/config
+if [[ ! -f containers/data/config/.env ]]; then
+  touch .env && mkdir -p containers/data/config &&
+  mv .env containers/data/config/.env &&
+  ln -sf containers/data/config/.env .env &&
+  echo "Migrate .env to containers/data/config/.env"
+  if [[ $? -ne 0 ]]; then echo "MGMT migrate .env failed"; exit 1; fi
+fi
+
