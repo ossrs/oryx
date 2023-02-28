@@ -326,15 +326,17 @@ All data will be reset when restarting, so please mount volumes if want to save 
 
 ```bash
 docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  -v $HOME/db/data:/data -v $HOME/db/record:/usr/local/srs-cloud/mgmt/containers/data/record -v $HOME/db/config:/usr/local/srs-cloud/mgmt/containers/data/config \
+  -v $HOME/db/redis/data:/data -v $HOME/db/srs/data:/usr/local/srs-cloud/mgmt/containers/data \
   ossrs/srs-cloud:platform-v1.0.292
 ```
 
 The volumes for srs-cloud:
 
 * `/data` The redis data directory, the publish secret and record configuration.
-* `/usr/local/srs-cloud/mgmt/containers/data/config` The mgmt password and cloud configuration.
-* `/usr/local/srs-cloud/mgmt/containers/data/record` The record storage directory, save record files.
+* `/usr/local/srs-cloud/mgmt/containers/data` The data for srs-cloud.
+  * `config` The mgmt password and cloud configuration.
+  * `record` The record storage directory, save record files.
+  * `vlive` The storage directory for virtual live, save video files.
 
 You can change the volumes to other directories.
 
