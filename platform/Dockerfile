@@ -11,7 +11,7 @@ ADD mgmt /g/mgmt
 ADD platform /g/platform
 
 # Create .env to force it as file when mount, see https://stackoverflow.com/a/47099098/17679565
-RUN touch /g/mgmt/.env
+RUN mkdir -p /g/mgmt/containers/data/config && touch /g/mgmt/containers/data/config/.env
 
 WORKDIR /g/mgmt
 # We might run mgmt in Linux host machine, so we build for alpine, statically link.
