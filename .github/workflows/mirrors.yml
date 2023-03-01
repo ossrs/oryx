@@ -78,6 +78,14 @@ jobs:
           dst: |
             ossrs/grafana:9.3.1
             ossrs/grafana
+      # See https://hub.docker.com/r/ossrs/ubuntu/tags
+      - name: Mirror for ubuntu:focal
+        uses: akhilerm/tag-push-action@v2.1.0
+        with:
+          src: ubuntu:focal
+          dst: |
+            ossrs/ubuntu:focal
+            ossrs/ubuntu
     runs-on: ubuntu-20.04
 
   # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/node/images
@@ -231,5 +239,24 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/grafana:9.3.1
             registry.cn-hangzhou.aliyuncs.com/ossrs/grafana
+    runs-on: ubuntu-20.04
+
+  # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/ubuntu/images
+  aliyun-ubuntu:
+    needs: aliyun-grafana
+    steps:
+      - name: Login Aliyun docker hub
+        uses: docker/login-action@v2
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
+      - name: Mirror for ubuntu:focal
+        uses: akhilerm/tag-push-action@v2.1.0
+        with:
+          src: ubuntu:focal
+          dst: |
+            registry.cn-hangzhou.aliyuncs.com/ossrs/ubuntu:focal
+            registry.cn-hangzhou.aliyuncs.com/ossrs/ubuntu
     runs-on: ubuntu-20.04
 
