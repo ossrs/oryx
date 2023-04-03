@@ -255,7 +255,39 @@ Removed variables in .env:
 
 Please restart service when `.env` changed.
 
-## Run All in macOS
+## Run All in One Docker
+
+Run srs-cloud in one docker:
+
+```bash
+docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
+  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  ossrs/srs-cloud:platform-1
+```
+
+Then open http://localhost:2022/mgmt in browser.
+
+All data will be reset when restarting, so please mount volumes if want to save data to local disk:
+
+```bash
+docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
+  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  -v $HOME/db:/data \
+  ossrs/srs-cloud:platform-1
+```
+
+The volumes for srs-cloud:
+
+* `/data` The global data directory.
+  * `redis` The redis data directory, the publish secret and record configuration.
+  * `srs-cloud` The data directory for srs-cloud
+    * `config` The mgmt password and cloud configuration.
+    * `record` The record storage directory, save record files.
+    * `vlive` The storage directory for virtual live, save video files.
+
+You can change the volumes to other directories.
+
+## Develop All in macOS
 
 Start redis by brew:
 
@@ -288,39 +320,6 @@ Run the platform react ui, or run in WebStorm:
 ```
 
 Access the browser: http://localhost:3000
-
-## Run All in One Docker
-
-Run srs-cloud in one docker:
-
-```bash
-docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
-  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  ossrs/srs-cloud:platform-1
-```
-
-Then open http://localhost:2022/mgmt in browser.
-
-All data will be reset when restarting, so please mount volumes if want to save data to local disk:
-
-```bash
-docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
-  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  -v $HOME/db:/data \
-  ossrs/srs-cloud:platform-1
-```
-
-The volumes for srs-cloud:
-
-* `/data` The global data directory.
-  * `redis` The redis data directory, the publish secret and record configuration.
-  * `srs-cloud` The data directory for srs-cloud, linked to `/usr/local/srs-cloud/mgmt/containers/data`.
-* `/usr/local/srs-cloud/mgmt/containers/data` The data for srs-cloud.
-  * `config` The mgmt password and cloud configuration.
-  * `record` The record storage directory, save record files.
-  * `vlive` The storage directory for virtual live, save video files.
-
-You can change the volumes to other directories.
 
 ## Develop All in One Docker
 
@@ -385,7 +384,7 @@ Release version for BT and aaPanel:
 
 To refresh current tag for mgmt:
 
-* Run `./scripts/refresh-current-tag.sh `
+* Run `./scripts/refresh-current-tag.sh`
 
 > Note: It does not update the tag for release.
 
