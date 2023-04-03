@@ -348,8 +348,6 @@ Start redis and SRS only in docker:
 bash auto/init_mgmt && bash auto/start_redis && bash auto/start_srs
 ```
 
-> Note: Stop by `docker exec -it platform bash -c 'bash auto/stop_redis && bash auto/stop_srs'`
-
 Build and run mgmt only in docker:
 
 ```bash
@@ -360,6 +358,12 @@ Build and run platform only in docker:
 
 ```bash
 docker exec -it platform bash -c 'make && ./platform'
+```
+
+Stop redis and SRS:
+
+```bash
+docker exec -it platform bash -c 'bash auto/stop_redis && bash auto/stop_srs'
 ```
 
 It's the same as production online.

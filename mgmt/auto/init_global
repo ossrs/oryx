@@ -27,8 +27,13 @@ fi
 # We always create the containers/data if not exists.
 if [[ ! -d containers/data ]]; then
   rm -rf containers/data &&
-  mkdir -p containers/data &&
-  echo "MGMT create containers/data directory"
+  if [[ -d $HOME/db/srs-cloud ]]; then
+    echo "MGMT move $HOME/db/srs-cloud to containers/data" &&
+    mv $HOME/db/srs-cloud containers/data
+  else
+    echo "MGMT create containers/data directory" &&
+    mkdir -p containers/data
+  fi &&
   if [[ $? -ne 0 ]]; then echo "MGMT create containers/data directory failed"; exit 1; fi
 fi
 
