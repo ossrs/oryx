@@ -16,27 +16,26 @@ function ContactCn() {
         <Carousel.Item>
           <img
             className="d-block w-100"
-            src={srsVideo}
-            alt="SRS付费星球"
-          />
-          <Carousel.Caption>
-            <h5>欢迎加入SRS付费星球</h5>
-            <p>
-              加入SRS付费星球后，可以和SRS维护者建立直接和长期的联系；还有每月一次线上交流的机会；也可以提疑惑和需求，我们会慎重和优先考虑。
-            </p>
-          </Carousel.Caption>
-        </Carousel.Item>
-        <Carousel.Item>
-          <img
-            className="d-block w-100"
             src={srsCloud}
             alt="SRS云服务器"
           />
           <Carousel.Caption>
             <h5>欢迎加云SRS微信群</h5>
             <p>
-              欢迎加群探讨使用经验，寻求帮助，请先观看<a href='https://www.bilibili.com/video/BV1844y1L7dL/' target='_blank' rel='noreferrer'>视频入门教程</a>。<br/>
-              提需求或咨询，请加SRS付费星球。
+              欢迎加群探讨使用经验，寻求帮助，请先观看<a href='https://www.bilibili.com/video/BV1844y1L7dL/' target='_blank' rel='noreferrer'>视频入门教程</a>。
+            </p>
+          </Carousel.Caption>
+        </Carousel.Item>
+        <Carousel.Item>
+          <img
+            className="d-block w-100"
+            src={srsVideo}
+            alt="SRS付费星球"
+          />
+          <Carousel.Caption>
+            <h5>欢迎加入SRS付费星球</h5>
+            <p>
+              深度用户推荐加入SRS付费星球，可以获得更多资讯，以及技术支持。
             </p>
           </Carousel.Caption>
         </Carousel.Item>

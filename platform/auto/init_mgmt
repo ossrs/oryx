@@ -17,13 +17,6 @@ if [[ ! -f /etc/redis/redis.conf ]]; then
   if [[ $? -ne 0 ]]; then echo "MGMT create redis configuration failed"; exit 1; fi
 fi
 
-if [[ ! -d /data ]]; then
-  mkdir -p containers/data/redis &&
-  ln -sf $(pwd)/containers/data/redis /data &&
-  echo "MGMT create redis data directory"
-  if [[ $? -ne 0 ]]; then echo "MGMT create redis data directory failed"; exit 1; fi
-fi
-
 if [[ ! -f /usr/local/srs/conf/lighthouse.conf ]]; then
   mkdir -p /usr/local/srs/conf &&
   ln -sf $(pwd)/containers/conf/srs.release.conf /usr/local/srs/conf/lighthouse.conf &&

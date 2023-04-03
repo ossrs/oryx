@@ -2,9 +2,43 @@
 
 echo "Init global script"
 
+# Prepare data directory if os is not macos.
+if [[ $(uname -s) != 'Darwin' && ! -d /data/srs-cloud ]]; then
+  # Create global data directory.
+  mkdir -p /data /data/redis &&
+  echo "MGMT create data directory"
+  if [[ $? -ne 0 ]]; then echo "MGMT create data directory failed"; exit 1; fi
+
+  # Migrate containers/data to /data/srs-cloud
+  if [[ -d containers/data && ! -d /data/srs-cloud ]]; then
+    mv containers/data /data/srs-cloud &&
+    echo "MGMT move containers/data to /data/srs-cloud"
+    if [[ $? -ne 0 ]]; then echo "MGMT move containers/data to /data/srs-cloud failed"; exit 1; fi
+  fi
+
+  # We use /data/srs-cloud as the default data directory.
+  mkdir -p /data/srs-cloud &&
+  rm -rf containers/data &&
+  ln -sf /data/srs-cloud containers/data &&
+  echo "MGMT link data directory"
+  if [[ $? -ne 0 ]]; then echo "MGMT link data directory failed"; exit 1; fi
+fi
+
+# We always create the containers/data if not exists.
+if [[ ! -d containers/data ]]; then
+  rm -rf containers/data &&
+  mkdir -p containers/data &&
+  echo "MGMT create containers/data directory"
+  if [[ $? -ne 0 ]]; then echo "MGMT create containers/data directory failed"; exit 1; fi
+fi
+
 # Migrate .env to containers/data/config
 if [[ ! -f containers/data/config/.env ]]; then
-  touch .env && mkdir -p containers/data/config &&
+  if [[ ! -f .env ]]; then
+    echo "Create MGMT .env" &&
+    rm -f .env && touch .env
+  fi &&
+  mkdir -p containers/data/config &&
   mv .env containers/data/config/.env &&
   echo "Migrate .env to containers/data/config/.env"
   if [[ $? -ne 0 ]]; then echo "MGMT migrate .env failed"; exit 1; fi

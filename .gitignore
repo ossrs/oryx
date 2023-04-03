@@ -108,12 +108,13 @@ dist
 mgmt/sources/*.gz
 tmp.js
 tmp.json
-mgmt/containers/data/prometheus/*
 mgmt/containers/etc/letsencrypt/*
 mgmt/containers/var/lib/letsencrypt/*
 mgmt/containers/var/log/letsencrypt/*
 mgmt/containers/objs/nginx/html/*
+mgmt/containers/data
 mgmt/containers/data/*
+mgmt/containers/data/prometheus/*
 mgmt/containers/www/*
 mgmt/containers/ssl/*
 mgmt/containers/bin/*

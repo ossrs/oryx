@@ -15,6 +15,9 @@ if [[ -f /etc/redis/redis.conf ]]; then
   REDIS_PARAMS="/etc/redis/redis.conf --daemonize yes"
   if [[ ! -z $REDIS_PASSWORD ]]; then REDIS_PARAMS="${REDIS_PARAMS} --requirepass $REDIS_PASSWORD"; fi
   if [[ ! -z $REDIS_PORT ]]; then REDIS_PARAMS="${REDIS_PARAMS} --port $REDIS_PORT"; fi
+
+  mkdir -p /data/redis
+  REDIS_PARAMS="${REDIS_PARAMS} --dir /data/redis"
   echo "Run redis-server $REDIS_PARAMS"
 
   mkdir -p /var/run/redis &&

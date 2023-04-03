@@ -11,12 +11,13 @@ A lightweight open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
 - [x] [Getting Started](https://mp.weixin.qq.com/s/fWmdkw-2AoFD_pEmE_EIkA).
 - [x] [Live Streaming](https://mp.weixin.qq.com/s/AKqVWIdk3SBD-6uiTMliyA).
 - [x] [Realtime SRT Streaming](https://mp.weixin.qq.com/s/HQb3gLRyJHHu56pnyHerxA).
-- [x] [Automatical HTTPS](https://mp.weixin.qq.com/s/O70Fz-mxNedZpxgGXQ8DsA).
 - [x] [DVR to Cloud Storage or VoD](https://mp.weixin.qq.com/s/UXR5EBKZ-LnthwKN_rlIjg).
 - [x] [Support WordPress Plugin](https://mp.weixin.qq.com/s/YjTkcJLkErMcZYHIjzsW_w) or [here](https://wordpress.org/plugins/srs-player).
 - [x] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
 - [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
 - [x] [Support DVR to local disk](https://github.com/ossrs/srs-cloud/issues/42).
+- [x] [Support Virtual Live Streaming](https://mp.weixin.qq.com/s/I0Kmxtc24txpngO-PiR_tQ).
+- [ ] [Automatical HTTPS](https://mp.weixin.qq.com/s/O70Fz-mxNedZpxgGXQ8DsA).
 - [ ] [Dashboard by Prometheus](https://mp.weixin.qq.com/s/ub9ZGmntOy_-S11oxFkxvg).
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
@@ -24,23 +25,19 @@ Other more use scenarios is on the way, please read [this post](https://github.c
 ## Architecture
 
 The architecture of [srs-cloud](https://github.com/ossrs/srs-cloud#architecture) by 
-[mermaid](https://mermaid.live/edit#pako:eNqNUktvwjAM_itRDhOVeOywXdiEhCgIaS_UMi6UQ9q4tKNJqtRlIMR_X5KO8TjtUMf299n-nPRAE8WB9mlaqO8kYxrJa_AUSULkOpc70ukMiFgLbFnzHOveIN4TaUq-Ks_Rqjpea1ZmJAxClyDWC5bGkIfuvSsJkcUFrM6w7-DHX9iHLRSqbHCQ3B52nBtuifacKrWpWmXBMFVa9DIbeg0DNTAxrDEjd8RfBMYulO-a2chSRh-Ntr-uk4koYX1ul6Y29i5JHXJCXbbR0flP5YB8luZOODg_gAJYBdeEEWiMVeNP5_PZjbw5yAQkjgpV8_Ooy2yz-mj4tjRfz-zXMzuvrrvMtBKAGdSVU_5uXm28K5VG0NdEXyWb29xYbpetLsite6JEAzejc1ZUXdyhdzMpAJ5Xy5Y7yMvCwLRNBWjBcm7-rYMlR9RIERDRvnE5pKwuMKKRPBpqXXKGMOY5Kk37qGtoU1ajCvcyOcUNx8-ZuVpB-6mRAscfoGvhKQ)
+[mermaid](https://mermaid.live/edit#pako:eNqNkcluwjAQhl_F8qFKJELuaYWECKhSVyUtF9KDiSdLie3ImVAQ4t1rO0I0nHrwMuNv_ll8orniQCNaNOonr5hG8pzcZ5IQWdbyQIJgRkQp0LPbw1aHs-2RSBPy3fkOs35HpUnqzkeldp3XNgwLpUVYWdMfCNTAxLzHityReJ2Yfa1ip2Itiyze0rHqaiVaKK9yRWHtUeqAXF6dd6gj-E_kjHy2pWYc3D2BBlgHY-ADZA4SF43q-VXrr3fobTF_2ZgVmgZC09TXWOVdKwFYQd-50l7N_JaHVmkEPQZjle9ufUu533hTkHs3_lwDN6lr1nRTPKB_kykBXncbzx3kaW2e6YQK0ILV3PzyycIZNaUIyGhkrhwK1jeY0UyeDdq3nCEseY1K0wh1DxPKelTpUeYXe2DimpnZCRoVphQ4_wK2Lb2m)
 
 ```mermaid
 flowchart LR;
   nginx --> mgmt(mgmt<br/>by nodejs);
-  subgraph SRS;
-    SRSR[SRS 4.0<br/>Stable];
-    SRSD[SRS 5.0<br/>Develop];
-  end
   mgmt --> SRS --> Hooks(platform/hooks) --> StreamAuth & DVR & VoD;
   DVR --> COS;
   mgmt --> FFmpeg(platform/ffmpeg);
   mgmt --- platform;
   SRS --- FFmpeg(platform/ffmpeg);
   mgmt --> Upgrade --> Release;
-  mgmt --> Certbot --> HTTPS;
   mgmt --> TencentCloud(platform/TencentCloud) --> CAM[CAM/COS/VoD];
+  mgmt --> Prometheus --- NodeExporter;
   mgmt --> Docker;
   mgmt --> Env[(.env<br/>credentials.txt)];
   mgmt --> Redis[(Redis KV)];
@@ -96,6 +93,7 @@ The features that we're developing:
 - [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
 - [x] [Support DVR to local disk](https://github.com/ossrs/srs-cloud/issues/42).
 - [x] Support upgrade to latest version manually.
+- [ ] Support HTTPS by let's encrypt with certbot.
 - [ ] Support GB28181 by SRS 5.0 container.
 - [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
 - [ ] Support virtual live streaming, covert file or other resource to live.
@@ -192,10 +190,10 @@ Static Files:
 
 The software we depend on:
 
-* Docker, `yum install -y docker`
-* Redis, `yum install -y redis`
-* Nginx, `yum install -y nginx`
-  * SSL: `mgmt/containers/ssl`
+* Docker, `apt-get install -y docker.io`
+  * Redis, `apt-get install -y redis`
+  * Nginx, `apt-get install -y nginx`
+    * SSL: `mgmt/containers/ssl`
 * [Certbot](https://github.com/ossrs/srs/issues/2864#lets-encrypt), `docker --name certbot`
   * Verify webroot: `mgmt/containers/www/.well-known/acme-challenge/`
   * Cert files: `mgmt/containers/etc/letsencrypt/live/`
@@ -208,26 +206,6 @@ The software we depend on:
   * [CAM](https://console.cloud.tencent.com/cam/overview) Authentication by secretId and secretKey.
 * [ffmpeg](https://github.com/ossrs/srs-cloud/tree/lighthouse/ffmpeg), `docker --name ffmpeg`
   * [FFmpeg and ffprobe](https://ffmpeg.org) tools in `ossrs/srs:node-av`
-
-## Upgrade Workflow
-
-No automatically upgrading, instead, user should reinstall srs-cloud or pull the specified version of docker.
-
-## System Boot
-
-When system boot:
-
-* Restart the mgmt service by `systemctl start srs-terraform`
-* Execute script `bootstrap` at mgmt
-* Run script `auto/foreach_run` at mgmt
-* Start application by `node .` at mgmt
-
-## System Setup
-
-When user setup the system, the admin password for the first boot:
-
-* Setup the `MGMT_PASSWORD` in `.env`
-* Restat all containers that depends on `.env`
 
 ## Environments
 
@@ -294,7 +272,7 @@ Start SRS in macOS:
 Run the mgmt backend, or run in GoLand:
 
 ```
-(cd mgmt && go run .)
+(cd mgmt && bash auto/init_global && PLATFORM_DOCKER=false go run .)
 ```
 
 Run the platform backend, or run in GoLand:
@@ -316,8 +294,9 @@ Access the browser: http://localhost:3000
 Run srs-cloud in one docker:
 
 ```bash
-docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  ossrs/srs-cloud:platform-v1.0.292
+docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
+  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  ossrs/srs-cloud:platform-1
 ```
 
 Then open http://localhost:2022/mgmt in browser.
@@ -325,81 +304,23 @@ Then open http://localhost:2022/mgmt in browser.
 All data will be reset when restarting, so please mount volumes if want to save data to local disk:
 
 ```bash
-docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  -v $HOME/db/redis/data:/data -v $HOME/db/srs/data:/usr/local/srs-cloud/mgmt/containers/data \
-  ossrs/srs-cloud:platform-v1.0.292
+docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
+  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  -v $HOME/db:/data \
+  ossrs/srs-cloud:platform-1
 ```
 
 The volumes for srs-cloud:
 
-* `/data` The redis data directory, the publish secret and record configuration.
+* `/data` The global data directory.
+  * `redis` The redis data directory, the publish secret and record configuration.
+  * `srs-cloud` The data directory for srs-cloud, linked to `/usr/local/srs-cloud/mgmt/containers/data`.
 * `/usr/local/srs-cloud/mgmt/containers/data` The data for srs-cloud.
   * `config` The mgmt password and cloud configuration.
   * `record` The record storage directory, save record files.
   * `vlive` The storage directory for virtual live, save video files.
 
 You can change the volumes to other directories.
-
-## Develop Platform in Docker
-
-Run mgmt in macOS or GoLand:
-
-```bash
-(cd mgmt && go run .)
-```
-
-Run the platform react ui, or run in WebStorm:
-
-```
-(cd platform/ui && npm install && npm start)
-```
-
-If develop and test platform in docker.
-
-First, build a local image for development:
-
-```bash
-docker build -t platform-dev -f platform/Dockerfile.dev .
-```
-
-Then, setup the IP of mgmt for platform to connect to:
-
-```bash
-CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}')
-```
-
-> Note: Please replace CANDIDATE to your mgmt IP.
-
-Then start the development docker:
-
-```bash
-docker run -d -it -p 2024:2024 --name platform \
-  -v $(pwd)/mgmt:/usr/local/srs-cloud/mgmt -v $(pwd)/platform:/usr/local/srs-cloud/platform \
-  -v $(pwd)/mgmt/containers/data/redis:/data -v $(pwd)/mgmt/containers/conf/redis.conf:/etc/redis/redis.conf \
-  -v $(readlink -f mgmt/containers/data/record):/usr/local/srs-cloud/mgmt/containers/data/record \
-  --add-host redis:127.0.0.1 --env REDIS_HOST=127.0.0.1 --add-host mgmt.srs.local:$CANDIDATE \
-  -v $(pwd)/mgmt/containers/conf/srs.release.conf:/usr/local/srs/conf/lighthouse.conf \
-  -v $(pwd)/mgmt/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html \
-  --env CLOUD=DEV --env PLATFORM_DOCKER=true --env MGMT_DOCKER=false --env SRS_DOCKERIZED=true --env NODE_ENV=development \
-  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  platform-dev bash
-```
-
-Start redis and SRS only in docker:
-
-```bash
-docker exec -it platform bash -c 'bash auto/start_redis && bash auto/start_srs'
-```
-
-> Note: Stop by `docker exec -it platform bash -c 'bash auto/stop_redis && bash auto/stop_srs'`
-
-Build and run platform only in docker:
-
-```bash
-docker exec -it platform bash -c 'make && ./platform'
-```
-
-It's the same as production online.
 
 ## Develop All in One Docker
 
@@ -414,13 +335,9 @@ docker build -t platform-dev -f platform/Dockerfile.dev .
 Then start the development docker:
 
 ```bash
-docker run -d -it -p 2022:2022 -p 2024:2024 --name platform \
-  -v $(pwd)/mgmt:/usr/local/srs-cloud/mgmt -v $(pwd)/platform:/usr/local/srs-cloud/platform \
-  -v $(pwd)/mgmt/containers/data/redis:/data -v $(pwd)/mgmt/containers/conf/redis.conf:/etc/redis/redis.conf \
-  -v $(readlink -f mgmt/containers/data/record):/usr/local/srs-cloud/mgmt/containers/data/record \
+docker run --rm -it -p 2022:2022 -p 2024:2024 --name platform \
+  -v $(pwd):/usr/local/srs-cloud -v $HOME/db:/data \
   --add-host redis:127.0.0.1 --env REDIS_HOST=127.0.0.1 --add-host mgmt.srs.local:127.0.0.1 \
-  -v $(pwd)/mgmt/containers/conf/srs.release.conf:/usr/local/srs/conf/lighthouse.conf \
-  -v $(pwd)/mgmt/containers/objs/nginx/html:/usr/local/srs/objs/nginx/html \
   --env CLOUD=DOCKER --env MGMT_DOCKER=true --env SRS_DOCKERIZED=true --env NODE_ENV=development \
   -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
   platform-dev bash
@@ -429,7 +346,7 @@ docker run -d -it -p 2022:2022 -p 2024:2024 --name platform \
 Start redis and SRS only in docker:
 
 ```bash
-docker exec -it platform bash -c 'bash auto/start_redis && bash auto/start_srs'
+bash auto/init_mgmt && bash auto/start_redis && bash auto/start_srs
 ```
 
 > Note: Stop by `docker exec -it platform bash -c 'bash auto/stop_redis && bash auto/stop_srs'`
@@ -437,7 +354,7 @@ docker exec -it platform bash -c 'bash auto/start_redis && bash auto/start_srs'
 Build and run mgmt only in docker:
 
 ```bash
-docker exec -it -w /usr/local/srs-cloud/mgmt platform bash -c 'make && ./mgmt'
+cd /usr/local/srs-cloud/mgmt && make && ./mgmt
 ```
 
 Build and run platform only in docker:
