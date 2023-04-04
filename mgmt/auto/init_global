@@ -3,7 +3,7 @@
 echo "Init global script"
 
 # Prepare data directory if os is not macos.
-if [[ $(uname -s) != 'Darwin' && ! -d /data/srs-cloud ]]; then
+if [[ $(uname -s) != 'Darwin' ]]; then
   # Create global data directory.
   mkdir -p /data /data/redis &&
   echo "MGMT create data directory"
