@@ -6,4 +6,4 @@
 package main
 
 // The version for mgmt.
-const version = "v1.0.293"
+const version = "v1.0.294"
