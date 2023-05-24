@@ -8,6 +8,42 @@ A lightweight open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
 
 ## Usage
 
+Run srs-cloud in one docker:
+
+```bash
+docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
+  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  ossrs/srs-cloud:platform-1
+```
+
+Then open http://localhost:2022/mgmt in browser.
+
+All data will be reset when restarting, so please mount volumes if want to save data to local disk:
+
+```bash
+docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
+  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  -v $HOME/db:/data ossrs/srs-cloud:platform-1
+```
+
+The volumes for srs-cloud:
+
+* `/data` The global data directory.
+    * `redis` The redis data directory, the publish secret and record configuration.
+    * `srs-cloud` The data directory for srs-cloud
+        * `config` The mgmt password and cloud configuration.
+        * `record` The record storage directory, save record files.
+        * `vlive` The storage directory for virtual live, save video files.
+
+You can change the volumes to other directories.
+
+## Q&A
+
+1. [English](https://ossrs.io/lts/en-us/faq-srs-cloud)
+2. [中文](https://ossrs.net/lts/zh-cn/faq-srs-cloud)
+
+## Tutorials
+
 - [x] [Getting Started](https://mp.weixin.qq.com/s/fWmdkw-2AoFD_pEmE_EIkA).
 - [x] [Live Streaming](https://mp.weixin.qq.com/s/AKqVWIdk3SBD-6uiTMliyA).
 - [x] [Realtime SRT Streaming](https://mp.weixin.qq.com/s/HQb3gLRyJHHu56pnyHerxA).
@@ -255,37 +291,6 @@ Removed variables in .env:
 
 Please restart service when `.env` changed.
 
-## Run All in One Docker
-
-Run srs-cloud in one docker:
-
-```bash
-docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
-  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  ossrs/srs-cloud:platform-1
-```
-
-Then open http://localhost:2022/mgmt in browser.
-
-All data will be reset when restarting, so please mount volumes if want to save data to local disk:
-
-```bash
-docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
-  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  -v $HOME/db:/data ossrs/srs-cloud:platform-1
-```
-
-The volumes for srs-cloud:
-
-* `/data` The global data directory.
-  * `redis` The redis data directory, the publish secret and record configuration.
-  * `srs-cloud` The data directory for srs-cloud
-    * `config` The mgmt password and cloud configuration.
-    * `record` The record storage directory, save record files.
-    * `vlive` The storage directory for virtual live, save video files.
-
-You can change the volumes to other directories.
-
 ## Develop All in macOS
 
 Start redis by brew:
@@ -379,7 +384,7 @@ Release bugfix:
 
 Release version for BT and aaPanel:
 
-* MUST update the version manually in `auto/bt_aapanel_pub.sh`, `scripts/setup-bt/info.json` and `scripts/setup-aapanel/info.json`
+* MUST update the version manually in `auto/bt_aapanel_pub.sh`
 * Then run `./auto/bt_aapanel_pub.sh`
 * Finally, download [bt-srs_cloud.zip](https://github.com/ossrs/srs-cloud/releases) then submit to [bt.cn](https://www.bt.cn/developer/details.html?id=600801805)
 

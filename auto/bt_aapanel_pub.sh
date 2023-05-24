@@ -8,6 +8,23 @@ cd $WORK_DIR
 TAG=publication-v4.6.14
 echo "Publication TAG=$TAG, WORK_DIR=$WORK_DIR"
 
+RELEASE=$(git describe --tags --abbrev=0 --match publication-*)
+if [[ $TAG == $RELEASE ]]; then
+  echo "Failed: Release $TAG already published."
+  echo "Please update the TAG in $0 then run again.";
+  exit 1
+fi
+
+VERSION=$(echo $TAG| sed 's/publication-v//g')
+cat scripts/setup-aapanel/info.json |sed "s|\"versions\": .*|\"versions\": \"$VERSION\",|g" > tmp.json && mv tmp.json scripts/setup-aapanel/info.json &&
+cat scripts/setup-bt/info.json |sed "s|\"versions\": .*|\"versions\": \"$VERSION\",|g" > tmp.json && mv tmp.json scripts/setup-bt/info.json
+
+git st |grep -q 'nothing to commit'
+if [[ $? -ne 0 ]]; then
+  echo "Failed: Please commit before release";
+  exit 1
+fi
+
 git tag -d $TAG 2>/dev/null
 git push origin :$TAG 2>/dev/null
 git push gitee :$TAG 2>/dev/null
