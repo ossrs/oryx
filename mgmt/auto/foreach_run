@@ -2,26 +2,8 @@
 
 echo "Foreach run script"
 
-# Do not use swap, for some OS it fails.
-if [[ -f /swapfile ]]; then
-  swapoff /swapfile; rm -f /swapfile; echo "Remove /swapfile"
-fi
-
-# Do not use redis container, we run redis in platform now.
-docker rm -f redis 2>/dev/null; echo "Remove redis container"
-
-# Do not use SRS container, we run SRS in platform now.
-docker rm -f srs-server 2>/dev/null; echo "Remove SRS container"
-
 # Initialize global configuration.
 bash auto/init_global
-
-# Generate coredump, see https://stackoverflow.com/a/47694315/17679565
-if [[ -f /proc/sys/kernel/core_pattern && ! -d /cores ]]; then
-  echo '/cores/core.%e.%p' | tee /proc/sys/kernel/core_pattern &&
-  mkdir -p /cores && echo "Create dirs for coredump"
-  if [[ $? -ne 0 ]]; then echo "Create dirs failed"; exit 1; fi
-fi
 
 # Revert the redis config, after migrate to docker.
 # Also setup the redis password, so we must keep running this script.

@@ -37,10 +37,10 @@ The volumes for srs-cloud:
 
 You can change the volumes to other directories.
 
-## Q&A
+## FAQ
 
-1. [English](https://ossrs.io/lts/en-us/faq-srs-cloud)
-2. [中文](https://ossrs.net/lts/zh-cn/faq-srs-cloud)
+1. [English FAQ](https://ossrs.io/lts/en-us/faq-srs-cloud)
+1. [中文 FAQ](https://ossrs.net/lts/zh-cn/faq-srs-cloud)
 
 ## Tutorials
 

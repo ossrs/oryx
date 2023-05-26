@@ -13,8 +13,11 @@ from firewalls import firewalls
 class srs_cloud_main:
     # Normally the plugin is at:
     #       /www/server/panel/plugin/srs_cloud
-    # And public.get_setup_path() is:
-    #       /www/server
+    # Other paths are:
+    #       public.get_setup_path() is /www/server
+    #       public.get_panel_path() is /www/server/panel
+    #       public.get_site_path() is /www/wwwroot
+    #       public.get_vhost_path() is /www/server/panel/vhost
     __plugin_path = "{}/panel/plugin/srs_cloud".format(public.get_setup_path())
     __srs_service = "/usr/lib/systemd/system/srs-cloud.service"
     __srs_home = '/usr/local/srs-cloud'
@@ -37,8 +40,8 @@ class srs_cloud_main:
         status['docker'] = public.ExecShell('ls /usr/lib/systemd/system/docker.service >/dev/null 2>&1 && echo -n ok')[0]
         status['docker_running'] = public.ExecShell('systemctl status docker.service >/dev/null 2>&1 && echo -n ok')[0]
         status['firewall'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__firewall))[0]
-        status['site'] = public.ExecShell('ls {root}/{site} >/dev/null 2>&1 && echo -n ok'.format(
-            root=public.get_site_path(), site=self.__site,
+        status['site'] = public.ExecShell('ls {root}/{site} {www}/nginx/{site}.conf >/dev/null 2>&1 && echo -n ok'.format(
+            root=public.get_site_path(), site=self.__site, www=public.get_vhost_path(),
         ))[0]
 
         # We use the default site.
@@ -149,7 +152,7 @@ class srs_cloud_main:
             www='{}/nginx'.format(public.get_vhost_path()), site=self.__site,
         )
         conf = files().GetFileBody(Params(path=confPath))
-        confData = conf['data'];
+        confData = conf['data']
 
         # Replace the directory to new home, because the site is kept when uninstall.
         confData = confData.replace('/usr/local/lighthouse/softwares/srs-cloud', '/usr/local/srs-cloud')

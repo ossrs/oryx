@@ -2,56 +2,28 @@
 
 echo "Init global script"
 
-# Prepare data directory if os is not macos.
+# Prepare data directory if os is not macOS.
 if [[ $(uname -s) != 'Darwin' ]]; then
   # Create global data directory.
-  mkdir -p /data /data/redis &&
+  mkdir -p /data &&
   echo "MGMT create data directory"
   if [[ $? -ne 0 ]]; then echo "MGMT create data directory failed"; exit 1; fi
 
-  # Migrate containers/data to /data/srs-cloud
-  if [[ -d containers/data && ! -d /data/srs-cloud ]]; then
-    mv containers/data /data/srs-cloud &&
-    echo "MGMT move containers/data to /data/srs-cloud"
-    if [[ $? -ne 0 ]]; then echo "MGMT move containers/data to /data/srs-cloud failed"; exit 1; fi
-  fi
-
-  # We use /data/srs-cloud as the default data directory.
-  mkdir -p /data/srs-cloud &&
-  rm -rf containers/data &&
-  ln -sf /data/srs-cloud containers/data &&
+  # We use /data as the default data directory.
+  rm -rf containers/data && ln -sf /data containers/data &&
   echo "MGMT link data directory"
   if [[ $? -ne 0 ]]; then echo "MGMT link data directory failed"; exit 1; fi
 fi
 
-# We always create the containers/data if not exists.
-if [[ ! -d containers/data ]]; then
-  rm -rf containers/data &&
-  if [[ -d $HOME/db/srs-cloud ]]; then
-    echo "MGMT move $HOME/db/srs-cloud to containers/data" &&
-    mv $HOME/db/srs-cloud containers/data
-  else
-    echo "MGMT create containers/data directory" &&
-    mkdir -p containers/data
-  fi &&
-  if [[ $? -ne 0 ]]; then echo "MGMT create containers/data directory failed"; exit 1; fi
-fi
-
-# Migrate .env to containers/data/config
-if [[ ! -f containers/data/config/.env ]]; then
-  if [[ ! -f .env ]]; then
-    echo "Create MGMT .env" &&
-    rm -f .env && touch .env
-  fi &&
-  mkdir -p containers/data/config &&
-  mv .env containers/data/config/.env &&
-  echo "Migrate .env to containers/data/config/.env"
-  if [[ $? -ne 0 ]]; then echo "MGMT migrate .env failed"; exit 1; fi
-fi
+# For macOS, the containers/data might be invalid, so we need to create it.
+if [[ ! -d containers/data ]]; then rm -rf containers/data; fi
+mkdir -p containers/data containers/data/redis containers/data/config containers/data/dvr \
+  containers/data/record containers/data/vod containers/data/upload containers/data/vlive &&
+echo "MGMT create containers directory"
+if [[ $? -ne 0 ]]; then echo "MGMT create containers directory failed"; exit 1; fi
 
 # Because .env might be moved to config, so we link it.
-if [[ ! -f .env ]]; then
-  ln -sf containers/data/config/.env .env
-  if [[ $? -ne 0 ]]; then echo "MGMT link .env failed"; exit 1; fi
-fi
+touch containers/data/config/.env &&
+rm -f .env && ln -sf containers/data/config/.env .env
+if [[ $? -ne 0 ]]; then echo "MGMT link .env failed"; exit 1; fi
 

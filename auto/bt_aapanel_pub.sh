@@ -5,7 +5,7 @@ WORK_DIR=$(cd $(dirname $REALPATH)/.. && pwd)
 cd $WORK_DIR
 
 # Please update the release version for each major version.
-TAG=publication-v4.6.14
+TAG=publication-v4.6.15
 echo "Publication TAG=$TAG, WORK_DIR=$WORK_DIR"
 
 RELEASE=$(git describe --tags --abbrev=0 --match publication-*)

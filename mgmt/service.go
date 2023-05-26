@@ -476,7 +476,7 @@ func (v *dockerPlatformManager) Start(ctx context.Context) error {
   // For redis server.
   args = append(args,
     "--add-host", "redis:127.0.0.1", "--env", "REDIS_HOST=127.0.0.1",
-    "-v", fmt.Sprintf("%v/containers/data/redis:/data", conf.Pwd),
+    "-v", fmt.Sprintf("%v/containers/data:/data", conf.Pwd),
     "-v", fmt.Sprintf("%v/containers/conf/redis.conf:/etc/redis/redis.conf", conf.Pwd),
   )
 	if os.Getenv("REDIS_PASSWORD") != "" {
