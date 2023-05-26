@@ -17,6 +17,8 @@ fi
 
 # For macOS, the containers/data might be invalid, so we need to create it.
 if [[ ! -d containers/data ]]; then rm -rf containers/data; fi
+
+# Always make sure the containers/data directory exists.
 mkdir -p containers/data containers/data/redis containers/data/config containers/data/dvr \
   containers/data/record containers/data/vod containers/data/upload containers/data/vlive &&
 echo "MGMT create containers directory"
