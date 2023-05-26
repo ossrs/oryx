@@ -12,9 +12,13 @@ Run srs-cloud in one docker:
 
 ```bash
 docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
-  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp --name srs-cloud \
   ossrs/srs-cloud:platform-1
 ```
+
+> Note: Please use `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1` in China.
+
+Then open http://localhost:2022/mgmt in browser.
 
 Then open http://localhost:2022/mgmt in browser.
 
@@ -22,11 +26,11 @@ All data will be reset when restarting, so please mount volumes if want to save 
 
 ```bash
 docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
-  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp --name srs-cloud \
   -v $HOME/db:/data ossrs/srs-cloud:platform-1
 ```
 
-The volumes for srs-cloud:
+You have the option to modify the volumes for srs-cloud and direct them to different directories.
 
 * `/data` The global data directory.
     * `redis` The redis data directory, the publish secret and record configuration.
@@ -35,7 +39,14 @@ The volumes for srs-cloud:
         * `record` The record storage directory, save record files.
         * `vlive` The storage directory for virtual live, save video files.
 
-You can change the volumes to other directories.
+You can use environment variables to modify the settings.
+
+* `MGMT_PASSWORD`: The mgmt administrator password.
+* `REACT_APP_LOCALE`: The i18n config for ui, `en` or `zh`, default to `zh`.
+
+> Note: Kindly utilize the command such as `docker run -e REACT_APP_LOCALE=en` to modify the environment.
+
+To access additional environment variables, please refer to the [Environments](#environments) section.
 
 ## FAQ
 
@@ -247,7 +258,6 @@ The software we depend on:
 
 The optional environments defined by `mgmt/.env`:
 
-* `MGMT_PASSWORD`: The mgmt administrator password.
 * `CLOUD`: The cloud platform name, DEV for development.
 * `REGION`: `ap-guangzhou|ap-singapore|sgp1`, The region for upgrade source.
 * `SOURCE`: `github|gitee`, The source code for upgrading. 
@@ -281,7 +291,6 @@ Environments for react ui:
 
 * `PUBLIC_URL`: The mount prefix.
 * `BUILD_PATH`: The output build path, default to `build`.
-* `REACT_APP_LOCALE`: The i18n config for ui, `en` or `zh`, default to `zh`.
 
 > Note: The env for react must start with `REACT_APP_`, please read [this post](https://create-react-app.dev/docs/adding-custom-environment-variables/#referencing-environment-variables-in-the-html).
 

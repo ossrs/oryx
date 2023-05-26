@@ -15,6 +15,8 @@ WORKDIR /g/mgmt
 RUN make clean && make alpine
 
 # Note that we only build the platform without ui, because already build ui for all OS.
+# See platform.yml command:
+#     make ui-build-cn && make ui-build-en
 WORKDIR /g/platform
 RUN make clean && make
 RUN cd /g/platform/ui && rm -rf js-core node_modules package* public src
