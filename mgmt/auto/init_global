@@ -2,20 +2,7 @@
 
 echo "Init global script"
 
-# Prepare data directory if os is not macOS.
-if [[ $(uname -s) != 'Darwin' ]]; then
-  # Create global data directory.
-  mkdir -p /data &&
-  echo "MGMT create data directory"
-  if [[ $? -ne 0 ]]; then echo "MGMT create data directory failed"; exit 1; fi
-
-  # We use /data as the default data directory.
-  rm -rf containers/data && ln -sf /data containers/data &&
-  echo "MGMT link data directory"
-  if [[ $? -ne 0 ]]; then echo "MGMT link data directory failed"; exit 1; fi
-fi
-
-# For macOS, the containers/data might be invalid, so we need to create it.
+# If the containers/data is invalid, we need to create it.
 if [[ ! -d containers/data ]]; then rm -rf containers/data; fi
 
 # Always make sure the containers/data directory exists.

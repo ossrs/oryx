@@ -9,6 +9,7 @@ cd $WORK_DIR
 DEPLOY_HOME=/usr/local/lighthouse/softwares
 SRS_HOME=${DEPLOY_HOME}/srs-cloud
 INSTALL_HOME=/usr/local/srs-cloud
+DATA_HOME=/data
 
 ########################################################################################################################
 # Check OS first, only support CentOS 7.
@@ -67,11 +68,17 @@ fi
 cd $(dirname $INSTALL_HOME) && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
 if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
 
+# Create global data directory.
+echo "Create data and config file"
+mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env &&
+rm -rf ${SRS_HOME}/mgmt/containers/data && ln -sf ${DATA_HOME} ${SRS_HOME}/mgmt/containers/data &&
+rm -rf ${SRS_HOME}/mgmt/.env && ln -sf ${DATA_HOME}/config/.env ${SRS_HOME}/mgmt/.env
+if [[ $? -ne 0 ]]; then echo "Create /data/config/.env failed"; exit 1; fi
+
 # Create srs-cloud service, and the credential file.
 # Remark: Never start the service, because the IP will change for new machine created.
 cd ${INSTALL_HOME} &&
 cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
-touch ${SRS_HOME}/mgmt/.env &&
 systemctl enable srs-cloud
 if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
 
@@ -138,9 +145,9 @@ update_sysctl net.core.wmem_default 16777216
 
 ########################################################################################################################
 # Note that we keep files as root, because we run srs-cloud as root, see https://stackoverflow.com/a/70953525/17679565
-chown lighthouse:lighthouse ${INSTALL_HOME}/mgmt/.env
+chown lighthouse:lighthouse ${DATA_HOME}/config/.env
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 
-rm -rf ~lighthouse/credentials.txt && ln -sf ${INSTALL_HOME}/mgmt/.env ~lighthouse/credentials.txt &&
+rm -rf ~lighthouse/credentials.txt && ln -sf ${DATA_HOME}/config/.env ~lighthouse/credentials.txt
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 

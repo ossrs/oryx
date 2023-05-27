@@ -27,27 +27,12 @@ COPY --from=srs /usr/local/srs /usr/local/srs
 
 # We write the common config for platform to base image, however you can
 # overwrite it if not for platform, for example, used in releases.
-ENV PORT=":2024"
-
-# Setup the default node env, for both Go and nodejs env.
-ENV NODE_ENV=production
-
-# Run application in docker.
-ENV SRS_DOCKERIZED=true
-# Run mgmt in docker by default.
-ENV MGMT_DOCKER=true
-# Run platform in docker by default.
-ENV PLATFORM_DOCKER=true
-# Setup the .env to docker.
-ENV CLOUD=DOCKER
+ENV PORT=":2024" NODE_ENV=production SRS_DOCKERIZED=true MGMT_DOCKER=true PLATFORM_DOCKER=true CLOUD=DOCKER
 
 # Create link for compatible reason.
-RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform
-
-# Create directory for compatible reason.
-# TODO: FIXME: Remove it when upgrade to new versions.
-RUN mkdir -p /usr/local/lighthouse/softwares
-RUN ln -sf /usr/local/srs-cloud /usr/local/lighthouse/softwares/srs-cloud
+RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform && \
+    mkdir -p /usr/local/lighthouse/softwares && \
+    ln -sf /usr/local/srs-cloud /usr/local/lighthouse/softwares/srs-cloud
 
 # Setup the work directory to platform.
 WORKDIR /usr/local/srs-cloud/platform

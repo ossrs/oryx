@@ -347,13 +347,14 @@ docker build -t platform-dev -f platform/Dockerfile.dev .
 Then start the development docker:
 
 ```bash
-docker run --rm -it -p 2022:2022 -p 2024:2024 --name platform \
-  -v $(pwd):/usr/local/srs-cloud -v $HOME/db:/data \
+docker run --rm -it -p 2022:2022 -p 2024:2024 --name platform -v $(pwd):/usr/local/srs-cloud \
   --add-host redis:127.0.0.1 --env REDIS_HOST=127.0.0.1 --add-host mgmt.srs.local:127.0.0.1 \
   --env CLOUD=DOCKER --env MGMT_DOCKER=true --env SRS_DOCKERIZED=true --env NODE_ENV=development \
   -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
   platform-dev bash
 ```
+
+> Note: We don't use the `/data` as global storage.
 
 Start redis and SRS only in docker:
 

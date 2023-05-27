@@ -28,4 +28,7 @@ FROM ${ARCH}ossrs/srs-cloud:focal-1 AS dist
 COPY --from=build /g/mgmt /usr/local/srs-cloud/mgmt
 COPY --from=build /g/platform /usr/local/srs-cloud/platform
 
+# Prepare data directory.
+RUN mkdir -p /data && cd /usr/local/srs-cloud/mgmt/containers && rm -rf data && ln -sf /data .
+
 CMD ["./bootstrap"]

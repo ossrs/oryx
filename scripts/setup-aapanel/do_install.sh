@@ -5,6 +5,7 @@ export PATH
 
 install_path=/www/server/panel/plugin/srs_cloud
 SRS_HOME=/usr/local/srs-cloud
+DATA_HOME=/data
 
 # Update sysctl.conf and add if not exists. For example:
 #   update_sysctl net.ipv4.ip_forward 1 0 "# Controls IP packet forwarding"
@@ -58,11 +59,13 @@ Install() {
     if [[ $? -ne 0 ]]; then echo "Create srs-cloud failed"; exit 1; fi
   fi
 
-  # We must create the .env to avoid docker mount as a dir.
-  echo "Create config file"
-  touch ${SRS_HOME}/mgmt/.env &&
-  ln -sf ${SRS_HOME}/mgmt/.env ~/credentials.txt
-  if [[ $? -ne 0 ]]; then echo "Create ${SRS_HOME}/mgmt/.env failed"; exit 1; fi
+  # Create global data directory.
+  echo "Create data and config file"
+  mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env &&
+  rm -rf ${SRS_HOME}/mgmt/containers/data && ln -sf ${DATA_HOME} ${SRS_HOME}/mgmt/containers/data &&
+  rm -rf ${SRS_HOME}/mgmt/.env && ln -sf ${DATA_HOME}/config/.env ${SRS_HOME}/mgmt/.env &&
+  rm -rf ~/credentials.txt && ln -sf ${DATA_HOME}/config/.env ~/credentials.txt
+  if [[ $? -ne 0 ]]; then echo "Create /data/config/.env failed"; exit 1; fi
 
   # Allow network forwarding, required by docker.
   # See https://stackoverflow.com/a/41453306/17679565
