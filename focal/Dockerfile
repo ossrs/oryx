@@ -9,6 +9,11 @@ FROM ${ARCH}ossrs/srs:4 AS srs
 # http://releases.ubuntu.com/focal/
 FROM ${ARCH}ubuntu:focal AS dist
 
+# https://serverfault.com/questions/949991/how-to-install-tzdata-on-a-ubuntu-docker-image
+ENV DEBIAN_FRONTEND=noninteractive
+# See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#apt-get
+RUN apt update && apt-get install -y certbot && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
 COPY --from=build /usr/local/bin/ffprobe /usr/local/bin/ffprobe
 # For HTTPS client, or failed as: x509: certificate signed by unknown authority

@@ -53,15 +53,6 @@ jobs:
           dst: |
             ossrs/node-exporter
             ossrs/node-exporter:v1.4.1
-      # See https://hub.docker.com/r/ossrs/certbot/tags
-      # TODO: FIXME: Only amd64.
-      - name: Mirror for certbot/certbot v1.32.2
-        uses: akhilerm/tag-push-action@v2.1.0
-        with:
-          src: certbot/certbot:v1.32.2
-          dst: |
-            ossrs/certbot
-            ossrs/certbot:v1.32.2
       # See https://hub.docker.com/r/ossrs/redis/tags
       - name: Mirror for redis:5.0
         uses: akhilerm/tag-push-action@v2.1.0
@@ -183,29 +174,10 @@ jobs:
             registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter:v1.4.1
     runs-on: ubuntu-20.04
 
-  # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/certbot/images
-  aliyun-certbot:
-    needs: aliyun-node-exporter
-    steps:
-      - name: Login Aliyun docker hub
-        uses: docker/login-action@v2
-        with:
-          registry: registry.cn-hangzhou.aliyuncs.com
-          username: "${{ secrets.ACR_USERNAME }}"
-          password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Mirror for certbot v1.32.2
-        uses: akhilerm/tag-push-action@v2.1.0
-        with:
-          src: certbot/certbot:v1.32.2
-          dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/certbot
-            registry.cn-hangzhou.aliyuncs.com/ossrs/certbot:v1.32.2
-    runs-on: ubuntu-20.04
-
   # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/redis/images
   # TODO: FIXME: Only amd64.
   aliyun-redis-server:
-    needs: aliyun-certbot
+    needs: aliyun-node-exporter
     steps:
       - name: Login Aliyun docker hub
         uses: docker/login-action@v2
