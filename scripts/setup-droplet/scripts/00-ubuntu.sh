@@ -6,7 +6,8 @@ if [[ $(uname -s) == 'Darwin' ]]; then
 fi
 
 # The main directory.
-DEPLOY_HOME=/usr/local/srs-cloud
+SRS_HOME=/usr/local/srs-cloud
+DEPLOY_HOME=$(dirname ${SRS_HOME})
 
 echo "Install depends"
 apt-get install -y git gcc g++ gdb make tree dstat docker docker.io nginx curl net-tools &&

@@ -10,7 +10,6 @@ SRS_HOME=/usr/local/srs-cloud
 INSTALL_HOME=/usr/local/srs-cloud
 
 # Install files to lighthouse directory.
-cd ${SRS_HOME}/mgmt && npm install &&
 cd ${SRS_HOME} && make install
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 
@@ -106,8 +105,6 @@ update_sysctl net.core.wmem_default 16777216
 
 ########################################################################################################################
 # Setup the mod and link.
-rm -rf /root/ssl && ln -sf ${SRS_HOME}/mgmt/containers/ssl /root/ssl &&
 rm -rf /root/credentials.txt && ln -sf ${INSTALL_HOME}/mgmt/.env /root/credentials.txt &&
-rm -rf /root/upgrade && ln -sf ${SRS_HOME}/mgmt/upgrade /root/upgrade
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 

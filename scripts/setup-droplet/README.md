@@ -18,6 +18,13 @@ brew tap hashicorp/tap
 brew install hashicorp/tap/packer
 ```
 
+Next, install the plugin:
+
+```bash
+PACKER_LOG=1 packer plugins install \
+    github.com/digitalocean/digitalocean v1.1.1
+```
+
 Finally, start to build SRS image by:
 
 ```bash
