@@ -72,15 +72,15 @@ Other more use scenarios is on the way, please read [this post](https://github.c
 ## Architecture
 
 The architecture of [srs-cloud](https://github.com/ossrs/srs-cloud#architecture) by 
-[mermaid](https://mermaid.live/edit#pako:eNqNkcluwjAQhl_F8qFKJELuaYWECKhSVyUtF9KDiSdLie3ImVAQ4t1rO0I0nHrwMuNv_ll8orniQCNaNOonr5hG8pzcZ5IQWdbyQIJgRkQp0LPbw1aHs-2RSBPy3fkOs35HpUnqzkeldp3XNgwLpUVYWdMfCNTAxLzHityReJ2Yfa1ip2Itiyze0rHqaiVaKK9yRWHtUeqAXF6dd6gj-E_kjHy2pWYc3D2BBlgHY-ADZA4SF43q-VXrr3fobTF_2ZgVmgZC09TXWOVdKwFYQd-50l7N_JaHVmkEPQZjle9ufUu533hTkHs3_lwDN6lr1nRTPKB_kykBXncbzx3kaW2e6YQK0ILV3PzyycIZNaUIyGhkrhwK1jeY0UyeDdq3nCEseY1K0wh1DxPKelTpUeYXe2DimpnZCRoVphQ4_wK2Lb2m)
+[mermaid](https://mermaid.live/edit#pako:eNqNkctuwjAQRX_F8qIKEiH7tEKqCLRSXyhp2ZAuTDx5iNiOnDEFIf69jtMWwqoL2zPjozt37CPNFAca0rxWX1nJNJLn-DaVhMiiknvi-1MiCoFet91tdDDdHMiDGjmkqzkiiRN3Piq1bb2mZpgrLYKyS0c9gRqYuDdYkhsSrWK7r1TkVLqsQ2ZvyVB1sRANFGe5PO_yQWufLH9u_zByYbD35f9HaUo-mkIzDi6OoQbWwhB4B5mBxFmtDD9rXVb7WWf3L2u7AjtQYIf8HKostRKAJZjWWXu1zz_fN0oj6CEYqWx7XZvL3dqbgNy5r8g0cNu6YnU7wT2OrjrFwKt27bmDPK3sNR1TAVqwitsfP3ZwSq0VASkNbcghZ6bGlKbyZFHTcIYw5xUqTUPUBsaUGVTJQWa_ec9EFbNvJ2iYWytw-gba_8FA)
 
 ```mermaid
 flowchart LR;
-  nginx --> mgmt(mgmt<br/>by nodejs);
+  nginx --> mgmt(mgmt<br/>by Go);
   mgmt --> SRS --> Hooks(platform/hooks) --> StreamAuth & DVR & VoD;
   DVR --> COS;
   mgmt --> FFmpeg(platform/ffmpeg);
-  mgmt --- platform;
+  mgmt --- Platform(platform by Go);
   SRS --- FFmpeg(platform/ffmpeg);
   mgmt --> Upgrade --> Release;
   mgmt --> TencentCloud(platform/TencentCloud) --> CAM[CAM/COS/VoD];
@@ -94,7 +94,7 @@ flowchart LR;
 
 ```mermaid
 flowchart LR;
-  nginx --> mgmt(mgmt<br/>by nodejs);
+  nginx --> mgmt(mgmt<br/>by Go);
   aaPanel --> mgmt;
   aaPanel --> nginx;
 ```
