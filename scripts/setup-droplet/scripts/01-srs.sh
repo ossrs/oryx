@@ -7,7 +7,7 @@ fi
 
 # The main directory.
 SRS_HOME=/usr/local/srs-cloud
-INSTALL_HOME=/usr/local/srs-cloud
+DATA_HOME=/data
 
 # Install files to lighthouse directory.
 cd ${SRS_HOME} && make install
@@ -21,24 +21,28 @@ docker pull docker.io/ossrs/srs-cloud:platform-1
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
 # If install ok, the directory should exists.
-if [[ ! -d ${INSTALL_HOME} || ! -d ${INSTALL_HOME}/mgmt ]]; then
+if [[ ! -d ${SRS_HOME} || ! -d ${SRS_HOME}/mgmt ]]; then
   echo "Install srs-cloud failed"; exit 1;
 fi
 
 # Compatible with previous version.
-cd $(dirname $INSTALL_HOME) && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
+cd $(dirname $SRS_HOME) && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
+if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
+
+# Setup data directory.
+mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env &&
+rm -rf ${SRS_HOME}/mgmt/containers/data && ln -sf ${DATA_HOME} ${SRS_HOME}/mgmt/containers/data
 if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
 
 # Create srs-cloud service, and the credential file.
 # Remark: Never start the service, because the IP will change for new machine created.
-cd ${INSTALL_HOME} &&
+cd ${SRS_HOME} &&
 cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
-touch ${INSTALL_HOME}/mgmt/.env &&
 systemctl enable srs-cloud
 if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
 
 # Choose default language.
-cat << END > ${SRS_HOME}/mgmt/.env
+cat << END > ${DATA_HOME}/config/.env
 CLOUD=DO
 REACT_APP_LOCALE=en
 END
@@ -105,6 +109,6 @@ update_sysctl net.core.wmem_default 16777216
 
 ########################################################################################################################
 # Setup the mod and link.
-rm -rf /root/credentials.txt && ln -sf ${INSTALL_HOME}/mgmt/.env /root/credentials.txt &&
+rm -rf /root/credentials.txt && ln -sf ${DATA_HOME}/config/.env /root/credentials.txt &&
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 

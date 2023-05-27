@@ -23,6 +23,7 @@ elif [ -n "$(command -v apt-get)" ]; then
   apt-get -o Dpkg::Options::="--force-confold" upgrade -q -y --force-yes
   apt-get -y autoremove
   apt-get -y autoclean
+  apt-get -y purge droplet-agent
 fi
 
 rm -rf /tmp/* /var/tmp/*
