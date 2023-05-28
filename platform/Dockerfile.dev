@@ -17,5 +17,9 @@ COPY --from=redis /usr/local/bin/redis-server /usr/local/bin/redis-server
 # For SRS server.
 COPY --from=srs /usr/local/srs /usr/local/srs
 
+# Prepare data directory.
+RUN mkdir -p /usr/local/srs-cloud/mgmt/containers/data && rm -rf /data && \
+    ln -sf /usr/local/srs-cloud/mgmt/containers/data /data
+
 # Setup the work directory to platform.
 WORKDIR /usr/local/srs-cloud/platform

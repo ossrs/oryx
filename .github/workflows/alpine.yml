@@ -81,7 +81,7 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       # Aliyun ACR
       - name: Login Aliyun docker hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: registry.cn-hangzhou.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
