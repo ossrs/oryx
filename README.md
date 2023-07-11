@@ -258,7 +258,7 @@ The software we depend on:
 
 The optional environments defined by `mgmt/.env`:
 
-* `CLOUD`: The cloud platform name, DEV for development.
+* `CLOUD`: `dev|bt|aapanel|droplet|docker`, The cloud platform name, DEV for development.
 * `REGION`: `ap-guangzhou|ap-singapore|sgp1`, The region for upgrade source.
 * `SOURCE`: `github|gitee`, The source code for upgrading. 
 * `REGISTRY`: `docker.io|registry.cn-hangzhou.aliyuncs.com`, The docker registry.
@@ -302,10 +302,10 @@ Please restart service when `.env` changed.
 
 ## Develop All in macOS
 
-Start redis by brew:
+Start redis by docker:
 
 ```bash
-brew services start redis
+docker run --name redis -d --rm -it -v $HOME/db/redis:/data -p 6379:6379 redis
 ```
 
 Start SRS in macOS:
