@@ -399,20 +399,13 @@ Release version for BT and aaPanel:
 
 > Note: The [BT forum](https://www.bt.cn/bbs/thread-90890-1-1.html) and [FAQ](https://github.com/ossrs/srs-cloud/issues/4) might need to be updated.
 
-To refresh current tag for mgmt:
+To refresh current tag for mgmt and platform:
 
-* Run `./scripts/refresh-current-tag.sh`
+* Run `./auto/mgmt_platform_pub.sh -refresh`
 
-> Note: It does not update the tag for release.
-
-## Deprecated
-
-Release [stable version](https://api.ossrs.net/terraform/v1/releases):
-
-* MUST update the stable version manually in `releases/version.go`
-* Then run `./auto/releases_pub.sh`
-
-> Note: We disable the upgrade feature, so should never update the stable version.
+The upgrade feature has been disabled, which means we no longer update the 
+[version API](https://api.ossrs.net/terraform/v1/releases), nor do we update
+the `releases/version.go` file, and we don't use `./auto/releases_pub.sh`.
 
 2022.11
 

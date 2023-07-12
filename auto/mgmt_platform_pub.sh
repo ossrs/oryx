@@ -49,10 +49,6 @@ if [[ $(grep -q "const version = \"$TAG\"" platform/version.go || echo no) == no
     echo "Failed: Please update platform/version.go to $TAG"
     exit 1
 fi
-if [[ $(grep -q "const latest = \"$TAG\"" releases/version.go || echo no) == no ]]; then
-    echo "Failed: Please update releases/version.go to $TAG"
-    exit 1
-fi
 
 git st |grep -q 'nothing to commit'
 if [[ $? -ne 0 ]]; then
