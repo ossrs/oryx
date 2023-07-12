@@ -393,7 +393,6 @@ Release bugfix:
 
 Release version for BT and aaPanel:
 
-* MUST update the version manually in `auto/bt_aapanel_pub.sh`
 * Then run `./auto/bt_aapanel_pub.sh`
 * Finally, download [bt-srs_cloud.zip](https://github.com/ossrs/srs-cloud/releases) then submit to [bt.cn](https://www.bt.cn/developer/details.html?id=600801805)
 

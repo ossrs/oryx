@@ -43,10 +43,12 @@ if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 ######################################################################
 if [[ $(grep -q "const version = \"$TAG\"" mgmt/version.go || echo no) == no ]]; then
     echo "Failed: Please update mgmt/version.go to $TAG"
+    echo "    sed -i '' 's|const version = \".*\"|const version = \"$TAG\"|g' mgmt/version.go"
     exit 1
 fi
 if [[ $(grep -q "const version = \"$TAG\"" platform/version.go || echo no) == no ]]; then
     echo "Failed: Please update platform/version.go to $TAG"
+    echo "    sed -i '' 's|const version = \".*\"|const version = \"$TAG\"|g' platform/version.go"
     exit 1
 fi
 
@@ -76,7 +78,7 @@ echo "Sync gitee OK"
 git tag -d $TAG 2>/dev/null; git push origin :$TAG 2>/dev/null; git push gitee :$TAG 2>/dev/null
 echo "Delete tag OK: $TAG"
 
-git tag $TAG && git push origin $TAG && git push gitee
+git tag $TAG && git push origin $TAG && git push gitee $TAG
 echo "Publish OK: $TAG"
 
 ######################################################################
@@ -85,7 +87,7 @@ PLATFORM_TAG="platform-v$VERSION"
 git tag -d $PLATFORM_TAG 2>/dev/null; git push origin :$PLATFORM_TAG 2>/dev/null; git push gitee :$PLATFORM_TAG 2>/dev/null
 echo "Delete tag OK: $PLATFORM_TAG"
 
-git tag $PLATFORM_TAG && git push origin $PLATFORM_TAG && git push gitee
+git tag $PLATFORM_TAG && git push origin $PLATFORM_TAG && git push gitee $PLATFORM_TAG
 echo "Publish OK: $PLATFORM_TAG"
 
 echo -e "\n\n"

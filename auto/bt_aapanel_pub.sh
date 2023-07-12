@@ -2,22 +2,55 @@
 
 REALPATH=$(realpath $0)
 WORK_DIR=$(cd $(dirname $REALPATH)/.. && pwd)
+echo "Run pub at $WORK_DIR from $0"
 cd $WORK_DIR
 
-# Please update the release version for each major version.
-TAG=publication-v4.6.16
-echo "Publication TAG=$TAG, WORK_DIR=$WORK_DIR"
+help=false
+refresh=false
 
-RELEASE=$(git describe --tags --abbrev=0 --match publication-*)
-if [[ $TAG == $RELEASE ]]; then
-  echo "Failed: Release $TAG already published."
-  echo "Please update the TAG in $0 then run again.";
-  exit 1
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -h|--help) help=true; shift ;;
+        -refresh|--refresh) refresh=true; shift ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+done
+
+if [ "$help" = true ]; then
+    echo "Usage: $0 [OPTIONS]"
+    echo "Options:"
+    echo "  -h, --help           Show this help message and exit"
+    echo "  -refresh, --refresh  Refresh current tag. Default: false"
+    exit 0
 fi
 
-VERSION=$(echo $TAG| sed 's/publication-v//g')
-cat scripts/setup-aapanel/info.json |sed "s|\"versions\": .*|\"versions\": \"$VERSION\",|g" > tmp.json && mv tmp.json scripts/setup-aapanel/info.json &&
-cat scripts/setup-bt/info.json |sed "s|\"versions\": .*|\"versions\": \"$VERSION\",|g" > tmp.json && mv tmp.json scripts/setup-bt/info.json
+# We increase version from the publication-v* base.
+RELEASE=$(git describe --tags --abbrev=0 --match publication-v*) &&
+REVISION=$(echo $RELEASE|awk -F . '{print $3}')
+if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
+
+let NEXT=$REVISION+1
+if [[ $refresh == true ]]; then
+  let NEXT=$REVISION
+fi
+echo "Last release is $RELEASE, revision is $REVISION, next is $NEXT"
+
+VERSION="4.6.$NEXT" &&
+TAG="publication-v$VERSION" &&
+echo "publish version $VERSION as tag $TAG"
+if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
+
+######################################################################
+if [[ $(grep versions scripts/setup-aapanel/info.json | grep -q $VERSION || echo no) == no ]]; then
+    echo "Failed: Please update scripts/setup-aapanel/info.json to $VERSION"
+    echo "    sed -i '' 's|\"versions\": \".*\"|\"versions\": \"$VERSION\"|g' scripts/setup-aapanel/info.json"
+    exit 1
+fi
+if [[ $(grep versions scripts/setup-bt/info.json | grep -q $VERSION || echo no) == no ]]; then
+    echo "Failed: Please update scripts/setup-bt/info.json to $VERSION"
+    echo "    sed -i '' 's|\"versions\": \".*\"|\"versions\": \"$VERSION\"|g' scripts/setup-bt/info.json"
+    exit 1
+fi
 
 git st |grep -q 'nothing to commit'
 if [[ $? -ne 0 ]]; then
@@ -25,12 +58,30 @@ if [[ $? -ne 0 ]]; then
   exit 1
 fi
 
-git tag -d $TAG 2>/dev/null
-git push origin :$TAG 2>/dev/null
-git push gitee :$TAG 2>/dev/null
-git tag $TAG
-git push origin $TAG
-git push gitee $TAG
+git fetch origin
+if [[ $(git status |grep -q 'Your branch is up to date' || echo 'no') == no ]]; then
+  git status
+  echo "Failed: Please sync before release";
+  exit 1
+fi
+echo "Sync OK"
+
+git fetch gitee
+if [[ $(git diff origin/main gitee/main |grep -q diff && echo no) == no ]]; then
+  git diff origin/main gitee/main |grep diff
+  echo "Failed: Please sync gitee before release";
+  exit 1
+fi
+echo "Sync gitee OK"
+
+######################################################################
+git tag -d $TAG 2>/dev/null; git push origin :$TAG 2>/dev/null; git push gitee :$TAG 2>/dev/null
+echo "Delete tag OK: $TAG"
+
+git tag $TAG && git push origin $TAG && git push gitee $TAG
+echo "Publish OK: $TAG"
+
+echo -e "\n\n"
 echo "Publication ok, please visit"
 echo "    Please test it after https://github.com/ossrs/srs-cloud/actions/workflows/publication.yml done"
 echo "    Download bt-srs_cloud.zip from https://github.com/ossrs/srs-cloud/releases"
