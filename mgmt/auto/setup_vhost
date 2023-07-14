@@ -16,7 +16,7 @@ fi
 # We will generate the nginx.vhost.conf for nginx, here we know the absolute path, because the path in NGINX configuration
 # should be absolute path or relative to the prefix path, see https://serverfault.com/a/777408
 cat << END > containers/conf/conf.d/nginx.vhost.conf
-# !!! Important: SRS will restore this file during each upgrade, please never modify it.
+# !!! Important: SRS will restore this file during each restart, please never modify it.
 
 # Configurations apply to http section.
 include ${WORK_DIR}/containers/conf/conf.d/nginx.http.conf;

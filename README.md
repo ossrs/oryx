@@ -139,7 +139,7 @@ The features that we're developing:
 - [x] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
 - [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
 - [x] [Support DVR to local disk](https://github.com/ossrs/srs-cloud/issues/42).
-- [x] Support upgrade to latest version manually.
+- [ ] Support upgrade to latest version manually.
 - [ ] Support HTTPS by let's encrypt with certbot.
 - [ ] Support GB28181 by SRS 5.0 container.
 - [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
@@ -170,14 +170,13 @@ Platform:
 * `/terraform/v1/mgmt/login` System auth with password.
 * `/terraform/v1/mgmt/status` Query the version of mgmt.
 * `/terraform/v1/mgmt/envs` Query the envs of mgmt.
-* `/terraform/v1/mgmt/containers` Query and upgrade SRS container.
+* `/terraform/v1/mgmt/containers` Query SRS container.
 * `/terraform/v1/mgmt/bilibili` Query the video information.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
 * `/terraform/v1/mgmt/secret/token` Create token for OpenAPI.
 * `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
-* `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
 
 Also by platform module:
 
@@ -232,6 +231,7 @@ Static Files:
 * `/terraform/v1/mgmt/ssl` Config the system SSL config.
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
 * `/terraform/v1/mgmt/pubkey` Update the access for platform administrator pubkey.
+* `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
 
 ## Depends
 

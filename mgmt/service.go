@@ -270,49 +270,6 @@ func (v *dockerInfo) String() string {
 	return fmt.Sprintf("ID=%v, State=%v, Status=%v", v.ID, v.State, v.Status)
 }
 
-// execUpgrade run upgrade.
-func execUpgrade(ctx context.Context, target string) error {
-	if os.Getenv("MGMT_DOCKER") == "true" {
-		return nil
-	}
-
-	cmd := exec.CommandContext(ctx, "bash", "upgrade", target)
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return errors.Wrapf(err, "pipe stdout")
-	}
-
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return errors.Wrapf(err, "pipe stderr")
-	}
-
-	logger.Tf(ctx, "start upgrade to %v", target)
-	if err = cmd.Start(); err != nil {
-		return errors.Wrapf(err, "start upgrade")
-	}
-
-	rs := io.MultiReader(stdout, stderr)
-	buf := make([]byte, 4096)
-	for {
-		if nn, err := rs.Read(buf); err != nil || nn == 0 {
-			if err != io.EOF {
-				logger.Tf(ctx, "read nn=%v, err %v", nn, err)
-			}
-			break
-		} else if s := buf[:nn]; true {
-			logger.Tf(ctx, "%v", string(s))
-		}
-	}
-
-	if err = cmd.Wait(); err != nil {
-		logger.Tf(ctx, "wait err %v", err)
-	}
-
-	return nil
-}
-
 // startContainer start container.
 func startContainer(ctx context.Context, args []string) error {
 	if os.Getenv("MGMT_DOCKER") == "true" {
@@ -473,12 +430,12 @@ func (v *dockerPlatformManager) Start(ctx context.Context) error {
 	if !conf.IsDarwin {
 		args = append(args, "--network=srs-cloud")
 	}
-  // For redis server.
-  args = append(args,
-    "--add-host", "redis:127.0.0.1", "--env", "REDIS_HOST=127.0.0.1",
-    "-v", fmt.Sprintf("%v/containers/data:/data", conf.Pwd),
-    "-v", fmt.Sprintf("%v/containers/conf/redis.conf:/etc/redis/redis.conf", conf.Pwd),
-  )
+	// For redis server.
+	args = append(args,
+		"--add-host", "redis:127.0.0.1", "--env", "REDIS_HOST=127.0.0.1",
+		"-v", fmt.Sprintf("%v/containers/data:/data", conf.Pwd),
+		"-v", fmt.Sprintf("%v/containers/conf/redis.conf:/etc/redis/redis.conf", conf.Pwd),
+	)
 	if os.Getenv("REDIS_PASSWORD") != "" {
 		args = append(args, "--env", fmt.Sprintf("REDIS_PASSWORD=%v", os.Getenv("REDIS_PASSWORD")))
 	}
@@ -834,22 +791,6 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 
 		ohttp.WriteData(ctx, w, r, nil)
 		logger.Tf(ctx, "execApi req=%v", sr)
-		return nil
-	}
-
-	// Start upgrade.
-	handlers["execUpgrade"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
-		target := sr.ArgsAsString()[0]
-		if target == "" {
-			return errors.New("no target")
-		}
-
-		if err := execUpgrade(ctx, target); err != nil {
-			return errors.Wrapf(err, "upgrade to %v", target)
-		}
-
-		ohttp.WriteData(ctx, w, r, nil)
-		logger.Tf(ctx, "execApi req=%v target=%v", sr, target)
 		return nil
 	}
 

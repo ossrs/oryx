@@ -233,12 +233,12 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			}
 
 			ohttp.WriteData(ctx, w, r, &struct {
-				Secret bool   `json:"secret"`
-				HTTPS  string `json:"https"`
-				MgmtDocker bool `json:"mgmtDocker"`
+				Secret     bool   `json:"secret"`
+				HTTPS      string `json:"https"`
+				MgmtDocker bool   `json:"mgmtDocker"`
 			}{
-				Secret: r0 != "",
-				HTTPS:  os.Getenv("SRS_HTTPS"),
+				Secret:     r0 != "",
+				HTTPS:      os.Getenv("SRS_HTTPS"),
 				MgmtDocker: os.Getenv("MGMT_DOCKER") == "true",
 			})
 			return nil
@@ -428,96 +428,6 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 				Strategy:  "manual",
 			})
 			logger.Tf(ctx, "status ok, versions=%v, upgrading=%v, token=%vB", conf.Versions.String(), upgrading, len(token))
-			return nil
-		}(); err != nil {
-			ohttp.WriteError(ctx, w, r, err)
-		}
-	})
-
-	ep = "/terraform/v1/mgmt/upgrade"
-	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
-		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
-			var token string
-			if err := json.Unmarshal(b, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
-			}
-
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
-			}
-
-			if upgrading, err := rdb.HGet(ctx, SRS_UPGRADING, "upgrading").Result(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hget %v upgrading", SRS_UPGRADING)
-			} else if upgrading == "1" {
-				return errors.New("already upgrading")
-			}
-
-			var upgradingMessage, targetVersion string
-			if versions, err := queryLatestVersion(ctx); err != nil {
-				return errors.Wrapf(err, "query latest version")
-			} else if versions == nil || versions.Latest == "" {
-				return errors.Errorf("invalid versions %v", versions)
-			} else {
-				targetVersion = versions.Latest
-				if versions.Latest < conf.Versions.Version {
-					targetVersion = conf.Versions.Version
-				}
-				upgradingMessage = fmt.Sprintf("upgrade to target=%v, current=%v, latest=%v",
-					targetVersion, conf.Versions.Version, versions.Latest,
-				)
-				conf.Versions = *versions
-				logger.Tf(ctx, "upgrade to %v, %v", targetVersion, upgradingMessage)
-			}
-
-			if err := rdb.HSet(ctx, SRS_UPGRADING, "upgrading", 1).Err(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hset %v upgrading 1", SRS_UPGRADING)
-			}
-			if err := rdb.HSet(ctx, SRS_UPGRADING, "desc", upgradingMessage).Err(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hset %v desc %v", SRS_UPGRADING, upgradingMessage)
-			}
-
-			// Wait for a while to do upgrade, because client expect the status change.
-			select {
-			case <-ctx.Done():
-			case <-time.After(3 * time.Second):
-				logger.W(ctx, "start to execute upgrading")
-			}
-			if err := execApi(ctx, "execUpgrade", []string{targetVersion}, nil); err != nil {
-				return errors.Wrapf(err, "exec api, target=%v", targetVersion)
-			}
-
-			// Generally, this process or docker should be killed while upgrading, but for darwin which ignores the
-			// upgrading, so we should reset the upgrading when done.
-			go func() {
-				select {
-				case <-ctx.Done():
-				case <-time.After(10 * time.Second):
-				}
-				r0 := rdb.HSet(ctx, SRS_UPGRADING, "upgrading", 0).Err()
-				logger.Wf(ctx, "reset upgrading, err=%v", r0)
-			}()
-
-			ohttp.WriteData(ctx, w, r, &struct {
-				Version string `json:"version"`
-			}{
-				Version: targetVersion,
-			})
-			logger.Tf(ctx, "upgrade ok, target=%v, token=%vB", targetVersion, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -790,7 +700,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			if action == "" {
 				return errors.New("no action")
 			}
-			if action != "query" && action != "enabled" {
+			if action != "query" {
 				return errors.Errorf("invalid action %v", action)
 			}
 
@@ -801,21 +711,6 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 				return []byte(apiSecret), nil
 			}); err != nil {
 				return errors.Wrapf(err, "verify token %v", token)
-			}
-
-			if action == "enabled" {
-				if name == "" {
-					return errors.New("no name")
-				}
-				if err := rdb.HSet(ctx, SRS_CONTAINER_DISABLED, name, fmt.Sprintf("%v", !enabled)).Err(); err != nil {
-					return errors.Wrapf(err, "hset %v %v %v", SRS_CONTAINER_DISABLED, name, !enabled)
-				}
-				if err := execApi(ctx, "rmContainer", []string{name}, nil); err != nil {
-					return errors.Wrapf(err, "rm container %v", name)
-				}
-
-				ohttp.WriteData(ctx, w, r, nil)
-				logger.Tf(ctx, "container query ok, name=%v, token=%vB", name, len(token))
 			}
 
 			// Query containers

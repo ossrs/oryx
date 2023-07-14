@@ -6,11 +6,10 @@ __REAL_INSTALL=$(DESTDIR)$(SRS_PREFIX)
 default: help
 
 help:
-	@echo "Usage: make build|install|upgrade|test"
+	@echo "Usage: make build|install|test"
 	@echo "     default     Show help and quit"
 	@echo "     build       Build the project, npm install and build the ui"
 	@echo "     install     Copy files for installer"
-	@echo "     upgrade     Build for upgrade"
 	@echo "     test     	Run tests"
 
 build:
@@ -22,9 +21,6 @@ clean:
 	cd releases && make clean
 	cd mgmt && make clean
 	cd platform && make clean
-
-upgrade:
-	@echo "ignore for upgrade"
 
 ifeq ($(shell pwd), $(__REAL_INSTALL))
 install:

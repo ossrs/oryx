@@ -422,7 +422,7 @@ func nginxGenerateConfig(ctx context.Context) error {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Build the config for NGINX.
 	confLines := []string{
-		"# !!! Important: SRS will restore this file during each upgrade, please never modify it.",
+		"# !!! Important: SRS will restore this file during each restart, please never modify it.",
 	}
 	confLines = append(confLines, uploadLimit...)
 	confLines = append(confLines, sslConf...)
