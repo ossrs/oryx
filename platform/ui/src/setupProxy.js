@@ -9,10 +9,10 @@ console.log('setupProxy for development reactjs');
 module.exports = function(app) {
   // Proxy all default mounts to mgmt.
   // Note that should never mount the root, because the mgmt will be overwrite.
-  app.use('/console/', createProxyMiddleware({target: 'http://127.0.0.1:2022/'}));
-  app.use('/players/', createProxyMiddleware({target: 'http://127.0.0.1:2022/'}));
-  app.use('/terraform/', createProxyMiddleware({target: 'http://127.0.0.1:2022/'}));
-  app.use('/tools/', createProxyMiddleware({target: 'http://127.0.0.1:2022/'}));
+  app.use('/console/', createProxyMiddleware({target: 'http://127.0.0.1:2024/'}));
+  app.use('/players/', createProxyMiddleware({target: 'http://127.0.0.1:2024/'}));
+  app.use('/terraform/', createProxyMiddleware({target: 'http://127.0.0.1:2024/'}));
+  app.use('/tools/', createProxyMiddleware({target: 'http://127.0.0.1:2024/'}));
 
   // Proxy to SRS API and streaming.
   const withLogs = (options) => {
@@ -23,6 +23,6 @@ module.exports = function(app) {
   app.use('/*/*.(flv|m3u8|ts|aac|mp3)', withLogs({target: 'http://127.0.0.1:8080/'}));
 
   // The redefined home page.
-  app.use('/index.html', createProxyMiddleware({target: 'http://127.0.0.1:2022/'}));
+  app.use('/index.html', createProxyMiddleware({target: 'http://127.0.0.1:2024/'}));
 };
 

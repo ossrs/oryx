@@ -16,14 +16,14 @@ if [[ $MGMT_DOCKER == "true" ]]; then
 
   for ((i=0; i<10; i++)); do
     if [[ -f $REDIS_PID_FILE ]]; then
-      curl http://localhost:2022/terraform/v1/host/versions 1>/dev/null 2>/dev/null &&
+      curl http://localhost:2024/terraform/v1/host/versions 1>/dev/null 2>/dev/null &&
       echo "mgmt server started" &&
       break
     fi
     sleep 0.3
   done
 
-  curl http://localhost:2022/terraform/v1/host/versions 1>/dev/null 2>/dev/null
+  curl http://localhost:2024/terraform/v1/host/versions 1>/dev/null 2>/dev/null
   if [[ $? -ne 0 ]]; then echo "Check mgmt failed"; exit 1; fi
 fi
 

@@ -6,7 +6,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -17,9 +16,11 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ossrs/go-oryx-lib/errors"
@@ -64,7 +65,10 @@ func (v Versions) String() string {
 // TODO: FIXME: Should be merged to mgmt.
 type Config struct {
 	IsDarwin bool
-	MgmtPwd  string
+	// Current working directory, at xxx/srs-cloud/platform.
+	Pwd string
+	// The working directory of mgmt, at xxx/srs-cloud/mgmt.
+	MgmtPwd string
 
 	Cloud    string
 	Region   string
@@ -91,14 +95,122 @@ func (v *Config) IPv4() string {
 
 func (v *Config) String() string {
 	return fmt.Sprintf("darwin=%v, cloud=%v, region=%v, source=%v, registry=%v, iface=%v, ipv4=%v, pwd=%v, "+
-		"version=%v, latest=%v, stable=%v",
-		v.IsDarwin, v.Cloud, v.Region, v.Source, v.Registry, v.Iface, v.IPv4(), v.MgmtPwd, v.Versions.Version,
+		"mgmtPwd=%v, version=%v, latest=%v, stable=%v",
+		v.IsDarwin, v.Cloud, v.Region, v.Source, v.Registry, v.Iface, v.IPv4(), v.Pwd, v.MgmtPwd, v.Versions.Version,
 		v.Versions.Latest, v.Versions.Stable,
 	)
 }
 
-// conf is a global config object.
-var conf *Config
+func discoverRegion(ctx context.Context) (cloud, region string, err error) {
+	if conf.IsDarwin {
+		return "DEV", "ap-beijing", nil
+	}
+
+	if os.Getenv("CLOUD") == "BT" {
+		return "BT", "ap-beijing", nil
+	}
+
+	if os.Getenv("CLOUD") == "AAPANEL" {
+		return "AAPANEL", "ap-singapore", nil
+	}
+
+	if os.Getenv("CLOUD") == "DOCKER" {
+		return "DOCKER", "ap-beijing", nil
+	}
+
+	if os.Getenv("CLOUD") != "" && os.Getenv("REGION") != "" {
+		return os.Getenv("CLOUD"), os.Getenv("REGION"), nil
+	}
+
+	logger.Tf(ctx, "Initialize start to discover region")
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	discoverCtx, discoverCancel := context.WithCancel(ctx)
+	result := make(chan Config, 2)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		res, err := http.Get("http://metadata.tencentyun.com/latest/meta-data/placement/region")
+		if err != nil {
+			logger.Tf(ctx, "Ignore tencent region err %v", err)
+			return
+		}
+		defer res.Body.Close()
+
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			logger.Tf(ctx, "Ignore tencent region err %v", err)
+			return
+		}
+
+		select {
+		case <-discoverCtx.Done():
+		case result <- Config{Cloud: "TENCENT", Region: string(b)}:
+			discoverCancel()
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		// See https://docs.digitalocean.com/reference/api/metadata-api/#operation/getRegion
+		res, err := http.Get("http://169.254.169.254/metadata/v1/region")
+		if err != nil {
+			logger.Tf(ctx, "Ignore do region err %v", err)
+			return
+		}
+		defer res.Body.Close()
+
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			logger.Tf(ctx, "Ignore do region err %v", err)
+			return
+		}
+
+		select {
+		case <-discoverCtx.Done():
+		case result <- Config{Cloud: "DO", Region: string(b)}:
+			discoverCancel()
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+	case r := <-result:
+		return r.Cloud, r.Region, nil
+	}
+	return
+}
+
+func discoverSource(ctx context.Context, cloud, region string) (source string, err error) {
+	switch cloud {
+	case "DEV", "BT", "DOCKER":
+		return "gitee", nil
+	case "DO", "AAPANEL":
+		return "github", nil
+	}
+
+	for _, r := range []string{
+		"ap-guangzhou", "ap-shanghai", "ap-nanjing", "ap-beijing", "ap-chengdu", "ap-chongqing",
+	} {
+		if strings.HasPrefix(region, r) {
+			return "gitee", nil
+		}
+	}
+	return "github", nil
+}
+
+func discoverRegistry(ctx context.Context, source string) (registry string, err error) {
+	if source == "github" {
+		return "docker.io", nil
+	}
+	return "registry.cn-hangzhou.aliyuncs.com", nil
+}
 
 func discoverPlatform(ctx context.Context, cloud string) (platform string, err error) {
 	switch cloud {
@@ -181,7 +293,7 @@ const (
 	SRS_CONTAINER_DISABLED = "SRS_CONTAINER_DISABLED"
 	// For system settings.
 	SRS_SECRET_PUBLISH  = "SRS_SECRET_PUBLISH"
-	SRS_DOCKER_IMAGES      = "SRS_DOCKER_IMAGES"
+	SRS_DOCKER_IMAGES   = "SRS_DOCKER_IMAGES"
 	SRS_AUTH_SECRET     = "SRS_AUTH_SECRET"
 	SRS_FIRST_BOOT      = "SRS_FIRST_BOOT"
 	SRS_UPGRADING       = "SRS_UPGRADING"
@@ -243,84 +355,82 @@ func createToken(ctx context.Context, apiSecret string) (expireAt, createAt time
 	return expireAt, createAt, token, nil
 }
 
-// For platform to execute RPC by HTTP API.
-func execApi(ctx context.Context, action string, args interface{}, resObj interface{}) error {
-	// Note that we use mgmt password, because redis is not available for mgmt.
-	_, _, token, err := createToken(ctx, os.Getenv("MGMT_PASSWORD"))
-	if err != nil {
-		return errors.Wrapf(err, "build token")
+// Refresh the ipv4 address.
+func refreshIPv4(ctx context.Context) error {
+	discoverPrivateIPv4 := func(ctx context.Context) (string, net.IP, error) {
+		candidates := make(map[string]net.IP)
+
+		ifaces, err := net.Interfaces()
+		if err != nil {
+			return "", nil, err
+		}
+		for _, iface := range ifaces {
+			addrs, err := iface.Addrs()
+			if err != nil {
+				return "", nil, err
+			}
+
+			for _, addr := range addrs {
+				if addr, ok := addr.(*net.IPNet); ok {
+					if addr.IP.To4() != nil && !addr.IP.IsLoopback() {
+						candidates[iface.Name] = addr.IP
+					}
+				}
+			}
+		}
+
+		var bestMatch string
+		for name, _ := range candidates {
+			if strings.HasPrefix(name, "en") || strings.HasPrefix(name, "eth") {
+				bestMatch = name
+				break
+			}
+		}
+
+		if bestMatch == "" {
+			for name, _ := range candidates {
+				bestMatch = name
+				break
+			}
+		}
+
+		var privateIPv4 net.IP
+		if bestMatch != "" {
+			if addr, ok := candidates[bestMatch]; ok {
+				privateIPv4 = addr
+			}
+		}
+
+		logger.Tf(ctx, "Refresh ipv4=%v, bestMatch=%v, candidates=%v", privateIPv4, bestMatch, candidates)
+		return bestMatch, privateIPv4, nil
 	}
 
-	server := "localhost"
-	// If not development or in docker, we use the virtual host.
-	if os.Getenv("MGMT_DOCKER") != "true" {
-    if os.Getenv("NODE_ENV") != "development" || os.Getenv("SRS_DOCKERIZED") == "true" {
-      server = "mgmt.srs.local"
-    }
-	}
+	ipv4Ctx, ipv4Cancel := context.WithCancel(context.Background())
+	go func() {
+		ctx := logger.WithContext(ctx)
+		for ctx.Err() == nil {
+			if name, ipv4, err := discoverPrivateIPv4(ctx); err != nil {
+				logger.Wf(ctx, "ignore ipv4 discover err %v", err)
+			} else if name != "" && ipv4 != nil {
+				conf.ipv4 = ipv4
+				conf.Iface = name
+				ipv4Cancel()
+			}
 
-	body, err := json.Marshal(&struct {
-		Token  string      `json:"token"`
-		Action string      `json:"action"`
-		Args   interface{} `json:"args"`
-	}{
-		Token: token, Action: action, Args: args,
-	})
-	if err != nil {
-		return errors.Wrapf(err, "build request")
-	}
+			duration := time.Duration(24*3600) * time.Second
+			if os.Getenv("NODE_ENV") == "development" {
+				duration = time.Duration(30) * time.Second
+			}
+			time.Sleep(duration)
+		}
+	}()
 
-	requestURL := fmt.Sprintf("http://%v:2022/terraform/v1/host/exec", server)
-	res, err := http.Post(requestURL, "application/json", bytes.NewReader(body))
-	if err != nil {
-		return errors.Wrapf(err, "request %v with %v", requestURL, string(body))
-	}
-	defer res.Body.Close()
-
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return errors.Wrapf(err, "read response")
-	}
-
-	r1 := &struct {
-		Code int         `json:"code"`
-		Data interface{} `json:"data"`
-	}{
-		Data: resObj,
-	}
-	if err = json.Unmarshal(b, r1); err != nil {
-		return errors.Wrapf(err, "unmarshal json from %v", string(b))
-	}
-	if r1.Code != 0 {
-		return errors.Errorf("error response code=%v, %v, action=%v", r1.Code, string(b), action)
+	select {
+	case <-ctx.Done():
+	case <-ipv4Ctx.Done():
 	}
 
 	return nil
-}
-
-// For docker state.
-type dockerInfo struct {
-	Command      string `json:"Command"`
-	CreatedAt    string `json:"CreatedAt"`
-	ID           string `json:"ID"`
-	Image        string `json:"Image"`
-	Labels       string `json:"Labels"`
-	LocalVolumes string `json:"LocalVolumes"`
-	Mounts       string `json:"Mounts"`
-	Names        string `json:"Names"`
-	Networks     string `json:"Networks"`
-	Ports        string `json:"Ports"`
-	RunningFor   string `json:"RunningFor"`
-	Size         string `json:"Size"`
-	State        string `json:"State"`
-	Status       string `json:"Status"`
-}
-
-func (v *dockerInfo) String() string {
-	if v == nil {
-		return "nil"
-	}
-	return fmt.Sprintf("ID=%v, State=%v, Status=%v", v.ID, v.State, v.Status)
 }
 
 // setEnvDefault set env key=value if not set.
@@ -402,7 +512,7 @@ func nginxGenerateConfig(ctx context.Context) error {
 			"",
 			"# For automatic HTTPS.",
 			"location /.well-known/acme-challenge/ {",
-			"  proxy_pass http://127.0.0.1:2022$request_uri;",
+			"  proxy_pass http://127.0.0.1:2024$request_uri;",
 			"}",
 		}
 	}
@@ -438,7 +548,52 @@ func nginxGenerateConfig(ctx context.Context) error {
 		return errors.Wrapf(err, "write file %v with %v", fileName, confData)
 	}
 
-	if err := execApi(ctx, "reloadNginx", nil, nil); err != nil {
+	// reloadNginx is used to reload the NGINX server.
+	// TODO: FIXME: Use go http server instead.
+	reloadNginx := func(ctx context.Context) error {
+		if os.Getenv("MGMT_DOCKER") == "true" {
+			return nil
+		}
+		if conf.IsDarwin {
+			return nil
+		}
+
+		var nginxServiceExists, nginxPidExists bool
+		if _, err := os.Stat("/usr/lib/systemd/system/nginx.service"); err == nil {
+			nginxServiceExists = true
+		}
+		if os.Getenv("NGINX_PID") != "" {
+			if _, err := os.Stat(os.Getenv("NGINX_PID")); err == nil {
+				nginxPidExists = true
+			}
+		}
+		if !nginxServiceExists && !nginxPidExists {
+			return errors.Errorf("Can't reload NGINX, no service or pid %v", os.Getenv("NGINX_PID"))
+		}
+
+		// Try to reload by service if exists, try pid if failed.
+		if nginxServiceExists {
+			if err := exec.CommandContext(ctx, "systemctl", "reload", "nginx.service").Run(); err != nil {
+				if !nginxPidExists {
+					return errors.Wrapf(err, "reload nginx failed, service=%v, pid=%v", nginxServiceExists, nginxPidExists)
+				}
+			} else {
+				return nil
+			}
+		}
+
+		if b, err := ioutil.ReadFile(os.Getenv("NGINX_PID")); err != nil {
+			return errors.Wrapf(err, "read nginx pid from %v", os.Getenv("NGINX_PID"))
+		} else if pid := strings.TrimSpace(string(b)); pid == "" {
+			return errors.Errorf("no pid at %v", os.Getenv("NGINX_PID"))
+		} else if err = exec.CommandContext(ctx, "kill", "-s", "SIGHUP", pid).Run(); err != nil {
+			return errors.Wrapf(err, "reload nginx failed pid=%v", pid)
+		}
+
+		return nil
+	}
+
+	if err := reloadNginx(ctx); err != nil {
 		return errors.Wrapf(err, "reload nginx")
 	}
 	logger.Tf(ctx, "NGINX: Refresh dynamic.conf ok")
@@ -615,7 +770,7 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		params["ts"] = fmt.Sprintf("%v", time.Now().UnixNano()/int64(time.Millisecond))
 		releaseServer := "https://api.ossrs.net"
 		if os.Getenv("LOCAL_RELEASE") != "" {
-			releaseServer = "http://localhost:2022"
+			releaseServer = "http://localhost:2023"
 		}
 		logger.Tf(ctx, "Query %v with %v", releaseServer, params)
 

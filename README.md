@@ -155,12 +155,6 @@ The features that we're developing:
 
 ## APIs
 
-Mgmt:
-
-* `/terraform/v1/host/versions` Public version api.
-* `/terraform/v1/host/exec` Exec command sync, response the stdout and stderr.
-* `/terraform/v1/releases` Version management for all components.
-
 Platform:
 
 * `/terraform/v1/mgmt/versions` Public version api.
@@ -176,6 +170,8 @@ Platform:
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
 * `/terraform/v1/mgmt/secret/token` Create token for OpenAPI.
 * `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
+* `/terraform/v1/host/versions` Public version api.
+* `/terraform/v1/releases` Version management for all components.
 
 Also by platform module:
 
@@ -203,13 +199,13 @@ Also by platform module:
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 
-Market:
+Also provided by platform for market:
 
 * `/api/` SRS: HTTP API of SRS media server.
 * `/rtc/` SRS: HTTP API for WebERTC of SRS media server.
 * `/*/*.(flv|m3u8|ts|aac|mp3)` SRS: Media stream for HTTP-FLV, HLS, HTTP-TS, HTTP-AAC, HTTP-MP3.
 
-Static Files:
+Also provided by platform for static Files:
 
 * `/tools/` A set of H5 tools, like simple player, xgplayer, etc, serve by mgmt.
 * `/console/` The SRS console, serve by mgmt.
@@ -232,6 +228,7 @@ Static Files:
 * `/terraform/v1/mgmt/pubkey` Update the access for platform administrator pubkey.
 * `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
 * `/terraform/v1/mgmt/containers` Query SRS container.
+* `/terraform/v1/host/exec` Exec command sync, response the stdout and stderr.
 
 ## Depends
 

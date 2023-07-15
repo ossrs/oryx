@@ -13,6 +13,8 @@ import (
 	"github.com/joho/godotenv"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -52,43 +54,94 @@ func (v *dockerHTTPService) Close() error {
 }
 
 func (v *dockerHTTPService) Run(ctx context.Context) error {
-	addr := os.Getenv("PLATFORM_LISTEN")
-	if !strings.HasPrefix(addr, ":") {
-		addr = fmt.Sprintf(":%v", addr)
-	}
-	logger.Tf(ctx, "HTTP listen at %v", addr)
+	var wg sync.WaitGroup
+	defer wg.Wait()
 
 	handler := http.NewServeMux()
 	if err := handleDockerHTTPService(ctx, handler); err != nil {
 		return errors.Wrapf(err, "handle service")
 	}
 
-	server := &http.Server{Addr: addr, Handler: handler}
-	v.server = server
+	var r0 error
+	if true {
+		addr := os.Getenv("PLATFORM_LISTEN")
+		if !strings.HasPrefix(addr, ":") {
+			addr = fmt.Sprintf(":%v", addr)
+		}
+		logger.Tf(ctx, "HTTP listen at %v", addr)
 
-	var wg sync.WaitGroup
-	defer wg.Wait()
+		server := &http.Server{Addr: addr, Handler: handler}
+		v.server = server
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		<-ctx.Done()
-		logger.Tf(ctx, "shutting down HTTP server...")
-		v.Close()
-	}()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-ctx.Done()
+			logger.Tf(ctx, "shutting down HTTP server...")
+			v.Close()
+		}()
 
-	if err := server.ListenAndServe(); err != nil && ctx.Err() != context.Canceled {
-		return errors.Wrapf(err, "listen %v", addr)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := server.ListenAndServe(); err != nil && ctx.Err() != context.Canceled {
+				r0 = errors.Wrapf(err, "listen %v", addr)
+			}
+			logger.Tf(ctx, "HTTP server is done")
+		}()
 	}
-	logger.Tf(ctx, "HTTP server is done")
 
+	var r1 error
+	if true {
+		addr := os.Getenv("MGMT_LISTEN")
+		if !strings.HasPrefix(addr, ":") {
+			addr = fmt.Sprintf(":%v", addr)
+		}
+		logger.Tf(ctx, "HTTP listen at %v", addr)
+
+		server := &http.Server{Addr: addr, Handler: handler}
+		v.server = server
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-ctx.Done()
+			logger.Tf(ctx, "shutting down HTTP server...")
+			v.Close()
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := server.ListenAndServe(); err != nil && ctx.Err() != context.Canceled {
+				r1 = errors.Wrapf(err, "listen %v", addr)
+			}
+			logger.Tf(ctx, "HTTP server is done")
+		}()
+	}
+
+	for _, r := range []error{r0, r1} {
+		if r != nil {
+			return r
+		}
+	}
 	return nil
 }
 
 func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	ohttp.Server = fmt.Sprintf("srs-cloud/%v", version)
 
-	ep := "/terraform/v1/mgmt/versions"
+	ep := "/terraform/v1/host/versions"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		ohttp.WriteData(ctx, w, r, &struct {
+			Version string `json:"version"`
+		}{
+			Version: strings.TrimPrefix(version, "v"),
+		})
+	})
+
+	ep = "/terraform/v1/mgmt/versions"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		ohttp.WriteData(ctx, w, r, &struct {
@@ -171,9 +224,6 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			// Refresh the local token.
 			if err := godotenv.Load(envFile); err != nil {
 				return errors.Wrapf(err, "load %v", envFile)
-			}
-			if err := execApi(ctx, "reloadEnv", nil, nil); err != nil {
-				return errors.Wrapf(err, "reload env for mgmt")
 			}
 
 			expireAt, createAt, token, err := createToken(ctx, os.Getenv("SRS_PLATFORM_SECRET"))
@@ -676,13 +726,8 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		}
 	})
 
-	// Because conf.Pwd is pwd of mgmt, we must use pwd of platform.
-	pwd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrapf(err, "getpwd")
-	}
-
-	fileRoot := path.Join(pwd, "ui/build")
+	// Serve UI at platform.
+	fileRoot := path.Join(conf.Pwd, "ui/build")
 	if os.Getenv("REACT_APP_LOCALE") != "" {
 		fileRoot = path.Join(fileRoot, os.Getenv("REACT_APP_LOCALE"))
 	} else {
@@ -711,6 +756,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 365*24*3600))
 		}
 
+		ohttp.SetHeader(w)
 		fileServer.ServeHTTP(w, r)
 	}
 
@@ -721,6 +767,76 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 	ep = "/mgmt/"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, mgmtHandler)
+
+	// Proxy to other services, migrate from mgmt.
+	createProxy := func(target string) (*httputil.ReverseProxy, error) {
+		targetObject, err := url.Parse(target)
+		if err != nil {
+			return nil, errors.Wrapf(err, "parse backend %v", target)
+		}
+		return httputil.NewSingleHostReverseProxy(targetObject), nil
+	}
+
+	proxy2023, err := createProxy("http://127.0.0.1:2023")
+	if err != nil {
+		return err
+	}
+
+	proxy1985, err := createProxy("http://127.0.0.1:1985")
+	if err != nil {
+		return err
+	}
+
+	proxy8080, err := createProxy("http://127.0.0.1:8080")
+	if err != nil {
+		return err
+	}
+
+	mgmtFileServer := http.FileServer(http.Dir(path.Join(conf.MgmtPwd, "containers/www")))
+
+	ep = "/"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		// Set common header.
+		ohttp.SetHeader(w)
+
+		// For version management.
+		if strings.HasPrefix(r.URL.Path, "/terraform/v1/releases") {
+			logger.Tf(ctx, "Proxy %v to backend 2023", r.URL.Path)
+			proxy2023.ServeHTTP(w, r)
+			return
+		}
+
+		// We directly serve the static files, because we overwrite the www for DVR.
+		if strings.HasPrefix(r.URL.Path, "/console/") || strings.HasPrefix(r.URL.Path, "/players/") ||
+			strings.HasPrefix(r.URL.Path, "/tools/") {
+			if r.URL.Path != "/tools/player.html" && r.URL.Path != "/tools/xgplayer.html" {
+				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 365*24*3600))
+			}
+			mgmtFileServer.ServeHTTP(w, r)
+			return
+		}
+
+		// Proxy to SRS HTTP streaming, console and player, by /api/, /rtc/, /live/, /console/, /players/
+		// See https://github.com/vagusX/koa-proxies
+		// TODO: FIXME: Do authentication for api.
+		if strings.HasPrefix(r.URL.Path, "/api/") || strings.HasPrefix(r.URL.Path, "/rtc/") {
+			logger.Tf(ctx, "Proxy %v to backend 1985", r.URL.Path)
+			proxy1985.ServeHTTP(w, r)
+			return
+		}
+
+		if strings.HasSuffix(r.URL.Path, ".flv") || strings.HasSuffix(r.URL.Path, ".m3u8") ||
+			strings.HasSuffix(r.URL.Path, ".ts") || strings.HasSuffix(r.URL.Path, ".aac") ||
+			strings.HasSuffix(r.URL.Path, ".mp3") {
+			logger.Tf(ctx, "Proxy %v to backend 8080", r.URL.Path)
+			proxy8080.ServeHTTP(w, r)
+			return
+
+		}
+
+		w.Write([]byte("Hello world!"))
+	})
 
 	return nil
 }

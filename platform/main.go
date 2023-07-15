@@ -9,10 +9,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"net"
 	"os"
 	"os/signal"
 	"path"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -26,8 +26,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// conf is a global config object.
+var conf *Config
+
 func main() {
 	ctx := logger.WithContext(context.Background())
+	ctx = logger.WithContext(ctx)
 
 	if err := doMain(ctx); err != nil {
 		logger.Tf(ctx, "run err %+v", err)
@@ -48,39 +52,6 @@ func doMain(ctx context.Context) error {
 		os.Exit(0)
 	}
 
-	// For platform, we need to load .env from pwd or mgmt. Right now, we still don't know about the .env file path,
-	// util we load the conf.Pwd from mgmt by execApi in initOS.
-	if true {
-		pwd, err := os.Getwd()
-		if err != nil {
-			return errors.Wrapf(err, "getpwd")
-		}
-
-		// Note that we only use .env in mgmt.
-		envFile := path.Join(pwd, "../mgmt/.env")
-		if err := godotenv.Load(envFile); err != nil {
-			return errors.Wrapf(err, "load %v", envFile)
-		}
-	}
-
-	// For platform, default to development for Darwin.
-	setEnvDefault("NODE_ENV", "development")
-	// For platform, HTTP server listen port.
-	setEnvDefault("PLATFORM_LISTEN", "2024")
-
-	setEnvDefault("REDIS_PORT", "6379")
-	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, "+
-		"NODE_ENV=%v, LOCAL_RELEASE=%v, SRS_DOCKER=%v, USE_DOCKER=%v, SRS_UTEST=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, "+
-		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, SRS_DOCKERIZED=%v, MGMT_DOCKER=%v, "+
-		"REGISTRY=%v",
-		len(os.Getenv("MGMT_PASSWORD")), len(os.Getenv("SRS_PLATFORM_SECRET")), os.Getenv("CLOUD"),
-		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("NODE_ENV"), os.Getenv("LOCAL_RELEASE"),
-		os.Getenv("SRS_DOCKER"), os.Getenv("USE_DOCKER"), os.Getenv("SRS_UTEST"),
-		len(os.Getenv("REDIS_PASSWORD")), os.Getenv("REDIS_PORT"), os.Getenv("PUBLIC_URL"),
-		os.Getenv("BUILD_PATH"), os.Getenv("REACT_APP_LOCALE"), os.Getenv("PLATFORM_LISTEN"),
-		os.Getenv("SRS_DOCKERIZED"), os.Getenv("MGMT_DOCKER"), os.Getenv("REGISTRY"),
-	)
-
 	// Install signals.
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
@@ -91,6 +62,55 @@ func doMain(ctx context.Context) error {
 			cancel()
 		}
 	}()
+
+	// Initialize the management password and load the environment without relying on Redis.
+	if true {
+		// Initialize global config.
+		conf = NewConfig()
+
+		// Initialize mgmt pwd.
+		if pwd, err := os.Getwd(); err != nil {
+			return errors.Wrapf(err, "getpwd")
+		} else {
+			conf.Pwd = pwd
+			conf.MgmtPwd = path.Join(pwd, "../mgmt/")
+		}
+
+		// Note that we only use .env in mgmt.
+		envFile := path.Join(conf.MgmtPwd, ".env")
+		if err := godotenv.Load(envFile); err != nil {
+			return errors.Wrapf(err, "load %v", envFile)
+		}
+	}
+
+	// For platform, default to development for Darwin.
+	setEnvDefault("NODE_ENV", "development")
+	// For platform, HTTP server listen port.
+	setEnvDefault("PLATFORM_LISTEN", "2024")
+
+	// Migrate from mgmt.
+	setEnvDefault("REDIS_PORT", "6379")
+	setEnvDefault("MGMT_LISTEN", "2022")
+	setEnvDefault("PLATFORM_DOCKER", "true")
+	setEnvDefault("MGMT_DOCKER", "false")
+
+	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, "+
+		"NODE_ENV=%v, LOCAL_RELEASE=%v, SRS_DOCKER=%v, USE_DOCKER=%v, SRS_UTEST=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, "+
+		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, SRS_DOCKERIZED=%v, MGMT_DOCKER=%v, "+
+		"REGISTRY=%v, MGMT_LISTEN=%v, PLATFORM_DOCKER=%v",
+		len(os.Getenv("MGMT_PASSWORD")), len(os.Getenv("SRS_PLATFORM_SECRET")), os.Getenv("CLOUD"),
+		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("NODE_ENV"), os.Getenv("LOCAL_RELEASE"),
+		os.Getenv("SRS_DOCKER"), os.Getenv("USE_DOCKER"), os.Getenv("SRS_UTEST"),
+		len(os.Getenv("REDIS_PASSWORD")), os.Getenv("REDIS_PORT"), os.Getenv("PUBLIC_URL"),
+		os.Getenv("BUILD_PATH"), os.Getenv("REACT_APP_LOCALE"), os.Getenv("PLATFORM_LISTEN"),
+		os.Getenv("SRS_DOCKERIZED"), os.Getenv("MGMT_DOCKER"), os.Getenv("REGISTRY"),
+		os.Getenv("MGMT_LISTEN"), os.Getenv("PLATFORM_DOCKER"),
+	)
+
+	// Setup the mgmt OS for redis, which should never depends on redis.
+	if err := initMgmtOS(ctx); err != nil {
+		return errors.Wrapf(err, "init mgmt os")
+	}
 
 	// Initialize global rdb, the redis client.
 	if err := InitRdb(); err != nil {
@@ -107,6 +127,11 @@ func doMain(ctx context.Context) error {
 	// We must initialize the platform after redis is ready.
 	if err := initPlatform(ctx); err != nil {
 		return errors.Wrapf(err, "init platform")
+	}
+
+	// We must initialize the mgmt after redis is ready.
+	if err := initMmgt(ctx); err != nil {
+		return errors.Wrapf(err, "init mgmt")
 	}
 	logger.Tf(ctx, "initialize platform region=%v, registry=%v, version=%v", conf.Region, conf.Registry, version)
 
@@ -156,14 +181,38 @@ func doMain(ctx context.Context) error {
 }
 
 // Initialize the source for redis, note that we don't change the env.
+func initMgmtOS(ctx context.Context) (err error) {
+	// For Darwin, append the search PATH for docker.
+	// Note that we should set the PATH env, not the exec.Cmd.Env.
+	if conf.IsDarwin && !strings.Contains(os.Getenv("PATH"), "/usr/local/bin") {
+		os.Setenv("PATH", fmt.Sprintf("%v:/usr/local/bin", os.Getenv("PATH")))
+	}
+
+	// The redis is not available when os startup, so we must directly discover from env or network.
+	if conf.Cloud, conf.Region, err = discoverRegion(ctx); err != nil {
+		return errors.Wrapf(err, "discover region")
+	}
+
+	// Always update the source, because it might change.
+	if conf.Source, err = discoverSource(ctx, conf.Cloud, conf.Region); err != nil {
+		return errors.Wrapf(err, "discover source")
+	}
+
+	// Always update the registry, because it might change.
+	if conf.Registry, err = discoverRegistry(ctx, conf.Source); err != nil {
+		return errors.Wrapf(err, "discover registry")
+	}
+
+	logger.Tf(ctx, "initOS %v", conf.String())
+	return
+}
+
+// Initialize the source for redis, note that we don't change the env.
 func initOS(ctx context.Context) (err error) {
-	// Initialize global config.
-	conf = NewConfig()
 	// Load some configurations from env, which is set by mgmt.
 	conf.Cloud = os.Getenv("CLOUD")
 	conf.Region = os.Getenv("REGION")
 	conf.Source = os.Getenv("SOURCE")
-	conf.MgmtPwd = os.Getenv("MGMT_PASSWORD")
 	conf.Registry = os.Getenv("REGISTRY")
 
 	// For platform, we must use the secret to access API of mgmt.
@@ -175,15 +224,6 @@ func initOS(ctx context.Context) (err error) {
 			os.Setenv("SRS_PLATFORM_SECRET", token)
 			logger.Tf(ctx, "Update api secret to %vB", len(token))
 		}
-	}
-
-	// Initialize pwd.
-	if err = execApi(ctx, "cwd", nil, &struct {
-		Cwd *string `json:"cwd"`
-	}{
-		Cwd: &conf.MgmtPwd,
-	}); err != nil {
-		return errors.Wrapf(err, "get pwd")
 	}
 
 	// Load the platform from redis, initialized by mgmt.
@@ -243,14 +283,7 @@ func initOS(ctx context.Context) (err error) {
 	}
 
 	// Request the host platform OS, whether the OS is Darwin.
-	var hostPlatform string
-	if err = execApi(ctx, "hostPlatform", nil, &struct {
-		Platform *string `json:"platform"`
-	}{
-		Platform: &hostPlatform,
-	}); err != nil {
-		return errors.Wrapf(err, "get platform")
-	}
+	hostPlatform := runtime.GOOS
 	// Because platform might run in docker, so we overwrite it by query from mgmt.
 	if hostPlatform == "darwin" {
 		conf.IsDarwin = true
@@ -263,40 +296,6 @@ func initOS(ctx context.Context) (err error) {
 
 	logger.Tf(ctx, "initOS %v", conf.String())
 	return
-}
-
-// Refresh the ipv4 address.
-func refreshIPv4(ctx context.Context) error {
-	ipv4Ctx, ipv4Cancel := context.WithCancel(context.Background())
-	go func() {
-		ctx := logger.WithContext(ctx)
-		for ctx.Err() == nil {
-			var address string
-			if err := execApi(ctx, "ipv4", nil, &struct {
-				Name    *string `json:"name"`
-				Address *string `json:"address"`
-			}{
-				Name: &conf.Iface, Address: &address,
-			}); err == nil && address != "" {
-				logger.Tf(ctx, "query ipv4 ok, result is %v %v", conf.Iface, address)
-				conf.ipv4 = net.ParseIP(address)
-				ipv4Cancel()
-			}
-
-			duration := time.Duration(24*3600) * time.Second
-			if os.Getenv("NODE_ENV") == "development" {
-				duration = time.Duration(30) * time.Second
-			}
-			time.Sleep(duration)
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-	case <-ipv4Ctx.Done():
-	}
-
-	return nil
 }
 
 // Initialize the platform before thread run.
@@ -436,6 +435,31 @@ func initPlatform(ctx context.Context) error {
 			return errors.Wrapf(err, "hset %v update %v", SRS_PLATFORM_SECRET, update)
 		}
 		logger.Tf(ctx, "Platform api secret update, token=%vB, update=%v", len(token), update)
+	}
+
+	return nil
+}
+
+// Initialize the platform before thread run.
+func initMmgt(ctx context.Context) error {
+	envFile := path.Join(conf.MgmtPwd, ".env")
+
+	// Refresh the env file.
+	if envs, err := godotenv.Read(envFile); err != nil {
+		return errors.Wrapf(err, "load envs")
+	} else {
+		envs["CLOUD"] = conf.Cloud
+		envs["REGION"] = conf.Region
+		envs["SOURCE"] = conf.Source
+		envs["REGISTRY"] = conf.Registry
+		if os.Getenv("MGMT_PASSWORD") != "" {
+			envs["MGMT_PASSWORD"] = os.Getenv("MGMT_PASSWORD")
+		}
+
+		if err := godotenv.Write(envs, envFile); err != nil {
+			return errors.Wrapf(err, "write %v", envFile)
+		}
+		logger.Tf(ctx, "Refresh %v ok", envFile)
 	}
 
 	return nil
