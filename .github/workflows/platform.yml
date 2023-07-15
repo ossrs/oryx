@@ -3,7 +3,7 @@ name: "Release Platform for SRS"
 on:
   push:
     tags:
-      - platform-v1*
+      - v1*
 
 jobs:
   envs:
@@ -15,8 +15,8 @@ jobs:
         uses: actions/checkout@v3
       # The github.ref is, for example, refs/tags/v5.0.145 or refs/tags/v5.0-r8
       # Generate variables like:
-      #   SRS_TAG=nodejs-v1.0.52
-      #   SRS_MAJOR=nodejs-1
+      #   SRS_TAG=v1.0.52
+      #   SRS_MAJOR=1
       # @see https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Generate varaiables
         run: |
@@ -70,8 +70,10 @@ jobs:
           src: ossrs/srs-cloud:${{ env.SRS_TAG }}
           dst: |
             ossrs/srs-cloud:${{ env.SRS_MAJOR }}
-            ossrs/srs-terraform:${{ env.SRS_TAG }}
-            ossrs/srs-terraform:${{ env.SRS_MAJOR }}
+            ossrs/srs-cloud:v${{ env.SRS_MAJOR }}
+            ossrs/srs-cloud:platform-${{ env.SRS_TAG }}
+            ossrs/srs-cloud:platform-${{ env.SRS_MAJOR }}
+            ossrs/srs-cloud:platform-v${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
   aliyun:
@@ -97,6 +99,8 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_TAG }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_MAJOR }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:${{ env.SRS_TAG }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:v${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-${{ env.SRS_TAG }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-v${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04

@@ -102,12 +102,12 @@ func (v *Config) String() string {
 }
 
 func discoverRegion(ctx context.Context) (cloud, region string, err error) {
-	if conf.IsDarwin {
-		return "DEV", "ap-beijing", nil
-	}
-
 	if os.Getenv("CLOUD") == "BT" {
 		return "BT", "ap-beijing", nil
+	}
+
+	if os.Getenv("CLOUD") == "BIN" {
+		return "BIN", "ap-beijing", nil
 	}
 
 	if os.Getenv("CLOUD") == "AAPANEL" {
@@ -120,6 +120,10 @@ func discoverRegion(ctx context.Context) (cloud, region string, err error) {
 
 	if os.Getenv("CLOUD") != "" && os.Getenv("REGION") != "" {
 		return os.Getenv("CLOUD"), os.Getenv("REGION"), nil
+	}
+
+	if conf.IsDarwin {
+		return "DEV", "ap-beijing", nil
 	}
 
 	logger.Tf(ctx, "Initialize start to discover region")
@@ -189,7 +193,7 @@ func discoverRegion(ctx context.Context) (cloud, region string, err error) {
 
 func discoverSource(ctx context.Context, cloud, region string) (source string, err error) {
 	switch cloud {
-	case "DEV", "BT", "DOCKER":
+	case "DEV", "BT", "BIN", "DOCKER":
 		return "gitee", nil
 	case "DO", "AAPANEL":
 		return "github", nil
@@ -220,6 +224,8 @@ func discoverPlatform(ctx context.Context, cloud string) (platform string, err e
 		return "droplet", nil
 	case "BT":
 		return "bt", nil
+	case "BIN":
+		return "bin", nil
 	case "AAPANEL":
 		return "aapanel", nil
 	case "DOCKER":

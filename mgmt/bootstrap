@@ -1,41 +1,41 @@
 #!/usr/bin/env bash
 
-REALPATH=$(realpath $0)
-WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
-echo "Run srs-cloud at $WORK_DIR from $0"
+# Execute by: bash xxx.sh or bash zzz/yyy/xxx.sh or ./xxx.sh or ./zzz/yyy/xxx.sh source xxx.sh
+REALPATH=$(realpath ${BASH_SOURCE[0]})
+SCRIPT_DIR=$(cd $(dirname ${REALPATH}) && pwd)
+WORK_DIR=$(cd $(dirname ${REALPATH}) && pwd)
+echo "BASH_SOURCE=${BASH_SOURCE}, REALPATH=${REALPATH}, SCRIPT_DIR=${SCRIPT_DIR}, WORK_DIR=${WORK_DIR}"
+cd ${WORK_DIR}
 
-APP_ARGS=$@
-echo "Program args: $APP_ARGS"
+DATA_HOME=/data
+IMAGE=ossrs/srs-cloud:1
+MGMT_PORT=2022
+RTMP_PORT=1935
+API_PORT=1985
+HTTP_PORT=8080
+RTC_PORT=8000
+SRT_PORT=10080
 
-# Do everything at the same work directory.
-cd $WORK_DIR
+echo "Stop platform container"
+docker rm -f srs-cloud
 
-# Create .env if not exists.
-if [[ ! -f .env ]]; then touch .env; fi
+echo "Start platform container"
+CMD="docker run --rm --name srs-cloud -v ${DATA_HOME}:/data
+    -p ${MGMT_PORT}:2022 -p ${RTMP_PORT}:1935/tcp -p ${API_PORT}:1985/tcp -p
+    ${HTTP_PORT}:8080/tcp -p ${RTC_PORT}:8000/udp -p ${SRT_PORT}:10080/udp
+    --restart no --detach
+    ${IMAGE}"
+echo $CMD && $CMD
+if [[ $? -ne 0 ]]; then echo "Start platform container failed"; exit 1; fi
+echo "Start platform container ok"
 
-# Get the metadata of machine.
-if [[ -f .env ]]; then source .env; fi
-echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
+while true; do
+    ID=$(docker ps --filter "name=srs-cloud" --format "{{.ID}}")
+    if [[ -z $ID ]]; then
+        echo "Platform container not found"
+        exit 1
+    fi
 
-# When env is ok, we try to load extra envs. Note that these envs is only for mgmt, we should pass to container if
-# container wants to use it.
-if [[ -f $WORK_DIR/containers/bin/bootstrap ]]; then
-  source $WORK_DIR/containers/bin/bootstrap
-fi
-
-# Execute script for each run, to make sure system is all right. Note that we must run in script, never run in code,
-# because if system corrupt, we could restart it to fix it.
-bash auto/foreach_run
-if [[ $? -ne 0 ]]; then echo "Execute for each run script failed"; exit 1; fi
-
-# Switch target version in version.go
-bash auto/switch_mgmt_version
-if [[ $? -ne 0 ]]; then echo "Switch MGMT failed"; exit 1; fi
-
-# Start the application server.
-if [[ $(uname -s) == 'Darwin' ]]; then
-  env NODE_ENV=development ./mgmt $APP_ARGS
-  exit 0;
-fi
-env NODE_ENV=production ./mgmt $APP_ARGS
-
+    docker ps --filter "name=srs-cloud" --format "{{.Names}} {{.ID}} {{.Ports}}"
+    sleep 3
+done

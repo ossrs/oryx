@@ -15,8 +15,7 @@ if [[ -z $SITE_NAME ]]; then echo "No site name"; exit 1; fi
 # Setup the path.
 install_path=/www/server/panel/plugin/srs_cloud
 SRS_HOME=/usr/local/srs-cloud
-INSTALL_HOME=/usr/local/srs-cloud
-echo "Setup SRS at install_path=$install_path, SRS_HOME=$SRS_HOME, INSTALL_HOME=$INSTALL_HOME, NGINX_PID=$NGINX_PID, WWW_HOME=$WWW_HOME, SITE_NAME=$SITE_NAME"
+echo "Setup SRS at install_path=$install_path, SRS_HOME=$SRS_HOME, NGINX_PID=$NGINX_PID, WWW_HOME=$WWW_HOME, SITE_NAME=$SITE_NAME"
 
 source do_os.sh
 if [[ $? -ne 0 ]]; then echo "Setup OS failed"; exit 1; fi
@@ -70,7 +69,7 @@ docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
 # If install ok, the directory should exists.
-if [[ ! -d ${INSTALL_HOME} || ! -d ${INSTALL_HOME}/mgmt ]]; then
+if [[ ! -d ${SRS_HOME} || ! -d ${SRS_HOME}/mgmt ]]; then
   echo "Install srs-cloud failed"; exit 1;
 fi
 
@@ -94,7 +93,7 @@ if [[ $? -ne 0 ]]; then echo "Setup init.d script failed"; exit 1; fi
 
 # Create srs-cloud service, and the credential file.
 # Remark: Never start the service, because the IP will change for new machine created.
-cd ${INSTALL_HOME} &&
+cd ${SRS_HOME} &&
 cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
 systemctl daemon-reload && systemctl enable srs-cloud
 if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi

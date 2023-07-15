@@ -1,0 +1,18 @@
+# Usage:
+# Build image:
+#     docker build -t test .
+# Note that should start with --privileged to run systemd.
+#     docker run \
+#         --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
+#         -d --rm -it -v $(pwd):/g -w /g --name=install test
+# Start a shell:
+#     docker exec -it install /bin/bash
+
+#FROM ubuntu:focal
+FROM jrei/systemd-ubuntu:focal
+
+# https://serverfault.com/questions/949991/how-to-install-tzdata-on-a-ubuntu-docker-image
+ENV DEBIAN_FRONTEND=noninteractive
+
+# See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#apt-get
+RUN apt update -y && apt-get install -y docker.io tree

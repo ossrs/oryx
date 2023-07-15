@@ -13,10 +13,10 @@ Run srs-cloud in one docker:
 ```bash
 docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
   -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp --name srs-cloud \
-  ossrs/srs-cloud:platform-1
+  ossrs/srs-cloud:1
 ```
 
-> Note: Please use `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1` in China.
+> Note: Please use `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:1` in China.
 
 Then open http://localhost:2022/mgmt in browser.
 
@@ -27,7 +27,7 @@ All data will be reset when restarting, so please mount volumes if want to save 
 ```bash
 docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
   -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp --name srs-cloud \
-  -v $HOME/db:/data ossrs/srs-cloud:platform-1
+  -v $HOME/db:/data ossrs/srs-cloud:1
 ```
 
 You have the option to modify the volumes for srs-cloud and direct them to different directories.
@@ -311,12 +311,6 @@ Start SRS in macOS:
 (cd platform && ~/git/srs/trunk/objs/srs -c containers/conf/srs.release-local.conf)
 ```
 
-Run the mgmt backend, or run in GoLand:
-
-```
-(cd mgmt && bash auto/init_global && PLATFORM_DOCKER=false go run .)
-```
-
 Run the platform backend, or run in GoLand:
 
 ```
@@ -357,12 +351,6 @@ Start redis and SRS only in docker:
 
 ```bash
 bash auto/init_mgmt && bash auto/start_redis && bash auto/start_srs
-```
-
-Build and run mgmt only in docker:
-
-```bash
-cd /usr/local/srs-cloud/mgmt && make && ./mgmt
 ```
 
 Build and run platform only in docker:

@@ -1,32 +1,39 @@
 #!/usr/bin/env bash
 
-REALPATH=$(realpath $0)
-WORK_DIR=$(cd $(dirname $REALPATH) && pwd)
-echo "Run srs-cloud at $WORK_DIR from $0"
+# Execute by: bash xxx.sh or bash zzz/yyy/xxx.sh or ./xxx.sh or ./zzz/yyy/xxx.sh source xxx.sh
+REALPATH=$(realpath ${BASH_SOURCE[0]})
+SCRIPT_DIR=$(cd $(dirname ${REALPATH}) && pwd)
+WORK_DIR=$(cd $(dirname ${REALPATH}) && pwd)
+echo "BASH_SOURCE=${BASH_SOURCE}, REALPATH=${REALPATH}, SCRIPT_DIR=${SCRIPT_DIR}, WORK_DIR=${WORK_DIR}"
+cd ${WORK_DIR}
+
+MGMT_DIR=$(cd ${WORK_DIR}/../mgmt && pwd)
 
 APP_ARGS=$@
-echo "Program args: $APP_ARGS"
-
-# Do everything at the same work directory.
-cd $WORK_DIR
-
-# Create .env when run mgmt from docker.
-if [[ $MGMT_DOCKER == "true" ]]; then
-  bash auto/init_mgmt && echo "Init mgmt ok."
-fi
+echo "Run srs-cloud with args: ${APP_ARGS}, MGMT_DIR:${MGMT_DIR}"
 
 # Get the metadata of machine.
-if [[ -f ../mgmt/.env ]]; then source ../mgmt/.env; fi
+if [[ -f ${MGMT_DIR}/.env ]]; then source ${MGMT_DIR}/.env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
+
+# When env is ok, we try to load extra envs. Note that these envs is only for mgmt, we should pass to container if
+# container wants to use it.
+if [[ -f ${MGMT_DIR}/containers/bin/bootstrap ]]; then
+  source ${MGMT_DIR}/containers/bin/bootstrap
+fi
+
+# Always make sure the containers/data directory exists.
+if [[ ! -d ${MGMT_DIR}/containers/data ]]; then rm -rf ${MGMT_DIR}/containers/data; fi &&
+(cd ${MGMT_DIR}/containers/data && mkdir -p redis config dvr record vod upload vlive) &&
+(cd ${MGMT_DIR} && touch containers/data/config/.env && rm -f .env && ln -sf containers/data/config/.env .env) &&
+if [[ $? -ne 0 ]]; then echo "MGMT create containers directory failed"; exit 1; fi
+echo "MGMT create containers directory"
 
 # Start redis.
 bash auto/start_redis
 
 # Start SRS.
 bash auto/start_srs
-
-# Start mgmt if run in docker.
-bash auto/start_mgmt
 
 # Start the application server.
 ./platform $APP_ARGS

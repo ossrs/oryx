@@ -1,20 +1,22 @@
 #!/bin/bash
 
-REALPATH=$(realpath $0)
-WORK_DIR=$(cd $(dirname $REALPATH)/.. && pwd)
-echo "Run pub at $WORK_DIR from $0"
-cd $WORK_DIR
+# Execute by: bash xxx.sh or bash zzz/yyy/xxx.sh or ./xxx.sh or ./zzz/yyy/xxx.sh source xxx.sh
+REALPATH=$(realpath ${BASH_SOURCE[0]})
+SCRIPT_DIR=$(cd $(dirname ${REALPATH}) && pwd)
+WORK_DIR=$(cd $(dirname ${REALPATH})/.. && pwd)
+echo "BASH_SOURCE=${BASH_SOURCE}, REALPATH=${REALPATH}, SCRIPT_DIR=${SCRIPT_DIR}, WORK_DIR=${WORK_DIR}"
+cd ${WORK_DIR}
 
-help=false
+help=no
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        -h|--help) help=true; shift ;;
+        -h|--help) help=yes; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
 
-if [ "$help" = true ]; then
+if [[ "$help" == yes ]]; then
     echo "Usage: $0 [OPTIONS]"
     echo "Options:"
     echo "  -h, --help           Show this help message and exit"

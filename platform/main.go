@@ -209,12 +209,6 @@ func initMgmtOS(ctx context.Context) (err error) {
 
 // Initialize the source for redis, note that we don't change the env.
 func initOS(ctx context.Context) (err error) {
-	// Load some configurations from env, which is set by mgmt.
-	conf.Cloud = os.Getenv("CLOUD")
-	conf.Region = os.Getenv("REGION")
-	conf.Source = os.Getenv("SOURCE")
-	conf.Registry = os.Getenv("REGISTRY")
-
 	// For platform, we must use the secret to access API of mgmt.
 	// Query the api secret from redis, cache it to env.
 	if os.Getenv("SRS_PLATFORM_SECRET") == "" {
@@ -258,7 +252,7 @@ func initOS(ctx context.Context) (err error) {
 
 	if registry, err := rdb.HGet(ctx, SRS_TENCENT_LH, "registry").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v registry", SRS_TENCENT_LH)
-	} else {
+	} else if registry != "" {
 		conf.Registry = registry
 	}
 
