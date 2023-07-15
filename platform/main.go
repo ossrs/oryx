@@ -71,7 +71,7 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("REDIS_PORT", "6379")
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, "+
 		"NODE_ENV=%v, LOCAL_RELEASE=%v, SRS_DOCKER=%v, USE_DOCKER=%v, SRS_UTEST=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, "+
-		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, SRS_DOCKERIZED=%v, MGMT_DOCKER=%v, " +
+		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, SRS_DOCKERIZED=%v, MGMT_DOCKER=%v, "+
 		"REGISTRY=%v",
 		len(os.Getenv("MGMT_PASSWORD")), len(os.Getenv("SRS_PLATFORM_SECRET")), os.Getenv("CLOUD"),
 		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("NODE_ENV"), os.Getenv("LOCAL_RELEASE"),
@@ -109,11 +109,6 @@ func doMain(ctx context.Context) error {
 		return errors.Wrapf(err, "init platform")
 	}
 	logger.Tf(ctx, "initialize platform region=%v, registry=%v, version=%v", conf.Region, conf.Registry, version)
-
-	// Note that we always restart the SRS container.
-	if err := execApi(ctx, "removeContainer", []string{srsDockerName}, nil); err != nil {
-		logger.Tf(ctx, "ignore restart SRS err %v", err)
-	}
 
 	// Create worker for RECORD, covert live stream to local file.
 	recordWorker = NewRecordWorker()
@@ -337,24 +332,6 @@ func initPlatform(ctx context.Context) error {
 			return errors.Wrapf(err, "nginx config and reload")
 		}
 
-		// Remove containers for IP might change, and use network srs-cloud.
-		names := []string{srsDockerName, srsDevDockerName}
-		for _, name := range names {
-			if err := execApi(ctx, "rmContainer", []string{name}, nil); err != nil {
-				return errors.Wrapf(err, "execApi rmContainer %v", []string{name})
-			}
-		}
-
-		// Remove the unused containers.
-		names = []string{
-			"prometheus", "node-exporter", "srs-hooks", "ffmpeg", "tencent-cloud",
-		}
-		for _, name := range names {
-			if err := execApi(ctx, "rmContainer", []string{name}, nil); err != nil {
-				return errors.Wrapf(err, "execApi rmContainer %v", []string{name})
-			}
-		}
-
 		// Run once, record in redis.
 		if err := rdb.HSet(ctx, SRS_FIRST_BOOT, bootRelease, 1).Err(); err != nil {
 			return errors.Wrapf(err, "hset %v %v 1", SRS_FIRST_BOOT, bootRelease)
@@ -378,8 +355,7 @@ func initPlatform(ctx context.Context) error {
 	} else if srsDevEnabled != "true" && srsEnabled == "true" {
 		r0 := rdb.HSet(ctx, SRS_CONTAINER_DISABLED, srsDevDockerName, "true").Err()
 		r1 := rdb.HSet(ctx, SRS_CONTAINER_DISABLED, srsDockerName, "false").Err()
-		r2 := execApi(ctx, "rmContainer", []string{srsDevDockerName}, nil)
-		logger.Wf(ctx, "Disable srs-dev r0=%v, r2=%v, only enable srs-server r1=%v", r0, r2, r1)
+		logger.Wf(ctx, "Disable srs-dev r0=%v, only enable srs-server r1=%v", r0, r1)
 	}
 
 	// For SRS, if release enabled, disable dev automatically.
@@ -389,8 +365,7 @@ func initPlatform(ctx context.Context) error {
 		return errors.Wrapf(err, "hget %v %v", SRS_CONTAINER_DISABLED, srsDevDockerName)
 	} else if srsReleaseDisabled != "true" && srsDevDisabled != "true" {
 		r0 := rdb.HSet(ctx, SRS_CONTAINER_DISABLED, srsDevDockerName, true).Err()
-		r1 := execApi(ctx, "rmContainer", []string{srsDevDockerName}, nil)
-		logger.Tf(ctx, "disable srs dev for release enabled, r0=%v, r1=%v", r0, r1)
+		logger.Tf(ctx, "disable srs dev for release enabled, r0=%v", r0)
 	}
 
 	// Setup the publish secret for first run.
@@ -407,7 +382,7 @@ func initPlatform(ctx context.Context) error {
 	}
 
 	// Migrate from previous versions.
-	for _, migrate := range []struct{
+	for _, migrate := range []struct {
 		PVK string
 		CVK string
 	}{
@@ -461,21 +436,6 @@ func initPlatform(ctx context.Context) error {
 			return errors.Wrapf(err, "hset %v update %v", SRS_PLATFORM_SECRET, update)
 		}
 		logger.Tf(ctx, "Platform api secret update, token=%vB, update=%v", len(token), update)
-	}
-
-	// Cleanup the previous unused images.
-	newImage := fmt.Sprintf("%v/ossrs/srs-cloud:platform-%v", conf.Registry, version)
-	if previousImage, err := rdb.HGet(ctx, SRS_DOCKER_IMAGES, platformDockerName).Result(); err != nil && err != redis.Nil {
-		return err
-	} else {
-		if err = rdb.HSet(ctx, SRS_DOCKER_IMAGES, platformDockerName, newImage).Err(); err != nil {
-			return err
-		}
-		if previousImage != "" && previousImage != newImage {
-			if err := execApi(ctx, "rmImage", []string{previousImage}, nil); err != nil {
-				logger.Wf(ctx, "ignore rmi %v err %v", previousImage, err)
-			}
-		}
 	}
 
 	return nil

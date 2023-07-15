@@ -621,121 +621,12 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		return nil
 	}
 
-	// Fetch the container.
-	handlers["fetchContainer"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
-		name := sr.ArgsAsString()[0]
-		if name == "" {
-			return errors.New("no name")
-		}
-
-		all, running := queryContainer(ctx, name)
-		ohttp.WriteData(ctx, w, r, &struct {
-			All     *dockerInfo `json:"all"`
-			Running *dockerInfo `json:"running"`
-		}{
-			All: all, Running: running,
-		})
-
-		logger.Tf(ctx, "execApi req=%v, all=%v, running=%v", sr, all, running)
-		return nil
-	}
-
-	// Remove the container.
-	handlers["removeContainer"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
-		name := sr.ArgsAsString()[0]
-		if name == "" {
-			return errors.New("no name")
-		}
-
-		err := removeContainer(ctx, name)
-		if err != nil {
-			return errors.Wrapf(err, "remove container %v", name)
-		}
-
-		ohttp.WriteData(ctx, w, r, nil)
-		logger.Tf(ctx, "execApi req=%v", sr)
-		return nil
-	}
-
-	// Query all the containers, ignore if not exists.
-	handlers["queryContainers"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
-		names := sr.ArgsAsString()
-		if len(names) == 0 {
-			return errors.Errorf("no name")
-		}
-
-		containers := []interface{}{}
-		for _, name := range names {
-			// Note that the enabled is load from redis by platform.
-			r0 := &struct {
-				Name      string `json:"name"`
-				Enabled   bool   `json:"enabled"`
-				Container struct {
-					ID     string `json:"ID"`
-					State  string `json:"State"`
-					Status string `json:"Status"`
-				} `json:"container"`
-			}{
-				Name: name,
-			}
-
-			all, _ := queryContainer(ctx, name)
-			if all != nil {
-				r0.Container.ID = all.ID
-				r0.Container.State = all.State
-				r0.Container.Status = all.Status
-			}
-
-			containers = append(containers, r0)
-		}
-
-		ohttp.WriteData(ctx, w, r, &struct {
-			Containers interface{} `json:"containers"`
-		}{
-			Containers: containers,
-		})
-		logger.Tf(ctx, "execApi req=%v, containers=%v", sr, len(containers))
-		return nil
-	}
-
 	// Reload NGINX.
 	handlers["reloadNginx"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
 		if err := reloadNginx(ctx); err != nil {
 			return errors.Wrapf(err, "reload nginx")
 		}
 		logger.Tf(ctx, "NGINX: Refresh dynamic.conf ok")
-
-		ohttp.WriteData(ctx, w, r, nil)
-		logger.Tf(ctx, "execApi req=%v", sr)
-		return nil
-	}
-
-	// Remove the specified container.
-	handlers["rmContainer"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
-		name := sr.ArgsAsString()[0]
-		if name == "" {
-			return errors.Errorf("no name")
-		}
-
-		if err := removeContainer(ctx, name); err != nil {
-			return errors.Wrapf(err, "remove container name=%v", name)
-		}
-
-		ohttp.WriteData(ctx, w, r, nil)
-		logger.Tf(ctx, "execApi req=%v", sr)
-		return nil
-	}
-
-	// Remove the specified docker image.
-	handlers["rmImage"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
-		name := sr.ArgsAsString()[0]
-		if name == "" {
-			return errors.Errorf("no name")
-		}
-
-		if err := removeImage(ctx, name); err != nil {
-			return errors.Wrapf(err, "remove image name=%v", name)
-		}
 
 		ohttp.WriteData(ctx, w, r, nil)
 		logger.Tf(ctx, "execApi req=%v", sr)
@@ -751,35 +642,6 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			Name: conf.Iface, Address: conf.IPv4(),
 		})
 		logger.Tf(ctx, "execApi req=%v, iface=%v, ipv4=%v", sr, conf.Iface, conf.IPv4())
-		return nil
-	}
-
-	// Start the container with args.
-	handlers["startContainer"] = func(ctx context.Context, w http.ResponseWriter, r *http.Request, sr *dockerServerRequest) error {
-		name, dockerArgs := sr.ArgsAsString()[0], sr.ArgsAsSlices()[0]
-		if name == "" {
-			return errors.New("no name")
-		}
-		if dockerArgs == nil {
-			return errors.New("no args")
-		}
-
-		var args []string
-		for _, a := range dockerArgs {
-			if s, ok := a.(string); ok {
-				args = append(args, s)
-			}
-		}
-
-		if err := removeContainer(ctx, name); err != nil {
-			logger.Tf(ctx, "ignore remove docker name=%v err %v", name, err)
-		}
-		if err := startContainer(ctx, args); err != nil {
-			return errors.Wrapf(err, "start")
-		}
-
-		ohttp.WriteData(ctx, w, r, nil)
-		logger.Tf(ctx, "execApi req=%v", sr)
 		return nil
 	}
 

@@ -170,7 +170,6 @@ Platform:
 * `/terraform/v1/mgmt/login` System auth with password.
 * `/terraform/v1/mgmt/status` Query the version of mgmt.
 * `/terraform/v1/mgmt/envs` Query the envs of mgmt.
-* `/terraform/v1/mgmt/containers` Query SRS container.
 * `/terraform/v1/mgmt/bilibili` Query the video information.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
@@ -232,6 +231,7 @@ Static Files:
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
 * `/terraform/v1/mgmt/pubkey` Update the access for platform administrator pubkey.
 * `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
+* `/terraform/v1/mgmt/containers` Query SRS container.
 
 ## Depends
 

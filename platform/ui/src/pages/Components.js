@@ -5,7 +5,6 @@ import axios from "axios";
 import {Row, Col, Card} from "react-bootstrap";
 import * as moment from 'moment';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
-import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
 import {SrsEnvContext} from "../components/SrsEnvContext";
 
@@ -19,8 +18,6 @@ export default function Components() {
 
 function ComponentsImpl() {
   const [status, setStatus] = React.useState();
-  const [platform, setPlatform] = React.useState();
-  const handleError = useErrorHandler();
   const {t} = useTranslation();
   const env = React.useContext(SrsEnvContext)[0];
 
@@ -46,53 +43,13 @@ function ComponentsImpl() {
     return () => clearInterval(timer);
   }, [setStatus, env]);
 
-  React.useEffect(() => {
-    if (env?.mgmtDocker) return;
-
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/containers', {
-      ...token, action: 'query',
-    }).then(res => {
-      const containers = res.data.data;
-      containers.filter(m => {
-        if (m.container.State || m.container.Status) {
-          m.StatusMessage = `${m.container.State || ''} ${m.container.Status || ''}`.trim();
-        } else {
-          m.StatusMessage = 'Stopped';
-        }
-        if (!m.enabled) {
-          m.StatusMessage = 'Disabled';
-        }
-
-        if (m.name === 'platform') setPlatform(m);
-
-        return null;
-      });
-      console.log(`SRS: Query ok, containers are ${JSON.stringify(containers)}`);
-    }).catch(handleError);
-  }, [handleError, env]);
-
   return (
     <>
       <Container>
         <Row>
-          {!env?.mgmtDocker &&
-            <Col xs lg={3}>
-              <Card style={{width: '18rem', marginTop: '16px'}}>
-                <Card.Header>{t('coms.platform')}</Card.Header>
-                <Card.Body>
-                  <Card.Text as={Col}>
-                    {t('coms.containerName')}：{platform?.name} <br/>
-                    {t('coms.containerId')}：{platform?.container?.ID} <br/>
-                    {t('coms.containerState')}：{platform?.StatusMessage}
-                  </Card.Text>
-                </Card.Body>
-              </Card>
-            </Col>
-          }
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>
-              <Card.Header>{env?.mgmtDocker ? t('coms.platform') : t('coms.host')}</Card.Header>
+              <Card.Header>{t('coms.host')}</Card.Header>
               <Card.Body>
                 <Card.Text as={Col}>
                   {t('coms.version')}: {status?.version} <br/>
