@@ -133,8 +133,8 @@ fi
 
 echo "Start to create data and config files"
 mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env &&
-rm -rf ${SRS_HOME}/mgmt/containers/data && ln -sf ${DATA_HOME} ${SRS_HOME}/mgmt/containers/data &&
-rm -rf ${SRS_HOME}/mgmt/.env && ln -sf ${DATA_HOME}/config/.env ${SRS_HOME}/mgmt/.env &&
+(cd ${SRS_HOME}/platform/containers && rm -rf data && ln -sf ${DATA_HOME} data) &&
+(cd ${SRS_HOME}/platform && rm -f .env && ln -sf ${DATA_HOME}/config/.env .env) &&
 rm -rf ~/credentials.txt && ln -sf ${DATA_HOME}/config/.env ~/credentials.txt
 if [[ $? -ne 0 ]]; then echo "Create /data/config/.env failed"; exit 1; fi
 echo "Create data and config files ok"
@@ -168,7 +168,7 @@ echo "Setup kernel UDP buffer ok"
 
 # For BT, we use special env, to disable discover of platform.
 echo "Start to setup .env"
-cat << END > ${SRS_HOME}/mgmt/.env
+cat << END > ${SRS_HOME}/platform/.env
 CLOUD=BIN
 REGION=${REGION}
 REACT_APP_LOCALE=${LANGUAGE}
@@ -179,8 +179,8 @@ END
 if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
 
 # Setup extra env.
-mkdir -p $SRS_HOME/mgmt/containers/bin &&
-cat << END > $SRS_HOME/mgmt/containers/bin/.env
+mkdir -p $SRS_HOME/platform/containers/bin &&
+cat << END > $SRS_HOME/platform/containers/bin/.env
 # Please use BT to configure the domain and HTTPS.
 SRS_HTTPS=off
 END
@@ -196,7 +196,7 @@ else
 fi
 
 # If install ok, the directory should exists.
-if [[ ! -d ${SRS_HOME} || ! -d ${SRS_HOME}/mgmt ]]; then
+if [[ ! -d ${SRS_HOME} || ! -d ${SRS_HOME}/platform ]]; then
   echo "Install srs-cloud failed"; exit 1;
 fi
 

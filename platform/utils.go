@@ -31,23 +31,10 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-// HttpService is a HTTP server for mgmt and platform.
+// HttpService is a HTTP server for platform.
 type HttpService interface {
 	Close() error
 	Run(ctx context.Context) error
-}
-
-// SrsManager is SRS based on docker or CLI.
-type SrsManager interface {
-	// Stop the SRS server.
-	// Note that we should never use 'docker rm -f srs" or data maybe discard. Instead, we should use command similar
-	// to 'docker stop srs' to allow SRS to save data to disk.
-	Stop(ctx context.Context, timeout time.Duration) error
-	// Start the SRS server.
-	// Now we start SRS again, to keep it with the latest configurations and params.
-	Start(ctx context.Context) error
-	// Ready to wait for SRS server ready.
-	Ready(ctx context.Context) error
 }
 
 // Versions is latest and stable version from SRS cloud API.
@@ -67,8 +54,6 @@ type Config struct {
 	IsDarwin bool
 	// Current working directory, at xxx/srs-cloud/platform.
 	Pwd string
-	// The working directory of mgmt, at xxx/srs-cloud/mgmt.
-	MgmtPwd string
 
 	Cloud    string
 	Region   string
@@ -96,7 +81,7 @@ func (v *Config) IPv4() string {
 func (v *Config) String() string {
 	return fmt.Sprintf("darwin=%v, cloud=%v, region=%v, source=%v, registry=%v, iface=%v, ipv4=%v, pwd=%v, "+
 		"mgmtPwd=%v, version=%v, latest=%v, stable=%v",
-		v.IsDarwin, v.Cloud, v.Region, v.Source, v.Registry, v.Iface, v.IPv4(), v.Pwd, v.MgmtPwd, v.Versions.Version,
+		v.IsDarwin, v.Cloud, v.Region, v.Source, v.Registry, v.Iface, v.IPv4(), v.Pwd, v.Pwd, v.Versions.Version,
 		v.Versions.Latest, v.Versions.Stable,
 	)
 }
@@ -469,14 +454,14 @@ func nginxGenerateConfig(ctx context.Context) error {
 	} else if hls == "true" {
 		m3u8Conf = []string{
 			// Use NGINX to deliver m3u8 files.
-			fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.MgmtPwd),
+			fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.Pwd),
 			// Set the cache control, see http://nginx.org/en/docs/http/ngx_http_headers_module.html
 			`add_header Cache-Control "public, max-age=10";`,
 			// Allow CORS for all domain, see https://ubiq.co/tech-blog/enable-cors-nginx/
 			"add_header Access-Control-Allow-Origin *;",
 		}
 		tsConf = []string{
-			fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.MgmtPwd),
+			fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.Pwd),
 			`add_header Cache-Control "public, max-age=86400";`,
 			// Allow CORS for all domain, see https://ubiq.co/tech-blog/enable-cors-nginx/
 			"add_header Access-Control-Allow-Origin *;",
@@ -513,8 +498,8 @@ func nginxGenerateConfig(ctx context.Context) error {
 			"ssl_session_timeout  10m;",
 			"ssl_ciphers HIGH:!aNULL:!MD5;",
 			"ssl_prefer_server_ciphers on;",
-			fmt.Sprintf(`ssl_certificate "%v/containers/ssl/nginx.crt";`, conf.MgmtPwd),
-			fmt.Sprintf(`ssl_certificate_key "%v/containers/ssl/nginx.key";`, conf.MgmtPwd),
+			fmt.Sprintf(`ssl_certificate "%v/containers/ssl/nginx.crt";`, conf.Pwd),
+			fmt.Sprintf(`ssl_certificate_key "%v/containers/ssl/nginx.key";`, conf.Pwd),
 			"",
 			"# For automatic HTTPS.",
 			"location /.well-known/acme-challenge/ {",

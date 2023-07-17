@@ -34,14 +34,14 @@ func NewDockerHTTPService() HttpService {
 }
 
 type dockerHTTPService struct {
-	server *http.Server
+	servers []*http.Server
 }
 
 func (v *dockerHTTPService) Close() error {
-	server := v.server
-	v.server = nil
+	servers := v.servers
+	v.servers = nil
 
-	if server != nil {
+	for _, server := range servers {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
@@ -71,7 +71,7 @@ func (v *dockerHTTPService) Run(ctx context.Context) error {
 		logger.Tf(ctx, "HTTP listen at %v", addr)
 
 		server := &http.Server{Addr: addr, Handler: handler}
-		v.server = server
+		v.servers = append(v.servers, server)
 
 		wg.Add(1)
 		go func() {
@@ -100,7 +100,7 @@ func (v *dockerHTTPService) Run(ctx context.Context) error {
 		logger.Tf(ctx, "HTTP listen at %v", addr)
 
 		server := &http.Server{Addr: addr, Handler: handler}
-		v.server = server
+		v.servers = append(v.servers, server)
 
 		wg.Add(1)
 		go func() {
@@ -209,8 +209,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			}
 
 			// Initialize the system password, save to env.
-			// Please note that the conf.Pwd is the work directory of mgmt, not platform.
-			envFile := path.Join(conf.MgmtPwd, ".env")
+			envFile := path.Join(conf.Pwd, ".env")
 			if envs, err := godotenv.Read(envFile); err != nil {
 				return errors.Wrapf(err, "load envs from %v", envFile)
 			} else {
@@ -289,7 +288,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			}{
 				Secret:     r0 != "",
 				HTTPS:      os.Getenv("SRS_HTTPS"),
-				MgmtDocker: os.Getenv("MGMT_DOCKER") == "true",
+				MgmtDocker: true,
 			})
 			return nil
 		}(); err != nil {
@@ -792,7 +791,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		return err
 	}
 
-	mgmtFileServer := http.FileServer(http.Dir(path.Join(conf.MgmtPwd, "containers/www")))
+	mgmtFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/www")))
 
 	ep = "/"
 	logger.Tf(ctx, "Handle %v", ep)

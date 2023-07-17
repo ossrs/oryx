@@ -68,16 +68,14 @@ func doMain(ctx context.Context) error {
 		// Initialize global config.
 		conf = NewConfig()
 
-		// Initialize mgmt pwd.
 		if pwd, err := os.Getwd(); err != nil {
 			return errors.Wrapf(err, "getpwd")
 		} else {
 			conf.Pwd = pwd
-			conf.MgmtPwd = path.Join(pwd, "../mgmt/")
 		}
 
 		// Note that we only use .env in mgmt.
-		envFile := path.Join(conf.MgmtPwd, ".env")
+		envFile := path.Join(conf.Pwd, ".env")
 		if err := godotenv.Load(envFile); err != nil {
 			return errors.Wrapf(err, "load %v", envFile)
 		}
@@ -107,7 +105,7 @@ func doMain(ctx context.Context) error {
 		os.Getenv("MGMT_LISTEN"), os.Getenv("PLATFORM_DOCKER"),
 	)
 
-	// Setup the mgmt OS for redis, which should never depends on redis.
+	// Setup the base OS for redis, which should never depends on redis.
 	if err := initMgmtOS(ctx); err != nil {
 		return errors.Wrapf(err, "init mgmt os")
 	}
@@ -436,7 +434,7 @@ func initPlatform(ctx context.Context) error {
 
 // Initialize the platform before thread run.
 func initMmgt(ctx context.Context) error {
-	envFile := path.Join(conf.MgmtPwd, ".env")
+	envFile := path.Join(conf.Pwd, ".env")
 
 	// Refresh the env file.
 	if envs, err := godotenv.Read(envFile); err != nil {

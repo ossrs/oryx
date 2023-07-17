@@ -8,7 +8,6 @@ console.log('setupProxy for development reactjs');
 // See https://create-react-app.dev/docs/proxying-api-requests-in-development/#configuring-the-proxy-manually
 module.exports = function(app) {
   // Proxy all default mounts to mgmt.
-  // Note that should never mount the root, because the mgmt will be overwrite.
   app.use('/console/', createProxyMiddleware({target: 'http://127.0.0.1:2024/'}));
   app.use('/players/', createProxyMiddleware({target: 'http://127.0.0.1:2024/'}));
   app.use('/terraform/', createProxyMiddleware({target: 'http://127.0.0.1:2024/'}));

@@ -9,7 +9,7 @@
       },
       "login": {
         "passwordLabel": "请输入密码",
-        "passwordTip": "忘记密码？可登录机器查看文件 /usr/local/srs-cloud/mgmt/.env",
+        "passwordTip": "忘记密码？可登录机器查看文件 /usr/local/srs-cloud/platform/.env",
         "labelShow": "显示密码",
         "labelLogin": "登录"
       },
@@ -208,7 +208,7 @@
       },
       "login": {
         "passwordLabel": "Password",
-        "passwordTip": "The password is store at /usr/local/srs-cloud/mgmt/.env",
+        "passwordTip": "The password is store at /usr/local/srs-cloud/platform/.env",
         "labelShow": "Show Password",
         "labelLogin": "Submit"
       },

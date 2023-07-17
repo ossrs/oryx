@@ -7,12 +7,7 @@ ARG TARGETPLATFORM
 ARG TARGETARCH
 RUN echo "BUILDPLATFORM: $BUILDPLATFORM, TARGETPLATFORM: $TARGETPLATFORM, TARGETARCH: $TARGETARCH"
 
-ADD mgmt /g/mgmt
 ADD platform /g/platform
-
-WORKDIR /g/mgmt
-# We might run mgmt in Linux host machine, so we build for alpine, statically link.
-RUN make clean && make alpine
 
 # Note that we only build the platform without ui, because already build ui for all OS.
 # See platform.yml command:
@@ -25,10 +20,11 @@ RUN cd /g/platform/ui && rm -rf js-core node_modules package* public src
 #FROM ${ARCH}ubuntu:focal AS dist
 FROM ${ARCH}ossrs/srs-cloud:focal-1 AS dist
 
-COPY --from=build /g/mgmt /usr/local/srs-cloud/mgmt
 COPY --from=build /g/platform /usr/local/srs-cloud/platform
 
 # Prepare data directory.
-RUN mkdir -p /data && cd /usr/local/srs-cloud/mgmt/containers && rm -rf data && ln -sf /data .
+RUN mkdir -p /data && \
+    cd /usr/local/srs-cloud/platform/containers && \
+    rm -rf data && ln -sf /data .
 
 CMD ["./bootstrap"]
