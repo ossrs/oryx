@@ -24,9 +24,19 @@ if [[ -f /usr/lib/systemd/system/srs-cloud.service ]]; then
     echo "Remove srs-cloud.service ok"
 fi
 
-if [[ ! -z $(docker ps --filter "name=srs-cloud" --format "{{.ID}}") ]]; then
+for ((i=0; i < 10; i++)); do
+    if [[ -z $(docker ps -a --filter "name=srs-cloud" --format "{{.ID}}") ]]; then
+        break
+    fi
+
+    echo "Gracefully stop platform container"
+    docker stop srs-cloud
+    sleep 0.5
+done
+
+if [[ ! -z $(docker ps -a --filter "name=srs-cloud" --format "{{.ID}}") ]]; then
+    echo "Force to stop platform container"
     docker rm -f srs-cloud
-    echo "Remove srs-cloud container ok"
 fi
 
 INSTALL_HOME=/usr/local/srs-cloud

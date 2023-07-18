@@ -15,4 +15,4 @@ FROM jrei/systemd-ubuntu:focal
 ENV DEBIAN_FRONTEND=noninteractive
 
 # See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#apt-get
-RUN apt update -y && apt-get install -y docker.io tree
+RUN apt update -y && apt-get install -y docker.io tree redis-tools

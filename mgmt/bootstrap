@@ -16,11 +16,23 @@ HTTP_PORT=8080
 RTC_PORT=8000
 SRT_PORT=10080
 
-echo "Stop platform container"
-docker rm -f srs-cloud
+for ((i=0; i < 10; i++)); do
+    if [[ -z $(docker ps -a --filter "name=srs-cloud" --format "{{.ID}}") ]]; then
+        break
+    fi
+
+    echo "Gracefully stop platform container"
+    docker stop srs-cloud
+    sleep 0.5
+done
+
+if [[ ! -z $(docker ps -a --filter "name=srs-cloud" --format "{{.ID}}") ]]; then
+    echo "Force to stop platform container"
+    docker rm -f srs-cloud
+fi
 
 echo "Start platform container"
-CMD="docker run --rm --name srs-cloud -v ${DATA_HOME}:/data
+CMD="docker run --rm -it --name srs-cloud -v ${DATA_HOME}:/data
     -p ${MGMT_PORT}:2022 -p ${RTMP_PORT}:1935/tcp -p ${API_PORT}:1985/tcp -p
     ${HTTP_PORT}:8080/tcp -p ${RTC_PORT}:8000/udp -p ${SRT_PORT}:10080/udp
     --restart no --detach
@@ -36,6 +48,6 @@ while true; do
         exit 1
     fi
 
-    docker ps --filter "name=srs-cloud" --format "{{.Names}} {{.ID}} {{.Ports}}"
+    docker ps -a --filter "name=srs-cloud" --format "{{.Names}} {{.ID}} {{.Ports}}"
     sleep 3
 done

@@ -1,19 +1,26 @@
-.PHONY: default clean alpine ui-install ui-build ui-build-cn ui-build-en ui-build-docker ui-clean build help
+.PHONY: default clean alpine platform-build platform-clean ui-install ui-build ui-build-cn ui-build-en ui-build-docker ui-clean build help
 
-default: ./platform
+default: build
 
 help:
 	@echo "Usage: make build|clean"
-	@echo "     default     Build the platform only"
-	@echo "     build       Build the platform and ui"
-	@echo "     clean       Cleanup the platform and ui"
-	@echo "     ui-install	Use npm install for dependencies for ui"
-	@echo "     ui-build	Use npm run build for building ui"
-	@echo "     ui-clean	Cleanup the ui"
+	@echo "     default     	Build the platform only"
+	@echo "     build       	Build the platform and ui"
+	@echo "     clean       	Cleanup the platform and ui"
+	@echo "     platform-build	Use Go to build the platform"
+	@echo "     platform-clean	Cleanup the platform"
+	@echo "     ui-install		Use npm install for dependencies for ui"
+	@echo "     ui-build		Use npm run build for building ui"
+	@echo "     ui-clean		Cleanup the ui"
 
-build: ./platform ui-install ui-build
+build: platform-build ui-install ui-build
 
 clean: ui-clean
+	platform-clean
+
+platform-build: ./platform
+
+platform-clean:
 	rm -f platform
 
 ./platform: *.go Makefile go.mod

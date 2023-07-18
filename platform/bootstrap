@@ -14,18 +14,8 @@ echo "Run srs-cloud with args: ${APP_ARGS}, WORK_DIR:${WORK_DIR}"
 if [[ -f ${WORK_DIR}/.env ]]; then source ${WORK_DIR}/.env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 
-# When env is ok, we try to load extra envs. Note that these envs is only for mgmt, we should pass to container if
-# container wants to use it.
-if [[ -f ${WORK_DIR}/containers/bin/.env ]]; then
-  source ${WORK_DIR}/containers/bin/.env
-fi
-
-# Always make sure the containers/data directory exists.
-if [[ ! -d ${WORK_DIR}/containers/data ]]; then rm -rf ${WORK_DIR}/containers/data; fi &&
-(cd ${WORK_DIR}/containers/data && mkdir -p redis config dvr record vod upload vlive) &&
-(cd ${WORK_DIR} && touch containers/data/config/.env && rm -f .env && ln -sf containers/data/config/.env .env) &&
-if [[ $? -ne 0 ]]; then echo "MGMT create containers directory failed"; exit 1; fi
-echo "MGMT create containers directory"
+# Setup the platform.
+bash auto/setup
 
 # Start redis.
 bash auto/start_redis

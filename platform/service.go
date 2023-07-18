@@ -834,7 +834,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 
 		}
 
-		w.Write([]byte("Hello world!"))
+		http.Redirect(w, r, "/mgmt", http.StatusFound)
 	})
 
 	return nil

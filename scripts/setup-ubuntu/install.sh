@@ -168,7 +168,10 @@ echo "Setup kernel UDP buffer ok"
 
 # For BT, we use special env, to disable discover of platform.
 echo "Start to setup .env"
-cat << END > ${SRS_HOME}/platform/.env
+if [[ -f ${DATA_HOME}/config/.env && -s ${DATA_HOME}/config/.env ]]; then
+    echo "The .env already exists, skip"
+else
+    cat << END > ${SRS_HOME}/platform/.env
 CLOUD=BIN
 REGION=${REGION}
 REACT_APP_LOCALE=${LANGUAGE}
@@ -176,7 +179,8 @@ REDIS_PORT=56379
 REDIS_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32)
 IMAGE=${IMAGE_URL}
 END
-if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
+    if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
+fi
 
 # Setup extra env.
 mkdir -p $SRS_HOME/platform/containers/bin &&

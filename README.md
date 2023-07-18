@@ -120,6 +120,8 @@ The ports allocated:
 
 > Note: TencentCloud(2020) has been migrated to platform(2024).
 
+> Note: Mgmt(2022) has been migrated to platform(2024).
+
 ## Features
 
 The features that we're developing:
@@ -332,17 +334,20 @@ Run srs-cloud in a docker.
 First, build image:
 
 ```bash
-docker build -t platform-dev -f platform/Dockerfile.dev .
+docker rm -f platform 2>/dev/null || echo 'OK' &&
+docker rmi platform-dev 2>/dev/null || echo 'OK' &&
+docker build -t platform-dev -f Dockerfile.dev .
 ```
 
 Then start the development docker:
 
 ```bash
-docker run --rm -it -p 2022:2022 -p 2024:2024 --name platform -v $(pwd):/usr/local/srs-cloud \
+docker rm -f platform 2>/dev/null || echo 'OK' &&
+docker run -d --rm -it -p 2022:2022 --name platform -v $(pwd):/usr/local/srs-cloud \
   --add-host redis:127.0.0.1 --env REDIS_HOST=127.0.0.1 --add-host mgmt.srs.local:127.0.0.1 \
   --env CLOUD=DOCKER --env MGMT_DOCKER=true --env SRS_DOCKERIZED=true --env NODE_ENV=development \
   -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  platform-dev bash
+  -w /usr/local/srs-cloud/platform platform-dev bash
 ```
 
 > Note: We don't use the `/data` as global storage.
@@ -350,7 +355,7 @@ docker run --rm -it -p 2022:2022 -p 2024:2024 --name platform -v $(pwd):/usr/loc
 Start redis and SRS only in docker:
 
 ```bash
-bash auto/init_mgmt && bash auto/start_redis && bash auto/start_srs
+docker exec -it platform bash -c 'bash auto/setup && bash auto/start_redis && bash auto/start_srs'
 ```
 
 Build and run platform only in docker:
@@ -362,10 +367,70 @@ docker exec -it platform bash -c 'make && ./platform'
 Stop redis and SRS:
 
 ```bash
-docker exec -it platform bash -c 'bash auto/stop_redis && bash auto/stop_srs'
+docker stop platform || echo 'OK' &&
+docker rm -f platform
 ```
 
 It's the same as production online.
+
+## Develop the Script Installer
+
+Build a docker image:
+
+```bash
+docker build -t test -f scripts/setup-ubuntu/Dockerfile.test .
+```
+
+Create a docker container in daemon:
+
+```bash
+docker run \
+    -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+    --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
+    -d --rm -it -v $(pwd):/g -w /g --name=install test
+```
+
+Build and save the platform image to file:
+
+```bash
+docker rmi platform:latest 2>/dev/null
+docker build -t platform:latest -f Dockerfile . &&
+docker save -o platform.tar platform:latest
+```
+
+Enter the docker container:
+
+```bash
+docker exec -it install /bin/bash
+```
+
+Import the platform image from file:
+
+```bash
+docker load -i platform.tar && 
+version=$(bash scripts/setup-ubuntu/version.sh) &&
+docker tag platform:latest ossrs/srs-cloud:$version &&
+docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+docker images
+```
+
+Test the build script, in the docker container:
+
+```bash
+bash scripts/setup-ubuntu/build.sh --extract
+```
+
+Test the install script, in the docker container:
+
+```bash
+bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose
+```
+
+Test the uninstall script, in the docker container:
+
+```bash
+bash build/srs-cloud/scripts/setup-ubuntu/uninstall.sh
+```
 
 ## Release
 
