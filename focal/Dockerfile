@@ -4,7 +4,7 @@ FROM ${ARCH}ossrs/srs:ubuntu20 AS build
 
 FROM ${ARCH}redis:5.0 AS redis
 
-FROM ${ARCH}ossrs/srs:4 AS srs
+FROM ${ARCH}ossrs/srs:5 AS srs
 
 # http://releases.ubuntu.com/focal/
 FROM ${ARCH}ubuntu:focal AS dist

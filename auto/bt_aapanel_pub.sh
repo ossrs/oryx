@@ -37,7 +37,7 @@ if [[ $refresh == true ]]; then
 fi
 echo "Last release is $RELEASE, revision is $REVISION, next is $NEXT"
 
-VERSION="4.6.$NEXT" &&
+VERSION="5.0.$NEXT" &&
 TAG="publication-v$VERSION" &&
 echo "publish version $VERSION as tag $TAG"
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
