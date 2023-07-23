@@ -819,7 +819,7 @@ func (r *CreateOIDCConfigResponse) FromJsonString(s string) error {
 
 // Predefined struct for user
 type CreatePolicyRequestParams struct {
-	// 策略名
+	// 策略名称。长度为1~128个字符，可包含英文字母、数字和+=,.@-_。
 	PolicyName *string `json:"PolicyName,omitempty" name:"PolicyName"`
 
 	// 策略文档，示例：{"version":"2.0","statement":[{"action":"name/sts:AssumeRole","effect":"allow","principal":{"service":["cloudaudit.cloud.tencent.com","cls.cloud.tencent.com"]}}]}，principal用于指定角色的授权对象。获取该参数可参阅 获取角色详情（https://cloud.tencent.com/document/product/598/36221） 输出参数RoleInfo
@@ -832,7 +832,7 @@ type CreatePolicyRequestParams struct {
 type CreatePolicyRequest struct {
 	*tchttp.BaseRequest
 	
-	// 策略名
+	// 策略名称。长度为1~128个字符，可包含英文字母、数字和+=,.@-_。
 	PolicyName *string `json:"PolicyName,omitempty" name:"PolicyName"`
 
 	// 策略文档，示例：{"version":"2.0","statement":[{"action":"name/sts:AssumeRole","effect":"allow","principal":{"service":["cloudaudit.cloud.tencent.com","cls.cloud.tencent.com"]}}]}，principal用于指定角色的授权对象。获取该参数可参阅 获取角色详情（https://cloud.tencent.com/document/product/598/36221） 输出参数RoleInfo
@@ -962,7 +962,7 @@ func (r *CreatePolicyVersionResponse) FromJsonString(s string) error {
 
 // Predefined struct for user
 type CreateRoleRequestParams struct {
-	// 角色名称
+	// 角色名称。长度为1~128个字符，可包含英文字母、数字和+=,.@-_。
 	RoleName *string `json:"RoleName,omitempty" name:"RoleName"`
 
 	// 策略文档，示例：{"version":"2.0","statement":[{"action":"name/sts:AssumeRole","effect":"allow","principal":{"service":["cloudaudit.cloud.tencent.com","cls.cloud.tencent.com"]}}]}，principal用于指定角色的授权对象。获取该参数可参阅 获取角色详情（https://cloud.tencent.com/document/product/598/36221） 输出参数RoleInfo
@@ -984,7 +984,7 @@ type CreateRoleRequestParams struct {
 type CreateRoleRequest struct {
 	*tchttp.BaseRequest
 	
-	// 角色名称
+	// 角色名称。长度为1~128个字符，可包含英文字母、数字和+=,.@-_。
 	RoleName *string `json:"RoleName,omitempty" name:"RoleName"`
 
 	// 策略文档，示例：{"version":"2.0","statement":[{"action":"name/sts:AssumeRole","effect":"allow","principal":{"service":["cloudaudit.cloud.tencent.com","cls.cloud.tencent.com"]}}]}，principal用于指定角色的授权对象。获取该参数可参阅 获取角色详情（https://cloud.tencent.com/document/product/598/36221） 输出参数RoleInfo
@@ -1318,6 +1318,9 @@ func (r *CreateUserOIDCConfigResponse) FromJsonString(s string) error {
 type CreateUserSAMLConfigRequestParams struct {
 	// SAML元数据文档，需要base64 encode
 	SAMLMetadataDocument *string `json:"SAMLMetadataDocument,omitempty" name:"SAMLMetadataDocument"`
+
+	// 辅助域名
+	AuxiliaryDomain *string `json:"AuxiliaryDomain,omitempty" name:"AuxiliaryDomain"`
 }
 
 type CreateUserSAMLConfigRequest struct {
@@ -1325,6 +1328,9 @@ type CreateUserSAMLConfigRequest struct {
 	
 	// SAML元数据文档，需要base64 encode
 	SAMLMetadataDocument *string `json:"SAMLMetadataDocument,omitempty" name:"SAMLMetadataDocument"`
+
+	// 辅助域名
+	AuxiliaryDomain *string `json:"AuxiliaryDomain,omitempty" name:"AuxiliaryDomain"`
 }
 
 func (r *CreateUserSAMLConfigRequest) ToJsonString() string {
@@ -1340,6 +1346,7 @@ func (r *CreateUserSAMLConfigRequest) FromJsonString(s string) error {
 		return err
 	}
 	delete(f, "SAMLMetadataDocument")
+	delete(f, "AuxiliaryDomain")
 	if len(f) > 0 {
 		return tcerr.NewTencentCloudSDKError("ClientError.BuildRequestError", "CreateUserSAMLConfigRequest has unknown keys!", "")
 	}
@@ -2193,6 +2200,10 @@ type DescribeSafeAuthFlagCollResponseParams struct {
 	// 异地登录保护设置
 	OffsiteFlag *OffsiteFlag `json:"OffsiteFlag,omitempty" name:"OffsiteFlag"`
 
+	// 是否提示信任设备1 ：提示 0: 不提示
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	PromptTrust *int64 `json:"PromptTrust,omitempty" name:"PromptTrust"`
+
 	// 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。
 	RequestId *string `json:"RequestId,omitempty" name:"RequestId"`
 }
@@ -2514,6 +2525,9 @@ type DescribeUserSAMLConfigResponseParams struct {
 	// 状态：0:未设置，1:已开启，2:已禁用
 	Status *uint64 `json:"Status,omitempty" name:"Status"`
 
+	// 辅助域名
+	AuxiliaryDomain *string `json:"AuxiliaryDomain,omitempty" name:"AuxiliaryDomain"`
+
 	// 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。
 	RequestId *string `json:"RequestId,omitempty" name:"RequestId"`
 }
@@ -2820,6 +2834,8 @@ type GetAccountSummaryResponseParams struct {
 	Roles *uint64 `json:"Roles,omitempty" name:"Roles"`
 
 	// 身份提供商数
+	//
+	// Deprecated: Idps is deprecated.
 	Idps *uint64 `json:"Idps,omitempty" name:"Idps"`
 
 	// 子账户数
@@ -2830,6 +2846,9 @@ type GetAccountSummaryResponseParams struct {
 
 	// 分组用户总数
 	Member *uint64 `json:"Member,omitempty" name:"Member"`
+
+	// 身份提供商数。
+	IdentityProviders *uint64 `json:"IdentityProviders,omitempty" name:"IdentityProviders"`
 
 	// 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。
 	RequestId *string `json:"RequestId,omitempty" name:"RequestId"`
@@ -3655,6 +3674,14 @@ type GetUserResponseParams struct {
 
 	// 邮箱
 	Email *string `json:"Email,omitempty" name:"Email"`
+
+	// 最近一次登录ip
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	RecentlyLoginIP *string `json:"RecentlyLoginIP,omitempty" name:"RecentlyLoginIP"`
+
+	// 最近一次登录时间
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	RecentlyLoginTime *string `json:"RecentlyLoginTime,omitempty" name:"RecentlyLoginTime"`
 
 	// 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。
 	RequestId *string `json:"RequestId,omitempty" name:"RequestId"`
@@ -6503,6 +6530,9 @@ type UpdateUserSAMLConfigRequestParams struct {
 
 	// 元数据文档，需要base64 encode，仅当Operate为updateSAML时需要此参数
 	SAMLMetadataDocument *string `json:"SAMLMetadataDocument,omitempty" name:"SAMLMetadataDocument"`
+
+	// 辅助域名
+	AuxiliaryDomain *string `json:"AuxiliaryDomain,omitempty" name:"AuxiliaryDomain"`
 }
 
 type UpdateUserSAMLConfigRequest struct {
@@ -6513,6 +6543,9 @@ type UpdateUserSAMLConfigRequest struct {
 
 	// 元数据文档，需要base64 encode，仅当Operate为updateSAML时需要此参数
 	SAMLMetadataDocument *string `json:"SAMLMetadataDocument,omitempty" name:"SAMLMetadataDocument"`
+
+	// 辅助域名
+	AuxiliaryDomain *string `json:"AuxiliaryDomain,omitempty" name:"AuxiliaryDomain"`
 }
 
 func (r *UpdateUserSAMLConfigRequest) ToJsonString() string {
@@ -6529,6 +6562,7 @@ func (r *UpdateUserSAMLConfigRequest) FromJsonString(s string) error {
 	}
 	delete(f, "Operate")
 	delete(f, "SAMLMetadataDocument")
+	delete(f, "AuxiliaryDomain")
 	if len(f) > 0 {
 		return tcerr.NewTencentCloudSDKError("ClientError.BuildRequestError", "UpdateUserSAMLConfigRequest has unknown keys!", "")
 	}

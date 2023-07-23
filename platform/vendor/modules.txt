@@ -34,10 +34,10 @@ github.com/mozillazg/go-httpheader
 github.com/ossrs/go-oryx-lib/errors
 github.com/ossrs/go-oryx-lib/http
 github.com/ossrs/go-oryx-lib/logger
-# github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam v1.0.587
+# github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam v1.0.706
 ## explicit
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116
-# github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.587
+# github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.706
 ## explicit
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors

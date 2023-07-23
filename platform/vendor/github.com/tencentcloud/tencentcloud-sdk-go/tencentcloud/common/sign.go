@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"hash"
 	"sort"
 
 	tchttp "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/http"
@@ -18,9 +19,12 @@ const (
 )
 
 func Sign(s, secretKey, method string) string {
-	hashed := hmac.New(sha1.New, []byte(secretKey))
-	if method == SHA256 {
+	var hashed hash.Hash
+	switch method {
+	case SHA256:
 		hashed = hmac.New(sha256.New, []byte(secretKey))
+	default:
+		hashed = hmac.New(sha1.New, []byte(secretKey))
 	}
 	hashed.Write([]byte(s))
 
