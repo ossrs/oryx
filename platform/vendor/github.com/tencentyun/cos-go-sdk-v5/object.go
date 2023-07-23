@@ -556,8 +556,15 @@ type ObjectRestoreOptions struct {
 // PutRestore API can recover an object of type archived by COS archive.
 //
 // https://cloud.tencent.com/document/product/436/12633
-func (s *ObjectService) PostRestore(ctx context.Context, name string, opt *ObjectRestoreOptions) (*Response, error) {
-	u := fmt.Sprintf("/%s?restore", encodeURIComponent(name))
+func (s *ObjectService) PostRestore(ctx context.Context, name string, opt *ObjectRestoreOptions, id ...string) (*Response, error) {
+	var u string
+	if len(id) == 1 {
+		u = fmt.Sprintf("/%s?restore&versionId=%s", encodeURIComponent(name), id[0])
+	} else if len(id) == 0 {
+		u = fmt.Sprintf("/%s?restore", encodeURIComponent(name))
+	} else {
+		return nil, errors.New("wrong params")
+	}
 	sendOpt := sendOptions{
 		baseURL:   s.client.BaseURL.BucketURL,
 		uri:       u,
@@ -676,14 +683,16 @@ func (s *ObjectService) DeleteMulti(ctx context.Context, opt *ObjectDeleteMultiO
 
 // Object is the meta info of the object
 type Object struct {
-	Key          string `xml:",omitempty"`
-	ETag         string `xml:",omitempty"`
-	Size         int64  `xml:",omitempty"`
-	PartNumber   int    `xml:",omitempty"`
-	LastModified string `xml:",omitempty"`
-	StorageClass string `xml:",omitempty"`
-	Owner        *Owner `xml:",omitempty"`
-	VersionId    string `xml:",omitempty"`
+	Key           string `xml:",omitempty"`
+	ETag          string `xml:",omitempty"`
+	Size          int64  `xml:",omitempty"`
+	PartNumber    int    `xml:",omitempty"`
+	LastModified  string `xml:",omitempty"`
+	StorageClass  string `xml:",omitempty"`
+	Owner         *Owner `xml:",omitempty"`
+	VersionId     string `xml:",omitempty"`
+	StorageTier   string `xml:",omitempty"`
+	RestoreStatus string `xml:",omitempty"`
 }
 
 // MultiUploadOptions is the option of the multiupload,
@@ -1014,7 +1023,6 @@ func (s *ObjectService) checkUploadedParts(ctx context.Context, name, UploadID, 
 //
 // 当 partSize > 0 时，由调用者指定分块大小，否则由 SDK 自动切分，单位为MB
 // 由调用者指定分块大小时，请确认分块数量不超过10000
-//
 func (s *ObjectService) MultiUpload(ctx context.Context, name string, filepath string, opt *MultiUploadOptions) (*CompleteMultipartUploadResult, *Response, error) {
 	return s.Upload(ctx, name, filepath, opt)
 }

@@ -120,6 +120,30 @@ type UserListInfo struct {
 	ListResults []UserListResults `xml:",omitempty"`
 }
 
+// AuditingMaskInfo 审核马赛克信息
+type AuditingMaskInfo struct {
+	RecordInfo *AuditingMaskRecordInfo `xml:",omitempty"`
+	LiveInfo   *AuditingMaskLiveInfo   `xml:",omitempty"`
+}
+
+// AuditingMaskInfo 审核马赛克信息
+type AuditingMaskRecordInfo struct {
+	Code    string `xml:"Code,omitempty"`
+	Message string `xml:"Message,omitempty"`
+	Output  *struct {
+		Region string `xml:"Region,omitempty"`
+		Bucket string `xml:"Bucket,omitempty"`
+		Object string `xml:"Object,omitempty"`
+	} `xml:"Output,omitempty"`
+}
+
+// AuditingMaskInfo 审核马赛克信息
+type AuditingMaskLiveInfo struct {
+	StartTime string `xml:"StartTime,omitempty"`
+	EndTime   string `xml:"EndTime,omitempty"`
+	Output    string `xml:"Output,omitempty"`
+}
+
 //UserListResults 命中账号黑白名单信息
 type UserListResults struct {
 	ListType *int   `xml:",omitempty"`
@@ -169,10 +193,9 @@ type RecognitionInfo struct {
 }
 
 // 图片审核 https://cloud.tencent.com/document/product/460/37318
-func (s *CIService) ImageRecognition(ctx context.Context, name string, DetectType string) (*ImageRecognitionResult, *Response, error) {
+func (s *CIService) ImageRecognition(ctx context.Context, name string, reserved string) (*ImageRecognitionResult, *Response, error) {
 	opt := &ImageRecognitionOptions{
-		CIProcess:  "sensitive-content-recognition",
-		DetectType: DetectType,
+		CIProcess: "sensitive-content-recognition",
 	}
 	var res ImageRecognitionResult
 	sendOpt := sendOptions{
@@ -215,6 +238,15 @@ type UserExtraInfo struct {
 	Role           string `xml:",omitempty"`
 }
 
+// Encryption is user defined information
+type Encryption struct {
+	Algorithm string `xml:",omitempty"`
+	Key       string `xml:",omitempty"`
+	IV        string `xml:",omitempty"`
+	KeyId     string `xml:",omitempty"`
+	KeyType   int    `xml:",omitempty"`
+}
+
 // FreezeConf is auto freeze options
 type FreezeConf struct {
 	PornScore      string `xml:",omitempty"`
@@ -224,6 +256,41 @@ type FreezeConf struct {
 	AdsScore       string `xml:",omitempty"`
 	AbuseScore     string `xml:",omitempty"`
 	TeenagerScore  string `xml:",omitempty"`
+}
+
+// AuditingMask is auto Mask options
+type AuditingMask struct {
+	Images     []AuditingMaskImages    `xml:",omitempty"`
+	Audios     []AuditingMaskAudios    `xml:",omitempty"`
+	CosOutput  *AuditingMaskCosOutput  `xml:",omitempty"`
+	LiveOutput *AuditingMaskLiveOutput `xml:",omitempty"`
+}
+
+// AuditingMaskImages 审核马赛克相关参数
+type AuditingMaskImages struct {
+	Label string `xml:",omitempty"`
+	Type  string `xml:",omitempty"`
+	Url   string `xml:",omitempty"`
+}
+
+// AuditingMaskAudios 审核马赛克相关参数
+type AuditingMaskAudios struct {
+	Label string `xml:",omitempty"`
+	Type  string `xml:",omitempty"`
+}
+
+// AuditingMaskCosOutput 审核马赛克相关参数
+type AuditingMaskCosOutput struct {
+	Region    string     `xml:"Region,omitempty"`
+	Bucket    string     `xml:"Bucket,omitempty"`
+	Object    string     `xml:"Object,omitempty"`
+	Transcode *Transcode `xml:",omitempty"`
+}
+
+// AuditingMaskLiveOutput 审核马赛克相关参数
+type AuditingMaskLiveOutput struct {
+	Url       string     `xml:"Url,omitempty"`
+	Transcode *Transcode `xml:",omitempty"`
 }
 
 // ImageAuditingInputOptions is the option of BatchImageAuditingOptions
@@ -276,6 +343,7 @@ type ImageAuditingResult struct {
 	TeenagerInfo      *RecognitionInfo `xml:",omitempty"`
 	CompressionResult int              `xml:",omitempty"`
 	UserInfo          *UserExtraInfo   `xml:",omitempty"`
+	Encryption        *Encryption      `xml:",omitempty"`
 	ListInfo          *UserListInfo    `xml:",omitempty"`
 	ForbidState       int              `xml:",omitempty"`
 }
@@ -328,6 +396,7 @@ type PutVideoAuditingJobOptions struct {
 	InputUrl      string                `xml:"Input>Url,omitempty"`
 	InputDataId   string                `xml:"Input>DataId,omitempty"`
 	InputUserInfo *UserExtraInfo        `xml:"Input>UserInfo,omitempty"`
+	Encryption    *Encryption           `xml:",omitempty"`
 	Conf          *VideoAuditingJobConf `xml:"Conf"`
 	Type          string                `xml:"Type,omitempty"`
 	StorageConf   *StorageConf          `xml:"StorageConf,omitempty"`
@@ -343,6 +412,7 @@ type VideoAuditingJobConf struct {
 	BizType         string                       `xml:",omitempty"`
 	DetectContent   int                          `xml:",omitempty"`
 	Freeze          *FreezeConf                  `xml:",omitempty"`
+	Mask            *AuditingMask                `xml:",omitempty"`
 }
 
 // PutVideoAuditingJobSnapshot is the snapshot config of VideoAuditingJobConf
@@ -403,6 +473,7 @@ type AuditingJobDetail struct {
 	DataId        string                        `xml:",omitempty"`
 	SnapshotCount string                        `xml:",omitempty"`
 	Label         string                        `xml:",omitempty"`
+	SubLabel      string                        `xml:",omitempty"`
 	Result        int                           `xml:",omitempty"`
 	PornInfo      *RecognitionInfo              `xml:",omitempty"`
 	TerrorismInfo *RecognitionInfo              `xml:",omitempty"`
@@ -415,6 +486,7 @@ type AuditingJobDetail struct {
 	Type          string                        `xml:",omitempty"`
 	ListInfo      *UserListInfo                 `xml:",omitempty"`
 	ForbidState   int                           `xml:",omitempty"`
+	MaskInfo      *AuditingMaskInfo             `xml:",omitempty"`
 }
 
 // GetVideoAuditingJobSnapshot is the snapshot result of AuditingJobDetail
@@ -466,7 +538,7 @@ func (s *CIService) PostVideoAuditingCancelJob(ctx context.Context, jobid string
 	var res PutVideoAuditingJobResult
 	sendOpt := sendOptions{
 		baseURL: s.client.BaseURL.CIURL,
-		uri:     "/video/cancel_auditing" + jobid,
+		uri:     "/video/cancel_auditing/" + jobid,
 		method:  http.MethodPost,
 		result:  &res,
 	}
@@ -774,12 +846,14 @@ type DocumentPageSegmentResultResult struct {
 type OcrResult struct {
 	Text     string    `xml:"Text,omitempty"`
 	Keywords []string  `xml:"Keywords,omitempty"`
+	SubLabel string    `xml:"SubLabel,omitempty"`
 	Location *Location `xml:"Location,omitempty"`
 }
 
 // ObjectResult
 type ObjectResult struct {
 	Name     string    `xml:"Name,omitempty"`
+	SubLabel string    `xml:"SubLabel,omitempty"`
 	Location *Location `xml:"Location,omitempty"`
 }
 
@@ -1364,6 +1438,30 @@ func (s *CIService) ImageQuality(ctx context.Context, obj string) (*ImageQuality
 	return &res, resp, err
 }
 
+// ImageQualityOptions is the option of ImageQualityWithOpt
+type ImageQualityOptions struct {
+	CIProcess        string `url:"ci-process,omitempty"`
+	DetectUrl        string `url:"detect-url,omitempty"`
+	EnableClarity    string `url:"enable_clarity,omitempty"`
+	EnableAesthetics string `url:"enable_aesthetics,omitempty"`
+	EnableLowquality string `url:"enable_lowquality,omitempty"`
+}
+
+// ImageQualityWithOpt 图片质量评估
+func (s *CIService) ImageQualityWithOpt(ctx context.Context, obj string, opt *ImageQualityOptions) (*ImageQualityResult, *Response, error) {
+	var res ImageQualityResult
+	opt.CIProcess = "AssessQuality"
+	sendOpt := &sendOptions{
+		baseURL:  s.client.BaseURL.BucketURL,
+		uri:      "/" + encodeURIComponent(obj),
+		method:   http.MethodGet,
+		optQuery: opt,
+		result:   &res,
+	}
+	resp, err := s.client.send(ctx, sendOpt)
+	return &res, resp, err
+}
+
 type OcrRecognitionOptions struct {
 	Type              string `url:"type,omitempty"`
 	LanguageType      string `url:"language-type,omitempty"`
@@ -1934,6 +2032,310 @@ func (s *CIService) GoodsMattingWithOpt(ctx context.Context, key string, opt *Go
 		uri:              "/" + encodeURIComponent(key) + "?ci-process=GoodsMatting",
 		optQuery:         opt,
 		method:           http.MethodGet,
+		disableCloseBody: true,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return resp, err
+}
+
+type PedestrianLocation CodeLocation
+
+type PedestrianInfo struct {
+	Name     string              `xml:"Name,omitempty"`
+	Score    int                 `xml:"Score,omitempty"`
+	Location *PedestrianLocation `xml:"Location,omitempty"`
+}
+
+type AIBodyRecognitionResult struct {
+	XMLName        xml.Name         `xml:"RecognitionResult"`
+	Status         int              `xml:"Status,omitempty"`
+	PedestrianInfo []PedestrianInfo `xml:"PedestrianInfo,omitempty"`
+}
+
+// AIBodyRecognitionOptions is the option of AIBodyRecognitionWithOpt
+type AIBodyRecognitionOptions struct {
+	CIProcess string `url:"ci-process,omitempty"`
+	DetectUrl string `url:"detect-url,omitempty"`
+}
+
+// 人体识别 https://cloud.tencent.com/document/product/436/83728
+func (s *CIService) AIBodyRecognition(ctx context.Context, key string, opt *AIBodyRecognitionOptions) (*AIBodyRecognitionResult, *Response, error) {
+	var res AIBodyRecognitionResult
+	opt.CIProcess = "AIBodyRecognition"
+	sendOpt := sendOptions{
+		baseURL:  s.client.BaseURL.BucketURL,
+		uri:      "/" + encodeURIComponent(key),
+		method:   http.MethodGet,
+		optQuery: opt,
+		result:   &res,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return &res, resp, err
+}
+
+// 海报合成
+// PosterproductionInput TODO
+type PosterproductionInput struct {
+	Object string `xml:"Object,omitempty"`
+}
+
+// PosterproductionTemplateOptions TODO
+type PosterproductionTemplateOptions struct {
+	XMLName     xml.Name               `xml:"Request"`
+	Input       *PosterproductionInput `xml:"Input,omitempty"`
+	Name        string                 `xml:"Name,omitempty"`
+	CategoryIds string                 `xml:"CategoryIds,omitempty"`
+}
+
+// DescribePosterproductionTemplateOptions TODO
+type DescribePosterproductionTemplateOptions struct {
+	PageNumber  int    `url:"pageNumber,omitempty"`
+	PageSize    int    `url:"pageSize,omitempty"`
+	CategoryIds string `url:"categoryIds,omitempty"`
+	Type        string `url:"type,omitempty"`
+}
+
+// PosterproductionTemplateResult TODO
+type PosterproductionTemplateResult struct {
+	XMLName   xml.Name    `xml:"Response"`
+	RequestId string      `xml:"RequestId,omitempty"`
+	Template  interface{} `xml:"Template,omitempty"`
+}
+
+// PosterproductionTemplateResult TODO
+type PosterproductionTemplateResults struct {
+	XMLName      xml.Name    `xml:"Response"`
+	RequestId    string      `xml:"RequestId,omitempty"`
+	TotalCount   string      `xml:"TotalCount,omitempty"`
+	PageNumber   string      `xml:"PageNumber,omitempty"`
+	PageSize     string      `xml:"PageSize,omitempty"`
+	TemplateList interface{} `xml:"TemplateList,omitempty"`
+}
+
+func (s *CIService) PutPosterproductionTemplate(ctx context.Context, opt *PosterproductionTemplateOptions) (*PosterproductionTemplateResult, *Response, error) {
+	var res PosterproductionTemplateResult
+	sendOpt := sendOptions{
+		baseURL:  s.client.BaseURL.CIURL,
+		uri:      "/posterproduction/template",
+		method:   http.MethodPost,
+		optQuery: nil,
+		body:     &opt,
+		result:   &res,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return &res, resp, err
+}
+
+func (s *CIService) GetPosterproductionTemplate(ctx context.Context, tplId string) (*PosterproductionTemplateResult, *Response, error) {
+	var res PosterproductionTemplateResult
+	sendOpt := sendOptions{
+		baseURL: s.client.BaseURL.CIURL,
+		uri:     "/posterproduction/template/" + tplId,
+		method:  http.MethodGet,
+		result:  &res,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return &res, resp, err
+}
+
+func (s *CIService) GetPosterproductionTemplates(ctx context.Context, opt *DescribePosterproductionTemplateOptions) (*PosterproductionTemplateResults, *Response, error) {
+	var res PosterproductionTemplateResults
+	sendOpt := sendOptions{
+		baseURL:  s.client.BaseURL.CIURL,
+		uri:      "/posterproduction/template",
+		method:   http.MethodGet,
+		optQuery: opt,
+		result:   &res,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return &res, resp, err
+}
+
+// GetOriginImage https://cloud.tencent.com/document/product/460/90744
+func (s *CIService) GetOriginImage(ctx context.Context, name string) (*Response, error) {
+	sendOpt := sendOptions{
+		baseURL:          s.client.BaseURL.CIURL,
+		uri:              "/" + encodeURIComponent(name) + "?ci-process=originImage",
+		method:           http.MethodGet,
+		disableCloseBody: true,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return resp, err
+}
+
+// GetAIImageColoring https://https://cloud.tencent.com/document/product/460/83794
+func (s *CIService) GetAIImageColoring(ctx context.Context, name string) (*Response, error) {
+	sendOpt := sendOptions{
+		baseURL:          s.client.BaseURL.BucketURL,
+		uri:              "/" + encodeURIComponent(name) + "?ci-process=AIImageColoring",
+		method:           http.MethodGet,
+		disableCloseBody: true,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return resp, err
+}
+
+// GetAISuperResolution https://cloud.tencent.com/document/product/460/83793
+func (s *CIService) GetAISuperResolution(ctx context.Context, name string) (*Response, error) {
+	sendOpt := sendOptions{
+		baseURL:          s.client.BaseURL.BucketURL,
+		uri:              "/" + encodeURIComponent(name) + "?ci-process=AISuperResolution",
+		method:           http.MethodGet,
+		disableCloseBody: true,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return resp, err
+}
+
+// GetAIEnhanceImage https://cloud.tencent.com/document/product/460/83792
+func (s *CIService) GetAIEnhanceImage(ctx context.Context, name string) (*Response, error) {
+	sendOpt := sendOptions{
+		baseURL:          s.client.BaseURL.BucketURL,
+		uri:              "/" + encodeURIComponent(name) + "?ci-process=AIEnhanceImage",
+		method:           http.MethodGet,
+		disableCloseBody: true,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return resp, err
+}
+
+// AIImageCropOptions 图像智能裁剪选项
+type AIImageCropOptions struct {
+	DetectUrl   string `url:"detect-url,omitempty"`
+	Width       int    `url:"width,omitempty"`
+	Height      int    `url:"height,omitempty"`
+	Fixed       int    `url:"fixed,omitempty"`
+	IgnoreError int    `url:"ignore-error,omitempty"`
+}
+
+// GetAIImageCrop https://cloud.tencent.com/document/product/460/83791
+func (s *CIService) GetAIImageCrop(ctx context.Context, name string, opt *AIImageCropOptions) (*Response, error) {
+	sendOpt := sendOptions{
+		baseURL:          s.client.BaseURL.BucketURL,
+		uri:              "/" + encodeURIComponent(name) + "?ci-process=AIImageCrop",
+		method:           http.MethodGet,
+		optQuery:         opt,
+		disableCloseBody: true,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return resp, err
+}
+
+// AutoTranslationBlockOptions 实时文字翻译
+type AutoTranslationBlockOptions struct {
+	InputText  string `url:"InputText,omitempty"`
+	SourceLang string `url:"SourceLang,omitempty"`
+	TargetLang string `url:"TargetLang,omitempty"`
+	TextDomain string `url:"TextDomain,omitempty"`
+	TextStyle  string `url:"TextStyle,omitempty"`
+}
+
+// AutoTranslationBlockResults 实时文字翻译选项
+type AutoTranslationBlockResults struct {
+	XMLName           xml.Name `xml:"TranslationResult"`
+	TranslationResult string   `xml:",chardata"`
+}
+
+// GetAIImageCrop https://cloud.tencent.com/document/product/460/83547
+func (s *CIService) GetAutoTranslationBlock(ctx context.Context, opt *AutoTranslationBlockOptions) (*AutoTranslationBlockResults, *Response, error) {
+	var res AutoTranslationBlockResults
+	sendOpt := sendOptions{
+		baseURL:          s.client.BaseURL.BucketURL,
+		uri:              "/?ci-process=AutoTranslationBlock",
+		method:           http.MethodGet,
+		optQuery:         opt,
+		disableCloseBody: true,
+		result:           &res,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return &res, resp, err
+}
+
+// ImageRepairOptions 图像修复选项
+type ImageRepairOptions struct {
+	MaskPic  string `url:"MaskPic,omitempty"`
+	MaskPoly string `url:"MaskPoly,omitempty"`
+}
+
+// GetImageRepair https://cloud.tencent.com/document/product/460/79042
+func (s *CIService) GetImageRepair(ctx context.Context, name string, opt *ImageRepairOptions) (*Response, error) {
+	sendOpt := sendOptions{
+		baseURL:          s.client.BaseURL.BucketURL,
+		uri:              "/" + encodeURIComponent(name) + "?ci-process=ImageRepair",
+		method:           http.MethodGet,
+		optQuery:         opt,
+		disableCloseBody: true,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return resp, err
+}
+
+// RecognizeLogoOptions Logo识别选项
+type RecognizeLogoOptions struct {
+	DetectUrl   string `url:"detect-url,omitempty"`
+	IgnoreError int    `url:"ignore-error,omitempty"`
+}
+
+// RecognizeLogoResults Logo识别结果
+type RecognizeLogoResults struct {
+	XMLName  xml.Name `xml:"RecognitionResult"`
+	Status   int      `xml:"Status"`
+	LogoInfo []struct {
+		Name     string `xml:"Name,omitempty"`
+		Sorce    string `xml:"Sorce,omitempty"`
+		Location struct {
+			Point []string `xml:"Point,omitempty"`
+		} `xml:"Location,omitempty"`
+	} `xml:"LogoInfo,omitempty"`
+}
+
+// GetRecognizeLogo https://cloud.tencent.com/document/product/460/79736
+func (s *CIService) GetRecognizeLogo(ctx context.Context, name string, opt *RecognizeLogoOptions) (*RecognizeLogoResults, *Response, error) {
+	var res RecognizeLogoResults
+	sendOpt := sendOptions{
+		baseURL:          s.client.BaseURL.BucketURL,
+		uri:              "/" + encodeURIComponent(name) + "?ci-process=RecognizeLogo",
+		method:           http.MethodGet,
+		optQuery:         opt,
+		disableCloseBody: true,
+		result:           &res,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return &res, resp, err
+}
+
+// AssessQualityResults Logo识别结果
+type AssessQualityResults struct {
+	XMLName        xml.Name `xml:"Response"`
+	LongImage      bool     `xml:"LongImage"`
+	BlackAndWhite  bool     `xml:"BlackAndWhite"`
+	SmallImage     bool     `xml:"SmallImage"`
+	BigImage       bool     `xml:"BigImage"`
+	PureImage      bool     `xml:"PureImage"`
+	ClarityScore   int      `xml:"ClarityScore"`
+	AestheticScore int      `xml:"AestheticScore"`
+	RequestId      string   `xml:"RequestId"`
+}
+
+// GetAssessQuality https://cloud.tencent.com/document/product/460/63228
+func (s *CIService) GetAssessQuality(ctx context.Context, name string) (*AssessQualityResults, *Response, error) {
+	var res AssessQualityResults
+	sendOpt := sendOptions{
+		baseURL:          s.client.BaseURL.BucketURL,
+		uri:              "/" + encodeURIComponent(name) + "?ci-process=AssessQuality",
+		method:           http.MethodGet,
+		disableCloseBody: true,
+		result:           &res,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return &res, resp, err
+}
+
+func (s *CIService) TDCRefresh(ctx context.Context, name string) (*Response, error) {
+	sendOpt := sendOptions{
+		baseURL:          s.client.BaseURL.CIURL,
+		uri:              "/" + encodeURIComponent(name) + "?TDCRefresh",
+		method:           http.MethodPost,
 		disableCloseBody: true,
 	}
 	resp, err := s.client.send(ctx, &sendOpt)

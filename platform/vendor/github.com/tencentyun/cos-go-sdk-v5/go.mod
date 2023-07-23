@@ -10,6 +10,6 @@ require (
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/mozillazg/go-httpheader v0.2.1
 	github.com/stretchr/testify v1.3.0
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.194
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/kms v1.0.194
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.563
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/kms v1.0.563
 )

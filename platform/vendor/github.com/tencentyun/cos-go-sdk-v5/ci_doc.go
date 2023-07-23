@@ -30,6 +30,9 @@ type DocProcessJobDocProcess struct {
 	PaperDirection int    `xml:"PaperDirection,omitempty"`
 	Quality        int    `xml:"Quality,omitempty"`
 	Zoom           int    `xml:"Zoom,omitempty"`
+	PaperSize      int    `xml:"PaperSize,omitempty"`
+	ImageDpi       int    `xml:"ImageDpi,omitempty"`
+	PicPagination  int    `xml:"PicPagination,omitempty"`
 }
 
 type DocProcessJobDocProcessResult struct {
@@ -269,6 +272,12 @@ type DocPreviewOptions struct {
 	ExcelPaperDirection int    `url:"excelPaperDirection,omitempty"`
 	Quality             int    `url:"quality,omitempty"`
 	Zoom                int    `url:"zoom,omitempty"`
+	ExcelRow            int    `url:"excelRow,omitempty"`
+	ExcelCol            int    `url:"excelCol,omitempty"`
+	ExcelPaperSize      int    `url:"excelPaperSize,omitempty"`
+	TxtPagination       bool   `url:"txtPagination,omitempty"`
+	Scale               int    `url:"scale,omitempty"`
+	ImageDpi            int    `url:"imageDpi,omitempty"`
 }
 
 // 同步请求接口 https://cloud.tencent.com/document/product/436/54058

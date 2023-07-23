@@ -33,6 +33,14 @@ type BatchJobReport struct {
 }
 
 // BatchJobOperationCopy
+type BatchCOSTag struct {
+	Key   string `xml:"Key,omitempty" header:"-" url:"-"`
+	Value string `xml:"Value,omitempty" header:"-" url:"-"`
+}
+type BatchNewObjectTagging struct {
+	COSTag []BatchCOSTag `xml:"COSTag,omitempty" header:"-" url:"-"`
+}
+
 type BatchMetadata struct {
 	Key   string `xml:"Key" header:"-" url:"-"`
 	Value string `xml:"Value" header:"-" url:"-"`
@@ -59,12 +67,18 @@ type BatchAccessControlGrants struct {
 	COSGrants *BatchCOSGrant `xml:"COSGrant,omitempty" header:"-" url:"-"`
 }
 type BatchJobOperationCopy struct {
+	AccessControlDirective    string                    `xml:"AccessControlDirective,omitempty" header:"-" url:"-"`
 	AccessControlGrants       *BatchAccessControlGrants `xml:"AccessControlGrants,omitempty" header:"-" url:"-"`
 	CannedAccessControlList   string                    `xml:"CannedAccessControlList,omitempty" header:"-" url:"-"`
+	PrefixReplace             bool                      `xml:"PrefixReplace,omitempty" header:"-" url:"-"`
+	ResourcesPrefix           string                    `xml:"ResourcesPrefix,omitempty" header:"-" url:"-"`
+	TargetKeyPrefix           string                    `xml:"TargetKeyPrefix,omitempty" header:"-" url:"-"`
 	MetadataDirective         string                    `xml:"MetadataDirective,omitempty" header:"-" url:"-"`
 	ModifiedSinceConstraint   int64                     `xml:"ModifiedSinceConstraint,omitempty" header:"-" url:"-"`
 	UnModifiedSinceConstraint int64                     `xml:"UnModifiedSinceConstraint,omitempty" header:"-" url:"-"`
 	NewObjectMetadata         *BatchNewObjectMetadata   `xml:"NewObjectMetadata,omitempty" header:"-" url:"-"`
+	TaggingDirective          string                    `xml:"TaggingDirective,omitempty" header:"-" url:"-"`
+	NewObjectTagging          *BatchNewObjectTagging    `xml:"NewObjectTagging,omitempty" header:"-" url:"-"`
 	StorageClass              string                    `xml:"StorageClass,omitempty" header:"-" url:"-"`
 	TargetResource            string                    `xml:"TargetResource" header:"-" url:"-"`
 }
@@ -259,4 +273,19 @@ func (s *BatchService) UpdateJobStatus(ctx context.Context, opt *BatchUpdateStat
 	}
 	resp, err := s.client.send(ctx, &sendOpt)
 	return &res, resp, err
+}
+
+func (s *BatchService) DeleteJob(ctx context.Context, id string, headers *BatchRequestHeaders) (*Response, error) {
+	if len(id) == 0 {
+		return nil, fmt.Errorf("Id is invalid")
+	}
+	u := fmt.Sprintf("/jobs/%s", id)
+	sendOpt := sendOptions{
+		baseURL:   s.client.BaseURL.BatchURL,
+		uri:       u,
+		method:    http.MethodDelete,
+		optHeader: headers,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return resp, err
 }

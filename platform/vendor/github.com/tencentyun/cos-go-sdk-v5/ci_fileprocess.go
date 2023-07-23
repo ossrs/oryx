@@ -23,6 +23,7 @@ type FileHashCodeResult struct {
 type FileUncompressConfig struct {
 	Prefix         string `xml:",omitempty"`
 	PrefixReplaced string `xml:",omitempty"`
+	UnCompressKey  string `xml:",omitempty"`
 }
 
 type FileUncompressResult struct {
@@ -32,11 +33,13 @@ type FileUncompressResult struct {
 }
 
 type FileCompressConfig struct {
-	Flatten string `xml:",omitempty"`
-	Format  string `xml:",omitempty"`
-	UrlList string `xml:",omitempty"`
-	Prefix  string `xml:",omitempty"`
-	Key     string `xml:",omitempty"`
+	Flatten     string   `xml:",omitempty"`
+	Format      string   `xml:",omitempty"`
+	UrlList     string   `xml:",omitempty"`
+	Prefix      string   `xml:",omitempty"`
+	Key         []string `xml:",omitempty"`
+	Type        string   `xml:",omitempty"`
+	CompressKey string   `xml:",omitempty"`
 }
 
 type FileCompressResult struct {
@@ -60,15 +63,15 @@ type FileProcessJobOperation struct {
 }
 
 type FileProcessJobOptions struct {
-	XMLName          xml.Name                 `xml:"Request"`
-	Tag              string                   `xml:",omitempty"`
-	Input            *FileProcessInput        `xml:",omitempty"`
-	Operation        *FileProcessJobOperation `xml:",omitempty"`
-	QueueId          string                   `xml:",omitempty"`
-	CallBackFormat   string                   `xml:",omitempty"`
-	CallBackType     string                   `xml:",omitempty"`
-	CallBack         string                   `xml:",omitempty"`
-	CallBackMqConfig string                   `xml:",omitempty"`
+	XMLName          xml.Name                      `xml:"Request"`
+	Tag              string                        `xml:",omitempty"`
+	Input            *FileProcessInput             `xml:",omitempty"`
+	Operation        *FileProcessJobOperation      `xml:",omitempty"`
+	QueueId          string                        `xml:",omitempty"`
+	CallBackFormat   string                        `xml:",omitempty"`
+	CallBackType     string                        `xml:",omitempty"`
+	CallBack         string                        `xml:",omitempty"`
+	CallBackMqConfig *NotifyConfigCallBackMqConfig `xml:",omitempty"`
 }
 
 type FileProcessJobResult struct {
@@ -144,6 +147,30 @@ func (s *CIService) GetFileHash(ctx context.Context, name string, opt *GetFileHa
 		method:   http.MethodGet,
 		optQuery: opt,
 		result:   &res,
+	}
+	resp, err := s.client.send(ctx, &sendOpt)
+	return &res, resp, err
+}
+
+// ZipPreviewResult 压缩包预览结果
+type ZipPreviewResult struct {
+	XMLName    xml.Name `xml:"Response"`
+	FileNumber int      `xml:"FileNumber,omitempty"`
+	Contents   []*struct {
+		Key              string `xml:"Key,omitempty"`
+		LastModified     string `xml:"LastModified,omitempty"`
+		UncompressedSize int    `xml:"UncompressedSize,omitempty"`
+	} `xml:"Contents,omitempty"`
+}
+
+// ZipPreview 压缩包预览
+func (s *CIService) ZipPreview(ctx context.Context, name string) (*ZipPreviewResult, *Response, error) {
+	var res ZipPreviewResult
+	sendOpt := sendOptions{
+		baseURL: s.client.BaseURL.BucketURL,
+		uri:     "/" + encodeURIComponent(name) + "?ci-process=zippreview",
+		method:  http.MethodGet,
+		result:  &res,
 	}
 	resp, err := s.client.send(ctx, &sendOpt)
 	return &res, resp, err
