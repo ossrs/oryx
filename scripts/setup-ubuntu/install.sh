@@ -69,8 +69,8 @@ if [[ "$HELP" == yes ]]; then
     help
     exit 0
 fi
-echo "Install with options: VERBOSE=${VERBOSE}, LANGUAGE=${LANGUAGE}, REGISTRY=${REGISTRY}, IMAGE=${IMAGE}, IMAGE_URL=${IMAGE_URL}, SRS_HOME=${SRS_HOME}, DATA_HOME=${DATA_HOME}"
-echo "MGMT_PORT=${MGMT_PORT}"
+echo -n "Install with options: VERBOSE=${VERBOSE}, LANGUAGE=${LANGUAGE}, REGISTRY=${REGISTRY}, IMAGE=${IMAGE}, IMAGE_URL=${IMAGE_URL}, SRS_HOME=${SRS_HOME}, DATA_HOME=${DATA_HOME}"
+echo ", MGMT_PORT=${MGMT_PORT}, RTMP_PORT=${RTMP_PORT}, API_PORT=${API_PORT}, HTTP_PORT=${HTTP_PORT}, RTC_PORT=${RTC_PORT}, SRT_PORT=${SRT_PORT}"
 
 # Update sysctl.conf and add if not exists. For example:
 #   update_sysctl net.ipv4.ip_forward 1 0 "# Controls IP packet forwarding"
@@ -147,7 +147,8 @@ sed -i "s|^RTMP_PORT=.*|RTMP_PORT=${RTMP_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
 sed -i "s|^API_PORT=.*|API_PORT=${API_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
 sed -i "s|^HTTP_PORT=.*|HTTP_PORT=${HTTP_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
 sed -i "s|^RTC_PORT=.*|RTC_PORT=${RTC_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
-sed -i "s|^SRT_PORT=.*|SRT_PORT=${SRT_PORT}|g" ${SRS_HOME}/mgmt/bootstrap
+sed -i "s|^SRT_PORT=.*|SRT_PORT=${SRT_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
+sed -i "s|^DEBUG=.*|DEBUG=${DEBUG}|g" ${SRS_HOME}/mgmt/bootstrap
 if [[ $? -ne 0 ]]; then echo "Update bootstrap failed"; exit 1; fi
 echo "Update bootstrap ok"
 

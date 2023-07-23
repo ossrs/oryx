@@ -1,4 +1,6 @@
-# Deveoper
+# Developer
+
+This is for developers.
 
 ## Ports
 
@@ -290,6 +292,12 @@ Test the install script, in the docker container:
 ```bash
 bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose
 ```
+
+> Note: Use `--verbose` to show the detail log.
+
+> Note: Use `--extract` to extract the platform tar file.
+
+> Note: Use `--debug` to enable debug mode, map current directory to platform container.
 
 Test the uninstall script, in the docker container:
 
