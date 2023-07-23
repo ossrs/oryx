@@ -352,22 +352,21 @@ docker run -d --rm -it -p 2022:2022 --name platform -v $(pwd):/usr/local/srs-clo
 
 > Note: We don't use the `/data` as global storage.
 
-Start redis and SRS only in docker:
+Build platform and UI in docker:
 
 ```bash
-docker exec -it platform bash -c 'bash auto/setup && bash auto/start_redis && bash auto/start_srs'
+docker exec -it platform make -j16
 ```
 
-Build and run platform only in docker:
+Run platform in docker:
 
 ```bash
-docker exec -it platform bash -c 'make && ./platform'
+docker exec -it platform ./bootstrap
 ```
 
 Stop redis and SRS:
 
 ```bash
-docker stop platform || echo 'OK' &&
 docker rm -f platform
 ```
 
@@ -393,7 +392,7 @@ docker run \
 Build and save the platform image to file:
 
 ```bash
-docker rmi platform:latest 2>/dev/null
+docker rmi platform:latest 2>/dev/null || echo OK &&
 docker build -t platform:latest -f Dockerfile . &&
 docker save -o platform.tar platform:latest
 ```

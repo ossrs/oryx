@@ -16,20 +16,8 @@ HTTP_PORT=8080
 RTC_PORT=8000
 SRT_PORT=10080
 
-for ((i=0; i < 10; i++)); do
-    if [[ -z $(docker ps -a --filter "name=srs-cloud" --format "{{.ID}}") ]]; then
-        break
-    fi
-
-    echo "Gracefully stop platform container"
-    docker stop srs-cloud
-    sleep 0.5
-done
-
-if [[ ! -z $(docker ps -a --filter "name=srs-cloud" --format "{{.ID}}") ]]; then
-    echo "Force to stop platform container"
-    docker rm -f srs-cloud
-fi
+echo "Force to stop platform container"
+docker rm -f srs-cloud 2>/dev/null
 
 echo "Start platform container"
 CMD="docker run --rm -it --name srs-cloud -v ${DATA_HOME}:/data
@@ -40,6 +28,20 @@ CMD="docker run --rm -it --name srs-cloud -v ${DATA_HOME}:/data
 echo $CMD && $CMD
 if [[ $? -ne 0 ]]; then echo "Start platform container failed"; exit 1; fi
 echo "Start platform container ok"
+
+handle_signals() {
+    echo "Signal $1 received. Cleaning up and exiting..."
+
+    ID=$(docker ps --filter "name=srs-cloud" --format "{{.ID}}")
+    if [[ ! -z $ID ]]; then
+        docker stop srs-cloud
+    fi
+
+    exit 0
+}
+
+trap 'handle_signals SIGTERM' SIGTERM
+trap 'handle_signals SIGINT' SIGINT
 
 while true; do
     ID=$(docker ps --filter "name=srs-cloud" --format "{{.ID}}")

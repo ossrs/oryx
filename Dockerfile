@@ -1,11 +1,17 @@
 ARG ARCH
 
+FROM ${ARCH}ossrs/node:18 AS node
+
 FROM ${ARCH}ossrs/srs:ubuntu20 AS build
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG TARGETARCH
 RUN echo "BUILDPLATFORM: $BUILDPLATFORM, TARGETPLATFORM: $TARGETPLATFORM, TARGETARCH: $TARGETARCH"
+
+# For ui build.
+COPY --from=node /usr/local/bin /usr/local/bin
+COPY --from=node /usr/local/lib /usr/local/lib
 
 ADD platform /g/platform
 
@@ -14,12 +20,6 @@ ADD platform /g/platform
 #     make ui-build-cn && make ui-build-en
 WORKDIR /g/platform
 RUN make platform-clean && make platform-build
-
-FROM ${ARCH}ossrs/node:18 AS ui
-
-ADD platform /g/platform
-
-WORKDIR /g/platform
 RUN make ui-clean && make ui-build-cn && make ui-build-en
 RUN cd /g/platform/ui && rm -rf js-core node_modules package* public src
 
@@ -27,7 +27,7 @@ RUN cd /g/platform/ui && rm -rf js-core node_modules package* public src
 #FROM ${ARCH}ubuntu:focal AS dist
 FROM ${ARCH}ossrs/srs-cloud:focal-1 AS dist
 
-COPY --from=ui /g/platform /usr/local/srs-cloud/platform
+COPY --from=build /g/platform /usr/local/srs-cloud/platform
 COPY --from=build /g/platform/platform /usr/local/srs-cloud/platform/platform
 
 # Prepare data directory.

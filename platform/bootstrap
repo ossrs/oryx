@@ -16,18 +16,58 @@ echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 
 # Setup the platform.
 bash auto/setup
+if [[ $? -ne 0 ]]; then echo "Setup platform failed"; exit 1; fi
 
 # Start redis.
 bash auto/start_redis
+if [[ $? -ne 0 ]]; then echo "Start redis failed"; exit 1; fi
 
 # Start SRS.
 bash auto/start_srs
+if [[ $? -ne 0 ]]; then echo "Start SRS failed"; exit 1; fi
 
-# Start the application server.
-./platform $APP_ARGS
+# Start the platform.
+./platform $APP_ARGS &
+if [[ $? -ne 0 ]]; then echo "Start platform failed"; exit 1; fi
 
-# Stop redis.
-bash auto/stop_redis
+stop_services() {
+    # Quickly save data before stopping, as the process termination may
+    # potentially result in a timeout.
+    bash auto/before_stop
 
-# Stop SRS.
-bash auto/stop_srs
+    if [[ ! -z $(pidof platform) ]]; then
+        kill -s SIGTERM $(pidof platform)
+    fi
+    bash auto/stop_redis
+    bash auto/stop_srs
+}
+
+handle_signals() {
+    echo "Signal $1 received. Cleaning up and exiting..."
+    stop_services
+    exit 0
+}
+
+trap 'handle_signals SIGTERM' SIGTERM
+trap 'handle_signals SIGINT' SIGINT
+
+while true; do
+    sleep 3
+
+    if [[ -z $(pidof redis-server) ]]; then
+        echo "Redis server stopped, exit."
+        break
+    fi
+    if [[ -z $(pidof srs) ]]; then
+        echo "SRS server stopped, exit."
+        break
+    fi
+    if [[ -z $(pidof platform) ]]; then
+        echo "Platform stopped, exit."
+        break
+    fi
+done
+
+# Quit by itself.
+stop_services
+exit 1

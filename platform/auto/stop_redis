@@ -6,10 +6,10 @@ REDIS_PID_FILE="/var/run/redis/redis-server.pid"
 if [[ -f $REDIS_PID_FILE ]]; then
   REDIS_PID=`cat $REDIS_PID_FILE`
   echo "Stopping redis, pid=$REDIS_PID"
-  kill $REDIS_PID 1>/dev/null 2>/dev/null
+  kill -s SIGTERM $REDIS_PID 1>/dev/null 2>/dev/null
 
   # See https://stackoverflow.com/a/41613532/17679565
-  timeout 10 tail --pid=$REDIS_PID -f /dev/null
+  timeout 30 tail --pid=$REDIS_PID -f /dev/null
   echo "Stopped redis, pid=$REDIS_PID"
 fi
 

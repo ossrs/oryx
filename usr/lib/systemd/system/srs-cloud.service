@@ -7,7 +7,9 @@ Wants=docker.service
 Type=simple
 Restart=always
 ExecStart=/usr/local/srs-cloud/mgmt/bootstrap
-KillSignal=SIGKILL
+KillSignal=SIGTERM
+TimeoutStopSec=30
+SendSIGKILL=yes
 
 [Install]
 WantedBy=multi-user.target

@@ -175,8 +175,6 @@ else
 CLOUD=BIN
 REGION=${REGION}
 REACT_APP_LOCALE=${LANGUAGE}
-REDIS_PORT=56379
-REDIS_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32)
 IMAGE=${IMAGE_URL}
 END
     if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
