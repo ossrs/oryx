@@ -287,6 +287,10 @@ Test the build script, in the docker container:
 bash scripts/setup-ubuntu/build.sh --extract
 ```
 
+> Note: Use `--extract` to extract the platform tar file.
+
+> Note: Use `--output dir` to specify the output directory.
+
 Test the install script, in the docker container:
 
 ```bash
@@ -295,9 +299,7 @@ bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose
 
 > Note: Use `--verbose` to show the detail log.
 
-> Note: Use `--extract` to extract the platform tar file.
-
-> Note: Use `--debug` to enable debug mode, map current directory to platform container.
+> Note: Use `--debug-home dir` to map current directory to platform container.
 
 Test the uninstall script, in the docker container:
 

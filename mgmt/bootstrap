@@ -15,15 +15,22 @@ API_PORT=1985
 HTTP_PORT=8080
 RTC_PORT=8000
 SRT_PORT=10080
+# Use local srs-cloud directory for debug.
+DEBUG_HOME=
 
 echo "Force to stop platform container"
 docker rm -f srs-cloud 2>/dev/null
 
+if [[ ! -z $DEBUG_HOME ]]; then
+    EXTRA_PARAMS="${EXTRA_PARAMS} -v ${DEBUG_HOME}:/usr/local/srs-cloud"
+    echo "Use local srs-cloud directory for debug: ${DEBUG_HOME}"
+fi
+
 echo "Start platform container"
-CMD="docker run --rm -it --name srs-cloud -v ${DATA_HOME}:/data
+CMD="docker run -v ${DATA_HOME}:/data ${EXTRA_PARAMS}
     -p ${MGMT_PORT}:2022 -p ${RTMP_PORT}:1935/tcp -p ${API_PORT}:1985/tcp -p
     ${HTTP_PORT}:8080/tcp -p ${RTC_PORT}:8000/udp -p ${SRT_PORT}:10080/udp
-    --restart no --detach
+    --restart no --detach --rm -it --name srs-cloud
     ${IMAGE}"
 echo $CMD && $CMD
 if [[ $? -ne 0 ]]; then echo "Start platform container failed"; exit 1; fi

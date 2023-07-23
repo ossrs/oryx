@@ -10,6 +10,7 @@ cd ${WORK_DIR}
 HELP=no
 LANGUAGE=zh
 EXTRACT=no
+OUTPUT=${WORK_DIR}/build
 VERSION=$(bash ${SCRIPT_DIR}/version.sh)
 
 while [[ "$#" -gt 0 ]]; do
@@ -17,6 +18,7 @@ while [[ "$#" -gt 0 ]]; do
         -h|--help) HELP=yes; shift ;;
         --language) LANGUAGE=$2; shift 2 ;;
         --version) VERSION=$2; shift 2 ;;
+        --output) OUTPUT=$2; shift 2 ;;
         --extract) EXTRACT=yes; shift 1 ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
@@ -28,10 +30,11 @@ if [[ "$HELP" == yes ]]; then
     echo "  -h, --help    Show this help message and exit"
     echo "  --language    The language to use. zh or en. Default: ${LANGUAGE}"
     echo "  --version     The image version to use. Default: ${VERSION}"
+    echo "  --output      The image version to use. Default: ${OUTPUT}"
     echo "  --extract     Whether to extract the final install file. Default: ${EXTRACT}"
     exit 0
 fi
-echo "Install with options: LANGUAGE=${LANGUAGE}, VERSION=${VERSION}, EXTRACT=${EXTRACT}"
+echo "Install with options: LANGUAGE=${LANGUAGE}, VERSION=${VERSION}, EXTRACT=${EXTRACT}, OUTPUT=${OUTPUT}"
 
 TMP_DIR="/tmp/srs-cloud-$(date +%s)" && TARGET_DIR="${TMP_DIR}/srs-cloud" &&
 mkdir -p ${TARGET_DIR} && cd ${TARGET_DIR}
@@ -75,15 +78,15 @@ INSTALL_FILE=srs-cloud-${LANGUAGE}-${VERSION}.tar.gz
 ret=$?; if [[ 0 -ne ${ret} ]]; then echo "tar failed, ret=$ret"; exit $ret; fi
 echo "Tar $INSTALL_FILE"
 
-mkdir -p ${WORK_DIR}/build &&
-mv ${TMP_DIR}/$INSTALL_FILE ${WORK_DIR}/build
+mkdir -p ${OUTPUT} &&
+mv ${TMP_DIR}/$INSTALL_FILE ${OUTPUT}
 ret=$?; if [[ 0 -ne ${ret} ]]; then echo "mv failed, ret=$ret"; exit $ret; fi
-echo "Move $INSTALL_FILE to ${WORK_DIR}/build"
+echo "Move $INSTALL_FILE to ${OUTPUT}"
 
 if [[ $EXTRACT == yes ]]; then
-    (cd ${WORK_DIR}/build && tar zxf $INSTALL_FILE)
+    (cd ${OUTPUT} && tar zxf $INSTALL_FILE)
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "tar failed, ret=$ret"; exit $ret; fi
-    echo "Extract $INSTALL_FILE to ${WORK_DIR}/build"
+    echo "Extract $INSTALL_FILE to ${OUTPUT}"
 fi
 
 rm -rf $TMP_DIR

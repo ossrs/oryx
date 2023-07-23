@@ -16,7 +16,7 @@ if [[ ! -z $(pidof redis-server) ]]; then
     REDIS_PARAMS=""
     if [[ ! -z $REDIS_PASSWORD ]]; then REDIS_PARAMS="${REDIS_PARAMS} -a $REDIS_PASSWORD"; fi
     if [[ ! -z $REDIS_PORT ]]; then REDIS_PARAMS="${REDIS_PARAMS} -p $REDIS_PORT"; fi
-    redis-cli $REDIS_PARAMS SAVE
-    echo "Redis server saved data OK"
+    RESULT=$(redis-cli $REDIS_PARAMS SAVE) && echo "Redis server saved data: ${RESULT}"
+    if [[ $? -ne 0 ]]; then echo "Redis server saved data failed"; exit 1; fi
 fi
 

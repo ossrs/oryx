@@ -22,6 +22,9 @@ API_PORT=1985
 HTTP_PORT=8080
 RTC_PORT=8000
 SRT_PORT=10080
+# Use local srs-cloud directory for debug.
+DEBUG_HOME=
+
 # Allow use .env to override the default values.
 if [[ -f ${SCRIPT_DIR}/.env ]]; then source ${SCRIPT_DIR}/.env; fi
 
@@ -29,6 +32,7 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) HELP=yes; shift ;;
         --verbose) VERBOSE=yes; shift ;;
+        --debug-home) DEBUG_HOME=$2; shift 2 ;;
         --language) LANGUAGE=$2; shift 2 ;;
         --registry) REGISTRY=$2; shift 2 ;;
         --image) IMAGE=$2; shift 2 ;;
@@ -56,6 +60,7 @@ function help() {
     echo "  --http_port   The port for HTTP Server. Default: ${HTTP_PORT}"
     echo "  --rtc_port    The port for WebRTC. Default: ${RTC_PORT}"
     echo "  --srt_port    The port for SRT. Default: ${SRT_PORT}"
+    echo "  --debug-home  Setup the debug home directory. Default: ${DEBUG_HOME}"
 }
 
 # Guess the registry automatically by language.
@@ -70,7 +75,7 @@ if [[ "$HELP" == yes ]]; then
     exit 0
 fi
 echo -n "Install with options: VERBOSE=${VERBOSE}, LANGUAGE=${LANGUAGE}, REGISTRY=${REGISTRY}, IMAGE=${IMAGE}, IMAGE_URL=${IMAGE_URL}, SRS_HOME=${SRS_HOME}, DATA_HOME=${DATA_HOME}"
-echo ", MGMT_PORT=${MGMT_PORT}, RTMP_PORT=${RTMP_PORT}, API_PORT=${API_PORT}, HTTP_PORT=${HTTP_PORT}, RTC_PORT=${RTC_PORT}, SRT_PORT=${SRT_PORT}"
+echo ", MGMT_PORT=${MGMT_PORT}, RTMP_PORT=${RTMP_PORT}, API_PORT=${API_PORT}, HTTP_PORT=${HTTP_PORT}, RTC_PORT=${RTC_PORT}, SRT_PORT=${SRT_PORT}, DEBUG_HOME=${DEBUG_HOME}"
 
 # Update sysctl.conf and add if not exists. For example:
 #   update_sysctl net.ipv4.ip_forward 1 0 "# Controls IP packet forwarding"
@@ -148,7 +153,7 @@ sed -i "s|^API_PORT=.*|API_PORT=${API_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
 sed -i "s|^HTTP_PORT=.*|HTTP_PORT=${HTTP_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
 sed -i "s|^RTC_PORT=.*|RTC_PORT=${RTC_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
 sed -i "s|^SRT_PORT=.*|SRT_PORT=${SRT_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
-sed -i "s|^DEBUG=.*|DEBUG=${DEBUG}|g" ${SRS_HOME}/mgmt/bootstrap
+if [[ ! -z $DEBUG_HOME ]]; then sed -i "s|^DEBUG_HOME=.*|DEBUG_HOME=${DEBUG_HOME}|g" ${SRS_HOME}/mgmt/bootstrap; fi
 if [[ $? -ne 0 ]]; then echo "Update bootstrap failed"; exit 1; fi
 echo "Update bootstrap ok"
 
