@@ -3,7 +3,7 @@
 SRS_PREFIX=/usr/local/srs-cloud
 __REAL_INSTALL=$(DESTDIR)$(SRS_PREFIX)
 
-default: help
+default: build
 
 help:
 	@echo "Usage: make build|install|test"

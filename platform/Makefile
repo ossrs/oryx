@@ -15,8 +15,7 @@ help:
 
 build: platform-build ui-install ui-build
 
-clean: ui-clean
-	platform-clean
+clean: ui-clean platform-clean
 
 platform-build: ./platform
 
@@ -46,4 +45,4 @@ ui-build-docker:
 	cd ui && npm run build
 
 ui-clean:
-	rm -rf platform/ui/build
+	rm -rf ui/build
