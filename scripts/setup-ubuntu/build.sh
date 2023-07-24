@@ -30,7 +30,7 @@ if [[ "$HELP" == yes ]]; then
     echo "  -h, --help    Show this help message and exit"
     echo "  --language    The language to use. zh or en. Default: ${LANGUAGE}"
     echo "  --version     The image version to use. Default: ${VERSION}"
-    echo "  --output      The image version to use. Default: ${OUTPUT}"
+    echo "  --output      The output directory to save the final install file. Default: ${OUTPUT}"
     echo "  --extract     Whether to extract the final install file. Default: ${EXTRACT}"
     exit 0
 fi
