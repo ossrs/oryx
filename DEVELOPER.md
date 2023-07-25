@@ -32,7 +32,7 @@ Run the platform backend, or run in GoLand:
 Run the platform react ui, or run in WebStorm:
 
 ```
-(cd platform/ui && npm install && npm start)
+(cd ui && npm install && npm start)
 ```
 
 Access the browser: http://localhost:3000
@@ -57,7 +57,7 @@ docker run -d --rm -it -p 2022:2022 --name platform -v $(pwd):/usr/local/srs-clo
   --add-host redis:127.0.0.1 --env REDIS_HOST=127.0.0.1 --add-host mgmt.srs.local:127.0.0.1 \
   --env CLOUD=DOCKER --env MGMT_DOCKER=true --env SRS_DOCKERIZED=true --env NODE_ENV=development \
   -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  -w /usr/local/srs-cloud/platform platform-dev bash
+  -w /usr/local/srs-cloud platform-dev bash
 ```
 
 > Note: We don't use the `/data` as global storage.
@@ -65,13 +65,13 @@ docker run -d --rm -it -p 2022:2022 --name platform -v $(pwd):/usr/local/srs-clo
 Build platform and UI in docker:
 
 ```bash
-docker exec -it platform make -j16
+docker exec -it platform make -j
 ```
 
 Run platform in docker:
 
 ```bash
-docker exec -it platform ./bootstrap
+docker exec -it platform ./platform/bootstrap
 ```
 
 Stop redis and SRS:

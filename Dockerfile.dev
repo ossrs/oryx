@@ -27,4 +27,4 @@ COPY --from=srs /usr/local/srs /usr/local/srs
 RUN rm -rf /data && ln -sf /usr/local/srs-cloud/platform/containers/data /data
 
 # Setup the work directory to platform.
-WORKDIR /usr/local/srs-cloud/platform
+WORKDIR /usr/local/srs-cloud

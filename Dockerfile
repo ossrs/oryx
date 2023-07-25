@@ -13,22 +13,22 @@ RUN echo "BUILDPLATFORM: $BUILDPLATFORM, TARGETPLATFORM: $TARGETPLATFORM, TARGET
 COPY --from=node /usr/local/bin /usr/local/bin
 COPY --from=node /usr/local/lib /usr/local/lib
 
+ADD releases /g/releases
+ADD mgmt /g/mgmt
 ADD platform /g/platform
+ADD ui /g/ui
 
 # Note that we only build the platform without ui, because already build ui for all OS.
 # See platform.yml command:
 #     make ui-build-cn && make ui-build-en
-WORKDIR /g/platform
-RUN make platform-clean && make platform-build
-RUN make ui-clean && make ui-build-cn && make ui-build-en
-RUN cd /g/platform/ui && rm -rf js-core node_modules package* public src
+WORKDIR /g
+RUN make clean && make -j && make install
 
 # http://releases.ubuntu.com/focal/
 #FROM ${ARCH}ubuntu:focal AS dist
 FROM ${ARCH}ossrs/srs-cloud:focal-1 AS dist
 
-COPY --from=build /g/platform /usr/local/srs-cloud/platform
-COPY --from=build /g/platform/platform /usr/local/srs-cloud/platform/platform
+COPY --from=build /usr/local/srs-cloud /usr/local/srs-cloud
 
 # Prepare data directory.
 RUN mkdir -p /data && \

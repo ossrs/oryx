@@ -726,7 +726,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 	})
 
 	// Serve UI at platform.
-	fileRoot := path.Join(conf.Pwd, "ui/build")
+	fileRoot := path.Join(conf.Pwd, "../ui/build")
 	if os.Getenv("REACT_APP_LOCALE") != "" {
 		fileRoot = path.Join(fileRoot, os.Getenv("REACT_APP_LOCALE"))
 	} else {

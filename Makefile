@@ -1,7 +1,7 @@
 .PHONY: default build install run uninstall upgrade test npm help clean
 
-SRS_PREFIX=/usr/local/srs-cloud
-__REAL_INSTALL=$(DESTDIR)$(SRS_PREFIX)
+PREFIX ?= /usr/local/srs-cloud
+__REAL_INSTALL = $(DESTDIR)$(PREFIX)
 
 default: build
 
@@ -13,29 +13,39 @@ help:
 	@echo "     test     	Run tests"
 
 build:
-	cd releases && make
-	cd platform && make build
+	make -C platform
+	make -C ui
+	make -C releases
 
 clean:
-	cd releases && make clean
-	cd platform && make clean
+	make -C platform clean
+	make -C ui clean
+	make -C releases clean
 
+install:
 ifeq ($(shell pwd), $(__REAL_INSTALL))
-install:
-	@echo "Install ok for $(__REAL_INSTALL)"
+	@echo "Ignore install for $(__REAL_INSTALL)"
 else
-install:
-	mkdir -p $(__REAL_INSTALL)
-	rm -rf $(__REAL_INSTALL)/usr
+	rm -rf $(__REAL_INSTALL)
+	mkdir -p $(__REAL_INSTALL)/mgmt $(__REAL_INSTALL)/platform $(__REAL_INSTALL)/ui
+	cp -rf mgmt $(__REAL_INSTALL)/mgmt
+	cp -rf ui/build $(__REAL_INSTALL)/ui/build
+	cp -f platform/platform $(__REAL_INSTALL)/platform/platform
+	cp -f platform/bootstrap $(__REAL_INSTALL)/platform/bootstrap
+	cp -rf platform/auto $(__REAL_INSTALL)/platform/auto
+	cp -rf platform/containers $(__REAL_INSTALL)/platform/containers
+	rm -rf $(__REAL_INSTALL)/platform/containers/objs/*
 	cp -rf usr $(__REAL_INSTALL)/usr
-	sed -i "s|/usr/local/srs-cloud|$(SRS_PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/srs-cloud.service
+	sed -i "s|/usr/local/srs-cloud|$(PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/srs-cloud.service
 endif
 
 uninstall:
-	@echo "rmdir $(SRS_PREFIX)"
-	rm -rf $(SRS_PREFIX)
+ifeq ($(shell pwd), $(__REAL_INSTALL))
+	@echo "Ignore uninstall for $(__REAL_INSTALL)"
+else
+	rm -rf $(__REAL_INSTALL)
 
 test:
 	cd platform && go test ./...
 	cd releases && go test ./...
-
+	cd ui && npm run test
