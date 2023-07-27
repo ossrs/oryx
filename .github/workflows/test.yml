@@ -20,7 +20,7 @@ jobs:
           node-version: '16'
           cache: 'npm'
           cache-dependency-path: |
-            platform/ui/package-lock.json
+            ui/package-lock.json
 
       # See https://github.com/actions/setup-go
       - name: Setup the Go

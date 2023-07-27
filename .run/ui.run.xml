@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="ui" type="js.build_tools.npm">
-    <package-json value="$PROJECT_DIR$/platform/ui/package.json" />
+    <package-json value="$PROJECT_DIR$/ui/package.json" />
     <command value="start" />
     <node-interpreter value="project" />
     <envs />
