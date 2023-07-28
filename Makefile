@@ -44,6 +44,7 @@ ifeq ($(shell pwd), $(__REAL_INSTALL))
 	@echo "Ignore uninstall for $(__REAL_INSTALL)"
 else
 	rm -rf $(__REAL_INSTALL)
+endif
 
 test:
 	cd platform && go test ./...
