@@ -17,7 +17,7 @@ jobs:
       - name: Setup the npm node
         uses: actions/setup-node@v2
         with:
-          node-version: '16'
+          node-version: '18'
           cache: 'npm'
           cache-dependency-path: |
             ui/package-lock.json
@@ -28,11 +28,7 @@ jobs:
         with:
           go-version: '>=1.16.0'
 
-      - name: Install and build
+      - name: Test by jest and Go
         run: |
-          make build
-
-      - name: Test by jest
-        run: |
-          make test
+          make -j && make test -j
 

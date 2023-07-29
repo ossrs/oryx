@@ -25,13 +25,13 @@ docker run --name srs --rm -it \
 
 Run the platform backend, or run in GoLand:
 
-```
+```bash
 (cd platform && go run .)
 ```
 
 Run the platform react ui, or run in WebStorm:
 
-```
+```bash
 (cd ui && npm install && npm start)
 ```
 
