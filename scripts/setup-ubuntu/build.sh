@@ -34,6 +34,8 @@ if [[ "$HELP" == yes ]]; then
     echo "  --extract     Whether to extract the final install file. Default: ${EXTRACT}"
     exit 0
 fi
+
+OUTPUT=$(cd ${WORK_DIR} && mkdir -p ${OUTPUT} && cd ${OUTPUT} && pwd)
 echo "Install with options: LANGUAGE=${LANGUAGE}, VERSION=${VERSION}, EXTRACT=${EXTRACT}, OUTPUT=${OUTPUT}"
 
 TMP_DIR="/tmp/srs-cloud-$(date +%s)" && TARGET_DIR="${TMP_DIR}/srs-cloud" &&
