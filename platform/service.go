@@ -209,7 +209,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			}
 
 			// Initialize the system password, save to env.
-			envFile := path.Join(conf.Pwd, ".env")
+			envFile := path.Join(conf.Pwd, "containers/data/config/.env")
 			if envs, err := godotenv.Read(envFile); err != nil {
 				return errors.Wrapf(err, "load envs from %v", envFile)
 			} else {

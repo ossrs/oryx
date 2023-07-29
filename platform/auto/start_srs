@@ -10,28 +10,25 @@ cd ${WORK_DIR}
 echo "Start SRS server, WORK_DIR:${WORK_DIR}"
 
 # Get the metadata of machine.
-if [[ -f ${WORK_DIR}/.env ]]; then source ${WORK_DIR}/.env; fi
+if [[ -f ${WORK_DIR}/containers/data/config/.env ]]; then source ${WORK_DIR}/containers/data/config/.env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 
-if [[ -d /usr/local/srs ]]; then
-  SRS_PARAMS="-c /usr/local/srs/conf/lighthouse.conf"
-  echo "Run srs-server $SRS_PARAMS"
+SRS_PARAMS="-c ${WORK_DIR}/containers/conf/srs.release.conf"
+echo "Run srs-server $SRS_PARAMS"
 
-  # Current directory should be /usr/local/srs-cloud/platform
-  /usr/local/srs/objs/srs $SRS_PARAMS &&
-  SRS_PID_FILE="./objs/srs.pid"
-  if [[ $? -ne 0 ]]; then echo "Start SRS failed"; exit 1; fi
+# Current directory should be /usr/local/srs-cloud/platform
+/usr/local/srs/objs/srs $SRS_PARAMS &&
+SRS_PID_FILE="./objs/srs.pid"
+if [[ $? -ne 0 ]]; then echo "Start SRS failed"; exit 1; fi
 
-  for ((i=0; i<10; i++)); do
-    if [[ -f $SRS_PID_FILE ]]; then
-      ps -p `cat $SRS_PID_FILE` 1>/dev/null 2>/dev/null &&
-      echo "SRS server started, pid=`cat $SRS_PID_FILE`" &&
-      break
-    fi
-    sleep 0.3
-  done
-
-  ps -p `cat $SRS_PID_FILE` 1>/dev/null 2>/dev/null
-  if [[ $? -ne 0 ]]; then echo "Check SRS failed"; exit 1; fi
+for ((i=0; i<10; i++)); do
+if [[ -f $SRS_PID_FILE ]]; then
+  ps -p `cat $SRS_PID_FILE` 1>/dev/null 2>/dev/null &&
+  echo "SRS server started, pid=`cat $SRS_PID_FILE`" &&
+  break
 fi
+sleep 0.3
+done
 
+ps -p `cat $SRS_PID_FILE` 1>/dev/null 2>/dev/null
+if [[ $? -ne 0 ]]; then echo "Check SRS failed"; exit 1; fi

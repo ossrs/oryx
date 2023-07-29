@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"syscall"
@@ -75,9 +76,11 @@ func doMain(ctx context.Context) error {
 		}
 
 		// Note that we only use .env in mgmt.
-		envFile := path.Join(conf.Pwd, ".env")
-		if err := godotenv.Load(envFile); err != nil {
-			return errors.Wrapf(err, "load %v", envFile)
+		envFile := path.Join(conf.Pwd, "containers/data/config/.env")
+		if _, err := os.Stat(envFile); err == nil {
+			if err := godotenv.Load(envFile); err != nil {
+				return errors.Wrapf(err, "load %v", envFile)
+			}
 		}
 	}
 
@@ -434,25 +437,44 @@ func initPlatform(ctx context.Context) error {
 
 // Initialize the platform before thread run.
 func initMmgt(ctx context.Context) error {
-	envFile := path.Join(conf.Pwd, ".env")
+	// Always create the data dir and sub dirs.
+	dataDir := filepath.Join(conf.Pwd, "containers", "data")
+	if _, err := os.Stat(dataDir); !os.IsNotExist(err) {
+		if err := os.RemoveAll(dataDir); err != nil {
+			return errors.Wrapf(err, "remove data dir %s", dataDir)
+		}
+	}
+
+	dirs := []string{"redis", "config", "dvr", "record", "vod", "upload", "vlive"}
+	for _, dir := range dirs {
+		if err := os.MkdirAll(filepath.Join(dataDir, dir), 0755); err != nil {
+			return errors.Wrapf(err, "create dir %s", dir)
+		}
+	}
 
 	// Refresh the env file.
-	if envs, err := godotenv.Read(envFile); err != nil {
-		return errors.Wrapf(err, "load envs")
-	} else {
-		envs["CLOUD"] = conf.Cloud
-		envs["REGION"] = conf.Region
-		envs["SOURCE"] = conf.Source
-		envs["REGISTRY"] = conf.Registry
-		if os.Getenv("MGMT_PASSWORD") != "" {
-			envs["MGMT_PASSWORD"] = os.Getenv("MGMT_PASSWORD")
+	envs := map[string]string{}
+	envFile := path.Join(conf.Pwd, "containers/data/config/.env")
+	if _, err := os.Stat(envFile); err == nil {
+		if v, err := godotenv.Read(envFile); err != nil {
+			return errors.Wrapf(err, "load envs")
+		} else {
+			envs = v
 		}
-
-		if err := godotenv.Write(envs, envFile); err != nil {
-			return errors.Wrapf(err, "write %v", envFile)
-		}
-		logger.Tf(ctx, "Refresh %v ok", envFile)
 	}
+
+	envs["CLOUD"] = conf.Cloud
+	envs["REGION"] = conf.Region
+	envs["SOURCE"] = conf.Source
+	envs["REGISTRY"] = conf.Registry
+	if os.Getenv("MGMT_PASSWORD") != "" {
+		envs["MGMT_PASSWORD"] = os.Getenv("MGMT_PASSWORD")
+	}
+
+	if err := godotenv.Write(envs, envFile); err != nil {
+		return errors.Wrapf(err, "write %v", envFile)
+	}
+	logger.Tf(ctx, "Refresh %v ok", envFile)
 
 	return nil
 }

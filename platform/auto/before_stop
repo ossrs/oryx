@@ -8,7 +8,7 @@ echo "BASH_SOURCE=${BASH_SOURCE}, REALPATH=${REALPATH}, SCRIPT_DIR=${SCRIPT_DIR}
 cd ${WORK_DIR}
 
 # Get the metadata of machine.
-if [[ -f ${WORK_DIR}/.env ]]; then source ${WORK_DIR}/.env; fi
+if [[ -f ${WORK_DIR}/containers/data/config/.env ]]; then source ${WORK_DIR}/containers/data/config/.env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 
 echo "Try to notify the Redis server to save data"

@@ -13,7 +13,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#apt-get
 RUN apt update && apt-get install -y certbot && rm -rf /var/lib/apt/lists/*
 
-# For ui build.
+# Copy nodejs for ui build.
 COPY --from=node /usr/local/bin /usr/local/bin
 COPY --from=node /usr/local/lib /usr/local/lib
 # For redis server and tools.

@@ -87,7 +87,7 @@ It's the same as production online.
 Build a docker image:
 
 ```bash
-docker build -t test -f scripts/setup-ubuntu/Dockerfile.test .
+docker build -t test -f Dockerfile.script .
 ```
 
 Create a docker container in daemon:
