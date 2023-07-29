@@ -2,6 +2,7 @@ ARG ARCH
 
 FROM ${ARCH}ossrs/node:18 AS node
 FROM ${ARCH}redis:5.0 AS redis
+FROM ${ARCH}ossrs/srs:ubuntu20 AS go
 
 # Usage:
 # Build image:
@@ -15,16 +16,19 @@ FROM ${ARCH}redis:5.0 AS redis
 
 #FROM ubuntu:focal
 # See https://hub.docker.com/r/jrei/systemd-ubuntu/tags
-FROM ${ARCH}jrei/systemd-ubuntu:focal
-
-# Copy nodejs for ui build.
-COPY --from=node /usr/local/bin /usr/local/bin
-COPY --from=node /usr/local/lib /usr/local/lib
-# For redis tools only, because it run redis in docker.
-COPY --from=redis /usr/local/bin/redis-cli /usr/local/bin/redis-cli
+FROM ${ARCH}jrei/systemd-ubuntu:focal AS dist
 
 # https://serverfault.com/questions/949991/how-to-install-tzdata-on-a-ubuntu-docker-image
 ENV DEBIAN_FRONTEND=noninteractive
 
 # See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#apt-get
 RUN apt update -y && apt-get install -y docker.io
+
+# Copy nodejs for ui build.
+COPY --from=node /usr/local/bin /usr/local/bin
+COPY --from=node /usr/local/lib /usr/local/lib
+# For redis tools only, because it run redis in docker.
+COPY --from=redis /usr/local/bin/redis-cli /usr/local/bin/redis-cli
+# For build platform in docker.
+COPY --from=go /usr/local/go /usr/local/go
+ENV PATH=$PATH:/usr/local/go/bin

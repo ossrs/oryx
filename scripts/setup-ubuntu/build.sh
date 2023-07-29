@@ -63,11 +63,6 @@ cp ${WORK_DIR}/mgmt/bootstrap ${TARGET_DIR}/mgmt/bootstrap
 ret=$?; if [[ 0 -ne ${ret} ]]; then echo "cp bootstrap failed, ret=$ret"; exit $ret; fi
 echo "Copy bootstrap to ${TARGET_DIR}/mgmt"
 
-mkdir -p ${TARGET_DIR}/platform/containers &&
-cp ${WORK_DIR}/platform/containers/.gitkeep ${TARGET_DIR}/platform/containers/.gitkeep
-ret=$?; if [[ 0 -ne ${ret} ]]; then echo "cp containers failed, ret=$ret"; exit $ret; fi
-echo "Copy containers to ${TARGET_DIR}/platform"
-
 cat << END > ${TARGET_DIR}/scripts/setup-ubuntu/.env
 LANGUAGE=${LANGUAGE}
 IMAGE=ossrs/srs-cloud:${VERSION}

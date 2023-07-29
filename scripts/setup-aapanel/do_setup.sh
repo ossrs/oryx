@@ -35,16 +35,10 @@ if [[ $? -ne 0 ]]; then echo "Setup bootstrap failed"; exit 1; fi
 cat << END > ${SRS_HOME}/mgmt/.env
 CLOUD=AAPANEL
 REACT_APP_LOCALE=en
-END
-if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
-
-# Setup extra env.
-mkdir -p $SRS_HOME/mgmt/containers/bin &&
-cat << END > $SRS_HOME/mgmt/containers/bin/.env
 # Please use BT to configure the domain and HTTPS.
 SRS_HTTPS=off
 END
-if [[ $? -ne 0 ]]; then echo "Setup extra env failed"; exit 1; fi
+if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
 
 ########################################################################################################################
 cd ${SRS_HOME} && make install

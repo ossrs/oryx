@@ -44,7 +44,6 @@ Run srs-cloud in a docker.
 First, build image:
 
 ```bash
-docker rm -f platform 2>/dev/null || echo 'OK' &&
 docker rmi platform-dev 2>/dev/null || echo 'OK' &&
 docker build -t platform-dev -f Dockerfile.dev .
 ```
@@ -87,16 +86,19 @@ It's the same as production online.
 Build a docker image:
 
 ```bash
+docker rm -f platform 2>/dev/null || echo 'OK' &&
+docker rmi test 2>/dev/null || echo 'OK' &&
 docker build -t test -f Dockerfile.script .
 ```
 
 Create a docker container in daemon:
 
 ```bash
+docker rm -f platform 2>/dev/null || echo 'OK' &&
 docker run \
     -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
-    -d --rm -it -v $(pwd):/g -w /g --name=install test
+    -d --rm -it -v $(pwd):/g -w /g --name=platform test
 ```
 
 Build and save the platform image to file:
@@ -110,23 +112,19 @@ docker save -o platform.tar platform:latest
 Enter the docker container:
 
 ```bash
-docker exec -it install /bin/bash
-```
-
-Import the platform image from file:
-
-```bash
-docker load -i platform.tar && 
-version=$(bash scripts/setup-ubuntu/version.sh) &&
-docker tag platform:latest ossrs/srs-cloud:$version &&
-docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
-docker images
+docker exec -it platform bash -c '
+    docker load -i platform.tar && 
+    version=$(bash scripts/setup-ubuntu/version.sh) &&
+    docker tag platform:latest ossrs/srs-cloud:$version &&
+    docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+    docker images
+'
 ```
 
 Test the build script, in the docker container:
 
 ```bash
-bash scripts/setup-ubuntu/build.sh --extract
+docker exec -it platform bash scripts/setup-ubuntu/build.sh --extract
 ```
 
 > Note: Use `--extract` to extract the platform tar file.
@@ -136,17 +134,31 @@ bash scripts/setup-ubuntu/build.sh --extract
 Test the install script, in the docker container:
 
 ```bash
-bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose
+docker exec -it platform bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose
 ```
 
 > Note: Use `--verbose` to show the detail log.
 
-> Note: Use `--debug-home $(pwd)` to map current directory to platform container.
+Or debug the install script, to map current directory to platform container:
+
+```bash
+docker exec -it platform make -C platform &&
+docker exec -it platform bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose --debug-home /g
+```
+
+To check the running service in docker:
+
+```bash
+docker exec -it platform systemctl status srs-cloud
+docker exec -it platform docker ps --filter name=srs-cloud
+docker exec -it platform docker logs -f srs-cloud
+docker exec -it platform docker exec -it srs-cloud ls -lh containers
+```
 
 Test the uninstall script, in the docker container:
 
 ```bash
-bash build/srs-cloud/scripts/setup-ubuntu/uninstall.sh
+docker exec -it platform bash build/srs-cloud/scripts/setup-ubuntu/uninstall.sh
 ```
 
 ## Release

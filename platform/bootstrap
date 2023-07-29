@@ -10,16 +10,6 @@ cd ${WORK_DIR}
 APP_ARGS=$@
 echo "Run srs-cloud with args: ${APP_ARGS}, WORK_DIR:${WORK_DIR}"
 
-# When env is ok, we try to load extra envs. Note that these envs is only for mgmt, we should pass to container if
-# container wants to use it.
-if [[ -f ${WORK_DIR}/containers/bin/.env ]]; then
-  source ${WORK_DIR}/containers/bin/.env
-fi
-
-# Get the metadata of machine.
-if [[ -f ${WORK_DIR}/containers/data/config/.env ]]; then source ${WORK_DIR}/containers/data/config/.env; fi
-echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
-
 # Start redis.
 bash auto/start_redis
 if [[ $? -ne 0 ]]; then echo "Start redis failed"; exit 1; fi

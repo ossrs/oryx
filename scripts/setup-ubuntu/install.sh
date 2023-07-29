@@ -138,8 +138,6 @@ fi
 
 echo "Start to create data and config files"
 mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env &&
-(cd ${SRS_HOME}/platform/containers && rm -rf data && ln -sf ${DATA_HOME} data) &&
-(cd ${SRS_HOME}/platform && rm -f .env && ln -sf ${DATA_HOME}/config/.env .env) &&
 rm -rf ~/credentials.txt && ln -sf ${DATA_HOME}/config/.env ~/credentials.txt
 if [[ $? -ne 0 ]]; then echo "Create /data/config/.env failed"; exit 1; fi
 echo "Create data and config files ok"
@@ -177,22 +175,16 @@ echo "Start to setup .env"
 if [[ -f ${DATA_HOME}/config/.env && -s ${DATA_HOME}/config/.env ]]; then
     echo "The .env already exists, skip"
 else
-    cat << END > ${SRS_HOME}/platform/.env
+    cat << END > ${DATA_HOME}/config/.env
 CLOUD=BIN
 REGION=${REGION}
 REACT_APP_LOCALE=${LANGUAGE}
 IMAGE=${IMAGE_URL}
-END
-    if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
-fi
-
-# Setup extra env.
-mkdir -p $SRS_HOME/platform/containers/bin &&
-cat << END > $SRS_HOME/platform/containers/bin/.env
 # Please use BT to configure the domain and HTTPS.
 SRS_HTTPS=off
 END
-if [[ $? -ne 0 ]]; then echo "Setup extra env failed"; exit 1; fi
+    if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
+fi
 
 # Update the docker images.
 echo "Cache docker images" &&
@@ -204,7 +196,7 @@ else
 fi
 
 # If install ok, the directory should exists.
-if [[ ! -d ${SRS_HOME} || ! -d ${SRS_HOME}/platform ]]; then
+if [[ ! -d ${SRS_HOME} ]]; then
   echo "Install srs-cloud failed"; exit 1;
 fi
 

@@ -34,6 +34,7 @@ else
 	cp -f platform/bootstrap $(__REAL_INSTALL)/platform/bootstrap
 	cp -rf platform/auto $(__REAL_INSTALL)/platform/auto
 	cp -rf platform/containers $(__REAL_INSTALL)/platform/containers
+	(cd platform && cp -P dvr objs record upload vlive vod $(__REAL_INSTALL)/platform)
 	rm -rf $(__REAL_INSTALL)/platform/containers/objs/*
 	cp -rf usr $(__REAL_INSTALL)/usr
 	sed -i "s|/usr/local/srs-cloud|$(PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/srs-cloud.service

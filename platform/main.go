@@ -439,7 +439,7 @@ func initPlatform(ctx context.Context) error {
 func initMmgt(ctx context.Context) error {
 	// Always create the data dir and sub dirs.
 	dataDir := filepath.Join(conf.Pwd, "containers", "data")
-	if _, err := os.Stat(dataDir); !os.IsNotExist(err) {
+	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
 		if err := os.RemoveAll(dataDir); err != nil {
 			return errors.Wrapf(err, "remove data dir %s", dataDir)
 		}

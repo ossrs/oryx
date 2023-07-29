@@ -8,7 +8,7 @@ clean:
 	rm -f platform
 
 ./platform: *.go Makefile go.mod
-	go build .
+	go build -mod=vendor .
 
 # Build for alpine, see https://www.cloudbees.com/blog/building-minimal-docker-containers-for-go-applications
 alpine:
