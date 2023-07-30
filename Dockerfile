@@ -18,6 +18,7 @@ ADD mgmt /g/mgmt
 ADD platform /g/platform
 ADD ui /g/ui
 ADD usr /g/usr
+ADD test /g/test
 ADD Makefile /g/Makefile
 
 # Note that we only build the platform without ui, because already build ui for all OS.

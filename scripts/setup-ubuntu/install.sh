@@ -137,8 +137,7 @@ if [[ ${VERBOSE} == yes ]]; then
 fi
 
 echo "Start to create data and config files"
-mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env &&
-rm -rf ~/credentials.txt && ln -sf ${DATA_HOME}/config/.env ~/credentials.txt
+mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env
 if [[ $? -ne 0 ]]; then echo "Create /data/config/.env failed"; exit 1; fi
 echo "Create data and config files ok"
 
@@ -206,7 +205,7 @@ cp ${SCRIPT_DIR}/init.d.sh /etc/init.d/srs_cloud &&
 chmod +x /etc/init.d/srs_cloud
 if [[ $? -ne 0 ]]; then echo "Setup init.d script failed"; exit 1; fi
 
-# Create srs-cloud service, and the credential file.
+# Create srs-cloud service.
 # Remark: Never start the service, because the IP will change for new machine created.
 cd ${SRS_HOME} &&
 cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&

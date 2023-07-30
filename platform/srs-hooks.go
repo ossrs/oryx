@@ -24,7 +24,6 @@ import (
 
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
-	"github.com/golang-jwt/jwt/v4"
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
@@ -71,7 +70,7 @@ func handleDockerHooksService(ctx context.Context, handler *http.ServeMux) error
 			var action string
 			var streamObj SrsStream
 			if err := json.Unmarshal(b, &struct {
-				Action   *string `json:"action"`
+				Action *string `json:"action"`
 				*SrsStream
 			}{
 				Action: &action, SrsStream: &streamObj,
@@ -153,27 +152,18 @@ func handleDockerHooksService(ctx context.Context, handler *http.ServeMux) error
 
 	secretQueryHandler := func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
 			var token string
-			if err := json.Unmarshal(b, &struct {
+			if err := ParseBody(ctx, r.Body, &struct {
 				Token *string `json:"token"`
 			}{
 				Token: &token,
 			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
+				return errors.Wrapf(err, "parse body")
 			}
 
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
 			}
 
 			publish, err := rdb.HGet(ctx, SRS_AUTH_SECRET, "pubSecret").Result()
@@ -208,31 +198,23 @@ func handleDockerHooksService(ctx context.Context, handler *http.ServeMux) error
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
 			var token, secret string
-			if err := json.Unmarshal(b, &struct {
+			if err := ParseBody(ctx, r.Body, &struct {
 				Token  *string `json:"token"`
 				Secret *string `json:"secret"`
 			}{
 				Token: &token, Secret: &secret,
 			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
-			}
-			if secret == "" {
-				return errors.New("no secret")
+				return errors.Wrapf(err, "parse body")
 			}
 
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			if secret == "" {
+				return errors.New("no secret")
 			}
 
 			if err := rdb.HSet(ctx, SRS_AUTH_SECRET, "pubSecret", secret).Err(); err != nil {
@@ -254,29 +236,20 @@ func handleDockerHooksService(ctx context.Context, handler *http.ServeMux) error
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
 			var token string
 			var pubNoAuth bool
-			if err := json.Unmarshal(b, &struct {
+			if err := ParseBody(ctx, r.Body, &struct {
 				Token     *string `json:"token"`
 				PubNoAuth *bool   `json:"pubNoAuth"`
 			}{
 				Token: &token, PubNoAuth: &pubNoAuth,
 			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
+				return errors.Wrapf(err, "parse body")
 			}
 
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
 			}
 
 			if err := rdb.HSet(ctx, SRS_AUTH_SECRET, "pubNoAuth", fmt.Sprintf("%v", pubNoAuth)).Err(); err != nil {
@@ -296,35 +269,27 @@ func handleDockerHooksService(ctx context.Context, handler *http.ServeMux) error
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
 			var token, secretId, secretKey string
-			if err := json.Unmarshal(b, &struct {
+			if err := ParseBody(ctx, r.Body, &struct {
 				Token     *string `json:"token"`
 				SecretID  *string `json:"secretId"`
 				SecretKey *string `json:"secretKey"`
 			}{
 				Token: &token, SecretID: &secretId, SecretKey: &secretKey,
 			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
+				return errors.Wrapf(err, "parse body")
 			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
 			if secretId == "" {
 				return errors.New("no secretId")
 			}
 			if secretKey == "" {
 				return errors.New("no secretKey")
-			}
-
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
 			}
 
 			// Query, verify and setup the secret ID and key.

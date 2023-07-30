@@ -9,7 +9,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -25,7 +24,6 @@ import (
 
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 )
 
@@ -55,30 +53,21 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
 			var token, action string
 			var userConf ForwardConfigure
-			if err := json.Unmarshal(b, &struct {
+			if err := ParseBody(ctx, r.Body, &struct {
 				Token  *string `json:"token"`
 				Action *string `json:"action"`
 				*ForwardConfigure
 			}{
 				Token: &token, Action: &action, ForwardConfigure: &userConf,
 			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
+				return errors.Wrapf(err, "parse body")
 			}
 
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
 			}
 
 			allowedActions := []string{"update"}
@@ -159,27 +148,18 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
 			var token string
-			if err := json.Unmarshal(b, &struct {
+			if err := ParseBody(ctx, r.Body, &struct {
 				Token *string `json:"token"`
 			}{
 				Token: &token,
 			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
+				return errors.Wrapf(err, "parse body")
 			}
 
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
 			}
 
 			res := make([]map[string]interface{}, 0)
@@ -628,7 +608,7 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 		// If we got a PID, sleep for a while, to avoid too fast restart.
 		if v.PID > 0 {
 			select {
-			case <- ctx.Done():
+			case <-ctx.Done():
 			case <-time.After(1 * time.Second):
 			}
 		}

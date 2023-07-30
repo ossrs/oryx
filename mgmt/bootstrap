@@ -30,6 +30,7 @@ echo "Start platform container"
 CMD="docker run -v ${DATA_HOME}:/data ${EXTRA_PARAMS}
     -p ${MGMT_PORT}:2022 -p ${RTMP_PORT}:1935/tcp -p ${API_PORT}:1985/tcp -p
     ${HTTP_PORT}:8080/tcp -p ${RTC_PORT}:8000/udp -p ${SRT_PORT}:10080/udp
+    --log-driver=json-file --log-opt=max-size=1g --log-opt=max-file=3
     --restart no --rm -it --name srs-cloud --detach
     ${IMAGE}"
 echo $CMD && $CMD

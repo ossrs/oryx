@@ -131,3 +131,4 @@ t.md
 /build
 /*.tar
 /srs-cloud2
+/test/srs-cloud.test

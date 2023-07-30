@@ -125,9 +125,7 @@ function SettingNginx() {
 }
 
 function SettingOpenApi({copyToClipboard}) {
-  const [apiSecretCopied, setAPISecretCopied] = React.useState();
   const [apiSecret, setAPISecret] = React.useState();
-  const [apiToken, setApiToken] = React.useState();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
@@ -141,21 +139,9 @@ function SettingOpenApi({copyToClipboard}) {
     }).catch(handleError);
   }, [handleError]);
 
-  const createApiToken = React.useCallback((e) => {
-    e.preventDefault();
-
-    axios.post('/terraform/v1/mgmt/secret/token', {
-      apiSecret
-    }).then(res => {
-      setApiToken(res.data);
-      console.log(`OpenAPI Example: Get access_token ok, data=${JSON.stringify(res.data.data)}`);
-    }).catch(handleError);
-  }, [handleError, apiSecret]);
-
   const copyApiSecret = React.useCallback((e, apiSecret) => {
     copyToClipboard(e, apiSecret);
-    setAPISecretCopied(true);
-  }, [copyToClipboard, setAPISecretCopied]);
+  }, [copyToClipboard]);
 
   return (
     <Accordion defaultActiveKey="0">
@@ -170,7 +156,6 @@ function SettingOpenApi({copyToClipboard}) {
           <ul>
             <li> {t('openapi.usage1')} </li>
             <li> {t('openapi.usage2')} </li>
-            <li> {t('openapi.usage3')} </li>
           </ul>
         </Accordion.Body>
       </Accordion.Item>
@@ -181,7 +166,7 @@ function SettingOpenApi({copyToClipboard}) {
             <Form.Group className="mb-3">
               <Form.Label>ApiSecret</Form.Label>
               <Form.Text> * {t('openapi.secretTip')}</Form.Text>
-              <Form.Control as="input" type='password' rows={1} defaultValue={apiSecret} readOnly={true}/>
+              <Form.Control as="input" type='input' rows={1} defaultValue={apiSecret} readOnly={true}/>
             </Form.Group>
             <Button variant="primary" type="submit" onClick={(e) => copyApiSecret(e, apiSecret)}>
               {t('openapi.secretCopy')}
@@ -189,43 +174,10 @@ function SettingOpenApi({copyToClipboard}) {
           </Form>
         </Accordion.Body>
       </Accordion.Item>
-      <Accordion.Item eventKey="2">
-        <Accordion.Header>{t('openapi.token')}</Accordion.Header>
-        <Accordion.Body>
-          {
-            !apiSecretCopied ?
-              <div>
-                {t('openapi.secretEmpty')}<code>{t('openapi.secret')}</code>
-              </div>
-              :
-              <Form>
-                <Form.Group className="mb-3">
-                  <Form.Label>API</Form.Label>
-                  <Form.Control as="textarea" rows={1} defaultValue='POST /terraform/v1/mgmt/secret/token'
-                                readOnly={true}/>
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Body</Form.Label>
-                  <pre>
-                        {JSON.stringify({apiSecret}, null, 2)}
-                      </pre>
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  {apiToken && <><Form.Label>Response</Form.Label>
-                    <pre>{JSON.stringify(apiToken, null, 2)}</pre>
-                  </>}
-                </Form.Group>
-                <Button variant="primary" type="submit" onClick={(e) => createApiToken(e)}>
-                  Run
-                </Button> &nbsp;
-              </Form>
-          }
-        </Accordion.Body>
-      </Accordion.Item>
       <Accordion.Item eventKey="3">
         <Accordion.Header>{t('openapi.apiPublishSecret')}</Accordion.Header>
         <Accordion.Body>
-          <RunOpenAPI token={apiToken?.data?.token} api='/terraform/v1/hooks/srs/secret/query' />
+          <RunOpenAPI apiSecret={apiSecret} api='/terraform/v1/hooks/srs/secret/query' />
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
@@ -392,17 +344,17 @@ function SettingHttpsDisabled() {
 function RunOpenAPI(props) {
   const [showResult, setShowResult] = React.useState();
   const {t} = useTranslation();
-  const {token, api} = props;
+  const {apiSecret, api, data} = props;
 
   const onClick = React.useCallback((e) => {
     e.preventDefault();
     setShowResult(!showResult);
   }, [showResult]);
 
-  if (!token) {
+  if (!apiSecret) {
     return (
       <div>
-        {t('openapi.tokenEmpty')}<code>{t('openapi.token')}</code>
+        {t('openapi.secretEmpty')}<code>{t('openapi.secret')}</code>
       </div>
     );
   }
@@ -410,15 +362,22 @@ function RunOpenAPI(props) {
   return (
     <Form>
       <Form.Group className="mb-3">
-        <Form.Label>API</Form.Label>
+        <Form.Label>URL</Form.Label>
         <Form.Control as="textarea" rows={1} defaultValue={`POST ${api}`} readOnly={true} />
       </Form.Group>
       <Form.Group className="mb-3">
-        <Form.Label>Body </Form.Label>
-        <pre>
-          {JSON.stringify({token: `${token || ''}`}, null, 2)}
-        </pre>
+        <Form.Label>Headers</Form.Label>
+        <Form.Control as="textarea" rows={1} defaultValue={`Authorization: Bearer ${apiSecret}`} readOnly={true} />
       </Form.Group>
+      {data &&
+        <Form.Group className="mb-3">
+          <Form.Label>Body</Form.Label>
+          <Form.Control as="textarea" rows={5} defaultValue={JSON.stringify(data, null, 2)} readOnly={true} />
+          <pre>
+
+          </pre>
+        </Form.Group>
+      }
       <Form.Group className="mb-3">
         { showResult && <SrsErrorBoundary><OpenAPIResult {...props} /></SrsErrorBoundary> }
       </Form.Group>
@@ -429,18 +388,20 @@ function RunOpenAPI(props) {
   );
 }
 
-function OpenAPIResult({token, api}) {
+function OpenAPIResult({apiSecret, api, data}) {
   const [openAPIRes, setOpenAPIRes] = React.useState();
   const handleError = useErrorHandler();
 
   React.useEffect(() => {
-    axios.post(api, {
-      token: token
+    axios.post(api, data, {
+      headers: {
+        'Authorization': `Bearer ${apiSecret}`,
+      }
     }).then(res => {
       setOpenAPIRes(res.data);
       console.log(`OpenAPI: Run api=${api} ok, data=${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
-  }, [handleError, token, api]);
+  }, [handleError, apiSecret, api, data]);
 
   return (
     <>

@@ -9,7 +9,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,7 +24,6 @@ import (
 
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/tencentyun/cos-go-sdk-v5"
 )
@@ -63,27 +61,18 @@ func (v *DvrWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
 			var token string
-			if err := json.Unmarshal(b, &struct {
+			if err := ParseBody(ctx, r.Body, &struct {
 				Token *string `json:"token"`
 			}{
 				Token: &token,
 			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
+				return errors.Wrapf(err, "parse body")
 			}
 
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
 			}
 
 			all, err := rdb.HGet(ctx, SRS_DVR_PATTERNS, "all").Result()
@@ -114,29 +103,20 @@ func (v *DvrWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
 			var token string
 			var all bool
-			if err := json.Unmarshal(b, &struct {
+			if err := ParseBody(ctx, r.Body, &struct {
 				Token *string `json:"token"`
 				All   *bool   `json:"all"`
 			}{
 				Token: &token, All: &all,
 			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
+				return errors.Wrapf(err, "parse body")
 			}
 
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
 			}
 
 			if all, err := rdb.HSet(ctx, SRS_DVR_PATTERNS, "all", fmt.Sprintf("%v", all)).Result(); err != nil && err != redis.Nil {
@@ -155,27 +135,18 @@ func (v *DvrWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
 			var token string
-			if err := json.Unmarshal(b, &struct {
+			if err := ParseBody(ctx, r.Body, &struct {
 				Token *string `json:"token"`
 			}{
 				Token: &token,
 			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
+				return errors.Wrapf(err, "parse body")
 			}
 
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
 			}
 
 			keys, cursor, err := rdb.HScan(ctx, SRS_DVR_M3U8_ARTIFACT, 0, "*", 100).Result()
@@ -208,8 +179,8 @@ func (v *DvrWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 					"duration": duration,
 					"size":     size,
 					// For DVR only.
-					"bucket":   metadata.Bucket,
-					"region":   metadata.Region,
+					"bucket": metadata.Bucket,
+					"region": metadata.Region,
 				})
 			}
 
@@ -753,7 +724,7 @@ func (v *DvrM3u8Stream) serveMessage(ctx context.Context, msg *SrsOnHlsObject) e
 	// See https://cloud.tencent.com/document/product/436/64980
 	opt := cos.ObjectPutOptions{
 		ObjectPutHeaderOptions: &cos.ObjectPutHeaderOptions{
-			ContentType: "video/MP2T",
+			ContentType:   "video/MP2T",
 			ContentLength: int64(msg.TsFile.Size),
 		},
 	}
@@ -784,7 +755,7 @@ func (v *DvrM3u8Stream) finishM3u8(ctx context.Context) error {
 	// See https://cloud.tencent.com/document/product/436/64980
 	opt := cos.ObjectPutOptions{
 		ObjectPutHeaderOptions: &cos.ObjectPutHeaderOptions{
-			ContentType: contentType,
+			ContentType:   contentType,
 			ContentLength: int64(len(m3u8Body)),
 		},
 	}

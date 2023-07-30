@@ -68,18 +68,48 @@ jobs:
           docker tag platform:latest ossrs/srs-cloud:$SRS_TAG &&
           docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG &&
           docker images
-      - name: Test build install package
+      - name: Build package
         run: |
           bash scripts/setup-ubuntu/build.sh --language zh --version $SRS_TAG \
-            --output build --extract
+              --output build --extract
           du -sh build/*
-      - name: Test install package
+      - name: Install package
         run: |
           sudo bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose &&
           du -sh /usr/local/srs-cloud/*
-      - name: Check installed package
+      - name: Check service
         run: |
+          # Wait for service ready.
+          make -j -C test
+          ./test/srs-cloud.test -test.v -srs-log -endpoint http://localhost:2022 \
+              -wait-ready -check-api-secret=false \
+              -test.run TestApi_Empty
+          
+          echo "Record log of services."
+          docker ps -a
           systemctl status srs-cloud
+          journalctl -u srs-cloud -f >journalctl.log 2>&1 & pid_journalctl=$!
+          docker logs -f srs-cloud >docker.log 2>&1 & pid_docker=$!
+      - name: Test service
+        run: |
+          # We will handle the error by ourselves.
+          set +e
+          
+          SRS_PLATFORM_SECRET=$(docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token)
+          ./test/srs-cloud.test -test.v -wait-ready -srs-log -endpoint http://localhost:2022 \
+              -wait-ready -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET \
+              -init-password
+          ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
+          
+          echo "Stop service"
+          sudo systemctl stop srs-cloud
+          kill $pid_journalctl 2>/dev/null
+          kill $pid_docker 2>/dev/null
+          
+          echo "Log of journalctl.log" && cat journalctl.log
+          echo "Log of docker.log" && cat docker.log
+          
+          exit $ret
 
   final:
     name: Final

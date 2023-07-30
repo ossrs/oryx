@@ -1,0 +1,7 @@
+# github.com/joho/godotenv v1.5.1
+## explicit
+github.com/joho/godotenv
+# github.com/ossrs/go-oryx-lib v0.0.9
+## explicit
+github.com/ossrs/go-oryx-lib/errors
+github.com/ossrs/go-oryx-lib/logger

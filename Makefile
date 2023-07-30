@@ -6,7 +6,7 @@ __REAL_INSTALL = $(DESTDIR)$(PREFIX)
 default: build
 
 help:
-	@echo "Usage: make build|install|test"
+	@echo "Usage: make build|install|utest"
 	@echo "     default     Show help and quit"
 	@echo "     build       Build the project, npm install and build the ui"
 	@echo "     install     Copy files for installer"
@@ -15,11 +15,13 @@ help:
 build:
 	make -C platform
 	make -C ui
+	make -C test
 	make -C releases
 
 clean:
 	make -C platform clean
 	make -C ui clean
+	make -C test clean
 	make -C releases clean
 
 install:
@@ -48,6 +50,7 @@ else
 endif
 
 test:
-	cd platform && go test ./...
-	cd releases && go test ./...
+	cd platform && go test -v ./...
+	cd releases && go test -v ./...
+	cd test && go test -v -check-api-secret=false -test.run TestApi_Empty ./...
 	cd ui && npm run test

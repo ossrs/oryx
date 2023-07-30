@@ -27,10 +27,9 @@ You have the option to modify the volumes for srs-cloud and direct them to diffe
 
 * `/data` The global data directory.
     * `redis` The redis data directory, the publish secret and record configuration.
-    * `srs-cloud` The data directory for srs-cloud
-        * `config` The mgmt password and cloud configuration.
-        * `record` The record storage directory, save record files.
-        * `vlive` The storage directory for virtual live, save video files.
+    * `config` The mgmt password and cloud configuration.
+    * `record` The record storage directory, save record files.
+    * `vlive` The storage directory for virtual live, save video files.
 
 You can use environment variables to modify the settings.
 

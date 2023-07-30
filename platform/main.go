@@ -210,6 +210,26 @@ func initMgmtOS(ctx context.Context) (err error) {
 
 // Initialize the source for redis, note that we don't change the env.
 func initOS(ctx context.Context) (err error) {
+	// Create api secret if not exists, see setupApiSecret
+	if token, err := rdb.HGet(ctx, SRS_PLATFORM_SECRET, "token").Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hget %v token", SRS_PLATFORM_SECRET)
+	} else if token == "" {
+		token = os.Getenv("SRS_PLATFORM_SECRET")
+		if token == "" {
+			token = fmt.Sprintf("srs-v2-%v", strings.ReplaceAll(uuid.NewString(), "-", ""))
+		}
+
+		if err = rdb.HSet(ctx, SRS_PLATFORM_SECRET, "token", token).Err(); err != nil {
+			return errors.Wrapf(err, "hset %v token %v", SRS_PLATFORM_SECRET, token)
+		}
+
+		update := time.Now().Format(time.RFC3339)
+		if err = rdb.HSet(ctx, SRS_PLATFORM_SECRET, "update", update).Err(); err != nil {
+			return errors.Wrapf(err, "hset %v update %v", SRS_PLATFORM_SECRET, update)
+		}
+		logger.Tf(ctx, "Platform update api secret, token=%vB, at=%v", len(token), update)
+	}
+
 	// For platform, we must use the secret to access API of mgmt.
 	// Query the api secret from redis, cache it to env.
 	if os.Getenv("SRS_PLATFORM_SECRET") == "" {
@@ -414,22 +434,6 @@ func initPlatform(ctx context.Context) error {
 			return errors.Wrapf(err, "hset %v node %v", SRS_TENCENT_LH, nid)
 		}
 		logger.Tf(ctx, "Update node nid=%v", nid)
-	}
-
-	// Create api secret if not exists, see setupApiSecret
-	if token, err := rdb.HGet(ctx, SRS_PLATFORM_SECRET, "token").Result(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hget %v token", SRS_PLATFORM_SECRET)
-	} else if token == "" {
-		token = fmt.Sprintf("srs-v1-%v", strings.ReplaceAll(uuid.NewString(), "-", ""))
-		if err = rdb.HSet(ctx, SRS_PLATFORM_SECRET, "token", token).Err(); err != nil {
-			return errors.Wrapf(err, "hset %v token %v", SRS_PLATFORM_SECRET, token)
-		}
-
-		update := time.Now().Format(time.RFC3339)
-		if err = rdb.HSet(ctx, SRS_PLATFORM_SECRET, "update", update).Err(); err != nil {
-			return errors.Wrapf(err, "hset %v update %v", SRS_PLATFORM_SECRET, update)
-		}
-		logger.Tf(ctx, "Platform api secret update, token=%vB, update=%v", len(token), update)
 	}
 
 	return nil
