@@ -1091,3 +1091,59 @@ func (v *SrsStream) IsSRT() bool {
 func (v *SrsStream) IsRTC() bool {
 	return strings.Contains(v.Param, "upstream=rtc")
 }
+
+// ParseBody read the body from r, and unmarshal JSON to v.
+func ParseBody(ctx context.Context, r io.ReadCloser, v interface{}) error {
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		return errors.Wrapf(err, "read body")
+	}
+	defer r.Close()
+
+	if len(b) == 0 {
+		return nil
+	}
+
+	if err := json.Unmarshal(b, v); err != nil {
+		return errors.Wrapf(err, "json unmarshal %v", string(b))
+	}
+
+	return nil
+}
+
+// Authenticate check by Bearer or token.
+// If use bearer secret, there is the header Authorization: Bearer {apiSecret}.
+// If use token, there is a JWT token which is signed by apiSecret.
+func Authenticate(ctx context.Context, apiSecret, token string, header http.Header) error {
+	parseBearerToken := func(authorization string) (string, error) {
+		authParts := strings.Split(authorization, " ")
+		if len(authParts) != 2 || strings.ToLower(authParts[0]) != "bearer" {
+			return "", errors.New("Invalid Authorization format")
+		}
+
+		return authParts[1], nil
+	}
+
+	// Verify bearer secret first.
+	if authorization := header.Get("Authorization"); authorization != "" {
+		authSecret, err := parseBearerToken(authorization)
+		if err != nil {
+			return errors.Wrapf(err, "parse bearer token")
+		}
+
+		if authSecret != apiSecret {
+			return errors.New("invalid bearer token")
+		}
+		return nil
+	}
+
+	// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
+	// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
+	if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		return []byte(apiSecret), nil
+	}); err != nil {
+		return errors.Wrapf(err, "verify token %v", token)
+	}
+
+	return nil
+}

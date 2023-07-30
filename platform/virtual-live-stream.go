@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -27,7 +26,6 @@ import (
 
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 )
 
@@ -57,30 +55,21 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
 			var token, action string
 			var userConf VLiveConfigure
-			if err := json.Unmarshal(b, &struct {
+			if err := ParseBody(ctx, r.Body, &struct {
 				Token  *string `json:"token"`
 				Action *string `json:"action"`
 				*VLiveConfigure
 			}{
 				Token: &token, Action: &action, VLiveConfigure: &userConf,
 			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
+				return errors.Wrapf(err, "parse body")
 			}
 
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
 			}
 
 			allowedActions := []string{"update"}
@@ -164,27 +153,18 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
 			var token string
-			if err := json.Unmarshal(b, &struct {
+			if err := ParseBody(ctx, r.Body, &struct {
 				Token *string `json:"token"`
 			}{
 				Token: &token,
 			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
+				return errors.Wrapf(err, "parse body")
 			}
 
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
 			}
 
 			res := make([]map[string]interface{}, 0)
@@ -301,11 +281,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			b, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				return errors.Wrapf(err, "read body")
-			}
-
 			type VLiveTempFile struct {
 				Name   string `json"name"`
 				Size   int64  `json:"size"`
@@ -315,15 +290,21 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 
 			var token, platform string
 			var files []*VLiveTempFile
-			if err := json.Unmarshal(b, &struct {
+			if err := ParseBody(ctx, r.Body, &struct {
 				Token    *string           `json:"token"`
 				Platform *string           `json:"platform"`
 				Files    *[]*VLiveTempFile `json:"files"`
 			}{
 				Token: &token, Platform: &platform, Files: &files,
 			}); err != nil {
-				return errors.Wrapf(err, "json unmarshal %v", string(b))
+				return errors.Wrapf(err, "parse body")
 			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
 			if len(files) == 0 {
 				return errors.New("no files")
 			}
@@ -341,15 +322,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					}
 				}
 			}()
-
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
-			// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
-			if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				return []byte(apiSecret), nil
-			}); err != nil {
-				return errors.Wrapf(err, "verify token %v", token)
-			}
 
 			// Check files.
 			for _, f := range files {

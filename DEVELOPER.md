@@ -221,7 +221,6 @@ Platform:
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
-* `/terraform/v1/mgmt/secret/token` Create token for OpenAPI.
 * `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
 * `/terraform/v1/host/versions` Public version api.
 * `/terraform/v1/releases` Version management for all components.
@@ -282,6 +281,7 @@ Also provided by platform for static Files:
 * `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
 * `/terraform/v1/mgmt/containers` Query SRS container.
 * `/terraform/v1/host/exec` Exec command sync, response the stdout and stderr.
+* `/terraform/v1/mgmt/secret/token` Create token for OpenAPI.
 
 ## Depends
 

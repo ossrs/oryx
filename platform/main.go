@@ -420,7 +420,7 @@ func initPlatform(ctx context.Context) error {
 	if token, err := rdb.HGet(ctx, SRS_PLATFORM_SECRET, "token").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v token", SRS_PLATFORM_SECRET)
 	} else if token == "" {
-		token = fmt.Sprintf("srs-v1-%v", strings.ReplaceAll(uuid.NewString(), "-", ""))
+		token = fmt.Sprintf("srs-v2-%v", strings.ReplaceAll(uuid.NewString(), "-", ""))
 		if err = rdb.HSet(ctx, SRS_PLATFORM_SECRET, "token", token).Err(); err != nil {
 			return errors.Wrapf(err, "hset %v token %v", SRS_PLATFORM_SECRET, token)
 		}
