@@ -22,7 +22,7 @@ github.com/google/go-querystring/query
 # github.com/google/uuid v1.3.0
 ## explicit
 github.com/google/uuid
-# github.com/joho/godotenv v1.4.0
+# github.com/joho/godotenv v1.5.1
 ## explicit
 github.com/joho/godotenv
 # github.com/mitchellh/mapstructure v1.4.3
