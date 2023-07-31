@@ -5,21 +5,18 @@ resources, and ports, as well as development on Mac or using Docker.
 
 ## Develop All in macOS
 
-Start redis by docker:
+Start redis and SRS by docker:
 
 ```bash
-docker run --name redis --rm -it -v $HOME/db/redis:/data -p 6379:6379 -d redis
-```
-
-Start SRS in macOS:
-
-```bash
+docker run --name redis --rm -it -v $HOME/db/redis:/data -p 6379:6379 -d redis &&
 docker run --name srs --rm -it \
     -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
     -v $(pwd)/platform/containers/objs/nginx:/usr/local/srs/objs/nginx \
     -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
     -d ossrs/srs:5
 ```
+
+> Note: Stop service by `docker rm -f redis srs`
 
 > Note: Also, you can run SRS by `(cd platform && ~/git/srs/trunk/objs/srs -c containers/conf/srs.release-local.conf)`
 

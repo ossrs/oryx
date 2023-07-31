@@ -118,12 +118,9 @@ fi
 
 echo "Start to install files"
 mkdir -p ${SRS_HOME} ${DATA_HOME} && rm -rf ${SRS_HOME}/* &&
-files=$(find . -type f |grep -vE '(.git|.idea|.run|node_modules|nginx/html/live)') &&
-files="${files} $(find . -name .gitkeep)"
-for file in $files; do
-    mkdir -p ${SRS_HOME}/$(dirname ${file}) &&
-    cp $file ${SRS_HOME}/${file}
-done
+cp -r ${WORK_DIR}/usr ${SRS_HOME}/usr &&
+cp -r ${WORK_DIR}/mgmt ${SRS_HOME}/mgmt &&
+cp -r ${WORK_DIR}/LICENSE ${SRS_HOME}/LICENSE
 ret=$?; if [[ $ret -ne 0 ]]; then echo "Copy files failed, ret=$ret"; exit $ret; fi
 echo "Install files at ${SRS_HOME} ok"
 

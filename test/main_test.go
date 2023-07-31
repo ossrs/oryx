@@ -29,20 +29,27 @@ var checkApiSecret *bool
 var waitReady *bool
 var apiReadyimeout *int
 var initPassword *bool
+var systemPassword *string
 
 func options() string {
-	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, waitReady=%v, initPassword=%v",
-		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *waitReady, *initPassword)
+	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, waitReady=%v, initPassword=%v, systemPassword=%vB",
+		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *waitReady, *initPassword, len(*systemPassword))
 }
 
 func prepareTest(ctx context.Context) (err error) {
-	envFile := "../platform/containers/data/config/.env"
-	if _, err := os.Stat(envFile); err == nil {
-		if err := godotenv.Load(envFile); err != nil {
-			return errors.Wrapf(err, "load %v", envFile)
+	// Try to load the .env file.
+	for _, envFile := range []string{
+		"../platform/containers/data/config/.env",
+		"/data/config/.env",
+	} {
+		if _, err := os.Stat(envFile); err == nil {
+			if err := godotenv.Load(envFile); err == nil {
+				break
+			}
 		}
 	}
 
+	// Parse the options.
 	srsLog = flag.Bool("srs-log", false, "Whether enable the detail log")
 	srsTimeout = flag.Int("srs-timeout", 5000, "For each case, the timeout in ms")
 	apiSecret = flag.String("api-secret", os.Getenv("SRS_PLATFORM_SECRET"), "The secret for api")
@@ -51,79 +58,14 @@ func prepareTest(ctx context.Context) (err error) {
 	waitReady = flag.Bool("wait-ready", false, "Whether wait for the service ready")
 	apiReadyimeout = flag.Int("api-ready-timeout", 30000, "Check when startup, the timeout in ms")
 	initPassword = flag.Bool("init-password", false, "Whether init the system and set password")
+	systemPassword = flag.String("system-password", os.Getenv("MGMT_PASSWORD"), "The system password for login")
 
 	// Should parse it first.
 	flag.Parse()
+	logger.Tf(ctx, "Test with %v", options())
 
 	if *checkApiSecret && *apiSecret == "" {
 		return errors.Errorf("empty api secret")
-	}
-
-	return nil
-}
-
-func waitForServiceReady(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(*apiReadyimeout)*time.Millisecond)
-	logger.Tf(ctx, "Wait for API ready with %v, apiReadyimeout=%vms", options(), *apiReadyimeout)
-	defer cancel()
-
-	for {
-		if ctx.Err() != nil {
-			logger.Ef(ctx, "Wait for API ready timeout, err %v", ctx.Err())
-			return ctx.Err()
-		}
-
-		err := apiRequest(ctx, "/terraform/v1/host/versions", nil, nil)
-		if err == nil {
-			logger.T(ctx, "API ready")
-			break
-		}
-
-		logger.Tf(ctx, "Wait for API ready, err %v", err)
-		time.Sleep(1 * time.Second)
-	}
-
-	return nil
-}
-
-func initSystemPassword(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(*srsTimeout)*time.Millisecond)
-	logger.Tf(ctx, "Wait for API ready with %v", options())
-	defer cancel()
-
-	// Initialize the system by password.
-	password := fmt.Sprintf("%x", rand.Uint64())
-	var token string
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/init", &struct {
-		Password string `json:"password"`
-	}{
-		Password: password,
-	}, &struct {
-		Token *string `json:"token"`
-	}{
-		Token: &token,
-	}); err != nil {
-		return errors.Wrapf(err, "init system")
-	}
-	if token == "" {
-		return errors.Errorf("invalid token")
-	}
-
-	// Login the system by password.
-	var token2 string
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/login", &struct {
-		Password string `json:"password"`
-	}{
-		Password: password,
-	}, &struct {
-		Token *string `json:"token"`
-	}{
-		Token: &token2,
-	}); err != nil {
-		return errors.Wrapf(err, "login system")
-	}
-	if token2 == "" {
-		return errors.Errorf("invalid token")
 	}
 
 	return nil
@@ -163,6 +105,78 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(m.Run())
+}
+
+func waitForServiceReady(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(*apiReadyimeout)*time.Millisecond)
+	defer cancel()
+
+	for {
+		if ctx.Err() != nil {
+			logger.Ef(ctx, "Wait for API ready timeout, err %v", ctx.Err())
+			return ctx.Err()
+		}
+
+		err := apiRequest(ctx, "/terraform/v1/host/versions", nil, nil)
+		if err == nil {
+			logger.T(ctx, "API ready")
+			break
+		}
+
+		logger.Tf(ctx, "Wait for API ready, err %v", err)
+		time.Sleep(1 * time.Second)
+	}
+
+	return nil
+}
+
+func initSystemPassword(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	// Set the password.
+	password := fmt.Sprintf("%x", rand.Uint64())
+	if *systemPassword != "" {
+		password = *systemPassword
+	} else {
+		*systemPassword = password
+	}
+
+	// Initialize the system by password.
+	var token string
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/init", &struct {
+		Password string `json:"password"`
+	}{
+		Password: password,
+	}, &struct {
+		Token *string `json:"token"`
+	}{
+		Token: &token,
+	}); err != nil {
+		return errors.Wrapf(err, "init system")
+	}
+	if token == "" {
+		return errors.Errorf("invalid token")
+	}
+
+	// Login the system by password.
+	var token2 string
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/login", &struct {
+		Password string `json:"password"`
+	}{
+		Password: password,
+	}, &struct {
+		Token *string `json:"token"`
+	}{
+		Token: &token2,
+	}); err != nil {
+		return errors.Wrapf(err, "login system")
+	}
+	if token2 == "" {
+		return errors.Errorf("invalid token")
+	}
+
+	return nil
 }
 
 // Filter the test error, ignore context.Canceled
@@ -208,8 +222,13 @@ func apiRequest(ctx context.Context, apiPath string, data interface{}, response 
 		}
 	}
 
+	m := http.MethodPost
+	if body == nil {
+		m = http.MethodGet
+	}
+
 	u := fmt.Sprintf("%s%s", *endpoint, apiPath)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, body)
+	req, err := http.NewRequestWithContext(ctx, m, u, body)
 	if err != nil {
 		return errors.Wrapf(err, "new request")
 	}
