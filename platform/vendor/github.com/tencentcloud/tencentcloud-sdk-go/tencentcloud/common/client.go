@@ -23,6 +23,8 @@ const (
 	octetStream = "application/octet-stream"
 )
 
+var DefaultHttpClient *http.Client
+
 type Client struct {
 	region          string
 	httpClient      *http.Client
@@ -33,7 +35,7 @@ type Client struct {
 	unsignedPayload bool
 	debug           bool
 	rb              *circuitBreaker
-	logger          *log.Logger
+	logger          Logger
 	requestClient   string
 }
 
@@ -298,7 +300,7 @@ func (c *Client) sendWithSignatureV3(request tchttp.Request, response tchttp.Res
 	for k, v := range request.GetHeader() {
 		switch k {
 		case "X-TC-Action", "X-TC-Version", "X-TC-Timestamp", "X-TC-RequestClient",
-			"X-TC-Language", "Content-Type", "X-TC-Region", "X-TC-Token":
+			"X-TC-Language", "X-TC-Region", "X-TC-Token":
 			c.logger.Printf("Skip header \"%s\": can not specify built-in header", k)
 		default:
 			headers[k] = v
@@ -426,16 +428,26 @@ func (c *Client) sendWithSignatureV3(request tchttp.Request, response tchttp.Res
 
 // send http request
 func (c *Client) sendHttp(request *http.Request) (response *http.Response, err error) {
-	if c.debug {
+	if c.debug && request != nil {
 		outBytes, err := httputil.DumpRequest(request, true)
 		if err != nil {
-			c.logger.Printf("[ERROR] dump request failed because %s", err)
-			return nil, err
+			c.logger.Printf("[ERROR] dump request failed: %s", err)
+		} else {
+			c.logger.Printf("[DEBUG] http request: %s", outBytes)
 		}
-		c.logger.Printf("[DEBUG] http request = %s", outBytes)
 	}
 
 	response, err = c.httpClient.Do(request)
+
+	if c.debug && response != nil {
+		out, err := httputil.DumpResponse(response, true)
+		if err != nil {
+			c.logger.Printf("[ERROR] dump response failed: %s", err)
+		} else {
+			c.logger.Printf("[DEBUG] http response: %s", out)
+		}
+	}
+
 	return response, err
 }
 
@@ -444,13 +456,20 @@ func (c *Client) GetRegion() string {
 }
 
 func (c *Client) Init(region string) *Client {
-	// try not to modify http.DefaultTransport if possible
-	transport := http.DefaultTransport
-	if ht, ok := transport.(*http.Transport); ok {
-		transport = ht.Clone()
+
+	if DefaultHttpClient == nil {
+		// try not to modify http.DefaultTransport if possible
+		// since we could possibly modify Transport.Proxy
+		transport := http.DefaultTransport
+		if ht, ok := transport.(*http.Transport); ok {
+			transport = ht.Clone()
+		}
+
+		c.httpClient = &http.Client{Transport: transport}
+	} else {
+		c.httpClient = DefaultHttpClient
 	}
 
-	c.httpClient = &http.Client{Transport: transport}
 	c.region = region
 	c.signMethod = "TC3-HMAC-SHA256"
 	c.debug = false
@@ -472,13 +491,13 @@ func (c *Client) WithRequestClient(rc string) *Client {
 	const reRequestClient = "^[0-9a-zA-Z-_ ,;.]+$"
 
 	if len(rc) > 128 {
-		c.logger.Println("the length of RequestClient should be within 128 characters, it will be truncated")
+		c.logger.Printf("the length of RequestClient should be within 128 characters, it will be truncated")
 		rc = rc[:128]
 	}
 
 	match, err := regexp.MatchString(reRequestClient, rc)
 	if err != nil {
-		c.logger.Println("regexp is wrong", reRequestClient)
+		c.logger.Printf("regexp is wrong: %s", reRequestClient)
 		return c
 	}
 	if !match {
@@ -511,13 +530,13 @@ func (c *Client) WithProfile(clientProfile *profile.ClientProfile) *Client {
 		}
 
 		if c.httpClient.Transport == nil {
-			c.logger.Println("trying to set proxy when httpClient.Transport is nil")
+			c.logger.Printf("trying to set proxy when httpClient.Transport is nil")
 		}
 
 		if _, ok := c.httpClient.Transport.(*http.Transport); ok {
 			c.httpClient.Transport.(*http.Transport).Proxy = http.ProxyURL(u)
 		} else {
-			c.logger.Println("setting proxy while httpClient.Transport is not a http.Transport is not supported")
+			c.logger.Printf("setting proxy while httpClient.Transport is not a http.Transport is not supported")
 		}
 	}
 	return c

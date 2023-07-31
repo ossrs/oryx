@@ -819,7 +819,7 @@ func (r *CreateOIDCConfigResponse) FromJsonString(s string) error {
 
 // Predefined struct for user
 type CreatePolicyRequestParams struct {
-	// 策略名
+	// 策略名称。长度为1~128个字符，可包含英文字母、数字和+=,.@-_。
 	PolicyName *string `json:"PolicyName,omitempty" name:"PolicyName"`
 
 	// 策略文档，示例：{"version":"2.0","statement":[{"action":"name/sts:AssumeRole","effect":"allow","principal":{"service":["cloudaudit.cloud.tencent.com","cls.cloud.tencent.com"]}}]}，principal用于指定角色的授权对象。获取该参数可参阅 获取角色详情（https://cloud.tencent.com/document/product/598/36221） 输出参数RoleInfo
@@ -832,7 +832,7 @@ type CreatePolicyRequestParams struct {
 type CreatePolicyRequest struct {
 	*tchttp.BaseRequest
 	
-	// 策略名
+	// 策略名称。长度为1~128个字符，可包含英文字母、数字和+=,.@-_。
 	PolicyName *string `json:"PolicyName,omitempty" name:"PolicyName"`
 
 	// 策略文档，示例：{"version":"2.0","statement":[{"action":"name/sts:AssumeRole","effect":"allow","principal":{"service":["cloudaudit.cloud.tencent.com","cls.cloud.tencent.com"]}}]}，principal用于指定角色的授权对象。获取该参数可参阅 获取角色详情（https://cloud.tencent.com/document/product/598/36221） 输出参数RoleInfo
@@ -962,7 +962,7 @@ func (r *CreatePolicyVersionResponse) FromJsonString(s string) error {
 
 // Predefined struct for user
 type CreateRoleRequestParams struct {
-	// 角色名称
+	// 角色名称。长度为1~128个字符，可包含英文字母、数字和+=,.@-_。
 	RoleName *string `json:"RoleName,omitempty" name:"RoleName"`
 
 	// 策略文档，示例：{"version":"2.0","statement":[{"action":"name/sts:AssumeRole","effect":"allow","principal":{"service":["cloudaudit.cloud.tencent.com","cls.cloud.tencent.com"]}}]}，principal用于指定角色的授权对象。获取该参数可参阅 获取角色详情（https://cloud.tencent.com/document/product/598/36221） 输出参数RoleInfo
@@ -984,7 +984,7 @@ type CreateRoleRequestParams struct {
 type CreateRoleRequest struct {
 	*tchttp.BaseRequest
 	
-	// 角色名称
+	// 角色名称。长度为1~128个字符，可包含英文字母、数字和+=,.@-_。
 	RoleName *string `json:"RoleName,omitempty" name:"RoleName"`
 
 	// 策略文档，示例：{"version":"2.0","statement":[{"action":"name/sts:AssumeRole","effect":"allow","principal":{"service":["cloudaudit.cloud.tencent.com","cls.cloud.tencent.com"]}}]}，principal用于指定角色的授权对象。获取该参数可参阅 获取角色详情（https://cloud.tencent.com/document/product/598/36221） 输出参数RoleInfo
@@ -1318,6 +1318,9 @@ func (r *CreateUserOIDCConfigResponse) FromJsonString(s string) error {
 type CreateUserSAMLConfigRequestParams struct {
 	// SAML元数据文档，需要base64 encode
 	SAMLMetadataDocument *string `json:"SAMLMetadataDocument,omitempty" name:"SAMLMetadataDocument"`
+
+	// 辅助域名
+	AuxiliaryDomain *string `json:"AuxiliaryDomain,omitempty" name:"AuxiliaryDomain"`
 }
 
 type CreateUserSAMLConfigRequest struct {
@@ -1325,6 +1328,9 @@ type CreateUserSAMLConfigRequest struct {
 	
 	// SAML元数据文档，需要base64 encode
 	SAMLMetadataDocument *string `json:"SAMLMetadataDocument,omitempty" name:"SAMLMetadataDocument"`
+
+	// 辅助域名
+	AuxiliaryDomain *string `json:"AuxiliaryDomain,omitempty" name:"AuxiliaryDomain"`
 }
 
 func (r *CreateUserSAMLConfigRequest) ToJsonString() string {
@@ -1340,6 +1346,7 @@ func (r *CreateUserSAMLConfigRequest) FromJsonString(s string) error {
 		return err
 	}
 	delete(f, "SAMLMetadataDocument")
+	delete(f, "AuxiliaryDomain")
 	if len(f) > 0 {
 		return tcerr.NewTencentCloudSDKError("ClientError.BuildRequestError", "CreateUserSAMLConfigRequest has unknown keys!", "")
 	}
@@ -2193,6 +2200,10 @@ type DescribeSafeAuthFlagCollResponseParams struct {
 	// 异地登录保护设置
 	OffsiteFlag *OffsiteFlag `json:"OffsiteFlag,omitempty" name:"OffsiteFlag"`
 
+	// 是否提示信任设备1 ：提示 0: 不提示
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	PromptTrust *int64 `json:"PromptTrust,omitempty" name:"PromptTrust"`
+
 	// 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。
 	RequestId *string `json:"RequestId,omitempty" name:"RequestId"`
 }
@@ -2514,6 +2525,9 @@ type DescribeUserSAMLConfigResponseParams struct {
 	// 状态：0:未设置，1:已开启，2:已禁用
 	Status *uint64 `json:"Status,omitempty" name:"Status"`
 
+	// 辅助域名
+	AuxiliaryDomain *string `json:"AuxiliaryDomain,omitempty" name:"AuxiliaryDomain"`
+
 	// 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。
 	RequestId *string `json:"RequestId,omitempty" name:"RequestId"`
 }
@@ -2820,6 +2834,8 @@ type GetAccountSummaryResponseParams struct {
 	Roles *uint64 `json:"Roles,omitempty" name:"Roles"`
 
 	// 身份提供商数
+	//
+	// Deprecated: Idps is deprecated.
 	Idps *uint64 `json:"Idps,omitempty" name:"Idps"`
 
 	// 子账户数
@@ -2830,6 +2846,9 @@ type GetAccountSummaryResponseParams struct {
 
 	// 分组用户总数
 	Member *uint64 `json:"Member,omitempty" name:"Member"`
+
+	// 身份提供商数。
+	IdentityProviders *uint64 `json:"IdentityProviders,omitempty" name:"IdentityProviders"`
 
 	// 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。
 	RequestId *string `json:"RequestId,omitempty" name:"RequestId"`
@@ -3656,6 +3675,14 @@ type GetUserResponseParams struct {
 	// 邮箱
 	Email *string `json:"Email,omitempty" name:"Email"`
 
+	// 最近一次登录ip
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	RecentlyLoginIP *string `json:"RecentlyLoginIP,omitempty" name:"RecentlyLoginIP"`
+
+	// 最近一次登录时间
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	RecentlyLoginTime *string `json:"RecentlyLoginTime,omitempty" name:"RecentlyLoginTime"`
+
 	// 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。
 	RequestId *string `json:"RequestId,omitempty" name:"RequestId"`
 }
@@ -3849,7 +3876,7 @@ func (r *ListAttachedGroupPoliciesRequest) FromJsonString(s string) error {
 
 // Predefined struct for user
 type ListAttachedGroupPoliciesResponseParams struct {
-	// 策略总数
+	// 策略总数。取值范围大于等于0。
 	TotalNum *uint64 `json:"TotalNum,omitempty" name:"TotalNum"`
 
 	// 策略列表
@@ -6284,31 +6311,31 @@ func (r *UpdateSAMLProviderResponse) FromJsonString(s string) error {
 // Predefined struct for user
 type UpdateUserOIDCConfigRequestParams struct {
 	// 身份提供商URL。OpenID Connect身份提供商标识。
-	// 对应企业IdP提供的Openid-configuration中"issuer"字段的值。
+	// 对应企业IdP提供的Openid-configuration中"issuer"字段的值，该URL必须以https开头，符合标准URL格式，不允许带有query参数（以?标识）、fragment片段（以#标识）和登录信息（以@标识）。
 	IdentityUrl *string `json:"IdentityUrl,omitempty" name:"IdentityUrl"`
 
-	// 签名公钥，需要base64_encode。验证OpenID Connect身份提供商ID Token签名的公钥。为了您的帐号安全，建议您定期轮换签名公钥。
+	// RSA签名公钥，JWKS格式，需要进行base64_encode。验证OpenID Connect身份提供商ID Token签名的公钥。为了您的账号安全，建议您定期轮换签名公钥。
 	IdentityKey *string `json:"IdentityKey,omitempty" name:"IdentityKey"`
 
-	// 客户端ID，在OpenID Connect身份提供商注册的客户端ID。
+	// 客户端ID，在OpenID Connect身份提供商注册的客户端ID，允许英文字母、数字、特殊字符.-_:/，不能以特殊字符.-_:/开头，单个客户端ID最大64个字符。
 	ClientId *string `json:"ClientId,omitempty" name:"ClientId"`
 
-	// 授权请求Endpoint，OpenID Connect身份提供商授权地址。对应企业IdP提供的Openid-configuration中"authorization_endpoint"字段的值。
+	// 授权请求Endpoint，OpenID Connect身份提供商授权地址。对应企业IdP提供的Openid-configuration中"authorization_endpoint"字段的值，该URL必须以https开头，符合标准URL格式，不允许带有query参数（以?标识）、fragment片段（以#标识）和登录信息（以@标识）。
 	AuthorizationEndpoint *string `json:"AuthorizationEndpoint,omitempty" name:"AuthorizationEndpoint"`
 
-	// 授权请求Response type，固定值id_token。
+	// 授权请求Response type，有code，id_token，固定值id_token。
 	ResponseType *string `json:"ResponseType,omitempty" name:"ResponseType"`
 
-	// 授权请求Response mode。授权请求返回模式，form_post和fragment两种可选模式，推荐选择form_post模式。
+	// 授权请求Response mode。授权请求返回模式，有form_post和fragment两种可选模式，推荐选择form_post模式。
 	ResponseMode *string `json:"ResponseMode,omitempty" name:"ResponseMode"`
 
-	// 映射字段名称。IdP的id_token中哪一个字段映射到子用户的用户名，通常是sub或者name字段
+	// 映射字段名称。IdP的id_token中哪一个字段映射到子用户的用户名，通常是sub或者name字段,仅支持英文字母、数宇、汉字、符号@、＆_[]-的组合，1-255个中文或英文字符
 	MappingFiled *string `json:"MappingFiled,omitempty" name:"MappingFiled"`
 
-	// 授权请求Scope。openid; email;profile。授权请求信息范围。默认必选openid。
+	// 授权请求Scope。有openid; email;profile三种。代表授权请求信息范围openid表示请求访问用户的身份信息，email表示请求访问用户的电子邮件地址，profile表示请求访问用户的基本信息。默认必选openid。
 	Scope []*string `json:"Scope,omitempty" name:"Scope"`
 
-	// 描述
+	// 描述，长度为1~255个英文或中文字符，默认值为空。
 	Description *string `json:"Description,omitempty" name:"Description"`
 }
 
@@ -6316,31 +6343,31 @@ type UpdateUserOIDCConfigRequest struct {
 	*tchttp.BaseRequest
 	
 	// 身份提供商URL。OpenID Connect身份提供商标识。
-	// 对应企业IdP提供的Openid-configuration中"issuer"字段的值。
+	// 对应企业IdP提供的Openid-configuration中"issuer"字段的值，该URL必须以https开头，符合标准URL格式，不允许带有query参数（以?标识）、fragment片段（以#标识）和登录信息（以@标识）。
 	IdentityUrl *string `json:"IdentityUrl,omitempty" name:"IdentityUrl"`
 
-	// 签名公钥，需要base64_encode。验证OpenID Connect身份提供商ID Token签名的公钥。为了您的帐号安全，建议您定期轮换签名公钥。
+	// RSA签名公钥，JWKS格式，需要进行base64_encode。验证OpenID Connect身份提供商ID Token签名的公钥。为了您的账号安全，建议您定期轮换签名公钥。
 	IdentityKey *string `json:"IdentityKey,omitempty" name:"IdentityKey"`
 
-	// 客户端ID，在OpenID Connect身份提供商注册的客户端ID。
+	// 客户端ID，在OpenID Connect身份提供商注册的客户端ID，允许英文字母、数字、特殊字符.-_:/，不能以特殊字符.-_:/开头，单个客户端ID最大64个字符。
 	ClientId *string `json:"ClientId,omitempty" name:"ClientId"`
 
-	// 授权请求Endpoint，OpenID Connect身份提供商授权地址。对应企业IdP提供的Openid-configuration中"authorization_endpoint"字段的值。
+	// 授权请求Endpoint，OpenID Connect身份提供商授权地址。对应企业IdP提供的Openid-configuration中"authorization_endpoint"字段的值，该URL必须以https开头，符合标准URL格式，不允许带有query参数（以?标识）、fragment片段（以#标识）和登录信息（以@标识）。
 	AuthorizationEndpoint *string `json:"AuthorizationEndpoint,omitempty" name:"AuthorizationEndpoint"`
 
-	// 授权请求Response type，固定值id_token。
+	// 授权请求Response type，有code，id_token，固定值id_token。
 	ResponseType *string `json:"ResponseType,omitempty" name:"ResponseType"`
 
-	// 授权请求Response mode。授权请求返回模式，form_post和fragment两种可选模式，推荐选择form_post模式。
+	// 授权请求Response mode。授权请求返回模式，有form_post和fragment两种可选模式，推荐选择form_post模式。
 	ResponseMode *string `json:"ResponseMode,omitempty" name:"ResponseMode"`
 
-	// 映射字段名称。IdP的id_token中哪一个字段映射到子用户的用户名，通常是sub或者name字段
+	// 映射字段名称。IdP的id_token中哪一个字段映射到子用户的用户名，通常是sub或者name字段,仅支持英文字母、数宇、汉字、符号@、＆_[]-的组合，1-255个中文或英文字符
 	MappingFiled *string `json:"MappingFiled,omitempty" name:"MappingFiled"`
 
-	// 授权请求Scope。openid; email;profile。授权请求信息范围。默认必选openid。
+	// 授权请求Scope。有openid; email;profile三种。代表授权请求信息范围openid表示请求访问用户的身份信息，email表示请求访问用户的电子邮件地址，profile表示请求访问用户的基本信息。默认必选openid。
 	Scope []*string `json:"Scope,omitempty" name:"Scope"`
 
-	// 描述
+	// 描述，长度为1~255个英文或中文字符，默认值为空。
 	Description *string `json:"Description,omitempty" name:"Description"`
 }
 
@@ -6503,6 +6530,9 @@ type UpdateUserSAMLConfigRequestParams struct {
 
 	// 元数据文档，需要base64 encode，仅当Operate为updateSAML时需要此参数
 	SAMLMetadataDocument *string `json:"SAMLMetadataDocument,omitempty" name:"SAMLMetadataDocument"`
+
+	// 辅助域名
+	AuxiliaryDomain *string `json:"AuxiliaryDomain,omitempty" name:"AuxiliaryDomain"`
 }
 
 type UpdateUserSAMLConfigRequest struct {
@@ -6513,6 +6543,9 @@ type UpdateUserSAMLConfigRequest struct {
 
 	// 元数据文档，需要base64 encode，仅当Operate为updateSAML时需要此参数
 	SAMLMetadataDocument *string `json:"SAMLMetadataDocument,omitempty" name:"SAMLMetadataDocument"`
+
+	// 辅助域名
+	AuxiliaryDomain *string `json:"AuxiliaryDomain,omitempty" name:"AuxiliaryDomain"`
 }
 
 func (r *UpdateUserSAMLConfigRequest) ToJsonString() string {
@@ -6529,6 +6562,7 @@ func (r *UpdateUserSAMLConfigRequest) FromJsonString(s string) error {
 	}
 	delete(f, "Operate")
 	delete(f, "SAMLMetadataDocument")
+	delete(f, "AuxiliaryDomain")
 	if len(f) > 0 {
 		return tcerr.NewTencentCloudSDKError("ClientError.BuildRequestError", "UpdateUserSAMLConfigRequest has unknown keys!", "")
 	}
