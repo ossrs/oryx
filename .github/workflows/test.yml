@@ -46,6 +46,10 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: '>=1.16.0'
+      - name: Install tools
+        run: |
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version
       - name: Test by jest and Go
         run: |
           make -j && make test -j
@@ -62,6 +66,10 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Install tools
+        run: |
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version
       - name: Build image for platform
         run: |
           docker build -t platform:latest -f Dockerfile .
@@ -104,6 +112,7 @@ jobs:
           ./test/srs-cloud.test -test.v -wait-ready -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false \
               -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET \
+              -test.parallel 8
           ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
           
           echo "Stop service"

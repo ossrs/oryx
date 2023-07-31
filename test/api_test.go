@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
+	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -10,11 +14,17 @@ import (
 )
 
 func TestApi_Empty(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
 	ctx := logger.WithContext(context.Background())
 	logger.Tf(ctx, "test done")
 }
 
 func TestApi_Ready(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -26,6 +36,9 @@ func TestApi_Ready(t *testing.T) {
 }
 
 func TestApi_QueryPublishSecret(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -51,6 +64,9 @@ func TestApi_QueryPublishSecret(t *testing.T) {
 }
 
 func TestApi_LoginByPassword(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -80,6 +96,9 @@ func TestApi_LoginByPassword(t *testing.T) {
 }
 
 func TestApi_BootstrapQueryEnvs(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -99,12 +118,15 @@ func TestApi_BootstrapQueryEnvs(t *testing.T) {
 	}{}
 	if err := apiRequest(ctx, "/terraform/v1/mgmt/envs", nil, &res); err != nil {
 		r0 = err
-	} else if !res.Secret || !res.HTTPS || !res.MgmtDocker {
+	} else if !res.Secret || res.HTTPS || !res.MgmtDocker {
 		r0 = errors.Errorf("invalid response %v", res)
 	}
 }
 
 func TestApi_BootstrapQueryInit(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -128,6 +150,9 @@ func TestApi_BootstrapQueryInit(t *testing.T) {
 }
 
 func TestApi_BootstrapQueryCheck(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -151,6 +176,9 @@ func TestApi_BootstrapQueryCheck(t *testing.T) {
 }
 
 func TestApi_BootstrapQueryVersions(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -174,6 +202,9 @@ func TestApi_BootstrapQueryVersions(t *testing.T) {
 }
 
 func TestApi_SetupWebsiteFooter(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -195,6 +226,7 @@ func TestApi_SetupWebsiteFooter(t *testing.T) {
 	}
 	if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/update", &req, nil); err != nil {
 		r0 = err
+		return
 	}
 
 	res := struct {
@@ -208,6 +240,9 @@ func TestApi_SetupWebsiteFooter(t *testing.T) {
 }
 
 func TestApi_SetupWebsiteTitle(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -229,6 +264,7 @@ func TestApi_SetupWebsiteTitle(t *testing.T) {
 	}
 	if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/update", &req, nil); err != nil {
 		r0 = err
+		return
 	}
 
 	res := struct {
@@ -241,26 +277,53 @@ func TestApi_SetupWebsiteTitle(t *testing.T) {
 	}
 }
 
-func TestApi_SetupPublishSecret(t *testing.T) {
+// Never run this in parallel, because it changes the publish
+// secret which might cause other cases to fail.
+func TestApi_UpdatePublishSecret(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
-	var r0 error
+	var r0, r1 error
 	defer func(ctx context.Context) {
-		if err := filterTestError(ctx.Err(), r0); err != nil {
+		if err := filterTestError(ctx.Err(), r0, r1); err != nil {
 			t.Errorf("Fail for err %+v", err)
 		} else {
 			logger.Tf(ctx, "test done")
 		}
 	}(ctx)
 
-	req := struct {
+	var pubSecret string
+	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+		Publish *string `json:"publish"`
+	}{
+		Publish: &pubSecret,
+	}); err != nil {
+		r0 = err
+		return
+	} else if pubSecret == "" {
+		r0 = errors.Errorf("invalid response %v", pubSecret)
+		return
+	}
+
+	// Reset the publish secret to the original value.
+	defer func() {
+		logger.Tf(ctx, "Reset publish secret to %v", pubSecret)
+		if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/update", &struct {
+			Secret string `json:"secret"`
+		}{
+			Secret: pubSecret,
+		}, nil); err != nil {
+			r1 = err
+		}
+	}()
+
+	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/update", &struct {
 		Secret string `json:"secret"`
 	}{
 		Secret: "TestPublish",
-	}
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/update", &req, nil); err != nil {
+	}, nil); err != nil {
 		r0 = err
+		return
 	}
 
 	res := struct {
@@ -274,6 +337,9 @@ func TestApi_SetupPublishSecret(t *testing.T) {
 }
 
 func TestApi_TutorialsQueryBilibili(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -299,5 +365,324 @@ func TestApi_TutorialsQueryBilibili(t *testing.T) {
 		r0 = err
 	} else if res.Title == "" || res.Desc == "" {
 		r0 = errors.Errorf("invalid response %v", res)
+	}
+}
+
+func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	var r0, r1, r2, r3, r4, r5 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0, r1, r2, r3, r4, r5); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	var pubSecret string
+	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+		Publish *string `json:"publish"`
+	}{
+		Publish: &pubSecret,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	// Start FFmpeg to publish stream.
+	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
+	streamURL := fmt.Sprintf("rtmp://localhost/live/%v?secret=%v", streamID, pubSecret)
+	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
+		v.args = []string{
+			"-re",
+			"-f", "lavfi", "-i", "testsrc=size=1280x720", "-f", "lavfi", "-i", "sine=frequency=440",
+			"-pix_fmt", "yuv420p", "-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
+			"-acodec", "aac", "-ar", "44100", "-ac", "2",
+			"-f", "flv", streamURL,
+		}
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r1 = ffmpeg.Run(ctx, cancel)
+	}()
+
+	// Start FFprobe to detect and verify stream.
+	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
+	ffprobe := NewFFprobe(func(v *ffprobeClient) {
+		v.dvrFile = fmt.Sprintf("srs-ffprobe-%v.flv", streamID)
+		v.streamURL = fmt.Sprintf("http://localhost:8080/live/%v.flv", streamID)
+		v.duration, v.timeout = duration, time.Duration(*srsFFprobeTimeout)*time.Millisecond
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r2 = ffprobe.Run(ctx, cancel)
+	}()
+
+	// Fast quit for probe done.
+	select {
+	case <-ctx.Done():
+	case <-ffprobe.ProbeDoneCtx().Done():
+		defer cancel()
+
+		str, m := ffprobe.Result()
+		if len(m.Streams) != 2 {
+			r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
+		}
+
+		if ts := 90; m.Format.ProbeScore < ts {
+			r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
+		}
+		if dv := m.Duration(); dv < duration {
+			r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
+		}
+	}
+}
+
+func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	var r0, r1, r2, r3, r4, r5 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0, r1, r2, r3, r4, r5); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	var pubSecret string
+	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+		Publish *string `json:"publish"`
+	}{
+		Publish: &pubSecret,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	// Start FFmpeg to publish stream.
+	streamID := fmt.Sprintf("stream-%v-%v-%v", pubSecret, os.Getpid(), rand.Int())
+	streamURL := fmt.Sprintf("rtmp://localhost/live/%v", streamID)
+	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
+		v.args = []string{
+			"-re",
+			"-f", "lavfi", "-i", "testsrc=size=1280x720", "-f", "lavfi", "-i", "sine=frequency=440",
+			"-pix_fmt", "yuv420p", "-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
+			"-acodec", "aac", "-ar", "44100", "-ac", "2",
+			"-f", "flv", streamURL,
+		}
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r1 = ffmpeg.Run(ctx, cancel)
+	}()
+
+	// Start FFprobe to detect and verify stream.
+	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
+	ffprobe := NewFFprobe(func(v *ffprobeClient) {
+		v.dvrFile = fmt.Sprintf("srs-ffprobe-%v.flv", streamID)
+		v.streamURL = fmt.Sprintf("http://localhost:8080/live/%v.flv", streamID)
+		v.duration, v.timeout = duration, time.Duration(*srsFFprobeTimeout)*time.Millisecond
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r2 = ffprobe.Run(ctx, cancel)
+	}()
+
+	// Fast quit for probe done.
+	select {
+	case <-ctx.Done():
+	case <-ffprobe.ProbeDoneCtx().Done():
+		defer cancel()
+
+		str, m := ffprobe.Result()
+		if len(m.Streams) != 2 {
+			r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
+		}
+
+		if ts := 90; m.Format.ProbeScore < ts {
+			r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
+		}
+		if dv := m.Duration(); dv < duration {
+			r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
+		}
+	}
+}
+
+func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	var r0, r1, r2, r3, r4, r5 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0, r1, r2, r3, r4, r5); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	var pubSecret string
+	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+		Publish *string `json:"publish"`
+	}{
+		Publish: &pubSecret,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	// Start FFmpeg to publish stream.
+	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
+	streamURL := fmt.Sprintf("rtmp://localhost/live/%v?secret=%v", streamID, pubSecret)
+	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
+		v.args = []string{
+			"-re",
+			"-f", "lavfi", "-i", "testsrc=size=1280x720", "-f", "lavfi", "-i", "sine=frequency=440",
+			"-pix_fmt", "yuv420p", "-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
+			"-acodec", "aac", "-ar", "44100", "-ac", "2",
+			"-f", "flv", streamURL,
+		}
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r1 = ffmpeg.Run(ctx, cancel)
+	}()
+
+	// Start FFprobe to detect and verify stream.
+	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
+	ffprobe := NewFFprobe(func(v *ffprobeClient) {
+		v.dvrFile = fmt.Sprintf("srs-ffprobe-%v.flv", streamID)
+		v.streamURL = fmt.Sprintf("http://localhost:8080/live/%v.m3u8", streamID)
+		v.duration, v.timeout = duration, time.Duration(*srsFFprobeTimeout)*time.Millisecond
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r2 = ffprobe.Run(ctx, cancel)
+	}()
+
+	// Fast quit for probe done.
+	select {
+	case <-ctx.Done():
+	case <-ffprobe.ProbeDoneCtx().Done():
+		defer cancel()
+
+		str, m := ffprobe.Result()
+		if len(m.Streams) != 2 {
+			r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
+		}
+
+		// Note that HLS score is low, so we only check duration. Note that only check half of duration, because we
+		// might get only some pieces of segments.
+		if dv := m.Duration(); dv < duration/2 {
+			r4 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration/2, m.String(), str)
+		}
+	}
+}
+
+func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
+	// This case is run in parallel.
+	t.Parallel()
+
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	var r0, r1, r2, r3, r4, r5 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0, r1, r2, r3, r4, r5); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	var pubSecret string
+	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+		Publish *string `json:"publish"`
+	}{
+		Publish: &pubSecret,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	// Start FFmpeg to publish stream.
+	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
+	streamURL := fmt.Sprintf("srt://localhost:10080#!::r=live/%v?secret=%v,m=publish", streamID, pubSecret)
+	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
+		v.args = []string{
+			"-re",
+			"-f", "lavfi", "-i", "testsrc=size=1280x720", "-f", "lavfi", "-i", "sine=frequency=440",
+			"-pix_fmt", "yuv420p", "-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
+			"-acodec", "aac", "-ar", "44100", "-ac", "2",
+			"-f", "mpegts", streamURL,
+		}
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r1 = ffmpeg.Run(ctx, cancel)
+	}()
+
+	// Start FFprobe to detect and verify stream.
+	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
+	ffprobe := NewFFprobe(func(v *ffprobeClient) {
+		v.dvrFile = fmt.Sprintf("srs-ffprobe-%v.flv", streamID)
+		v.streamURL = fmt.Sprintf("http://localhost:8080/live/%v.flv", streamID)
+		v.duration, v.timeout = duration, time.Duration(*srsFFprobeTimeout)*time.Millisecond
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r2 = ffprobe.Run(ctx, cancel)
+	}()
+
+	// Fast quit for probe done.
+	select {
+	case <-ctx.Done():
+	case <-ffprobe.ProbeDoneCtx().Done():
+		defer cancel()
+
+		str, m := ffprobe.Result()
+		if len(m.Streams) != 2 {
+			r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
+		}
+
+		if ts := 90; m.Format.ProbeScore < ts {
+			r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
+		}
+		if dv := m.Duration(); dv < duration {
+			r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
+		}
 	}
 }
