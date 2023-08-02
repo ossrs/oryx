@@ -1,6 +1,6 @@
 import React from "react";
 import Container from "react-bootstrap/Container";
-import {Form, Button} from 'react-bootstrap';
+import {Form, Button, Spinner} from 'react-bootstrap';
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
 import {Token, Tools} from '../utils';
@@ -19,6 +19,7 @@ export default function Login({onLogin}) {
 function LoginImpl({onLogin}) {
   const [plaintext, setPlaintext] = React.useState(true);
   const [password, setPassword] = React.useState();
+  const [logging, setLogging] = React.useState(false);
   const navigate = useNavigate();
   const passwordRef = React.useRef();
   const plaintextRef = React.useRef();
@@ -50,18 +51,23 @@ function LoginImpl({onLogin}) {
   // changes its value. See https://stackoverflow.com/a/55854902/17679565
   const handleLogin = React.useCallback((e) => {
     e.preventDefault();
+    setLogging(true);
 
     axios.post('/terraform/v1/mgmt/login', {
       password,
-    }).then(res => {
+    }).then(async (res) => {
+      await new Promise(resolve => setTimeout(resolve, 600));
+
       const data = res.data.data;
       console.log(`Login: OK, token is ${Tools.mask(data)}`);
       Token.save(data);
 
       onLogin && onLogin();
       navigate('/routers-scenario');
-    }).catch(handleError);
-  }, [password, handleError, onLogin, navigate]);
+    }).catch(handleError).finally(() => {
+      setLogging(false);
+    });
+  }, [password, handleError, onLogin, navigate, setLogging]);
 
   return (
     <>
@@ -87,9 +93,10 @@ function LoginImpl({onLogin}) {
             <Form.Check type="checkbox" label={t('login.labelShow')} defaultChecked={plaintext}
               onClick={() => setPlaintext(!plaintext)}/>
           </Form.Group>
-          <Button variant="primary" type="submit" onClick={(e) => handleLogin(e)}>
+          <Button variant="primary" type="submit" disabled={logging} onClick={(e) => handleLogin(e)}>
             {t('login.labelLogin')}
-          </Button>
+          </Button> &nbsp;
+          {logging && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />}
         </Form>
       </Container>
     </>

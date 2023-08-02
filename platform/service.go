@@ -276,9 +276,9 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			ohttp.WriteData(ctx, w, r, &struct {
-				Secret     bool   `json:"secret"`
+				Secret     bool `json:"secret"`
 				HTTPS      bool `json:"https"`
-				MgmtDocker bool   `json:"mgmtDocker"`
+				MgmtDocker bool `json:"mgmtDocker"`
 			}{
 				Secret:     os.Getenv("SRS_PLATFORM_SECRET") != "",
 				HTTPS:      os.Getenv("SRS_HTTPS") != "off",
@@ -327,10 +327,16 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		}
 	})
 
+	var loginLock sync.Mutex
 	ep = "/terraform/v1/mgmt/login"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
+			if !loginLock.TryLock() {
+				return errors.New("login is running, try later")
+			}
+			defer loginLock.Unlock()
+
 			if os.Getenv("MGMT_PASSWORD") == "" {
 				return errors.New("not init")
 			}
@@ -354,7 +360,15 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			}
 
 			if password != os.Getenv("MGMT_PASSWORD") {
-				return errors.New("invalid password")
+				wait := time.Duration(10) * time.Second
+				logger.Wf(ctx, "Invalid password, wait for %v", wait)
+
+				select {
+				case <-time.After(wait):
+				case <-ctx.Done():
+				}
+
+				return errors.Errorf("invalid password, wait %v", wait)
 			}
 
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
