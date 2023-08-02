@@ -52,41 +52,55 @@ jobs:
           bash scripts/setup-aapanel/auto/zip.sh  && SRS_AAPANEL_SOURCE_FILE=aapanel-srs_cloud.zip &&
           echo "SRS_AAPANEL_SOURCE_FILE=${SRS_AAPANEL_SOURCE_FILE}" >> $GITHUB_ENV &&
           echo "SRS_AAPANEL_SOURCE_MD5=$(md5sum /tmp/zip-for-aapanel-srs_cloud/${SRS_AAPANEL_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
+          # 
+          # For Ubuntu script: zh
+          bash scripts/setup-ubuntu/build.sh --output /tmp/zip-for-ubuntu --language zh && SRS_UBUNTU_ZH_SOURCE_FILE=srs-cloud-zh.tar.gz &&
+          echo "SRS_UBUNTU_ZH_SOURCE_FILE=${SRS_UBUNTU_ZH_SOURCE_FILE}" >> $GITHUB_ENV &&
+          echo "SRS_UBUNTU_ZH_SOURCE_FILE_MD5=$(md5sum /tmp/zip-for-ubuntu/${SRS_UBUNTU_ZH_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
+          # 
+          # For Ubuntu script: en
+          bash scripts/setup-ubuntu/build.sh --output /tmp/zip-for-ubuntu --language en && SRS_UBUNTU_EN_SOURCE_FILE=srs-cloud-en.tar.gz &&
+          echo "SRS_UBUNTU_EN_SOURCE_FILE=${SRS_UBUNTU_EN_SOURCE_FILE}" >> $GITHUB_ENV &&
+          echo "SRS_UBUNTU_EN_SOURCE_FILE_MD5=$(md5sum /tmp/zip-for-ubuntu/${SRS_UBUNTU_EN_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
           #
           echo "Gather asserts"
           SRS_SOURCE_PATH=/tmp/srs_cloud-asserts && rm -rf $SRS_SOURCE_PATH && mkdir -p $SRS_SOURCE_PATH &&
           mv /tmp/zip-for-bt-srs_cloud/${SRS_BT_SOURCE_FILE} $SRS_SOURCE_PATH &&
           mv /tmp/zip-for-aapanel-srs_cloud/${SRS_AAPANEL_SOURCE_FILE} $SRS_SOURCE_PATH &&
+          mv /tmp/zip-for-ubuntu/${SRS_UBUNTU_ZH_SOURCE_FILE} $SRS_SOURCE_PATH &&
+          mv /tmp/zip-for-ubuntu/${SRS_UBUNTU_EN_SOURCE_FILE} $SRS_SOURCE_PATH &&
           ls -lh $SRS_SOURCE_PATH &&
           echo "SRS_SOURCE_PATH=${SRS_SOURCE_PATH}/*.zip" >> $GITHUB_ENV
 
-      # Create release.
-      - name: Create release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Update release
+        id: update_release
+        uses: ncipollo/release-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release SRS Cloud ${{ env.SRS_VERSION }}
+          allowUpdates: true
+          tag: ${{ github.ref }}
+          name: Release SRS Cloud ${{ env.SRS_VERSION }}
           body: |
             [${{ github.event.head_commit.message }}](https://github.com/ossrs/srs-cloud/commit/${{ github.sha }})
             
-            ## Platform
+            ## English
             * [DigitalOcean](https://marketplace.digitalocean.com/apps/srs): [Tutorial](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-1-click-e9fe6f314ac6)
-            * [Lighthouse](https://mp.weixin.qq.com/s/fWmdkw-2AoFD_pEmE_EIkA): [Tutorial](https://www.bilibili.com/video/BV1844y1L7dL)
-            * [BT](https://bt.cn) Plugin: ${{ env.SRS_BT_SOURCE_MD5 }} [${{ env.SRS_BT_SOURCE_FILE }}](https://github.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_BT_SOURCE_FILE }})
+            * Ubuntu Script: ${{ env.SRS_UBUNTU_EN_SOURCE_FILE_MD5 }} [${{ env.SRS_UBUNTU_EN_SOURCE_FILE }}](https://github.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_UBUNTU_EN_SOURCE_FILE }})
             * [aaPanel](https://aapanel.com) Plugin: ${{ env.SRS_AAPANEL_SOURCE_MD5 }} [${{ env.SRS_AAPANEL_SOURCE_FILE }}](https://github.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_AAPANEL_SOURCE_FILE }})
-            
-            ## Platform Mirror: gitee.com
+            * [Changelog](https://ossrs.io/lts/en-us/faq-srs-cloud#changelog)
+            * [Features](https://ossrs.io/lts/en-us/faq-srs-cloud#features)
+
+            ## Chinese
+            * [Lighthouse](https://mp.weixin.qq.com/s/fWmdkw-2AoFD_pEmE_EIkA): [Tutorial](https://www.bilibili.com/video/BV1844y1L7dL)
+            * Ubuntu Script: ${{ env.SRS_UBUNTU_ZH_SOURCE_FILE_MD5 }} [${{ env.SRS_UBUNTU_ZH_SOURCE_FILE }}](https://gitee.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_UBUNTU_ZH_SOURCE_FILE }})
             * [BT](https://bt.cn) Plugin: ${{ env.SRS_BT_SOURCE_MD5 }} [${{ env.SRS_BT_SOURCE_FILE }}](https://gitee.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_BT_SOURCE_FILE }})
             * [aaPanel](https://aapanel.com) Plugin: ${{ env.SRS_AAPANEL_SOURCE_MD5 }} [${{ env.SRS_AAPANEL_SOURCE_FILE }}](https://gitee.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_AAPANEL_SOURCE_FILE }})
-            
-            ## Docs
-            * [Changelog](https://github.com/ossrs/srs-cloud/issues/4#changelog)
-            * [Features](https://github.com/ossrs/srs-cloud/issues/4#features)
+            * [Changelog](https://ossrs.net/lts/zh-cn/faq-srs-cloud#changelog)
+            * [Features](https://ossrs.net/lts/zh-cn/faq-srs-cloud#features)
           draft: false
           prerelease: false
+          makeLatest: true
 
       # Upload release source files
       - name: Upload Release Assets Source

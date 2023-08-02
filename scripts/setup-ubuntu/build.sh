@@ -70,7 +70,7 @@ LANGUAGE=${LANGUAGE}
 IMAGE=ossrs/srs-cloud:${VERSION}
 END
 
-INSTALL_FILE=srs-cloud-${LANGUAGE}-${VERSION}.tar.gz
+INSTALL_FILE=srs-cloud-${LANGUAGE}.tar.gz
 (cd ${TMP_DIR} && tar zcf $INSTALL_FILE srs-cloud) &&
 ret=$?; if [[ 0 -ne ${ret} ]]; then echo "tar failed, ret=$ret"; exit $ret; fi
 echo "Tar $INSTALL_FILE"

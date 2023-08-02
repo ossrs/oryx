@@ -221,8 +221,7 @@ func TestApi_SetupWebsiteFooter(t *testing.T) {
 		Beian string `json:"beian"`
 		Text  string `json:"text"`
 	}{
-		Beian: "icp",
-		Text:  "TestFooter",
+		Beian: "icp", Text: "TestFooter",
 	}
 	if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/update", &req, nil); err != nil {
 		r0 = err
@@ -255,12 +254,31 @@ func TestApi_SetupWebsiteTitle(t *testing.T) {
 		}
 	}(ctx)
 
+	var title string
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/query", nil, &struct {
+		Title *string `json:"title"`
+	}{
+		Title: &title,
+	}); err != nil {
+		r0 = err
+		return
+	}
+	defer func() {
+		if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/update", &struct {
+			Beian string `json:"beian"`
+			Text  string `json:"text"`
+		}{
+			Beian: "title", Text: title,
+		}, nil); err != nil {
+			r0 = err
+		}
+	}()
+
 	req := struct {
 		Beian string `json:"beian"`
 		Text  string `json:"text"`
 	}{
-		Beian: "title",
-		Text:  "TestTitle",
+		Beian: "title", Text: "TestTitle",
 	}
 	if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/update", &req, nil); err != nil {
 		r0 = err
