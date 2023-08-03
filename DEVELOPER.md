@@ -111,7 +111,7 @@ Enter the docker container:
 ```bash
 docker exec -it platform bash -c '
     docker load -i platform.tar && 
-    version=$(bash scripts/setup-ubuntu/version.sh) &&
+    version=$(bash scripts/version.sh) &&
     docker tag platform:latest ossrs/srs-cloud:$version &&
     docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
     docker images
@@ -157,6 +157,33 @@ Test the uninstall script, in the docker container:
 ```bash
 docker exec -it platform bash build/srs-cloud/scripts/setup-ubuntu/uninstall.sh
 ```
+
+## Develop the BT Plugin
+
+Start a container and mount as plugin:
+
+```bash
+docker rm -f bt 2>/dev/null || echo 'OK' &&
+docker run -p 7800:7800 -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
+    --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
+    -d --rm -it -v $(pwd):/g -w /g --name=bt ossrs/bt-plugin-dev:1
+```
+
+Next, build the BT plugin and install it:
+
+```bash
+docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo 'OK' &&
+bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
+docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh install
+```
+
+Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install plugin.
+
+> Note: Or you can use `docker exec -it bt bt default` to show the login info.
+
+Register a BT account and bind to the container, in the application store, there is a `srs_cloud` plugin.
+
+After test, you can install the plugin `build/bt-srs_cloud.zip` to production BT panel.
 
 ## Release
 

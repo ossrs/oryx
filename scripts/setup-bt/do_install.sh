@@ -33,38 +33,16 @@ Install() {
   source do_os.sh
   if [[ $? -ne 0 ]]; then echo "Setup OS failed"; exit 1; fi
 
-  # Restore files from git.
-  echo "Git reset files"
-  cd $install_path/srs-cloud && git reset --hard HEAD
-  if [[ $? -ne 0 ]]; then echo "Reset files failed"; exit 1; fi
-
-  # Change file permissions.
-  echo "Change files permissions"
-  find $install_path -type d -exec chmod 0755 {} \; &&
-  find $install_path -type f -exec chmod 0644 {} \; &&
-  cd $install_path/srs-cloud && chmod 755 mgmt/bootstrap mgmt/upgrade scripts/remove-containers.sh
-  if [[ $? -ne 0 ]]; then echo "Change file permissions failed"; exit 1; fi
-
-  # Restore files from git again, after changing file permissions.
-  echo "Git reset files"
-  cd $install_path/srs-cloud && git reset --hard HEAD
-  if [[ $? -ne 0 ]]; then echo "Reset files failed"; exit 1; fi
-
   # Move srs-cloud to its home.
-  echo "Move srs-cloud to $SRS_HOME"
-  mkdir -p `dirname $SRS_HOME`
-  if [[ -d $install_path/srs-cloud && ! -d $SRS_HOME/.git ]]; then
-    rm -rf $SRS_HOME && mv $install_path/srs-cloud $SRS_HOME &&
-    ln -sf $SRS_HOME $install_path/srs-cloud
-    if [[ $? -ne 0 ]]; then echo "Create srs-cloud failed"; exit 1; fi
-  fi
+  echo "Link srs-cloud to $SRS_HOME"
+  rm -rf $SRS_HOME && mkdir $SRS_HOME &&
+  ln -sf $install_path/mgmt $SRS_HOME/mgmt &&
+  ln -sf $install_path/usr $SRS_HOME/usr
+  if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
 
   # Create global data directory.
   echo "Create data and config file"
-  mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env &&
-  rm -rf ${SRS_HOME}/mgmt/containers/data && ln -sf ${DATA_HOME} ${SRS_HOME}/mgmt/containers/data &&
-  rm -rf ${SRS_HOME}/mgmt/.env && ln -sf ${DATA_HOME}/config/.env ${SRS_HOME}/mgmt/.env &&
-  rm -rf ~/credentials.txt && ln -sf ${DATA_HOME}/config/.env ~/credentials.txt
+  mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env
   if [[ $? -ne 0 ]]; then echo "Create /data/config/.env failed"; exit 1; fi
 
   # Allow network forwarding, required by docker.
@@ -81,7 +59,7 @@ Install() {
   update_sysctl net.core.wmem_default 16777216
 
   # Now, we're ready to install by BT.
-  echo 'Wait for srs-cloud plugin ready...'; sleep 10;
+  echo 'Wait for srs-cloud plugin ready...'; sleep 1.3;
   touch ${install_path}/.bt_ready
 
   echo 'Install OK'
@@ -106,21 +84,22 @@ Uninstall() {
   echo "Remove install $INSTALL_HOME ok"
 
   SRS_ALIAS=/usr/local/srs-terraform
-	rm -rf $SRS_HOME $SRS_ALIAS
-	echo "Remove srs home $SRS_HOME ok"
+  rm -rf $SRS_HOME $SRS_ALIAS
+  echo "Remove srs home $SRS_HOME ok"
 
-	rm -f ~/credentials.txt
-	echo "Remove credentials.txt"
+  rm -f ~/credentials.txt
+  echo "Remove credentials.txt"
 
-	rmdir /usr/local/lighthouse/softwares 2>/dev/null
-	rmdir /usr/local/lighthouse 2>/dev/null
-	echo "Remove empty lighthouse directory"
+  rmdir /usr/local/lighthouse/softwares 2>/dev/null
+  rmdir /usr/local/lighthouse 2>/dev/null
+  echo "Remove empty lighthouse directory"
 
-  rm -rf $install_path
+  rm -rf $install_path/*
+  rmdir $install_path 2>/dev/null
   echo "Remove plugin path $install_path ok"
 
-  LOGS=$(ls /tmp/srs_cloud_install.*)
-  rm -f $LOGS
+  LOGS=$(ls /tmp/srs_cloud_install.* 2>/dev/null)
+  if [[ ! -z $LOGS && -f $LOGS ]]; then rm -f $LOGS; fi
   echo "Remove install flag files $LOGS ok"
 }
 

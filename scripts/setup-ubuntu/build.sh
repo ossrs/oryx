@@ -11,7 +11,7 @@ HELP=no
 LANGUAGE=zh
 EXTRACT=no
 OUTPUT=${WORK_DIR}/build
-VERSION=$(bash ${SCRIPT_DIR}/version.sh)
+VERSION=$(bash ${WORK_DIR}/scripts/version.sh)
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -45,30 +45,19 @@ echo "Enter work directory ${TARGET_DIR}"
 
 mkdir -p ${TARGET_DIR}/scripts/setup-ubuntu &&
 cp -rf ${WORK_DIR}/scripts/setup-ubuntu/*.sh ${TARGET_DIR}/scripts/setup-ubuntu &&
-ret=$?; if [[ 0 -ne ${ret} ]]; then echo "cp scripts failed, ret=$ret"; exit $ret; fi
-echo "Copy scripts to ${TARGET_DIR}/scripts/setup-ubuntu"
-
-cp -r ${WORK_DIR}/usr ${TARGET_DIR}/usr
-ret=$?; if [[ 0 -ne ${ret} ]]; then echo "cp usr failed, ret=$ret"; exit $ret; fi
-echo "Copy usr to ${TARGET_DIR}/usr"
-
-cp ${WORK_DIR}/LICENSE ${TARGET_DIR}/LICENSE
-ret=$?; if [[ 0 -ne ${ret} ]]; then echo "cp LICENSE failed, ret=$ret"; exit $ret; fi
-echo "Copy LICENSE to ${TARGET_DIR}/LICENSE"
-
-cp ${WORK_DIR}/README.md ${TARGET_DIR}/README.md
-ret=$?; if [[ 0 -ne ${ret} ]]; then echo "cp README.md failed, ret=$ret"; exit $ret; fi
-echo "Copy README.md to ${TARGET_DIR}/README.md"
-
-mkdir -p ${TARGET_DIR}/mgmt &&
-cp ${WORK_DIR}/mgmt/bootstrap ${TARGET_DIR}/mgmt/bootstrap
-ret=$?; if [[ 0 -ne ${ret} ]]; then echo "cp bootstrap failed, ret=$ret"; exit $ret; fi
-echo "Copy bootstrap to ${TARGET_DIR}/mgmt"
+cp -r ${WORK_DIR}/usr ${TARGET_DIR}/usr &&
+cp ${WORK_DIR}/LICENSE ${TARGET_DIR}/LICENSE &&
+cp ${WORK_DIR}/README.md ${TARGET_DIR}/README.md &&
+mkdir -p ${TARGET_DIR}/mgmt && cp ${WORK_DIR}/mgmt/bootstrap ${TARGET_DIR}/mgmt/bootstrap
+ret=$?; if [[ 0 -ne ${ret} ]]; then echo "cp files failed, ret=$ret"; exit $ret; fi
+echo "Copy files to ${TARGET_DIR}"
 
 cat << END > ${TARGET_DIR}/scripts/setup-ubuntu/.env
 LANGUAGE=${LANGUAGE}
 IMAGE=ossrs/srs-cloud:${VERSION}
 END
+ret=$?; if [[ 0 -ne ${ret} ]]; then echo "write .env failed, ret=$ret"; exit $ret; fi
+echo "Write .env to ${TARGET_DIR}/scripts/setup-ubuntu/.env"
 
 INSTALL_FILE=srs-cloud-${LANGUAGE}.tar.gz
 (cd ${TMP_DIR} && tar zcf $INSTALL_FILE srs-cloud) &&

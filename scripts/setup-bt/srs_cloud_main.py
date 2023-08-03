@@ -37,18 +37,20 @@ class srs_cloud_main:
         status['srs'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
         status['nginx'] = public.ExecShell('ls {}/nginx/sbin/nginx >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
         status['docker_manager'] = public.ExecShell('ls {}/panel/plugin/docker >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
-        status['docker'] = public.ExecShell('ls /usr/lib/systemd/system/docker.service >/dev/null 2>&1 && echo -n ok')[0]
+        status['docker_installed'] = public.ExecShell('ls /usr/lib/systemd/system/docker.service >/dev/null 2>&1 && echo -n ok')[0]
         status['docker_running'] = public.ExecShell('systemctl status docker.service >/dev/null 2>&1 && echo -n ok')[0]
-        status['firewall'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__firewall))[0]
-        status['site'] = public.ExecShell('ls {root}/{site} {www}/nginx/{site}.conf >/dev/null 2>&1 && echo -n ok'.format(
+        status['firewall_ready'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__firewall))[0]
+        status['site_created'] = public.ExecShell('ls {root}/{site} {www}/nginx/{site}.conf >/dev/null 2>&1 && echo -n ok'.format(
             root=public.get_site_path(), site=self.__site, www=public.get_vhost_path(),
         ))[0]
 
         # We use the default site.
-        site = panelSite().GetDefaultSite(None)
-        status['default_site_available'] = site['defaultSite']
-        if site['defaultSite'] == '' or site['defaultSite'] == False or site['defaultSite'] == self.__site:
-            status['default_site_available'] = 'ok'
+        site = panelSite().get_site_info(self.__site)
+        if site is not None and 'id' in site:
+            domains = panelSite().GetSiteDomains(Params(id=site['id']))
+            for item in domains['domains']:
+                if item["name"] != self.__site:
+                    status['site_domain'] = item["name"]
 
         # Whether site is setup ok.
         status['site_setup'] = public.ExecShell('grep -q \'{pattern}\' "{www}/{site}.conf" >/dev/null 2>&1 && echo -n ok'.format(
@@ -66,12 +68,14 @@ class srs_cloud_main:
         tasks = echoMsg['task']
         return public.returnMsg(True, json.dumps(tasks))
 
+    # If not set docker_installed.
     def installService(self, args):
         if args.service != 'docker':
             return public.returnMsg(False, 'invalid service {}'.format(args.service))
         public.ExecShell('bash {}/do_docker.sh'.format(self.__plugin_path))
         return public.returnMsg(True, json.dumps('ok'))
 
+    # If not set docker_running.
     def restartService(self, args):
         if args.service != 'docker':
             return public.returnMsg(False, 'invalid service {}'.format(args.service))
@@ -81,6 +85,7 @@ class srs_cloud_main:
     def installSrs(self, args):
         if 'start' not in args: args.start = 0
         if 'end' not in args: args.end = 0
+        return public.returnMsg(False, 'xxx')
 
         nginx = '{}/nginx/logs/nginx.pid'.format(public.get_setup_path())
         if not os.path.exists(nginx):
@@ -119,15 +124,21 @@ class srs_cloud_main:
         public.ExecShell('rm -f {}'.format(self.__r0_file))
         return public.returnMsg(True, json.dumps('ok'))
 
+    # If not set site_created.
     def createSrsSite(self, args):
+        if 'domain' not in args or args.domain == '':
+            with open(self.__log_file, 'a+') as file:
+                file.write(f"Error: Empty SRS Cloud domain.\n")
+            return public.returnMsg(False, 'invalid domain')
+
         site = panelSite().AddSite(Params(
-            webname = json.dumps({"domain": self.__site, "domainlist": [], "count": 0}),
+            webname = json.dumps({"domain": self.__site, "domainlist": [args.domain], "count": 0}),
             type = 'PHP',
             port = '80',
             ps = self.__site,
             path = os.path.join(public.get_site_path(), self.__site),
             type_id = 0,
-            version = '00',
+            version = '00', # Static site.
             ftp = 'false',
             sql = 'false',
             codeing = 'utf8',
@@ -137,16 +148,8 @@ class srs_cloud_main:
 
         return public.returnMsg(True, json.dumps(site))
 
+    # If not set site_setup
     def setupSrsSite(self, args):
-        # Setup the default site to SRS.
-        site = panelSite().GetDefaultSite(None)
-        if site['defaultSite'] != '' and site['defaultSite'] != False and site['defaultSite'] != self.__site:
-            return public.returnMsg(False, 'default site is {}'.format(site['defaultSite']))
-
-        r0 = panelSite().SetDefaultSite(Params(name=self.__site))
-        if 'status' in r0 and r0['status'] != True:
-            return r0
-
         # Setup the nginx config.
         confPath = '{www}/{site}.conf'.format(
             www='{}/nginx'.format(public.get_vhost_path()), site=self.__site,
@@ -154,33 +157,32 @@ class srs_cloud_main:
         conf = files().GetFileBody(Params(path=confPath))
         confData = conf['data']
 
-        # Replace the directory to new home, because the site is kept when uninstall.
+        ## Replace the directory to new home, because the site is kept when uninstall.
         confData = confData.replace('/usr/local/lighthouse/softwares/srs-cloud', '/usr/local/srs-cloud')
 
-        # Process the http section of nginx.
-        if confData.find('#SRS-HTTP-START') == -1:
-            srsHttpConf = 'include {}/mgmt/containers/conf/conf.d/nginx.http.conf;'.format(self.__srs_home)
-            confData = '#SRS-HTTP-START\n{}\n#SRS-HTTP-END\n\n'.format(srsHttpConf) + confData
-
-        # Process the server section of nginx.
-        if confData.find('#SRS-SERVER-START') == -1:
-            srsServerConf = 'include {}/mgmt/containers/conf/default.d/*.conf;'.format(self.__srs_home)
-            confData = confData.replace(
-                '#SSL-START',
-                '#SRS-SERVER-START\n    {}\n    #SRS-SERVER-END\n\n    #SSL-START'.format(srsServerConf),
-            )
+        ## Process the http section of nginx.
+        #if confData.find('#SRS-HTTP-START') == -1:
+        #    srsHttpConf = 'include {}/mgmt/containers/conf/conf.d/nginx.http.conf;'.format(self.__srs_home)
+        #    confData = '#SRS-HTTP-START\n{}\n#SRS-HTTP-END\n\n'.format(srsHttpConf) + confData
+        ## Process the server section of nginx.
+        #if confData.find('#SRS-SERVER-START') == -1:
+        #    srsServerConf = 'include {}/mgmt/containers/conf/default.d/*.conf;'.format(self.__srs_home)
+        #    confData = confData.replace(
+        #        '#SSL-START',
+        #        '#SRS-SERVER-START\n    {}\n    #SRS-SERVER-END\n\n    #SSL-START'.format(srsServerConf),
+        #    )
 
         # Disable the location section of nginx, we will handle it.
-        if confData.find('location ~ /disabled.by.srs/.*\.(js|css)?$\n') == -1:
-            confData = confData.replace(
-                'location ~ .*\.(js|css)?$\n',
-                'location ~ /disabled.by.srs/.*\.(js|css)?$\n',
-            )
-        if confData.find('#location ~ /disabled.by.srs/.*\.(gif|jpg|jpeg|png|bmp|swf)$\n') == -1:
-            confData = confData.replace(
-                'location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$\n',
-                'location ~ /disabled.by.srs/.*\.(gif|jpg|jpeg|png|bmp|swf)$\n',
-            );
+        #if confData.find('location ~ /disabled.by.srs/.*\.(js|css)?$\n') == -1:
+        #    confData = confData.replace(
+        #        'location ~ .*\.(js|css)?$\n',
+        #        'location ~ /disabled.by.srs/.*\.(js|css)?$\n',
+        #    )
+        #if confData.find('#location ~ /disabled.by.srs/.*\.(gif|jpg|jpeg|png|bmp|swf)$\n') == -1:
+        #    confData = confData.replace(
+        #        'location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$\n',
+        #        'location ~ /disabled.by.srs/.*\.(gif|jpg|jpeg|png|bmp|swf)$\n',
+        #    );
 
         # Save the nginx config and reload it.
         r0 = files().SaveFileBody(Params(
@@ -192,6 +194,7 @@ class srs_cloud_main:
             r0['msg'] = json.dumps({'path': confPath, 'conf': confData})
         return r0
 
+    # If not set firewall_ready
     def setupFirewall(self, args):
         rtmp = firewalls().AddAcceptPortAll('1935', None)
         webrtc = firewalls().AddAcceptPortAll('8000', None)

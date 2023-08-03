@@ -19,7 +19,7 @@ jobs:
       # @see https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Generate varaiables
         run: |
-          SRS_TAG=$(bash scripts/setup-ubuntu/version.sh)
+          SRS_TAG=$(bash scripts/version.sh)
           echo "SRS_TAG=$SRS_TAG" >> $GITHUB_ENV
           SRS_MAJOR=$(echo $SRS_TAG| awk -F '.' '{print $1}' |sed 's/v//g')
           echo "SRS_MAJOR=$SRS_MAJOR" >> $GITHUB_ENV
