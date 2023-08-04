@@ -1,65 +1,100 @@
 #!/bin/bash
 
 # Install srs-cloud, for example:
-#   bash /www/server/panel/plugin/srs_cloud/setup.sh /tmp/srs_cloud_install.r0 /www/server/nginx/logs/nginx.pid /www/wwwroot srs.cloud.local
+#   bash /www/server/panel/plugin/srs_cloud/setup.sh --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid --www /www/wwwroot --site srs.cloud.local
 # If ok, we will create systemctl service at:
 #   /usr/lib/systemd/system/srs-cloud.service
 
-R0_FILE=$1; NGINX_PID=$2; WWW_HOME=$3; SITE_NAME=$4
+HELP=no
+R0_FILE=
+NGINX_PID=
+WWW_HOME=
+SITE_NAME=
+install_path=/www/server/panel/plugin/srs_cloud
+SRS_HOME=/usr/local/srs-cloud
+DATA_HOME=/data
+
+HELP=no
+VERBOSE=no
+LANGUAGE=zh
+REGISTRY=auto
+REGION=auto
+IMAGE=ossrs/srs-cloud:1
+
+# Allow use .env to override the default values.
+if [[ -f ${install_path}/.env ]]; then source ${install_path}/.env; fi
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -h|--help) HELP=yes; shift ;;
+        --r0) R0_FILE=$2; shift 2 ;;
+        --nginx) NGINX_PID=$2; shift 2 ;;
+        --www) WWW_HOME=$2; shift 2 ;;
+        --site) SITE_NAME=$2; shift 2 ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+done
+
+if [[ "$HELP" == yes ]]; then
+    echo "Usage: $0 [OPTIONS]"
+    echo "Options:"
+    echo "  -h, --help    Show this help message and exit"
+    echo "  --r0          The install error file. Default: ${R0_FILE}"
+    echo "  --nginx       The NGINX pid file. Default: ${NGINX_PID}"
+    echo "  --www         The www home directory. Default: ${WWW_HOME}"
+    echo "  --site        The website name. Default: ${SITE_NAME}"
+    exit 0
+fi
+
+# Guess the registry automatically by language.
+if [[ $REGISTRY == auto ]]; then
+    REGISTRY=$([[ $LANGUAGE == zh ]] && echo registry.cn-hangzhou.aliyuncs.com || echo docker.io)
+    REGION=$([[ $LANGUAGE == zh ]] && echo ap-beijing || echo ap-singapore)
+    IMAGE_URL=$([[ $REGISTRY == docker.io ]] && echo ${IMAGE} || echo ${REGISTRY}/${IMAGE})
+fi
+
 if [[ -z $NGINX_PID ]]; then echo "The nginx is empty"; exit 1; fi
 if [[ ! -f $NGINX_PID ]]; then echo "No nginx pid at $NGINX_PID"; exit 1; fi
 if [[ ! -f /etc/init.d/nginx ]]; then echo "No nginx file at /etc/init.d/nginx"; exit 1; fi
 if [[ -z $WWW_HOME ]]; then echo "No www home"; exit 1; fi
 if [[ -z $SITE_NAME ]]; then echo "No site name"; exit 1; fi
 
-# Setup the path.
-install_path=/www/server/panel/plugin/srs_cloud
-SRS_HOME=/usr/local/srs-cloud
-echo "Setup SRS at install_path=$install_path, SRS_HOME=$SRS_HOME, NGINX_PID=$NGINX_PID, WWW_HOME=$WWW_HOME, SITE_NAME=$SITE_NAME"
+echo "Setup SRS at install_path=$install_path, SRS_HOME=$SRS_HOME, DATA_HOME=$DATA_HOME, r0=$R0_FILE, NGINX_PID=$NGINX_PID, WWW_HOME=$WWW_HOME, SITE_NAME=$SITE_NAME"
+echo "ENV LANGUAGE=$LANGUAGE, IMAGE=$IMAGE, REGISTRY=$REGISTRY, REGION=$REGION, IMAGE_URL=$IMAGE_URL"
 
 source do_os.sh
 if [[ $? -ne 0 ]]; then echo "Setup OS failed"; exit 1; fi
 
-########################################################################################################################
-# Generate PATH for nginx.
-mkdir -p $SRS_HOME/mgmt/containers/bin &&
-cat << END > $SRS_HOME/mgmt/containers/bin/bootstrap
-#!/bin/bash
-
-NGINX_PID=$NGINX_PID
-export NGINX_PID=\$NGINX_PID
-END
-if [[ $? -ne 0 ]]; then echo "Setup bootstrap failed"; exit 1; fi
-
-# For BT, we use special env, to disable discover of platform.
-cat << END > ${SRS_HOME}/mgmt/.env
+# Setup the environment variables.
+echo "Start to setup .env"
+if [[ -f ${DATA_HOME}/config/.env && -s ${DATA_HOME}/config/.env ]]; then
+  echo "The .env already exists, skip"
+else
+  mkdir -p ${DATA_HOME}/config &&
+  cat << END > ${DATA_HOME}/config/.env
 CLOUD=BT
-REACT_APP_LOCALE=zh
+REGION=${REGION}
+REACT_APP_LOCALE=${LANGUAGE}
+IMAGE=${IMAGE_URL}
 # Please use BT to configure the domain and HTTPS.
 SRS_HTTPS=off
+NGINX_PID=$NGINX_PID
 END
-if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
+  if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
+fi
 
-########################################################################################################################
-cd ${SRS_HOME} && make install
-if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
+echo "Start to update bootstrap"
+sed -i "s|^DATA_HOME=.*|DATA_HOME=${DATA_HOME}|g" ${SRS_HOME}/mgmt/bootstrap &&
+sed -i "s|^IMAGE=.*|IMAGE=${IMAGE_URL}|g" ${SRS_HOME}/mgmt/bootstrap &&
+if [[ $? -ne 0 ]]; then echo "Update bootstrap failed"; exit 1; fi
+echo "Update bootstrap ok"
 
-cd `dirname $SRS_HOME` && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
-if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
-
-# Setup git alias to make it convenient.
-cd ${SRS_HOME}/mgmt &&
-echo "Setup git alias to make it more convenient" &&
-git config --local alias.co checkout &&
-git config --local alias.br branch &&
-git config --local alias.ci commit &&
-git config --local alias.st status
-if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
-
-########################################################################################################################
 # Update the docker images.
-echo "Cache docker images" &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1
+echo "Cache docker image ${IMAGE}" &&
+REPO=$(echo $IMAGE |cut -d: -f1) && TAG=$(echo $IMAGE |cut -d: -f2)
+if [[ $(docker images |grep $REPO |grep -q $TAG || echo no) == no ]]; then
+  docker pull ${IMAGE}
+fi
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
 # If install ok, the directory should exists.
@@ -68,16 +103,12 @@ if [[ ! -d ${SRS_HOME} || ! -d ${SRS_HOME}/mgmt ]]; then
 fi
 
 # Link the www root to container.
-WWW_FILES=$(ls ${SRS_HOME}/mgmt/containers/www)
-for file in $WWW_FILES; do
-  rm -rf $WWW_HOME/$SITE_NAME/$file &&
-  ln -sf ${SRS_HOME}/mgmt/containers/www/$file $WWW_HOME/$SITE_NAME/$file
-done
-if [[ $? -ne 0 ]]; then echo "Link www root failed"; exit 1; fi
-
-# Execute script for each run.
-cd ${SRS_HOME}/mgmt && bash auto/foreach_run
-if [[ $? -ne 0 ]]; then echo "Execute for each run script failed"; exit 1; fi
+#WWW_FILES=$(ls ${SRS_HOME}/mgmt/containers/www)
+#for file in $WWW_FILES; do
+#  rm -rf $WWW_HOME/$SITE_NAME/$file &&
+#  ln -sf ${SRS_HOME}/mgmt/containers/www/$file $WWW_HOME/$SITE_NAME/$file
+#done
+#if [[ $? -ne 0 ]]; then echo "Link www root failed"; exit 1; fi
 
 # Create init.d script.
 rm -f /etc/init.d/srs_cloud &&

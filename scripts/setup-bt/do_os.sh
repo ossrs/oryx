@@ -4,6 +4,7 @@
 yum --version >/dev/null 2>&1 && rpm --version >/dev/null 2>&1 && OS_NAME='CentOS'
 apt-get --version >/dev/null 2>&1 && OS_NAME='Ubuntu'
 if [[ -z $OS_NAME ]]; then echo "Only support CentOS/Ubuntu"; exit 1; fi
+if [[ $OS_NAME != "Ubuntu" ]]; then echo "Only support Ubuntu"; exit 1; fi
 
 if [[ $OS_NAME == 'CentOS' ]]; then
   # Check CentOS version.
@@ -16,4 +17,6 @@ if [[ $OS_NAME == 'Ubuntu' ]]; then
   Ubuntu_VERSION=$(cat /etc/os-release |grep VERSION_ID |awk -F '"' '{print $2}' |awk -F '.' '{print $1}')
   if [[ $Ubuntu_VERSION -lt 18 ]]; then echo "Only support Ubuntu 18+, yours is $Ubuntu_VERSION"; exit 1; fi
 fi
+
+echo "OS is $OS_NAME $Ubuntu_VERSION"
 

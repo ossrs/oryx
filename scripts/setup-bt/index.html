@@ -156,11 +156,7 @@
     });
 
     $('.btn_install_srs').click(function () {
-      srs_cloud_install().catch(e => {
-        // If install failed, refresh and show the latest logs.
-        srs_cloud_refresh_logs();
-        throw e;
-      });
+      srs_cloud_try_install();
     });
 
     const services = await srs_cloud_request('serviceStatus');
@@ -169,7 +165,7 @@
     }
 
     console.log(`services is ${JSON.stringify(services)}`);
-    if (!services?.srs || services?.r0) {
+    if (!services?.srs_ready || services?.srs_error) {
       $(".bt-w-menu p[name='install']").addClass('bgw').siblings().removeClass('bgw');
       $('.install_version_box').show().siblings().hide();
       await srs_cloud_setup_install_view();
@@ -196,7 +192,7 @@
     const menuName = self.attr('name');
 
     const services = await srs_cloud_request('serviceStatus');
-    if (!services?.srs || services?.r0) {
+    if (!services?.srs_ready || services?.srs_error) {
       if (menuName !== 'install') layer.msg('请先安装云SRS', {icon: 7});
       return console.log(`service not ready ${JSON.stringify(services)}`);
     }
@@ -246,13 +242,38 @@
   }
 
   async function srs_cloud_setup_mgmt_view() {
-    const l = window.location;
+    const r0 = await srs_cloud_request('serviceStatus');
 
     // Always use HTTP, because HTTPS might not be available.
-    //const url = `${l.protocol}//${l.hostname}/mgmt/`;
-    const url = `http://${l.hostname}/mgmt/`;
+    //const url = `${l.protocol}//${r0.site_domain}/mgmt/`;
+    const url = `http://${r0.site_domain}/mgmt/`;
 
     $('.srs_mgmt_link').attr('href', url);
+  }
+
+  async function srs_cloud_try_install() {
+    if (!$('.txt_srs_domain').val()) {
+      alert('请填写域名');
+      throw 'no domain';
+    }
+
+    $('.btn_install_srs').html('准备安装').attr({'disabled': 'disabled'});
+    try {
+      await srs_cloud_install();
+    } catch (e) {
+      $('.btn_install_srs').html('错误重试').removeAttr('disabled').show();
+      // If install failed, refresh and show the latest logs.
+      srs_cloud_refresh_logs();
+      throw e;
+    };
+
+    const services = await srs_cloud_request('serviceStatus');
+
+    // Allow user to install SRS, if not installed, or failed.
+    // It already refreshed the logs, so we don't do it when failed.
+    if (!services?.srs_ready || services?.srs_error) {
+      await do_srs_cloud_install();
+    }
   }
 
   async function srs_cloud_install() {
@@ -266,7 +287,7 @@
     layer.close(tips);
 
     // If BT or aaPanel not ready to install SRS, should wait.
-    if (services?.ready !== 'ok') {
+    if (services?.plugin_ready !== 'ok') {
       const msg = `正在安装SRS插件，请稍后再试`;
       layer.msg(msg, {icon: 2});
       throw msg;
@@ -277,7 +298,8 @@
       ...(services?.nginx ? [] : [{id: 'nginx', title: 'NGINX', call: 'bt.soft.install'}]),
     ];
     // If no docker manager plugin, or docker service, install the plugin.
-    if (!services?.docker_manager) {
+    // If there is a docker installed, we only need to start it, don't require the docker plugin.
+    if (!services?.docker_manager && !services?.docker_installed) {
       deps.push({id: 'docker', title: 'Docker', call: 'bt.soft.install'});
     }
 
@@ -334,11 +356,6 @@
       const data = await srs_cloud_request('setupFirewall');
       console.log('setup firewall', data);
       await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-
-    // Allow user to install SRS, if not installed, or failed.
-    if (!services?.srs || services?.r0) {
-      return await do_srs_cloud_install();
     }
   }
 

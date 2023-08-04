@@ -32,9 +32,9 @@ class srs_cloud_main:
 
     def serviceStatus(self, args):
         status = {}
-        status['r0'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
-        status['ready'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__ready_file))[0]
-        status['srs'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
+        status['plugin_ready'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__ready_file))[0]
+        status['srs_error'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
+        status['srs_ready'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
         status['nginx'] = public.ExecShell('ls {}/nginx/sbin/nginx >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
         status['docker_manager'] = public.ExecShell('ls {}/panel/plugin/docker >/dev/null 2>&1 && echo -n ok'.format(public.get_setup_path()))[0]
         status['docker_installed'] = public.ExecShell('ls /usr/lib/systemd/system/docker.service >/dev/null 2>&1 && echo -n ok')[0]
@@ -71,6 +71,7 @@ class srs_cloud_main:
     # If not set docker_installed.
     def installService(self, args):
         if args.service != 'docker':
+            self.__trace(f"Error: Install invalid service {args.service}")
             return public.returnMsg(False, 'invalid service {}'.format(args.service))
         public.ExecShell('bash {}/do_docker.sh'.format(self.__plugin_path))
         return public.returnMsg(True, json.dumps('ok'))
@@ -78,19 +79,22 @@ class srs_cloud_main:
     # If not set docker_running.
     def restartService(self, args):
         if args.service != 'docker':
+            self.__trace(f"Error: Restart invalid service {args.service}")
             return public.returnMsg(False, 'invalid service {}'.format(args.service))
         public.ExecShell('systemctl restart {}'.format(args.service))
         return public.returnMsg(True, json.dumps('ok'))
 
+    # If not srs_ready or srs_error.
     def installSrs(self, args):
         if 'start' not in args: args.start = 0
         if 'end' not in args: args.end = 0
-        return public.returnMsg(False, 'xxx')
 
         nginx = '{}/nginx/logs/nginx.pid'.format(public.get_setup_path())
         if not os.path.exists(nginx):
+            self.__trace(f"Error: Install no nginx")
             return public.returnMsg(False, 'no nginx')
         if public.GetWebServer() != 'nginx':
+            self.__trace(f"Error: Install not nginx, but {public.GetWebServer()}")
             return public.returnMsg(False, 'not nginx, but {}'.format(public.GetWebServer()))
 
         srs = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
@@ -99,7 +103,7 @@ class srs_cloud_main:
         [tail, wc] = ['', 0]
         r0 = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
         if running != 'ok' and srs != 'ok' and r0 != 'failed':
-            public.ExecShell('nohup bash {plugin}/setup.sh "{r0}" "{nginx}" "{www}" "{site}" 1>{log} 2>&1 &'.format(
+            public.ExecShell('nohup bash {plugin}/setup.sh --r0 "{r0}" --nginx "{nginx}" --www "{www}" --site "{site}" 1>{log} 2>&1 &'.format(
                 plugin=self.__plugin_path, r0=self.__r0_file, nginx=nginx, www=public.get_site_path(),
                 site=self.__site, log=self.__log_file,
             ))
@@ -127,8 +131,7 @@ class srs_cloud_main:
     # If not set site_created.
     def createSrsSite(self, args):
         if 'domain' not in args or args.domain == '':
-            with open(self.__log_file, 'a+') as file:
-                file.write(f"Error: Empty SRS Cloud domain.\n")
+            self.__trace(f"Error: Empty SRS Cloud domain.")
             return public.returnMsg(False, 'invalid domain')
 
         site = panelSite().AddSite(Params(
@@ -157,32 +160,47 @@ class srs_cloud_main:
         conf = files().GetFileBody(Params(path=confPath))
         confData = conf['data']
 
-        ## Replace the directory to new home, because the site is kept when uninstall.
-        confData = confData.replace('/usr/local/lighthouse/softwares/srs-cloud', '/usr/local/srs-cloud')
+        # Include the nginx.http.conf for http(global) level.
+        if os.path.exists('/data/config/nginx.http.conf') and confData.find('#SRS-HTTP-START') == -1:
+            srsConf = [
+                '#SRS-HTTP-START\n',
+                'include /data/config/nginx.http.conf;\n',
+                '#SRS-HTTP-END\n',
+            ]
+            confData = f"{''.join(srsConf)}\n{confData}"
 
-        ## Process the http section of nginx.
-        #if confData.find('#SRS-HTTP-START') == -1:
-        #    srsHttpConf = 'include {}/mgmt/containers/conf/conf.d/nginx.http.conf;'.format(self.__srs_home)
-        #    confData = '#SRS-HTTP-START\n{}\n#SRS-HTTP-END\n\n'.format(srsHttpConf) + confData
-        ## Process the server section of nginx.
-        #if confData.find('#SRS-SERVER-START') == -1:
-        #    srsServerConf = 'include {}/mgmt/containers/conf/default.d/*.conf;'.format(self.__srs_home)
-        #    confData = confData.replace(
-        #        '#SSL-START',
-        #        '#SRS-SERVER-START\n    {}\n    #SRS-SERVER-END\n\n    #SSL-START'.format(srsServerConf),
-        #    )
+        # Include the nginx.server.conf for server(vhost) level.
+        if os.path.exists('/data/config/nginx.server.conf') and confData.find('#SRS-SERVER-START') == -1:
+            srsConf = [
+                '#SRS-SERVER-START\n',
+                'include /data/config/nginx.server.conf;\n'
+                '#SRS-SERVER-END\n',
+            ]
+            confData = confData.replace('#SSL-START', f"{'    '.join(srsConf)}\n    #SSL-START")
+
+        # Proxy all to SRS Cloud.
+        if confData.find('#SRS-PROXY-START') == -1:
+            srsConf = [
+                '#SRS-PROXY-START\n',
+                'location / {\n',
+                '    proxy_pass http://127.0.0.1:2022;\n',
+                '    proxy_set_header Host $host;\n',
+                '}\n',
+                '#SRS-PROXY-END\n',
+            ]
+            confData = confData.replace('#SSL-START', f"{'    '.join(srsConf)}\n    #SSL-START")
 
         # Disable the location section of nginx, we will handle it.
-        #if confData.find('location ~ /disabled.by.srs/.*\.(js|css)?$\n') == -1:
-        #    confData = confData.replace(
-        #        'location ~ .*\.(js|css)?$\n',
-        #        'location ~ /disabled.by.srs/.*\.(js|css)?$\n',
-        #    )
-        #if confData.find('#location ~ /disabled.by.srs/.*\.(gif|jpg|jpeg|png|bmp|swf)$\n') == -1:
-        #    confData = confData.replace(
-        #        'location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$\n',
-        #        'location ~ /disabled.by.srs/.*\.(gif|jpg|jpeg|png|bmp|swf)$\n',
-        #    );
+        if confData.find('location ~ /disabled.by.srs/.*\.(js|css)?$\n') == -1:
+            confData = confData.replace(
+                'location ~ .*\.(js|css)?$\n',
+                'location ~ /disabled.by.srs/.*\.(js|css)?$\n',
+            )
+        if confData.find('#location ~ /disabled.by.srs/.*\.(gif|jpg|jpeg|png|bmp|swf)$\n') == -1:
+            confData = confData.replace(
+                'location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$\n',
+                'location ~ /disabled.by.srs/.*\.(gif|jpg|jpeg|png|bmp|swf)$\n',
+            );
 
         # Save the nginx config and reload it.
         r0 = files().SaveFileBody(Params(
@@ -192,6 +210,9 @@ class srs_cloud_main:
         # We must rewrite the message if ok, for json not support chinese.
         if 'status' in r0 and r0['status'] == True:
             r0['msg'] = json.dumps({'path': confPath, 'conf': confData})
+
+        if r0['status'] == False:
+            self.__trace(f"Error: Failed to setup site, {r0['msg']}")
         return r0
 
     # If not set firewall_ready
@@ -220,6 +241,10 @@ class srs_cloud_main:
         if real_path is not None:
             real_path = real_path.strip()
         return [ok, real_path]
+
+    def __trace(self, msg):
+        with open(self.__log_file, 'a+') as file:
+            file.write(f"{msg}\n")
 
 class Params(object):
     def __init__(self, **kwargs):

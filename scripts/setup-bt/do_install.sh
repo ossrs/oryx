@@ -42,8 +42,10 @@ Install() {
 
   # Create global data directory.
   echo "Create data and config file"
-  mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env
-  if [[ $? -ne 0 ]]; then echo "Create /data/config/.env failed"; exit 1; fi
+  mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env &&
+  touch ${DATA_HOME}/config/nginx.http.conf &&
+  touch ${DATA_HOME}/config/nginx.server.conf
+  if [[ $? -ne 0 ]]; then echo "Create /data/config failed"; exit 1; fi
 
   # Allow network forwarding, required by docker.
   # See https://stackoverflow.com/a/41453306/17679565
@@ -66,17 +68,18 @@ Install() {
 }
 
 Uninstall() {
-  /etc/init.d/srs_cloud stop
+  if [[ -f /etc/init.d/srs_cloud ]]; then /etc/init.d/srs_cloud stop; fi
   echo "Stop srs-cloud service ok"
 
-  INIT_D=/etc/init.d/srs_cloud &&
-  rm -f $INIT_D
+  INIT_D=/etc/init.d/srs_cloud && rm -f $INIT_D
   echo "Remove init.d script $INIT_D ok"
 
-  systemctl disable srs-cloud
-  rm -f /usr/lib/systemd/system/srs-cloud.service
-  systemctl daemon-reload
-  systemctl reset-failed
+  if [[ -f /usr/lib/systemd/system/srs-cloud.service ]]; then
+    systemctl disable srs-cloud
+    rm -f /usr/lib/systemd/system/srs-cloud.service
+    systemctl daemon-reload
+    systemctl reset-failed
+  fi
   echo "Remove srs-cloud.service ok"
 
   INSTALL_HOME=/usr/local/srs-cloud
@@ -99,7 +102,7 @@ Uninstall() {
   echo "Remove plugin path $install_path ok"
 
   LOGS=$(ls /tmp/srs_cloud_install.* 2>/dev/null)
-  if [[ ! -z $LOGS && -f $LOGS ]]; then rm -f $LOGS; fi
+  if [[ ! -z $LOGS ]]; then rm -f $LOGS; fi
   echo "Remove install flag files $LOGS ok"
 }
 

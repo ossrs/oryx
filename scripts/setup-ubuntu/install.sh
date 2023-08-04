@@ -16,12 +16,6 @@ LANGUAGE=zh
 REGISTRY=auto
 REGION=auto
 IMAGE=ossrs/srs-cloud:1
-MGMT_PORT=2022
-RTMP_PORT=1935
-API_PORT=1985
-HTTP_PORT=8080
-RTC_PORT=8000
-SRT_PORT=10080
 # Use local srs-cloud directory for debug.
 DEBUG_HOME=
 
@@ -36,12 +30,6 @@ while [[ "$#" -gt 0 ]]; do
         --language) LANGUAGE=$2; shift 2 ;;
         --registry) REGISTRY=$2; shift 2 ;;
         --image) IMAGE=$2; shift 2 ;;
-        --mgmt_port) MGMT_PORT=$2; shift 2 ;;
-        --rtmp_port) RTMP_PORT=$2; shift 2 ;;
-        --api_port) API_PORT=$2; shift 2 ;;
-        --http_port) HTTP_PORT=$2; shift 2 ;;
-        --rtc_port) RTC_PORT=$2; shift 2 ;;
-        --srt_port) SRT_PORT=$2; shift 2 ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
@@ -54,12 +42,6 @@ function help() {
     echo "  --language    The language to use. zh or en. Default: ${LANGUAGE}"
     echo "  --registry    The registry for docker images. Default: ${REGISTRY}"
     echo "  --image       The image to run. Default: ${IMAGE}"
-    echo "  --mgmt_port   The port for mgmt. Default: ${MGMT_PORT}"
-    echo "  --rtmp_port   The port for RTMP. Default: ${RTMP_PORT}"
-    echo "  --api_port    The port for HTTP API. Default: ${API_PORT}"
-    echo "  --http_port   The port for HTTP Server. Default: ${HTTP_PORT}"
-    echo "  --rtc_port    The port for WebRTC. Default: ${RTC_PORT}"
-    echo "  --srt_port    The port for SRT. Default: ${SRT_PORT}"
     echo "  --debug-home  Setup the debug home directory. Default: ${DEBUG_HOME}"
 }
 
@@ -74,8 +56,8 @@ if [[ "$HELP" == yes ]]; then
     help
     exit 0
 fi
-echo -n "Install with options: VERBOSE=${VERBOSE}, LANGUAGE=${LANGUAGE}, REGISTRY=${REGISTRY}, IMAGE=${IMAGE}, IMAGE_URL=${IMAGE_URL}, SRS_HOME=${SRS_HOME}, DATA_HOME=${DATA_HOME}"
-echo ", MGMT_PORT=${MGMT_PORT}, RTMP_PORT=${RTMP_PORT}, API_PORT=${API_PORT}, HTTP_PORT=${HTTP_PORT}, RTC_PORT=${RTC_PORT}, SRT_PORT=${SRT_PORT}, DEBUG_HOME=${DEBUG_HOME}"
+echo -n "Install with options: VERBOSE=${VERBOSE}, LANGUAGE=${LANGUAGE}, SRS_HOME=${SRS_HOME}, DATA_HOME=${DATA_HOME}"
+echo ", REGISTRY=${REGISTRY}, IMAGE=${IMAGE}, REGION=${REGION}, IMAGE_URL=${IMAGE_URL}, DEBUG_HOME=${DEBUG_HOME}"
 
 # Update sysctl.conf and add if not exists. For example:
 #   update_sysctl net.ipv4.ip_forward 1 0 "# Controls IP packet forwarding"
@@ -141,12 +123,6 @@ echo "Create data and config files ok"
 echo "Start to update bootstrap"
 sed -i "s|^DATA_HOME=.*|DATA_HOME=${DATA_HOME}|g" ${SRS_HOME}/mgmt/bootstrap &&
 sed -i "s|^IMAGE=.*|IMAGE=${IMAGE_URL}|g" ${SRS_HOME}/mgmt/bootstrap &&
-sed -i "s|^MGMT_PORT=.*|MGMT_PORT=${MGMT_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
-sed -i "s|^RTMP_PORT=.*|RTMP_PORT=${RTMP_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
-sed -i "s|^API_PORT=.*|API_PORT=${API_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
-sed -i "s|^HTTP_PORT=.*|HTTP_PORT=${HTTP_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
-sed -i "s|^RTC_PORT=.*|RTC_PORT=${RTC_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
-sed -i "s|^SRT_PORT=.*|SRT_PORT=${SRT_PORT}|g" ${SRS_HOME}/mgmt/bootstrap &&
 if [[ ! -z $DEBUG_HOME ]]; then sed -i "s|^DEBUG_HOME=.*|DEBUG_HOME=${DEBUG_HOME}|g" ${SRS_HOME}/mgmt/bootstrap; fi
 if [[ $? -ne 0 ]]; then echo "Update bootstrap failed"; exit 1; fi
 echo "Update bootstrap ok"

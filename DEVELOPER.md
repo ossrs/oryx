@@ -164,9 +164,37 @@ Start a container and mount as plugin:
 
 ```bash
 docker rm -f bt 2>/dev/null || echo 'OK' &&
-docker run -p 7800:7800 -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
+docker run -p 80:80 -p 7800:7800 -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
+    -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
+    -v $HOME/.bt/api.json:/www/server/panel/config/api.json \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
     -d --rm -it -v $(pwd):/g -w /g --name=bt ossrs/bt-plugin-dev:1
+```
+
+> Note: Should bind the docker to your BT account, then you will get the `userInfo.json`, 
+> and save it to `$HOME/.bt/userInfo.json`.
+
+> Note: Enable the [HTTP API](https://www.bt.cn/bbs/thread-20376-1-1.html) and get the `api.json`, 
+> and save it to `$HOME/.bt/api.json`.
+
+Build and save the platform image to file:
+
+```bash
+docker rmi platform:latest 2>/dev/null || echo OK &&
+docker build -t platform:latest -f Dockerfile . &&
+docker save -o platform.tar platform:latest
+```
+
+Enter the docker container:
+
+```bash
+docker exec -it bt bash -c '
+    docker load -i platform.tar && 
+    version=$(bash scripts/version.sh) &&
+    docker tag platform:latest ossrs/srs-cloud:$version &&
+    docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+    docker images
+'
 ```
 
 Next, build the BT plugin and install it:
@@ -181,9 +209,8 @@ Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install
 
 > Note: Or you can use `docker exec -it bt bt default` to show the login info.
 
-Register a BT account and bind to the container, in the application store, there is a `srs_cloud` plugin.
-
-After test, you can install the plugin `build/bt-srs_cloud.zip` to production BT panel.
+In the [application store](http://localhost:7800/soft), there is a `srs_cloud` plugin. After test, you can install the plugin 
+`build/bt-srs_cloud.zip` to production BT panel.
 
 ## Release
 
