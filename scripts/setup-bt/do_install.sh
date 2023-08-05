@@ -33,6 +33,9 @@ Install() {
   source do_os.sh
   if [[ $? -ne 0 ]]; then echo "Setup OS failed"; exit 1; fi
 
+  chmod +x $install_path/mgmt/bootstrap
+  if [[ $? -ne 0 ]]; then echo "Set mgmt bootstrap permission failed"; exit 1; fi
+
   # Move srs-cloud to its home.
   echo "Link srs-cloud to $SRS_HOME"
   rm -rf $SRS_HOME && mkdir $SRS_HOME &&

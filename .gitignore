@@ -132,3 +132,4 @@ t.md
 /*.tar
 /srs-cloud2
 /test/srs-cloud.test
+__pycache__

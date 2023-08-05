@@ -41,18 +41,20 @@ echo "Create tmp dir ${TARGET_DIR}"
 
 mkdir -p $TARGET_DIR &&
 cp -r scripts/setup-bt/* $TARGET_DIR && rm -rf $TARGET_DIR/auto &&
+rm -f $TARGET_DIR/srsTools.py && cp -f scripts/tools/* $TARGET_DIR &&
 cp -r ${WORK_DIR}/usr ${TARGET_DIR}/usr &&
 cp ${WORK_DIR}/LICENSE ${TARGET_DIR}/LICENSE &&
 mkdir -p ${TARGET_DIR}/mgmt && cp ${WORK_DIR}/mgmt/bootstrap ${TARGET_DIR}/mgmt/bootstrap
 echo "Copy files to $TARGET_DIR"
 if [[ $? -ne 0 ]]; then echo "Copy files failed"; exit 1; fi
 
-cat << END > $TARGET_DIR/.env
+# For BT, should never use .env, because it will be removed when install.
+cat << END > $TARGET_DIR/config
 LANGUAGE=zh
 IMAGE=ossrs/srs-cloud:${VERSION}
 END
-if [[ $? -ne 0 ]]; then echo "Generate .env failed"; exit 1; fi
-echo "Generate .env to $TARGET_DIR/.env"
+if [[ $? -ne 0 ]]; then echo "Generate config failed"; exit 1; fi
+echo "Generate config to $TARGET_DIR/config"
 
 INSTALL_FILE=bt-srs_cloud.zip
 (cd $TMP_DIR/ && zip -q -r $INSTALL_FILE srs_cloud) &&

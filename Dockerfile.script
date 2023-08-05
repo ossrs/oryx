@@ -22,7 +22,8 @@ FROM ${ARCH}jrei/systemd-ubuntu:focal AS dist
 ENV DEBIAN_FRONTEND=noninteractive
 
 # See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#apt-get
-RUN apt update -y && apt-get install -y docker.io make gdb gcc g++ wget
+RUN apt update -y && apt-get install -y docker.io make gdb gcc g++ wget ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy nodejs for ui build.
 COPY --from=node /usr/local/bin /usr/local/bin

@@ -47,7 +47,10 @@
                     </div>
                 </div>
                 <div class="conter_box install_version_box" name="install">
-                    <div>域名：<input type="text" class="txt_srs_domain"/> * 通过域名访问SRS Cloud管理后台</div>
+                    <div>
+                        域名：<input type="text" class="txt_srs_domain"/>
+                        * 通过域名访问SRS Cloud管理后台，操作步骤请看<a href="https://ossrs.net/lts/zh-cn/faq-srs-cloud#how-to-set-domain" target="_blank" style="color:red">这里</a>
+                    </div>
                     <br/>
                     <button class="btn btn-success btn-sm va0 ml5 btn_install_srs">安装云SRS</button>
                     <textarea class="install_log tomcat_log" style="display:none"></textarea>
@@ -57,7 +60,8 @@
                     </ul>
                 </div>
                 <div class="conter_box srs_mgmt_box" name="mgmt">
-                    <a href="#" class="btn btn-link srs_mgmt_link" target="_blank" rel="noreferrer">云SRS管理面板</a>
+                    <p><a href="#" class="btn btn-link srs_mgmt_link" target="_blank" rel="noreferrer">云SRS管理面板</a></p>
+                    <p style="color:red">注意!!! 请设置域名解析或者hosts，操作步骤请看<a href="https://ossrs.net/lts/zh-cn/faq-srs-cloud#how-to-set-domain" target="_blank" style="color:blue">这里</a></p>
                 </div>
             </div>
         </div>
@@ -170,7 +174,7 @@
       $('.install_version_box').show().siblings().hide();
       await srs_cloud_setup_install_view();
     } else {
-      await srs_cloud_dispatch($("p[name='service']"));
+      await srs_cloud_dispatch($("p[name='mgmt']"));
     }
 
     const pid = await srs_cloud_request('querySrs');
@@ -202,10 +206,10 @@
 
     if (menuName === 'service') {
       await srs_cloud_setup_service_view();
-    } else if (menuName === 'install') {
-      await srs_cloud_setup_install_view();
     } else if (menuName === 'mgmt') {
       await srs_cloud_setup_mgmt_view();
+    } else if (menuName === 'install') {
+      await srs_cloud_setup_install_view();
     }
   }
 
@@ -252,9 +256,16 @@
   }
 
   async function srs_cloud_try_install() {
-    if (!$('.txt_srs_domain').val()) {
+    const domain = $('.txt_srs_domain').val();
+    if (!domain) {
       alert('请填写域名');
       throw 'no domain';
+    }
+
+    const domainRegex = /^(?=.{1,253})(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.?)+[A-Za-z]{2,6}$/;
+    if (!domainRegex.test(domain)) {
+      alert('请填写正确格式的域名');
+      throw 'invalid domain format';
     }
 
     $('.btn_install_srs').html('准备安装').attr({'disabled': 'disabled'});
@@ -401,10 +412,13 @@
 
     layer.msg('云SRS启动中，请稍后......', {icon: 1});
     $('.btn_install_srs').html('正在启动').attr({'disabled': 'disabled'});
-    await new Promise(resolve => setTimeout(resolve, 60000));
+    await new Promise(resolve => setTimeout(resolve, 30000));
 
     layer.msg('云SRS安装成功', {icon: 1});
     $('.btn_install_srs').html('安装完成').attr({'disabled': 'disabled'});
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    await srs_cloud_dispatch($("p[name='mgmt']"));
   }
 
   $(function () {

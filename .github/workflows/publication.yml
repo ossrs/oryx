@@ -44,14 +44,14 @@ jobs:
         run: |
           #
           # For BT
-          bash scripts/setup-bt/auto/zip.sh && SRS_BT_SOURCE_FILE=bt-srs_cloud.zip &&
+          bash scripts/setup-bt/auto/zip.sh --output /tmp/zip-for-bt && SRS_BT_SOURCE_FILE=bt-srs_cloud.zip &&
           echo "SRS_BT_SOURCE_FILE=${SRS_BT_SOURCE_FILE}" >> $GITHUB_ENV &&
-          echo "SRS_BT_SOURCE_MD5=$(md5sum /tmp/zip-for-bt-srs_cloud/${SRS_BT_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
+          echo "SRS_BT_SOURCE_MD5=$(md5sum /tmp/zip-for-bt/${SRS_BT_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
           #
           # For aaPanel
-          bash scripts/setup-aapanel/auto/zip.sh  && SRS_AAPANEL_SOURCE_FILE=aapanel-srs_cloud.zip &&
+          bash scripts/setup-aapanel/auto/zip.sh --output /tmp/zip-for-aapanel  && SRS_AAPANEL_SOURCE_FILE=aapanel-srs_cloud.zip &&
           echo "SRS_AAPANEL_SOURCE_FILE=${SRS_AAPANEL_SOURCE_FILE}" >> $GITHUB_ENV &&
-          echo "SRS_AAPANEL_SOURCE_MD5=$(md5sum /tmp/zip-for-aapanel-srs_cloud/${SRS_AAPANEL_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
+          echo "SRS_AAPANEL_SOURCE_MD5=$(md5sum /tmp/zip-for-aapanel/${SRS_AAPANEL_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
           # 
           # For Ubuntu script: zh
           bash scripts/setup-ubuntu/build.sh --output /tmp/zip-for-ubuntu --language zh && SRS_UBUNTU_ZH_SOURCE_FILE=srs-cloud-zh.tar.gz &&
@@ -65,8 +65,8 @@ jobs:
           #
           echo "Gather asserts"
           SRS_SOURCE_PATH=/tmp/srs_cloud-asserts && rm -rf $SRS_SOURCE_PATH && mkdir -p $SRS_SOURCE_PATH &&
-          mv /tmp/zip-for-bt-srs_cloud/${SRS_BT_SOURCE_FILE} $SRS_SOURCE_PATH &&
-          mv /tmp/zip-for-aapanel-srs_cloud/${SRS_AAPANEL_SOURCE_FILE} $SRS_SOURCE_PATH &&
+          mv /tmp/zip-for-bt/${SRS_BT_SOURCE_FILE} $SRS_SOURCE_PATH &&
+          mv /tmp/zip-for-aapanel/${SRS_AAPANEL_SOURCE_FILE} $SRS_SOURCE_PATH &&
           mv /tmp/zip-for-ubuntu/${SRS_UBUNTU_ZH_SOURCE_FILE} $SRS_SOURCE_PATH &&
           mv /tmp/zip-for-ubuntu/${SRS_UBUNTU_EN_SOURCE_FILE} $SRS_SOURCE_PATH &&
           ls -lh $SRS_SOURCE_PATH &&

@@ -3,215 +3,6 @@
 This guide is for developers and covers topics such as OpenAPI, environment variables, 
 resources, and ports, as well as development on Mac or using Docker.
 
-## Develop All in macOS
-
-Start redis and SRS by docker:
-
-```bash
-docker run --name redis --rm -it -v $HOME/db/redis:/data -p 6379:6379 -d redis &&
-docker run --name srs --rm -it \
-    -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
-    -v $(pwd)/platform/containers/objs/nginx:/usr/local/srs/objs/nginx \
-    -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-    -d ossrs/srs:5
-```
-
-> Note: Stop service by `docker rm -f redis srs`
-
-> Note: Also, you can run SRS by `(cd platform && ~/git/srs/trunk/objs/srs -c containers/conf/srs.release-local.conf)`
-
-Run the platform backend, or run in GoLand:
-
-```bash
-(cd platform && go run .)
-```
-
-Run the platform react ui, or run in WebStorm:
-
-```bash
-(cd ui && npm install && npm start)
-```
-
-Access the browser: http://localhost:3000
-
-## Develop All in One Docker
-
-Run srs-cloud in a docker.
-
-First, build image:
-
-```bash
-docker rmi platform-dev 2>/dev/null || echo 'OK' &&
-docker build -t platform-dev -f Dockerfile.dev .
-```
-
-Then start the development docker:
-
-```bash
-docker rm -f platform 2>/dev/null || echo 'OK' &&
-docker run -d --rm -it -p 2022:2022 --name platform -v $(pwd):/usr/local/srs-cloud \
-  --add-host redis:127.0.0.1 --env REDIS_HOST=127.0.0.1 --add-host mgmt.srs.local:127.0.0.1 \
-  --env CLOUD=DOCKER --env MGMT_DOCKER=true --env SRS_DOCKERIZED=true --env NODE_ENV=development \
-  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  -w /usr/local/srs-cloud platform-dev bash
-```
-
-> Note: We don't use the `/data` as global storage.
-
-Build platform and UI in docker:
-
-```bash
-docker exec -it platform make -j
-```
-
-Run platform in docker:
-
-```bash
-docker exec -it platform ./platform/bootstrap
-```
-
-Stop redis and SRS:
-
-```bash
-docker rm -f platform
-```
-
-It's the same as production online.
-
-## Develop the Script Installer
-
-Build a docker image:
-
-```bash
-docker rm -f platform 2>/dev/null || echo 'OK' &&
-docker rmi test 2>/dev/null || echo 'OK' &&
-docker build -t test -f Dockerfile.script .
-```
-
-Create a docker container in daemon:
-
-```bash
-docker rm -f platform 2>/dev/null || echo 'OK' &&
-docker run \
-    -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-    --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
-    -d --rm -it -v $(pwd):/g -w /g --name=platform test
-```
-
-Build and save the platform image to file:
-
-```bash
-docker rmi platform:latest 2>/dev/null || echo OK &&
-docker build -t platform:latest -f Dockerfile . &&
-docker save -o platform.tar platform:latest
-```
-
-Enter the docker container:
-
-```bash
-docker exec -it platform bash -c '
-    docker load -i platform.tar && 
-    version=$(bash scripts/version.sh) &&
-    docker tag platform:latest ossrs/srs-cloud:$version &&
-    docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
-    docker images
-'
-```
-
-Test the build script, in the docker container:
-
-```bash
-docker exec -it platform bash scripts/setup-ubuntu/build.sh --extract
-```
-
-> Note: Use `--extract` to extract the platform tar file.
-
-> Note: Use `--output $(pwd)/build` to specify the output directory.
-
-Test the install script, in the docker container:
-
-```bash
-docker exec -it platform bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose
-```
-
-> Note: Use `--verbose` to show the detail log.
-
-Or debug the install script, to map current directory to platform container:
-
-```bash
-docker exec -it platform make -C platform &&
-docker exec -it platform bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose --debug-home /g
-```
-
-To check the running service in docker:
-
-```bash
-docker exec -it platform systemctl status srs-cloud
-docker exec -it platform docker ps --filter name=srs-cloud
-docker exec -it platform docker logs -f srs-cloud
-docker exec -it platform docker exec -it srs-cloud ls -lh containers
-```
-
-Test the uninstall script, in the docker container:
-
-```bash
-docker exec -it platform bash build/srs-cloud/scripts/setup-ubuntu/uninstall.sh
-```
-
-## Develop the BT Plugin
-
-Start a container and mount as plugin:
-
-```bash
-docker rm -f bt 2>/dev/null || echo 'OK' &&
-docker run -p 80:80 -p 7800:7800 -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
-    -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
-    -v $HOME/.bt/api.json:/www/server/panel/config/api.json \
-    --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
-    -d --rm -it -v $(pwd):/g -w /g --name=bt ossrs/bt-plugin-dev:1
-```
-
-> Note: Should bind the docker to your BT account, then you will get the `userInfo.json`, 
-> and save it to `$HOME/.bt/userInfo.json`.
-
-> Note: Enable the [HTTP API](https://www.bt.cn/bbs/thread-20376-1-1.html) and get the `api.json`, 
-> and save it to `$HOME/.bt/api.json`.
-
-Build and save the platform image to file:
-
-```bash
-docker rmi platform:latest 2>/dev/null || echo OK &&
-docker build -t platform:latest -f Dockerfile . &&
-docker save -o platform.tar platform:latest
-```
-
-Enter the docker container:
-
-```bash
-docker exec -it bt bash -c '
-    docker load -i platform.tar && 
-    version=$(bash scripts/version.sh) &&
-    docker tag platform:latest ossrs/srs-cloud:$version &&
-    docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
-    docker images
-'
-```
-
-Next, build the BT plugin and install it:
-
-```bash
-docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo 'OK' &&
-bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
-docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh install
-```
-
-Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install plugin.
-
-> Note: Or you can use `docker exec -it bt bt default` to show the login info.
-
-In the [application store](http://localhost:7800/soft), there is a `srs_cloud` plugin. After test, you can install the plugin 
-`build/bt-srs_cloud.zip` to production BT panel.
-
 ## Release
 
 Release bugfix:
@@ -232,7 +23,7 @@ To refresh current tag for mgmt and platform:
 
 * Run `./auto/mgmt_platform_pub.sh -refresh`
 
-The upgrade feature has been disabled, which means we no longer update the 
+The upgrade feature has been disabled, which means we no longer update the
 [version API](https://api.ossrs.net/terraform/v1/releases), nor do we update
 the `releases/version.go` file, and we don't use `./auto/releases_pub.sh`.
 
@@ -432,4 +223,255 @@ flowchart LR;
 ```
 
 > Note: This is an optional workflow for user to use aaPanel to deploy srs-cloud.
+
+## Develop All in macOS
+
+Start redis and SRS by docker:
+
+```bash
+docker run --name redis --rm -it -v $HOME/db/redis:/data -p 6379:6379 -d redis &&
+docker run --name srs --rm -it \
+    -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
+    -v $(pwd)/platform/containers/objs/nginx:/usr/local/srs/objs/nginx \
+    -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+    -d ossrs/srs:5
+```
+
+> Note: Stop service by `docker rm -f redis srs`
+
+> Note: Also, you can run SRS by `(cd platform && ~/git/srs/trunk/objs/srs -c containers/conf/srs.release-local.conf)`
+
+Run the platform backend, or run in GoLand:
+
+```bash
+(cd platform && go run .)
+```
+
+Run the platform react ui, or run in WebStorm:
+
+```bash
+(cd ui && npm install && npm start)
+```
+
+Access the browser: http://localhost:3000
+
+## Develop All in One Docker
+
+Run srs-cloud in a docker.
+
+First, build image:
+
+```bash
+docker rmi platform-dev 2>/dev/null || echo 'OK' &&
+docker build -t platform-dev -f Dockerfile.dev .
+```
+
+Then start the development docker:
+
+```bash
+docker rm -f platform 2>/dev/null || echo 'OK' &&
+docker run -d --rm -it -p 2022:2022 --name platform -v $(pwd):/usr/local/srs-cloud \
+  --add-host redis:127.0.0.1 --env REDIS_HOST=127.0.0.1 --add-host mgmt.srs.local:127.0.0.1 \
+  --env CLOUD=DOCKER --env MGMT_DOCKER=true --env SRS_DOCKERIZED=true --env NODE_ENV=development \
+  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  -w /usr/local/srs-cloud platform-dev bash
+```
+
+> Note: We don't use the `/data` as global storage.
+
+Build platform and UI in docker:
+
+```bash
+docker exec -it platform make -j
+```
+
+Run platform in docker:
+
+```bash
+docker exec -it platform ./platform/bootstrap
+```
+
+Stop redis and SRS:
+
+```bash
+docker rm -f platform
+```
+
+It's the same as production online.
+
+## Develop the Script Installer
+
+Build a docker image:
+
+```bash
+docker rm -f script 2>/dev/null || echo 'OK' &&
+docker rmi srs-script-dev 2>/dev/null || echo 'OK' &&
+docker build -t srs-script-dev -f Dockerfile.script .
+```
+
+Create a docker container in daemon:
+
+```bash
+docker rm -f script 2>/dev/null || echo 'OK' &&
+docker run \
+    -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+    --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
+    -d --rm -it -v $(pwd):/g -w /g --name=script srs-script-dev
+```
+
+> Note: For Linux server, please use `--privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro` to start docker.
+
+Build and save the script image to file:
+
+```bash
+docker rmi platform:latest 2>/dev/null || echo OK &&
+docker build -t platform:latest -f Dockerfile . &&
+docker save -o platform.tar platform:latest
+```
+
+Enter the docker container:
+
+```bash
+version=$(bash scripts/version.sh) &&
+docker exec -it bt docker load -i platform.tar && 
+docker exec -it bt docker tag platform:latest ossrs/srs-cloud:$version &&
+docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+docker exec -it bt docker images
+```
+
+Test the build script, in the docker container:
+
+```bash
+docker exec -it script bash scripts/setup-ubuntu/build.sh --extract
+```
+
+> Note: Use `--extract` to extract the install tar file.
+
+> Note: Use `--output $(pwd)/build` to specify the output directory.
+
+Test the install script, in the docker container:
+
+```bash
+docker exec -it script bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose
+```
+
+> Note: Use `--verbose` to show the detail log.
+
+Or debug the install script, to map current directory to script container:
+
+```bash
+docker exec -it script make -C platform &&
+docker exec -it script bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose --debug-home /g
+```
+
+To check the running service in docker:
+
+```bash
+docker exec -it script systemctl status srs-cloud
+docker exec -it script docker ps --filter name=srs-cloud
+docker exec -it script docker logs -f srs-cloud
+docker exec -it script docker exec -it srs-cloud ls -lh containers
+```
+
+Run test for script:
+
+```bash
+docker exec -it script make -j -C test
+docker exec -it script ./test/srs-cloud.test -test.v -endpoint http://localhost:2022 \
+    -srs-log=true -wait-ready=true -init-password=true \
+    -check-api-secret=false -test.run TestApi_Empty &&
+SRS_PLATFORM_SECRET=$(docker exec script docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token) &&
+docker exec -it script ./test/srs-cloud.test -test.v -wait-ready -endpoint http://localhost:2022 \
+  -srs-log=true -wait-ready=true -init-password=false \
+  -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET \
+  -test.parallel 3
+```
+
+Test the uninstall script, in the docker container:
+
+```bash
+docker exec -it script bash build/srs-cloud/scripts/setup-ubuntu/uninstall.sh
+```
+
+## Develop the BT or aaPanel Plugin
+
+Start a container and mount as plugin:
+
+```bash
+docker rm -f bt 2>/dev/null || echo 'OK' &&
+BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
+docker run -p 80:80 -p 7800:7800 \
+    -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
+    -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
+    -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
+    --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
+    --add-host srs.cloud.local:127.0.0.1 \
+    -d --rm -it -v $(pwd):/g -w /g --name=bt ossrs/bt-plugin-dev:1
+```
+
+> Note: For Linux server, please use `--privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro` to start docker.
+
+> Note: Should bind the docker to your BT account, then you will get the `userInfo.json`, 
+> and save it to `$HOME/.bt/userInfo.json`.
+
+> Note: Enable the [HTTP API](https://www.bt.cn/bbs/thread-20376-1-1.html) and get the `api.json`, 
+> and save it to `$HOME/.bt/api.json`.
+
+Build and save the platform image to file:
+
+```bash
+docker rmi platform:latest 2>/dev/null || echo OK &&
+docker build -t platform:latest -f Dockerfile . &&
+docker save -o platform.tar platform:latest
+```
+
+Enter the docker container:
+
+```bash
+version=$(bash scripts/version.sh) &&
+docker exec -it bt docker load -i platform.tar && 
+docker exec -it bt docker tag platform:latest ossrs/srs-cloud:$version &&
+docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+docker exec -it bt docker images
+```
+
+Next, build the BT plugin and install it:
+
+```bash
+docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo 'OK' &&
+bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
+docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh install
+```
+
+You can use BT panel to install the plugin, or by command:
+
+```bash
+docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt-api-remove-site.py &&
+docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt-api-create-site.py &&
+docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt-api-setup-site.py &&
+docker exec -it bt bash /www/server/panel/plugin/srs_cloud/setup.sh \
+    --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+    --www /www/wwwroot --site srs.cloud.local
+```
+
+Run test for BT:
+
+```bash
+docker exec -it bt make -j -C test &&
+docker exec -it bt ./test/srs-cloud.test -test.v -endpoint http://srs.cloud.local:80 \
+    -srs-log=true -wait-ready=true -init-password=true \
+    -check-api-secret=false -test.run TestApi_Empty &&
+SRS_PLATFORM_SECRET=$(docker exec bt docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token) &&
+docker exec -it bt ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+  -srs-log=true -wait-ready=true -init-password=false \
+  -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET \
+  -test.parallel 3
+```
+
+Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install plugin.
+
+> Note: Or you can use `docker exec -it bt bt default` to show the login info.
+
+In the [application store](http://localhost:7800/soft), there is a `srs_cloud` plugin. After test, you can install the plugin 
+`build/bt-srs_cloud.zip` to production BT panel.
 

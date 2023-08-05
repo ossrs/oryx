@@ -262,6 +262,8 @@ func TestApi_SetupWebsiteTitle(t *testing.T) {
 	}); err != nil {
 		r0 = err
 		return
+	} else if title == "" {
+		title = "SRS"
 	}
 	defer func() {
 		if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/update", &struct {

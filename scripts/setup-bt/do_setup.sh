@@ -21,8 +21,9 @@ REGISTRY=auto
 REGION=auto
 IMAGE=ossrs/srs-cloud:1
 
-# Allow use .env to override the default values.
-if [[ -f ${install_path}/.env ]]; then source ${install_path}/.env; fi
+# Allow use config to override the default values.
+# For BT, should never use .env, because it will be removed when install.
+if [[ -f ${install_path}/config ]]; then source ${install_path}/config; fi
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -66,6 +67,7 @@ source do_os.sh
 if [[ $? -ne 0 ]]; then echo "Setup OS failed"; exit 1; fi
 
 # Setup the environment variables.
+# TODO: FIXME: Support reload NGIXN by signal file.
 echo "Start to setup .env"
 if [[ -f ${DATA_HOME}/config/.env && -s ${DATA_HOME}/config/.env ]]; then
   echo "The .env already exists, skip"

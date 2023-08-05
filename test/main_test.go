@@ -51,8 +51,8 @@ func options() string {
 func prepareTest(ctx context.Context) (err error) {
 	// Try to load the .env file.
 	for _, envFile := range []string{
-		"../platform/containers/data/config/.env",
 		"/data/config/.env",
+		"../platform/containers/data/config/.env",
 	} {
 		if _, err := os.Stat(envFile); err == nil {
 			if err := godotenv.Load(envFile); err == nil {

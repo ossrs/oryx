@@ -10,6 +10,9 @@ from panelSite import panelSite
 from files import files
 from firewalls import firewalls
 
+import srsTools
+print(f"srsTools version: {srsTools.version()}")
+
 class srs_cloud_main:
     # Normally the plugin is at:
     #       /www/server/panel/plugin/srs_cloud
@@ -32,6 +35,7 @@ class srs_cloud_main:
 
     def serviceStatus(self, args):
         status = {}
+        status['tools_version'] = srsTools.version()
         status['plugin_ready'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__ready_file))[0]
         status['srs_error'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
         status['srs_ready'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
@@ -53,10 +57,9 @@ class srs_cloud_main:
                     status['site_domain'] = item["name"]
 
         # Whether site is setup ok.
-        status['site_setup'] = public.ExecShell('grep -q \'{pattern}\' "{www}/{site}.conf" >/dev/null 2>&1 && echo -n ok'.format(
-            pattern='{}/mgmt/containers/conf/default.d'.format(self.__srs_home),
-            www='{}/nginx'.format(public.get_vhost_path()), site=self.__site,
-        ))[0]
+        status['site_setup'] = public.ExecShell(
+            f"grep -q 'SRS-PROXY-START' {public.get_vhost_path()}/nginx/{self.__site}.conf >/dev/null 2>&1 && echo -n ok"
+        )[0]
 
         return public.returnMsg(True, json.dumps(status))
 
@@ -154,53 +157,10 @@ class srs_cloud_main:
     # If not set site_setup
     def setupSrsSite(self, args):
         # Setup the nginx config.
-        confPath = '{www}/{site}.conf'.format(
-            www='{}/nginx'.format(public.get_vhost_path()), site=self.__site,
-        )
+        confPath = f'{public.get_vhost_path()}/nginx/{self.__site}.conf'
         conf = files().GetFileBody(Params(path=confPath))
         confData = conf['data']
-
-        # Include the nginx.http.conf for http(global) level.
-        if os.path.exists('/data/config/nginx.http.conf') and confData.find('#SRS-HTTP-START') == -1:
-            srsConf = [
-                '#SRS-HTTP-START\n',
-                'include /data/config/nginx.http.conf;\n',
-                '#SRS-HTTP-END\n',
-            ]
-            confData = f"{''.join(srsConf)}\n{confData}"
-
-        # Include the nginx.server.conf for server(vhost) level.
-        if os.path.exists('/data/config/nginx.server.conf') and confData.find('#SRS-SERVER-START') == -1:
-            srsConf = [
-                '#SRS-SERVER-START\n',
-                'include /data/config/nginx.server.conf;\n'
-                '#SRS-SERVER-END\n',
-            ]
-            confData = confData.replace('#SSL-START', f"{'    '.join(srsConf)}\n    #SSL-START")
-
-        # Proxy all to SRS Cloud.
-        if confData.find('#SRS-PROXY-START') == -1:
-            srsConf = [
-                '#SRS-PROXY-START\n',
-                'location / {\n',
-                '    proxy_pass http://127.0.0.1:2022;\n',
-                '    proxy_set_header Host $host;\n',
-                '}\n',
-                '#SRS-PROXY-END\n',
-            ]
-            confData = confData.replace('#SSL-START', f"{'    '.join(srsConf)}\n    #SSL-START")
-
-        # Disable the location section of nginx, we will handle it.
-        if confData.find('location ~ /disabled.by.srs/.*\.(js|css)?$\n') == -1:
-            confData = confData.replace(
-                'location ~ .*\.(js|css)?$\n',
-                'location ~ /disabled.by.srs/.*\.(js|css)?$\n',
-            )
-        if confData.find('#location ~ /disabled.by.srs/.*\.(gif|jpg|jpeg|png|bmp|swf)$\n') == -1:
-            confData = confData.replace(
-                'location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$\n',
-                'location ~ /disabled.by.srs/.*\.(gif|jpg|jpeg|png|bmp|swf)$\n',
-            );
+        confData = srsTools.setup_site(confData)
 
         # Save the nginx config and reload it.
         r0 = files().SaveFileBody(Params(
