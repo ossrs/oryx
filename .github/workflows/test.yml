@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-20.04
 
   test:
-    name: Test for commits
+    name: Run UTest
     runs-on: ubuntu-20.04
     needs:
       - envs
@@ -58,7 +58,7 @@ jobs:
           make -j && make test -j
 
   build-image:
-    name: Build test image
+    name: Build platform image
     runs-on: ubuntu-20.04
     needs:
       - envs
@@ -77,7 +77,7 @@ jobs:
           retention-days: 1
 
   install-script:
-    name: Test for install by script
+    name: Test install by script
     runs-on: ubuntu-20.04
     needs:
       - envs
@@ -134,11 +134,11 @@ jobs:
           # We will handle the error by ourselves.
           set +e
           
-          # The systemPassword is set by MGMT_PASSWORD in /data/config/.env
-          SRS_PLATFORM_SECRET=$(docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token)
+          # Setup SRS_PLATFORM_SECRET and MGMT_PASSWORD.
+          eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
           ./test/srs-cloud.test -test.v -wait-ready -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false \
-              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET \
+              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
               -test.parallel 3
           ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
           
@@ -153,7 +153,7 @@ jobs:
           exit $ret
 
   install-bt:
-    name: Test for install by BT
+    name: Test install by BT
     runs-on: ubuntu-20.04
     needs:
       - envs
@@ -281,11 +281,11 @@ jobs:
           # We will handle the error by ourselves.
           set +e
           
-          # The systemPassword is set by MGMT_PASSWORD in /data/config/.env
-          SRS_PLATFORM_SECRET=$(docker exec bt docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token)
+          # Setup SRS_PLATFORM_SECRET and MGMT_PASSWORD.
+          eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
           ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
               -srs-log=true -wait-ready=true -init-password=false \
-              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET \
+              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
               -test.parallel 3
           ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
           
@@ -299,7 +299,7 @@ jobs:
           exit $ret
 
   install-aapanel:
-    name: Test for install by aaPanel
+    name: Test install by aaPanel
     runs-on: ubuntu-20.04
     needs:
       - envs
@@ -424,11 +424,11 @@ jobs:
           # We will handle the error by ourselves.
           set +e
           
-          # The systemPassword is set by MGMT_PASSWORD in /data/config/.env
-          SRS_PLATFORM_SECRET=$(docker exec aapanel docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token)
+          # Setup SRS_PLATFORM_SECRET and MGMT_PASSWORD.
+          eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
           ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
               -srs-log=true -wait-ready=true -init-password=false \
-              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET \
+              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
               -test.parallel 3
           ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
           

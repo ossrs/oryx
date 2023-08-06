@@ -438,6 +438,7 @@ docker exec -it bt docker images
 Next, build the BT plugin and install it:
 
 ```bash
+docker exec -it bt rm -rf /data/* &&
 docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo 'OK' &&
 bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
 docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh install
@@ -461,11 +462,11 @@ docker exec -it bt make -j -C test &&
 docker exec -it bt ./test/srs-cloud.test -test.v -endpoint http://srs.cloud.local:80 \
     -srs-log=true -wait-ready=true -init-password=true \
     -check-api-secret=false -test.run TestApi_Empty &&
-SRS_PLATFORM_SECRET=$(docker exec bt docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token) &&
+bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it bt ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
-  -srs-log=true -wait-ready=true -init-password=false \
-  -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET \
-  -test.parallel 3
+      -srs-log=true -wait-ready=true -init-password=false \
+      -check-api-secret=true \
+      -test.parallel 3
 ```
 
 Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install plugin.
@@ -516,6 +517,7 @@ docker exec -it aapanel docker images
 Next, build the aaPanel plugin and install it:
 
 ```bash
+docker exec -it bt rm -rf /data/* &&
 docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo 'OK' &&
 bash scripts/setup-aapanel/auto/zip.sh --output $(pwd)/build --extract &&
 docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/install.sh install
@@ -539,10 +541,10 @@ docker exec -it aapanel make -j -C test &&
 docker exec -it aapanel ./test/srs-cloud.test -test.v -endpoint http://srs.cloud.local:80 \
     -srs-log=true -wait-ready=true -init-password=true \
     -check-api-secret=false -test.run TestApi_Empty &&
-SRS_PLATFORM_SECRET=$(docker exec aapanel docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token) &&
+bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it aapanel ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
   -srs-log=true -wait-ready=true -init-password=false \
-  -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET \
+  -check-api-secret=true \
   -test.parallel 3
 ```
 
