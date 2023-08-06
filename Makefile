@@ -1,4 +1,4 @@
-.PHONY: default build install run uninstall upgrade test npm help clean
+.PHONY: default build build-no-ui install run uninstall upgrade test npm help clean
 
 PREFIX ?= /usr/local/srs-cloud
 __REAL_INSTALL = $(DESTDIR)$(PREFIX)
@@ -12,9 +12,11 @@ help:
 	@echo "     install     Copy files for installer"
 	@echo "     test     	Run tests"
 
-build:
-	make -C platform
+build: build-no-ui
 	make -C ui
+
+build-no-ui:
+	make -C platform
 	make -C test
 	make -C releases
 

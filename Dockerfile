@@ -7,7 +7,8 @@ FROM ${ARCH}ossrs/srs:ubuntu20 AS build
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG TARGETARCH
-RUN echo "BUILDPLATFORM: $BUILDPLATFORM, TARGETPLATFORM: $TARGETPLATFORM, TARGETARCH: $TARGETARCH"
+ARG MAKEARGS
+RUN echo "BUILDPLATFORM: $BUILDPLATFORM, TARGETPLATFORM: $TARGETPLATFORM, TARGETARCH: $TARGETARCH, MAKEARGS: $MAKEARGS"
 
 # For ui build.
 COPY --from=node /usr/local/bin /usr/local/bin
@@ -21,9 +22,10 @@ ADD usr /g/usr
 ADD test /g/test
 ADD Makefile /g/Makefile
 
-# Make all, including platform and ui.
+# By default, make all, including platform and ui, but it will take a long time,
+# so there is a MAKEARGS to build without UI, see platform.yml.
 WORKDIR /g
-RUN make clean && make -j && make install
+RUN make clean && make -j ${MAKEARGS} && make install
 
 # http://releases.ubuntu.com/focal/
 #FROM ${ARCH}ubuntu:focal AS dist
