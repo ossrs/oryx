@@ -32,7 +32,7 @@ REVISION=$(echo $RELEASE|awk -F . '{print $3}')
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
 let NEXT=$REVISION+1
-if [[ $refresh == true ]]; then
+if [[ $refresh == yes ]]; then
   let NEXT=$REVISION
 fi
 echo "Last release is $RELEASE, revision is $REVISION, next is $NEXT"
