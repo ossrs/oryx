@@ -101,7 +101,7 @@ jobs:
           mv /tmp/zip-for-ubuntu/${SRS_UBUNTU_ZH_SOURCE_FILE} $SRS_SOURCE_PATH &&
           mv /tmp/zip-for-ubuntu/${SRS_UBUNTU_EN_SOURCE_FILE} $SRS_SOURCE_PATH &&
           ls -lh $SRS_SOURCE_PATH &&
-          echo "SRS_SOURCE_PATH=${SRS_SOURCE_PATH}/*.zip" >> $GITHUB_ENV
+          echo "SRS_SOURCE_PATH=${SRS_SOURCE_PATH}/*" >> $GITHUB_ENV
       ##################################################################################################################
       # Upload release source files
       - name: Upload Release Assets Source
