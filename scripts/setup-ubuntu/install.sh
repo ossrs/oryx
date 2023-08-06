@@ -16,8 +16,6 @@ LANGUAGE=zh
 REGISTRY=auto
 REGION=auto
 IMAGE=ossrs/srs-cloud:1
-# Use local srs-cloud directory for debug.
-DEBUG_HOME=
 
 # Allow use .env to override the default values.
 if [[ -f ${SCRIPT_DIR}/.env ]]; then source ${SCRIPT_DIR}/.env; fi
@@ -26,7 +24,6 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) HELP=yes; shift ;;
         --verbose) VERBOSE=yes; shift ;;
-        --debug-home) DEBUG_HOME=$2; shift 2 ;;
         --language) LANGUAGE=$2; shift 2 ;;
         --registry) REGISTRY=$2; shift 2 ;;
         --image) IMAGE=$2; shift 2 ;;
@@ -42,7 +39,6 @@ function help() {
     echo "  --language    The language to use. zh or en. Default: ${LANGUAGE}"
     echo "  --registry    The registry for docker images. Default: ${REGISTRY}"
     echo "  --image       The image to run. Default: ${IMAGE}"
-    echo "  --debug-home  Setup the debug home directory. Default: ${DEBUG_HOME}"
 }
 
 # Guess the registry automatically by language.
@@ -57,7 +53,7 @@ if [[ "$HELP" == yes ]]; then
     exit 0
 fi
 echo -n "Install with options: VERBOSE=${VERBOSE}, LANGUAGE=${LANGUAGE}, SRS_HOME=${SRS_HOME}, DATA_HOME=${DATA_HOME}"
-echo ", REGISTRY=${REGISTRY}, IMAGE=${IMAGE}, REGION=${REGION}, IMAGE_URL=${IMAGE_URL}, DEBUG_HOME=${DEBUG_HOME}"
+echo ", REGISTRY=${REGISTRY}, IMAGE=${IMAGE}, REGION=${REGION}, IMAGE_URL=${IMAGE_URL}"
 
 # Update sysctl.conf and add if not exists. For example:
 #   update_sysctl net.ipv4.ip_forward 1 0 "# Controls IP packet forwarding"
@@ -122,8 +118,7 @@ echo "Create data and config files ok"
 
 echo "Start to update bootstrap"
 sed -i "s|^DATA_HOME=.*|DATA_HOME=${DATA_HOME}|g" ${SRS_HOME}/mgmt/bootstrap &&
-sed -i "s|^IMAGE=.*|IMAGE=${IMAGE_URL}|g" ${SRS_HOME}/mgmt/bootstrap &&
-if [[ ! -z $DEBUG_HOME ]]; then sed -i "s|^DEBUG_HOME=.*|DEBUG_HOME=${DEBUG_HOME}|g" ${SRS_HOME}/mgmt/bootstrap; fi
+sed -i "s|^IMAGE=.*|IMAGE=${IMAGE_URL}|g" ${SRS_HOME}/mgmt/bootstrap
 if [[ $? -ne 0 ]]; then echo "Update bootstrap failed"; exit 1; fi
 echo "Update bootstrap ok"
 

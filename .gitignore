@@ -133,3 +133,6 @@ t.md
 /srs-cloud2
 /test/srs-cloud.test
 __pycache__
+/*.flv
+/*.mp4
+/*.ts

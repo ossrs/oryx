@@ -52,6 +52,7 @@ func prepareTest(ctx context.Context) (err error) {
 	// Try to load the .env file.
 	for _, envFile := range []string{
 		".env",
+		"test/.env",
 		"/data/config/.env",
 		"../platform/containers/data/config/.env",
 	} {

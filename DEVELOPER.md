@@ -229,6 +229,7 @@ flowchart LR;
 Start redis and SRS by docker:
 
 ```bash
+docker rm -f redis srs &&
 docker run --name redis --rm -it -v $HOME/db/redis:/data -p 6379:6379 -d redis &&
 docker run --name srs --rm -it \
     -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
@@ -254,50 +255,6 @@ Run the platform react ui, or run in WebStorm:
 ```
 
 Access the browser: http://localhost:3000
-
-## Develop All in One Docker
-
-Run srs-cloud in a docker.
-
-First, build image:
-
-```bash
-docker rmi platform-dev 2>/dev/null || echo 'OK' &&
-docker build -t platform-dev -f Dockerfile.dev .
-```
-
-Then start the development docker:
-
-```bash
-docker rm -f platform 2>/dev/null || echo 'OK' &&
-docker run -d --rm -it -p 2022:2022 --name platform -v $(pwd):/usr/local/srs-cloud \
-  --add-host redis:127.0.0.1 --env REDIS_HOST=127.0.0.1 --add-host mgmt.srs.local:127.0.0.1 \
-  --env CLOUD=DOCKER --env MGMT_DOCKER=true --env SRS_DOCKERIZED=true --env NODE_ENV=development \
-  -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-  -w /usr/local/srs-cloud platform-dev bash
-```
-
-> Note: We don't use the `/data` as global storage.
-
-Build platform and UI in docker:
-
-```bash
-docker exec -it platform make -j
-```
-
-Run platform in docker:
-
-```bash
-docker exec -it platform ./platform/bootstrap
-```
-
-Stop redis and SRS:
-
-```bash
-docker rm -f platform
-```
-
-It's the same as production online.
 
 ## Develop the Script Installer
 
@@ -333,65 +290,36 @@ Enter the docker container:
 
 ```bash
 version=$(bash scripts/version.sh) &&
-docker exec -it bt docker load -i platform.tar && 
-docker exec -it bt docker tag platform:latest ossrs/srs-cloud:$version &&
-docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
-docker exec -it bt docker images
+docker exec -it script docker load -i platform.tar && 
+docker exec -it script docker tag platform:latest ossrs/srs-cloud:$version &&
+docker exec -it script docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+docker exec -it script docker images
 ```
 
 Test the build script, in the docker container:
 
 ```bash
-docker exec -it script bash scripts/setup-ubuntu/build.sh --extract
-```
-
-> Note: Use `--extract` to extract the install tar file.
-
-> Note: Use `--output $(pwd)/build` to specify the output directory.
-
-Test the install script, in the docker container:
-
-```bash
+docker exec -it bt rm -rf /data/* &&
+docker exec -it script bash build/srs-cloud/scripts/setup-ubuntu/uninstall.sh || echo OK &&
+docker exec -it script bash scripts/setup-ubuntu/build.sh --extract &&
 docker exec -it script bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose
-```
-
-> Note: Use `--verbose` to show the detail log.
-
-Or debug the install script, to map current directory to script container:
-
-```bash
-docker exec -it script make -C platform &&
-docker exec -it script bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose --debug-home /g
-```
-
-To check the running service in docker:
-
-```bash
-docker exec -it script systemctl status srs-cloud
-docker exec -it script docker ps --filter name=srs-cloud
-docker exec -it script docker logs -f srs-cloud
-docker exec -it script docker exec -it srs-cloud ls -lh containers
 ```
 
 Run test for script:
 
 ```bash
-docker exec -it script make -j -C test
+docker exec -it script make -j -C test &&
 docker exec -it script ./test/srs-cloud.test -test.v -endpoint http://localhost:2022 \
     -srs-log=true -wait-ready=true -init-password=true \
     -check-api-secret=false -test.run TestApi_Empty &&
-SRS_PLATFORM_SECRET=$(docker exec script docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token) &&
+bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it script ./test/srs-cloud.test -test.v -wait-ready -endpoint http://localhost:2022 \
   -srs-log=true -wait-ready=true -init-password=false \
-  -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET \
+  -check-api-secret=true \
   -test.parallel 3
 ```
 
-Test the uninstall script, in the docker container:
-
-```bash
-docker exec -it script bash build/srs-cloud/scripts/setup-ubuntu/uninstall.sh
-```
+Access the browser: [http://localhost:2022](http://localhost:2022)
 
 ## Develop the BT Plugin
 

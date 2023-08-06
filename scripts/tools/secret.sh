@@ -25,20 +25,26 @@ if [[ "$HELP" == yes ]]; then
     exit 0
 fi
 
-# Start by script.
+# Start by docker.
 SRS_PLATFORM_SECRET=$(docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
 MGMT_PASSWORD=$(docker exec srs-cloud bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
+
+# Start by script.
+if [[ -z $SRS_PLATFORM_SECRET ]]; then
+    SRS_PLATFORM_SECRET=$(docker exec script docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
+    MGMT_PASSWORD=$(docker exec script docker exec srs-cloud bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
+fi
 
 # Start by BT.
 if [[ -z $SRS_PLATFORM_SECRET ]]; then
     SRS_PLATFORM_SECRET=$(docker exec bt docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
-    MGMT_PASSWORD=$(docker exec bt docker exec srs-cloud bash -c '. /data/config/.env && echo $MGMT_PASSWORD')
+    MGMT_PASSWORD=$(docker exec bt docker exec srs-cloud bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
 fi
 
 # Start by aaPanel.
 if [[ -z $SRS_PLATFORM_SECRET ]]; then
     SRS_PLATFORM_SECRET=$(docker exec aapanel docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
-    MGMT_PASSWORD=$(docker exec aapanel docker exec srs-cloud bash -c '. /data/config/.env && echo $MGMT_PASSWORD')
+    MGMT_PASSWORD=$(docker exec aapanel docker exec srs-cloud bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
 fi
 
 # Start by develop.
