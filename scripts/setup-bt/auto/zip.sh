@@ -41,7 +41,7 @@ echo "Create tmp dir ${TARGET_DIR}"
 
 mkdir -p $TARGET_DIR &&
 cp -r scripts/setup-bt/* $TARGET_DIR && rm -rf $TARGET_DIR/auto &&
-rm -f $TARGET_DIR/srsTools.py && cp -f scripts/tools/* $TARGET_DIR &&
+rm -f $TARGET_DIR/srsTools.py && cp -f scripts/tools/*.py $TARGET_DIR &&
 cp -r ${WORK_DIR}/usr ${TARGET_DIR}/usr &&
 cp ${WORK_DIR}/LICENSE ${TARGET_DIR}/LICENSE &&
 mkdir -p ${TARGET_DIR}/mgmt && cp ${WORK_DIR}/mgmt/bootstrap ${TARGET_DIR}/mgmt/bootstrap
