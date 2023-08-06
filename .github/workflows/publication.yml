@@ -54,12 +54,12 @@ jobs:
           echo "SRS_AAPANEL_SOURCE_MD5=$(md5sum /tmp/zip-for-aapanel/${SRS_AAPANEL_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
           # 
           # For Ubuntu script: zh
-          bash scripts/setup-ubuntu/build.sh --output /tmp/zip-for-ubuntu --language zh && SRS_UBUNTU_ZH_SOURCE_FILE=srs-cloud-zh.tar.gz &&
+          bash scripts/setup-ubuntu/build.sh --output /tmp/zip-for-ubuntu --language zh && SRS_UBUNTU_ZH_SOURCE_FILE=linux-srs_cloud-zh.tar.gz &&
           echo "SRS_UBUNTU_ZH_SOURCE_FILE=${SRS_UBUNTU_ZH_SOURCE_FILE}" >> $GITHUB_ENV &&
           echo "SRS_UBUNTU_ZH_SOURCE_FILE_MD5=$(md5sum /tmp/zip-for-ubuntu/${SRS_UBUNTU_ZH_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
           # 
           # For Ubuntu script: en
-          bash scripts/setup-ubuntu/build.sh --output /tmp/zip-for-ubuntu --language en && SRS_UBUNTU_EN_SOURCE_FILE=srs-cloud-en.tar.gz &&
+          bash scripts/setup-ubuntu/build.sh --output /tmp/zip-for-ubuntu --language en && SRS_UBUNTU_EN_SOURCE_FILE=linux-srs_cloud-en.tar.gz &&
           echo "SRS_UBUNTU_EN_SOURCE_FILE=${SRS_UBUNTU_EN_SOURCE_FILE}" >> $GITHUB_ENV &&
           echo "SRS_UBUNTU_EN_SOURCE_FILE_MD5=$(md5sum /tmp/zip-for-ubuntu/${SRS_UBUNTU_EN_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
           #

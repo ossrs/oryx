@@ -51,8 +51,8 @@ function ContactEn() {
       <ul>
         <li>
           Discord:
-          <a href='https://discord.gg/yZ4BnPmHAd' target='_blank' rel='noreferrer'>
-            https://discord.gg/yZ4BnPmHAd
+          <a href='https://discord.gg/bQUPDRqy79' target='_blank' rel='noreferrer'>
+            https://discord.gg/bQUPDRqy79
           </a>
         </li>
         <li>

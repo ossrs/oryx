@@ -77,7 +77,7 @@ function update_sysctl() {
 
 # Check OS first, only support Ubuntu
 apt-get --version >/dev/null 2>&1 && OS_NAME='Ubuntu'
-if [[ -z $OS_NAME ]]; then echo "Only support CentOS/Ubuntu"; exit 1; fi
+if [[ -z $OS_NAME ]]; then echo "Only support Ubuntu"; exit 1; fi
 
 # ubuntu:xenial is 16
 # ubuntu:bionic is 18

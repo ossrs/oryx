@@ -105,11 +105,11 @@ jobs:
       - name: Build package
         run: |
           bash scripts/setup-ubuntu/build.sh --language zh --version $SRS_TAG \
-              --output build --extract
-          du -sh build/*
+              --output $(pwd)/build --extract
+          du -sh $(pwd)/build/*
       - name: Install package
         run: |
-          sudo bash build/srs-cloud/scripts/setup-ubuntu/install.sh --verbose
+          sudo bash build/srs_cloud/scripts/setup-ubuntu/install.sh --verbose
           echo "" && echo "/usr/local/srs-cloud/" && du -sh /usr/local/srs-cloud/*
           echo "" && ls -lha /data /data/config
       - name: Check service

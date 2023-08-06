@@ -21,7 +21,7 @@ On the server:
   * The MGMT admin password is saved in /root/credentials.txt
   * Automatic HTTPS is supported.
 
-For help and more information, visit https://discord.gg/yZ4BnPmHAd
+For help and more information, visit https://discord.gg/bQUPDRqy79
 
 ********************************************************************************
 To delete this message of the day: rm -rf $(readlink -f ${0})
