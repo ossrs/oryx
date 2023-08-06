@@ -26,8 +26,8 @@ if [[ "$help" == yes ]]; then
     exit 0
 fi
 
-# We increase version from the platform-v* base.
-RELEASE=$(git describe --tags --abbrev=0 --match platform-v*) &&
+# We increase version from the v* base.
+RELEASE=$(git describe --tags --abbrev=0 --match v*) &&
 REVISION=$(echo $RELEASE|awk -F . '{print $3}')
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
@@ -82,15 +82,6 @@ echo "Delete tag OK: $TAG"
 
 git tag $TAG && git push origin $TAG && git push gitee $TAG
 echo "Publish OK: $TAG"
-
-######################################################################
-PLATFORM_TAG="platform-v$VERSION"
-
-git tag -d $PLATFORM_TAG 2>/dev/null; git push origin :$PLATFORM_TAG 2>/dev/null; git push gitee :$PLATFORM_TAG 2>/dev/null
-echo "Delete tag OK: $PLATFORM_TAG"
-
-git tag $PLATFORM_TAG && git push origin $PLATFORM_TAG && git push gitee $PLATFORM_TAG
-echo "Publish OK: $PLATFORM_TAG"
 
 echo -e "\n\n"
 echo "Publish OK: $TAG $PLATFORM_TAG"

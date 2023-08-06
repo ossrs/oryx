@@ -6,7 +6,7 @@
 package main
 
 // The latest version of SRS Cloud.
-const latest = "v1.0.299"
+const latest = "v1.0.300"
 
 // The api service version of SRS Cloud.
 const api = "v1.0.374"
