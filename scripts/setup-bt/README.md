@@ -4,7 +4,7 @@ To create a plugin for [BT](https://bt.cn).
 
 ## Usage
 
-To create a `srs_cloud.zip` by:
+To create a `bt-srs_cloud.zip` by:
 
 ```bash
 bash auto/zip.sh

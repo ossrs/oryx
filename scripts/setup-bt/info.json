@@ -5,5 +5,5 @@
   "versions": "5.7.17",
   "checks": "/www/server/panel/plugin/srs_cloud",
   "author": "Winlin",
-  "home": "https://github.com/ossrs/srs"
+  "home": "https://github.com/ossrs/srs-cloud"
 }

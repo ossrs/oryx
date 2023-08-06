@@ -78,7 +78,7 @@ func doMain(ctx context.Context) error {
 		// Note that we only use .env in mgmt.
 		envFile := path.Join(conf.Pwd, "containers/data/config/.env")
 		if _, err := os.Stat(envFile); err == nil {
-			if err := godotenv.Load(envFile); err != nil {
+			if err := godotenv.Overload(envFile); err != nil {
 				return errors.Wrapf(err, "load %v", envFile)
 			}
 		}

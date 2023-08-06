@@ -443,7 +443,15 @@ bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
 docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh install
 ```
 
-You can use BT panel to install the plugin, or by command:
+Or build the aaPanel plugin and install it:
+
+```bash
+docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo 'OK' &&
+bash scripts/setup-aapanel/auto/zip.sh --output $(pwd)/build --extract &&
+docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh install
+```
+
+You can use BT or aaPanel panel to install the plugin, or by command:
 
 ```bash
 docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt-api-remove-site.py &&

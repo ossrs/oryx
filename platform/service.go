@@ -220,7 +220,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			logger.Tf(ctx, "init mgmt password %vB ok, file=%v", len(password), envFile)
 
 			// Refresh the local token.
-			if err := godotenv.Load(envFile); err != nil {
+			if err := godotenv.Overload(envFile); err != nil {
 				return errors.Wrapf(err, "load %v", envFile)
 			}
 
