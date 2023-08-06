@@ -7,21 +7,21 @@ resources, and ports, as well as development on Mac or using Docker.
 
 Release bugfix:
 
-* For mgmt: `./auto/mgmt_platform_pub.sh`
+* For mgmt: `./auto/platform.sh`
 * Then test the specified version of mgmt.
 
 > Note: The [features](https://github.com/ossrs/srs-cloud/issues/4) might need to be updated.
 
 Release version for BT and aaPanel:
 
-* Then run `./auto/bt_aapanel_pub.sh`
+* Then run `./auto/release.sh`
 * Finally, download [bt-srs_cloud.zip](https://github.com/ossrs/srs-cloud/releases) then submit to [bt.cn](https://www.bt.cn/developer/details.html?id=600801805)
 
 > Note: The [BT forum](https://www.bt.cn/bbs/thread-90890-1-1.html) and [FAQ](https://github.com/ossrs/srs-cloud/issues/4) might need to be updated.
 
 To refresh current tag for mgmt and platform:
 
-* Run `./auto/mgmt_platform_pub.sh -refresh`
+* Run `./auto/platform.sh -refresh`
 
 The upgrade feature has been disabled, which means we no longer update the
 [version API](https://api.ossrs.net/terraform/v1/releases), nor do we update
