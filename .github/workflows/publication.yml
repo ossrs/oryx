@@ -4,7 +4,7 @@ name: "Release publication"
 on:
   push:
     tags:
-      - publication-v4*
+      - publication-v*
 
 jobs:
   plugin:
