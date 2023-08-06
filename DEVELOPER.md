@@ -393,12 +393,12 @@ Test the uninstall script, in the docker container:
 docker exec -it script bash build/srs-cloud/scripts/setup-ubuntu/uninstall.sh
 ```
 
-## Develop the BT or aaPanel Plugin
+## Develop the BT Plugin
 
 Start a container and mount as plugin:
 
 ```bash
-docker rm -f bt 2>/dev/null || echo 'OK' &&
+docker rm -f bt aapanel 2>/dev/null || echo 'OK' &&
 BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
 docker run -p 80:80 -p 7800:7800 \
     -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
@@ -443,15 +443,7 @@ bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
 docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh install
 ```
 
-Or build the aaPanel plugin and install it:
-
-```bash
-docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo 'OK' &&
-bash scripts/setup-aapanel/auto/zip.sh --output $(pwd)/build --extract &&
-docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh install
-```
-
-You can use BT or aaPanel panel to install the plugin, or by command:
+You can use BT panel to install the plugin, or by command:
 
 ```bash
 docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt-api-remove-site.py &&
@@ -482,4 +474,82 @@ Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install
 
 In the [application store](http://localhost:7800/soft), there is a `srs_cloud` plugin. After test, you can install the plugin 
 `build/bt-srs_cloud.zip` to production BT panel.
+
+## Develop the aaPanel Plugin
+
+Start a container and mount as plugin:
+
+```bash
+docker rm -f bt aapanel 2>/dev/null || echo 'OK' &&
+AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
+docker run -p 80:80 -p 7800:7800 \
+    -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
+    -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
+    --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
+    --add-host srs.cloud.local:127.0.0.1 \
+    -d --rm -it -v $(pwd):/g -w /g --name=aapanel ossrs/aapanel-plugin-dev:1
+```
+
+> Note: For Linux server, please use `--privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro` to start docker.
+
+> Note: Enable the [HTTP API](https://www.bt.cn/bbs/thread-20376-1-1.html) and get the `api.json`,
+> and save it to `$HOME/.bt/api.json`.
+
+Build and save the platform image to file:
+
+```bash
+docker rmi platform:latest 2>/dev/null || echo OK &&
+docker build -t platform:latest -f Dockerfile . &&
+docker save -o platform.tar platform:latest
+```
+
+Enter the docker container:
+
+```bash
+version=$(bash scripts/version.sh) &&
+docker exec -it aapanel docker load -i platform.tar && 
+docker exec -it aapanel docker tag platform:latest ossrs/srs-cloud:$version &&
+docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+docker exec -it aapanel docker images
+```
+
+Next, build the aaPanel plugin and install it:
+
+```bash
+docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo 'OK' &&
+bash scripts/setup-aapanel/auto/zip.sh --output $(pwd)/build --extract &&
+docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/install.sh install
+```
+
+You can use aaPanel panel to install the plugin, or by command:
+
+```bash
+docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-remove-site.py &&
+docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-create-site.py &&
+docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-setup-site.py &&
+docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/setup.sh \
+    --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+    --www /www/wwwroot --site srs.cloud.local
+```
+
+Run test for aaPanel:
+
+```bash
+docker exec -it aapanel make -j -C test &&
+docker exec -it aapanel ./test/srs-cloud.test -test.v -endpoint http://srs.cloud.local:80 \
+    -srs-log=true -wait-ready=true -init-password=true \
+    -check-api-secret=false -test.run TestApi_Empty &&
+SRS_PLATFORM_SECRET=$(docker exec aapanel docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token) &&
+docker exec -it aapanel ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+  -srs-log=true -wait-ready=true -init-password=false \
+  -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET \
+  -test.parallel 3
+```
+
+Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install plugin.
+
+> Note: Or you can use `docker exec -it aapanel bt default` to show the login info.
+
+In the [application store](http://localhost:7800/soft), there is a `srs_cloud` plugin. After test, you can install the plugin
+`build/aapanel-srs_cloud.zip` to production aaPanel panel.
 

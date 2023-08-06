@@ -125,6 +125,6 @@ cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud
 systemctl daemon-reload && systemctl enable srs-cloud
 if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
 
-#/etc/init.d/srs_cloud restart srs-cloud
+/etc/init.d/srs_cloud restart srs-cloud
 if [[ $? -ne 0 ]]; then echo "Start srs-cloud failed"; exit 1; fi
 

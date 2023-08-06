@@ -25,6 +25,8 @@ req = urllib.request.Request(
         'ps': 'SRS Cloud',
         'ftp': 'false',
         'sql': 'false',
+        # For aaPanel.
+        'set_ssl': 0,
     }).encode('utf-8')
 )
 res = urllib.request.urlopen(req)

@@ -298,6 +298,149 @@ jobs:
           
           exit $ret
 
+  install-aapanel:
+    name: Test for install by aaPanel
+    runs-on: ubuntu-20.04
+    needs:
+      - envs
+      - build-image
+    steps:
+      - name: Remove unnecessary files
+        run: |
+          df -h
+          echo ""
+          echo "After removed some unused files."
+          echo ""
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /usr/local/share/powershell /usr/share/swift /usr/lib/jvm
+          df -h
+      - name: Covert output to env
+        run: |
+          echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
+          echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install tools
+        run: |
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version
+      - uses: actions/download-artifact@v3
+        with:
+          name: platform-cache
+      # See https://github.com/moby/moby/issues/13742#issuecomment-725197223
+      - name: Force docker to use vfs.
+        run: |
+          sudo systemctl stop docker
+          echo '{"cgroup-parent":"/actions_job","storage-driver":"vfs"}' | sudo tee /etc/docker/daemon.json
+          sudo systemctl start docker
+      - name: Add hosts to /etc/hosts
+        run: |
+          sudo echo "127.0.0.1 srs.cloud.local" | sudo tee -a /etc/hosts
+      - name: Build package
+        run: |
+          bash scripts/setup-aapanel/auto/zip.sh --version $SRS_TAG \
+              --output build --extract
+          du -sh build/*
+      - name: Start aaPanel develop container
+        env:
+          AAPANEL_API: ${{ secrets.BT_API }}
+        run: |
+          mkdir -p $HOME/.aapanel
+          echo -n "$AAPANEL_API" > $HOME/.aapanel/api.json
+          AAPANEL_KEY=$(cat $HOME/.aapanel/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
+          
+          # Note that we must mount the /data to allow test to read the MGMT_PASSWORD in /data/config/.env
+          docker run -v /data:/data -p 80:80 -p 7800:7800 \
+            -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
+            -v $HOME/.aapanel/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
+            --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+            --add-host srs.cloud.local:127.0.0.1 \
+            -d --rm -v $(pwd):/g -w /g --name=aapanel ossrs/aapanel-plugin-dev:1
+          echo "aaPanel docker started."
+      - name: Wait for systemd service start
+        run: |
+          # We will handle the error by ourselves.
+          set +e
+          
+          for ((i=0; i<10; i++)); do
+            if [[ $(docker exec aapanel systemctl status docker >/dev/null 2>/dev/null && echo yes) == yes ]]; then
+              echo "Docker service started."
+              break
+            else
+                echo "Wait for docker service start."
+                sleep 1
+            fi
+          done
+          
+          docker exec aapanel systemctl status docker
+          echo "Docker service started."
+      - name: Import platform image to aaPanel
+        run: |
+          docker exec aapanel docker load -i platform.tar
+          echo "Import platform image to aaPanel ok."
+          
+          docker exec aapanel docker tag platform:latest ossrs/srs-cloud:$SRS_TAG
+          docker exec aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
+          echo "Tag platform image to aaPanel ok."
+          
+          docker exec aapanel docker images
+      - name: Install SRS Cloud plugin
+        run: |
+          docker exec aapanel bash /www/server/panel/plugin/srs_cloud/install.sh install
+          echo "Install SRS Cloud plugin ok."
+          
+          docker exec aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-create-site.py
+          docker exec aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-setup-site.py
+          echo "Create SRS site ok."
+          
+          docker exec aapanel bash /www/server/panel/plugin/srs_cloud/setup.sh \
+            --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+            --www /www/wwwroot --site srs.cloud.local
+          echo "Setup SRS Cloud plugin ok."
+          
+          set +e
+          docker exec aapanel systemctl status srs-cloud
+          docker exec aapanel journalctl -u srs-cloud
+          docker exec aapanel docker logs srs-cloud
+      - name: Check service
+        run: |
+          echo "Wait for service ready."
+          make -j -C test
+          ./test/srs-cloud.test -test.v -endpoint http://srs.cloud.local:80 \
+              -srs-log=true -wait-ready=true -init-password=true \
+              -check-api-secret=false -test.run TestApi_Empty
+          
+          echo "Show service status."
+          docker exec aapanel systemctl status srs-cloud
+          docker exec aapanel docker ps -a
+          
+          echo "Record log of services."
+          docker exec aapanel journalctl -u srs-cloud > journalctl.log
+          docker exec aapanel journalctl -u srs-cloud -f >>journalctl.log 2>&1 &
+          docker exec aapanel docker logs srs-cloud >docker.log
+          docker exec aapanel docker logs -f srs-cloud >>docker.log 2>&1 &
+      - name: Test service
+        run: |
+          # We will handle the error by ourselves.
+          set +e
+          
+          # The systemPassword is set by MGMT_PASSWORD in /data/config/.env
+          SRS_PLATFORM_SECRET=$(docker exec aapanel docker exec srs-cloud redis-cli hget SRS_PLATFORM_SECRET token)
+          ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+              -srs-log=true -wait-ready=true -init-password=false \
+              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET \
+              -test.parallel 3
+          ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
+          
+          echo "Stop service"
+          docker exec aapanel systemctl stop srs-cloud
+          docker stop aapanel
+          
+          echo "Log of journalctl.log" && cat journalctl.log
+          echo "Log of docker.log" && cat docker.log
+          
+          exit $ret
+
   final:
     name: Final
     runs-on: ubuntu-20.04
@@ -305,6 +448,7 @@ jobs:
       - test
       - install-script
       - install-bt
+      - install-aapanel
     steps:
       - uses: geekyeggo/delete-artifact@v2
         with:
