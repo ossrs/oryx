@@ -21,9 +21,7 @@ ADD usr /g/usr
 ADD test /g/test
 ADD Makefile /g/Makefile
 
-# Note that we only build the platform without ui, because already build ui for all OS.
-# See platform.yml command:
-#     make ui-build-cn && make ui-build-en
+# Make all, including platform and ui.
 WORKDIR /g
 RUN make clean && make -j && make install
 
