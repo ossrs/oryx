@@ -48,7 +48,7 @@ func NewOIDCRoleArnProvider(region, providerId, webIdentityToken, roleArn, roleS
 
 // DefaultTkeOIDCRoleArnProvider returns a OIDCRoleArnProvider with some default options:
 //  1. providerId will be environment var TKE_PROVIDER_ID
-//  2. webIdentityToken will be the content of file specified by env TKE_IDENTITY_TOKEN_FILE
+//  2. webIdentityToken will be the content of file specified by env TKE_WEB_IDENTITY_TOKEN_FILE
 //  3. roleArn will be env TKE_ROLE_ARN
 //  4. roleSessionName will be "tencentcloud-go-sdk-" + timestamp
 //  5. durationSeconds will be 7200s
@@ -63,9 +63,9 @@ func DefaultTkeOIDCRoleArnProvider() (*OIDCRoleArnProvider, error) {
 		return nil, errors.New("env TKE_PROVIDER_ID not exist")
 	}
 
-	tokenFile := os.Getenv("TKE_IDENTITY_TOKEN_FILE")
+	tokenFile := os.Getenv("TKE_WEB_IDENTITY_TOKEN_FILE")
 	if tokenFile == "" {
-		return nil, errors.New("env TKE_IDENTITY_TOKEN_FILE not exist")
+		return nil, errors.New("env TKE_WEB_IDENTITY_TOKEN_FILE not exist")
 	}
 	tokenBytes, err := ioutil.ReadFile(tokenFile)
 	if err != nil {
