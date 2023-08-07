@@ -4,7 +4,6 @@
 yum --version >/dev/null 2>&1 && rpm --version >/dev/null 2>&1 && OS_NAME='CentOS'
 apt-get --version >/dev/null 2>&1 && OS_NAME='Ubuntu'
 if [[ -z $OS_NAME ]]; then echo "Only support CentOS/Ubuntu"; exit 1; fi
-if [[ $OS_NAME != "Ubuntu" ]]; then echo "Only support Ubuntu"; exit 1; fi
 
 if [[ $OS_NAME == 'CentOS' ]]; then
   # Check CentOS version.

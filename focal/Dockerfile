@@ -1,10 +1,7 @@
 ARG ARCH
 
 FROM ${ARCH}ossrs/srs:ubuntu20 AS build
-
 FROM ${ARCH}redis:5.0 AS redis
-
-FROM ${ARCH}ossrs/srs:5 AS srs
 
 # http://releases.ubuntu.com/focal/
 FROM ${ARCH}ubuntu:focal AS dist
@@ -22,8 +19,6 @@ COPY --from=build /usr/share/ca-certificates /usr/share/ca-certificates
 # For redis server and tools.
 COPY --from=redis /usr/local/bin/redis-cli /usr/local/bin/redis-cli
 COPY --from=redis /usr/local/bin/redis-server /usr/local/bin/redis-server
-# For SRS server.
-COPY --from=srs /usr/local/srs /usr/local/srs
 
 # We write the common config for platform to base image, however you can
 # overwrite it if not for platform, for example, used in releases.

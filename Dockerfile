@@ -1,6 +1,7 @@
 ARG ARCH
 
 FROM ${ARCH}ossrs/node:18 AS node
+FROM ${ARCH}ossrs/srs:5 AS srs
 
 FROM ${ARCH}ossrs/srs:ubuntu20 AS build
 
@@ -31,7 +32,10 @@ RUN make clean && make -j ${MAKEARGS} && make install
 #FROM ${ARCH}ubuntu:focal AS dist
 FROM ${ARCH}ossrs/srs-cloud:focal-1 AS dist
 
+# For SRS-Cloud, build it.
 COPY --from=build /usr/local/srs-cloud /usr/local/srs-cloud
+# For SRS server, always use the latest release version.
+COPY --from=srs /usr/local/srs /usr/local/srs
 
 # Prepare data directory.
 RUN mkdir -p /data && \
