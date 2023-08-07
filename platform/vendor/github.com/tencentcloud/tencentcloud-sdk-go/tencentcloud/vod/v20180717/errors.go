@@ -35,6 +35,9 @@ const (
 	// 操作失败：不支持的封面类型。
 	FAILEDOPERATION_COVERTYPE = "FailedOperation.CoverType"
 
+	// 操作失败：数据库操作失败。
+	FAILEDOPERATION_DBERROR = "FailedOperation.DBError"
+
 	// 域名部署中，不能变更配置。
 	FAILEDOPERATION_DOMAINDEPLOYING = "FailedOperation.DomainDeploying"
 
@@ -620,7 +623,7 @@ const (
 	// 超过限制值：新旧标签个数和超过限制值。
 	LIMITEXCEEDED_TAGCOUNTREACHMAX = "LimitExceeded.TagCountReachMax"
 
-	// 超过限制值：模板数超限。
+	// 超过限制值：模板数超过上限 100 个，如需更多请[提交工单](https://console.cloud.tencent.com/workorder/category)。
 	LIMITEXCEEDED_TOOMUCHTEMPLATE = "LimitExceeded.TooMuchTemplate"
 
 	// 缺少参数错误。
