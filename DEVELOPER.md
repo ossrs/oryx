@@ -263,7 +263,7 @@ Build a docker image:
 ```bash
 docker rm -f script 2>/dev/null || echo 'OK' &&
 docker rmi srs-script-dev 2>/dev/null || echo 'OK' &&
-docker build -t srs-script-dev -f Dockerfile.script .
+docker build -t srs-script-dev -f scripts/setup-ubuntu/Dockerfile.script .
 ```
 
 Create a docker container in daemon:
@@ -316,7 +316,7 @@ bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it script ./test/srs-cloud.test -test.v -wait-ready -endpoint http://localhost:2022 \
   -srs-log=true -wait-ready=true -init-password=false \
   -check-api-secret=true \
-  -test.parallel 3
+  -test.parallel 8
 ```
 
 Access the browser: [http://localhost:2022](http://localhost:2022)
@@ -390,7 +390,7 @@ bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it aapanel ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
   -srs-log=true -wait-ready=true -init-password=false \
   -check-api-secret=true \
-  -test.parallel 3
+  -test.parallel 8
 ```
 
 Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install plugin.
@@ -473,7 +473,7 @@ bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it bt ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
       -srs-log=true -wait-ready=true -init-password=false \
       -check-api-secret=true \
-      -test.parallel 3
+      -test.parallel 8
 ```
 
 Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install plugin.
@@ -483,3 +483,26 @@ Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install
 In the [application store](http://localhost:7800/soft), there is a `srs_cloud` plugin. After test, you can install the plugin 
 `build/bt-srs_cloud.zip` to production BT panel.
 
+## Develop the Droplet Image
+
+To build SRS droplet image for [DigitalOcean Marketplace](https://marketplace.digitalocean.com/).
+
+For the first run, please [install Packer](https://www.packer.io/intro/getting-started/install.html) and plugin:
+
+```bash
+brew tap hashicorp/tap &&
+brew install hashicorp/tap/packer &&
+PACKER_LOG=1 packer plugins install github.com/digitalocean/digitalocean v1.1.1
+```
+
+Start to build SRS image by:
+
+```bash
+(cd scripts/setup-droplet && 
+export DIGITALOCEAN_TOKEN=$(grep market "${HOME}/Library/Application Support/doctl/config.yaml" |grep -v context |awk '{print $2}') &&
+packer build srs.json)
+```
+
+> Note: You can also create a [token](https://cloud.digitalocean.com/account/api/tokens) and setup the env `DIGITALOCEAN_TOKEN`.
+
+Please check the [snapshot](https://cloud.digitalocean.com/images/snapshots/droplets).

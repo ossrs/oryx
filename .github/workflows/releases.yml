@@ -81,8 +81,6 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_TAG }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_MAJOR }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:${{ env.SRS_TAG }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
   k8s:

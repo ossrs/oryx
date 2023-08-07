@@ -13,6 +13,5 @@ FROM ${ARCH}ossrs/srs-cloud:focal-1 AS dist
 COPY --from=build /g/releases/releases /usr/local/srs-cloud/releases/releases
 
 ENV PORT=":9000"
-RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform
 WORKDIR /usr/local/srs-cloud/releases
 CMD ["./releases"]

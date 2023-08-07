@@ -89,10 +89,6 @@ Uninstall() {
   rm -rf $INSTALL_HOME
   echo "Remove install $INSTALL_HOME ok"
 
-  SRS_ALIAS=/usr/local/srs-terraform
-  rm -rf $SRS_HOME $SRS_ALIAS
-  echo "Remove srs home $SRS_HOME ok"
-
   rm -f ~/credentials.txt
   echo "Remove credentials.txt"
 

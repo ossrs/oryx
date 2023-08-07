@@ -49,24 +49,17 @@ cd ${SRS_HOME} &&
 make build && make install
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 
-cd $DEPLOY_HOME && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
-if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
-
 ########################################################################################################################
 # Cache the docker images for srs-cloud to startup faster.
 systemctl start docker &&
 echo "Cache docker images" &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-1
+docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:1
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
 # If install ok, the directory should exists.
 if [[ ! -d ${INSTALL_HOME} || ! -d ${INSTALL_HOME}/mgmt ]]; then
   echo "Install srs-cloud failed"; exit 1;
 fi
-
-# Compatible with previous version.
-cd $(dirname $INSTALL_HOME) && rm -rf srs-terraform && ln -sf srs-cloud srs-terraform
-if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
 
 # Create global data directory.
 echo "Create data and config file"

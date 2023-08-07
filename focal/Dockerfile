@@ -25,8 +25,7 @@ COPY --from=redis /usr/local/bin/redis-server /usr/local/bin/redis-server
 ENV PORT=":2024" NODE_ENV=production SRS_DOCKERIZED=true MGMT_DOCKER=true PLATFORM_DOCKER=true CLOUD=DOCKER
 
 # Create link for compatible reason.
-RUN ln -sf /usr/local/srs-cloud /usr/local/srs-terraform && \
-    mkdir -p /usr/local/lighthouse/softwares && \
+RUN mkdir -p /usr/local/lighthouse/softwares && \
     ln -sf /usr/local/srs-cloud /usr/local/lighthouse/softwares/srs-cloud
 
 # Setup the work directory to platform.

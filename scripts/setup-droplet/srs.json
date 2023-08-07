@@ -1,9 +1,9 @@
 {
   "variables": {
     "do_token": "{{env `DIGITALOCEAN_TOKEN`}}",
-    "image_name": "srs-4-snapshot-{{timestamp}}",
+    "image_name": "srs-5-snapshot-{{timestamp}}",
     "application_name": "SRS",
-    "application_version": "4.6.15"
+    "application_version": "5.7.18"
   },
   "sensitive-variables": ["do_token"],
   "builders": [

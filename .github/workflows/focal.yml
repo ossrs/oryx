@@ -66,8 +66,6 @@ jobs:
           src: ossrs/srs-cloud:${{ env.SRS_TAG }}
           dst: |
             ossrs/srs-cloud:${{ env.SRS_MAJOR }}
-            ossrs/srs-terraform:${{ env.SRS_TAG }}
-            ossrs/srs-terraform:${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
   aliyun:
@@ -93,6 +91,4 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_TAG }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_MAJOR }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:${{ env.SRS_TAG }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-terraform:${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
