@@ -139,7 +139,7 @@ jobs:
           ./test/srs-cloud.test -test.v -wait-ready -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false \
               -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
-              -test.parallel 3
+              -test.parallel 1
           ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
           
           echo "Stop service"
@@ -286,7 +286,7 @@ jobs:
           ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
               -srs-log=true -wait-ready=true -init-password=false \
               -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
-              -test.parallel 3
+              -test.parallel 1
           ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
           
           echo "Stop service"
