@@ -136,3 +136,4 @@ __pycache__
 /*.flv
 /*.mp4
 /*.ts
+/docs

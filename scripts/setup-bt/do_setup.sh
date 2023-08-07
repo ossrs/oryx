@@ -92,10 +92,10 @@ if [[ $? -ne 0 ]]; then echo "Update bootstrap failed"; exit 1; fi
 echo "Update bootstrap ok"
 
 # Update the docker images.
-echo "Cache docker image ${IMAGE}" &&
-REPO=$(echo $IMAGE |cut -d: -f1) && TAG=$(echo $IMAGE |cut -d: -f2)
+echo "Cache docker image ${IMAGE_URL}" &&
+REPO=$(echo $IMAGE_URL |cut -d: -f1) && TAG=$(echo $IMAGE_URL |cut -d: -f2)
 if [[ $(docker images |grep $REPO |grep -q $TAG || echo no) == no ]]; then
-  docker pull ${IMAGE}
+  docker pull ${IMAGE_URL}
 fi
 if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
