@@ -44,8 +44,8 @@ if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
 ######################################################################
 if [[ $(grep -q "const latest = \"$TAG\"" releases/version.go || echo no) == no ]]; then
-    echo "Failed: Please update releases/latest.go to $TAG"
-    echo "    sed -i '' 's|const latest = \".*\"|const latest = \"$TAG\"|g' releases/latest.go"
+    echo "Failed: Please update releases/version.go to $TAG"
+    echo "    sed -i '' 's|const latest = \".*\"|const latest = \"$TAG\"|g' releases/version.go"
     exit 1
 fi
 if [[ $(grep -q "const version = \"$TAG\"" platform/version.go || echo no) == no ]]; then
