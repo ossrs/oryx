@@ -335,7 +335,7 @@ func initPlatform(ctx context.Context) error {
 	}
 
 	// Run only once for a special version.
-	bootRelease := "v23"
+	bootRelease := "v24"
 	if firstRun, err := rdb.HGet(ctx, SRS_FIRST_BOOT, bootRelease).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v %v", SRS_FIRST_BOOT, bootRelease)
 	} else if firstRun == "" {

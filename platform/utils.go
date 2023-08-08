@@ -531,7 +531,11 @@ func nginxGenerateConfig(ctx context.Context) error {
 	confLines = append(confLines, "", "")
 
 	confData := strings.Join(confLines, "\n")
+	_ = confData
 
+	return nil
+
+	// TODO: FIXME: Support configure Nginx and reload.
 	fileName := "containers/conf/default.d/nginx.dynamic.conf"
 	if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
 		return errors.Wrapf(err, "open file %v", fileName)
