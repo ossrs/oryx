@@ -13,7 +13,7 @@ jobs:
         id: wait-for-test
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: Test for commits
+          checkName: test-final
           ref: ${{ github.sha }}
           timeoutSeconds: 3600
       - name: Check Test Workflow result

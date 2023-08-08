@@ -441,8 +441,8 @@ jobs:
           
           exit $ret
 
-  final:
-    name: Final
+  test-final:
+    name: test-final
     runs-on: ubuntu-20.04
     needs:
       - test
