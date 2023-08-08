@@ -137,3 +137,6 @@ __pycache__
 /*.mp4
 /*.ts
 /docs
+/lighthouse
+/.*.txt
+/*.txt

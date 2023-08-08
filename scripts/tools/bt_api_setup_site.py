@@ -1,5 +1,5 @@
 #coding: utf-8
-import os, sys, srsTools
+import os, sys, bt_tools
 
 confPath = '/www/server/panel/vhost/nginx/srs.cloud.local.conf'
 print(f"Nginx confPath: {confPath}")
@@ -8,7 +8,7 @@ with open(confPath, 'r') as f:
     confData = f.read()
 print(f"Nginx original confData: {confData}")
 
-confData = srsTools.setup_site(confData)
+confData = bt_tools.setup_site(confData)
 print(f"Nginx new confData: {confData}")
 
 with open(confPath, 'w') as f:

@@ -10,8 +10,8 @@ from panelSite import panelSite
 from files import files
 from firewalls import firewalls
 
-import srsTools
-print(f"srsTools version: {srsTools.version()}")
+import bt_tools
+print(f"bt_tools version: {bt_tools.version()}")
 
 class srs_cloud_main:
     # Normally the plugin is at:
@@ -35,7 +35,7 @@ class srs_cloud_main:
 
     def serviceStatus(self, args):
         status = {}
-        status['tools_version'] = srsTools.version()
+        status['tools_version'] = bt_tools.version()
         status['plugin_ready'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__ready_file))[0]
         status['srs_error'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
         status['srs_ready'] = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
@@ -160,7 +160,7 @@ class srs_cloud_main:
         confPath = f'{public.get_vhost_path()}/nginx/{self.__site}.conf'
         conf = files().GetFileBody(Params(path=confPath))
         confData = conf['data']
-        confData = srsTools.setup_site(confData)
+        confData = bt_tools.setup_site(confData)
 
         # Save the nginx config and reload it.
         r0 = files().SaveFileBody(Params(

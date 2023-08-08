@@ -1,110 +1,5 @@
 #!/bin/bash
 
-REALPATH=$(realpath $0)
-WORK_DIR=$(cd $(dirname $REALPATH)/../.. && pwd)
-echo "Run setup at $WORK_DIR from $0"
-cd $WORK_DIR
-
-# The main directory.
-DEPLOY_HOME=/usr/local/lighthouse/softwares
-SRS_HOME=${DEPLOY_HOME}/srs-cloud
-INSTALL_HOME=/usr/local/srs-cloud
-DATA_HOME=/data
-
-########################################################################################################################
-# Check OS first, only support CentOS 7.
-yum --version >/dev/null 2>&1 && rpm --version >/dev/null 2>&1
-if [[ $? -ne 0 ]]; then echo "Only support CentOS 7"; exit 1; fi
-
-# Check CentOS version.
-CentOS_VERSION=$(rpm --eval '%{centos_ver}')
-if [[ $CentOS_VERSION -ne 7 ]]; then echo "Only support CentOS 7, yours is $CentOS_VERSION"; exit 1; fi
-
-# Check user lighthouse
-if [[ $(id -un lighthouse 2>/dev/null) == '' ]]; then
-  echo "No user lighthouse"; exit 1;
-fi
-
-# Check user lighthouse home directory.
-if [[ ! -d ~lighthouse ]]; then
-  echo "No home directory ~lighthouse"; exit 1;
-fi
-
-# Ignore darwin
-if [[ $(uname -s) == 'Darwin' ]]; then
-  echo "Mac is not supported"; exit 1;
-fi
-
-########################################################################################################################
-# Install depends services.
-yum install -y git gcc-c++ gdb make tree dstat docker nginx &&
-systemctl enable docker nginx
-if [[ $? -ne 0 ]]; then echo "Install dependencies failed"; exit 1; fi
-
-# Install files to lighthouse directory.
-mkdir -p $DEPLOY_HOME &&
-rm -rf ${SRS_HOME} &&
-(cd $(dirname $WORK_DIR) && cp -r $(basename $WORK_DIR) ${SRS_HOME}) &&
-cd ${SRS_HOME} &&
-make build && make install
-if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
-
-########################################################################################################################
-# Cache the docker images for srs-cloud to startup faster.
-systemctl start docker &&
-echo "Cache docker images" &&
-docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:1
-if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
-
-# If install ok, the directory should exists.
-if [[ ! -d ${INSTALL_HOME} || ! -d ${INSTALL_HOME}/mgmt ]]; then
-  echo "Install srs-cloud failed"; exit 1;
-fi
-
-# Create global data directory.
-echo "Create data and config file"
-mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env &&
-rm -rf ${SRS_HOME}/mgmt/containers/data && ln -sf ${DATA_HOME} ${SRS_HOME}/mgmt/containers/data &&
-rm -rf ${SRS_HOME}/mgmt/.env && ln -sf ${DATA_HOME}/config/.env ${SRS_HOME}/mgmt/.env
-if [[ $? -ne 0 ]]; then echo "Create /data/config/.env failed"; exit 1; fi
-
-# Create srs-cloud service, and the credential file.
-# Remark: Never start the service, because the IP will change for new machine created.
-cd ${INSTALL_HOME} &&
-cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
-systemctl enable srs-cloud
-if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
-
-# Choose default language.
-cat << END > ${SRS_HOME}/mgmt/.env
-CLOUD=TENCENT
-REACT_APP_LOCALE=zh
-END
-if [[ $? -ne 0 ]]; then echo "Setup language failed"; exit 1; fi
-
-# Setup the nginx configuration.
-rm -f /etc/nginx/nginx.conf &&
-ln -sf ${SRS_HOME}/mgmt/containers/conf/nginx.conf /etc/nginx/nginx.conf
-if [[ $? -ne 0 ]]; then echo "Setup nginx config failed"; exit 1; fi
-
-# Build the mgmt/containers/conf/conf.d/nginx.vhost.conf
-cd ${SRS_HOME}/mgmt && bash auto/setup_vhost
-if [[ $? -ne 0 ]]; then echo "Build nginx vhost failed"; exit 1; fi
-
-cd ${SRS_HOME}/mgmt &&
-rm -f /etc/nginx/conf.d/nginx.vhost.conf /etc/nginx/conf.d/server.conf &&
-ln -sf ${SRS_HOME}/mgmt/containers/conf/conf.d/nginx.vhost.conf /etc/nginx/conf.d/vhost.conf
-if [[ $? -ne 0 ]]; then echo "Reload nginx failed"; exit 1; fi
-
-# Setup git alias to make it convenient.
-cd ${SRS_HOME}/mgmt &&
-echo "Setup git alias to make it more convenient" &&
-git config --local alias.co checkout &&
-git config --local alias.br branch &&
-git config --local alias.ci commit &&
-git config --local alias.st status
-if [[ $? -ne 0 ]]; then echo "Setup git alias failed"; exit 1; fi
-
 # Update sysctl.conf and add if not exists. For example:
 #   update_sysctl net.ipv4.ip_forward 1 0 "# Controls IP packet forwarding"
 function update_sysctl() {
@@ -125,6 +20,59 @@ function update_sysctl() {
     echo "Update done: ${RESULT}"
 }
 
+REALPATH=$(realpath $0)
+WORK_DIR=$(cd $(dirname $REALPATH)/../.. && pwd)
+echo "Run setup at $WORK_DIR from $0"
+cd $WORK_DIR
+
+# The main directory.
+SRS_HOME=/usr/local/srs-cloud
+DATA_HOME=/data
+IMAGE_URL=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:1
+SOURCE=$WORK_DIR
+
+mkdir -p /usr/local/lighthouse/softwares/srs-cloud &&
+rm -rf $SRS_HOME && ln -sf /usr/local/lighthouse/softwares/srs-cloud $SRS_HOME
+ret=$?; if [[ 0 -ne $ret ]]; then echo "Failed to create $SRS_HOME"; exit $ret; fi
+
+if [[ $(id -un lighthouse 2>/dev/null) == '' ]]; then
+    bash scripts/setup-lighthouse/create_lighthouse_user.sh
+    if [[ $? -ne 0 ]]; then echo "Create user lighthouse failed"; exit 1; fi
+fi
+
+########################################################################################################################
+# Check OS first, only support CentOS 7.
+apt-get --version >/dev/null 2>&1 && OS_NAME='Ubuntu'
+if [[ -z $OS_NAME ]]; then echo "Only support Ubuntu"; exit 1; fi
+
+if [[ $OS_NAME == 'Ubuntu' ]]; then
+  # Check Ubuntu version.
+  Ubuntu_VERSION=$(cat /etc/os-release |grep VERSION_ID |awk -F '"' '{print $2}' |awk -F '.' '{print $1}')
+  if [[ $Ubuntu_VERSION -lt 18 ]]; then echo "Only support Ubuntu 18+, yours is $Ubuntu_VERSION"; exit 1; fi
+fi
+
+# Check user lighthouse
+if [[ $(id -un lighthouse 2>/dev/null) == '' ]]; then
+  echo "No user lighthouse"; exit 1;
+fi
+
+# Check user lighthouse home directory.
+if [[ ! -d ~lighthouse ]]; then
+  echo "No home directory ~lighthouse"; exit 1;
+fi
+
+########################################################################################################################
+# Install depends services.
+apt-get update -y &&
+apt-get install -y git gcc g++ gdb make tree dstat docker docker.io nginx curl net-tools &&
+apt-get -qqy clean
+if [[ $? -ne 0 ]]; then echo "Install dependencies failed"; exit 1; fi
+
+echo "Enable service" &&
+systemctl enable docker nginx &&
+systemctl start docker
+if [[ $? -ne 0 ]]; then echo "Enable service failed"; exit 1; fi
+
 # Allow network forwarding, required by docker.
 # See https://stackoverflow.com/a/41453306/17679565
 update_sysctl net.ipv4.ip_forward 1 1 "# Controls IP packet forwarding"
@@ -136,6 +84,64 @@ update_sysctl net.core.rmem_default 16777216
 update_sysctl net.core.wmem_max 16777216
 update_sysctl net.core.wmem_default 16777216
 
+# Install files to lighthouse directory.
+rm -rf ${SRS_HOME} && mkdir -p $SRS_HOME/mgmt &&
+cp -r ${SOURCE}/usr ${SRS_HOME}/usr &&
+cp ${SOURCE}/LICENSE ${SRS_HOME}/LICENSE &&
+cp ${SOURCE}/README.md ${SRS_HOME}/README.md &&
+cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap
+if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
+
+########################################################################################################################
+echo "Start to create data and config files"
+mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env &&
+touch ${DATA_HOME}/config/nginx.http.conf &&
+touch ${DATA_HOME}/config/nginx.server.conf
+if [[ $? -ne 0 ]]; then echo "Create /data/config failed"; exit 1; fi
+echo "Create data and config files ok"
+
+# Setup the nginx configuration.
+rm -f /etc/nginx/nginx.conf &&
+cp ${SOURCE}/platform/containers/conf/nginx.conf /etc/nginx/nginx.conf &&
+sed -i "s/user nginx;/user www-data;/g" /etc/nginx/nginx.conf
+if [[ $? -ne 0 ]]; then echo "Setup nginx config failed"; exit 1; fi
+
+echo "Start to update bootstrap"
+sed -i "s|^DATA_HOME=.*|DATA_HOME=${DATA_HOME}|g" ${SRS_HOME}/mgmt/bootstrap &&
+sed -i "s|^IMAGE=.*|IMAGE=${IMAGE_URL}|g" ${SRS_HOME}/mgmt/bootstrap
+if [[ $? -ne 0 ]]; then echo "Update bootstrap failed"; exit 1; fi
+echo "Update bootstrap ok"
+
+# Choose default language.
+echo "Start to setup .env"
+if [[ -f ${DATA_HOME}/config/.env && -s ${DATA_HOME}/config/.env ]]; then
+    echo "The .env already exists, skip"
+else
+    cat << END > ${DATA_HOME}/config/.env
+CLOUD=TENCENT
+REACT_APP_LOCALE=zh
+IMAGE=${IMAGE_URL}
+# Please use BT to configure the domain and HTTPS.
+SRS_HTTPS=off
+END
+    if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
+fi
+
+# Update the docker images.
+echo "Cache docker images" &&
+if [[ $(docker images --format "{{.Repository}}:{{.Tag}}" ${IMAGE_URL} |wc -l) -eq 1 ]]; then
+    echo "Docker images ${IMAGE_URL} exists, skip pull"
+else
+    docker pull ${IMAGE_URL}
+    if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
+fi
+
+# Create srs-cloud service, and the credential file.
+# Remark: Never start the service, because the IP will change for new machine created.
+cp -f ${SRS_HOME}/usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
+systemctl enable srs-cloud
+if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
+
 ########################################################################################################################
 # Note that we keep files as root, because we run srs-cloud as root, see https://stackoverflow.com/a/70953525/17679565
 chown lighthouse:lighthouse ${DATA_HOME}/config/.env
@@ -144,3 +150,4 @@ if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 rm -rf ~lighthouse/credentials.txt && ln -sf ${DATA_HOME}/config/.env ~lighthouse/credentials.txt
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 
+echo "Install srs-cloud ok"

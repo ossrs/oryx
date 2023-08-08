@@ -21,18 +21,11 @@ if [[ $GIT_DONE != YES ]]; then
   echo "Clone srs-cloud failed"; exit 1;
 fi
 
-# Setup the nginx configuration.
-rm -f /etc/nginx/nginx.conf &&
-cp ${SOURCE}/platform/containers/conf/nginx.conf /etc/nginx/nginx.conf &&
-sed -i "s/user nginx;/user www-data;/g" /etc/nginx/nginx.conf
-if [[ $? -ne 0 ]]; then echo "Setup nginx config failed"; exit 1; fi
-
 # Install files to lighthouse directory.
-mkdir -p ${SRS_HOME} ${DATA_HOME} && rm -rf ${SRS_HOME}/* &&
+mkdir -p ${SRS_HOME}/mgmt ${DATA_HOME} && rm -rf ${SRS_HOME}/* &&
 cp -r ${SOURCE}/usr ${SRS_HOME}/usr &&
 cp ${SOURCE}/LICENSE ${SRS_HOME}/LICENSE &&
 cp ${SOURCE}/README.md ${SRS_HOME}/README.md &&
-mkdir -p ${SRS_HOME}/mgmt &&
 cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap &&
 rm -rf $SOURCE
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
@@ -43,6 +36,12 @@ touch ${DATA_HOME}/config/nginx.http.conf &&
 touch ${DATA_HOME}/config/nginx.server.conf
 if [[ $? -ne 0 ]]; then echo "Create /data/config failed"; exit 1; fi
 echo "Create data and config files ok"
+
+# Setup the nginx configuration.
+rm -f /etc/nginx/nginx.conf &&
+cp ${SOURCE}/platform/containers/conf/nginx.conf /etc/nginx/nginx.conf &&
+sed -i "s/user nginx;/user www-data;/g" /etc/nginx/nginx.conf
+if [[ $? -ne 0 ]]; then echo "Setup nginx config failed"; exit 1; fi
 
 echo "Start to update bootstrap"
 sed -i "s|^DATA_HOME=.*|DATA_HOME=${DATA_HOME}|g" ${SRS_HOME}/mgmt/bootstrap &&
@@ -72,11 +71,6 @@ if [[ $(docker images --format "{{.Repository}}:{{.Tag}}" ${IMAGE_URL} |wc -l) -
 else
     docker pull ${IMAGE_URL}
     if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
-fi
-
-# If install ok, the directory should exists.
-if [[ ! -d ${SRS_HOME} ]]; then
-  echo "Install srs-cloud failed"; exit 1;
 fi
 
 # Create srs-cloud service, and the credential file.

@@ -150,9 +150,9 @@ docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/install.sh insta
 You can use aaPanel panel to install the plugin, or by command:
 
 ```bash
-docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-remove-site.py &&
-docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-create-site.py &&
-docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-setup-site.py &&
+docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_remove_site.py &&
+docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_create_site.py &&
+docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_setup_site.py &&
 docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/setup.sh \
     --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
     --www /www/wwwroot --site srs.cloud.local
@@ -233,9 +233,9 @@ docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh install
 You can use BT panel to install the plugin, or by command:
 
 ```bash
-docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt-api-remove-site.py &&
-docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt-api-create-site.py &&
-docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt-api-setup-site.py &&
+docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt_api_remove_site.py &&
+docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt_api_create_site.py &&
+docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt_api_setup_site.py &&
 docker exec -it bt bash /www/server/panel/plugin/srs_cloud/setup.sh \
     --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
     --www /www/wwwroot --site srs.cloud.local
@@ -285,6 +285,49 @@ packer build srs.json)
 > Note: You can also create a [token](https://cloud.digitalocean.com/account/api/tokens) and setup the env `DIGITALOCEAN_TOKEN`.
 
 Please check the [snapshot](https://cloud.digitalocean.com/images/snapshots/droplets).
+
+## Develop the TencentCloud Lighthouse Image
+
+Create a [TencentCloud Secret](https://console.cloud.tencent.com/cam/capi) and save to `~/.lighthouse/.env` file:
+
+```bash
+LH_ACCOUNT=xxxxxx
+SECRET_ID=xxxxxx
+SECRET_KEY=xxxxxx
+```
+
+> Note: Share the image to `LH_ACCOUNT` to publish it.
+
+Create a CVM instance:
+
+```bash
+rm -f /tmp/lh-*.txt &&
+VM_TOKEN="ABCabc$(date +%s)" && echo "$VM_TOKEN" >/tmp/lh-token.txt &&
+VM_TOKEN=$VM_TOKEN bash scripts/tools/tencent-cloud/helper.sh create-cvm.py 2>/tmp/lh-instance.txt && VM_INSTANCE=$(cat /tmp/lh-instance.txt) && 
+bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $VM_INSTANCE 2>/tmp/lh-ip.txt && VM_IP=$(cat /tmp/lh-ip.txt) && 
+echo "Instance: $VM_INSTANCE, IP: $VM_IP"
+```
+
+Run blueprint script:
+
+```bash
+VM_IP=$(cat /tmp/lh-ip.txt) && VM_TOKEN=$(cat /tmp/lh-token.txt) && VM_INSTANCE=$(cat /tmp/lh-instance.txt) &&
+bash scripts/setup-lighthouse/build.sh --ip $VM_IP --os ubuntu --user ubuntu --password $VM_TOKEN &&
+bash scripts/tools/tencent-cloud/helper.sh create-image.py --instance $VM_INSTANCE 2>/tmp/lh-image.txt && VM_IMAGE=$(cat /tmp/lh-image.txt) && 
+bash scripts/tools/tencent-cloud/helper.sh share-image --instance $VM_IMAGE &&
+echo "Image: $VM_IMAGE created and shared."
+```
+
+> Note: We always use the `1.0.0.sh` for SRS Cloud lighthouse.
+
+Then run the script to remove all the CVM, disk images, and snapshots:
+
+```bash
+VM_INSTANCE=$(cat /tmp/lh-instance.txt) && VM_IMAGE=$(cat /tmp/lh-image.txt) &&
+(cd scripts/tools/tencent-cloud && source venv/bin/activate && python remove-cvm.py --instance $VM_INSTANCE || echo OK) &&
+(cd scripts/tools/tencent-cloud && source venv/bin/activate && python remove-image.py --instance $VM_IMAGE || echo OK) &&
+echo "Cleanup Instance: $VM_INSTANCE, Image: $VM_IMAGE OK."
+```
 
 # Tips
 

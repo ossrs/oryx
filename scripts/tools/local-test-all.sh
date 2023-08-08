@@ -37,10 +37,11 @@ if [[ $TARGET != all && $TARGET != script && $TARGET != aapanel && $TARGET != bt
     exit 1
 fi
 
-echo "Test TARGET=$TARGET"
+CONTAINERS="script bt aapanel"
+echo "Test TARGET=$TARGET, CONTAINERS=$CONTAINERS"
 
 echo "Remove all docker containers"
-docker rm -f script bt aapanel 2>/dev/null || echo 'OK'
+docker rm -f $CONTAINERS 2>/dev/null || echo 'OK'
 echo "Remove all docker containers OK"
 
 #####################################################################################
@@ -60,7 +61,7 @@ if [[ $TARGET == all || $TARGET == script ]]; then
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Build script dev docker image failed, ret=$ret"; exit $ret; fi
 
     echo "Run script dev docker image" &&
-    docker rm -f script 2>/dev/null || echo 'OK' &&
+    docker rm -f $CONTAINERS 2>/dev/null || echo 'OK' &&
     docker run -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
         -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
         --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
@@ -102,6 +103,7 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
     echo "Test aaPanel installer"
 
     echo "Build aaPanel dev docker image"
+    docker rm -f $CONTAINERS 2>/dev/null || echo 'OK' &&
     AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
     docker run -p 80:80 -p 7800:7800 \
         -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
@@ -127,9 +129,9 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Setup aaPanel installer failed, ret=$ret"; exit $ret; fi
 
     echo "Test aaPanel installer" &&
-    docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-remove-site.py &&
-    docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-create-site.py &&
-    docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-setup-site.py &&
+    docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_remove_site.py &&
+    docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_create_site.py &&
+    docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_setup_site.py &&
     docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/setup.sh \
         --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
         --www /www/wwwroot --site srs.cloud.local
@@ -155,6 +157,7 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
     echo "Test bt installer"
 
     echo "Build bt dev docker image"
+    docker rm -f $CONTAINERS 2>/dev/null || echo 'OK' &&
     BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
     docker run -p 80:80 -p 7800:7800 \
         -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
@@ -181,9 +184,9 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Setup bt installer failed, ret=$ret"; exit $ret; fi
 
     echo "Setup bt installer" &&
-    docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt-api-remove-site.py &&
-    docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt-api-create-site.py &&
-    docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt-api-setup-site.py &&
+    docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt_api_remove_site.py &&
+    docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt_api_create_site.py &&
+    docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt_api_setup_site.py &&
     docker exec -it bt bash /www/server/panel/plugin/srs_cloud/setup.sh \
         --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
         --www /www/wwwroot --site srs.cloud.local
@@ -205,9 +208,7 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
 fi
 
 #####################################################################################
+docker rm -f $CONTAINERS 2>/dev/null
 
-echo "Remove all docker containers"
-docker rm -f script bt aapanel 2>/dev/null || echo 'OK'
-echo "Remove all docker containers OK"
-
-echo "OK"
+echo ""
+echo "All tests OK"

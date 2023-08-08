@@ -246,8 +246,8 @@ jobs:
           docker exec bt bash /www/server/panel/plugin/srs_cloud/install.sh install
           echo "Install SRS Cloud plugin ok."
           
-          docker exec bt python3 /www/server/panel/plugin/srs_cloud/bt-api-create-site.py
-          docker exec bt python3 /www/server/panel/plugin/srs_cloud/bt-api-setup-site.py
+          docker exec bt python3 /www/server/panel/plugin/srs_cloud/bt_api_create_site.py
+          docker exec bt python3 /www/server/panel/plugin/srs_cloud/bt_api_setup_site.py
           echo "Create SRS site ok."
         
           docker exec bt bash /www/server/panel/plugin/srs_cloud/setup.sh \
@@ -389,8 +389,8 @@ jobs:
           docker exec aapanel bash /www/server/panel/plugin/srs_cloud/install.sh install
           echo "Install SRS Cloud plugin ok."
           
-          docker exec aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-create-site.py
-          docker exec aapanel python3 /www/server/panel/plugin/srs_cloud/bt-api-setup-site.py
+          docker exec aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_create_site.py
+          docker exec aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_setup_site.py
           echo "Create SRS site ok."
           
           docker exec aapanel bash /www/server/panel/plugin/srs_cloud/setup.sh \
