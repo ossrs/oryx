@@ -108,6 +108,7 @@ Start a container and mount as plugin:
 docker rm -f bt aapanel 2>/dev/null || echo 'OK' &&
 AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
 docker run -p 80:80 -p 7800:7800 \
+    -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
     -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
@@ -187,6 +188,7 @@ Start a container and mount as plugin:
 docker rm -f bt aapanel 2>/dev/null || echo 'OK' &&
 BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
 docker run -p 80:80 -p 7800:7800 \
+    -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
     -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
     -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \

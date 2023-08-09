@@ -108,7 +108,7 @@ echo "Start to setup nginx.http.conf"
 if [[ -f ${DATA_HOME}/config/nginx.http.conf && -s ${DATA_HOME}/config/nginx.http.conf ]]; then
     echo "The nginx.http.conf already exists, skip"
 else
-    cat << END > ${DATA_HOME}/config/nginx.http.conf
+    cat << END > ${DATA_HOME}/config/nginx.server.conf
 # Limit for upload file size
 client_max_body_size 100g;
 END
