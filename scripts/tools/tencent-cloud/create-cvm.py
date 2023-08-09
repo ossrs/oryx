@@ -1,5 +1,10 @@
 #coding: utf-8
-import dotenv, os, time, sys, tools
+import dotenv, os, time, sys, tools, argparse
+
+parser = argparse.ArgumentParser(description="TencentCloud")
+parser.add_argument("--id", type=str, required=False, help="Write ID result to this file")
+
+args = parser.parse_args()
 
 if os.path.exists(f'{os.getenv("HOME")}/.lighthouse/.env'):
     dotenv.load_dotenv(dotenv.find_dotenv(filename=f'{os.getenv("HOME")}/.lighthouse/.env'))
@@ -16,6 +21,7 @@ if os.getenv("VM_TOKEN") == None:
     exit(1)
 
 region = "ap-beijing"
+print(f"Run with region={region}, id={args.id}")
 
 images = tools.get_images(region, "Ubuntu")['ImageSet']
 image = None
@@ -71,5 +77,6 @@ if len(instance_details) != 1:
 instance_detail = instance_details[0]
 print(f"Instance {instance_id}, public ip={instance_detail['PublicIpAddresses'][0]}, private ip={instance_detail['PrivateIpAddresses'][0]}")
 
-# print the instance id to stderr.
-print(instance_id, file=sys.stderr)
+if args.id != None:
+    with open(args.id, 'w') as f:
+        print(instance_id, file=f)

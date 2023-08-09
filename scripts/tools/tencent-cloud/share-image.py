@@ -1,5 +1,5 @@
 #coding: utf-8
-import dotenv, os, tools, argparse, time
+import dotenv, os, tools, argparse
 
 parser = argparse.ArgumentParser(description="TencentCloud")
 parser.add_argument("--image", type=str, required=False, help="The CVM image id")
@@ -30,17 +30,6 @@ region = "ap-beijing"
 image_id = args.image
 account_id = os.getenv("LH_ACCOUNT")
 print(f"Share image id={image_id}, region={region} to account={account_id}")
-
-while True:
-    info = tools.query_image(region, image_id)['ImageSet']
-    if len(info) != 1:
-        raise Exception(f"Image {image_id} not found")
-
-    if info[0]['ImageState'] == 'NORMAL':
-        break
-
-    print(f"Image {image_id} state is {info[0]['ImageState']}, wait 5 seconds")
-    time.sleep(5)
 
 tools.share_image(region, image_id, account_id)
 print(f"Image {image_id} shared to account {account_id}")

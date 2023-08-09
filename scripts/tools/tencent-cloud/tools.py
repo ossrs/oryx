@@ -335,7 +335,7 @@ def delete_snapshot_and_image(region, snapshot_id):
     resp = client.DeleteSnapshots(req)
     return json.loads(resp.to_json_string())
 
-def create_image(region, instance_id, image_name):
+def create_image(region, instance_id, image_name, image_desc):
     cred = credential.Credential(os.getenv("SECRET_ID"), os.getenv("SECRET_KEY"))
     httpProfile = HttpProfile()
     httpProfile.endpoint = "cvm.tencentcloudapi.com"
@@ -347,7 +347,9 @@ def create_image(region, instance_id, image_name):
     req = cvm_models.CreateImageRequest()
     params = {
         "InstanceId": instance_id,
-        "ImageName": image_name
+        "ImageName": image_name,
+        "ImageDescription": image_desc,
+        "ForcePoweroff": "TRUE"
     }
     req.from_json_string(json.dumps(params))
 

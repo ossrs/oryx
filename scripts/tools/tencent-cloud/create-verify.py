@@ -3,6 +3,7 @@ import dotenv, os, time, sys, tools, argparse
 
 parser = argparse.ArgumentParser(description="TencentCloud")
 parser.add_argument("--image", type=str, required=False, help="The CVM image id")
+parser.add_argument("--id", type=str, required=False, help="Write ID result to this file")
 
 args = parser.parse_args()
 
@@ -28,7 +29,7 @@ if os.getenv("VM_TOKEN") == None:
 
 region = "ap-beijing"
 image_id = args.image
-print(f"Select image: {image_id}, {region}")
+print(f"Select image: {image_id}, {region}, id={args.id}")
 
 instance_quotas = tools.get_zone_instance(region)['InstanceTypeQuotaSet']
 if len(instance_quotas) == 0:
@@ -72,5 +73,6 @@ if len(instance_details) != 1:
 instance_detail = instance_details[0]
 print(f"Instance {instance_id}, public ip={instance_detail['PublicIpAddresses'][0]}, private ip={instance_detail['PrivateIpAddresses'][0]}")
 
-# print the instance id to stderr.
-print(instance_id, file=sys.stderr)
+if args.id != None:
+    with open(args.id, 'w') as f:
+        print(instance_id, file=f)

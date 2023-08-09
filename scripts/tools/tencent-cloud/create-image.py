@@ -1,8 +1,9 @@
 #coding: utf-8
-import dotenv, os, tools, argparse, sys
+import dotenv, os, tools, argparse, sys, time, datetime
 
 parser = argparse.ArgumentParser(description="TencentCloud")
 parser.add_argument("--instance", type=str, required=False, help="The CVM instance id")
+parser.add_argument("--id", type=str, required=False, help="Write ID result to this file")
 
 args = parser.parse_args()
 
@@ -26,11 +27,24 @@ if os.getenv("SECRET_KEY") == None:
 region = "ap-beijing"
 image_name = "srs"
 instance_id = args.instance
-print(f"Create CVM instance={instance_id}, region={region}, image={image_name}")
+image_desc = f"{image_name} from {instance_id} at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+print(f"Create CVM instance={instance_id}, region={region}, image={image_name}, desc={image_desc}, id={args.id}")
 
-r0 = tools.create_image(region, instance_id, image_name)
+r0 = tools.create_image(region, instance_id, image_name, image_desc)
 image_id = r0['ImageId']
 print(f"Image {image_name} created id={image_id}")
 
-# print the instance public ip to stderr.
-print(image_id, file=sys.stderr)
+while True:
+    info = tools.query_image(region, image_id)['ImageSet']
+    if len(info) != 1:
+        raise Exception(f"Image {image_id} not found")
+
+    if info[0]['ImageState'] == 'NORMAL':
+        break
+
+    print(f"Image {image_id} state is {info[0]['ImageState']}, wait 5 seconds")
+    time.sleep(5)
+
+if args.id != None:
+    with open(args.id, 'w') as f:
+        print(image_id, file=f)

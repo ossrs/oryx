@@ -47,9 +47,8 @@ echo "SOURCE=$SOURCE, ip=$ip, os=$os, user=$user, password=${#password}B, cleanu
 sshCmd="sshpass -p $password ssh -o StrictHostKeyChecking=no"
 scpCmd="sshpass -p $password scp -o StrictHostKeyChecking=no"
 
-$sshCmd -t $user@$ip "hostname" >/dev/null 2>/dev/null &&
-echo "Check sshpass ok"
-if [[ $? -ne 0 ]]; then echo "Check sshpass failed"; echo "For mac to install sshpass, see https://stackoverflow.com/a/32258393/17679565"; exit 1; fi
+$sshCmd -t $user@$ip "hostname" && echo "Check sshpass ok"
+if [[ $ret -ne 0 ]]; then echo "Check sshpass failed"; echo "See https://stackoverflow.com/a/32258393/17679565"; exit 1; fi
 
 SRS_HOME=/tmp/lighthouse/srs-cloud &&
 rm -rf $(dirname $SRS_HOME) && mkdir -p $SRS_HOME &&
@@ -66,8 +65,8 @@ cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap &&
 cp ${SOURCE}/platform/containers/conf/nginx.conf ${SRS_HOME}/platform/containers/conf/nginx.conf
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 
-tgzName=/tmp/lighthouse/srs-cloud.tar.bz2 &&
-(cd $(dirname $tgzName) && rm -f $tgzName && tar jcf $tgzName $(basename $SRS_HOME)) &&
+tgzName=/tmp/lighthouse/srs-cloud.zip &&
+(cd $(dirname $tgzName) && rm -f $tgzName && zip -q -r $tgzName $(basename $SRS_HOME)) &&
 echo "Package $tgzName ok" && ls -lh $tgzName
 if [[ $? -ne 0 ]]; then echo "Package $tgzName failed"; exit 1; fi
 
@@ -78,11 +77,11 @@ echo "Copy $tgzName to $ip ok"
 tgzFile=$(basename $tgzName) &&
 SRS_NAME=$(basename $SRS_HOME) &&
 echo "Run command on server: $ip" &&
-echo "  tar xf $tgzFile"
+echo "  unzip -q $tgzFile"
 echo "  bash ~/$SRS_NAME/scripts/setup-lighthouse/setup_lighthouse.sh"
 
 $sshCmd -t $user@$ip "
-    rm -rf $SRS_NAME && tar xf $tgzFile && \
+    rm -rf $SRS_NAME && unzip -q $tgzFile && \
     sudo bash $SRS_NAME/scripts/setup-lighthouse/setup_lighthouse.sh &&
     if [[ $cleanup == yes ]]; then
         sudo bash $SRS_NAME/scripts/setup-lighthouse/post_build.sh &&

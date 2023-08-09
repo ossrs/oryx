@@ -62,11 +62,15 @@ if [[ ! -d ~lighthouse ]]; then
 fi
 
 ########################################################################################################################
-# Install depends services.
-apt-get update -y &&
-apt-get install -y git gcc g++ gdb make tree dstat docker docker.io nginx curl net-tools &&
-apt-get -qqy clean
-if [[ $? -ne 0 ]]; then echo "Install dependencies failed"; exit 1; fi
+# Install depends services. Retry because apt-get might be busy.
+for ((i=0; i<3; i++)); do
+    apt-get update -y &&
+    apt-get install -y git gcc g++ gdb make tree dstat docker docker.io nginx curl net-tools &&
+    apt-get -qqy clean
+    ret=$?; if [[ $ret -eq 0 ]]; then break; fi
+    sleep 5;
+done
+if [[ $ret -ne 0 ]]; then echo "Install dependencies failed"; exit 1; fi
 
 echo "Enable service" &&
 systemctl enable docker nginx &&
@@ -98,6 +102,18 @@ touch ${DATA_HOME}/config/nginx.http.conf &&
 touch ${DATA_HOME}/config/nginx.server.conf
 if [[ $? -ne 0 ]]; then echo "Create /data/config failed"; exit 1; fi
 echo "Create data and config files ok"
+
+# TODO: FIXME: Move to code.
+echo "Start to setup nginx.http.conf"
+if [[ -f ${DATA_HOME}/config/nginx.http.conf && -s ${DATA_HOME}/config/nginx.http.conf ]]; then
+    echo "The nginx.http.conf already exists, skip"
+else
+    cat << END > ${DATA_HOME}/config/nginx.http.conf
+# Limit for upload file size
+client_max_body_size 100g;
+END
+    if [[ $? -ne 0 ]]; then echo "Setup nginx.http.conf failed"; exit 1; fi
+fi
 
 # Setup the nginx configuration.
 rm -f /etc/nginx/nginx.conf &&

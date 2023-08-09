@@ -3,6 +3,7 @@ import dotenv, os, sys, tools, argparse
 
 parser = argparse.ArgumentParser(description="TencentCloud")
 parser.add_argument("--instance", type=str, required=False, help="The CVM instance id")
+parser.add_argument("--id", type=str, required=False, help="Write ID result to this file")
 
 args = parser.parse_args()
 
@@ -25,7 +26,7 @@ if os.getenv("SECRET_KEY") == None:
 
 region = "ap-beijing"
 instance_id = args.instance
-print(f"Query CVM instance={instance_id}, region={region}")
+print(f"Query CVM instance={instance_id}, region={region}, id={args.id}")
 
 instance_details = tools.query_instance_detail(region, instance_id)['InstanceSet']
 if len(instance_details) != 1:
@@ -35,5 +36,6 @@ public_ip = instance_detail['PublicIpAddresses'][0]
 private_ip = instance_detail['PrivateIpAddresses'][0]
 print(f"Instance {instance_id}, public ip={public_ip}, private ip={private_ip}")
 
-# print the instance public ip to stderr.
-print(public_ip, file=sys.stderr)
+if args.id != None:
+    with open(args.id, 'w') as f:
+        print(public_ip, file=f)
