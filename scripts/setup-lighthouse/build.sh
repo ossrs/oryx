@@ -82,7 +82,7 @@ echo "  tar xf $tgzFile"
 echo "  bash ~/$SRS_NAME/scripts/setup-lighthouse/setup_lighthouse.sh"
 
 $sshCmd -t $user@$ip "
-    tar xf $tgzFile && \
+    rm -rf $SRS_NAME && tar xf $tgzFile && \
     sudo bash $SRS_NAME/scripts/setup-lighthouse/setup_lighthouse.sh &&
     if [[ $cleanup == yes ]]; then
         sudo bash $SRS_NAME/scripts/setup-lighthouse/post_build.sh &&

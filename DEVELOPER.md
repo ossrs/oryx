@@ -302,10 +302,10 @@ Create a CVM instance:
 
 ```bash
 rm -f /tmp/lh-*.txt &&
-VM_TOKEN="ABCabc$(date +%s)" && echo "$VM_TOKEN" >/tmp/lh-token.txt &&
+VM_TOKEN=$(openssl rand -base64 16 | tr -dc 'a-zA-Z0-9' | head -c 16) && echo "$VM_TOKEN" >/tmp/lh-token.txt &&
 VM_TOKEN=$VM_TOKEN bash scripts/tools/tencent-cloud/helper.sh create-cvm.py 2>/tmp/lh-instance.txt && VM_INSTANCE=$(cat /tmp/lh-instance.txt) && 
 bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $VM_INSTANCE 2>/tmp/lh-ip.txt && VM_IP=$(cat /tmp/lh-ip.txt) && 
-echo "Instance: $VM_INSTANCE, IP: $VM_IP"
+echo "Instance: $VM_INSTANCE, IP: ubuntu@$VM_IP"
 ```
 
 Run blueprint script:
@@ -314,18 +314,27 @@ Run blueprint script:
 VM_IP=$(cat /tmp/lh-ip.txt) && VM_TOKEN=$(cat /tmp/lh-token.txt) && VM_INSTANCE=$(cat /tmp/lh-instance.txt) &&
 bash scripts/setup-lighthouse/build.sh --ip $VM_IP --os ubuntu --user ubuntu --password $VM_TOKEN &&
 bash scripts/tools/tencent-cloud/helper.sh create-image.py --instance $VM_INSTANCE 2>/tmp/lh-image.txt && VM_IMAGE=$(cat /tmp/lh-image.txt) && 
-bash scripts/tools/tencent-cloud/helper.sh share-image --instance $VM_IMAGE &&
+bash scripts/tools/tencent-cloud/helper.sh share-image.py --image $VM_IMAGE &&
 echo "Image: $VM_IMAGE created and shared."
 ```
 
-> Note: We always use the `1.0.0.sh` for SRS Cloud lighthouse.
+Next, create a test CVM instance with the image:
+
+```bash
+TEST_TOKEN=$(openssl rand -base64 16 | tr -dc 'a-zA-Z0-9' | head -c 16) && VM_IMAGE=$(cat /tmp/lh-image.txt) && 
+VM_TOKEN=$TEST_TOKEN bash scripts/tools/tencent-cloud/helper.sh create-verify-cvm.py --image $VM_IMAGE 2>/tmp/lh-test.txt && TEST_INSTANCE=$(cat /tmp/lh-test.txt) && 
+bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $TEST_INSTANCE 2>/tmp/lh-ip2.txt && TEST_IP=$(cat /tmp/lh-ip2.txt) && 
+echo "Instance: $TEST_INSTANCE, IP: ubuntu@$TEST_IP, Password: $TEST_TOKEN" &&
+echo "http://$TEST_IP"
+```
 
 Then run the script to remove all the CVM, disk images, and snapshots:
 
 ```bash
-VM_INSTANCE=$(cat /tmp/lh-instance.txt) && VM_IMAGE=$(cat /tmp/lh-image.txt) &&
-(cd scripts/tools/tencent-cloud && source venv/bin/activate && python remove-cvm.py --instance $VM_INSTANCE || echo OK) &&
-(cd scripts/tools/tencent-cloud && source venv/bin/activate && python remove-image.py --instance $VM_IMAGE || echo OK) &&
+VM_INSTANCE=$(cat /tmp/lh-instance.txt) && VM_IMAGE=$(cat /tmp/lh-image.txt) && TEST_INSTANCE=$(cat /tmp/lh-test.txt) && 
+(bash scripts/tools/tencent-cloud/helper.sh remove-cvm.py --instance $TEST_INSTANCE || echo OK) &&
+(bash scripts/tools/tencent-cloud/helper.sh remove-cvm.py --instance $VM_INSTANCE || echo OK) &&
+(bash scripts/tools/tencent-cloud/helper.sh remove-image.py --image $VM_IMAGE || echo OK) &&
 echo "Cleanup Instance: $VM_INSTANCE, Image: $VM_IMAGE OK."
 ```
 

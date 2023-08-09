@@ -373,3 +373,21 @@ def share_image(region, image_id, account_id):
 
     resp = client.ModifyImageSharePermission(req)
     return json.loads(resp.to_json_string())
+
+def query_image(region, image_id):
+    cred = credential.Credential(os.getenv("SECRET_ID"), os.getenv("SECRET_KEY"))
+    httpProfile = HttpProfile()
+    httpProfile.endpoint = "cvm.tencentcloudapi.com"
+
+    clientProfile = ClientProfile()
+    clientProfile.httpProfile = httpProfile
+    client = cvm_client.CvmClient(cred, region, clientProfile)
+
+    req = cvm_models.DescribeImagesRequest()
+    params = {
+        "ImageIds": [image_id]
+    }
+    req.from_json_string(json.dumps(params))
+
+    resp = client.DescribeImages(req)
+    return json.loads(resp.to_json_string())

@@ -85,11 +85,10 @@ update_sysctl net.core.wmem_max 16777216
 update_sysctl net.core.wmem_default 16777216
 
 # Install files to lighthouse directory.
-rm -rf ${SRS_HOME} && mkdir -p $SRS_HOME/mgmt &&
 cp -r ${SOURCE}/usr ${SRS_HOME}/usr &&
 cp ${SOURCE}/LICENSE ${SRS_HOME}/LICENSE &&
 cp ${SOURCE}/README.md ${SRS_HOME}/README.md &&
-cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap
+mkdir -p ${SRS_HOME}/mgmt && cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 
 ########################################################################################################################
@@ -139,7 +138,7 @@ fi
 # Create srs-cloud service, and the credential file.
 # Remark: Never start the service, because the IP will change for new machine created.
 cp -f ${SRS_HOME}/usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
-systemctl enable srs-cloud
+systemctl daemon-reload && systemctl enable srs-cloud
 if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
 
 ########################################################################################################################
