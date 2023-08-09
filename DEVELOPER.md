@@ -8,7 +8,7 @@ resources, and ports, as well as development on Mac or using Docker.
 Start redis and SRS by docker:
 
 ```bash
-docker rm -f redis srs &&
+docker rm -f redis srs 2>/dev/null &&
 docker run --name redis --rm -it -v $HOME/db/redis:/data -p 6379:6379 -d redis &&
 docker run --name srs --rm -it \
     -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
@@ -40,15 +40,15 @@ Access the browser: http://localhost:3000
 Build a docker image:
 
 ```bash
-docker rm -f script 2>/dev/null || echo 'OK' &&
-docker rmi srs-script-dev 2>/dev/null || echo 'OK' &&
+docker rm -f script 2>/dev/null &&
+docker rmi srs-script-dev 2>/dev/null &&
 docker build -t srs-script-dev -f scripts/setup-ubuntu/Dockerfile.script .
 ```
 
 Create a docker container in daemon:
 
 ```bash
-docker rm -f script 2>/dev/null || echo 'OK' &&
+docker rm -f script 2>/dev/null &&
 docker run -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
     -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
@@ -105,7 +105,7 @@ Access the browser: [http://localhost:2022](http://localhost:2022)
 Start a container and mount as plugin:
 
 ```bash
-docker rm -f bt aapanel 2>/dev/null || echo 'OK' &&
+docker rm -f bt aapanel 2>/dev/null &&
 AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
 docker run -p 80:80 -p 7800:7800 \
     -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
@@ -143,7 +143,7 @@ Next, build the aaPanel plugin and install it:
 
 ```bash
 docker exec -it aapanel rm -rf /data/* &&
-docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo 'OK' &&
+docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo OK &&
 bash scripts/setup-aapanel/auto/zip.sh --output $(pwd)/build --extract &&
 docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/install.sh install
 ```
@@ -185,7 +185,7 @@ In the [application store](http://localhost:7800/soft), there is a `srs_cloud` p
 Start a container and mount as plugin:
 
 ```bash
-docker rm -f bt aapanel 2>/dev/null || echo 'OK' &&
+docker rm -f bt aapanel 2>/dev/null &&
 BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
 docker run -p 80:80 -p 7800:7800 \
     -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
@@ -227,7 +227,7 @@ Next, build the BT plugin and install it:
 
 ```bash
 docker exec -it bt rm -rf /data/* &&
-docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo 'OK' &&
+docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh || echo OK &&
 bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
 docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh install
 ```
