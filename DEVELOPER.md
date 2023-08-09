@@ -277,9 +277,8 @@ PACKER_LOG=1 packer plugins install github.com/digitalocean/digitalocean v1.1.1
 Start to build SRS image by:
 
 ```bash
-(cd scripts/setup-droplet && 
-export DIGITALOCEAN_TOKEN=$(grep market "${HOME}/Library/Application Support/doctl/config.yaml" |grep -v context |awk '{print $2}') &&
-packer build srs.json)
+(export DIGITALOCEAN_TOKEN=$(grep market "${HOME}/Library/Application Support/doctl/config.yaml" |grep -v context |awk '{print $2}') &&
+cd scripts/setup-droplet && packer build srs.json)
 ```
 
 > Note: You can also create a [token](https://cloud.digitalocean.com/account/api/tokens) and setup the env `DIGITALOCEAN_TOKEN`.
@@ -288,7 +287,10 @@ Please check the [snapshot](https://cloud.digitalocean.com/images/snapshots/drop
 
 ## Develop the TencentCloud Lighthouse Image
 
-Create a [TencentCloud Secret](https://console.cloud.tencent.com/cam/capi) and save to `~/.lighthouse/.env` file:
+To build SRS image for [TencentCloud Lighthouse](https://cloud.tencent.com/product/lighthouse).
+
+For the first run, please create a [TencentCloud Secret](https://console.cloud.tencent.com/cam/capi) and save 
+to `~/.lighthouse/.env` file:
 
 ```bash
 LH_ACCOUNT=xxxxxx

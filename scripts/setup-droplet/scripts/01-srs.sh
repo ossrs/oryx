@@ -22,12 +22,11 @@ if [[ $GIT_DONE != YES ]]; then
 fi
 
 # Install files to lighthouse directory.
-mkdir -p ${SRS_HOME}/mgmt ${DATA_HOME} && rm -rf ${SRS_HOME}/* &&
+rm -rf ${SRS_HOME}/* && mkdir -p ${SRS_HOME}/mgmt ${DATA_HOME} &&
 cp -r ${SOURCE}/usr ${SRS_HOME}/usr &&
 cp ${SOURCE}/LICENSE ${SRS_HOME}/LICENSE &&
 cp ${SOURCE}/README.md ${SRS_HOME}/README.md &&
-cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap &&
-rm -rf $SOURCE
+cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap
 if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
 
 echo "Start to create data and config files"
@@ -89,8 +88,11 @@ fi
 # Remark: Never start the service, because the IP will change for new machine created.
 cd ${SRS_HOME} &&
 cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
-systemctl enable srs-cloud
-if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
+systemctl daemon-reload && systemctl enable srs-cloud
+if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi &&
+
+rm -rf $SOURCE
+if [[ $? -ne 0 ]]; then echo "Remove srs-cloud failed"; exit 1; fi
 
 echo 'Install OK'
 
