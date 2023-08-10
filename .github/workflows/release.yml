@@ -141,22 +141,22 @@ jobs:
           tag: ${{ github.ref }}
           name: Release SRS Cloud ${{ env.SRS_VERSION }}
           body: |
-            [${{ github.event.head_commit.message }}](https://github.com/ossrs/srs-cloud/commit/${{ github.sha }})
+            [${{ github.event.head_commit.message }}](https://github.com/ossrs/srs-stack/commit/${{ github.sha }})
             
             ## English
             * [DigitalOcean](https://marketplace.digitalocean.com/apps/srs): [Tutorial](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-1-click-e9fe6f314ac6)
-            * Ubuntu Script: ${{ env.SRS_UBUNTU_EN_SOURCE_FILE_MD5 }} [${{ env.SRS_UBUNTU_EN_SOURCE_FILE }}](https://github.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_UBUNTU_EN_SOURCE_FILE }})
-            * [aaPanel](https://aapanel.com) Plugin: ${{ env.SRS_AAPANEL_SOURCE_MD5 }} [${{ env.SRS_AAPANEL_SOURCE_FILE }}](https://github.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_AAPANEL_SOURCE_FILE }})
-            * [Changelog](https://ossrs.io/lts/en-us/faq-srs-cloud#changelog)
-            * [Features](https://ossrs.io/lts/en-us/faq-srs-cloud#features)
+            * Ubuntu Script: ${{ env.SRS_UBUNTU_EN_SOURCE_FILE_MD5 }} [${{ env.SRS_UBUNTU_EN_SOURCE_FILE }}](https://github.com/ossrs/srs-stack/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_UBUNTU_EN_SOURCE_FILE }})
+            * [aaPanel](https://aapanel.com) Plugin: ${{ env.SRS_AAPANEL_SOURCE_MD5 }} [${{ env.SRS_AAPANEL_SOURCE_FILE }}](https://github.com/ossrs/srs-stack/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_AAPANEL_SOURCE_FILE }})
+            * [Changelog](https://ossrs.io/lts/en-us/faq-srs-stack#changelog)
+            * [Features](https://ossrs.io/lts/en-us/faq-srs-stack#features)
 
             ## Chinese
             * [Lighthouse](https://mp.weixin.qq.com/s/fWmdkw-2AoFD_pEmE_EIkA): [Tutorial](https://www.bilibili.com/video/BV1844y1L7dL)
-            * Ubuntu Script: ${{ env.SRS_UBUNTU_ZH_SOURCE_FILE_MD5 }} [${{ env.SRS_UBUNTU_ZH_SOURCE_FILE }}](https://gitee.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_UBUNTU_ZH_SOURCE_FILE }})
-            * [BT](https://bt.cn) Plugin: ${{ env.SRS_BT_SOURCE_MD5 }} [${{ env.SRS_BT_SOURCE_FILE }}](https://gitee.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_BT_SOURCE_FILE }})
-            * [aaPanel](https://aapanel.com) Plugin: ${{ env.SRS_AAPANEL_SOURCE_MD5 }} [${{ env.SRS_AAPANEL_SOURCE_FILE }}](https://gitee.com/ossrs/srs-cloud/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_AAPANEL_SOURCE_FILE }})
-            * [Changelog](https://ossrs.net/lts/zh-cn/faq-srs-cloud#changelog)
-            * [Features](https://ossrs.net/lts/zh-cn/faq-srs-cloud#features)
+            * Ubuntu Script: ${{ env.SRS_UBUNTU_ZH_SOURCE_FILE_MD5 }} [${{ env.SRS_UBUNTU_ZH_SOURCE_FILE }}](https://gitee.com/ossrs/srs-stack/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_UBUNTU_ZH_SOURCE_FILE }})
+            * [BT](https://bt.cn) Plugin: ${{ env.SRS_BT_SOURCE_MD5 }} [${{ env.SRS_BT_SOURCE_FILE }}](https://gitee.com/ossrs/srs-stack/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_BT_SOURCE_FILE }})
+            * [aaPanel](https://aapanel.com) Plugin: ${{ env.SRS_AAPANEL_SOURCE_MD5 }} [${{ env.SRS_AAPANEL_SOURCE_FILE }}](https://gitee.com/ossrs/srs-stack/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_AAPANEL_SOURCE_FILE }})
+            * [Changelog](https://ossrs.net/lts/zh-cn/faq-srs-stack#changelog)
+            * [Features](https://ossrs.net/lts/zh-cn/faq-srs-stack#features)
           draft: false
           prerelease: false
           makeLatest: true

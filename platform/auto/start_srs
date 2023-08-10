@@ -16,7 +16,7 @@ echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 SRS_PARAMS="-c ${WORK_DIR}/containers/conf/srs.release.conf"
 echo "Run srs-server $SRS_PARAMS"
 
-# Current directory should be /usr/local/srs-cloud/platform
+# Current directory should be /usr/local/srs-stack/platform
 # We don't check the exit value, see https://github.com/ossrs/srs/issues/3757
 /usr/local/srs/objs/srs $SRS_PARAMS
 if [[ $? -ne 0 ]]; then echo "Warning: SRS start with none zero, but might be ok, see #3757."; fi

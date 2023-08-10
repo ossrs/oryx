@@ -128,7 +128,7 @@ func (v *dockerHTTPService) Run(ctx context.Context) error {
 }
 
 func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error {
-	ohttp.Server = fmt.Sprintf("srs-cloud/%v", version)
+	ohttp.Server = fmt.Sprintf("srs-stack/%v", version)
 
 	ep := "/terraform/v1/host/versions"
 	logger.Tf(ctx, "Handle %v", ep)

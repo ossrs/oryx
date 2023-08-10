@@ -44,8 +44,8 @@ jobs:
       # Build SRS image
       - name: Build SRS docker image
         run: |
-          echo "Release ossrs/srs-cloud:$SRS_TAG"
-          docker build --tag ossrs/srs-cloud:$SRS_TAG -f releases/Dockerfile .
+          echo "Release ossrs/srs-stack:$SRS_TAG"
+          docker build --tag ossrs/srs-stack:$SRS_TAG -f releases/Dockerfile .
       # Create main images for Docker
       - name: Login to docker hub
         uses: docker/login-action@v2
@@ -54,8 +54,8 @@ jobs:
           password: "${{ secrets.DOCKER_PASSWORD }}"
       - name: Push to Docker hub
         run: |
-          docker tag ossrs/srs-cloud:$SRS_TAG ossrs/srs-cloud:$SRS_MAJOR
-          docker push --all-tags ossrs/srs-cloud
+          docker tag ossrs/srs-stack:$SRS_TAG ossrs/srs-stack:$SRS_MAJOR
+          docker push --all-tags ossrs/srs-stack
     runs-on: ubuntu-20.04
 
   aliyun:
@@ -74,13 +74,13 @@ jobs:
           registry: registry.cn-hangzhou.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
           password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Docker alias images for ossrs/srs-cloud
+      - name: Docker alias images for ossrs/srs-stack
         uses: akhilerm/tag-push-action@v2.1.0
         with:
-          src: ossrs/srs-cloud:${{ env.SRS_TAG }}
+          src: ossrs/srs-stack:${{ env.SRS_TAG }}
           dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_TAG }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_TAG }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
   k8s:
@@ -102,7 +102,7 @@ jobs:
           echo "Check stable release $STABLE_RELEASE"
 
           while true; do
-            docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$STABLE_RELEASE >/dev/null 2>&1 && echo "done" && break
+            docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$STABLE_RELEASE >/dev/null 2>&1 && echo "done" && break
             echo "Image $STABLE_RELEASE not ready, wait..." && sleep 5
           done
 
@@ -133,7 +133,7 @@ jobs:
             export SRS_DROPLET_PIP=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
             echo "SRS_DROPLET_PIP=$SRS_DROPLET_PIP"
             #
-            # Restart srs-cloud releases
+            # Restart srs-stack releases
             for ((i=0; i < 5; i++)); do
               if [[ $(docker ps -f name=docs-cloudversion |wc -l) -eq 1 ]]; then echo "Killed"; break; fi;
               docker rm -f docs-cloudversion; sleep 0.3;
@@ -143,5 +143,5 @@ jobs:
             if [[ ! -z $OLD_IMAGE ]]; then docker rmi $OLD_IMAGE; echo "Remove old image $OLD_IMAGE"; fi
             # Start new releases.
             docker run -d -it --restart always --name docs-cloudversion -p 8101:9000 \
-              registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
+              registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
     runs-on: ubuntu-20.04

@@ -99,8 +99,8 @@ jobs:
       - name: Load platform image
         run: |
           docker load -i platform.tar
-          docker tag platform:latest ossrs/srs-cloud:$SRS_TAG
-          docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
+          docker tag platform:latest ossrs/srs-stack:$SRS_TAG
+          docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
           docker images
       - name: Build package
         run: |
@@ -110,25 +110,25 @@ jobs:
       - name: Install package
         run: |
           sudo bash build/srs_cloud/scripts/setup-ubuntu/install.sh --verbose
-          echo "" && echo "/usr/local/srs-cloud/" && du -sh /usr/local/srs-cloud/*
+          echo "" && echo "/usr/local/srs-stack/" && du -sh /usr/local/srs-stack/*
           echo "" && ls -lha /data /data/config
       - name: Check service
         run: |
           echo "Wait for service ready."
           make -j -C test
-          ./test/srs-cloud.test -test.v -endpoint http://localhost:2022 \
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=true \
               -check-api-secret=false -test.run TestApi_Empty
           
           echo "Show service status."
-          systemctl status srs-cloud
+          systemctl status srs-stack
           docker ps -a
           
           echo "Record log of services."
-          journalctl -u srs-cloud > journalctl.log
-          journalctl -u srs-cloud -f >>journalctl.log 2>&1 & pid_journalctl=$!
-          docker logs srs-cloud >docker.log
-          docker logs -f srs-cloud >>docker.log 2>&1 & pid_docker=$!
+          journalctl -u srs-stack > journalctl.log
+          journalctl -u srs-stack -f >>journalctl.log 2>&1 & pid_journalctl=$!
+          docker logs srs-stack >docker.log
+          docker logs -f srs-stack >>docker.log 2>&1 & pid_docker=$!
       - name: Test service
         run: |
           # We will handle the error by ourselves.
@@ -136,14 +136,14 @@ jobs:
           
           # Setup SRS_PLATFORM_SECRET and MGMT_PASSWORD.
           eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
-          ./test/srs-cloud.test -test.v -wait-ready -endpoint http://localhost:2022 \
+          ./test/srs-stack.test -test.v -wait-ready -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false \
               -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
               -test.parallel 1
           ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
           
           echo "Stop service"
-          sudo systemctl stop srs-cloud
+          sudo systemctl stop srs-stack
           kill $pid_journalctl 2>/dev/null
           kill $pid_docker 2>/dev/null
           
@@ -236,8 +236,8 @@ jobs:
           docker exec bt docker load -i platform.tar
           echo "Import platform image to BT ok."
           
-          docker exec bt docker tag platform:latest ossrs/srs-cloud:$SRS_TAG
-          docker exec bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
+          docker exec bt docker tag platform:latest ossrs/srs-stack:$SRS_TAG
+          docker exec bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
           echo "Tag platform image to BT ok."
           
           docker exec bt docker images
@@ -256,26 +256,26 @@ jobs:
           echo "Setup SRS Cloud plugin ok."
           
           set +e
-          docker exec bt systemctl status srs-cloud
-          docker exec bt journalctl -u srs-cloud
-          docker exec bt docker logs srs-cloud
+          docker exec bt systemctl status srs-stack
+          docker exec bt journalctl -u srs-stack
+          docker exec bt docker logs srs-stack
       - name: Check service
         run: |
           echo "Wait for service ready."
           make -j -C test
-          ./test/srs-cloud.test -test.v -endpoint http://srs.cloud.local:80 \
+          ./test/srs-stack.test -test.v -endpoint http://srs.cloud.local:80 \
               -srs-log=true -wait-ready=true -init-password=true \
               -check-api-secret=false -test.run TestApi_Empty
           
           echo "Show service status."
-          docker exec bt systemctl status srs-cloud
+          docker exec bt systemctl status srs-stack
           docker exec bt docker ps -a
           
           echo "Record log of services."
-          docker exec bt journalctl -u srs-cloud > journalctl.log
-          docker exec bt journalctl -u srs-cloud -f >>journalctl.log 2>&1 &
-          docker exec bt docker logs srs-cloud >docker.log
-          docker exec bt docker logs -f srs-cloud >>docker.log 2>&1 &
+          docker exec bt journalctl -u srs-stack > journalctl.log
+          docker exec bt journalctl -u srs-stack -f >>journalctl.log 2>&1 &
+          docker exec bt docker logs srs-stack >docker.log
+          docker exec bt docker logs -f srs-stack >>docker.log 2>&1 &
       - name: Test service
         run: |
           # We will handle the error by ourselves.
@@ -283,14 +283,14 @@ jobs:
           
           # Setup SRS_PLATFORM_SECRET and MGMT_PASSWORD.
           eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
-          ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+          ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
               -srs-log=true -wait-ready=true -init-password=false \
               -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
               -test.parallel 1
           ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
           
           echo "Stop service"
-          docker exec bt systemctl stop srs-cloud
+          docker exec bt systemctl stop srs-stack
           docker stop bt
           
           echo "Log of journalctl.log" && cat journalctl.log
@@ -379,8 +379,8 @@ jobs:
           docker exec aapanel docker load -i platform.tar
           echo "Import platform image to aaPanel ok."
           
-          docker exec aapanel docker tag platform:latest ossrs/srs-cloud:$SRS_TAG
-          docker exec aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$SRS_TAG
+          docker exec aapanel docker tag platform:latest ossrs/srs-stack:$SRS_TAG
+          docker exec aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
           echo "Tag platform image to aaPanel ok."
           
           docker exec aapanel docker images
@@ -399,26 +399,26 @@ jobs:
           echo "Setup SRS Cloud plugin ok."
           
           set +e
-          docker exec aapanel systemctl status srs-cloud
-          docker exec aapanel journalctl -u srs-cloud
-          docker exec aapanel docker logs srs-cloud
+          docker exec aapanel systemctl status srs-stack
+          docker exec aapanel journalctl -u srs-stack
+          docker exec aapanel docker logs srs-stack
       - name: Check service
         run: |
           echo "Wait for service ready."
           make -j -C test
-          ./test/srs-cloud.test -test.v -endpoint http://srs.cloud.local:80 \
+          ./test/srs-stack.test -test.v -endpoint http://srs.cloud.local:80 \
               -srs-log=true -wait-ready=true -init-password=true \
               -check-api-secret=false -test.run TestApi_Empty
           
           echo "Show service status."
-          docker exec aapanel systemctl status srs-cloud
+          docker exec aapanel systemctl status srs-stack
           docker exec aapanel docker ps -a
           
           echo "Record log of services."
-          docker exec aapanel journalctl -u srs-cloud > journalctl.log
-          docker exec aapanel journalctl -u srs-cloud -f >>journalctl.log 2>&1 &
-          docker exec aapanel docker logs srs-cloud >docker.log
-          docker exec aapanel docker logs -f srs-cloud >>docker.log 2>&1 &
+          docker exec aapanel journalctl -u srs-stack > journalctl.log
+          docker exec aapanel journalctl -u srs-stack -f >>journalctl.log 2>&1 &
+          docker exec aapanel docker logs srs-stack >docker.log
+          docker exec aapanel docker logs -f srs-stack >>docker.log 2>&1 &
       - name: Test service
         run: |
           # We will handle the error by ourselves.
@@ -426,14 +426,14 @@ jobs:
           
           # Setup SRS_PLATFORM_SECRET and MGMT_PASSWORD.
           eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
-          ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+          ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
               -srs-log=true -wait-ready=true -init-password=false \
               -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
               -test.parallel 3
           ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
           
           echo "Stop service"
-          docker exec aapanel systemctl stop srs-cloud
+          docker exec aapanel systemctl stop srs-stack
           docker stop aapanel
           
           echo "Log of journalctl.log" && cat journalctl.log

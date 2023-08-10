@@ -8,7 +8,7 @@ RUN make
 
 # http://releases.ubuntu.com/focal/
 #FROM ${ARCH}ubuntu:focal AS dist
-FROM ${ARCH}ossrs/srs-cloud:focal-1 AS dist
+FROM ${ARCH}ossrs/srs-stack:focal-1 AS dist
 
 COPY --from=build /g/releases/releases /usr/local/srs-cloud/releases/releases
 

@@ -78,15 +78,21 @@ jobs:
           cd ui && make build-cn -j && make build-en -j
       - name: Build SRS docker image
         run: |
-          echo "Release ossrs/srs-cloud:$SRS_TAG"
+          echo "Release ossrs/srs-stack:$SRS_TAG"
           docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
             --output "type=image,push=true" --build-arg MAKEARGS=build-no-ui \
-            --tag ossrs/srs-cloud:$SRS_TAG -f Dockerfile .
-      - name: Docker alias images for ossrs/srs-cloud
+            --tag ossrs/srs-stack:$SRS_TAG -f Dockerfile .
+      - name: Docker alias images for ossrs/srs-stack
         uses: akhilerm/tag-push-action@v2.1.0
         with:
-          src: ossrs/srs-cloud:${{ env.SRS_TAG }}
+          src: ossrs/srs-stack:${{ env.SRS_TAG }}
           dst: |
+            ossrs/srs-stack:${{ env.SRS_MAJOR }}
+            ossrs/srs-stack:v${{ env.SRS_MAJOR }}
+            ossrs/srs-stack:platform-${{ env.SRS_TAG }}
+            ossrs/srs-stack:platform-${{ env.SRS_MAJOR }}
+            ossrs/srs-stack:platform-v${{ env.SRS_MAJOR }}
+            ossrs/srs-cloud:${{ env.SRS_TAG }}
             ossrs/srs-cloud:${{ env.SRS_MAJOR }}
             ossrs/srs-cloud:v${{ env.SRS_MAJOR }}
             ossrs/srs-cloud:platform-${{ env.SRS_TAG }}
@@ -110,11 +116,17 @@ jobs:
           registry: registry.cn-hangzhou.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
           password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Docker alias images for ossrs/srs-cloud
+      - name: Docker alias images for ossrs/srs-stack
         uses: akhilerm/tag-push-action@v2.1.0
         with:
-          src: ossrs/srs-cloud:${{ env.SRS_TAG }}
+          src: ossrs/srs-stack:${{ env.SRS_TAG }}
           dst: |
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_TAG }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:v${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:platform-${{ env.SRS_TAG }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:platform-${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:platform-v${{ env.SRS_MAJOR }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_TAG }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_MAJOR }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:v${{ env.SRS_MAJOR }}

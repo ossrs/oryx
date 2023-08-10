@@ -1,29 +1,29 @@
-# SRS-Cloud
+# SRS-Stack
 
 [![](https://img.shields.io/twitter/follow/srs_server?style=social)](https://twitter.com/srs_server)
 [![](https://badgen.net/discord/members/bQUPDRqy79)](https://discord.gg/bQUPDRqy79)
 [![](https://ossrs.net/wiki/images/wechat-badge4.svg)](https://ossrs.net/lts/zh-cn/contact#discussion)
 [![](https://ossrs.net/wiki/images/do-btn-srs-125x20.svg)](https://cloud.digitalocean.com/droplets/new?appId=133468816&size=s-1vcpu-512mb-10gb&region=sgp1&image=ossrs-srs&type=applications)
 
-A lightweight open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.
+SRS Stack is a video solution that is lightweight, open-source, and based on Go, Reactjs, SRS, FFmpeg, WebRTC, etc.
 
 ## Usage
 
-Run srs-cloud in one docker:
+Run srs-stack in one docker:
 
 ```bash
 docker run --rm -it -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
-  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp --name srs-cloud \
-  -v $HOME/db:/data ossrs/srs-cloud:1
+  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
+  -v $HOME/db:/data ossrs/srs-stack:1
 ```
 
-> Note: Please use `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:1` in China.
+> Note: Please use `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:1` in China.
 
 > Note: All data will be saved in `$HOME/db` directory, please change it to your directory.
 
 Then open http://localhost:2022 in browser.
 
-You have the option to modify the volumes for srs-cloud and direct them to different directories.
+You have the option to modify the volumes for srs-stack and direct them to different directories.
 
 * `/data` The global data directory.
     * `redis` The redis data directory, the publish secret and record configuration.
@@ -42,8 +42,8 @@ To access additional environment variables, please refer to the [Environments](D
 
 ## FAQ
 
-1. [English FAQ](https://ossrs.io/lts/en-us/faq-srs-cloud)
-1. [中文 FAQ](https://ossrs.net/lts/zh-cn/faq-srs-cloud)
+1. [English FAQ](https://ossrs.io/lts/en-us/faq-srs-stack)
+1. [中文 FAQ](https://ossrs.net/lts/zh-cn/faq-srs-stack)
 
 ## Tutorials
 
@@ -53,8 +53,8 @@ To access additional environment variables, please refer to the [Environments](D
 - [x] [DVR to Cloud Storage or VoD](https://mp.weixin.qq.com/s/UXR5EBKZ-LnthwKN_rlIjg).
 - [x] [Support WordPress Plugin](https://mp.weixin.qq.com/s/YjTkcJLkErMcZYHIjzsW_w) or [here](https://wordpress.org/plugins/srs-player).
 - [x] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
-- [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
-- [x] [Support DVR to local disk](https://github.com/ossrs/srs-cloud/issues/42).
+- [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-stack/issues/29).
+- [x] [Support DVR to local disk](https://github.com/ossrs/srs-stack/issues/42).
 - [x] [Support Virtual Live Streaming](https://mp.weixin.qq.com/s/I0Kmxtc24txpngO-PiR_tQ).
 - [ ] [Automatical HTTPS](https://mp.weixin.qq.com/s/O70Fz-mxNedZpxgGXQ8DsA).
 - [ ] [Dashboard by Prometheus](https://mp.weixin.qq.com/s/ub9ZGmntOy_-S11oxFkxvg).
@@ -78,8 +78,8 @@ The features that we're developing:
 - [x] Forward stream to multiple platforms, see [#2676](https://github.com/ossrs/srs/issues/2676).
 - [x] [Support WordPress Plugin](https://mp.weixin.qq.com/s/YjTkcJLkErMcZYHIjzsW_w) or [here](https://wordpress.org/plugins/srs-player).
 - [x] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
-- [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
-- [x] [Support DVR to local disk](https://github.com/ossrs/srs-cloud/issues/42).
+- [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-stack/issues/29).
+- [x] [Support DVR to local disk](https://github.com/ossrs/srs-stack/issues/42).
 - [ ] Support upgrade to latest version manually.
 - [ ] Support HTTPS by let's encrypt with LEGO.
 - [ ] Support GB28181 by SRS 5.0 container.

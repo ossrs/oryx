@@ -36,7 +36,7 @@ RUN make clean && make -j ${MAKEARGS} && make install
 
 # http://releases.ubuntu.com/focal/
 #FROM ${ARCH}ubuntu:focal AS dist
-FROM ${ARCH}ossrs/srs-cloud:focal-1 AS dist
+FROM ${ARCH}ossrs/srs-stack:focal-1 AS dist
 
 # For SRS-Cloud, build it.
 COPY --from=build /usr/local/srs-cloud /usr/local/srs-cloud
