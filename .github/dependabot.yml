@@ -10,4 +10,4 @@ updates:
   - package-ecosystem: "npm"
     directory: "/platform/ui"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
