@@ -9,7 +9,7 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/ossrs/go-oryx-lib v0.0.9
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam v1.0.587
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.587
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vod v1.0.587
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.720
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vod v1.0.720
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.41
 )
