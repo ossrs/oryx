@@ -109,7 +109,7 @@ jobs:
           du -sh $(pwd)/build/*
       - name: Install package
         run: |
-          sudo bash build/srs_cloud/scripts/setup-ubuntu/install.sh --verbose
+          sudo bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
           echo "" && echo "/usr/local/srs-stack/" && du -sh /usr/local/srs-stack/*
           echo "" && ls -lha /data /data/config
       - name: Check service
@@ -207,7 +207,7 @@ jobs:
           
           # Note that we must mount the /data to allow test to read the MGMT_PASSWORD in /data/config/.env
           docker run -v /data:/data -p 80:80 -p 7800:7800 \
-            -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
+            -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
             -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
             -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
             --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
@@ -243,15 +243,15 @@ jobs:
           docker exec bt docker images
       - name: Install SRS Cloud plugin
         run: |
-          docker exec bt bash /www/server/panel/plugin/srs_cloud/install.sh install
+          docker exec bt bash /www/server/panel/plugin/srs_stack/install.sh install
           echo "Install SRS Cloud plugin ok."
           
-          docker exec bt python3 /www/server/panel/plugin/srs_cloud/bt_api_create_site.py
-          docker exec bt python3 /www/server/panel/plugin/srs_cloud/bt_api_setup_site.py
+          docker exec bt python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py
+          docker exec bt python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py
           echo "Create SRS site ok."
         
-          docker exec bt bash /www/server/panel/plugin/srs_cloud/setup.sh \
-            --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+          docker exec bt bash /www/server/panel/plugin/srs_stack/setup.sh \
+            --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
             --www /www/wwwroot --site srs.cloud.local
           echo "Setup SRS Cloud plugin ok."
           
@@ -351,7 +351,7 @@ jobs:
           
           # Note that we must mount the /data to allow test to read the MGMT_PASSWORD in /data/config/.env
           docker run -v /data:/data -p 80:80 -p 7800:7800 \
-            -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
+            -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
             -v $HOME/.aapanel/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
             --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
             --add-host srs.cloud.local:127.0.0.1 \
@@ -386,15 +386,15 @@ jobs:
           docker exec aapanel docker images
       - name: Install SRS Cloud plugin
         run: |
-          docker exec aapanel bash /www/server/panel/plugin/srs_cloud/install.sh install
+          docker exec aapanel bash /www/server/panel/plugin/srs_stack/install.sh install
           echo "Install SRS Cloud plugin ok."
           
-          docker exec aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_create_site.py
-          docker exec aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_setup_site.py
+          docker exec aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py
+          docker exec aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py
           echo "Create SRS site ok."
           
-          docker exec aapanel bash /www/server/panel/plugin/srs_cloud/setup.sh \
-            --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+          docker exec aapanel bash /www/server/panel/plugin/srs_stack/setup.sh \
+            --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
             --www /www/wwwroot --site srs.cloud.local
           echo "Setup SRS Cloud plugin ok."
           

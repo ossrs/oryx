@@ -35,13 +35,13 @@
                         </p>
                         <div class="sfm-opt">
                             <button class="btn btn-default btn-sm btn_server_start" style="display: none"
-                                    onclick="bt.pub.set_server_status('srs_cloud','start')">启动
+                                    onclick="bt.pub.set_server_status('srs_stack','start')">启动
                             </button>
                             <button class="btn btn-default btn-sm btn_server_stop"
-                                    onclick="bt.pub.set_server_status('srs_cloud','stop')">停止
+                                    onclick="bt.pub.set_server_status('srs_stack','stop')">停止
                             </button>
                             <button class="btn btn-default btn-sm"
-                                    onclick="bt.pub.set_server_status('srs_cloud','restart')">重启
+                                    onclick="bt.pub.set_server_status('srs_stack','restart')">重启
                             </button>
                         </div>
                     </div>
@@ -71,12 +71,12 @@
 <script type="text/javascript">
   // Request the backend api by functionName with args.
   // @param timeout The timeout in ms, default to 300s.
-  async function srs_cloud_request(functionName, args, timeout) {
+  async function srs_stack_request(functionName, args, timeout) {
     try {
       return await new Promise((resolve, reject) => {
         $.ajax({
           type: 'POST',
-          url: `/plugin?action=a&s=${functionName}&name=srs_cloud`,
+          url: `/plugin?action=a&s=${functionName}&name=srs_stack`,
           data: args,
           timeout: timeout || 300 * 1000,
           success: function (res, status, xhr) {
@@ -155,16 +155,16 @@
   }
 </script>
 <script type="text/javascript">
-  async function srs_cloud_init() {
+  async function srs_stack_init() {
     $(".bt-w-menu p").click(function () {
-      srs_cloud_dispatch($(this));
+      srs_stack_dispatch($(this));
     });
 
     $('.btn_install_srs').click(function () {
-      srs_cloud_try_install();
+      srs_stack_try_install();
     });
 
-    const services = await srs_cloud_request('serviceStatus');
+    const services = await srs_stack_request('serviceStatus');
     if (services?.site_domain) {
       $('.txt_srs_domain').val(services?.site_domain);
     }
@@ -173,30 +173,30 @@
     if (!services?.srs_ready || services?.srs_error) {
       $(".bt-w-menu p[name='install']").addClass('bgw').siblings().removeClass('bgw');
       $('.install_version_box').show().siblings().hide();
-      await srs_cloud_setup_install_view();
+      await srs_stack_setup_install_view();
     } else {
-      await srs_cloud_dispatch($("p[name='mgmt']"));
+      await srs_stack_dispatch($("p[name='mgmt']"));
     }
 
-    const pid = await srs_cloud_request('querySrs');
+    const pid = await srs_stack_request('querySrs');
     console.log(`srs is ${JSON.stringify(services)}`);
     if (pid?.running) {
-      await do_srs_cloud_install();
+      await do_srs_stack_install();
     }
   }
 
-  async function srs_cloud_refresh_logs() {
-    const pid = await srs_cloud_request('querySrs');
+  async function srs_stack_refresh_logs() {
+    const pid = await srs_stack_request('querySrs');
     if (pid.tail) {
       const elem = $('.install_log').val($('.install_log').val() + pid.tail).show();
       elem.get(0).scrollTop = elem.get(0)?.scrollHeight;
     }
   }
 
-  async function srs_cloud_dispatch(self) {
+  async function srs_stack_dispatch(self) {
     const menuName = self.attr('name');
 
-    const services = await srs_cloud_request('serviceStatus');
+    const services = await srs_stack_request('serviceStatus');
     if (!services?.srs_ready || services?.srs_error) {
       if (menuName !== 'install') layer.msg('请先安装云SRS', {icon: 7});
       return console.log(`service not ready ${JSON.stringify(services)}`);
@@ -206,16 +206,16 @@
     $(`.conter_box[name=${menuName}]`).show().siblings().hide();
 
     if (menuName === 'service') {
-      await srs_cloud_setup_service_view();
+      await srs_stack_setup_service_view();
     } else if (menuName === 'mgmt') {
-      await srs_cloud_setup_mgmt_view();
+      await srs_stack_setup_mgmt_view();
     } else if (menuName === 'install') {
-      await srs_cloud_setup_install_view();
+      await srs_stack_setup_install_view();
     }
   }
 
-  async function srs_cloud_setup_install_view() {
-    const pid = await srs_cloud_request('querySrs');
+  async function srs_stack_setup_install_view() {
+    const pid = await srs_stack_request('querySrs');
     console.log(`installing pid is ${JSON.stringify(pid)}`);
     if (pid?.srs || pid?.running) {
       $('.btn_install_srs').html(pid?.srs ? '安装完成' : '正在安装').attr({'disabled': 'disabled'}).show();
@@ -234,8 +234,8 @@
     }
   }
 
-  async function srs_cloud_setup_service_view() {
-    const r0 = await srs_cloud_request('querySrsService');
+  async function srs_stack_setup_service_view() {
+    const r0 = await srs_stack_request('querySrsService');
     console.log(`srs service is ${JSON.stringify(r0)}`);
 
     const status = !!(r0?.active);
@@ -246,8 +246,8 @@
     $('.srs_service_box .status span:eq(0)').html(status ? '开启' : '停止');
   }
 
-  async function srs_cloud_setup_mgmt_view() {
-    const r0 = await srs_cloud_request('serviceStatus');
+  async function srs_stack_setup_mgmt_view() {
+    const r0 = await srs_stack_request('serviceStatus');
 
     // Always use HTTP, because HTTPS might not be available.
     //const url = `${l.protocol}//${r0.site_domain}/mgmt/`;
@@ -256,7 +256,7 @@
     $('.srs_mgmt_link').attr('href', url);
   }
 
-  async function srs_cloud_try_install() {
+  async function srs_stack_try_install() {
     const domain = $('.txt_srs_domain').val();
     if (!domain) {
       alert('请填写域名');
@@ -271,30 +271,30 @@
 
     $('.btn_install_srs').html('准备安装').attr({'disabled': 'disabled'});
     try {
-      await srs_cloud_install();
+      await srs_stack_install();
     } catch (e) {
       $('.btn_install_srs').html('错误重试').removeAttr('disabled').show();
       // If install failed, refresh and show the latest logs.
-      srs_cloud_refresh_logs();
+      srs_stack_refresh_logs();
       throw e;
     };
 
-    const services = await srs_cloud_request('serviceStatus');
+    const services = await srs_stack_request('serviceStatus');
 
     // Allow user to install SRS, if not installed, or failed.
     // It already refreshed the logs, so we don't do it when failed.
     if (!services?.srs_ready || services?.srs_error) {
-      await do_srs_cloud_install();
+      await do_srs_stack_install();
     }
   }
 
-  async function srs_cloud_install() {
+  async function srs_stack_install() {
     if ($('.install_log').empty()) {
       $('.install_log').show().val('Installing...\n');
     }
 
     let tips = layer.msg('检测服务状态', {icon: 16});
-    const services = await srs_cloud_request('serviceStatus');
+    const services = await srs_stack_request('serviceStatus');
     console.log(`services status is ${JSON.stringify(services)}`);
     layer.close(tips);
 
@@ -315,7 +315,7 @@
       deps.push({id: 'docker', title: 'Docker', call: 'bt.soft.install'});
     }
 
-    const tasks = await srs_cloud_request('installTasks');
+    const tasks = await srs_stack_request('installTasks');
     const notInstalledDeps = deps.filter(dep => {
       if (tasks.filter(task => {
         return task?.name?.indexOf(`[${dep.id}-`) >= 0 ? task : null;
@@ -334,14 +334,14 @@
     // Try to install docker service.
     if (!services?.docker_installed) {
       layer.msg('安装Docker服务', {icon: 1});
-      await srs_cloud_request('installService', {service: 'docker'});
+      await srs_stack_request('installService', {service: 'docker'});
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     // Try to start docker service.
     if (!services?.docker_running) {
       layer.msg('启动Docker服务', {icon: 1});
-      await srs_cloud_request('restartService', {service: 'docker'});
+      await srs_stack_request('restartService', {service: 'docker'});
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
@@ -349,7 +349,7 @@
     if (!services?.site_created) {
       const domain = $('.txt_srs_domain').val();
       layer.msg(`创建云SRS站点: ${domain}`, {icon: 1});
-      const site = await srs_cloud_request('createSrsSite', {domain: domain});
+      const site = await srs_stack_request('createSrsSite', {domain: domain});
       console.log(`Create site ${JSON.stringify(site)}`);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
@@ -357,7 +357,7 @@
     // Setup the website. Note that it depends on http configuration files.
     if (!services?.site_setup) {
       layer.msg('设置云SRS站点', {icon: 1});
-      const data = await srs_cloud_request('setupSrsSite');
+      const data = await srs_stack_request('setupSrsSite');
       console.log('setup site', data);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
@@ -365,19 +365,19 @@
     // Setup the firewall.
     if (!services?.firewall_ready) {
       layer.msg('设置防火墙', {icon: 1});
-      const data = await srs_cloud_request('setupFirewall');
+      const data = await srs_stack_request('setupFirewall');
       console.log('setup firewall', data);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 
-  async function do_srs_cloud_install() {
+  async function do_srs_stack_install() {
     const installing = async (resolve, reject) => {
       $('.btn_install_srs').html('正在安装').attr({'disabled': 'disabled'});
       let pos = 1;
       for (; ;) {
         try {
-          const pid = await srs_cloud_request('installSrs', {start: pos, end: pos + 100});
+          const pid = await srs_stack_request('installSrs', {start: pos, end: pos + 100});
           console.log(`installing pid is ${JSON.stringify(pid)}`);
 
           if (pid.tail) {
@@ -400,11 +400,11 @@
       }
     };
 
-    const pid = await srs_cloud_request('querySrs');
+    const pid = await srs_stack_request('querySrs');
     console.log(`installing pid is ${JSON.stringify(pid)}`);
 
     if (pid.r0) {
-      await srs_cloud_request('cleanupIntall');
+      await srs_stack_request('cleanupIntall');
     }
 
     await new Promise((resolve, reject) => {
@@ -419,11 +419,11 @@
     $('.btn_install_srs').html('安装完成').attr({'disabled': 'disabled'});
 
     await new Promise(resolve => setTimeout(resolve, 1500));
-    await srs_cloud_dispatch($("p[name='mgmt']"));
+    await srs_stack_dispatch($("p[name='mgmt']"));
   }
 
   $(function () {
-    srs_cloud_init();
+    srs_stack_init();
   });
 </script>
 

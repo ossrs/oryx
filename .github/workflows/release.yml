@@ -86,34 +86,34 @@ jobs:
       # Create source tar for release. Note that it's for OpenWRT package srs-server, so the filename MUST be
       # srs-server-xxx.tar.gz, because the package is named srs-server.
       # Generate variables like:
-      #   SRS_BT_SOURCE_FILE=srs_cloud.zip
+      #   SRS_BT_SOURCE_FILE=srs_stack.zip
       #   SRS_BT_SOURCE_MD5=83e38700a80a26e30b2df054e69956e5
-      #   SRS_SOURCE_PATH=/tmp/srs_cloud-asserts/*.zip
+      #   SRS_SOURCE_PATH=/tmp/srs_stack-asserts/*.zip
       - name: Create source tar.gz
         run: |
           #
           # For BT
-          bash scripts/setup-bt/auto/zip.sh --output /tmp/zip-for-bt && SRS_BT_SOURCE_FILE=bt-srs_cloud.zip &&
+          bash scripts/setup-bt/auto/zip.sh --output /tmp/zip-for-bt && SRS_BT_SOURCE_FILE=bt-srs_stack.zip &&
           echo "SRS_BT_SOURCE_FILE=${SRS_BT_SOURCE_FILE}" >> $GITHUB_ENV &&
           echo "SRS_BT_SOURCE_MD5=$(md5sum /tmp/zip-for-bt/${SRS_BT_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
           #
           # For aaPanel
-          bash scripts/setup-aapanel/auto/zip.sh --output /tmp/zip-for-aapanel  && SRS_AAPANEL_SOURCE_FILE=aapanel-srs_cloud.zip &&
+          bash scripts/setup-aapanel/auto/zip.sh --output /tmp/zip-for-aapanel  && SRS_AAPANEL_SOURCE_FILE=aapanel-srs_stack.zip &&
           echo "SRS_AAPANEL_SOURCE_FILE=${SRS_AAPANEL_SOURCE_FILE}" >> $GITHUB_ENV &&
           echo "SRS_AAPANEL_SOURCE_MD5=$(md5sum /tmp/zip-for-aapanel/${SRS_AAPANEL_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
           # 
           # For Ubuntu script: zh
-          bash scripts/setup-ubuntu/build.sh --output /tmp/zip-for-ubuntu --language zh && SRS_UBUNTU_ZH_SOURCE_FILE=linux-srs_cloud-zh.tar.gz &&
+          bash scripts/setup-ubuntu/build.sh --output /tmp/zip-for-ubuntu --language zh && SRS_UBUNTU_ZH_SOURCE_FILE=linux-srs_stack-zh.tar.gz &&
           echo "SRS_UBUNTU_ZH_SOURCE_FILE=${SRS_UBUNTU_ZH_SOURCE_FILE}" >> $GITHUB_ENV &&
           echo "SRS_UBUNTU_ZH_SOURCE_FILE_MD5=$(md5sum /tmp/zip-for-ubuntu/${SRS_UBUNTU_ZH_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
           # 
           # For Ubuntu script: en
-          bash scripts/setup-ubuntu/build.sh --output /tmp/zip-for-ubuntu --language en && SRS_UBUNTU_EN_SOURCE_FILE=linux-srs_cloud-en.tar.gz &&
+          bash scripts/setup-ubuntu/build.sh --output /tmp/zip-for-ubuntu --language en && SRS_UBUNTU_EN_SOURCE_FILE=linux-srs_stack-en.tar.gz &&
           echo "SRS_UBUNTU_EN_SOURCE_FILE=${SRS_UBUNTU_EN_SOURCE_FILE}" >> $GITHUB_ENV &&
           echo "SRS_UBUNTU_EN_SOURCE_FILE_MD5=$(md5sum /tmp/zip-for-ubuntu/${SRS_UBUNTU_EN_SOURCE_FILE}| awk '{print $1}')" >> $GITHUB_ENV
           #
           echo "Gather asserts"
-          SRS_SOURCE_PATH=/tmp/srs_cloud-asserts && rm -rf $SRS_SOURCE_PATH && mkdir -p $SRS_SOURCE_PATH &&
+          SRS_SOURCE_PATH=/tmp/srs_stack-asserts && rm -rf $SRS_SOURCE_PATH && mkdir -p $SRS_SOURCE_PATH &&
           mv /tmp/zip-for-bt/${SRS_BT_SOURCE_FILE} $SRS_SOURCE_PATH &&
           mv /tmp/zip-for-aapanel/${SRS_AAPANEL_SOURCE_FILE} $SRS_SOURCE_PATH &&
           mv /tmp/zip-for-ubuntu/${SRS_UBUNTU_ZH_SOURCE_FILE} $SRS_SOURCE_PATH &&

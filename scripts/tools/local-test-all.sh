@@ -78,9 +78,9 @@ if [[ $TARGET == all || $TARGET == script ]]; then
 
     echo "Setup script installer" &&
     docker exec -it bt rm -rf /data/* &&
-    docker exec -it script bash build/srs_cloud/scripts/setup-ubuntu/uninstall.sh || echo OK &&
+    docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/uninstall.sh || echo OK &&
     bash scripts/setup-ubuntu/build.sh --output $(pwd)/build --extract &&
-    docker exec -it script bash build/srs_cloud/scripts/setup-ubuntu/install.sh --verbose
+    docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Setup script installer failed, ret=$ret"; exit $ret; fi
 
     echo "Test script installer" &&
@@ -106,7 +106,7 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
     docker rm -f $CONTAINERS 2>/dev/null || echo 'OK' &&
     AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
     docker run -p 80:80 -p 7800:7800 \
-        -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
+        -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
         -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
         --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
         --add-host srs.cloud.local:127.0.0.1 \
@@ -123,17 +123,17 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
 
     echo "Setup aaPanel installer" &&
     docker exec -it aapanel rm -rf /data/* &&
-    docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo 'OK' &&
+    docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh uninstall || echo 'OK' &&
     bash scripts/setup-aapanel/auto/zip.sh --output $(pwd)/build --extract &&
-    docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/install.sh install
+    docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh install
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Setup aaPanel installer failed, ret=$ret"; exit $ret; fi
 
     echo "Test aaPanel installer" &&
-    docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_remove_site.py &&
-    docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_create_site.py &&
-    docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_setup_site.py &&
-    docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/setup.sh \
-        --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+    docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
+    docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py &&
+    docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
+    docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/setup.sh \
+        --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
         --www /www/wwwroot --site srs.cloud.local
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Test aaPanel installer failed, ret=$ret"; exit $ret; fi
 
@@ -160,7 +160,7 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
     docker rm -f $CONTAINERS 2>/dev/null || echo 'OK' &&
     BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
     docker run -p 80:80 -p 7800:7800 \
-        -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
+        -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
         -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
         -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
         --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
@@ -178,17 +178,17 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
 
     echo "Install bt installer" &&
     docker exec -it bt rm -rf /data/* &&
-    docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo 'OK' &&
+    docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh uninstall || echo 'OK' &&
     bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
-    docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh install
+    docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh install
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Setup bt installer failed, ret=$ret"; exit $ret; fi
 
     echo "Setup bt installer" &&
-    docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt_api_remove_site.py &&
-    docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt_api_create_site.py &&
-    docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt_api_setup_site.py &&
-    docker exec -it bt bash /www/server/panel/plugin/srs_cloud/setup.sh \
-        --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+    docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
+    docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py &&
+    docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
+    docker exec -it bt bash /www/server/panel/plugin/srs_stack/setup.sh \
+        --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
         --www /www/wwwroot --site srs.cloud.local
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Test bt installer failed, ret=$ret"; exit $ret; fi
 

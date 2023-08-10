@@ -7,12 +7,12 @@ WORK_DIR=$(cd $(dirname ${REALPATH})/../.. && pwd)
 echo "BASH_SOURCE=${BASH_SOURCE}, REALPATH=${REALPATH}, SCRIPT_DIR=${SCRIPT_DIR}, WORK_DIR=${WORK_DIR}"
 cd ${WORK_DIR}
 
-if [[ -f /etc/init.d/srs_cloud ]]; then
-    /etc/init.d/srs_cloud stop
+if [[ -f /etc/init.d/srs_stack ]]; then
+    /etc/init.d/srs_stack stop
     echo "Stop srs-stack service ok"
 fi
 
-INIT_D=/etc/init.d/srs_cloud &&
+INIT_D=/etc/init.d/srs_stack &&
 rm -f $INIT_D
 echo "Remove init.d script $INIT_D ok"
 

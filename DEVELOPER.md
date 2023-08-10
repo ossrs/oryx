@@ -79,9 +79,9 @@ Test the build script, in the docker container:
 
 ```bash
 docker exec -it bt rm -rf /data/* &&
-docker exec -it script bash build/srs_cloud/scripts/setup-ubuntu/uninstall.sh || echo OK &&
+docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/uninstall.sh || echo OK &&
 bash scripts/setup-ubuntu/build.sh --output $(pwd)/build --extract &&
-docker exec -it script bash build/srs_cloud/scripts/setup-ubuntu/install.sh --verbose
+docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
 ```
 
 Run test for script:
@@ -109,7 +109,7 @@ docker rm -f bt aapanel 2>/dev/null &&
 AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
 docker run -p 80:80 -p 7800:7800 \
     -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-    -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
+    -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
     --add-host srs.cloud.local:127.0.0.1 \
@@ -143,19 +143,19 @@ Next, build the aaPanel plugin and install it:
 
 ```bash
 docker exec -it aapanel rm -rf /data/* &&
-docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/install.sh uninstall || echo OK &&
+docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh uninstall || echo OK &&
 bash scripts/setup-aapanel/auto/zip.sh --output $(pwd)/build --extract &&
-docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/install.sh install
+docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh install
 ```
 
 You can use aaPanel panel to install the plugin, or by command:
 
 ```bash
-docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_remove_site.py &&
-docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_create_site.py &&
-docker exec -it aapanel python3 /www/server/panel/plugin/srs_cloud/bt_api_setup_site.py &&
-docker exec -it aapanel bash /www/server/panel/plugin/srs_cloud/setup.sh \
-    --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
+docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py &&
+docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
+docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/setup.sh \
+    --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
     --www /www/wwwroot --site srs.cloud.local
 ```
 
@@ -177,8 +177,8 @@ Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install
 
 > Note: Or you can use `docker exec -it aapanel bt default` to show the login info.
 
-In the [application store](http://localhost:7800/soft), there is a `srs_cloud` plugin. After test, you can install the plugin
-`build/aapanel-srs_cloud.zip` to production aaPanel panel.
+In the [application store](http://localhost:7800/soft), there is a `srs_stack` plugin. After test, you can install the plugin
+`build/aapanel-srs_stack.zip` to production aaPanel panel.
 
 ## Develop the BT Plugin
 
@@ -189,7 +189,7 @@ docker rm -f bt aapanel 2>/dev/null &&
 BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
 docker run -p 80:80 -p 7800:7800 \
     -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
-    -v $(pwd)/build/srs_cloud:/www/server/panel/plugin/srs_cloud \
+    -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
     -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
@@ -227,19 +227,19 @@ Next, build the BT plugin and install it:
 
 ```bash
 docker exec -it bt rm -rf /data/* &&
-docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh || echo OK &&
+docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh || echo OK &&
 bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
-docker exec -it bt bash /www/server/panel/plugin/srs_cloud/install.sh install
+docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh install
 ```
 
 You can use BT panel to install the plugin, or by command:
 
 ```bash
-docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt_api_remove_site.py &&
-docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt_api_create_site.py &&
-docker exec -it bt python3 /www/server/panel/plugin/srs_cloud/bt_api_setup_site.py &&
-docker exec -it bt bash /www/server/panel/plugin/srs_cloud/setup.sh \
-    --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
+docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py &&
+docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
+docker exec -it bt bash /www/server/panel/plugin/srs_stack/setup.sh \
+    --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
     --www /www/wwwroot --site srs.cloud.local
 ```
 
@@ -261,8 +261,8 @@ Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install
 
 > Note: Or you can use `docker exec -it bt bt default` to show the login info.
 
-In the [application store](http://localhost:7800/soft), there is a `srs_cloud` plugin. After test, you can install the plugin 
-`build/bt-srs_cloud.zip` to production BT panel.
+In the [application store](http://localhost:7800/soft), there is a `srs_stack` plugin. After test, you can install the plugin 
+`build/bt-srs_stack.zip` to production BT panel.
 
 ## Develop the Droplet Image
 
@@ -353,7 +353,7 @@ Release bugfix:
 Release version for BT and aaPanel:
 
 * Then run `./auto/release.sh`
-* Finally, download [bt-srs_cloud.zip](https://github.com/ossrs/srs-stack/releases) then submit to [bt.cn](https://www.bt.cn/developer/details.html?id=600801805)
+* Finally, download [bt-srs_stack.zip](https://github.com/ossrs/srs-stack/releases) then submit to [bt.cn](https://www.bt.cn/developer/details.html?id=600801805)
 
 > Note: The [BT forum](https://www.bt.cn/bbs/thread-90890-1-1.html) and [FAQ](https://github.com/ossrs/srs-stack/issues/4) might need to be updated.
 

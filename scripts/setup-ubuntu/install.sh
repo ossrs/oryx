@@ -168,9 +168,9 @@ if [[ ! -d ${SRS_HOME} ]]; then
 fi
 
 # Create init.d script.
-rm -f /etc/init.d/srs_cloud &&
-cp ${SCRIPT_DIR}/init.d.sh /etc/init.d/srs_cloud &&
-chmod +x /etc/init.d/srs_cloud
+rm -f /etc/init.d/srs_stack &&
+cp ${SCRIPT_DIR}/init.d.sh /etc/init.d/srs_stack &&
+chmod +x /etc/init.d/srs_stack
 if [[ $? -ne 0 ]]; then echo "Setup init.d script failed"; exit 1; fi
 
 # Create srs-stack service.
@@ -180,7 +180,7 @@ cp -f usr/lib/systemd/system/srs-stack.service /usr/lib/systemd/system/srs-stack
 systemctl daemon-reload && systemctl enable srs-stack
 if [[ $? -ne 0 ]]; then echo "Install srs-stack failed"; exit 1; fi
 
-/etc/init.d/srs_cloud restart srs-stack
+/etc/init.d/srs_stack restart srs-stack
 if [[ $? -ne 0 ]]; then echo "Start srs-stack failed"; exit 1; fi
 
 echo 'Install OK'

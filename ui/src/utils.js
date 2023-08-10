@@ -1,5 +1,5 @@
 const SRS_TERRAFORM_TOKEN = 'SRS_TERRAFORM_TOKEN';
-const SRS_CLOUD_LOCALE = 'SRS_CLOUD_LOCALE';
+const SRS_STACK_LOCALE = 'SRS_STACK_LOCALE';
 
 export const Token = {
   save(data) {
@@ -21,10 +21,10 @@ export const Locale = {
   _cache: null,
   save(data) {
     this._cache = data;
-    localStorage.setItem(SRS_CLOUD_LOCALE, JSON.stringify(data));
+    localStorage.setItem(SRS_STACK_LOCALE, JSON.stringify(data));
   },
   load() {
-    const info = localStorage.getItem(SRS_CLOUD_LOCALE);
+    const info = localStorage.getItem(SRS_STACK_LOCALE);
     this._cache = info ? JSON.parse(info) : null;
     return this._cache;
   },

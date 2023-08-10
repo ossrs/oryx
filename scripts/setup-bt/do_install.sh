@@ -3,7 +3,7 @@
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 
-install_path=/www/server/panel/plugin/srs_cloud
+install_path=/www/server/panel/plugin/srs_stack
 SRS_HOME=/usr/local/srs-stack
 DATA_HOME=/data
 
@@ -83,10 +83,10 @@ fi
 }
 
 Uninstall() {
-  if [[ -f /etc/init.d/srs_cloud ]]; then /etc/init.d/srs_cloud stop; fi
+  if [[ -f /etc/init.d/srs_stack ]]; then /etc/init.d/srs_stack stop; fi
   echo "Stop srs-stack service ok"
 
-  INIT_D=/etc/init.d/srs_cloud && rm -f $INIT_D
+  INIT_D=/etc/init.d/srs_stack && rm -f $INIT_D
   echo "Remove init.d script $INIT_D ok"
 
   if [[ -f /usr/lib/systemd/system/srs-stack.service ]]; then
@@ -112,7 +112,7 @@ Uninstall() {
   rmdir $install_path 2>/dev/null
   echo "Remove plugin path $install_path ok"
 
-  LOGS=$(ls /tmp/srs_cloud_install.* 2>/dev/null)
+  LOGS=$(ls /tmp/srs_stack_install.* 2>/dev/null)
   if [[ ! -z $LOGS ]]; then rm -f $LOGS; fi
   echo "Remove install flag files $LOGS ok"
 }

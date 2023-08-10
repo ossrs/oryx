@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Install srs-stack, for example:
-#   bash /www/server/panel/plugin/srs_cloud/setup.sh --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid --www /www/wwwroot --site srs.cloud.local
+#   bash /www/server/panel/plugin/srs_stack/setup.sh --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid --www /www/wwwroot --site srs.cloud.local
 # If ok, we will create systemctl service at:
 #   /usr/lib/systemd/system/srs-stack.service
 
@@ -10,7 +10,7 @@ R0_FILE=
 NGINX_PID=
 WWW_HOME=
 SITE_NAME=
-install_path=/www/server/panel/plugin/srs_cloud
+install_path=/www/server/panel/plugin/srs_stack
 SRS_HOME=/usr/local/srs-stack
 DATA_HOME=/data
 
@@ -113,9 +113,9 @@ fi
 #if [[ $? -ne 0 ]]; then echo "Link www root failed"; exit 1; fi
 
 # Create init.d script.
-rm -f /etc/init.d/srs_cloud &&
-cp $install_path/init.d.sh /etc/init.d/srs_cloud &&
-chmod +x /etc/init.d/srs_cloud
+rm -f /etc/init.d/srs_stack &&
+cp $install_path/init.d.sh /etc/init.d/srs_stack &&
+chmod +x /etc/init.d/srs_stack
 if [[ $? -ne 0 ]]; then echo "Setup init.d script failed"; exit 1; fi
 
 # Create srs-stack service, and the credential file.
@@ -125,6 +125,6 @@ cp -f usr/lib/systemd/system/srs-stack.service /usr/lib/systemd/system/srs-stack
 systemctl daemon-reload && systemctl enable srs-stack
 if [[ $? -ne 0 ]]; then echo "Install srs-stack failed"; exit 1; fi
 
-/etc/init.d/srs_cloud restart srs-stack
+/etc/init.d/srs_stack restart srs-stack
 if [[ $? -ne 0 ]]; then echo "Start srs-stack failed"; exit 1; fi
 
