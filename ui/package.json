@@ -9,6 +9,7 @@
     "axios": "^0.25.0",
     "bootstrap": "^5.1.3",
     "country-flag-icons": "^1.4.25",
+    "hermes-engine": "^0.10.0",
     "http-proxy-middleware": "^2.0.2",
     "i18next": "^21.6.14",
     "loader-utils": "^1.4.2",
