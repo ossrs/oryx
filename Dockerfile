@@ -3,6 +3,12 @@ ARG ARCH
 FROM ${ARCH}ossrs/node:18 AS node
 FROM ${ARCH}ossrs/srs:5 AS srs
 
+RUN mv /usr/local/srs/objs/ffmpeg/bin/ffmpeg /usr/local/bin/ffmpeg && \
+    ln -sf /usr/local/bin/ffmpeg /usr/local/srs/objs/ffmpeg/bin/ffmpeg
+
+RUN rm -rf /usr/local/srs/objs/nginx/html/console \
+    /usr/local/srs/objs/nginx/html/players
+
 FROM ${ARCH}ossrs/srs:ubuntu20 AS build
 
 ARG BUILDPLATFORM
