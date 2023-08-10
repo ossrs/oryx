@@ -415,7 +415,7 @@
     $('.btn_install_srs').html('Starting').attr({'disabled': 'disabled'});
     await new Promise(resolve => setTimeout(resolve, 30000));
 
-    layer.msg('Cloud SRS installation successful.', {icon: 1});
+    layer.msg('SRS Stack installation successful.', {icon: 1});
     $('.btn_install_srs').html('Installed').attr({'disabled': 'disabled'});
 
     await new Promise(resolve => setTimeout(resolve, 1500));
