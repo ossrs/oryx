@@ -71,7 +71,7 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 					All  bool   `json:"all"`
 					Home string `json:"home"`
 				}{
-					All: all == "true", Home: "/usr/local/srs-cloud/platform/containers/data/record",
+					All: all == "true", Home: "/data/record",
 				})
 			}
 
