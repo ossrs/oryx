@@ -8,10 +8,12 @@ echo "BASH_SOURCE=${BASH_SOURCE}, REALPATH=${REALPATH}, SCRIPT_DIR=${SCRIPT_DIR}
 cd ${WORK_DIR}
 
 help=no
+refresh=no
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) help=yes; shift ;;
+        -refresh|--refresh) refresh=yes; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
@@ -20,12 +22,16 @@ if [[ "$help" == yes ]]; then
     echo "Usage: $0 [OPTIONS]"
     echo "Options:"
     echo "  -h, --help           Show this help message and exit"
+    echo "  -refresh, --refresh  Refresh current tag. Default: no"
     exit 0
 fi
 
 RELEASE=$(git describe --tags --abbrev=0 --match focal-*)
 REVISION=$(echo $RELEASE|awk -F . '{print $3}')
 let NEXT=$REVISION+1
+if [[ $refresh == yes && $REVISION != "-1" ]]; then
+  let NEXT=$REVISION
+fi
 echo "Last release is $RELEASE, revision is $REVISION, next is $NEXT"
 
 VERSION="1.0.$NEXT"
