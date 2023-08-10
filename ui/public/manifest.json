@@ -1,6 +1,6 @@
 {
-  "short_name": "SRS Cloud",
-  "name": "A lightweight open-source video cloud based on Nodejs, SRS, FFmpeg, WebRTC, etc.",
+  "short_name": "SRS Stack",
+  "name": "A lightweight open-source video solution based on Go, SRS, FFmpeg, WebRTC, etc.",
   "icons": [
     {
       "src": "favicon.ico",

@@ -123,12 +123,12 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
         <Accordion.Header>场景介绍</Accordion.Header>
         <Accordion.Body>
           <div>
-            本地录制，指录制视频流到云SRS的本地磁盘，只要推送到服务器的流都可以录制。
+            本地录制，指录制视频流到SRS Stack的本地磁盘，只要推送到服务器的流都可以录制。
             <p></p>
           </div>
           <p>可应用的具体场景包括：</p>
           <ul>
-            <li>直播转点播，录制直播流成为一个HLS文件，存储在云SRS本地磁盘，可以下载</li>
+            <li>直播转点播，录制直播流成为一个HLS文件，存储在SRS Stack本地磁盘，可以下载</li>
           </ul>
           <p>特别注意：</p>
           <ul>

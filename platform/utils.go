@@ -37,7 +37,7 @@ type HttpService interface {
 	Run(ctx context.Context) error
 }
 
-// Versions is latest and stable version from SRS cloud API.
+// Versions is latest and stable version from SRS Stack API.
 type Versions struct {
 	Version string `json:"version"`
 	Stable  string `json:"stable"`
@@ -63,7 +63,7 @@ type Config struct {
 	ipv4  net.IP
 	Iface string
 
-	// The latest and stable version from SRS cloud API.
+	// The latest and stable version from SRS Stack API.
 	Versions Versions
 }
 
@@ -607,7 +607,7 @@ func nginxHlsDelivery(ctx context.Context, enabled bool) error {
 	return nil
 }
 
-// queryLatestVersion is to query the latest and stable version from SRS cloud API.
+// queryLatestVersion is to query the latest and stable version from SRS Stack API.
 func queryLatestVersion(ctx context.Context) (*Versions, error) {
 	// Request release api with params.
 	params := make(map[string]string)

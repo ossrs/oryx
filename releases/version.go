@@ -5,10 +5,10 @@
 //
 package main
 
-// The latest version of SRS Cloud.
+// The latest version of SRS Stack.
 const latest = "v1.0.303"
 
-// The api service version of SRS Cloud.
+// The api service version of SRS Stack.
 const api = "v1.0.374"
 
 // We should keep the stable version as 193, because for new architecture, we don't support automatically upgrade, so

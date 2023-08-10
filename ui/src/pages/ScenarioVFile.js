@@ -139,7 +139,7 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
         <Accordion.Header>场景介绍</Accordion.Header>
         <Accordion.Body>
           <div>
-            虚拟直播<TutorialsButton prefixLine={true} tutorials={vLiveTutorials} />，是将一个视频文件，用FFmpeg转成直播流，推送到云SRS或其他平台。
+            虚拟直播<TutorialsButton prefixLine={true} tutorials={vLiveTutorials} />，是将一个视频文件，用FFmpeg转成直播流，推送到SRS Stack或其他平台。
             <p></p>
           </div>
           <p>可应用的具体场景包括：</p>

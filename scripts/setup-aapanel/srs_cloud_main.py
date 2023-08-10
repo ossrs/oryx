@@ -134,7 +134,7 @@ class srs_stack_main:
     # If not set site_created.
     def createSrsSite(self, args):
         if 'domain' not in args or args.domain == '':
-            self.__trace(f"Error: Empty SRS Cloud domain.")
+            self.__trace(f"Error: Empty SRS Stack domain.")
             return public.returnMsg(False, 'invalid domain')
 
         site = panelSite().AddSite(Params(

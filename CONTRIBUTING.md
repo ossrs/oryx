@@ -1,4 +1,4 @@
-Welome to contribute to SRS Cloud!
+Welome to contribute to SRS Stack!
 
 1. Please start from fixing some [Issues: good first issue](https://github.com/ossrs/srs-stack/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
 1. Please [setup your email](https://github.com/ossrs/srs/wiki/HowToFilePR#setup-your-email) before contributing, this is important.

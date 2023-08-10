@@ -23,7 +23,7 @@ def setup_site(confData):
         ]
         confData = confData.replace('#SSL-START', f"{'    '.join(srsConf)}\n    #SSL-START")
 
-    # Proxy all to SRS Cloud.
+    # Proxy all to SRS Stack.
     if confData.find('#SRS-PROXY-START') == -1:
         srsConf = [
             '#SRS-PROXY-START\n',

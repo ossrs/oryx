@@ -34,7 +34,7 @@ function useTutorialsEn(mediumRef) {
     'cb618777639f': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/how-to-secure-srs-with-lets-encrypt-by-1-click-cb618777639f',
-      title: 'How to Secure SRS Cloud with Let’s Encrypt by 1-Click',
+      title: 'How to Secure SRS Stack with Let’s Encrypt by 1-Click',
     },
     'ec18dfae7d6f': {
       author: 'Roboin',

@@ -49,19 +49,19 @@
                 <div class="conter_box install_version_box" name="install">
                     <div>
                         Domain: <input type="text" class="txt_srs_domain"/>
-                        * Access the SRS Cloud console through the domain name, please see <a href="https://ossrs.io/lts/en-us/faq-srs-stack#how-to-set-domain" target="_blank" style="color:red">here</a>
+                        * Access the SRS Stack console through the domain name, please see <a href="https://ossrs.io/lts/en-us/faq-srs-stack#how-to-set-domain" target="_blank" style="color:red">here</a>
                     </div>
                     <br/>
-                    <button class="btn btn-success btn-sm va0 ml5 btn_install_srs">Install SRS Cloud</button>
+                    <button class="btn btn-success btn-sm va0 ml5 btn_install_srs">Install SRS Stack</button>
                     <textarea class="install_log tomcat_log" style="display:none"></textarea>
                     <ul class="help-info-text c7">
-                        <li style="color:red">The installation of the SRS Cloud version will take a relatively long time, please be patient and wait.</li>
-                        <li style="color:red">If you need to uninstall the SRS Cloud, please directly delete the SRS Cloud plugin.</li>
-                        <li style="color:red">If you need to upgrade the SRS Cloud, please uninstall it directly and then reinstall it.</li>
+                        <li style="color:red">The installation of the SRS Stack version will take a relatively long time, please be patient and wait.</li>
+                        <li style="color:red">If you need to uninstall the SRS Stack, please directly delete the SRS Stack plugin.</li>
+                        <li style="color:red">If you need to upgrade the SRS Stack, please uninstall it directly and then reinstall it.</li>
                     </ul>
                 </div>
                 <div class="conter_box srs_mgmt_box" name="mgmt">
-                    <p><a href="#" class="btn btn-link srs_mgmt_link" target="_blank" rel="noreferrer">SRS Cloud Dashboard</a></p>
+                    <p><a href="#" class="btn btn-link srs_mgmt_link" target="_blank" rel="noreferrer">SRS Stack Dashboard</a></p>
                     <p style="color:red">Attention!!! Please set domain name by DNS or hosts, please see <a href="https://ossrs.io/lts/en-us/faq-srs-stack#how-to-set-domain" target="_blank" style="color:blue">here</a></p>
                 </div>
             </div>
@@ -111,13 +111,13 @@
       layer.open({
         icon: 0,
         closeBtn: 0,
-        title: 'Install SRS Cloud',
+        title: 'Install SRS Stack',
         area: '400px',
         btn: [],
         content: `
         <p>Please install the following dependencies:</p>
         <ul>${depsContent}</ul>
-        <p style="color: red; font-weight: bold;">Please continue to install the SRS Cloud after installing the dependencies.</p>
+        <p style="color: red; font-weight: bold;">Please continue to install the SRS Stack after installing the dependencies.</p>
       `,
         success: function (layero, index) {
           // Note that this is called when the window is open, not closed or finished.
@@ -138,13 +138,13 @@
       layer.open({
         icon: 0,
         closeBtn: 0,
-        title: 'Install SRS Cloud',
+        title: 'Install SRS Stack',
         area: '400px',
         btn: [],
         content: `
         <p>Please install the following dependencies:</p>
         <ul>${depsContent}</ul>
-        Please continue to install the SRS Cloud after installing the dependencies. Click <a href="javascript:void(0)" class="btlink" onclick="messagebox()">here</a> for detail.
+        Please continue to install the SRS Stack after installing the dependencies. Click <a href="javascript:void(0)" class="btlink" onclick="messagebox()">here</a> for detail.
       `,
         success: function (layero, index) {
           // Note that this is called when the window is open, not closed or finished.
@@ -198,7 +198,7 @@
 
     const services = await srs_stack_request('serviceStatus');
     if (!services?.srs_ready || services?.srs_error) {
-      if (menuName !== 'install') layer.msg('Please install the SRS Cloud first', {icon: 7});
+      if (menuName !== 'install') layer.msg('Please install the SRS Stack first', {icon: 7});
       return console.log(`service not ready ${JSON.stringify(services)}`);
     }
 
@@ -227,7 +227,7 @@
       return;
     }
 
-    $('.btn_install_srs').html(pid?.r0 ? 'Reinstall the SRS Cloud' : 'Install the SRS Cloud').removeAttr('disabled').show();
+    $('.btn_install_srs').html(pid?.r0 ? 'Reinstall the SRS Stack' : 'Install the SRS Stack').removeAttr('disabled').show();
     if (pid.tail) {
       const elem = $('.install_log').val($('.install_log').val() + pid.tail).show();
       elem.get(0).scrollTop = elem.get(0)?.scrollHeight;
@@ -300,7 +300,7 @@
 
     // If BT or aaPanel not ready to install SRS, should wait.
     if (services?.plugin_ready !== 'ok') {
-      const msg = `Installing SRS Cloud plugin, please try again later.`;
+      const msg = `Installing SRS Stack plugin, please try again later.`;
       layer.msg(msg, {icon: 2});
       throw msg;
     }
@@ -345,10 +345,10 @@
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    // Try to create site for srs cloud.
+    // Try to create site for SRS Stack.
     if (!services?.site_created) {
       const domain = $('.txt_srs_domain').val();
-      layer.msg(`Create the SRS Cloud website: ${domain}`, {icon: 1});
+      layer.msg(`Create the SRS Stack website: ${domain}`, {icon: 1});
       const site = await srs_stack_request('createSrsSite', {domain: domain});
       console.log(`Create site ${JSON.stringify(site)}`);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -356,7 +356,7 @@
 
     // Setup the website. Note that it depends on http configuration files.
     if (!services?.site_setup) {
-      layer.msg('Setup the SRS Cloud website', {icon: 1});
+      layer.msg('Setup the SRS Stack website', {icon: 1});
       const data = await srs_stack_request('setupSrsSite');
       console.log('setup site', data);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -389,7 +389,7 @@
           if (pid.srs) return resolve();
 
           if (pid.r0) {
-            layer.msg('Install SRS Cloud failed', {icon: 2});
+            layer.msg('Install SRS Stack failed', {icon: 2});
             return reject(pid);
           }
 
@@ -411,7 +411,7 @@
       installing(resolve, reject);
     });
 
-    layer.msg('Starting SRS Cloud......', {icon: 1});
+    layer.msg('Starting SRS Stack......', {icon: 1});
     $('.btn_install_srs').html('Starting').attr({'disabled': 'disabled'});
     await new Promise(resolve => setTimeout(resolve, 30000));
 

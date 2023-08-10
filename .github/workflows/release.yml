@@ -139,7 +139,7 @@ jobs:
         with:
           allowUpdates: true
           tag: ${{ github.ref }}
-          name: Release SRS Cloud ${{ env.SRS_VERSION }}
+          name: Release SRS Stack ${{ env.SRS_VERSION }}
           body: |
             [${{ github.event.head_commit.message }}](https://github.com/ossrs/srs-stack/commit/${{ github.sha }})
             

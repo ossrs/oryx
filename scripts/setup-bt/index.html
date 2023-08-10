@@ -49,19 +49,19 @@
                 <div class="conter_box install_version_box" name="install">
                     <div>
                         域名：<input type="text" class="txt_srs_domain"/>
-                        * 通过域名访问SRS Cloud管理后台，操作步骤请看<a href="https://ossrs.net/lts/zh-cn/faq-srs-stack#how-to-set-domain" target="_blank" style="color:red">这里</a>
+                        * 通过域名访问SRS Stack管理后台，操作步骤请看<a href="https://ossrs.net/lts/zh-cn/faq-srs-stack#how-to-set-domain" target="_blank" style="color:red">这里</a>
                     </div>
                     <br/>
-                    <button class="btn btn-success btn-sm va0 ml5 btn_install_srs">安装云SRS</button>
+                    <button class="btn btn-success btn-sm va0 ml5 btn_install_srs">安装SRS Stack</button>
                     <textarea class="install_log tomcat_log" style="display:none"></textarea>
                     <ul class="help-info-text c7">
-                        <li style="color:red">安装云SRS版本会耗时比较久，请耐心等候。</li>
-                        <li style="color:red">若需要卸载云SRS，请直接删除云SRS插件。</li>
-                        <li style="color:red">若需要升级云SRS，请直接卸载后重装即可。</li>
+                        <li style="color:red">安装SRS Stack版本会耗时比较久，请耐心等候。</li>
+                        <li style="color:red">若需要卸载SRS Stack，请直接删除SRS Stack插件。</li>
+                        <li style="color:red">若需要升级SRS Stack，请直接卸载后重装即可。</li>
                     </ul>
                 </div>
                 <div class="conter_box srs_mgmt_box" name="mgmt">
-                    <p><a href="#" class="btn btn-link srs_mgmt_link" target="_blank" rel="noreferrer">云SRS管理面板</a></p>
+                    <p><a href="#" class="btn btn-link srs_mgmt_link" target="_blank" rel="noreferrer">SRS Stack管理面板</a></p>
                     <p style="color:red">注意!!! 请设置域名解析或者hosts，操作步骤请看<a href="https://ossrs.net/lts/zh-cn/faq-srs-stack#how-to-set-domain" target="_blank" style="color:blue">这里</a></p>
                 </div>
             </div>
@@ -111,13 +111,13 @@
       layer.open({
         icon: 0,
         closeBtn: 0,
-        title: '安装云SRS',
+        title: '安装SRS Stack',
         area: '400px',
         btn: [],
         content: `
         <p>请安装以下依赖：</p>
         <ul>${depsContent}</ul>
-        <p style="color: red; font-weight: bold;">请安装完依赖后继续安装云SRS。</p>
+        <p style="color: red; font-weight: bold;">请安装完依赖后继续安装SRS Stack。</p>
       `,
         success: function (layero, index) {
           // Note that this is called when the window is open, not closed or finished.
@@ -138,13 +138,13 @@
       layer.open({
         icon: 0,
         closeBtn: 0,
-        title: '安装云SRS',
+        title: '安装SRS Stack',
         area: '400px',
         btn: [],
         content: `
         <p>正在安装依赖：</p>
         <ul>${depsContent}</ul>
-        请安装完依赖后，再继续安装云SRS，请点<a href="javascript:void(0)" class="btlink" onclick="messagebox()">这里</a>查看安装详情。
+        请安装完依赖后，再继续安装SRS Stack，请点<a href="javascript:void(0)" class="btlink" onclick="messagebox()">这里</a>查看安装详情。
       `,
         success: function (layero, index) {
           // Note that this is called when the window is open, not closed or finished.
@@ -198,7 +198,7 @@
 
     const services = await srs_stack_request('serviceStatus');
     if (!services?.srs_ready || services?.srs_error) {
-      if (menuName !== 'install') layer.msg('请先安装云SRS', {icon: 7});
+      if (menuName !== 'install') layer.msg('请先安装SRS Stack', {icon: 7});
       return console.log(`service not ready ${JSON.stringify(services)}`);
     }
 
@@ -227,7 +227,7 @@
       return;
     }
 
-    $('.btn_install_srs').html(pid?.r0 ? '重新安装云SRS' : '安装云SRS').removeAttr('disabled').show();
+    $('.btn_install_srs').html(pid?.r0 ? '重新安装SRS Stack' : '安装SRS Stack').removeAttr('disabled').show();
     if (pid.tail) {
       const elem = $('.install_log').val($('.install_log').val() + pid.tail).show();
       elem.get(0).scrollTop = elem.get(0)?.scrollHeight;
@@ -345,10 +345,10 @@
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    // Try to create site for srs cloud.
+    // Try to create site for SRS Stack.
     if (!services?.site_created) {
       const domain = $('.txt_srs_domain').val();
-      layer.msg(`创建云SRS站点: ${domain}`, {icon: 1});
+      layer.msg(`创建SRS Stack站点: ${domain}`, {icon: 1});
       const site = await srs_stack_request('createSrsSite', {domain: domain});
       console.log(`Create site ${JSON.stringify(site)}`);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -356,7 +356,7 @@
 
     // Setup the website. Note that it depends on http configuration files.
     if (!services?.site_setup) {
-      layer.msg('设置云SRS站点', {icon: 1});
+      layer.msg('设置SRS Stack站点', {icon: 1});
       const data = await srs_stack_request('setupSrsSite');
       console.log('setup site', data);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -389,7 +389,7 @@
           if (pid.srs) return resolve();
 
           if (pid.r0) {
-            layer.msg('安装云SRS失败', {icon: 2});
+            layer.msg('安装SRS Stack失败', {icon: 2});
             return reject(pid);
           }
 
@@ -411,11 +411,11 @@
       installing(resolve, reject);
     });
 
-    layer.msg('云SRS启动中，请稍后......', {icon: 1});
+    layer.msg('SRS Stack启动中，请稍后......', {icon: 1});
     $('.btn_install_srs').html('正在启动').attr({'disabled': 'disabled'});
     await new Promise(resolve => setTimeout(resolve, 30000));
 
-    layer.msg('云SRS安装成功', {icon: 1});
+    layer.msg('SRS Stack安装成功', {icon: 1});
     $('.btn_install_srs').html('安装完成').attr({'disabled': 'disabled'});
 
     await new Promise(resolve => setTimeout(resolve, 1500));

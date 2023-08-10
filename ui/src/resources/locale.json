@@ -352,7 +352,7 @@
       },
       "openapi": {
         "title": "Introduction",
-        "summary": "For developer to call OpenAPI of SRS Cloud",
+        "summary": "For developer to call OpenAPI of SRS Stack",
         "usage1": "ApiSecret is used for authentication of OpenAPI",
         "usage2": "Please click the bellow steps",
         "secret": "Copy ApiSecret",

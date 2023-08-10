@@ -44,7 +44,7 @@ export default function Navigator({initialized, token, localChanged}) {
             width="64"
             height="30"
             className="d-inline-block align-top"
-            alt="SRS Cloud"
+            alt="SRS Stack"
           />
         </Navbar.Brand>
         <Nav className='me-auto' variant="pills" activeKey={activekey}>

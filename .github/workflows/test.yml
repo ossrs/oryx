@@ -241,10 +241,10 @@ jobs:
           echo "Tag platform image to BT ok."
           
           docker exec bt docker images
-      - name: Install SRS Cloud plugin
+      - name: Install SRS Stack plugin
         run: |
           docker exec bt bash /www/server/panel/plugin/srs_stack/install.sh install
-          echo "Install SRS Cloud plugin ok."
+          echo "Install SRS Stack plugin ok."
           
           docker exec bt python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py
           docker exec bt python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py
@@ -253,7 +253,7 @@ jobs:
           docker exec bt bash /www/server/panel/plugin/srs_stack/setup.sh \
             --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
             --www /www/wwwroot --site srs.cloud.local
-          echo "Setup SRS Cloud plugin ok."
+          echo "Setup SRS Stack plugin ok."
           
           set +e
           docker exec bt systemctl status srs-stack
@@ -384,10 +384,10 @@ jobs:
           echo "Tag platform image to aaPanel ok."
           
           docker exec aapanel docker images
-      - name: Install SRS Cloud plugin
+      - name: Install SRS Stack plugin
         run: |
           docker exec aapanel bash /www/server/panel/plugin/srs_stack/install.sh install
-          echo "Install SRS Cloud plugin ok."
+          echo "Install SRS Stack plugin ok."
           
           docker exec aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py
           docker exec aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py
@@ -396,7 +396,7 @@ jobs:
           docker exec aapanel bash /www/server/panel/plugin/srs_stack/setup.sh \
             --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
             --www /www/wwwroot --site srs.cloud.local
-          echo "Setup SRS Cloud plugin ok."
+          echo "Setup SRS Stack plugin ok."
           
           set +e
           docker exec aapanel systemctl status srs-stack

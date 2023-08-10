@@ -22,7 +22,7 @@ req = urllib.request.Request(
         'type': 'PHP',
         'version': '00',
         'port': 80,
-        'ps': 'SRS Cloud',
+        'ps': 'SRS Stack',
         'ftp': 'false',
         'sql': 'false',
         # For aaPanel.

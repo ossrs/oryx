@@ -17,10 +17,10 @@ function ContactCn() {
           <img
             className="d-block w-100"
             src={srsCloud}
-            alt="SRS云服务器"
+            alt="SRS Stack"
           />
           <Carousel.Caption>
-            <h5>欢迎加云SRS微信群</h5>
+            <h5>欢迎加SRS Stack微信群</h5>
             <p>
               欢迎加群探讨使用经验，寻求帮助，请先观看<a href='https://www.bilibili.com/video/BV1844y1L7dL/' target='_blank' rel='noreferrer'>视频入门教程</a>。
             </p>

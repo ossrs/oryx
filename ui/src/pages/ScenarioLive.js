@@ -48,7 +48,7 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
           <p>可应用的具体场景包括：</p>
           <ul>
             <li>一起看电影，异地恋的情侣，或者三五个好朋友，一起看看自己喜欢的电影</li>
-            <li>远程制作和导播，户外直播用手机或摄像头推流到SRS云服务器，用OBS/vMix/芯象制作后再播出，编辑不用在直播现场</li>
+            <li>远程制作和导播，户外直播用手机或摄像头推流到SRS Stack，用OBS/vMix/芯象制作后再播出，编辑不用在直播现场</li>
           </ul>
           <p>使用说明：</p>
           <ul>
