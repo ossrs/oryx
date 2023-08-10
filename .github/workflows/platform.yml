@@ -89,9 +89,6 @@ jobs:
           dst: |
             ossrs/srs-stack:${{ env.SRS_MAJOR }}
             ossrs/srs-stack:v${{ env.SRS_MAJOR }}
-            ossrs/srs-stack:platform-${{ env.SRS_TAG }}
-            ossrs/srs-stack:platform-${{ env.SRS_MAJOR }}
-            ossrs/srs-stack:platform-v${{ env.SRS_MAJOR }}
             ossrs/srs-cloud:${{ env.SRS_TAG }}
             ossrs/srs-cloud:${{ env.SRS_MAJOR }}
             ossrs/srs-cloud:v${{ env.SRS_MAJOR }}
@@ -124,9 +121,6 @@ jobs:
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_TAG }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:v${{ env.SRS_MAJOR }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:platform-${{ env.SRS_TAG }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:platform-${{ env.SRS_MAJOR }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:platform-v${{ env.SRS_MAJOR }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_TAG }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_MAJOR }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:v${{ env.SRS_MAJOR }}
