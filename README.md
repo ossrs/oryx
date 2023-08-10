@@ -81,7 +81,7 @@ The features that we're developing:
 - [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-cloud/issues/29).
 - [x] [Support DVR to local disk](https://github.com/ossrs/srs-cloud/issues/42).
 - [ ] Support upgrade to latest version manually.
-- [ ] Support HTTPS by let's encrypt with certbot.
+- [ ] Support HTTPS by let's encrypt with LEGO.
 - [ ] Support GB28181 by SRS 5.0 container.
 - [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
 - [ ] Support virtual live streaming, covert file or other resource to live.

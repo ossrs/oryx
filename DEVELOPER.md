@@ -471,17 +471,17 @@ The software we depend on:
     * Redis, `apt-get install -y redis`
     * Nginx, `apt-get install -y nginx`
         * SSL: `mgmt/containers/ssl`
-* [Certbot](https://github.com/ossrs/srs/issues/2864#lets-encrypt), `docker --name certbot`
+* [LEGO](https://github.com/go-acme/lego)
     * Verify webroot: `mgmt/containers/www/.well-known/acme-challenge/`
     * Cert files: `mgmt/containers/etc/letsencrypt/live/`
-* [SRS](https://github.com/ossrs/srs), `docker --name srs-server`
+* [SRS](https://github.com/ossrs/srs)
     * Config: `mgmt/containers/conf/srs.conf` mount as `/usr/local/srs/conf/lighthouse.conf`
     * Volume: `mgmt/containers/objs/nginx/html` mount as `/usr/local/srs/objs/nginx/html`
-* [srs-hooks](https://github.com/ossrs/srs-cloud/tree/lighthouse/hooks), `docker --name srs-hooks`
+* [srs-hooks](https://github.com/ossrs/srs-cloud/tree/lighthouse/hooks)
     * Volume: `mgmt/containers/objs/nginx/html` mount as `/usr/local/mgmt/containers/objs/nginx/html`
-* [tencent-cloud](https://github.com/ossrs/srs-cloud/tree/lighthouse/tencent), `docker --name tencent-cloud`
+* [tencent-cloud](https://github.com/ossrs/srs-cloud/tree/lighthouse/tencent)
     * [CAM](https://console.cloud.tencent.com/cam/overview) Authentication by secretId and secretKey.
-* [ffmpeg](https://github.com/ossrs/srs-cloud/tree/lighthouse/ffmpeg), `docker --name ffmpeg`
+* [ffmpeg](https://github.com/ossrs/srs-cloud/tree/lighthouse/ffmpeg)
     * [FFmpeg and ffprobe](https://ffmpeg.org) tools in `ossrs/srs:node-av`
 
 ## Environments
