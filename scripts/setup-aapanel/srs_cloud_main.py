@@ -22,8 +22,8 @@ class srs_cloud_main:
     #       public.get_site_path() is /www/wwwroot
     #       public.get_vhost_path() is /www/server/panel/vhost
     __plugin_path = "{}/panel/plugin/srs_cloud".format(public.get_setup_path())
-    __srs_service = "/usr/lib/systemd/system/srs-cloud.service"
-    __srs_home = '/usr/local/srs-cloud'
+    __srs_service = "/usr/lib/systemd/system/srs-stack.service"
+    __srs_home = '/usr/local/srs-stack'
     __r0_file = '/tmp/srs_cloud_install.r0'
     __firewall = '/tmp/srs_cloud_install.fw'
     __log_file = '/tmp/srs_cloud_install.log'
@@ -190,7 +190,7 @@ class srs_cloud_main:
         }))
 
     def querySrsService(self, args):
-        ok = public.ExecShell('systemctl status srs-cloud.service >/dev/null 2>&1 && echo -n ok')[0]
+        ok = public.ExecShell('systemctl status srs-stack.service >/dev/null 2>&1 && echo -n ok')[0]
         return public.returnMsg(True, json.dumps({'active': ok}))
 
     def __discover_path(self, general_path):

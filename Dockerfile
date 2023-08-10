@@ -38,14 +38,14 @@ RUN make clean && make -j ${MAKEARGS} && make install
 #FROM ${ARCH}ubuntu:focal AS dist
 FROM ${ARCH}ossrs/srs-stack:focal-1 AS dist
 
-# For SRS-Cloud, build it.
-COPY --from=build /usr/local/srs-cloud /usr/local/srs-cloud
+# For srs-stack, build it.
+COPY --from=build /usr/local/srs-stack /usr/local/srs-stack
 # For SRS server, always use the latest release version.
 COPY --from=srs /usr/local/srs /usr/local/srs
 
 # Prepare data directory.
 RUN mkdir -p /data && \
-    cd /usr/local/srs-cloud/platform/containers && \
+    cd /usr/local/srs-stack/platform/containers && \
     rm -rf data && ln -sf /data .
 
 CMD ["./bootstrap"]

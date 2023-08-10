@@ -71,8 +71,8 @@ if [[ $TARGET == all || $TARGET == script ]]; then
     echo "Load platform image to docker" &&
     version=$(bash scripts/version.sh) &&
     docker exec -it script docker load -i platform.tar &&
-    docker exec -it script docker tag platform:latest ossrs/srs-cloud:$version &&
-    docker exec -it script docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+    docker exec -it script docker tag platform:latest ossrs/srs-stack:$version &&
+    docker exec -it script docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
     docker exec -it script docker images
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Load platform image to docker failed, ret=$ret"; exit $ret; fi
 
@@ -85,11 +85,11 @@ if [[ $TARGET == all || $TARGET == script ]]; then
 
     echo "Test script installer" &&
     docker exec -it script make -j -C test &&
-    docker exec -it script ./test/srs-cloud.test -test.v -endpoint http://localhost:2022 \
+    docker exec -it script ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
         -srs-log=true -wait-ready=true -init-password=true \
         -check-api-secret=false -test.run TestApi_Empty &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it script ./test/srs-cloud.test -test.v -wait-ready -endpoint http://localhost:2022 \
+    docker exec -it script ./test/srs-stack.test -test.v -wait-ready -endpoint http://localhost:2022 \
         -srs-log=true -wait-ready=true -init-password=false \
         -check-api-secret=true \
         -test.parallel 1
@@ -116,8 +116,8 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
     echo "Load platform image to docker" &&
     version=$(bash scripts/version.sh) &&
     docker exec -it aapanel docker load -i platform.tar &&
-    docker exec -it aapanel docker tag platform:latest ossrs/srs-cloud:$version &&
-    docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+    docker exec -it aapanel docker tag platform:latest ossrs/srs-stack:$version &&
+    docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
     docker exec -it aapanel docker images
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Load platform image to docker failed, ret=$ret"; exit $ret; fi
 
@@ -139,11 +139,11 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
 
     echo "Test aaPanel installer" &&
     docker exec -it aapanel make -j -C test &&
-    docker exec -it aapanel ./test/srs-cloud.test -test.v -endpoint http://srs.cloud.local:80 \
+    docker exec -it aapanel ./test/srs-stack.test -test.v -endpoint http://srs.cloud.local:80 \
         -srs-log=true -wait-ready=true -init-password=true \
         -check-api-secret=false -test.run TestApi_Empty &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it aapanel ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+    docker exec -it aapanel ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
         -srs-log=true -wait-ready=true -init-password=false \
         -check-api-secret=true \
         -test.parallel 1
@@ -171,8 +171,8 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
     echo "Load platform image to docker" &&
     version=$(bash scripts/version.sh) &&
     docker exec -it bt docker load -i platform.tar &&
-    docker exec -it bt docker tag platform:latest ossrs/srs-cloud:$version &&
-    docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+    docker exec -it bt docker tag platform:latest ossrs/srs-stack:$version &&
+    docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
     docker exec -it bt docker images
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Load platform image to docker failed, ret=$ret"; exit $ret; fi
 
@@ -194,11 +194,11 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
 
     echo "Test bt installer" &&
     docker exec -it bt make -j -C test &&
-    docker exec -it bt ./test/srs-cloud.test -test.v -endpoint http://srs.cloud.local:80 \
+    docker exec -it bt ./test/srs-stack.test -test.v -endpoint http://srs.cloud.local:80 \
         -srs-log=true -wait-ready=true -init-password=true \
         -check-api-secret=false -test.run TestApi_Empty &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it bt ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+    docker exec -it bt ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
           -srs-log=true -wait-ready=true -init-password=false \
           -check-api-secret=true \
           -test.parallel 1

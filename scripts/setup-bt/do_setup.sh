@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Install srs-cloud, for example:
+# Install srs-stack, for example:
 #   bash /www/server/panel/plugin/srs_cloud/setup.sh --r0 /tmp/srs_cloud_install.r0 --nginx /www/server/nginx/logs/nginx.pid --www /www/wwwroot --site srs.cloud.local
 # If ok, we will create systemctl service at:
-#   /usr/lib/systemd/system/srs-cloud.service
+#   /usr/lib/systemd/system/srs-stack.service
 
 HELP=no
 R0_FILE=
@@ -11,7 +11,7 @@ NGINX_PID=
 WWW_HOME=
 SITE_NAME=
 install_path=/www/server/panel/plugin/srs_cloud
-SRS_HOME=/usr/local/srs-cloud
+SRS_HOME=/usr/local/srs-stack
 DATA_HOME=/data
 
 HELP=no
@@ -19,7 +19,7 @@ VERBOSE=no
 LANGUAGE=zh
 REGISTRY=auto
 REGION=auto
-IMAGE=ossrs/srs-cloud:1
+IMAGE=ossrs/srs-stack:1
 
 # Allow use config to override the default values.
 # For BT, should never use .env, because it will be removed when install.
@@ -101,7 +101,7 @@ if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
 # If install ok, the directory should exists.
 if [[ ! -d ${SRS_HOME} || ! -d ${SRS_HOME}/mgmt ]]; then
-  echo "Install srs-cloud failed"; exit 1;
+  echo "Install srs-stack failed"; exit 1;
 fi
 
 # Link the www root to container.
@@ -118,13 +118,13 @@ cp $install_path/init.d.sh /etc/init.d/srs_cloud &&
 chmod +x /etc/init.d/srs_cloud
 if [[ $? -ne 0 ]]; then echo "Setup init.d script failed"; exit 1; fi
 
-# Create srs-cloud service, and the credential file.
+# Create srs-stack service, and the credential file.
 # Remark: Never start the service, because the IP will change for new machine created.
 cd ${SRS_HOME} &&
-cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
-systemctl daemon-reload && systemctl enable srs-cloud
-if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
+cp -f usr/lib/systemd/system/srs-stack.service /usr/lib/systemd/system/srs-stack.service &&
+systemctl daemon-reload && systemctl enable srs-stack
+if [[ $? -ne 0 ]]; then echo "Install srs-stack failed"; exit 1; fi
 
-/etc/init.d/srs_cloud restart srs-cloud
-if [[ $? -ne 0 ]]; then echo "Start srs-cloud failed"; exit 1; fi
+/etc/init.d/srs_cloud restart srs-stack
+if [[ $? -ne 0 ]]; then echo "Start srs-stack failed"; exit 1; fi
 

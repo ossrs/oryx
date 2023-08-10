@@ -9,22 +9,22 @@ cd ${WORK_DIR}
 
 if [[ -f /etc/init.d/srs_cloud ]]; then
     /etc/init.d/srs_cloud stop
-    echo "Stop srs-cloud service ok"
+    echo "Stop srs-stack service ok"
 fi
 
 INIT_D=/etc/init.d/srs_cloud &&
 rm -f $INIT_D
 echo "Remove init.d script $INIT_D ok"
 
-if [[ -f /usr/lib/systemd/system/srs-cloud.service ]]; then
-    systemctl disable srs-cloud
-    rm -f /usr/lib/systemd/system/srs-cloud.service
+if [[ -f /usr/lib/systemd/system/srs-stack.service ]]; then
+    systemctl disable srs-stack
+    rm -f /usr/lib/systemd/system/srs-stack.service
     systemctl daemon-reload
     systemctl reset-failed
-    echo "Remove srs-cloud.service ok"
+    echo "Remove srs-stack.service ok"
 fi
 
-INSTALL_HOME=/usr/local/srs-cloud
+INSTALL_HOME=/usr/local/srs-stack
 rm -rf $INSTALL_HOME
 echo "Remove install $INSTALL_HOME ok"
 

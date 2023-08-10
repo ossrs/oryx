@@ -474,7 +474,7 @@ func handleDockerHooksService(ctx context.Context, handler *http.ServeMux) error
 				request := vod.NewCreateSubAppIdRequest()
 
 				request.Name = common.StringPtr(vodAppName)
-				request.Description = common.StringPtr("Application VoD for srs-cloud")
+				request.Description = common.StringPtr("Application VoD for srs-stack")
 
 				if response, err := vodClient.CreateSubAppIdWithContext(ctx, request); err != nil {
 					return errors.Wrapf(err, "create vod appid")

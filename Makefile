@@ -1,6 +1,6 @@
 .PHONY: default build build-no-ui install run uninstall upgrade test npm help clean
 
-PREFIX ?= /usr/local/srs-cloud
+PREFIX ?= /usr/local/srs-stack
 __REAL_INSTALL = $(DESTDIR)$(PREFIX)
 
 default: build
@@ -41,7 +41,7 @@ else
 	(cd platform && cp -P dvr objs record upload vlive vod $(__REAL_INSTALL)/platform)
 	rm -rf $(__REAL_INSTALL)/platform/containers/objs/*
 	cp -rf usr $(__REAL_INSTALL)/usr
-	sed -i "s|/usr/local/srs-cloud|$(PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/srs-cloud.service
+	sed -i "s|/usr/local/srs-stack|$(PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/srs-stack.service
 endif
 
 uninstall:

@@ -6,7 +6,7 @@ Wants=docker.service
 [Service]
 Type=simple
 Restart=always
-ExecStart=/usr/local/srs-cloud/mgmt/bootstrap
+ExecStart=/usr/local/srs-stack/mgmt/bootstrap
 KillSignal=SIGTERM
 TimeoutStopSec=30
 SendSIGKILL=yes

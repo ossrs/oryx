@@ -8,14 +8,14 @@ echo "BASH_SOURCE=${BASH_SOURCE}, REALPATH=${REALPATH}, SCRIPT_DIR=${SCRIPT_DIR}
 cd ${WORK_DIR}
 
 DATA_HOME=/data
-SRS_HOME=/usr/local/srs-cloud
+SRS_HOME=/usr/local/srs-stack
 
 HELP=no
 VERBOSE=no
 LANGUAGE=zh
 REGISTRY=auto
 REGION=auto
-IMAGE=ossrs/srs-cloud:1
+IMAGE=ossrs/srs-stack:1
 
 # Allow use .env to override the default values.
 if [[ -f ${SCRIPT_DIR}/.env ]]; then source ${SCRIPT_DIR}/.env; fi
@@ -164,7 +164,7 @@ fi
 
 # If install ok, the directory should exists.
 if [[ ! -d ${SRS_HOME} ]]; then
-  echo "Install srs-cloud failed"; exit 1;
+  echo "Install srs-stack failed"; exit 1;
 fi
 
 # Create init.d script.
@@ -173,14 +173,14 @@ cp ${SCRIPT_DIR}/init.d.sh /etc/init.d/srs_cloud &&
 chmod +x /etc/init.d/srs_cloud
 if [[ $? -ne 0 ]]; then echo "Setup init.d script failed"; exit 1; fi
 
-# Create srs-cloud service.
+# Create srs-stack service.
 # Remark: Never start the service, because the IP will change for new machine created.
 cd ${SRS_HOME} &&
-cp -f usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
-systemctl daemon-reload && systemctl enable srs-cloud
-if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
+cp -f usr/lib/systemd/system/srs-stack.service /usr/lib/systemd/system/srs-stack.service &&
+systemctl daemon-reload && systemctl enable srs-stack
+if [[ $? -ne 0 ]]; then echo "Install srs-stack failed"; exit 1; fi
 
-/etc/init.d/srs_cloud restart srs-cloud
-if [[ $? -ne 0 ]]; then echo "Start srs-cloud failed"; exit 1; fi
+/etc/init.d/srs_cloud restart srs-stack
+if [[ $? -ne 0 ]]; then echo "Start srs-stack failed"; exit 1; fi
 
 echo 'Install OK'

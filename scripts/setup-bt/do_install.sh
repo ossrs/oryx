@@ -4,7 +4,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 
 install_path=/www/server/panel/plugin/srs_cloud
-SRS_HOME=/usr/local/srs-cloud
+SRS_HOME=/usr/local/srs-stack
 DATA_HOME=/data
 
 # Update sysctl.conf and add if not exists. For example:
@@ -36,12 +36,12 @@ Install() {
   chmod +x $install_path/mgmt/bootstrap
   if [[ $? -ne 0 ]]; then echo "Set mgmt bootstrap permission failed"; exit 1; fi
 
-  # Move srs-cloud to its home.
-  echo "Link srs-cloud to $SRS_HOME"
+  # Move srs-stack to its home.
+  echo "Link srs-stack to $SRS_HOME"
   rm -rf $SRS_HOME && mkdir $SRS_HOME &&
   ln -sf $install_path/mgmt $SRS_HOME/mgmt &&
   ln -sf $install_path/usr $SRS_HOME/usr
-  if [[ $? -ne 0 ]]; then echo "Link srs-cloud failed"; exit 1; fi
+  if [[ $? -ne 0 ]]; then echo "Link srs-stack failed"; exit 1; fi
 
   # Create global data directory.
   echo "Create data and config file"
@@ -76,7 +76,7 @@ fi
   update_sysctl net.core.wmem_default 16777216
 
   # Now, we're ready to install by BT.
-  echo 'Wait for srs-cloud plugin ready...'; sleep 1.3;
+  echo 'Wait for srs-stack plugin ready...'; sleep 1.3;
   touch ${install_path}/.bt_ready
 
   echo 'Install OK'
@@ -84,20 +84,20 @@ fi
 
 Uninstall() {
   if [[ -f /etc/init.d/srs_cloud ]]; then /etc/init.d/srs_cloud stop; fi
-  echo "Stop srs-cloud service ok"
+  echo "Stop srs-stack service ok"
 
   INIT_D=/etc/init.d/srs_cloud && rm -f $INIT_D
   echo "Remove init.d script $INIT_D ok"
 
-  if [[ -f /usr/lib/systemd/system/srs-cloud.service ]]; then
-    systemctl disable srs-cloud
-    rm -f /usr/lib/systemd/system/srs-cloud.service
+  if [[ -f /usr/lib/systemd/system/srs-stack.service ]]; then
+    systemctl disable srs-stack
+    rm -f /usr/lib/systemd/system/srs-stack.service
     systemctl daemon-reload
     systemctl reset-failed
   fi
-  echo "Remove srs-cloud.service ok"
+  echo "Remove srs-stack.service ok"
 
-  INSTALL_HOME=/usr/local/srs-cloud
+  INSTALL_HOME=/usr/local/srs-stack
   rm -rf $INSTALL_HOME
   echo "Remove install $INSTALL_HOME ok"
 

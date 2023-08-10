@@ -85,4 +85,4 @@ echo "Publish OK: $TAG"
 
 echo -e "\n\n"
 echo "Publish OK: $TAG $PLATFORM_TAG"
-echo "    https://github.com/ossrs/srs-cloud/actions/workflows/platform.yml"
+echo "    https://github.com/ossrs/srs-stack/actions/workflows/platform.yml"

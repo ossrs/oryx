@@ -70,8 +70,8 @@ Enter the docker container:
 ```bash
 version=$(bash scripts/version.sh) &&
 docker exec -it script docker load -i platform.tar && 
-docker exec -it script docker tag platform:latest ossrs/srs-cloud:$version &&
-docker exec -it script docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+docker exec -it script docker tag platform:latest ossrs/srs-stack:$version &&
+docker exec -it script docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
 docker exec -it script docker images
 ```
 
@@ -88,11 +88,11 @@ Run test for script:
 
 ```bash
 docker exec -it script make -j -C test &&
-docker exec -it script ./test/srs-cloud.test -test.v -endpoint http://localhost:2022 \
+docker exec -it script ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
     -srs-log=true -wait-ready=true -init-password=true \
     -check-api-secret=false -test.run TestApi_Empty &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it script ./test/srs-cloud.test -test.v -wait-ready -endpoint http://localhost:2022 \
+docker exec -it script ./test/srs-stack.test -test.v -wait-ready -endpoint http://localhost:2022 \
     -srs-log=true -wait-ready=true -init-password=false \
     -check-api-secret=true \
     -test.parallel 8
@@ -134,8 +134,8 @@ Enter the docker container:
 ```bash
 version=$(bash scripts/version.sh) &&
 docker exec -it aapanel docker load -i platform.tar && 
-docker exec -it aapanel docker tag platform:latest ossrs/srs-cloud:$version &&
-docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+docker exec -it aapanel docker tag platform:latest ossrs/srs-stack:$version &&
+docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
 docker exec -it aapanel docker images
 ```
 
@@ -163,11 +163,11 @@ Run test for aaPanel:
 
 ```bash
 docker exec -it aapanel make -j -C test &&
-docker exec -it aapanel ./test/srs-cloud.test -test.v -endpoint http://srs.cloud.local:80 \
+docker exec -it aapanel ./test/srs-stack.test -test.v -endpoint http://srs.cloud.local:80 \
     -srs-log=true -wait-ready=true -init-password=true \
     -check-api-secret=false -test.run TestApi_Empty &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it aapanel ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+docker exec -it aapanel ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
     -srs-log=true -wait-ready=true -init-password=false \
     -check-api-secret=true \
     -test.parallel 8
@@ -218,8 +218,8 @@ Enter the docker container:
 ```bash
 version=$(bash scripts/version.sh) &&
 docker exec -it bt docker load -i platform.tar && 
-docker exec -it bt docker tag platform:latest ossrs/srs-cloud:$version &&
-docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:$version &&
+docker exec -it bt docker tag platform:latest ossrs/srs-stack:$version &&
+docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
 docker exec -it bt docker images
 ```
 
@@ -247,11 +247,11 @@ Run test for BT:
 
 ```bash
 docker exec -it bt make -j -C test &&
-docker exec -it bt ./test/srs-cloud.test -test.v -endpoint http://srs.cloud.local:80 \
+docker exec -it bt ./test/srs-stack.test -test.v -endpoint http://srs.cloud.local:80 \
     -srs-log=true -wait-ready=true -init-password=true \
     -check-api-secret=false -test.run TestApi_Empty &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it bt ./test/srs-cloud.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+docker exec -it bt ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
       -srs-log=true -wait-ready=true -init-password=false \
       -check-api-secret=true \
       -test.parallel 8
@@ -348,14 +348,14 @@ Release bugfix:
 * For mgmt: `./auto/platform.sh`
 * Then test the specified version of mgmt.
 
-> Note: The [features](https://github.com/ossrs/srs-cloud/issues/4) might need to be updated.
+> Note: The [features](https://github.com/ossrs/srs-stack/issues/4) might need to be updated.
 
 Release version for BT and aaPanel:
 
 * Then run `./auto/release.sh`
-* Finally, download [bt-srs_cloud.zip](https://github.com/ossrs/srs-cloud/releases) then submit to [bt.cn](https://www.bt.cn/developer/details.html?id=600801805)
+* Finally, download [bt-srs_cloud.zip](https://github.com/ossrs/srs-stack/releases) then submit to [bt.cn](https://www.bt.cn/developer/details.html?id=600801805)
 
-> Note: The [BT forum](https://www.bt.cn/bbs/thread-90890-1-1.html) and [FAQ](https://github.com/ossrs/srs-cloud/issues/4) might need to be updated.
+> Note: The [BT forum](https://www.bt.cn/bbs/thread-90890-1-1.html) and [FAQ](https://github.com/ossrs/srs-stack/issues/4) might need to be updated.
 
 To refresh current tag for mgmt and platform:
 
@@ -477,11 +477,11 @@ The software we depend on:
 * [SRS](https://github.com/ossrs/srs)
     * Config: `mgmt/containers/conf/srs.conf` mount as `/usr/local/srs/conf/lighthouse.conf`
     * Volume: `mgmt/containers/objs/nginx/html` mount as `/usr/local/srs/objs/nginx/html`
-* [srs-hooks](https://github.com/ossrs/srs-cloud/tree/lighthouse/hooks)
+* [srs-hooks](https://github.com/ossrs/srs-stack/tree/lighthouse/hooks)
     * Volume: `mgmt/containers/objs/nginx/html` mount as `/usr/local/mgmt/containers/objs/nginx/html`
-* [tencent-cloud](https://github.com/ossrs/srs-cloud/tree/lighthouse/tencent)
+* [tencent-cloud](https://github.com/ossrs/srs-stack/tree/lighthouse/tencent)
     * [CAM](https://console.cloud.tencent.com/cam/overview) Authentication by secretId and secretKey.
-* [ffmpeg](https://github.com/ossrs/srs-cloud/tree/lighthouse/ffmpeg)
+* [ffmpeg](https://github.com/ossrs/srs-stack/tree/lighthouse/ffmpeg)
     * [FFmpeg and ffprobe](https://ffmpeg.org) tools in `ossrs/srs:node-av`
 
 ## Environments
@@ -532,7 +532,7 @@ Please restart service when `.env` changed.
 
 ## Architecture
 
-The architecture of [srs-cloud](https://github.com/ossrs/srs-cloud#architecture) by
+The architecture of [srs-stack](https://github.com/ossrs/srs-stack#architecture) by
 [mermaid](https://mermaid.live/edit#pako:eNqNkctuwjAQRX_F8qIKEiH7tEKqCLRSXyhp2ZAuTDx5iNiOnDEFIf69jtMWwqoL2zPjozt37CPNFAca0rxWX1nJNJLn-DaVhMiiknvi-1MiCoFet91tdDDdHMiDGjmkqzkiiRN3Piq1bb2mZpgrLYKyS0c9gRqYuDdYkhsSrWK7r1TkVLqsQ2ZvyVB1sRANFGe5PO_yQWufLH9u_zByYbD35f9HaUo-mkIzDi6OoQbWwhB4B5mBxFmtDD9rXVb7WWf3L2u7AjtQYIf8HKostRKAJZjWWXu1zz_fN0oj6CEYqWx7XZvL3dqbgNy5r8g0cNu6YnU7wT2OrjrFwKt27bmDPK3sNR1TAVqwitsfP3ZwSq0VASkNbcghZ6bGlKbyZFHTcIYw5xUqTUPUBsaUGVTJQWa_ec9EFbNvJ2iYWytw-gba_8FA)
 
 ```mermaid
@@ -560,4 +560,4 @@ flowchart LR;
   aaPanel --> nginx;
 ```
 
-> Note: This is an optional workflow for user to use aaPanel to deploy srs-cloud.
+> Note: This is an optional workflow for user to use aaPanel to deploy srs-stack.

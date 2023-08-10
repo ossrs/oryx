@@ -26,13 +26,13 @@ echo "Run setup at $WORK_DIR from $0"
 cd $WORK_DIR
 
 # The main directory.
-SRS_HOME=/usr/local/srs-cloud
+SRS_HOME=/usr/local/srs-stack
 DATA_HOME=/data
-IMAGE_URL=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:1
+IMAGE_URL=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:1
 SOURCE=$WORK_DIR
 
-mkdir -p /usr/local/lighthouse/softwares/srs-cloud &&
-rm -rf $SRS_HOME && ln -sf /usr/local/lighthouse/softwares/srs-cloud $SRS_HOME
+mkdir -p /usr/local/lighthouse/softwares/srs-stack &&
+rm -rf $SRS_HOME && ln -sf /usr/local/lighthouse/softwares/srs-stack $SRS_HOME
 ret=$?; if [[ 0 -ne $ret ]]; then echo "Failed to create $SRS_HOME"; exit $ret; fi
 
 if [[ $(id -un lighthouse 2>/dev/null) == '' ]]; then
@@ -93,7 +93,7 @@ cp -r ${SOURCE}/usr ${SRS_HOME}/usr &&
 cp ${SOURCE}/LICENSE ${SRS_HOME}/LICENSE &&
 cp ${SOURCE}/README.md ${SRS_HOME}/README.md &&
 mkdir -p ${SRS_HOME}/mgmt && cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap
-if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
+if [[ $? -ne 0 ]]; then echo "Copy srs-stack failed"; exit 1; fi
 
 ########################################################################################################################
 echo "Start to create data and config files"
@@ -151,18 +151,18 @@ else
     if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 fi
 
-# Create srs-cloud service, and the credential file.
+# Create srs-stack service, and the credential file.
 # Remark: Never start the service, because the IP will change for new machine created.
-cp -f ${SRS_HOME}/usr/lib/systemd/system/srs-cloud.service /usr/lib/systemd/system/srs-cloud.service &&
-systemctl daemon-reload && systemctl enable srs-cloud
-if [[ $? -ne 0 ]]; then echo "Install srs-cloud failed"; exit 1; fi
+cp -f ${SRS_HOME}/usr/lib/systemd/system/srs-stack.service /usr/lib/systemd/system/srs-stack.service &&
+systemctl daemon-reload && systemctl enable srs-stack
+if [[ $? -ne 0 ]]; then echo "Install srs-stack failed"; exit 1; fi
 
 ########################################################################################################################
-# Note that we keep files as root, because we run srs-cloud as root, see https://stackoverflow.com/a/70953525/17679565
+# Note that we keep files as root, because we run srs-stack as root, see https://stackoverflow.com/a/70953525/17679565
 chown lighthouse:lighthouse ${DATA_HOME}/config/.env
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 
 rm -rf ~lighthouse/credentials.txt && ln -sf ${DATA_HOME}/config/.env ~lighthouse/credentials.txt
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 
-echo "Install srs-cloud ok"
+echo "Install srs-stack ok"

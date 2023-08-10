@@ -8,7 +8,7 @@ echo "BASH_SOURCE=${BASH_SOURCE}, REALPATH=${REALPATH}, SCRIPT_DIR=${SCRIPT_DIR}
 cd ${WORK_DIR}
 
 APP_ARGS=$@
-echo "Run srs-cloud with args: ${APP_ARGS}, WORK_DIR:${WORK_DIR}"
+echo "Run srs-stack with args: ${APP_ARGS}, WORK_DIR:${WORK_DIR}"
 
 # Start redis.
 bash auto/start_redis

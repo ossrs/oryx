@@ -54,7 +54,7 @@ function ComponentsImpl() {
                 <Card.Text as={Col}>
                   {t('coms.version')}: {status?.version} <br/>
                   {t('coms.stable')}: {status?.releases?.stable}<br/>
-                  {t('coms.latest')}: <a href='https://github.com/ossrs/srs-cloud/issues/4#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
+                  {t('coms.latest')}: <a href='https://github.com/ossrs/srs-stack/issues/4#changelog' target='_blank' rel='noreferrer'>{status?.releases?.latest}</a>
                 </Card.Text>
               </Card.Body>
             </Card>

@@ -35,7 +35,7 @@ fi
 OUTPUT=$(cd ${WORK_DIR} && mkdir -p ${OUTPUT} && cd ${OUTPUT} && pwd)
 echo "Install with options: VERSION=${VERSION}, OUTPUT=${OUTPUT}, EXTRACT=${EXTRACT}"
 
-TMP_DIR="/tmp/srs-cloud-$(date +%s)" && TARGET_DIR="${TMP_DIR}/srs_cloud" && mkdir -p ${TARGET_DIR}
+TMP_DIR="/tmp/srs-stack-$(date +%s)" && TARGET_DIR="${TMP_DIR}/srs_cloud" && mkdir -p ${TARGET_DIR}
 ret=$?; if [[ 0 -ne ${ret} ]]; then echo "mkdir ${TARGET_DIR} failed, ret=$ret"; exit $ret; fi
 echo "Create tmp dir ${TARGET_DIR}"
 
@@ -51,7 +51,7 @@ if [[ $? -ne 0 ]]; then echo "Copy files failed"; exit 1; fi
 # For aaPanel, should never use .env, because it will be removed when install.
 cat << END > $TARGET_DIR/config
 LANGUAGE=en
-IMAGE=ossrs/srs-cloud:${VERSION}
+IMAGE=ossrs/srs-stack:${VERSION}
 END
 if [[ $? -ne 0 ]]; then echo "Generate config failed"; exit 1; fi
 echo "Generate config to $TARGET_DIR/config"

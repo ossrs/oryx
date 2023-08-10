@@ -50,7 +50,7 @@ scpCmd="sshpass -p $password scp -o StrictHostKeyChecking=no"
 $sshCmd -t $user@$ip "hostname" && echo "Check sshpass ok"
 if [[ $ret -ne 0 ]]; then echo "Check sshpass failed"; echo "See https://stackoverflow.com/a/32258393/17679565"; exit 1; fi
 
-SRS_HOME=/tmp/lighthouse/srs-cloud &&
+SRS_HOME=/tmp/lighthouse/srs-stack &&
 rm -rf $(dirname $SRS_HOME) && mkdir -p $SRS_HOME &&
 echo "mkdir $SRS_HOME ok"
 ret=$?; if [[ 0 -ne $ret ]]; then echo "mkdir $SRS_HOME failed, ret=$ret"; exit $ret; fi
@@ -63,9 +63,9 @@ cp ${SOURCE}/LICENSE ${SRS_HOME}/LICENSE &&
 cp ${SOURCE}/README.md ${SRS_HOME}/README.md &&
 cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap &&
 cp ${SOURCE}/platform/containers/conf/nginx.conf ${SRS_HOME}/platform/containers/conf/nginx.conf
-if [[ $? -ne 0 ]]; then echo "Copy srs-cloud failed"; exit 1; fi
+if [[ $? -ne 0 ]]; then echo "Copy srs-stack failed"; exit 1; fi
 
-tgzName=/tmp/lighthouse/srs-cloud.zip &&
+tgzName=/tmp/lighthouse/srs-stack.zip &&
 (cd $(dirname $tgzName) && rm -f $tgzName && zip -q -r $tgzName $(basename $SRS_HOME)) &&
 echo "Package $tgzName ok" && ls -lh $tgzName
 if [[ $? -ne 0 ]]; then echo "Package $tgzName failed"; exit 1; fi

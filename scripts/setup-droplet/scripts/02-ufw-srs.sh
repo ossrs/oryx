@@ -4,7 +4,7 @@
 echo "ufw allow ssh"
 ufw limit ssh
 
-# For Nginx HTTP/HTTPS, also proxy for srs-cloud and SRS streaming.
+# For Nginx HTTP/HTTPS, also proxy for srs-stack and SRS streaming.
 echo "ufw allow HTTP/HTTPS"
 ufw allow 80
 ufw allow 443
@@ -26,7 +26,7 @@ ufw allow 5060/udp
 
 # Note that we must expose these port listen at PrivateIP or lo, for container to access it.
 echo "ufw allow mgmt"
-# For srs-cloud API.
+# For srs-stack API.
 ufw allow 2022/tcp
 
 # Apply force firewall.

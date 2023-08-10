@@ -130,8 +130,8 @@ srs.id
 t.md
 /build
 /*.tar
-/srs-cloud2
-/test/srs-cloud.test
+/srs-stack2
+/test/srs-stack.test
 __pycache__
 /*.flv
 /*.mp4

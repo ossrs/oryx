@@ -54,7 +54,7 @@ echo "Copy files to ${TARGET_DIR}"
 
 cat << END > ${TARGET_DIR}/scripts/setup-ubuntu/.env
 LANGUAGE=${LANGUAGE}
-IMAGE=ossrs/srs-cloud:${VERSION}
+IMAGE=ossrs/srs-stack:${VERSION}
 END
 ret=$?; if [[ 0 -ne ${ret} ]]; then echo "write .env failed, ret=$ret"; exit $ret; fi
 echo "Write .env to ${TARGET_DIR}/scripts/setup-ubuntu/.env"

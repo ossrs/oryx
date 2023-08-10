@@ -2,10 +2,10 @@
 
 default: build
 
-build: ./srs-cloud.test
+build: ./srs-stack.test
 
 clean:
-	rm -f srs-cloud.test
+	rm -f srs-stack.test
 
-./srs-cloud.test: *.go Makefile go.mod
-	go test -mod=vendor -c -o srs-cloud.test .
+./srs-stack.test: *.go Makefile go.mod
+	go test -mod=vendor -c -o srs-stack.test .

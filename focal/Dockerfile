@@ -21,4 +21,4 @@ COPY --from=lego /lego /usr/local/bin/
 ENV PORT=":2024" NODE_ENV=production SRS_DOCKERIZED=true MGMT_DOCKER=true PLATFORM_DOCKER=true CLOUD=DOCKER
 
 # Setup the work directory to platform.
-WORKDIR /usr/local/srs-cloud/platform
+WORKDIR /usr/local/srs-stack/platform

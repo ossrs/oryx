@@ -69,5 +69,5 @@ git tag $TAG && git push origin $TAG && git push gitee $TAG
 echo "Publish OK: $TAG"
 
 echo "publish $TAG ok"
-echo "    Please test it after https://github.com/ossrs/srs-cloud/actions/workflows/focal.yml done"
+echo "    Please test it after https://github.com/ossrs/srs-stack/actions/workflows/focal.yml done"
 

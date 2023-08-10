@@ -14,8 +14,8 @@ function ScenarioSourceCn() {
         <Accordion.Header>SRS Cloud</Accordion.Header>
         <Accordion.Body>
           <div>SRS Cloud是开源项目：</div>
-          <div>1. Github：<a href='https://github.com/ossrs/srs-cloud'>https://github.com/ossrs/srs-cloud</a></div>
-          <div>2. Gitee：<a href='https://gitee.com/ossrs/srs-cloud'>https://gitee.com/ossrs/srs-cloud</a></div>
+          <div>1. Github：<a href='https://github.com/ossrs/srs-stack'>https://github.com/ossrs/srs-stack</a></div>
+          <div>2. Gitee：<a href='https://gitee.com/ossrs/srs-stack'>https://gitee.com/ossrs/srs-stack</a></div>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">
