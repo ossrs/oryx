@@ -28,7 +28,7 @@ class srs_stack_main:
     __firewall = '/tmp/srs_stack_install.fw'
     __log_file = '/tmp/srs_stack_install.log'
     __ready_file = '{}/.bt_ready'.format(__plugin_path)
-    __site = 'srs.cloud.local'
+    __site = 'srs.stack.local'
 
     def __init__(self):
         pass

@@ -29,7 +29,7 @@ if len(jr) == 0:
     exit(0)
 
 for site in jr['data']:
-    if site['name'] != 'srs.cloud.local':
+    if site['name'] != 'srs.stack.local':
         print(f"Skip site, name={site['name']})")
         continue
 
@@ -39,7 +39,7 @@ for site in jr['data']:
             'request_token': request_token,
             'request_time': now_time,
             'id': site['id'],
-            'webname': 'srs.cloud.local',
+            'webname': 'srs.stack.local',
             'ftp': 1,
             'database': 1,
             'path': 1,

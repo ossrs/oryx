@@ -189,7 +189,7 @@ jobs:
           sudo systemctl start docker
       - name: Add hosts to /etc/hosts
         run: |
-          sudo echo "127.0.0.1 srs.cloud.local" | sudo tee -a /etc/hosts
+          sudo echo "127.0.0.1 srs.stack.local" | sudo tee -a /etc/hosts
       - name: Build package
         run: |
           bash scripts/setup-bt/auto/zip.sh --version $SRS_TAG \
@@ -211,7 +211,7 @@ jobs:
             -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
             -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
             --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
-            --add-host srs.cloud.local:127.0.0.1 \
+            --add-host srs.stack.local:127.0.0.1 \
             -d --rm -v $(pwd):/g -w /g --name=bt ossrs/bt-plugin-dev:1
           echo "BT docker started."
       - name: Wait for systemd service start
@@ -252,7 +252,7 @@ jobs:
         
           docker exec bt bash /www/server/panel/plugin/srs_stack/setup.sh \
             --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
-            --www /www/wwwroot --site srs.cloud.local
+            --www /www/wwwroot --site srs.stack.local
           echo "Setup SRS Stack plugin ok."
           
           set +e
@@ -263,7 +263,7 @@ jobs:
         run: |
           echo "Wait for service ready."
           make -j -C test
-          ./test/srs-stack.test -test.v -endpoint http://srs.cloud.local:80 \
+          ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=true \
               -check-api-secret=false -test.run TestApi_Empty
           
@@ -283,7 +283,7 @@ jobs:
           
           # Setup SRS_PLATFORM_SECRET and MGMT_PASSWORD.
           eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
-          ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+          ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=false \
               -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
               -test.parallel 1
@@ -335,7 +335,7 @@ jobs:
           sudo systemctl start docker
       - name: Add hosts to /etc/hosts
         run: |
-          sudo echo "127.0.0.1 srs.cloud.local" | sudo tee -a /etc/hosts
+          sudo echo "127.0.0.1 srs.stack.local" | sudo tee -a /etc/hosts
       - name: Build package
         run: |
           bash scripts/setup-aapanel/auto/zip.sh --version $SRS_TAG \
@@ -354,7 +354,7 @@ jobs:
             -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
             -v $HOME/.aapanel/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
             --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
-            --add-host srs.cloud.local:127.0.0.1 \
+            --add-host srs.stack.local:127.0.0.1 \
             -d --rm -v $(pwd):/g -w /g --name=aapanel ossrs/aapanel-plugin-dev:1
           echo "aaPanel docker started."
       - name: Wait for systemd service start
@@ -395,7 +395,7 @@ jobs:
           
           docker exec aapanel bash /www/server/panel/plugin/srs_stack/setup.sh \
             --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
-            --www /www/wwwroot --site srs.cloud.local
+            --www /www/wwwroot --site srs.stack.local
           echo "Setup SRS Stack plugin ok."
           
           set +e
@@ -406,7 +406,7 @@ jobs:
         run: |
           echo "Wait for service ready."
           make -j -C test
-          ./test/srs-stack.test -test.v -endpoint http://srs.cloud.local:80 \
+          ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=true \
               -check-api-secret=false -test.run TestApi_Empty
           
@@ -426,7 +426,7 @@ jobs:
           
           # Setup SRS_PLATFORM_SECRET and MGMT_PASSWORD.
           eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
-          ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+          ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=false \
               -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
               -test.parallel 3

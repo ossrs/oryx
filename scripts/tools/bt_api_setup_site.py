@@ -1,7 +1,7 @@
 #coding: utf-8
 import os, sys, bt_tools
 
-confPath = '/www/server/panel/vhost/nginx/srs.cloud.local.conf'
+confPath = '/www/server/panel/vhost/nginx/srs.stack.local.conf'
 print(f"Nginx confPath: {confPath}")
 
 with open(confPath, 'r') as f:

@@ -109,7 +109,7 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
         -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
         -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
         --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
-        --add-host srs.cloud.local:127.0.0.1 \
+        --add-host srs.stack.local:127.0.0.1 \
         -d --rm -it -v $(pwd):/g -w /g --name=aapanel ossrs/aapanel-plugin-dev:1
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Build aaPanel dev docker image failed, ret=$ret"; exit $ret; fi
 
@@ -134,16 +134,16 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
     docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
     docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/setup.sh \
         --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
-        --www /www/wwwroot --site srs.cloud.local
+        --www /www/wwwroot --site srs.stack.local
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Test aaPanel installer failed, ret=$ret"; exit $ret; fi
 
     echo "Test aaPanel installer" &&
     docker exec -it aapanel make -j -C test &&
-    docker exec -it aapanel ./test/srs-stack.test -test.v -endpoint http://srs.cloud.local:80 \
+    docker exec -it aapanel ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
         -srs-log=true -wait-ready=true -init-password=true \
         -check-api-secret=false -test.run TestApi_Empty &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it aapanel ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+    docker exec -it aapanel ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
         -srs-log=true -wait-ready=true -init-password=false \
         -check-api-secret=true \
         -test.parallel 1
@@ -164,7 +164,7 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
         -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
         -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
         --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
-        --add-host srs.cloud.local:127.0.0.1 \
+        --add-host srs.stack.local:127.0.0.1 \
         -d --rm -it -v $(pwd):/g -w /g --name=bt ossrs/bt-plugin-dev:1
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Build bt dev docker image failed, ret=$ret"; exit $ret; fi
 
@@ -189,16 +189,16 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
     docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
     docker exec -it bt bash /www/server/panel/plugin/srs_stack/setup.sh \
         --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
-        --www /www/wwwroot --site srs.cloud.local
+        --www /www/wwwroot --site srs.stack.local
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Test bt installer failed, ret=$ret"; exit $ret; fi
 
     echo "Test bt installer" &&
     docker exec -it bt make -j -C test &&
-    docker exec -it bt ./test/srs-stack.test -test.v -endpoint http://srs.cloud.local:80 \
+    docker exec -it bt ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
         -srs-log=true -wait-ready=true -init-password=true \
         -check-api-secret=false -test.run TestApi_Empty &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it bt ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.cloud.local:80 \
+    docker exec -it bt ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
           -srs-log=true -wait-ready=true -init-password=false \
           -check-api-secret=true \
           -test.parallel 1

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Install srs-stack, for example:
-#   bash /www/server/panel/plugin/srs_stack/setup.sh --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid --www /www/wwwroot --site srs.cloud.local
+#   bash /www/server/panel/plugin/srs_stack/setup.sh --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid --www /www/wwwroot --site srs.stack.local
 # If ok, we will create systemctl service at:
 #   /usr/lib/systemd/system/srs-stack.service
 

@@ -16,8 +16,8 @@ req = urllib.request.Request(
     urllib.parse.urlencode({
         'request_token': request_token,
         'request_time': now_time,
-        'webname': json.dumps({"domain":"srs.cloud.local", "domainlist":["bt.ossrs.net"],"count":0}),
-        'path': '/www/wwwroot/srs.cloud.local',
+        'webname': json.dumps({"domain":"srs.stack.local", "domainlist":["bt.ossrs.net"],"count":0}),
+        'path': '/www/wwwroot/srs.stack.local',
         'type_id': 0,
         'type': 'PHP',
         'version': '00',
