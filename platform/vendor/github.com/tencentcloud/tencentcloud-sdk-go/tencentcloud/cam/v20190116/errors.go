@@ -59,6 +59,9 @@ const (
 	// 内部错误。
 	INTERNALERROR_SYSTEMERROR = "InternalError.SystemError"
 
+	// 系统错误，未知异常。
+	INTERNALERROR_UNKNOWNERROR = "InternalError.UnknownError"
+
 	// 参数错误。
 	INVALIDPARAMETER = "InvalidParameter"
 
