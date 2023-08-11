@@ -56,6 +56,8 @@ func (v *dockerHTTPService) Run(ctx context.Context) error {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
+	ctx, cancel := context.WithCancel(ctx)
+
 	handler := http.NewServeMux()
 	if err := handleDockerHTTPService(ctx, handler); err != nil {
 		return errors.Wrapf(err, "handle service")
@@ -83,6 +85,7 @@ func (v *dockerHTTPService) Run(ctx context.Context) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			defer cancel()
 			if err := server.ListenAndServe(); err != nil && ctx.Err() != context.Canceled {
 				r0 = errors.Wrapf(err, "listen %v", addr)
 			}
@@ -112,6 +115,7 @@ func (v *dockerHTTPService) Run(ctx context.Context) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			defer cancel()
 			if err := server.ListenAndServe(); err != nil && ctx.Err() != context.Canceled {
 				r1 = errors.Wrapf(err, "listen %v", addr)
 			}
@@ -119,6 +123,7 @@ func (v *dockerHTTPService) Run(ctx context.Context) error {
 		}()
 	}
 
+	wg.Wait()
 	for _, r := range []error{r0, r1} {
 		if r != nil {
 			return r
@@ -657,10 +662,14 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			key = strings.TrimSpace(key) + "\n"
-			crt = strings.TrimSpace(crt) + "\n"
+			if key = strings.TrimSpace(key); key == "" {
+				return errors.New("empty key")
+			}
+			if crt = strings.TrimSpace(crt); crt == "" {
+				return errors.New("empty crt")
+			}
 
-			if err := updateSslFiles(ctx, key, crt); err != nil {
+			if err := updateSslFiles(ctx, key+"\n", crt+"\n"); err != nil {
 				return errors.Wrapf(err, "updateSslFiles key=%vB, crt=%vB", len(key), len(crt))
 			}
 
@@ -673,7 +682,54 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "nginx hls ok, key=%vB, crt=%vB, token=%vB", len(key), len(crt), len(token))
+			logger.Tf(ctx, "nginx ssl file ok, key=%vB, crt=%vB, token=%vB", len(key), len(crt), len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
+	ep = "/terraform/v1/mgmt/letsencrypt"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var domain string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token  *string `json:"token"`
+				Domain *string `json:"domain"`
+			}{
+				Token: &token, Domain: &domain,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			if domain = strings.TrimSpace(domain); domain == "" {
+				return errors.New("empty domain")
+			}
+
+			if err := updateLetsEncrypt(ctx, domain); err != nil {
+				return errors.Wrapf(err, "updateSslFiles domain=%v", domain)
+			}
+
+			if err := rdb.Set(ctx, SRS_HTTPS, "lets", 0).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "set %v %v", SRS_HTTPS, "lets")
+			}
+			if err := rdb.Set(ctx, SRS_HTTPS_DOMAIN, domain, 0).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "set %v %v", SRS_HTTPS_DOMAIN, domain)
+			}
+
+			if err := nginxGenerateConfig(ctx); err != nil {
+				return errors.Wrapf(err, "nginx config and reload")
+			}
+
+			ohttp.WriteData(ctx, w, r, nil)
+			logger.Tf(ctx, "nginx letsencrypt ok, domain=%v, token=%vB", domain, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -746,7 +802,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		return err
 	}
 
-	mgmtFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/www")))
+	platformFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/www")))
 
 	ep = "/"
 	logger.Tf(ctx, "Handle %v", ep)
@@ -761,13 +817,20 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			return
 		}
 
+		// For HTTPS management.
+		if strings.HasPrefix(r.URL.Path, "/.well-known/") {
+			w.Header().Set("Cache-Control", "no-cache, max-age=0")
+			platformFileServer.ServeHTTP(w, r)
+			return
+		}
+
 		// We directly serve the static files, because we overwrite the www for DVR.
 		if strings.HasPrefix(r.URL.Path, "/console/") || strings.HasPrefix(r.URL.Path, "/players/") ||
 			strings.HasPrefix(r.URL.Path, "/tools/") {
 			if r.URL.Path != "/tools/player.html" && r.URL.Path != "/tools/xgplayer.html" {
-				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 365*24*3600))
+				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 30*24*3600))
 			}
-			mgmtFileServer.ServeHTTP(w, r)
+			platformFileServer.ServeHTTP(w, r)
 			return
 		}
 

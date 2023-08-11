@@ -171,6 +171,13 @@ func doMain(ctx context.Context) error {
 		return errors.Wrapf(err, "start vLive worker")
 	}
 
+	// Create worker for crontab.
+	crontabWorker = NewCrontabWorker()
+	defer crontabWorker.Close()
+	if err := crontabWorker.Start(ctx); err != nil {
+		return errors.Wrapf(err, "start crontab worker")
+	}
+
 	// Run HTTP service.
 	httpService := NewDockerHTTPService()
 	defer httpService.Close()
@@ -326,6 +333,7 @@ func initPlatform(ctx context.Context) error {
 	for _, dir := range []string{
 		"containers/data/dvr", "containers/data/record", "containers/data/vod",
 		"containers/data/upload", "containers/data/vlive", "containers/data/signals",
+		"containers/data/lego",
 	} {
 		if _, err := os.Stat(dir); err != nil && os.IsNotExist(err) {
 			if err = os.MkdirAll(dir, os.ModeDir|os.FileMode(0755)); err != nil {

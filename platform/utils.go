@@ -16,6 +16,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"runtime"
 	"strings"
@@ -292,6 +293,7 @@ const (
 	SRS_CACHE_BILIBILI  = "SRS_CACHE_BILIBILI"
 	SRS_BEIAN           = "SRS_BEIAN"
 	SRS_HTTPS           = "SRS_HTTPS"
+	SRS_HTTPS_DOMAIN    = "SRS_HTTPS_DOMAIN"
 )
 
 // Tencent cloud consts.
@@ -430,10 +432,31 @@ func setEnvDefault(key, value string) {
 	}
 }
 
+// reloadNginx is used to reload the NGINX server.
+func reloadNginx(ctx context.Context) error {
+	fileName := path.Join(conf.Pwd, fmt.Sprintf("containers/data/signals/nginx.reload.%v",
+		time.Now().UnixNano()/int64(time.Millisecond),
+	))
+	if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
+		return errors.Wrapf(err, "open file %v", fileName)
+	} else {
+		defer f.Close()
+		msg := fmt.Sprintf("SRS Stack reload Nginx at %v\n", time.Now().Format(time.RFC3339))
+		if _, err = f.Write([]byte(msg)); err != nil {
+			return errors.Wrapf(err, "write file %v", fileName)
+		}
+	}
+	return nil
+}
+
 // updateSslFiles update the ssl files.
 func updateSslFiles(ctx context.Context, key, crt string) error {
 	keyFile := path.Join(conf.Pwd, "containers/data/config/nginx.key")
 	crtFile := path.Join(conf.Pwd, "containers/data/config/nginx.crt")
+
+	if err := exec.CommandContext(ctx, "rm", "-f", keyFile, crtFile).Run(); err != nil {
+		return errors.Wrapf(err, "rm -f %v %v", keyFile, crtFile)
+	}
 
 	if err := ioutil.WriteFile(keyFile, []byte(key), 0644); err != nil {
 		return errors.Wrapf(err, "write key %vB to %v", len(key), keyFile)
@@ -444,6 +467,67 @@ func updateSslFiles(ctx context.Context, key, crt string) error {
 	}
 
 	return nil
+}
+
+// updateLetsEncrypt request letsencrypt and update the ssl files.
+func updateLetsEncrypt(ctx context.Context, domain string) error {
+	args := []string{
+		"--email", "srs.stack@gmail.com", "--domains", domain,
+		"--http.webroot", path.Join(conf.Pwd, "containers/www"), "--http", "--accept-tos",
+		"run",
+	}
+	cmd := exec.CommandContext(ctx, "lego", args...)
+	cmd.Dir = path.Join(conf.Pwd, "containers/data/lego")
+
+	if err := cmd.Run(); err != nil {
+		return errors.Wrapf(err, "run lego %v", args)
+	}
+	logger.Tf(ctx, "run lego %v ok", args)
+
+	keyFile := path.Join(conf.Pwd, fmt.Sprintf("containers/data/lego/.lego/certificates/%v.key", domain))
+	if _, err := os.Stat(keyFile); err != nil {
+		return errors.Wrapf(err, "stat %v", keyFile)
+	}
+
+	crtFile := path.Join(conf.Pwd, fmt.Sprintf("containers/data/lego/.lego/certificates/%v.crt", domain))
+	if _, err := os.Stat(crtFile); err != nil {
+		return errors.Wrapf(err, "stat %v", crtFile)
+	}
+
+	targetKeyFile := path.Join(conf.Pwd, "containers/data/config/nginx.key")
+	targetCrtFile := path.Join(conf.Pwd, "containers/data/config/nginx.crt")
+	if err := exec.CommandContext(ctx, "rm", "-f", targetKeyFile, targetCrtFile).Run(); err != nil {
+		return errors.Wrapf(err, "rm -f %v %v", targetKeyFile, targetCrtFile)
+	}
+
+	if err := os.Symlink(keyFile, targetKeyFile); err != nil {
+		return errors.Wrapf(err, "symlink %v to %v", keyFile, targetKeyFile)
+	}
+
+	if err := os.Symlink(crtFile, targetCrtFile); err != nil {
+		return errors.Wrapf(err, "symlink %v to %v", crtFile, targetCrtFile)
+	}
+
+	return nil
+}
+
+// renewLetsEncrypt request letsencrypt and update the ssl files.
+func renewLetsEncrypt(ctx context.Context, domain string) (string, error) {
+	args := []string{
+		"--email", "srs.stack@gmail.com", "--domains", domain,
+		"--http.webroot", path.Join(conf.Pwd, "containers/www"), "--http",
+		"renew", "--days", "30",
+	}
+	cmd := exec.CommandContext(ctx, "lego", args...)
+	cmd.Dir = path.Join(conf.Pwd, "containers/data/lego")
+
+	b, err := cmd.Output()
+	if err != nil {
+		return "", errors.Wrapf(err, "run lego %v", args)
+	}
+	logger.Tf(ctx, "run lego %v ok", args)
+
+	return string(b), nil
 }
 
 // nginxGenerateConfig is to build NGINX configuration and reload NGINX.
@@ -518,23 +602,6 @@ func nginxGenerateConfig(ctx context.Context) error {
 				return errors.Wrapf(err, "write file %v with %v", fileName, confData)
 			}
 		}
-	}
-
-	// reloadNginx is used to reload the NGINX server.
-	reloadNginx := func(ctx context.Context) error {
-		fileName := path.Join(conf.Pwd, fmt.Sprintf("containers/data/signals/nginx.reload.%v",
-			time.Now().UnixNano()/int64(time.Millisecond),
-		))
-		if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
-			return errors.Wrapf(err, "open file %v", fileName)
-		} else {
-			defer f.Close()
-			msg := fmt.Sprintf("SRS Stack reload Nginx at %v\n", time.Now().Format(time.RFC3339))
-			if _, err = f.Write([]byte(msg)); err != nil {
-				return errors.Wrapf(err, "write file %v", fileName)
-			}
-		}
-		return nil
 	}
 
 	if err := reloadNginx(ctx); err != nil {
