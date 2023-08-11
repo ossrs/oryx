@@ -84,6 +84,7 @@ fi
 
 echo "Start to update bootstrap"
 sed -i "s|^DATA_HOME=.*|DATA_HOME=${DATA_HOME}|g" ${SRS_HOME}/mgmt/bootstrap &&
+sed -i "s|^WELL_KNOWN=.*|WELL_KNOWN=${WWW_HOME}/${SITE_NAME}/.well-known|g" ${SRS_HOME}/mgmt/bootstrap &&
 sed -i "s|^IMAGE=.*|IMAGE=${IMAGE_URL}|g" ${SRS_HOME}/mgmt/bootstrap &&
 if [[ $? -ne 0 ]]; then echo "Update bootstrap failed"; exit 1; fi
 echo "Update bootstrap ok"

@@ -91,10 +91,10 @@ func refreshSSLCert(ctx context.Context) error {
 		return nil
 	}
 
-	if msg, err := renewLetsEncrypt(ctx, domain); err != nil {
+	if err := renewLetsEncrypt(ctx, domain); err != nil {
 		return err
 	} else {
-		logger.Tf(ctx, "crontab: renew ssl cert ok, msg=%v", msg)
+		logger.Tf(ctx, "crontab: renew ssl cert ok")
 	}
 
 	if err := nginxGenerateConfig(ctx); err != nil {

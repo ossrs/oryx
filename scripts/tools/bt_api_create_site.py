@@ -4,10 +4,15 @@ md5sum = lambda s: hashlib.md5(s.encode('utf-8')).hexdigest()
 
 # See https://www.bt.cn/bbs/thread-20376-1-1.html
 # See https://www.bt.cn/data/api-doc.pdf
-BT_KEY= os.getenv('BT_KEY')
+BT_KEY = os.getenv('BT_KEY')
 if not BT_KEY:
     print("BT_KEY is not set")
     exit(1)
+
+domain = "bt.ossrs.net"
+if os.getenv("DOMAIN") is not None:
+    domain = os.getenv("DOMAIN")
+print(f"Create site for domain={domain}")
 
 now_time = int(time.time())
 request_token = md5sum(str(now_time) + md5sum(BT_KEY))
@@ -16,7 +21,7 @@ req = urllib.request.Request(
     urllib.parse.urlencode({
         'request_token': request_token,
         'request_time': now_time,
-        'webname': json.dumps({"domain":"srs.stack.local", "domainlist":["bt.ossrs.net"],"count":0}),
+        'webname': json.dumps({"domain":"srs.stack.local", "domainlist":[domain],"count":0}),
         'path': '/www/wwwroot/srs.stack.local',
         'type_id': 0,
         'type': 'PHP',

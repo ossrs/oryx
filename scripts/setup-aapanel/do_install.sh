@@ -108,7 +108,7 @@ Uninstall() {
   rmdir /usr/local/lighthouse 2>/dev/null
   echo "Remove empty lighthouse directory"
 
-  rm -rf $install_path/*
+  rm -rf $install_path/* ${install_path}/.bt_ready
   rmdir $install_path 2>/dev/null
   echo "Remove plugin path $install_path ok"
 

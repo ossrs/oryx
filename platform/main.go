@@ -333,7 +333,7 @@ func initPlatform(ctx context.Context) error {
 	for _, dir := range []string{
 		"containers/data/dvr", "containers/data/record", "containers/data/vod",
 		"containers/data/upload", "containers/data/vlive", "containers/data/signals",
-		"containers/data/lego",
+		"containers/data/lego", "containers/data/.well-known",
 	} {
 		if _, err := os.Stat(dir); err != nil && os.IsNotExist(err) {
 			if err = os.MkdirAll(dir, os.ModeDir|os.FileMode(0755)); err != nil {

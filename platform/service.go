@@ -803,6 +803,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 	}
 
 	platformFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/www")))
+	wellKnownFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/data")))
 
 	ep = "/"
 	logger.Tf(ctx, "Handle %v", ep)
@@ -820,7 +821,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		// For HTTPS management.
 		if strings.HasPrefix(r.URL.Path, "/.well-known/") {
 			w.Header().Set("Cache-Control", "no-cache, max-age=0")
-			platformFileServer.ServeHTTP(w, r)
+			wellKnownFileServer.ServeHTTP(w, r)
 			return
 		}
 

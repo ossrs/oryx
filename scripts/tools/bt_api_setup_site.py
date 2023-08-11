@@ -4,14 +4,14 @@ import os, sys, bt_tools
 confPath = '/www/server/panel/vhost/nginx/srs.stack.local.conf'
 print(f"Nginx confPath: {confPath}")
 
-with open(confPath, 'r') as f:
+with open(confPath, 'r', encoding='utf-8') as f:
     confData = f.read()
 print(f"Nginx original confData: {confData}")
 
 confData = bt_tools.setup_site(confData)
 print(f"Nginx new confData: {confData}")
 
-with open(confPath, 'w') as f:
+with open(confPath, 'w', encoding="utf-8") as f:
     f.write(confData)
 print(f"Nginx save config success.")
 
