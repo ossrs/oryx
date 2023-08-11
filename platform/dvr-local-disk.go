@@ -810,8 +810,11 @@ func (v *RecordM3u8Stream) finishM3u8(ctx context.Context) error {
 	hls := path.Join("record", v.UUID, "index.m3u8")
 	if f, err := os.OpenFile(hls, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
 		return errors.Wrapf(err, "open file %v", hls)
-	} else if _, err = f.Write([]byte(m3u8Body)); err != nil {
-		return errors.Wrapf(err, "write hls %v to %v", m3u8Body, hls)
+	} else {
+		defer f.Close()
+		if _, err = f.Write([]byte(m3u8Body)); err != nil {
+			return errors.Wrapf(err, "write hls %v to %v", m3u8Body, hls)
+		}
 	}
 	logger.Tf(ctx, "record to %v ok, type=%v, duration=%v", hls, contentType, duration)
 

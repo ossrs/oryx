@@ -1,6 +1,6 @@
 import React from "react";
 import {Container, Carousel} from "react-bootstrap";
-import srsCloud from "../resources/srs-stack-1296x648.png";
+import srsStack from "../resources/srs-stack-1296x648.png";
 import srsVideo from "../resources/srs-xingqiu-1296x648.png";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 
@@ -16,7 +16,7 @@ function ContactCn() {
         <Carousel.Item>
           <img
             className="d-block w-100"
-            src={srsCloud}
+            src={srsStack}
             alt="SRS Stack"
           />
           <Carousel.Caption>

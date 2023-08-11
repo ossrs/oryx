@@ -15,6 +15,11 @@ API_PORT=1985
 HTTP_PORT=8080
 RTC_PORT=8000
 SRT_PORT=10080
+NGINX_RELOAD="/etc/init.d/nginx reload"
+
+echo -n "DATA_HOME=${DATA_HOME}, IMAGE=${IMAGE}, MGMT_PORT=${MGMT_PORT}, RTMP_PORT=${RTMP_PORT}, API_PORT=${API_PORT}"
+echo -n ", HTTP_PORT=${HTTP_PORT}, RTC_PORT=${RTC_PORT}, SRT_PORT=${SRT_PORT}, NGINX_RELOAD=${NGINX_RELOAD}"
+echo ""
 
 echo "Force to stop platform container"
 docker rm -f srs-stack 2>/dev/null
@@ -29,6 +34,9 @@ CMD="docker run -v ${DATA_HOME}:/data ${EXTRA_PARAMS}
 echo $CMD && $CMD
 if [[ $? -ne 0 ]]; then echo "Start platform container failed"; exit 1; fi
 echo "Start platform container ok"
+
+# Show all logs of container.
+docker logs -f srs-stack &
 
 handle_signals() {
     echo "Signal $1 received. Cleaning up and exiting..."
@@ -52,5 +60,16 @@ while true; do
     fi
 
     docker ps -a --filter "name=srs-stack" --format "{{.Names}} {{.ID}} {{.Ports}}"
-    sleep 3
+    for (( i=0; i<3; i++ )); do
+        files=$(ls $DATA_HOME/signals/nginx.reload.* 2>/dev/null)
+        for file in $files; do
+            echo "Got ${#files[@]} reload signals" && rm -f $files
+            if [[ -f /etc/init.d/nginx ]]; then
+                $NGINX_RELOAD && echo "Reload nginx ok"
+                if [[ $? -ne 0 ]]; then echo "Reload nginx failed"; exit 1; fi
+            fi
+            break
+        done
+        sleep 1
+    done
 done

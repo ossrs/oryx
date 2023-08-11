@@ -493,8 +493,11 @@ func nginxGenerateConfig(ctx context.Context) error {
 		fileName := path.Join(conf.Pwd, "containers/data/config/nginx.http.conf")
 		if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
 			return errors.Wrapf(err, "open file %v", fileName)
-		} else if _, err = f.Write([]byte(confData)); err != nil {
-			return errors.Wrapf(err, "write file %v with %v", fileName, confData)
+		} else {
+			defer f.Close()
+			if _, err = f.Write([]byte(confData)); err != nil {
+				return errors.Wrapf(err, "write file %v with %v", fileName, confData)
+			}
 		}
 	}
 	if true {
@@ -509,13 +512,28 @@ func nginxGenerateConfig(ctx context.Context) error {
 		fileName := path.Join(conf.Pwd, "containers/data/config/nginx.server.conf")
 		if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
 			return errors.Wrapf(err, "open file %v", fileName)
-		} else if _, err = f.Write([]byte(confData)); err != nil {
-			return errors.Wrapf(err, "write file %v with %v", fileName, confData)
+		} else {
+			defer f.Close()
+			if _, err = f.Write([]byte(confData)); err != nil {
+				return errors.Wrapf(err, "write file %v with %v", fileName, confData)
+			}
 		}
 	}
 
 	// reloadNginx is used to reload the NGINX server.
 	reloadNginx := func(ctx context.Context) error {
+		fileName := path.Join(conf.Pwd, fmt.Sprintf("containers/data/signals/nginx.reload.%v",
+			time.Now().UnixNano()/int64(time.Millisecond),
+		))
+		if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
+			return errors.Wrapf(err, "open file %v", fileName)
+		} else {
+			defer f.Close()
+			msg := fmt.Sprintf("SRS Stack reload Nginx at %v\n", time.Now().Format(time.RFC3339))
+			if _, err = f.Write([]byte(msg)); err != nil {
+				return errors.Wrapf(err, "write file %v", fileName)
+			}
+		}
 		return nil
 	}
 

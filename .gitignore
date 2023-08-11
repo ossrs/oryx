@@ -112,9 +112,7 @@ platform/containers/etc/letsencrypt/*
 platform/containers/var/lib/letsencrypt/*
 platform/containers/var/log/letsencrypt/*
 platform/containers/objs/nginx/html/*
-platform/containers/data
 platform/containers/data/*
-platform/containers/data/prometheus/*
 platform/containers/www/*
 platform/containers/ssl/*
 platform/containers/bin/*

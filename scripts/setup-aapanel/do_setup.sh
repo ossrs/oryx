@@ -78,9 +78,6 @@ CLOUD=AAPANEL
 REGION=${REGION}
 REACT_APP_LOCALE=${LANGUAGE}
 IMAGE=${IMAGE_URL}
-# Please use aaPanel to configure the domain and HTTPS.
-SRS_HTTPS=off
-NGINX_PID=$NGINX_PID
 END
   if [[ $? -ne 0 ]]; then echo "Setup .env failed"; exit 1; fi
 fi

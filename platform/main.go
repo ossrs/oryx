@@ -325,7 +325,7 @@ func initPlatform(ctx context.Context) error {
 	// Create directories for data, allow user to link it.
 	for _, dir := range []string{
 		"containers/data/dvr", "containers/data/record", "containers/data/vod",
-		"containers/data/upload", "containers/data/vlive",
+		"containers/data/upload", "containers/data/vlive", "containers/data/signals",
 	} {
 		if _, err := os.Stat(dir); err != nil && os.IsNotExist(err) {
 			if err = os.MkdirAll(dir, os.ModeDir|os.FileMode(0755)); err != nil {

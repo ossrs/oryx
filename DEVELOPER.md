@@ -49,7 +49,7 @@ Create a docker container in daemon:
 
 ```bash
 docker rm -f script 2>/dev/null &&
-docker run -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
+docker run -p 2022:2022 -p 2443:2443 -p 1935:1935/tcp -p 1985:1985/tcp \
     -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
     -d --rm -it -v $(pwd):/g -w /g --name=script srs-script-dev
@@ -79,7 +79,7 @@ Test the build script, in the docker container:
 
 ```bash
 docker exec -it bt rm -rf /data/* &&
-docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/uninstall.sh || echo OK &&
+docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/uninstall.sh 2>/dev/null || echo OK &&
 bash scripts/setup-ubuntu/build.sh --output $(pwd)/build --extract &&
 docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
 ```
@@ -106,8 +106,8 @@ Start a container and mount as plugin:
 
 ```bash
 docker rm -f bt aapanel 2>/dev/null &&
-AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
-docker run -p 80:80 -p 7800:7800 \
+AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3) &&
+docker run -p 80:80 -p 443:443 -p 7800:7800 \
     -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
     -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
@@ -143,7 +143,7 @@ Next, build the aaPanel plugin and install it:
 
 ```bash
 docker exec -it aapanel rm -rf /data/* &&
-docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh uninstall || echo OK &&
+docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh uninstall 2>/dev/null || echo OK &&
 bash scripts/setup-aapanel/auto/zip.sh --output $(pwd)/build --extract &&
 docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh install
 ```
@@ -173,7 +173,7 @@ docker exec -it aapanel ./test/srs-stack.test -test.v -wait-ready -endpoint http
     -test.parallel 8
 ```
 
-Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install plugin.
+Open [http://localhost:7800/srsstack](http://localhost:7800/srsstack) to install plugin.
 
 > Note: Or you can use `docker exec -it aapanel bt default` to show the login info.
 
@@ -186,8 +186,8 @@ Start a container and mount as plugin:
 
 ```bash
 docker rm -f bt aapanel 2>/dev/null &&
-BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
-docker run -p 80:80 -p 7800:7800 \
+BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3) &&
+docker run -p 80:80 -p 443:443 -p 7800:7800 \
     -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
     -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
     -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
@@ -226,8 +226,8 @@ docker exec -it bt docker images
 Next, build the BT plugin and install it:
 
 ```bash
+docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh uninstall 2>/dev/null || echo OK &&
 docker exec -it bt rm -rf /data/* &&
-docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh || echo OK &&
 bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
 docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh install
 ```
@@ -257,7 +257,7 @@ docker exec -it bt ./test/srs-stack.test -test.v -wait-ready -endpoint http://sr
       -test.parallel 8
 ```
 
-Open [http://localhost:7800/srscloud](http://localhost:7800/srscloud) to install plugin.
+Open [http://localhost:7800/srsstack](http://localhost:7800/srsstack) to install plugin.
 
 > Note: Or you can use `docker exec -it bt bt default` to show the login info.
 
