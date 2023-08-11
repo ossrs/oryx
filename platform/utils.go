@@ -16,7 +16,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 	"runtime"
 	"strings"
@@ -431,58 +430,24 @@ func setEnvDefault(key, value string) {
 	}
 }
 
+// updateSslFiles update the ssl files.
+func updateSslFiles(ctx context.Context, key, crt string) error {
+	keyFile := path.Join(conf.Pwd, "containers/data/config/nginx.key")
+	crtFile := path.Join(conf.Pwd, "containers/data/config/nginx.crt")
+
+	if err := ioutil.WriteFile(keyFile, []byte(key), 0644); err != nil {
+		return errors.Wrapf(err, "write key %vB to %v", len(key), keyFile)
+	}
+
+	if err := ioutil.WriteFile(crtFile, []byte(crt), 0644); err != nil {
+		return errors.Wrapf(err, "write crt %vB to %v", len(crt), crtFile)
+	}
+
+	return nil
+}
+
 // nginxGenerateConfig is to build NGINX configuration and reload NGINX.
 func nginxGenerateConfig(ctx context.Context) error {
-	prefixSpace := func(elems []string) []string {
-		var nElems []string
-		for _, elem := range elems {
-			nElems = append(nElems, fmt.Sprintf("  %v", elem))
-		}
-		return nElems
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Build HLS config for NGINX.
-	m3u8Conf := []string{
-		"proxy_pass http://127.0.0.1:8080$request_uri;",
-	}
-	tsConf := []string{
-		"proxy_pass http://127.0.0.1:8080$request_uri;",
-	}
-	if hls, err := rdb.HGet(ctx, SRS_STREAM_NGINX, "hls").Result(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hget %v hls", SRS_STREAM_NGINX)
-	} else if hls == "true" {
-		m3u8Conf = []string{
-			// Use NGINX to deliver m3u8 files.
-			fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.Pwd),
-			// Set the cache control, see http://nginx.org/en/docs/http/ngx_http_headers_module.html
-			`add_header Cache-Control "public, max-age=10";`,
-			// Allow CORS for all domain, see https://ubiq.co/tech-blog/enable-cors-nginx/
-			"add_header Access-Control-Allow-Origin *;",
-		}
-		tsConf = []string{
-			fmt.Sprintf("root %v/containers/objs/nginx/html;", conf.Pwd),
-			`add_header Cache-Control "public, max-age=86400";`,
-			// Allow CORS for all domain, see https://ubiq.co/tech-blog/enable-cors-nginx/
-			"add_header Access-Control-Allow-Origin *;",
-		}
-	}
-
-	hlsConf := []string{
-		"",
-		"# For HLS delivery",
-		`location ~ ^/.+/.*\.(m3u8)$ {`,
-	}
-	hlsConf = append(hlsConf, prefixSpace(m3u8Conf)...)
-	hlsConf = append(hlsConf, "}")
-	hlsConf = append(hlsConf, `location ~ ^/.+/.*\.(ts)$ {`)
-	hlsConf = append(hlsConf, prefixSpace(tsConf)...)
-	hlsConf = append(hlsConf, "}")
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Build reverse proxy config for NGINX.
-	// Note that it's been removed, see SRS_HTTP_PROXY.
-
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Build the SSL/TLS config.
 	sslConf := []string{}
@@ -492,19 +457,15 @@ func nginxGenerateConfig(ctx context.Context) error {
 		sslConf = []string{
 			"",
 			"# For SSL/TLS config.",
-			"listen       443 ssl http2 default_server;",
-			"listen       [::]:443 ssl http2 default_server;",
-			"ssl_session_cache shared:SSL:1m;",
-			"ssl_session_timeout  10m;",
-			"ssl_ciphers HIGH:!aNULL:!MD5;",
-			"ssl_prefer_server_ciphers on;",
-			fmt.Sprintf(`ssl_certificate "%v/containers/ssl/nginx.crt";`, conf.Pwd),
-			fmt.Sprintf(`ssl_certificate_key "%v/containers/ssl/nginx.key";`, conf.Pwd),
+			"listen       443 ssl;",
+			"listen       [::]:443 ssl;",
+			"ssl_certificate /data/config/nginx.crt;",
+			"ssl_certificate_key /data/config/nginx.key;",
+			"ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;",
+			`add_header Strict-Transport-Security "max-age=0";`,
+			"ssl_session_cache shared:SSL:10m;",
+			"ssl_session_timeout 10m;",
 			"",
-			"# For automatic HTTPS.",
-			"location /.well-known/acme-challenge/ {",
-			"  proxy_pass http://127.0.0.1:2024$request_uri;",
-			"}",
 		}
 	}
 
@@ -522,76 +483,46 @@ func nginxGenerateConfig(ctx context.Context) error {
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Build the config for NGINX.
-	confLines := []string{
-		"# !!! Important: SRS will restore this file during each restart, please never modify it.",
+	if true {
+		confLines := []string{
+			"# !!! Important: SRS will restore this file during each restart, please never modify it.",
+		}
+		confLines = append(confLines, "", "")
+
+		confData := strings.Join(confLines, "\n")
+		fileName := path.Join(conf.Pwd, "containers/data/config/nginx.http.conf")
+		if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
+			return errors.Wrapf(err, "open file %v", fileName)
+		} else if _, err = f.Write([]byte(confData)); err != nil {
+			return errors.Wrapf(err, "write file %v with %v", fileName, confData)
+		}
 	}
-	confLines = append(confLines, uploadLimit...)
-	confLines = append(confLines, sslConf...)
-	confLines = append(confLines, hlsConf...)
-	confLines = append(confLines, "", "")
+	if true {
+		confLines := []string{
+			"# !!! Important: SRS will restore this file during each restart, please never modify it.",
+		}
+		confLines = append(confLines, uploadLimit...)
+		confLines = append(confLines, sslConf...)
+		confLines = append(confLines, "", "")
 
-	confData := strings.Join(confLines, "\n")
-	_ = confData
-
-	return nil
-
-	// TODO: FIXME: Support configure Nginx and reload.
-	fileName := "containers/conf/default.d/nginx.dynamic.conf"
-	if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
-		return errors.Wrapf(err, "open file %v", fileName)
-	} else if _, err = f.Write([]byte(confData)); err != nil {
-		return errors.Wrapf(err, "write file %v with %v", fileName, confData)
+		confData := strings.Join(confLines, "\n")
+		fileName := path.Join(conf.Pwd, "containers/data/config/nginx.server.conf")
+		if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
+			return errors.Wrapf(err, "open file %v", fileName)
+		} else if _, err = f.Write([]byte(confData)); err != nil {
+			return errors.Wrapf(err, "write file %v with %v", fileName, confData)
+		}
 	}
 
 	// reloadNginx is used to reload the NGINX server.
-	// TODO: FIXME: Use go http server instead.
 	reloadNginx := func(ctx context.Context) error {
-		if os.Getenv("MGMT_DOCKER") == "true" {
-			return nil
-		}
-		if conf.IsDarwin {
-			return nil
-		}
-
-		var nginxServiceExists, nginxPidExists bool
-		if _, err := os.Stat("/usr/lib/systemd/system/nginx.service"); err == nil {
-			nginxServiceExists = true
-		}
-		if os.Getenv("NGINX_PID") != "" {
-			if _, err := os.Stat(os.Getenv("NGINX_PID")); err == nil {
-				nginxPidExists = true
-			}
-		}
-		if !nginxServiceExists && !nginxPidExists {
-			return errors.Errorf("Can't reload NGINX, no service or pid %v", os.Getenv("NGINX_PID"))
-		}
-
-		// Try to reload by service if exists, try pid if failed.
-		if nginxServiceExists {
-			if err := exec.CommandContext(ctx, "systemctl", "reload", "nginx.service").Run(); err != nil {
-				if !nginxPidExists {
-					return errors.Wrapf(err, "reload nginx failed, service=%v, pid=%v", nginxServiceExists, nginxPidExists)
-				}
-			} else {
-				return nil
-			}
-		}
-
-		if b, err := ioutil.ReadFile(os.Getenv("NGINX_PID")); err != nil {
-			return errors.Wrapf(err, "read nginx pid from %v", os.Getenv("NGINX_PID"))
-		} else if pid := strings.TrimSpace(string(b)); pid == "" {
-			return errors.Errorf("no pid at %v", os.Getenv("NGINX_PID"))
-		} else if err = exec.CommandContext(ctx, "kill", "-s", "SIGHUP", pid).Run(); err != nil {
-			return errors.Wrapf(err, "reload nginx failed pid=%v", pid)
-		}
-
 		return nil
 	}
 
 	if err := reloadNginx(ctx); err != nil {
 		return errors.Wrapf(err, "reload nginx")
 	}
-	logger.Tf(ctx, "NGINX: Refresh dynamic.conf ok")
+	logger.Tf(ctx, "NGINX: Refresh nginx conf ok")
 
 	return nil
 }

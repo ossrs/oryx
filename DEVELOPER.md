@@ -402,6 +402,8 @@ Platform:
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
 * `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
+* `/terraform/v1/mgmt/ssl` Config the system SSL config.
+* `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
 * `/terraform/v1/host/versions` Public version api.
 * `/terraform/v1/releases` Version management for all components.
 
@@ -455,8 +457,6 @@ Also provided by platform for static Files:
 * `/terraform/v1/mgmt/window/query` Query the upgrade time window.
 * `/terraform/v1/mgmt/window/update` Update the upgrade time window.
 * `/.well-known/acme-challenge/` HTTPS verify mount for letsencrypt.
-* `/terraform/v1/mgmt/ssl` Config the system SSL config.
-* `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
 * `/terraform/v1/mgmt/pubkey` Update the access for platform administrator pubkey.
 * `/terraform/v1/mgmt/upgrade` Upgrade the mgmt to latest version.
 * `/terraform/v1/mgmt/containers` Query SRS container.

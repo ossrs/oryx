@@ -276,12 +276,8 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			ohttp.WriteData(ctx, w, r, &struct {
-				Secret     bool `json:"secret"`
-				HTTPS      bool `json:"https"`
 				MgmtDocker bool `json:"mgmtDocker"`
 			}{
-				Secret:     os.Getenv("SRS_PLATFORM_SECRET") != "",
-				HTTPS:      os.Getenv("SRS_HTTPS") != "off",
 				MgmtDocker: true,
 			})
 			return nil
@@ -634,6 +630,50 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 
 			ohttp.WriteData(ctx, w, r, nil)
 			logger.Tf(ctx, "nginx hls ok, enabled=%v, token=%vB", enabled, len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
+	ep = "/terraform/v1/mgmt/ssl"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var key, crt string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token *string `json:"token"`
+				Key   *string `json:"key"`
+				Crt   *string `json:"crt"`
+			}{
+				Token: &token, Key: &key, Crt: &crt,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			key = strings.TrimSpace(key) + "\n"
+			crt = strings.TrimSpace(crt) + "\n"
+
+			if err := updateSslFiles(ctx, key, crt); err != nil {
+				return errors.Wrapf(err, "updateSslFiles key=%vB, crt=%vB", len(key), len(crt))
+			}
+
+			if err := rdb.Set(ctx, SRS_HTTPS, "ssl", 0).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "set %v %v", SRS_HTTPS, "ssl")
+			}
+
+			if err := nginxGenerateConfig(ctx); err != nil {
+				return errors.Wrapf(err, "nginx config and reload")
+			}
+
+			ohttp.WriteData(ctx, w, r, nil)
+			logger.Tf(ctx, "nginx hls ok, key=%vB, crt=%vB, token=%vB", len(key), len(crt), len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

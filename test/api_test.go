@@ -112,13 +112,11 @@ func TestApi_BootstrapQueryEnvs(t *testing.T) {
 	}(ctx)
 
 	res := struct {
-		Secret     bool `json:"secret"`
-		HTTPS      bool `json:"https"`
 		MgmtDocker bool `json:"mgmtDocker"`
 	}{}
 	if err := apiRequest(ctx, "/terraform/v1/mgmt/envs", nil, &res); err != nil {
 		r0 = err
-	} else if !res.Secret || res.HTTPS || !res.MgmtDocker {
+	} else if !res.MgmtDocker {
 		r0 = errors.Errorf("invalid response %v", res)
 	}
 }

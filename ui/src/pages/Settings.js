@@ -8,6 +8,7 @@ import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
 import {SrsEnvContext} from "../components/SrsEnvContext";
+import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 
 export default function Systems() {
   return (
@@ -64,7 +65,7 @@ function SettingsImpl2({defaultActiveTab}) {
             <SettingAuth />
           </Tab>
           <Tab eventKey="https" title="HTTPS">
-            <SettingHttpsDisabled />
+            <SettingHttps />
           </Tab>
           <Tab eventKey="nginx" title="NGINX">
             <SettingNginx />
@@ -336,9 +337,97 @@ function SettingAuth() {
   );
 }
 
-function SettingHttpsDisabled() {
+function SettingHttps() {
+  const [key, setKey] = React.useState();
+  const [crt, setCrt] = React.useState();
+  const [domain, setDomain] = React.useState();
+  const handleError = useErrorHandler();
   const {t} = useTranslation();
-  return <span style={{color: 'red'}}>{t('errs.btHttps1')}</span>;
+
+  const sslTutorials = useTutorials({
+    bilibili: React.useRef([
+      {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
+    ]),
+    medium: React.useRef([
+      {id: 'cb618777639f'},
+    ])
+  });
+
+  const updateSSL = React.useCallback((e) => {
+    e.preventDefault();
+
+    if (!key || !crt) {
+      alert(t('settings.sslNoFile'));
+      return;
+    }
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/ssl', {
+      ...token, key, crt,
+    }).then(res => {
+      alert(t('settings.sslOk'));
+      console.log(`SSL: Update ok`);
+    }).catch(handleError);
+  }, [handleError, key, crt, t]);
+
+  const requestLetsEncrypt = React.useCallback((e) => {
+    e.preventDefault();
+
+    if (!domain) {
+      alert(t('settings.sslNoDomain'));
+      return;
+    }
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/letsencrypt', {
+      ...token, domain,
+    }).then(res => {
+      alert(t('settings.sslLetsOk'));
+      console.log(`SSL: Let's Encrypt SSL ok`);
+    }).catch(handleError);
+  }, [handleError, domain, t]);
+
+  return (
+    <Accordion defaultActiveKey="0">
+      <Accordion.Item eventKey="0">
+        <Accordion.Header>{t('settings.letsTitle')}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('settings.letsDomain')}</Form.Label>
+              <Form.Text> * {t('settings.letsDomainTip')}</Form.Text>
+              <Form.Control as="input" defaultValue={domain} onChange={(e) => setDomain(e.target.value)} />
+            </Form.Group>
+            <Button variant="primary" type="submit" onClick={(e) => requestLetsEncrypt(e)}>
+              {t('settings.letsDomainSubmit')}
+            </Button> &nbsp;
+            <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="1">
+        <Accordion.Header>{t('settings.sslFileTitle')}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('settings.sslFileKey')}</Form.Label>
+              <Form.Text> * {t('settings.sslFileKeyTip')}</Form.Text>
+              <Form.Control as="textarea" rows={5} defaultValue={key} onChange={(e) => setKey(e.target.value)} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('settings.sslFileCert')}</Form.Label>
+              <Form.Text> * {t('settings.sslFileCertTip')}</Form.Text>
+              <Form.Control as="textarea" rows={5} defaultValue={crt} onChange={(e) => setCrt(e.target.value)} />
+            </Form.Group>
+            <Button variant="primary" type="submit" onClick={(e) => updateSSL(e)}>
+              {t('settings.sslFileSubmit')}
+            </Button> &nbsp;
+            <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+    </Accordion>
+  );
 }
 
 function RunOpenAPI(props) {
