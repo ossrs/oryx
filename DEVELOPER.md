@@ -344,8 +344,9 @@ bash scripts/tools/tencent-cloud/helper.sh remove-image.py --image $(cat /tmp/lh
 Create a domain for HTTPS:
 
 ```bash
-doctl compute domain records create ossrs.net \
-    --record-type A --record-name lego --record-data $(dig +short ossrs.net) \
+LNAME=lego && LDOMAIN=ossrs.net &&
+doctl compute domain records create $LDOMAIN \
+    --record-type A --record-name $LNAME --record-data $(dig +short $LDOMAIN) \
     --record-ttl 3600
 ```
 
@@ -360,37 +361,46 @@ docker save -o platform.tar platform:latest
 Copy and load the image to server:
 
 ```bash
-ssh root@lego.ossrs.net rm -f platform.tar* 2>/dev/null &&
+ssh root@$LNAME.$LDOMAIN rm -f platform.tar* 2>/dev/null &&
 rm -f platform.tar.gz && tar zcf platform.tar.gz platform.tar &&
-scp platform.tar.gz root@lego.ossrs.net:~ &&
-ssh root@lego.ossrs.net tar xf platform.tar.gz &&
+scp platform.tar.gz root@$LNAME.$LDOMAIN:~ &&
+ssh root@$LNAME.$LDOMAIN tar xf platform.tar.gz &&
 version=$(bash scripts/version.sh) &&
-ssh root@lego.ossrs.net docker load -i platform.tar &&
-ssh root@lego.ossrs.net docker tag platform:latest ossrs/srs-stack:$version &&
-ssh root@lego.ossrs.net docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
-ssh root@lego.ossrs.net docker image prune -f &&
-ssh root@lego.ossrs.net docker images
+ssh root@$LNAME.$LDOMAIN docker load -i platform.tar &&
+ssh root@$LNAME.$LDOMAIN docker tag platform:latest ossrs/srs-stack:$version &&
+ssh root@$LNAME.$LDOMAIN docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
+ssh root@$LNAME.$LDOMAIN docker image prune -f &&
+ssh root@$LNAME.$LDOMAIN docker images
 ```
 
 Next, build the BT plugin and install it:
 
 ```bash
-ssh root@lego.ossrs.net bash /www/server/panel/plugin/srs_stack/install.sh uninstall 2>/dev/null || echo OK &&
+ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/srs_stack/install.sh uninstall 2>/dev/null || echo OK &&
 bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
-scp build/bt-srs_stack.zip root@lego.ossrs.net:~ &&
-ssh root@lego.ossrs.net unzip -q bt-srs_stack.zip -d /www/server/panel/plugin &&
-ssh root@lego.ossrs.net bash /www/server/panel/plugin/srs_stack/install.sh install
+scp build/bt-srs_stack.zip root@$LNAME.$LDOMAIN:~ &&
+ssh root@$LNAME.$LDOMAIN unzip -q bt-srs_stack.zip -d /www/server/panel/plugin &&
+ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/srs_stack/install.sh install
 ```
 
 You can use BT panel to install the plugin, or by command:
 
 ```bash
-ssh root@lego.ossrs.net python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
-ssh root@lego.ossrs.net DOMAIN=lego.ossrs.net python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py &&
-ssh root@lego.ossrs.net python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
-ssh root@lego.ossrs.net bash /www/server/panel/plugin/srs_stack/setup.sh \
+ssh root@$LNAME.$LDOMAIN python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
+ssh root@$LNAME.$LDOMAIN DOMAIN=$LNAME.$LDOMAIN python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py &&
+ssh root@$LNAME.$LDOMAIN python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
+ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/srs_stack/setup.sh \
     --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
     --www /www/wwwroot --site srs.stack.local
+```
+
+Cleanup, remove the files and domain:
+
+```bash
+ssh root@$LNAME.$LDOMAIN rm -f platform.tar* bt-srs_stack.zip 2>/dev/null &&
+ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/srs_stack/install.sh uninstall 2>/dev/null || echo OK &&
+domains=$(doctl compute domain records ls $LDOMAIN --no-header |grep $LNAME) && echo "Cleanup domains: $domains" &&
+doctl compute domain records delete $LDOMAIN $(echo $domains |awk '{print $1}') -f
 ```
 
 # Tips

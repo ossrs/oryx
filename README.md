@@ -26,10 +26,16 @@ Then open http://localhost:2022 in browser.
 You have the option to modify the volumes for srs-stack and direct them to different directories.
 
 * `/data` The global data directory.
-    * `redis` The redis data directory, the publish secret and record configuration.
-    * `config` The mgmt password and cloud configuration.
+    * `.well-known` The directory for Let's Encrypt ACME challenge.
+    * `config` The .env for password, srs/redis/nginx/prometheus config, and SSL files.
+    * `dvr` The dvr storage directory, save dvr files.
+    * `lego` The LEGO Let's Encrypt ACME challenge directory.
     * `record` The record storage directory, save record files.
+    * `redis` The redis data directory, the publish secret and record configuration.
+    * `signals` The signals storage directory, save signal files.
+    * `upload` The upload storage directory, save upload files.
     * `vlive` The storage directory for virtual live, save video files.
+    * `vod` The storage directory for VoD, save video files.
 
 You can use environment variables to modify the settings.
 
@@ -56,7 +62,7 @@ To access additional environment variables, please refer to the [Environments](D
 - [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-stack/issues/29).
 - [x] [Support DVR to local disk](https://github.com/ossrs/srs-stack/issues/42).
 - [x] [Support Virtual Live Streaming](https://mp.weixin.qq.com/s/I0Kmxtc24txpngO-PiR_tQ).
-- [ ] [Automatical HTTPS](https://mp.weixin.qq.com/s/O70Fz-mxNedZpxgGXQ8DsA).
+- [x] [Automatical HTTPS](https://mp.weixin.qq.com/s/O70Fz-mxNedZpxgGXQ8DsA).
 - [ ] [Dashboard by Prometheus](https://mp.weixin.qq.com/s/ub9ZGmntOy_-S11oxFkxvg).
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
@@ -80,8 +86,8 @@ The features that we're developing:
 - [x] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
 - [x] [Support aaPanel to install on any linux](https://github.com/ossrs/srs-stack/issues/29).
 - [x] [Support DVR to local disk](https://github.com/ossrs/srs-stack/issues/42).
-- [ ] Support upgrade to latest version manually.
-- [ ] Support HTTPS by let's encrypt with LEGO.
+- [x] Support upgrade to latest version manually.
+- [x] Support HTTPS by let's encrypt with LEGO.
 - [ ] Support GB28181 by SRS 5.0 container.
 - [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
 - [ ] Support virtual live streaming, covert file or other resource to live.
