@@ -431,30 +431,6 @@ func setEnvDefault(key, value string) {
 	}
 }
 
-// reloadNginx is used to reload the NGINX server.
-func reloadNginx(ctx context.Context) error {
-	defer certManager.ReloadCertificate(ctx)
-
-	if conf.IsDarwin {
-		logger.T(ctx, "ignore reload nginx on darwin")
-		return nil
-	}
-
-	fileName := path.Join(conf.Pwd, fmt.Sprintf("containers/data/signals/nginx.reload.%v",
-		time.Now().UnixNano()/int64(time.Millisecond),
-	))
-	if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
-		return errors.Wrapf(err, "open file %v", fileName)
-	} else {
-		defer f.Close()
-		msg := fmt.Sprintf("SRS Stack reload Nginx at %v\n", time.Now().Format(time.RFC3339))
-		if _, err = f.Write([]byte(msg)); err != nil {
-			return errors.Wrapf(err, "write file %v", fileName)
-		}
-	}
-	return nil
-}
-
 // nginxGenerateConfig is to build NGINX configuration and reload NGINX.
 func nginxGenerateConfig(ctx context.Context) error {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -527,6 +503,29 @@ func nginxGenerateConfig(ctx context.Context) error {
 				return errors.Wrapf(err, "write file %v with %v", fileName, confData)
 			}
 		}
+	}
+
+	reloadNginx := func(ctx context.Context) error {
+		defer certManager.ReloadCertificate(ctx)
+
+		if conf.IsDarwin {
+			logger.T(ctx, "ignore reload nginx on darwin")
+			return nil
+		}
+
+		fileName := path.Join(conf.Pwd, fmt.Sprintf("containers/data/signals/nginx.reload.%v",
+			time.Now().UnixNano()/int64(time.Millisecond),
+		))
+		if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
+			return errors.Wrapf(err, "open file %v", fileName)
+		} else {
+			defer f.Close()
+			msg := fmt.Sprintf("SRS Stack reload Nginx at %v\n", time.Now().Format(time.RFC3339))
+			if _, err = f.Write([]byte(msg)); err != nil {
+				return errors.Wrapf(err, "write file %v", fileName)
+			}
+		}
+		return nil
 	}
 
 	if err := reloadNginx(ctx); err != nil {

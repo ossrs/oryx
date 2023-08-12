@@ -15,11 +15,13 @@ fi
 
 HELP=no
 TARGET=all
+BUILD=yes
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) HELP=yes; shift ;;
         --target) TARGET=$2; shift 2;;
+        --build) BUILD=$2; shift 2;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
@@ -29,6 +31,7 @@ if [[ "$HELP" == yes ]]; then
     echo "Options:"
     echo "  -h, --help    Show this help message and exit"
     echo "  --target      Test special target: all, script, aapanel, bt. default: $TARGET"
+    echo "  --build       Whether build image. yes or no. default: $BUILD"
     exit 0
 fi
 
@@ -45,11 +48,13 @@ docker rm -f $CONTAINERS 2>/dev/null || echo 'OK'
 echo "Remove all docker containers OK"
 
 #####################################################################################
-echo "Rebuild platform docker image" &&
-docker rmi platform:latest 2>/dev/null || echo OK &&
-docker build -t platform:latest -f Dockerfile . &&
-docker save -o platform.tar platform:latest
-ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Rebuild platform docker image failed, ret=$ret"; exit $ret; fi
+if [[ $BUILD != no ]]; then
+    echo "Rebuild platform docker image" &&
+    docker rmi platform:latest 2>/dev/null || echo OK &&
+    docker build -t platform:latest -f Dockerfile . &&
+    docker save -o platform.tar platform:latest
+    ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Rebuild platform docker image failed, ret=$ret"; exit $ret; fi
+fi
 
 #####################################################################################
 if [[ $TARGET == all || $TARGET == script ]]; then
@@ -65,7 +70,8 @@ if [[ $TARGET == all || $TARGET == script ]]; then
     docker run -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
         -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
         --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
-        -d --rm -it -v $(pwd):/g -w /g --name=script srs-script-dev
+        -d --rm -it -v $(pwd):/g -w /g --name=script srs-script-dev &&
+    echo "Waiting for the container to be ready..." && sleep 3 && echo "OK"
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Run script dev docker image failed, ret=$ret"; exit $ret; fi
 
     echo "Load platform image to docker" &&
@@ -77,7 +83,7 @@ if [[ $TARGET == all || $TARGET == script ]]; then
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Load platform image to docker failed, ret=$ret"; exit $ret; fi
 
     echo "Setup script installer" &&
-    docker exec -it bt rm -rf /data/* &&
+    docker exec -it bt rm -f /data/config/.env &&
     docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/uninstall.sh || echo OK &&
     bash scripts/setup-ubuntu/build.sh --output $(pwd)/build --extract &&
     docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
@@ -85,14 +91,14 @@ if [[ $TARGET == all || $TARGET == script ]]; then
 
     echo "Test script installer" &&
     docker exec -it script make -j -C test &&
-    docker exec -it script ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
-        -srs-log=true -wait-ready=true -init-password=true \
-        -check-api-secret=false -test.run TestApi_Empty &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it script ./test/srs-stack.test -test.v -wait-ready -endpoint http://localhost:2022 \
-        -srs-log=true -wait-ready=true -init-password=false \
-        -check-api-secret=true \
-        -test.parallel 1
+    docker exec -it script ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+        -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+        -check-api-secret=true &&
+    bash scripts/tools/secret.sh --output test/.env &&
+    docker exec -it script ./test/srs-stack.test -test.v -wait-ready -endpoint https://localhost:2443 \
+        -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+        -check-api-secret=true
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Test script installer failed, ret=$ret"; exit $ret; fi
 
     echo "Test script installer OK"
@@ -110,7 +116,8 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
         -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
         --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
         --add-host srs.stack.local:127.0.0.1 \
-        -d --rm -it -v $(pwd):/g -w /g --name=aapanel ossrs/aapanel-plugin-dev:1
+        -d --rm -it -v $(pwd):/g -w /g --name=aapanel ossrs/aapanel-plugin-dev:1 &&
+    echo "Waiting for the container to be ready..." && sleep 3 && echo "OK"
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Build aaPanel dev docker image failed, ret=$ret"; exit $ret; fi
 
     echo "Load platform image to docker" &&
@@ -122,7 +129,7 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Load platform image to docker failed, ret=$ret"; exit $ret; fi
 
     echo "Setup aaPanel installer" &&
-    docker exec -it aapanel rm -rf /data/* &&
+    docker exec -it aapanel rm -f /data/config/.env &&
     docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh uninstall || echo 'OK' &&
     bash scripts/setup-aapanel/auto/zip.sh --output $(pwd)/build --extract &&
     docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh install
@@ -139,14 +146,14 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
 
     echo "Test aaPanel installer" &&
     docker exec -it aapanel make -j -C test &&
-    docker exec -it aapanel ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
-        -srs-log=true -wait-ready=true -init-password=true \
-        -check-api-secret=false -test.run TestApi_Empty &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it aapanel ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
-        -srs-log=true -wait-ready=true -init-password=false \
-        -check-api-secret=true \
-        -test.parallel 1
+    docker exec -it aapanel ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+        -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+        -check-api-secret=true &&
+    bash scripts/tools/secret.sh --output test/.env &&
+    docker exec -it aapanel ./test/srs-stack.test -test.v -wait-ready -endpoint https://srs.stack.local:443 \
+        -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+        -check-api-secret=true
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Test aaPanel installer failed, ret=$ret"; exit $ret; fi
 
     echo "Test aaPanel installer OK"
@@ -165,7 +172,8 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
         -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
         --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
         --add-host srs.stack.local:127.0.0.1 \
-        -d --rm -it -v $(pwd):/g -w /g --name=bt ossrs/bt-plugin-dev:1
+        -d --rm -it -v $(pwd):/g -w /g --name=bt ossrs/bt-plugin-dev:1 &&
+    echo "Waiting for the container to be ready..." && sleep 3 && echo "OK"
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Build bt dev docker image failed, ret=$ret"; exit $ret; fi
 
     echo "Load platform image to docker" &&
@@ -177,7 +185,7 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Load platform image to docker failed, ret=$ret"; exit $ret; fi
 
     echo "Install bt installer" &&
-    docker exec -it bt rm -rf /data/* &&
+    docker exec -it bt rm -f /data/config/.env &&
     docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh uninstall || echo 'OK' &&
     bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
     docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh install
@@ -194,14 +202,14 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
 
     echo "Test bt installer" &&
     docker exec -it bt make -j -C test &&
-    docker exec -it bt ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
-        -srs-log=true -wait-ready=true -init-password=true \
-        -check-api-secret=false -test.run TestApi_Empty &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it bt ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
-          -srs-log=true -wait-ready=true -init-password=false \
-          -check-api-secret=true \
-          -test.parallel 1
+    docker exec -it bt ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+          -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+          -check-api-secret=true &&
+    bash scripts/tools/secret.sh --output test/.env &&
+    docker exec -it bt ./test/srs-stack.test -test.v -wait-ready -endpoint https://srs.stack.local:443 \
+          -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+          -check-api-secret=true
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Test bt installer failed, ret=$ret"; exit $ret; fi
 
     echo "Test bt installer OK"

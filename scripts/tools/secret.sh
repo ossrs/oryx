@@ -25,33 +25,45 @@ if [[ "$HELP" == yes ]]; then
     exit 0
 fi
 
-# Start by docker.
-SRS_PLATFORM_SECRET=$(docker exec srs-stack redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
-MGMT_PASSWORD=$(docker exec srs-stack bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
-
-# Start by script.
-if [[ -z $SRS_PLATFORM_SECRET ]]; then
-    SRS_PLATFORM_SECRET=$(docker exec script docker exec srs-stack redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
-    MGMT_PASSWORD=$(docker exec script docker exec srs-stack bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
+if [[ ! -z  $OUTPUT ]]; then
+    echo "Truncate output file: $OUTPUT"
+    echo "" > $OUTPUT
 fi
 
-# Start by BT.
-if [[ -z $SRS_PLATFORM_SECRET ]]; then
-    SRS_PLATFORM_SECRET=$(docker exec bt docker exec srs-stack redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
-    MGMT_PASSWORD=$(docker exec bt docker exec srs-stack bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
-fi
+for ((i=0; i<3; i++)); do
+    # Start by docker.
+    SRS_PLATFORM_SECRET=$(docker exec srs-stack redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
+    MGMT_PASSWORD=$(docker exec srs-stack bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
 
-# Start by aaPanel.
-if [[ -z $SRS_PLATFORM_SECRET ]]; then
-    SRS_PLATFORM_SECRET=$(docker exec aapanel docker exec srs-stack redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
-    MGMT_PASSWORD=$(docker exec aapanel docker exec srs-stack bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
-fi
+    # Start by script.
+    if [[ -z $SRS_PLATFORM_SECRET ]]; then
+        SRS_PLATFORM_SECRET=$(docker exec script docker exec srs-stack redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
+        MGMT_PASSWORD=$(docker exec script docker exec srs-stack bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
+    fi
 
-# Start by develop.
-if [[ -z $SRS_PLATFORM_SECRET ]]; then
-    SRS_PLATFORM_SECRET=$(redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
-    MGMT_PASSWORD=$(. ${WORK_DIR}/platform/containers/data/config/.env && echo $MGMT_PASSWORD)
-fi
+    # Start by BT.
+    if [[ -z $SRS_PLATFORM_SECRET ]]; then
+        SRS_PLATFORM_SECRET=$(docker exec bt docker exec srs-stack redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
+        MGMT_PASSWORD=$(docker exec bt docker exec srs-stack bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
+    fi
+
+    # Start by aaPanel.
+    if [[ -z $SRS_PLATFORM_SECRET ]]; then
+        SRS_PLATFORM_SECRET=$(docker exec aapanel docker exec srs-stack redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
+        MGMT_PASSWORD=$(docker exec aapanel docker exec srs-stack bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
+    fi
+
+    # Start by develop.
+    if [[ -z $SRS_PLATFORM_SECRET ]]; then
+        SRS_PLATFORM_SECRET=$(redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
+        MGMT_PASSWORD=$(. ${WORK_DIR}/platform/containers/data/config/.env && echo $MGMT_PASSWORD)
+    fi
+
+    if [[ ! -z $SRS_PLATFORM_SECRET ]]; then break; fi
+
+    echo "Warning: Retry to get SRS_PLATFORM_SECRET."
+    sleep 3
+done
 
 if [[ ! -z $SRS_PLATFORM_SECRET ]]; then
     echo "SRS_PLATFORM_SECRET=$SRS_PLATFORM_SECRET"

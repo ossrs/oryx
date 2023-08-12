@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ossrs/go-oryx-lib/errors"
 	"github.com/ossrs/go-oryx-lib/logger"
 )
 
@@ -66,6 +67,10 @@ func (v *CrontabWorker) Start(ctx context.Context) error {
 			}
 		}
 	}()
+
+	if err := certManager.Initialize(ctx); err != nil {
+		return errors.Wrapf(err, "initialize cert manager")
+	}
 
 	v.wg.Add(1)
 	go func() {

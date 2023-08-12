@@ -18,7 +18,7 @@ COPY --from=lego /lego /usr/local/bin/
 
 # We write the common config for platform to base image, however you can
 # overwrite it if not for platform, for example, used in releases.
-ENV PORT=":2024" NODE_ENV=production SRS_DOCKERIZED=true MGMT_DOCKER=true PLATFORM_DOCKER=true CLOUD=DOCKER
+ENV PORT=":2024" NODE_ENV=production CLOUD=DOCKER
 
 # Setup the work directory to platform.
 WORKDIR /usr/local/srs-stack/platform

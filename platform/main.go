@@ -30,6 +30,11 @@ import (
 // conf is a global config object.
 var conf *Config
 
+func init() {
+	certManager = NewCertManager()
+	conf = NewConfig()
+}
+
 func main() {
 	ctx := logger.WithContext(context.Background())
 	ctx = logger.WithContext(ctx)
@@ -66,9 +71,6 @@ func doMain(ctx context.Context) error {
 
 	// Initialize the management password and load the environment without relying on Redis.
 	if true {
-		// Initialize global config.
-		conf = NewConfig()
-
 		if pwd, err := os.Getwd(); err != nil {
 			return errors.Wrapf(err, "getpwd")
 		} else {
@@ -93,20 +95,22 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("REDIS_PORT", "6379")
 	setEnvDefault("MGMT_LISTEN", "2022")
 	setEnvDefault("PLATFORM_DOCKER", "true")
-	setEnvDefault("MGMT_DOCKER", "false")
-	setEnvDefault("HTTPS_LISTEN", "2443")
 
-	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, "+
-		"NODE_ENV=%v, LOCAL_RELEASE=%v, SRS_DOCKER=%v, USE_DOCKER=%v, SRS_UTEST=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, "+
-		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, SRS_DOCKERIZED=%v, MGMT_DOCKER=%v, "+
-		"REGISTRY=%v, MGMT_LISTEN=%v, PLATFORM_DOCKER=%v, HTTPS_LISTEN=%v",
+	// For HTTPS.
+	setEnvDefault("HTTPS_LISTEN", "2443")
+	setEnvDefault("AUTO_SELF_SIGNED_CERTIFICATE", "false")
+
+	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, "+
+		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, "+
+		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, "+
+		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, "+
+		"REGISTRY=%v, MGMT_LISTEN=%v, HTTPS_LISTEN=%v, AUTO_SELF_SIGNED_CERTIFICATE=%v",
 		len(os.Getenv("MGMT_PASSWORD")), len(os.Getenv("SRS_PLATFORM_SECRET")), os.Getenv("CLOUD"),
 		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("NODE_ENV"), os.Getenv("LOCAL_RELEASE"),
-		os.Getenv("SRS_DOCKER"), os.Getenv("USE_DOCKER"), os.Getenv("SRS_UTEST"),
 		len(os.Getenv("REDIS_PASSWORD")), os.Getenv("REDIS_PORT"), os.Getenv("PUBLIC_URL"),
 		os.Getenv("BUILD_PATH"), os.Getenv("REACT_APP_LOCALE"), os.Getenv("PLATFORM_LISTEN"),
-		os.Getenv("SRS_DOCKERIZED"), os.Getenv("MGMT_DOCKER"), os.Getenv("REGISTRY"),
-		os.Getenv("MGMT_LISTEN"), os.Getenv("PLATFORM_DOCKER"), os.Getenv("HTTPS_LISTEN"),
+		os.Getenv("REGISTRY"), os.Getenv("MGMT_LISTEN"), os.Getenv("HTTPS_LISTEN"),
+		os.Getenv("AUTO_SELF_SIGNED_CERTIFICATE"),
 	)
 
 	// Setup the base OS for redis, which should never depends on redis.
@@ -343,13 +347,8 @@ func initPlatform(ctx context.Context) error {
 		}
 	}
 
-	certManager = NewCertManager()
-	if err := certManager.Initialize(ctx); err != nil {
-		return errors.Wrapf(err, "initialize cert manager")
-	}
-
 	// Run only once for a special version.
-	bootRelease := "v25"
+	bootRelease := "v26"
 	if firstRun, err := rdb.HGet(ctx, SRS_FIRST_BOOT, bootRelease).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v %v", SRS_FIRST_BOOT, bootRelease)
 	} else if firstRun == "" {

@@ -27,6 +27,35 @@ import (
 	"github.com/ossrs/go-oryx-lib/logger"
 )
 
+// initPassword is used to init the password for SRS Stack.
+//
+// SRS Stack requires initializing and setting up a password by default when the system is initialized.
+// This password is utilized for logging into the system through the UI and API. Typically, for testing
+// purposes, we generate a random password and proceed with system initialization. However, when developing
+// and debugging tests for an already initialized system, there is no need to initialize a new password,
+// as it has already been established.
+var initPassword *bool
+
+// systemPassword is the password sued by SRS Stack.
+//
+// Users can specify a dedicated password; if not provided, a temporary password will be created to
+// initialize the SRS Stack. This password will be used to test the login feature.
+var systemPassword *string
+
+// initSelfSignedCert is used to init the self-signed cert for HTTPS.
+//
+// We should not initialize self-signed certificates by default, as this sets up SSL files for nginx,
+// making it impossible for BT or aaPanel to configure SSL. Therefore, we disable it by default, and users
+// can enable it if necessary, such as for testing the HTTPS API. It is important to note that we support
+// requesting SSL certificates through BT or aaPanel, or via SRS Stack, all of which share the same
+// .well-known web directory and nginx configurations. However, SRS Stack does not rely on the NGINX SSL
+// files.
+//
+// When this feature is enabled and there are no certificate files (nginx.key and nginx.crt) in the nginx
+// directory, SRS Stack will create a self-signed certificate, save it to the nginx SSL file, and then
+// generate the nginx configuration in nginx.server.conf.
+var initSelfSignedCert *bool
+
 var srsLog *bool
 var srsTimeout *int
 var endpoint *string
@@ -35,8 +64,6 @@ var apiSecret *string
 var checkApiSecret *bool
 var waitReady *bool
 var apiReadyimeout *int
-var initPassword *bool
-var systemPassword *string
 var srsFFmpeg *string
 var srsFFprobe *string
 var srsFFmpegStderr *bool
@@ -46,8 +73,8 @@ var srsFFprobeDuration *int
 var srsFFprobeTimeout *int
 
 func options() string {
-	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, forceHttps=%v, waitReady=%v, initPassword=%v, systemPassword=%vB",
-		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *forceHttps, *waitReady, *initPassword, len(*systemPassword))
+	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, forceHttps=%v, waitReady=%v, initPassword=%v, initSelfSignedCert=%v, systemPassword=%vB",
+		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *forceHttps, *waitReady, *initPassword, *initSelfSignedCert, len(*systemPassword))
 }
 
 func prepareTest(ctx context.Context) (err error) {
@@ -75,6 +102,7 @@ func prepareTest(ctx context.Context) (err error) {
 	waitReady = flag.Bool("wait-ready", false, "Whether wait for the service ready")
 	apiReadyimeout = flag.Int("api-ready-timeout", 30000, "Check when startup, the timeout in ms")
 	initPassword = flag.Bool("init-password", false, "Whether init the system and set password")
+	initSelfSignedCert = flag.Bool("init-self-signed-cert", false, "Whether init self-signed cert for HTTPS")
 	systemPassword = flag.String("system-password", os.Getenv("MGMT_PASSWORD"), "The system password for login")
 	srsFFmpeg = flag.String("srs-ffmpeg", "ffmpeg", "The FFmpeg tool")
 	srsFFmpegStderr = flag.Bool("srs-ffmpeg-stderr", false, "Whether enable the FFmpeg stderr log")
@@ -150,6 +178,7 @@ func TestMain(m *testing.M) {
 		if err := waitForServiceReady(ctx); err != nil {
 			os.Exit(-1)
 		}
+		logger.Tf(ctx, "Wait for service ready ok")
 	}
 
 	if *initPassword {
@@ -157,6 +186,15 @@ func TestMain(m *testing.M) {
 			logger.Ef(ctx, "Init system fail, err %+v", err)
 			os.Exit(-1)
 		}
+		logger.Tf(ctx, "Init system password ok")
+	}
+
+	if *initSelfSignedCert {
+		if err := apiRequest(ctx, "/terraform/v1/mgmt/auto-self-signed-certificate", nil, nil); err != nil {
+			logger.Ef(ctx, "Init self-signed cert fail, err %+v", err)
+			os.Exit(-1)
+		}
+		logger.Tf(ctx, "Init self-signed cert ok")
 	}
 
 	os.Exit(m.Run())
@@ -174,7 +212,6 @@ func waitForServiceReady(ctx context.Context) error {
 
 		err := apiRequest(ctx, "/terraform/v1/host/versions", nil, nil)
 		if err == nil {
-			logger.T(ctx, "API ready")
 			break
 		}
 

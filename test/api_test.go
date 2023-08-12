@@ -14,17 +14,11 @@ import (
 )
 
 func TestApi_Empty(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx := logger.WithContext(context.Background())
 	logger.Tf(ctx, "test done")
 }
 
 func TestApi_Ready(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -36,9 +30,6 @@ func TestApi_Ready(t *testing.T) {
 }
 
 func TestApi_QueryPublishSecret(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -64,9 +55,6 @@ func TestApi_QueryPublishSecret(t *testing.T) {
 }
 
 func TestApi_LoginByPassword(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -96,9 +84,6 @@ func TestApi_LoginByPassword(t *testing.T) {
 }
 
 func TestApi_BootstrapQueryEnvs(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -122,9 +107,6 @@ func TestApi_BootstrapQueryEnvs(t *testing.T) {
 }
 
 func TestApi_BootstrapQueryInit(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -148,9 +130,6 @@ func TestApi_BootstrapQueryInit(t *testing.T) {
 }
 
 func TestApi_BootstrapQueryCheck(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -174,9 +153,6 @@ func TestApi_BootstrapQueryCheck(t *testing.T) {
 }
 
 func TestApi_BootstrapQueryVersions(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -200,9 +176,6 @@ func TestApi_BootstrapQueryVersions(t *testing.T) {
 }
 
 func TestApi_SetupWebsiteFooter(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -237,9 +210,6 @@ func TestApi_SetupWebsiteFooter(t *testing.T) {
 }
 
 func TestApi_SetupWebsiteTitle(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -355,9 +325,6 @@ func TestApi_UpdatePublishSecret(t *testing.T) {
 }
 
 func TestApi_TutorialsQueryBilibili(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -387,9 +354,6 @@ func TestApi_TutorialsQueryBilibili(t *testing.T) {
 }
 
 func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -467,9 +431,6 @@ func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 }
 
 func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -547,9 +508,6 @@ func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 }
 
 func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -626,9 +584,6 @@ func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 }
 
 func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
-	// This case is run in parallel.
-	t.Parallel()
-
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 

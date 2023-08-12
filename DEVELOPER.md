@@ -25,8 +25,10 @@ docker run --name srs --rm -it \
 Run the platform backend, or run in GoLand:
 
 ```bash
-(cd platform && go run .)
+(cd platform && AUTO_SELF_SIGNED_CERTIFICATE=true go run .)
 ```
+
+> Note: We use `AUTO_SELF_SIGNED_CERTIFICATE=true` to enable self-signed certificate.
 
 Run all tests:
 
@@ -87,7 +89,7 @@ docker exec -it script docker images
 Test the build script, in the docker container:
 
 ```bash
-docker exec -it bt rm -rf /data/* &&
+docker exec -it bt rm -f /data/config/.env &&
 docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/uninstall.sh 2>/dev/null || echo OK &&
 bash scripts/setup-ubuntu/build.sh --output $(pwd)/build --extract &&
 docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
@@ -97,14 +99,17 @@ Run test for script:
 
 ```bash
 docker exec -it script make -j -C test &&
+bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it script ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
-    -srs-log=true -wait-ready=true -init-password=true \
-    -check-api-secret=false -test.run TestApi_Empty &&
+    -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
+    -test.run TestApi_Empty &&
 bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it script ./test/srs-stack.test -test.v -wait-ready -endpoint http://localhost:2022 \
-    -srs-log=true -wait-ready=true -init-password=false \
-    -check-api-secret=true \
-    -test.parallel 8
+    -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
+    -test.parallel 3 &&
+docker exec -it script ./test/srs-stack.test -test.v -wait-ready -endpoint https://localhost:2443 \
+    -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
+    -test.parallel 3
 ```
 
 Access the browser: [http://localhost:2022](http://localhost:2022)
@@ -151,7 +156,7 @@ docker exec -it aapanel docker images
 Next, build the aaPanel plugin and install it:
 
 ```bash
-docker exec -it aapanel rm -rf /data/* &&
+docker exec -it aapanel rm -f /data/config/.env &&
 docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh uninstall 2>/dev/null || echo OK &&
 bash scripts/setup-aapanel/auto/zip.sh --output $(pwd)/build --extract &&
 docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh install
@@ -172,14 +177,17 @@ Run test for aaPanel:
 
 ```bash
 docker exec -it aapanel make -j -C test &&
+bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it aapanel ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
-    -srs-log=true -wait-ready=true -init-password=true \
-    -check-api-secret=false -test.run TestApi_Empty &&
+    -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
+    -test.run TestApi_Empty &&
 bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it aapanel ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
-    -srs-log=true -wait-ready=true -init-password=false \
-    -check-api-secret=true \
-    -test.parallel 8
+    -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
+    -test.parallel 3 &&
+docker exec -it aapanel ./test/srs-stack.test -test.v -wait-ready -endpoint https://srs.stack.local:443 \
+    -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
+    -test.parallel 3
 ```
 
 Open [http://localhost:7800/srsstack](http://localhost:7800/srsstack) to install plugin.
@@ -236,7 +244,7 @@ Next, build the BT plugin and install it:
 
 ```bash
 docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh uninstall 2>/dev/null || echo OK &&
-docker exec -it bt rm -rf /data/* &&
+docker exec -it bt rm -f /data/config/.env &&
 bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
 docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh install
 ```
@@ -256,14 +264,17 @@ Run test for BT:
 
 ```bash
 docker exec -it bt make -j -C test &&
+bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it bt ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
-    -srs-log=true -wait-ready=true -init-password=true \
-    -check-api-secret=false -test.run TestApi_Empty &&
+    -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
+    -test.run TestApi_Empty &&
 bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it bt ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
-      -srs-log=true -wait-ready=true -init-password=false \
-      -check-api-secret=true \
-      -test.parallel 8
+    -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
+    -test.parallel 3 &&
+docker exec -it bt ./test/srs-stack.test -test.v -wait-ready -endpoint https://srs.stack.local:443 \
+    -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
+    -test.parallel 3
 ```
 
 Open [http://localhost:7800/srsstack](http://localhost:7800/srsstack) to install plugin.
@@ -479,6 +490,7 @@ Platform:
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
 * `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
 * `/terraform/v1/mgmt/ssl` Config the system SSL config.
+* `/terraform/v1/mgmt/auto-self-signed-certificate` Create the self-signed certificate if no cert.
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
 * `/terraform/v1/host/versions` Public version api.
 * `/terraform/v1/releases` Version management for all components.
@@ -570,23 +582,11 @@ The optional environments defined by `mgmt/.env`:
 * `REGISTRY`: `docker.io|registry.cn-hangzhou.aliyuncs.com`, The docker registry.
 * `MGMT_LISTEN`: The listen port for mgmt HTTP server. Default: 2022
 * `PLATFORM_LISTEN`: The listen port for platform HTTP server. Default: 2024
-* `SRS_DOCKERIZED`: `true|false` Indicates the OS is in docker.
-
-For mgmt to start platform in docker, because it can't access redis which is started by platform:
-
-* `PLATFORM_DOCKER`: Whether run platform in docker. Default: true
-* `MGMT_DOCKER`: Whether run mgmt in docker. Default: false
 
 For testing the specified service:
 
 * `NODE_ENV`: `development|production`, if development, use local redis; otherwise, use `mgmt.srs.local` in docker.
 * `LOCAL_RELEASE`: `true|false`, whether use local release service.
-
-For github actions to control the containers:
-
-* `SRS_DOCKER`: `srs` to enfore use `ossrs/srs` docker image.
-* `USE_DOCKER`: `true|false`, if false, disable all docker containers.
-* `SRS_UTEST`: `true|false`, if true, running in utest mode.
 
 For mgmt and containers to connect to redis:
 
@@ -603,6 +603,19 @@ Environments for react ui:
 Removed variables in .env:
 
 * `SRS_PLATFORM_SECRET`: The mgmt api secret for token generating and verifying.
+
+For HTTPS, automatically generate a self-signed certificate:
+
+* `AUTO_SELF_SIGNED_CERTIFICATE`: `true|false`, whether generate self-signed certificate.
+
+Deprecated and unused variables:
+
+* `SRS_DOCKERIZED`: `true|false` Indicates the OS is in docker.
+* `SRS_DOCKER`: `srs` to enfore use `ossrs/srs` docker image.
+* `MGMT_DOCKER`: Whether run mgmt in docker. Default: false
+* `PLATFORM_DOCKER`: Whether run platform in docker. Default: true
+* `USE_DOCKER`: `true|false`, if false, disable all docker containers.
+* `SRS_UTEST`: `true|false`, if true, running in utest mode.
 
 Please restart service when `.env` changed.
 

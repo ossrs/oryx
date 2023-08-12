@@ -8,15 +8,24 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"fmt"
-	"github.com/go-redis/redis/v8"
-	"github.com/ossrs/go-oryx-lib/errors"
-	"github.com/ossrs/go-oryx-lib/logger"
 	"io/ioutil"
+	"math/big"
 	"os"
 	"os/exec"
 	"path"
+	"time"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/ossrs/go-oryx-lib/errors"
+	"github.com/ossrs/go-oryx-lib/logger"
 )
 
 var certManager *CertManager
@@ -36,12 +45,95 @@ func NewCertManager() *CertManager {
 }
 
 func (v *CertManager) Initialize(ctx context.Context) error {
+	if os.Getenv("AUTO_SELF_SIGNED_CERTIFICATE") == "true" {
+		if err := v.createSelfSignCertificate(ctx); err != nil {
+			return errors.Wrapf(err, "create self-signed certificate")
+		}
+	}
+
+	return nil
+}
+
+func (v *CertManager) createSelfSignCertificate(ctx context.Context) error {
+	keyFile := path.Join(conf.Pwd, "containers/data/config/nginx.key")
+	crtFile := path.Join(conf.Pwd, "containers/data/config/nginx.crt")
+
+	var noKeyFile, noCrtFile bool
+	if _, err := os.Stat(keyFile); os.IsNotExist(err) {
+		noKeyFile = true
+	}
+	if _, err := os.Stat(crtFile); os.IsNotExist(err) {
+		noCrtFile = true
+	}
+	if !noKeyFile || !noCrtFile {
+		logger.Tf(ctx, "cert: ignore for cert file exists")
+		return nil
+	}
+
+	var key, crt string
+	if true {
+		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		if err != nil {
+			return errors.Wrapf(err, "generate ecdsa key")
+		}
+
+		template := x509.Certificate{
+			SerialNumber: big.NewInt(1),
+			Subject: pkix.Name{
+				CommonName: "srs.stack.local",
+			},
+			NotBefore: time.Now(),
+			NotAfter:  time.Now().AddDate(10, 0, 0),
+			KeyUsage:  x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+			ExtKeyUsage: []x509.ExtKeyUsage{
+				x509.ExtKeyUsageServerAuth,
+			},
+			BasicConstraintsValid: true,
+		}
+
+		derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+		if err != nil {
+			return errors.Wrapf(err, "create certificate")
+		}
+
+		privateKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
+		if err != nil {
+			return errors.Wrapf(err, "marshal ecdsa key")
+		}
+
+		privateKeyBlock := pem.Block{
+			Type:  "EC PRIVATE KEY",
+			Bytes: privateKeyBytes,
+		}
+		key = string(pem.EncodeToMemory(&privateKeyBlock))
+
+		certBlock := pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: derBytes,
+		}
+		crt = string(pem.EncodeToMemory(&certBlock))
+		logger.Tf(ctx, "cert: create self-signed certificate ok, key=%vB, crt=%vB", len(key), len(crt))
+	}
+
+	if err := v.updateSslFiles(ctx, key+"\n", crt+"\n"); err != nil {
+		return errors.Wrapf(err, "updateSslFiles key=%vB, crt=%vB", len(key), len(crt))
+	}
+
+	if err := rdb.Set(ctx, SRS_HTTPS, "ssl", 0).Err(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "set %v %v", SRS_HTTPS, "ssl")
+	}
+
+	if err := nginxGenerateConfig(ctx); err != nil {
+		return errors.Wrapf(err, "nginx config and reload")
+	}
+	logger.T(ctx, "cert: update self-signed certificate ok, key=%vB, crt=%vB", len(key), len(crt))
+
 	return nil
 }
 
 func (v *CertManager) ReloadCertificate(ctx context.Context) {
 	select {
-	case certManager.httpCertificateReload <- true:
+	case v.httpCertificateReload <- true:
 	case <-ctx.Done():
 	default:
 	}
@@ -59,18 +151,18 @@ func (v *CertManager) reloadCertificateFile(ctx context.Context) error {
 		noCrtFile = true
 	}
 	if noKeyFile || noCrtFile {
-		logger.Tf(ctx, "crontab: ignore for no cert file")
+		logger.Tf(ctx, "cert: ignore for no cert file")
 		return nil
 	}
 
 	cert, err := tls.LoadX509KeyPair(crtFile, keyFile)
 	if err != nil {
-		logger.Tf(ctx, "crontab: ignore load cert %v, key %v failed", crtFile, keyFile)
+		logger.Tf(ctx, "cert: ignore load cert %v, key %v failed", crtFile, keyFile)
 		return nil
 	}
 
 	v.httpsCertificate = &cert
-	logger.Tf(ctx, "crontab: reload certificate file ok")
+	logger.Tf(ctx, "cert: reload certificate file ok")
 
 	return nil
 }
@@ -191,7 +283,7 @@ func (v *CertManager) refreshSSLCert(ctx context.Context) error {
 		return err
 	}
 	if provider != "lets" {
-		logger.Tf(ctx, "crontab: ignore ssl provider %v", provider)
+		logger.Tf(ctx, "cert: ignore ssl provider %v", provider)
 		return nil
 	}
 
@@ -200,20 +292,20 @@ func (v *CertManager) refreshSSLCert(ctx context.Context) error {
 		return err
 	}
 	if domain == "" {
-		logger.Tf(ctx, "crontab: ignore ssl domain empty")
+		logger.Tf(ctx, "cert: ignore ssl domain empty")
 		return nil
 	}
 
 	if err := v.renewLetsEncrypt(ctx, domain); err != nil {
 		return err
 	} else {
-		logger.Tf(ctx, "crontab: renew ssl cert ok")
+		logger.Tf(ctx, "cert: renew ssl cert ok")
 	}
 
 	if err := nginxGenerateConfig(ctx); err != nil {
 		return errors.Wrapf(err, "nginx config and reload")
 	}
 
-	logger.Tf(ctx, "crontab: refresh ssl cert ok")
+	logger.Tf(ctx, "cert: refresh ssl cert ok")
 	return nil
 }

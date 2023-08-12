@@ -126,17 +126,17 @@ jobs:
           
           echo "Wait for service ready." &&
           make -j -C test &&
+          bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
-              -srs-log=true -wait-ready=true -init-password=true \
-              -check-api-secret=false -test.run TestApi_Empty &&
+              -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+              -check-api-secret=true -test.run TestApi_Empty &&
           
           echo "Test service." &&
-          eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
-          ./test/srs-stack.test -test.v -wait-ready -endpoint http://localhost:2022 \
-              -srs-log=true -wait-ready=true -init-password=false \
-              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
-              -test.parallel 1
-          ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true
+          ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
           sudo systemctl stop srs-stack
@@ -193,19 +193,20 @@ jobs:
           # Record all logs.
           journalctl -u srs-stack -f >journalctl.log 2>&1 & pid_journalctl=$!
           
+          # Note that must init HTTPS by HTTP.
           echo "Wait for service ready." &&
           make -j -C test &&
-          ./test/srs-stack.test -test.v -endpoint https://localhost:2443 \
-              -srs-log=true -wait-ready=true -init-password=true \
-              -check-api-secret=false -test.run TestApi_Empty &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+              -check-api-secret=true -test.run TestApi_Empty &&
           
           echo "Test service." &&
-          eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
-          ./test/srs-stack.test -test.v -wait-ready -endpoint https://localhost:2443 \
-              -srs-log=true -wait-ready=true -init-password=false \
-              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
-              -test.parallel 1
-          ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint https://localhost:2443 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true
+          ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
           sudo systemctl stop srs-stack
@@ -331,17 +332,17 @@ jobs:
           
           echo "Wait for service ready." &&
           make -j -C test &&
+          bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
-              -srs-log=true -wait-ready=true -init-password=true \
-              -check-api-secret=false -test.run TestApi_Empty &&
+              -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+              -check-api-secret=true -test.run TestApi_Empty &&
           
           echo "Test service." &&
-          eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
-          ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
-              -srs-log=true -wait-ready=true -init-password=false \
-              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
-              -test.parallel 1
-          ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true
+          ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
           docker exec bt systemctl stop srs-stack
@@ -468,17 +469,17 @@ jobs:
           
           echo "Wait for service ready." &&
           make -j -C test &&
-          ./test/srs-stack.test -test.v -endpoint https://srs.stack.local:443 \
-              -srs-log=true -wait-ready=true -init-password=true \
-              -check-api-secret=false -test.run TestApi_Empty &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+              -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+              -check-api-secret=true -test.run TestApi_Empty &&
           
           echo "Test service." &&
-          eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
-          ./test/srs-stack.test -test.v -wait-ready -endpoint https://srs.stack.local:443 \
-              -srs-log=true -wait-ready=true -init-password=false \
-              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
-              -test.parallel 1
-          ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint https://srs.stack.local:443 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true
+          ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
           docker exec bt systemctl stop srs-stack
@@ -602,17 +603,17 @@ jobs:
           
           echo "Wait for service ready." &&
           make -j -C test &&
+          bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
-              -srs-log=true -wait-ready=true -init-password=true \
-              -check-api-secret=false -test.run TestApi_Empty &&
+              -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+              -check-api-secret=true -test.run TestApi_Empty &&
           
           echo "Test service." &&
-          eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
-          ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
-              -srs-log=true -wait-ready=true -init-password=false \
-              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
-              -test.parallel 3
-          ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true
+          ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
           docker exec aapanel systemctl stop srs-stack
@@ -736,17 +737,17 @@ jobs:
           
           echo "Wait for service ready." &&
           make -j -C test &&
-          ./test/srs-stack.test -test.v -endpoint https://srs.stack.local:443 \
-              -srs-log=true -wait-ready=true -init-password=true \
-              -check-api-secret=false -test.run TestApi_Empty &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+              -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+              -check-api-secret=true -test.run TestApi_Empty &&
           
           echo "Test service." &&
-          eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
-          ./test/srs-stack.test -test.v -wait-ready -endpoint https://srs.stack.local:443 \
-              -srs-log=true -wait-ready=true -init-password=false \
-              -check-api-secret=true -api-secret=$SRS_PLATFORM_SECRET -system-password=$MGMT_PASSWORD \
-              -test.parallel 3
-          ret=$?; echo "Test with ${SRS_PLATFORM_SECRET} result: $ret"
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint https://srs.stack.local:443 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true
+          ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
           docker exec aapanel systemctl stop srs-stack
