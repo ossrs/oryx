@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/joho/godotenv"
@@ -123,8 +124,44 @@ func (v *dockerHTTPService) Run(ctx context.Context) error {
 		}()
 	}
 
+	var r2 error
+	if true {
+		addr := os.Getenv("HTTPS_LISTEN")
+		if !strings.HasPrefix(addr, ":") {
+			addr = fmt.Sprintf(":%v", addr)
+		}
+		logger.Tf(ctx, "HTTPS listen at %v", addr)
+
+		server := &http.Server{
+			Addr:    addr,
+			Handler: handler,
+			TLSConfig: &tls.Config{
+				GetCertificate: nginxGetCertificate,
+			},
+		}
+		v.servers = append(v.servers, server)
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-ctx.Done()
+			logger.Tf(ctx, "shutting down HTTPS server...")
+			v.Close()
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer cancel()
+			if err := server.ListenAndServeTLS("", ""); err != nil && ctx.Err() != context.Canceled {
+				r2 = errors.Wrapf(err, "listen %v", addr)
+			}
+			logger.Tf(ctx, "HTTPS server is done")
+		}()
+	}
+
 	wg.Wait()
-	for _, r := range []error{r0, r1} {
+	for _, r := range []error{r0, r1, r2} {
 		if r != nil {
 			return r
 		}

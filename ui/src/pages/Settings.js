@@ -1,5 +1,5 @@
 import React from "react";
-import {Accordion, Container, Form, Button, Tabs, Tab} from "react-bootstrap";
+import {Accordion, Container, Form, Button, Tabs, Tab, Spinner} from "react-bootstrap";
 import {Clipboard, Token} from "../utils";
 import axios from "axios";
 import {useSearchParams} from "react-router-dom";
@@ -341,6 +341,7 @@ function SettingHttps() {
   const [key, setKey] = React.useState();
   const [crt, setCrt] = React.useState();
   const [domain, setDomain] = React.useState();
+  const [operating, setOperating] = React.useState(false);
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
@@ -353,7 +354,7 @@ function SettingHttps() {
     ])
   });
 
-  const updateSSL = React.useCallback((e) => {
+  const updateSSL = React.useCallback(async (e) => {
     e.preventDefault();
 
     if (!key || !crt) {
@@ -361,14 +362,18 @@ function SettingHttps() {
       return;
     }
 
+    setOperating(true);
+
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/ssl', {
       ...token, key, crt,
     }).then(res => {
       alert(t('settings.sslOk'));
       console.log(`SSL: Update ok`);
-    }).catch(handleError);
-  }, [handleError, key, crt, t]);
+    }).catch(handleError).finally(() => {
+      setOperating(false);
+    });
+  }, [handleError, key, crt, t, setOperating]);
 
   const requestLetsEncrypt = React.useCallback((e) => {
     e.preventDefault();
@@ -378,14 +383,24 @@ function SettingHttps() {
       return;
     }
 
+    const domainRegex = /^(?=.{1,253})(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.?)+[A-Za-z]{2,6}$/;
+    if (!domainRegex.test(domain)) {
+      alert(t('settings.sslInvalidDomain'));
+      return;
+    }
+
+    setOperating(true);
+
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/letsencrypt', {
       ...token, domain,
     }).then(res => {
       alert(t('settings.sslLetsOk'));
       console.log(`SSL: Let's Encrypt SSL ok`);
-    }).catch(handleError);
-  }, [handleError, domain, t]);
+    }).catch(handleError).finally(() => {
+      setOperating(false);
+    });
+  }, [handleError, domain, t, setOperating]);
 
   return (
     <Accordion defaultActiveKey="0">
@@ -398,10 +413,11 @@ function SettingHttps() {
               <Form.Text> * {t('settings.letsDomainTip')}</Form.Text>
               <Form.Control as="input" defaultValue={domain} onChange={(e) => setDomain(e.target.value)} />
             </Form.Group>
-            <Button variant="primary" type="submit" onClick={(e) => requestLetsEncrypt(e)}>
+            <Button variant="primary" type="submit" disabled={operating} onClick={(e) => requestLetsEncrypt(e)}>
               {t('settings.letsDomainSubmit')}
             </Button> &nbsp;
-            <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
+            <TutorialsButton prefixLine={true} tutorials={sslTutorials} /> &nbsp;
+            {operating && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />}
           </Form>
         </Accordion.Body>
       </Accordion.Item>
@@ -419,10 +435,11 @@ function SettingHttps() {
               <Form.Text> * {t('settings.sslFileCertTip')}</Form.Text>
               <Form.Control as="textarea" rows={5} defaultValue={crt} onChange={(e) => setCrt(e.target.value)} />
             </Form.Group>
-            <Button variant="primary" type="submit" onClick={(e) => updateSSL(e)}>
+            <Button variant="primary" type="submit" disabled={operating} onClick={(e) => updateSSL(e)}>
               {t('settings.sslFileSubmit')}
             </Button> &nbsp;
-            <TutorialsButton prefixLine={true} tutorials={sslTutorials} />
+            <TutorialsButton prefixLine={true} tutorials={sslTutorials} /> &nbsp;
+            {operating && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />}
           </Form>
         </Accordion.Body>
       </Accordion.Item>

@@ -94,18 +94,19 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("MGMT_LISTEN", "2022")
 	setEnvDefault("PLATFORM_DOCKER", "true")
 	setEnvDefault("MGMT_DOCKER", "false")
+	setEnvDefault("HTTPS_LISTEN", "2443")
 
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, "+
 		"NODE_ENV=%v, LOCAL_RELEASE=%v, SRS_DOCKER=%v, USE_DOCKER=%v, SRS_UTEST=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, "+
 		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, SRS_DOCKERIZED=%v, MGMT_DOCKER=%v, "+
-		"REGISTRY=%v, MGMT_LISTEN=%v, PLATFORM_DOCKER=%v",
+		"REGISTRY=%v, MGMT_LISTEN=%v, PLATFORM_DOCKER=%v, HTTPS_LISTEN=%v",
 		len(os.Getenv("MGMT_PASSWORD")), len(os.Getenv("SRS_PLATFORM_SECRET")), os.Getenv("CLOUD"),
 		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("NODE_ENV"), os.Getenv("LOCAL_RELEASE"),
 		os.Getenv("SRS_DOCKER"), os.Getenv("USE_DOCKER"), os.Getenv("SRS_UTEST"),
 		len(os.Getenv("REDIS_PASSWORD")), os.Getenv("REDIS_PORT"), os.Getenv("PUBLIC_URL"),
 		os.Getenv("BUILD_PATH"), os.Getenv("REACT_APP_LOCALE"), os.Getenv("PLATFORM_LISTEN"),
 		os.Getenv("SRS_DOCKERIZED"), os.Getenv("MGMT_DOCKER"), os.Getenv("REGISTRY"),
-		os.Getenv("MGMT_LISTEN"), os.Getenv("PLATFORM_DOCKER"),
+		os.Getenv("MGMT_LISTEN"), os.Getenv("PLATFORM_DOCKER"), os.Getenv("HTTPS_LISTEN"),
 	)
 
 	// Setup the base OS for redis, which should never depends on redis.

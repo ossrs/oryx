@@ -8,6 +8,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -435,6 +436,16 @@ func setEnvDefault(key, value string) {
 
 // reloadNginx is used to reload the NGINX server.
 func reloadNginx(ctx context.Context) error {
+	select {
+	case httpCertificateReload <- true:
+	default:
+	}
+
+	if conf.IsDarwin {
+		logger.T(ctx, "ignore reload nginx on darwin")
+		return nil
+	}
+
 	fileName := path.Join(conf.Pwd, fmt.Sprintf("containers/data/signals/nginx.reload.%v",
 		time.Now().UnixNano()/int64(time.Millisecond),
 	))
@@ -448,6 +459,11 @@ func reloadNginx(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// nginxGetCertificate is used to get the certificate for the server.
+func nginxGetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+	return httpsCertificate, nil
 }
 
 // updateSslFiles update the ssl files.

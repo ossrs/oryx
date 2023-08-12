@@ -19,7 +19,7 @@ export default function Login({onLogin}) {
 function LoginImpl({onLogin}) {
   const [plaintext, setPlaintext] = React.useState(true);
   const [password, setPassword] = React.useState();
-  const [logging, setLogging] = React.useState(false);
+  const [operating, setOperating] = React.useState(false);
   const navigate = useNavigate();
   const passwordRef = React.useRef();
   const plaintextRef = React.useRef();
@@ -51,7 +51,7 @@ function LoginImpl({onLogin}) {
   // changes its value. See https://stackoverflow.com/a/55854902/17679565
   const handleLogin = React.useCallback((e) => {
     e.preventDefault();
-    setLogging(true);
+    setOperating(true);
 
     axios.post('/terraform/v1/mgmt/login', {
       password,
@@ -65,9 +65,9 @@ function LoginImpl({onLogin}) {
       onLogin && onLogin();
       navigate('/routers-scenario');
     }).catch(handleError).finally(() => {
-      setLogging(false);
+      setOperating(false);
     });
-  }, [password, handleError, onLogin, navigate, setLogging]);
+  }, [password, handleError, onLogin, navigate, setOperating]);
 
   return (
     <>
@@ -93,10 +93,10 @@ function LoginImpl({onLogin}) {
             <Form.Check type="checkbox" label={t('login.labelShow')} defaultChecked={plaintext}
               onClick={() => setPlaintext(!plaintext)}/>
           </Form.Group>
-          <Button variant="primary" type="submit" disabled={logging} onClick={(e) => handleLogin(e)}>
+          <Button variant="primary" type="submit" disabled={operating} onClick={(e) => handleLogin(e)}>
             {t('login.labelLogin')}
           </Button> &nbsp;
-          {logging && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />}
+          {operating && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />}
         </Form>
       </Container>
     </>

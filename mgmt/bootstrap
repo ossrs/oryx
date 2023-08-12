@@ -11,6 +11,7 @@ DATA_HOME=/data
 WELL_KNOWN=${DATA_HOME}/.well-known
 IMAGE=ossrs/srs-stack:1
 MGMT_PORT=2022
+HTTPS_PORT=2443
 RTMP_PORT=1935
 API_PORT=1985
 HTTP_PORT=8080
@@ -20,17 +21,17 @@ NGINX_RELOAD="/etc/init.d/nginx reload"
 
 echo -n "DATA_HOME=${DATA_HOME}, WELL_KNOWN=${WELL_KNOWN}, IMAGE=${IMAGE}, MGMT_PORT=${MGMT_PORT}, RTMP_PORT=${RTMP_PORT}"
 echo -n ", API_PORT=${API_PORT}, HTTP_PORT=${HTTP_PORT}, RTC_PORT=${RTC_PORT}, SRT_PORT=${SRT_PORT}, NGINX_RELOAD=${NGINX_RELOAD}"
-echo ""
+echo ", HTTPS_PORT=${HTTPS_PORT}"
 
 echo "Force to stop platform container"
 docker rm -f srs-stack 2>/dev/null
 
 echo "Start platform container"
 CMD="docker run -v ${DATA_HOME}:/data -v ${WELL_KNOWN}:/data/.well-known ${EXTRA_PARAMS}
-    -p ${MGMT_PORT}:2022 -p ${RTMP_PORT}:1935/tcp -p ${API_PORT}:1985/tcp -p
+    -p ${MGMT_PORT}:2022/tcp -p ${HTTPS_PORT}:2443/tcp -p ${RTMP_PORT}:1935/tcp -p ${API_PORT}:1985/tcp -p
     ${HTTP_PORT}:8080/tcp -p ${RTC_PORT}:8000/udp -p ${SRT_PORT}:10080/udp
     --log-driver=json-file --log-opt=max-size=1g --log-opt=max-file=3
-    --restart no --rm -it --name srs-stack --detach
+    --restart no -it --name srs-stack --detach
     ${IMAGE}"
 echo $CMD && $CMD
 if [[ $? -ne 0 ]]; then echo "Start platform container failed"; exit 1; fi
@@ -39,7 +40,7 @@ echo "Start platform container ok"
 # Show all logs of container.
 docker logs -f srs-stack &
 
-handle_signals() {
+function handle_signals() {
     echo "Signal $1 received. Cleaning up and exiting..."
 
     ID=$(docker ps --filter "name=srs-stack" --format "{{.ID}}")
@@ -53,24 +54,29 @@ handle_signals() {
 trap 'handle_signals SIGTERM' SIGTERM
 trap 'handle_signals SIGINT' SIGINT
 
+function do_reload() {
+    files=$(ls $DATA_HOME/signals/nginx.reload.* 2>/dev/null)
+    for file in $files; do
+        echo "Got ${#files[@]} reload signals" && rm -f $files
+        if [[ -f /etc/init.d/nginx ]]; then
+            $NGINX_RELOAD && echo "Reload nginx ok"
+            if [[ $? -ne 0 ]]; then echo "Reload nginx failed"; exit 1; fi
+        fi
+        break
+    done
+}
+
 while true; do
     ID=$(docker ps --filter "name=srs-stack" --format "{{.ID}}")
     if [[ -z $ID ]]; then
         echo "Platform container not found"
+        docker rm -f srs-stack 2>/dev/null
         exit 1
     fi
 
     docker ps -a --filter "name=srs-stack" --format "{{.Names}} {{.ID}} {{.Ports}}"
     for (( i=0; i<3; i++ )); do
-        files=$(ls $DATA_HOME/signals/nginx.reload.* 2>/dev/null)
-        for file in $files; do
-            echo "Got ${#files[@]} reload signals" && rm -f $files
-            if [[ -f /etc/init.d/nginx ]]; then
-                $NGINX_RELOAD && echo "Reload nginx ok"
-                if [[ $? -ne 0 ]]; then echo "Reload nginx failed"; exit 1; fi
-            fi
-            break
-        done
+        do_reload
         sleep 1
     done
 done

@@ -112,29 +112,22 @@ jobs:
           sudo bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
           echo "" && echo "/usr/local/srs-stack/" && du -sh /usr/local/srs-stack/*
           echo "" && ls -lha /data /data/config
-      - name: Check service
-        run: |
-          echo "Wait for service ready."
-          make -j -C test
-          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
-              -srs-log=true -wait-ready=true -init-password=true \
-              -check-api-secret=false -test.run TestApi_Empty
-          
-          echo "Show service status."
-          systemctl status srs-stack
-          docker ps -a
-          
-          echo "Record log of services."
-          journalctl -u srs-stack > journalctl.log
-          journalctl -u srs-stack -f >>journalctl.log 2>&1 & pid_journalctl=$!
-          docker logs srs-stack >docker.log
-          docker logs -f srs-stack >>docker.log 2>&1 & pid_docker=$!
-      - name: Test service
+      - name: Check and Test service
         run: |
           # We will handle the error by ourselves.
           set +e
           
-          # Setup SRS_PLATFORM_SECRET and MGMT_PASSWORD.
+          # Record all logs.
+          journalctl -u srs-stack > journalctl.log
+          journalctl -u srs-stack -f >>journalctl.log 2>&1 & pid_journalctl=$!
+          
+          echo "Wait for service ready." &&
+          make -j -C test &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=true \
+              -check-api-secret=false -test.run TestApi_Empty &&
+          
+          echo "Test service." &&
           eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
           ./test/srs-stack.test -test.v -wait-ready -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false \
@@ -145,10 +138,7 @@ jobs:
           echo "Stop service"
           sudo systemctl stop srs-stack
           kill $pid_journalctl 2>/dev/null
-          kill $pid_docker 2>/dev/null
-          
           echo "Log of journalctl.log" && cat journalctl.log
-          echo "Log of docker.log" && cat docker.log
           
           exit $ret
 
@@ -259,29 +249,22 @@ jobs:
           docker exec bt systemctl status srs-stack
           docker exec bt journalctl -u srs-stack
           docker exec bt docker logs srs-stack
-      - name: Check service
-        run: |
-          echo "Wait for service ready."
-          make -j -C test
-          ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
-              -srs-log=true -wait-ready=true -init-password=true \
-              -check-api-secret=false -test.run TestApi_Empty
-          
-          echo "Show service status."
-          docker exec bt systemctl status srs-stack
-          docker exec bt docker ps -a
-          
-          echo "Record log of services."
-          docker exec bt journalctl -u srs-stack > journalctl.log
-          docker exec bt journalctl -u srs-stack -f >>journalctl.log 2>&1 &
-          docker exec bt docker logs srs-stack >docker.log
-          docker exec bt docker logs -f srs-stack >>docker.log 2>&1 &
-      - name: Test service
+      - name: Check and Test service
         run: |
           # We will handle the error by ourselves.
           set +e
           
-          # Setup SRS_PLATFORM_SECRET and MGMT_PASSWORD.
+          # Record all logs.
+          docker exec bt journalctl -u srs-stack >journalctl.log
+          docker exec bt journalctl -u srs-stack -f >>journalctl.log 2>&1 &
+          
+          echo "Wait for service ready." &&
+          make -j -C test &&
+          ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+              -srs-log=true -wait-ready=true -init-password=true \
+              -check-api-secret=false -test.run TestApi_Empty &&
+          
+          echo "Test service." &&
           eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
           ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=false \
@@ -294,7 +277,6 @@ jobs:
           docker stop bt
           
           echo "Log of journalctl.log" && cat journalctl.log
-          echo "Log of docker.log" && cat docker.log
           
           exit $ret
 
@@ -402,29 +384,22 @@ jobs:
           docker exec aapanel systemctl status srs-stack
           docker exec aapanel journalctl -u srs-stack
           docker exec aapanel docker logs srs-stack
-      - name: Check service
-        run: |
-          echo "Wait for service ready."
-          make -j -C test
-          ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
-              -srs-log=true -wait-ready=true -init-password=true \
-              -check-api-secret=false -test.run TestApi_Empty
-          
-          echo "Show service status."
-          docker exec aapanel systemctl status srs-stack
-          docker exec aapanel docker ps -a
-          
-          echo "Record log of services."
-          docker exec aapanel journalctl -u srs-stack > journalctl.log
-          docker exec aapanel journalctl -u srs-stack -f >>journalctl.log 2>&1 &
-          docker exec aapanel docker logs srs-stack >docker.log
-          docker exec aapanel docker logs -f srs-stack >>docker.log 2>&1 &
-      - name: Test service
+      - name: Check and Test service
         run: |
           # We will handle the error by ourselves.
           set +e
           
-          # Setup SRS_PLATFORM_SECRET and MGMT_PASSWORD.
+          # Record all logs.
+          docker exec aapanel journalctl -u srs-stack >journalctl.log
+          docker exec aapanel journalctl -u srs-stack -f >>journalctl.log 2>&1 &
+          
+          echo "Wait for service ready." &&
+          make -j -C test &&
+          ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+              -srs-log=true -wait-ready=true -init-password=true \
+              -check-api-secret=false -test.run TestApi_Empty &&
+          
+          echo "Test service." &&
           eval $(bash scripts/tools/secret.sh) && rm -f test/.env &&
           ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=false \
@@ -437,7 +412,6 @@ jobs:
           docker stop aapanel
           
           echo "Log of journalctl.log" && cat journalctl.log
-          echo "Log of docker.log" && cat docker.log
           
           exit $ret
 
