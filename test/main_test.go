@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -29,6 +30,7 @@ import (
 var srsLog *bool
 var srsTimeout *int
 var endpoint *string
+var forceHttps *bool
 var apiSecret *string
 var checkApiSecret *bool
 var waitReady *bool
@@ -44,8 +46,8 @@ var srsFFprobeDuration *int
 var srsFFprobeTimeout *int
 
 func options() string {
-	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, waitReady=%v, initPassword=%v, systemPassword=%vB",
-		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *waitReady, *initPassword, len(*systemPassword))
+	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, forceHttps=%v, waitReady=%v, initPassword=%v, systemPassword=%vB",
+		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *forceHttps, *waitReady, *initPassword, len(*systemPassword))
 }
 
 func prepareTest(ctx context.Context) (err error) {
@@ -68,7 +70,8 @@ func prepareTest(ctx context.Context) (err error) {
 	srsTimeout = flag.Int("srs-timeout", 60000, "For each case, the timeout in ms")
 	apiSecret = flag.String("api-secret", os.Getenv("SRS_PLATFORM_SECRET"), "The secret for api")
 	checkApiSecret = flag.Bool("check-api-secret", true, "Whether check the api secret")
-	endpoint = flag.String("endpoint", "http://localhost:2022", "The endpoint for api")
+	endpoint = flag.String("endpoint", "http://localhost:2022", "The endpoint for api, can be http or https")
+	forceHttps = flag.Bool("force-https", false, "Force to use HTTPS api")
 	waitReady = flag.Bool("wait-ready", false, "Whether wait for the service ready")
 	apiReadyimeout = flag.Int("api-ready-timeout", 30000, "Check when startup, the timeout in ms")
 	initPassword = flag.Bool("init-password", false, "Whether init the system and set password")
@@ -279,14 +282,35 @@ func apiRequest(ctx context.Context, apiPath string, data interface{}, response 
 		m = http.MethodGet
 	}
 
-	u := fmt.Sprintf("%s%s", *endpoint, apiPath)
+	apiEndpoint := *endpoint
+	if *forceHttps {
+		apiEndpoint = strings.ReplaceAll(apiEndpoint, "http://", "https://")
+		apiEndpoint = strings.ReplaceAll(apiEndpoint, ":2022", ":2443")
+	}
+
+	u := fmt.Sprintf("%s%s", apiEndpoint, apiPath)
 	req, err := http.NewRequestWithContext(ctx, m, u, body)
 	if err != nil {
 		return errors.Wrapf(err, "new request")
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", *apiSecret))
-	resp, err := http.DefaultClient.Do(req)
+
+	var resp *http.Response
+	if strings.HasPrefix(apiEndpoint, "https://") {
+		tlsConfig := &tls.Config{
+			InsecureSkipVerify: true,
+		}
+		transport := &http.Transport{
+			TLSClientConfig: tlsConfig,
+		}
+		client := &http.Client{
+			Transport: transport,
+		}
+		resp, err = client.Do(req)
+	} else {
+		resp, err = http.DefaultClient.Do(req)
+	}
 	if err != nil {
 		return errors.Wrapf(err, "do request")
 	}

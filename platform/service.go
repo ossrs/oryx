@@ -136,7 +136,9 @@ func (v *dockerHTTPService) Run(ctx context.Context) error {
 			Addr:    addr,
 			Handler: handler,
 			TLSConfig: &tls.Config{
-				GetCertificate: nginxGetCertificate,
+				GetCertificate: func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+					return certManager.httpsCertificate, nil
+				},
 			},
 		}
 		v.servers = append(v.servers, server)
@@ -706,7 +708,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 				return errors.New("empty crt")
 			}
 
-			if err := updateSslFiles(ctx, key+"\n", crt+"\n"); err != nil {
+			if err := certManager.updateSslFiles(ctx, key+"\n", crt+"\n"); err != nil {
 				return errors.Wrapf(err, "updateSslFiles key=%vB, crt=%vB", len(key), len(crt))
 			}
 
@@ -750,7 +752,7 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 				return errors.New("empty domain")
 			}
 
-			if err := updateLetsEncrypt(ctx, domain); err != nil {
+			if err := certManager.updateLetsEncrypt(ctx, domain); err != nil {
 				return errors.Wrapf(err, "updateSslFiles domain=%v", domain)
 			}
 

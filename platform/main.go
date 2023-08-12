@@ -343,8 +343,13 @@ func initPlatform(ctx context.Context) error {
 		}
 	}
 
+	certManager = NewCertManager()
+	if err := certManager.Initialize(ctx); err != nil {
+		return errors.Wrapf(err, "initialize cert manager")
+	}
+
 	// Run only once for a special version.
-	bootRelease := "v24"
+	bootRelease := "v25"
 	if firstRun, err := rdb.HGet(ctx, SRS_FIRST_BOOT, bootRelease).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v %v", SRS_FIRST_BOOT, bootRelease)
 	} else if firstRun == "" {

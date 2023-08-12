@@ -10,6 +10,7 @@ Start redis and SRS by docker:
 ```bash
 docker rm -f redis srs 2>/dev/null &&
 docker run --name redis --rm -it -v $HOME/db/redis:/data -p 6379:6379 -d redis &&
+bash scripts/tools/secret.sh --output test/.env || echo "No secret, OK" &&
 docker run --name srs --rm -it \
     -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
     -v $(pwd)/platform/containers/objs/nginx:/usr/local/srs/objs/nginx \
@@ -25,6 +26,14 @@ Run the platform backend, or run in GoLand:
 
 ```bash
 (cd platform && go run .)
+```
+
+Run all tests:
+
+```bash
+bash scripts/tools/secret.sh --output test/.env &&
+(cd test && go test -v --endpoint=http://localhost:2022) &&
+(cd test && go test -v --endpoint=https://localhost:2443)
 ```
 
 Run the platform react ui, or run in WebStorm:
@@ -398,6 +407,7 @@ Cleanup, remove the files and domain:
 
 ```bash
 ssh root@$LNAME.$LDOMAIN rm -f platform.tar* bt-srs_stack.zip 2>/dev/null &&
+ssh root@$LNAME.$LDOMAIN python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
 ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/srs_stack/install.sh uninstall 2>/dev/null || echo OK &&
 domains=$(doctl compute domain records ls $LDOMAIN --no-header |grep $LNAME) && echo "Cleanup domains: $domains" &&
 doctl compute domain records delete $LDOMAIN $(echo $domains |awk '{print $1}') -f

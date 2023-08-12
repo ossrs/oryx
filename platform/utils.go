@@ -6,9 +6,7 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,7 +16,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 	"runtime"
 	"strings"
@@ -436,10 +433,7 @@ func setEnvDefault(key, value string) {
 
 // reloadNginx is used to reload the NGINX server.
 func reloadNginx(ctx context.Context) error {
-	select {
-	case httpCertificateReload <- true:
-	default:
-	}
+	defer certManager.ReloadCertificate(ctx)
 
 	if conf.IsDarwin {
 		logger.T(ctx, "ignore reload nginx on darwin")
@@ -458,117 +452,6 @@ func reloadNginx(ctx context.Context) error {
 			return errors.Wrapf(err, "write file %v", fileName)
 		}
 	}
-	return nil
-}
-
-// nginxGetCertificate is used to get the certificate for the server.
-func nginxGetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
-	return httpsCertificate, nil
-}
-
-// updateSslFiles update the ssl files.
-func updateSslFiles(ctx context.Context, key, crt string) error {
-	keyFile := path.Join(conf.Pwd, "containers/data/config/nginx.key")
-	crtFile := path.Join(conf.Pwd, "containers/data/config/nginx.crt")
-
-	if err := exec.CommandContext(ctx, "rm", "-f", keyFile, crtFile).Run(); err != nil {
-		return errors.Wrapf(err, "rm -f %v %v", keyFile, crtFile)
-	}
-
-	if err := ioutil.WriteFile(keyFile, []byte(key), 0644); err != nil {
-		return errors.Wrapf(err, "write key %vB to %v", len(key), keyFile)
-	}
-
-	if err := ioutil.WriteFile(crtFile, []byte(crt), 0644); err != nil {
-		return errors.Wrapf(err, "write crt %vB to %v", len(crt), crtFile)
-	}
-
-	return nil
-}
-
-// updateLetsEncrypt request letsencrypt and update the ssl files.
-func updateLetsEncrypt(ctx context.Context, domain string) error {
-	if true {
-		args := []string{
-			"--email", "srs.stack@gmail.com", "--domains", domain,
-			"--http.webroot", path.Join(conf.Pwd, "containers/data"), "--http", "--accept-tos",
-			"run",
-		}
-		cmd := exec.CommandContext(ctx, "lego", args...)
-		cmd.Dir = path.Join(conf.Pwd, "containers/data/lego")
-
-		var stdout, stderr bytes.Buffer
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-
-		if err := cmd.Run(); err != nil {
-			return errors.Wrapf(err, "run lego %v in %v, stdout %v, stderr %v",
-				args, cmd.Dir, stdout.String(), stderr.String())
-		}
-		logger.Tf(ctx, "run lego %v in %v ok, stdout %v, stderr %v",
-			args, cmd.Dir, stdout.String(), stderr.String(),
-		)
-	}
-
-	keyFile := path.Join(conf.Pwd, fmt.Sprintf("containers/data/lego/.lego/certificates/%v.key", domain))
-	if _, err := os.Stat(keyFile); err != nil {
-		return errors.Wrapf(err, "stat %v", keyFile)
-	}
-
-	crtFile := path.Join(conf.Pwd, fmt.Sprintf("containers/data/lego/.lego/certificates/%v.crt", domain))
-	if _, err := os.Stat(crtFile); err != nil {
-		return errors.Wrapf(err, "stat %v", crtFile)
-	}
-
-	targetKeyFile := path.Join(conf.Pwd, "containers/data/config/nginx.key")
-	targetCrtFile := path.Join(conf.Pwd, "containers/data/config/nginx.crt")
-	if err := exec.CommandContext(ctx, "rm", "-f", targetKeyFile, targetCrtFile).Run(); err != nil {
-		return errors.Wrapf(err, "rm -f %v %v", targetKeyFile, targetCrtFile)
-	}
-
-	if true {
-		source := fmt.Sprintf("../lego/.lego/certificates/%v.key", domain)
-		cmd := exec.CommandContext(ctx, "ln", "-sf", source, "nginx.key")
-		cmd.Dir = path.Join(conf.Pwd, "containers/data/config")
-		if err := cmd.Run(); err != nil {
-			return errors.Wrapf(err, "run %v in %v", cmd.Args, cmd.Dir)
-		}
-	}
-
-	if true {
-		source := fmt.Sprintf("../lego/.lego/certificates/%v.crt", domain)
-		cmd := exec.CommandContext(ctx, "ln", "-sf", source, "nginx.crt")
-		cmd.Dir = path.Join(conf.Pwd, "containers/data/config")
-		if err := cmd.Run(); err != nil {
-			return errors.Wrapf(err, "run %v in %v", cmd.Args, cmd.Dir)
-		}
-	}
-
-	return nil
-}
-
-// renewLetsEncrypt request letsencrypt and update the ssl files.
-func renewLetsEncrypt(ctx context.Context, domain string) error {
-	args := []string{
-		"--email", "srs.stack@gmail.com", "--domains", domain,
-		"--http.webroot", path.Join(conf.Pwd, "containers/data"), "--http",
-		"renew", "--days", "30",
-	}
-	cmd := exec.CommandContext(ctx, "lego", args...)
-	cmd.Dir = path.Join(conf.Pwd, "containers/data/lego")
-
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return errors.Wrapf(err, "run lego %v in %v, stdout %v, stderr %v",
-			args, cmd.Dir, stdout.String(), stderr.String())
-	}
-	logger.Tf(ctx, "run lego %v in %v ok, stdout %v, stderr %v",
-		args, cmd.Dir, stdout.String(), stderr.String(),
-	)
-
 	return nil
 }
 
