@@ -429,6 +429,13 @@ domains=$(doctl compute domain records ls $LDOMAIN --no-header |grep $LNAME) && 
 doctl compute domain records delete $LDOMAIN $(echo $domains |awk '{print $1}') -f
 ```
 
+Query domain and droplet:
+
+```bash
+doctl compute domain records ls ossrs.io |grep lego &&
+doctl compute droplet ls |grep lego
+```
+
 # Tips
 
 Other tips for developers.

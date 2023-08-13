@@ -312,8 +312,8 @@ jobs:
       SRS_DROPLET_EIP: ${{ env.SRS_DROPLET_EIP }}
     runs-on: ubuntu-20.04
 
-  test-online-final:
-    name: test-online-final
+  waiting:
+    name: Waiting debug
     if: always()
     needs:
       - envs
@@ -323,6 +323,10 @@ jobs:
         run: |
           echo "SRS_DOMAIN=${{ needs.envs.outputs.SRS_DOMAIN }}" >> $GITHUB_ENV
           echo "SRS_DROPLET_EIP=${{ needs.run-test.outputs.SRS_DROPLET_EIP }}" >> $GITHUB_ENV
+      - name: Dispose artifacts
+        uses: geekyeggo/delete-artifact@v2
+        with:
+          name: platform-cache
       - name: Tips for Debugging
         run: |
           echo "Please use the following command to login the server:"
@@ -361,6 +365,16 @@ jobs:
                 if [[ -f ctrl-reset ]]; then echo "Reset by user."; rm -f ctrl-reset; i=600; fi
               done
             fi
+    runs-on: ubuntu-20.04
+
+  # Use a seperate job to ensure the VM and domain is disposed.
+  test-online-final:
+    name: test-online-final
+    if: always()
+    needs:
+      - envs
+      - waiting
+    steps:
       - name: Covert output to env
         run: |
           echo "SRS_DOMAIN=${{ needs.envs.outputs.SRS_DOMAIN }}" >> $GITHUB_ENV
@@ -368,30 +382,24 @@ jobs:
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-      - name: Remove temporary domain
-        run: |
-          # We will handle the error by ourselves.
-          set +e
-          
-          COUNT=$(doctl compute domain records ls ossrs.io --no-header |grep lego |grep $SRS_DOMAIN |wc -l)
-          if [[ $COUNT -ne 1 ]]; then
-              doctl compute domain records ls ossrs.io --no-header |grep lego |grep $SRS_DOMAIN 
-              echo "Should be 1 record, actual $COUNT"
-              exit 1
-          fi
-          
-          DOMAIN_ID=$(doctl compute domain records ls ossrs.io --no-header |grep lego |grep $SRS_DOMAIN |awk '{print $1}') &&
-          echo "Remove $DOMAIN_ID" &&
-          doctl compute domain records delete ossrs.io $DOMAIN_ID -f
       - name: Remove temporary VM
         run: |
           # We will handle the error by ourselves.
           set +e
           
-          echo "Remove machine $SRS_DOMAIN"
-          doctl compute droplet delete $SRS_DOMAIN -f
-      - uses: geekyeggo/delete-artifact@v2
-        with:
-          name: platform-cache
+          if [[ ! -z $SRS_DOMAIN ]]; then
+            echo "Remove machine $SRS_DOMAIN" &&
+            doctl compute droplet delete $SRS_DOMAIN -f
+          fi
+      - name: Remove temporary domain
+        run: |
+          # We will handle the error by ourselves.
+          set +e
+          
+          DOMAIN_ID=$(doctl compute domain records ls ossrs.io --no-header |grep lego |grep $SRS_DOMAIN |awk '{print $1}')
+          if [[ ! -z $DOMAIN_ID ]]; then
+            echo "Remove $DOMAIN_ID" &&
+            doctl compute domain records delete ossrs.io $DOMAIN_ID -f
+          fi
       - run: echo OK
     runs-on: ubuntu-20.04
