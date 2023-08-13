@@ -401,6 +401,13 @@ ssh root@$LNAME.$LDOMAIN unzip -q bt-srs_stack.zip -d /www/server/panel/plugin &
 ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/srs_stack/install.sh install
 ```
 
+On the server, setup the `.bashrc`:
+
+```bash
+export BT_KEY=xxxxxx
+export PYTHONIOENCODING=UTF-8
+```
+
 You can use BT panel to install the plugin, or by command:
 
 ```bash

@@ -6,7 +6,7 @@ on:
       - v1*
 
 jobs:
-  check-test:
+  check-test-dev:
     steps:
       - name: Wait for Test Workflow
         uses: fountainhead/action-wait-for-check@v1.1.0
@@ -22,9 +22,26 @@ jobs:
           echo "Test Workflow failed, aborting release" && exit 1
     runs-on: ubuntu-20.04
 
+  check-test-online:
+    steps:
+      - name: Wait for Test Online Workflow
+        uses: fountainhead/action-wait-for-check@v1.1.0
+        id: wait-for-test
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: test-online-final
+          ref: ${{ github.sha }}
+          timeoutSeconds: 3600
+      - name: Check Test Workflow result
+        if: steps.wait-for-test.outputs.conclusion != 'success'
+        run: |
+          echo "Test Workflow failed, aborting release" && exit 1
+    runs-on: ubuntu-20.04
+
   envs:
     needs:
-      - check-test
+      - check-test-dev
+      - check-test-online
     name: envs
     steps:
       ##################################################################################################################

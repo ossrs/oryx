@@ -1,4 +1,4 @@
-name: Test for commits
+name: Test Dev Environment
 
 on:
   push:

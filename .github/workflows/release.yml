@@ -1,4 +1,4 @@
-name: "Release publication"
+name: "Release Publication for Major Version"
 
 # @see https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#onpushpull_requestbranchestags
 on:

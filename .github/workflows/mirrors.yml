@@ -1,4 +1,4 @@
-name: "Mirror docker containers"
+name: "Mirror Required Docker Images"
 
 on:
   # See https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow

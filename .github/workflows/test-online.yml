@@ -1,0 +1,397 @@
+name: Test Online Environment
+
+on:
+  push:
+    tags:
+      - v1*
+  # See https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow
+  workflow_dispatch:
+
+jobs:
+  envs:
+    name: envs
+    steps:
+      ##################################################################################################################
+      # Git checkout
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      # The github.ref is, for example, refs/tags/v5.0.145 or refs/tags/v5.0-r8
+      # Generate variables like:
+      #   SRS_TAG=v1.0.52
+      #   SRS_MAJOR=1
+      # @see https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
+      - name: Generate varaiables
+        run: |
+          SRS_TAG=$(bash scripts/version.sh)
+          echo "SRS_TAG=$SRS_TAG" >> $GITHUB_ENV
+          SRS_MAJOR=$(echo $SRS_TAG| awk -F '.' '{print $1}' |sed 's/v//g')
+          echo "SRS_MAJOR=$SRS_MAJOR" >> $GITHUB_ENV
+          SRS_DOMAIN=lego-$(date +%s)-$RANDOM
+          echo "SRS_DOMAIN=$SRS_DOMAIN" >> $GITHUB_ENV
+          echo "SRS_TAG:$SRS_TAG, SRS_MAJOR:$SRS_MAJOR, SRS_DOMAIN:$SRS_DOMAIN"
+    # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
+    outputs:
+      SRS_TAG: ${{ env.SRS_TAG }}
+      SRS_MAJOR: ${{ env.SRS_MAJOR }}
+      SRS_DOMAIN: ${{ env.SRS_DOMAIN }}
+    runs-on: ubuntu-20.04
+
+  build-image:
+    name: Build Image
+    needs:
+      - envs
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Build image for platform
+        run: |
+          docker build -t platform:latest -f Dockerfile .
+          docker images
+          docker save -o platform.tar platform:latest
+      - uses: actions/upload-artifact@v3
+        with:
+          name: platform-cache
+          path: platform.tar
+          retention-days: 1
+    runs-on: ubuntu-20.04
+
+  create-vm-domain:
+    name: Create VM Domain
+    needs:
+      - envs
+    steps:
+      - name: Covert output to env
+        run: |
+          echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
+          echo "SRS_DOMAIN=${{ needs.envs.outputs.SRS_DOMAIN }}" >> $GITHUB_ENV
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      - name: Create test machine
+        run: |
+          sshkey=$(doctl compute ssh-key list --no-header |grep srs |awk '{print $1}')
+          doctl compute droplet create $SRS_DOMAIN \
+            --image ubuntu-20-04-x64 --region sgp1 --size s-1vcpu-512mb-10gb \
+            --ssh-keys $sshkey --wait
+      - name: Query IP of Server
+        run: |
+          SRS_DROPLET_EIP=$(doctl compute droplet get $SRS_DOMAIN --format PublicIPv4 --no-header)
+          echo "SRS_DROPLET_EIP=$SRS_DROPLET_EIP" >> $GITHUB_ENV
+          echo "SRS_DROPLET_EIP:$SRS_DROPLET_EIP"
+      - name: Create domain name
+        run: |
+          doctl compute domain records create ossrs.io \
+              --record-type A --record-name $SRS_DOMAIN --record-data $SRS_DROPLET_EIP \
+              --record-ttl 3600
+          # Note that should never list all records.
+          doctl compute domain records ls ossrs.io |grep lego |wc -l
+      - name: Tips for Debugging
+        run: |
+          echo "Please use the following command to login the server:"
+          echo "  ssh root@$SRS_DROPLET_EIP"
+          echo "Or check by web console:"
+          echo "  http://$SRS_DOMAIN.ossrs.io"
+          echo "To terminate immediately:"
+          echo "  ssh root@$SRS_DROPLET_EIP touch ctrl-abort"
+          echo "To reset the timer:"
+          echo "  ssh root@$SRS_DROPLET_EIP touch ctrl-reset"
+          echo "To always wait for debugging:"
+          echo "  ssh root@$SRS_DROPLET_EIP touch ctrl-debugging"
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Build package
+        run: |
+          # Build files for test, should run in ubuntu20.
+          bash scripts/setup-ubuntu/build.sh --version $SRS_TAG --output $(pwd)/build
+          make -j -C test
+          
+          # All files in provision will be uploaded to server.
+          mkdir -p provision provision/test
+          cp test/srs-stack.test provision/test/
+          cp build/linux-srs_stack-zh.tar.gz platform/containers/conf/nginx.conf \
+            scripts/tools/secret.sh provision/
+      - name: Copy file via ssh key
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ env.SRS_DROPLET_EIP }}
+          username: root
+          port: 22
+          key: ${{ secrets.DIGITALOCEAN_SSHKEY }}
+          timeout: 600s
+          source: provision/*
+          target: /root
+      - name: Provision server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SRS_DROPLET_EIP }}
+          username: root
+          key: ${{ secrets.DIGITALOCEAN_SSHKEY }}
+          port: 22
+          timeout: 600s
+          script: |
+            apt-get update -y &&
+            apt-get install -y docker.io nginx ffmpeg unzip net-tools tree &&
+            echo "Install OK"
+            
+            # Move files from provision.
+            mv -f provision/* .
+            
+            /etc/init.d/nginx stop
+            cp nginx.conf /etc/nginx/nginx.conf
+            sed -i "s/user nginx;/user www-data;/g" /etc/nginx/nginx.conf
+            mkdir -p  /data/config && touch /data/config/nginx.http.conf /data/config/nginx.server.conf
+            /etc/init.d/nginx start
+      - name: Wait for domain ready
+        run: |
+          for ((i=0; i<100; i++)); do
+            IP=$(dig +short $SRS_DOMAIN.ossrs.io 2>/dev/null)
+            if [[ ! -z $IP ]]; then
+              echo "Domain $SRS_DOMAIN.ossrs.io is ready, IP=$IP"
+              exit 0
+            fi
+          done
+          
+          echo "Domain $SRS_DOMAIN.ossrs.io is not ready"
+          exit 1
+    # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
+    outputs:
+      SRS_DROPLET_EIP: ${{ env.SRS_DROPLET_EIP }}
+    runs-on: ubuntu-20.04
+
+  run-test:
+    name: Run Test
+    needs:
+      - envs
+      - build-image
+      - create-vm-domain
+    steps:
+      - name: Remove unnecessary files
+        run: |
+          df -h
+          echo ""
+          echo "After removed some unused files."
+          echo ""
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /usr/local/share/powershell /usr/share/swift /usr/lib/jvm
+          df -h
+      - name: Covert output to env
+        run: |
+          echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
+          echo "SRS_DOMAIN=${{ needs.envs.outputs.SRS_DOMAIN }}" >> $GITHUB_ENV
+          echo "SRS_DROPLET_EIP=${{ needs.create-vm-domain.outputs.SRS_DROPLET_EIP }}" >> $GITHUB_ENV
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: platform-cache
+      - name: Setup the Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '>=1.16.0'
+      - name: Build package
+        run: |
+          # Build files for test, should run in ubuntu20.
+          rm -f platform.tar.gz && tar zcf platform.tar.gz platform.tar
+          
+          # All files in provision will be uploaded to server.
+          mkdir -p provision
+          cp platform.tar.gz provision
+      - name: Copy file via ssh key
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ env.SRS_DROPLET_EIP }}
+          username: root
+          port: 22
+          key: ${{ secrets.DIGITALOCEAN_SSHKEY }}
+          timeout: 600s
+          source: provision/*
+          target: /root
+      - name: Provision server
+        env:
+          SRS_TAG: ${{ env.SRS_TAG }}
+          SRS_DOMAIN: ${{ env.SRS_DOMAIN }}
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SRS_DROPLET_EIP }}
+          username: root
+          key: ${{ secrets.DIGITALOCEAN_SSHKEY }}
+          port: 22
+          envs: SRS_TAG,SRS_DOMAIN
+          timeout: 600s
+          script: |
+            # Move files from provision.
+            mv -f provision/* . 
+            
+            tar xf platform.tar.gz
+            docker load -i platform.tar
+            docker tag platform:latest ossrs/srs-stack:$SRS_TAG
+            docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
+            docker image prune -f
+            docker images
+            
+            tar xf linux-srs_stack-zh.tar.gz
+            bash srs_stack/scripts/setup-ubuntu/install.sh
+            
+            # Setup journald to write logs.
+            sed -i 's/#Storage=auto/Storage=volatile/g' /etc/systemd/journald.conf
+            systemctl restart systemd-journald
+      - name: Run All tests
+        env:
+          SRS_TAG: ${{ env.SRS_TAG }}
+          SRS_DOMAIN: ${{ env.SRS_DOMAIN }}
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SRS_DROPLET_EIP }}
+          username: root
+          key: ${{ secrets.DIGITALOCEAN_SSHKEY }}
+          port: 22
+          envs: SRS_TAG,SRS_DOMAIN
+          timeout: 1800s
+          script: |
+            # We will handle the error by ourselves.
+            set +e
+
+            # Record all logs.
+            journalctl -u srs-stack -f >journalctl.log 2>&1 & pid_journalctl=$!
+            
+            # Restart the service, might fail because journald restarted.
+            systemctl restart srs-stack
+            systemctl status srs-stack
+            
+            echo "Wait for service ready." &&
+            bash secret.sh >./test/.env &&
+            ./test/srs-stack.test -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
+              -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
+              -test.run TestApi_Empty &&
+            
+            echo "Test HTTP API with self-signed cert." &&
+            bash secret.sh >./test/.env &&
+            ./test/srs-stack.test -test.v -wait-ready -endpoint http://$SRS_DOMAIN.ossrs.io \
+              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true &&
+            
+            echo "Test HTTPS API with self-signed cert." &&
+            bash secret.sh >./test/.env &&
+            ./test/srs-stack.test -test.v -wait-ready -endpoint https://$SRS_DOMAIN.ossrs.io \
+              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true &&
+            
+            echo "Request CERT from letsencrypt." &&
+            bash secret.sh >./test/.env &&
+            ./test/srs-stack.test -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
+              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -domain-lets-encrypt=$SRS_DOMAIN.ossrs.io \
+              -test.run TestApi_LetsEncryptUpdateCert &&
+            
+            echo "Test HTTPS API with letsencrypt cert." &&
+            bash secret.sh >./test/.env &&
+            ./test/srs-stack.test -test.v -wait-ready -endpoint https://$SRS_DOMAIN.ossrs.io \
+              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -https-insecure-verify
+            ret=$?; echo "Test result: $ret"
+  
+            echo "Stop service"
+            sudo systemctl stop srs-stack
+            kill $pid_journalctl 2>/dev/null
+            echo "Log of journalctl.log" && cat journalctl.log
+            
+            exit $ret
+      - name: Write signal file
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SRS_DROPLET_EIP }}
+          username: root
+          key: ${{ secrets.DIGITALOCEAN_SSHKEY }}
+          port: 22
+          timeout: 1800s
+          script: |
+            touch ctrl-test-done
+    # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
+    outputs:
+      SRS_DROPLET_EIP: ${{ env.SRS_DROPLET_EIP }}
+    runs-on: ubuntu-20.04
+
+  test-online-final:
+    name: test-online-final
+    if: always()
+    needs:
+      - envs
+      - run-test
+    steps:
+      - name: Covert output to env
+        run: |
+          echo "SRS_DOMAIN=${{ needs.envs.outputs.SRS_DOMAIN }}" >> $GITHUB_ENV
+          echo "SRS_DROPLET_EIP=${{ needs.run-test.outputs.SRS_DROPLET_EIP }}" >> $GITHUB_ENV
+      - name: Tips for Debugging
+        run: |
+          echo "Please use the following command to login the server:"
+          echo "  ssh root@$SRS_DROPLET_EIP"
+          echo "Or check by web console:"
+          echo "  http://$SRS_DOMAIN.ossrs.io"
+          echo "To terminate immediately:"
+          echo "  ssh root@$SRS_DROPLET_EIP touch ctrl-abort"
+          echo "To reset the timer:"
+          echo "  ssh root@$SRS_DROPLET_EIP touch ctrl-reset"
+          echo "To always wait for debugging:"
+          echo "  ssh root@$SRS_DROPLET_EIP touch ctrl-debugging"
+          if [[ -f test/.env ]]; then
+            echo "Environment variables:"
+            cat test/.env
+          fi
+      - name: Waiting for error debugging
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SRS_DROPLET_EIP }}
+          username: root
+          key: ${{ secrets.DIGITALOCEAN_SSHKEY }}
+          port: 22
+          timeout: 1800s
+          script: |
+            if [[ -f ctrl-test-done && ! -f ctrl-debugging ]]; then
+              echo "Test done normally."
+            else
+              echo "Start service for debugging"
+              sudo systemctl start srs-stack
+              
+              echo "Dispose in 60s..."
+              for ((i=60; i>0; i--)); do
+                echo "Dispose in ${i}s..."; sleep 3
+                if [[ -f ctrl-abort ]]; then echo "Abort by user."; break; fi
+                if [[ -f ctrl-reset ]]; then echo "Reset by user."; rm -f ctrl-reset; i=600; fi
+              done
+            fi
+      - name: Covert output to env
+        run: |
+          echo "SRS_DOMAIN=${{ needs.envs.outputs.SRS_DOMAIN }}" >> $GITHUB_ENV
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      - name: Remove temporary domain
+        run: |
+          # We will handle the error by ourselves.
+          set +e
+          
+          COUNT=$(doctl compute domain records ls ossrs.io --no-header |grep lego |grep $SRS_DOMAIN |wc -l)
+          if [[ $COUNT -ne 1 ]]; then
+              doctl compute domain records ls ossrs.io --no-header |grep lego |grep $SRS_DOMAIN 
+              echo "Should be 1 record, actual $COUNT"
+              exit 1
+          fi
+          
+          DOMAIN_ID=$(doctl compute domain records ls ossrs.io --no-header |grep lego |grep $SRS_DOMAIN |awk '{print $1}') &&
+          echo "Remove $DOMAIN_ID" &&
+          doctl compute domain records delete ossrs.io $DOMAIN_ID -f
+      - name: Remove temporary VM
+        run: |
+          # We will handle the error by ourselves.
+          set +e
+          
+          echo "Remove machine $SRS_DOMAIN"
+          doctl compute droplet delete $SRS_DOMAIN -f
+      - uses: geekyeggo/delete-artifact@v2
+        with:
+          name: platform-cache
+      - run: echo OK
+    runs-on: ubuntu-20.04

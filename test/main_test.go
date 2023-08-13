@@ -56,6 +56,24 @@ var systemPassword *string
 // generate the nginx configuration in nginx.server.conf.
 var initSelfSignedCert *bool
 
+// domainLetsEncrypt is the domain used to test the letsencrypt feature.
+//
+// In a development environment, you typically don't have a public IP address, which means you won't be
+// able to test the Let's Encrypt feature by default. However, when testing in an online environment, you
+// can enable this feature, and it will initiate a genuine request to Let's Encrypt to obtain a valid HTTPS
+// certificate.
+//
+// If empty string, don't test the letsencrypt feature.
+var domainLetsEncrypt *string
+
+// httpsInsecureVerify is used to verify the HTTPS certificate.
+//
+// When using a self-signed certificate for local HTTPS testing, you should not attempt to verify the HTTP
+// certificate, as it is self-signed and verification will fail. For testing in an online environment, you
+// can enable the domainLetsEncrypt feature to request a legitimate and valid certificate from Let's Encrypt,
+// at which point you can enable verification for the HTTPS certificate.
+var httpsInsecureVerify *bool
+
 var srsLog *bool
 var srsTimeout *int
 var endpoint *string
@@ -73,8 +91,11 @@ var srsFFprobeDuration *int
 var srsFFprobeTimeout *int
 
 func options() string {
-	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, forceHttps=%v, waitReady=%v, initPassword=%v, initSelfSignedCert=%v, systemPassword=%vB",
-		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *forceHttps, *waitReady, *initPassword, *initSelfSignedCert, len(*systemPassword))
+	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, forceHttps=%v, "+
+		"waitReady=%v, initPassword=%v, initSelfSignedCert=%v, systemPassword=%vB, domainLetsEncrypt=%v, "+
+		"httpsInsecureVerify=%v",
+		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *forceHttps, *waitReady, *initPassword,
+		*initSelfSignedCert, len(*systemPassword), *domainLetsEncrypt, *httpsInsecureVerify)
 }
 
 func prepareTest(ctx context.Context) (err error) {
@@ -103,6 +124,8 @@ func prepareTest(ctx context.Context) (err error) {
 	apiReadyimeout = flag.Int("api-ready-timeout", 30000, "Check when startup, the timeout in ms")
 	initPassword = flag.Bool("init-password", false, "Whether init the system and set password")
 	initSelfSignedCert = flag.Bool("init-self-signed-cert", false, "Whether init self-signed cert for HTTPS")
+	domainLetsEncrypt = flag.String("domain-lets-encrypt", "", "Use the domain to test the letsencrypt feature")
+	httpsInsecureVerify = flag.Bool("https-insecure-verify", false, "Whether verify the HTTPS certificate")
 	systemPassword = flag.String("system-password", os.Getenv("MGMT_PASSWORD"), "The system password for login")
 	srsFFmpeg = flag.String("srs-ffmpeg", "ffmpeg", "The FFmpeg tool")
 	srsFFmpegStderr = flag.Bool("srs-ffmpeg-stderr", false, "Whether enable the FFmpeg stderr log")
@@ -336,7 +359,7 @@ func apiRequest(ctx context.Context, apiPath string, data interface{}, response 
 	var resp *http.Response
 	if strings.HasPrefix(apiEndpoint, "https://") {
 		tlsConfig := &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: !*httpsInsecureVerify,
 		}
 		transport := &http.Transport{
 			TLSClientConfig: tlsConfig,

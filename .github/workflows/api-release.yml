@@ -1,4 +1,4 @@
-name: "Release version management"
+name: "Release Version Management"
 
 on:
   push:

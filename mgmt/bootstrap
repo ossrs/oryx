@@ -46,6 +46,7 @@ function handle_signals() {
     ID=$(docker ps --filter "name=srs-stack" --format "{{.ID}}")
     if [[ ! -z $ID ]]; then
         docker stop srs-stack
+        docker rm -f srs-stack 2>/dev/null
     fi
 
     exit 0
@@ -70,6 +71,7 @@ while true; do
     ID=$(docker ps --filter "name=srs-stack" --format "{{.ID}}")
     if [[ -z $ID ]]; then
         echo "Platform container not found"
+        docker stop srs-stack 2>/dev/null
         docker rm -f srs-stack 2>/dev/null
         exit 1
     fi
