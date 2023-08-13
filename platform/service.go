@@ -29,15 +29,21 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-func NewDockerHTTPService() HttpService {
-	return &dockerHTTPService{}
+// HttpService is a HTTP server for platform.
+type HttpService interface {
+	Close() error
+	Run(ctx context.Context) error
 }
 
-type dockerHTTPService struct {
+func NewHTTPService() HttpService {
+	return &httpService{}
+}
+
+type httpService struct {
 	servers []*http.Server
 }
 
-func (v *dockerHTTPService) Close() error {
+func (v *httpService) Close() error {
 	servers := v.servers
 	v.servers = nil
 
@@ -53,14 +59,14 @@ func (v *dockerHTTPService) Close() error {
 	return nil
 }
 
-func (v *dockerHTTPService) Run(ctx context.Context) error {
+func (v *httpService) Run(ctx context.Context) error {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
 	ctx, cancel := context.WithCancel(ctx)
 
 	handler := http.NewServeMux()
-	if err := handleDockerHTTPService(ctx, handler); err != nil {
+	if err := handleHTTPService(ctx, handler); err != nil {
 		return errors.Wrapf(err, "handle service")
 	}
 
@@ -171,42 +177,8 @@ func (v *dockerHTTPService) Run(ctx context.Context) error {
 	return nil
 }
 
-func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error {
+func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	ohttp.Server = fmt.Sprintf("srs-stack/%v", version)
-
-	ep := "/terraform/v1/host/versions"
-	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
-		ohttp.WriteData(ctx, w, r, &struct {
-			Version string `json:"version"`
-		}{
-			Version: strings.TrimPrefix(version, "v"),
-		})
-	})
-
-	ep = "/terraform/v1/mgmt/versions"
-	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
-		ohttp.WriteData(ctx, w, r, &struct {
-			Version string `json:"version"`
-		}{
-			Version: strings.TrimPrefix(version, "v"),
-		})
-	})
-
-	if err := handleDockerHooksService(ctx, handler); err != nil {
-		return errors.Wrapf(err, "handle hooks")
-	}
-
-	ep = "/terraform/v1/ffmpeg/versions"
-	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
-		ohttp.WriteData(ctx, w, r, &struct {
-			Version string `json:"version"`
-		}{
-			Version: strings.TrimPrefix(version, "v"),
-		})
-	})
 
 	if err := forwardWorker.Handle(ctx, handler); err != nil {
 		return errors.Wrapf(err, "handle forward")
@@ -216,7 +188,151 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		return errors.Wrapf(err, "handle vLive")
 	}
 
-	ep = "/terraform/v1/mgmt/init"
+	if err := handleHooksService(ctx, handler); err != nil {
+		return errors.Wrapf(err, "handle hooks")
+	}
+
+	var ep string
+
+	handleHostVersions(ctx, handler)
+	handleMgmtVersions(ctx, handler)
+	handleFFmpegVersions(ctx, handler)
+	handleMgmtInit(ctx, handler)
+	handleMgmtCheck(ctx, handler)
+	handleMgmtEnvs(ctx, handler)
+	handleMgmtToken(ctx, handler)
+	handleMgmtLogin(ctx, handler)
+	handleMgmtStatus(ctx, handler)
+	handleMgmtBilibili(ctx, handler)
+	handleMgmtBeianQuery(ctx, handler)
+	handleMgmtSecretQuery(ctx, handler)
+	handleMgmtBeianUpdate(ctx, handler)
+	handleMgmtNginxHls(ctx, handler)
+	handleMgmtAutoSelfSignedCertificate(ctx, handler)
+	handleMgmtSsl(ctx, handler)
+	handleMgmtLetsEncrypt(ctx, handler)
+	handleMgmtCertQuery(ctx, handler)
+	handleMgmtUI(ctx, handler)
+
+	// Proxy to other services, migrate from mgmt.
+	createProxy := func(target string) (*httputil.ReverseProxy, error) {
+		targetObject, err := url.Parse(target)
+		if err != nil {
+			return nil, errors.Wrapf(err, "parse backend %v", target)
+		}
+		return httputil.NewSingleHostReverseProxy(targetObject), nil
+	}
+
+	proxy2023, err := createProxy("http://127.0.0.1:2023")
+	if err != nil {
+		return err
+	}
+
+	proxy1985, err := createProxy("http://127.0.0.1:1985")
+	if err != nil {
+		return err
+	}
+
+	proxy8080, err := createProxy("http://127.0.0.1:8080")
+	if err != nil {
+		return err
+	}
+
+	platformFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/www")))
+	wellKnownFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/data")))
+
+	ep = "/"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		// Set common header.
+		ohttp.SetHeader(w)
+
+		// For version management.
+		if strings.HasPrefix(r.URL.Path, "/terraform/v1/releases") {
+			logger.Tf(ctx, "Proxy %v to backend 2023", r.URL.Path)
+			proxy2023.ServeHTTP(w, r)
+			return
+		}
+
+		// For HTTPS management.
+		if strings.HasPrefix(r.URL.Path, "/.well-known/") {
+			w.Header().Set("Cache-Control", "no-cache, max-age=0")
+			wellKnownFileServer.ServeHTTP(w, r)
+			return
+		}
+
+		// We directly serve the static files, because we overwrite the www for DVR.
+		if strings.HasPrefix(r.URL.Path, "/console/") || strings.HasPrefix(r.URL.Path, "/players/") ||
+			strings.HasPrefix(r.URL.Path, "/tools/") {
+			if r.URL.Path != "/tools/player.html" && r.URL.Path != "/tools/xgplayer.html" {
+				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 30*24*3600))
+			}
+			platformFileServer.ServeHTTP(w, r)
+			return
+		}
+
+		// Proxy to SRS HTTP streaming, console and player, by /api/, /rtc/, /live/, /console/, /players/
+		// See https://github.com/vagusX/koa-proxies
+		// TODO: FIXME: Do authentication for api.
+		if strings.HasPrefix(r.URL.Path, "/api/") || strings.HasPrefix(r.URL.Path, "/rtc/") {
+			logger.Tf(ctx, "Proxy %v to backend 1985", r.URL.Path)
+			proxy1985.ServeHTTP(w, r)
+			return
+		}
+
+		if strings.HasSuffix(r.URL.Path, ".flv") || strings.HasSuffix(r.URL.Path, ".m3u8") ||
+			strings.HasSuffix(r.URL.Path, ".ts") || strings.HasSuffix(r.URL.Path, ".aac") ||
+			strings.HasSuffix(r.URL.Path, ".mp3") {
+			logger.Tf(ctx, "Proxy %v to backend 8080", r.URL.Path)
+			proxy8080.ServeHTTP(w, r)
+			return
+
+		}
+
+		http.Redirect(w, r, "/mgmt", http.StatusFound)
+	})
+
+	return nil
+}
+
+func handleHostVersions(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/host/versions"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		ohttp.WriteData(ctx, w, r, &struct {
+			Version string `json:"version"`
+		}{
+			Version: strings.TrimPrefix(version, "v"),
+		})
+	})
+}
+
+func handleMgmtVersions(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/versions"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		ohttp.WriteData(ctx, w, r, &struct {
+			Version string `json:"version"`
+		}{
+			Version: strings.TrimPrefix(version, "v"),
+		})
+	})
+}
+
+func handleFFmpegVersions(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/ffmpeg/versions"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		ohttp.WriteData(ctx, w, r, &struct {
+			Version string `json:"version"`
+		}{
+			Version: strings.TrimPrefix(version, "v"),
+		})
+	})
+}
+
+func handleMgmtInit(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/init"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -286,8 +402,10 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
-	ep = "/terraform/v1/mgmt/check"
+func handleMgmtCheck(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/check"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -314,8 +432,10 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
-	ep = "/terraform/v1/mgmt/envs"
+func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/envs"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -329,8 +449,10 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
-	ep = "/terraform/v1/mgmt/token"
+func handleMgmtToken(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/token"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -366,9 +488,11 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
+func handleMgmtLogin(ctx context.Context, handler *http.ServeMux) {
 	var loginLock sync.Mutex
-	ep = "/terraform/v1/mgmt/login"
+	ep := "/terraform/v1/mgmt/login"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -430,8 +554,10 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
-	ep = "/terraform/v1/mgmt/status"
+func handleMgmtStatus(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/status"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -471,8 +597,10 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
-	ep = "/terraform/v1/mgmt/bilibili"
+func handleMgmtBilibili(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/bilibili"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -562,8 +690,10 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
-	ep = "/terraform/v1/mgmt/beian/query"
+func handleMgmtBeianQuery(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/beian/query"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -579,8 +709,10 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
-	ep = "/terraform/v1/mgmt/secret/query"
+func handleMgmtSecretQuery(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/secret/query"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -605,8 +737,10 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
-	ep = "/terraform/v1/mgmt/beian/update"
+func handleMgmtBeianUpdate(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/beian/update"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -644,8 +778,10 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
-	ep = "/terraform/v1/mgmt/nginx/hls"
+func handleMgmtNginxHls(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/nginx/hls"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -679,8 +815,10 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
-	ep = "/terraform/v1/mgmt/auto-self-signed-certificate"
+func handleMgmtAutoSelfSignedCertificate(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/auto-self-signed-certificate"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -709,8 +847,10 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
-	ep = "/terraform/v1/mgmt/ssl"
+func handleMgmtSsl(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/ssl"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -757,8 +897,10 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
-	ep = "/terraform/v1/mgmt/letsencrypt"
+func handleMgmtLetsEncrypt(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/letsencrypt"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -804,7 +946,64 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
+}
 
+func handleMgmtCertQuery(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/cert/query"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token *string `json:"token"`
+			}{
+				Token: &token,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			provider, err := rdb.Get(ctx, SRS_HTTPS).Result()
+			if err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "get %v", SRS_HTTPS)
+			}
+
+			domain, err := rdb.Get(ctx, SRS_HTTPS_DOMAIN).Result()
+			if err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "get %v", SRS_HTTPS_DOMAIN)
+			}
+
+			var key, crt string
+			if provider != "" {
+				key, crt, err = certManager.QueryCertificate()
+				if err != nil {
+					return errors.Wrapf(err, "query cert")
+				}
+			}
+
+			ohttp.WriteData(ctx, w, r, &struct {
+				Provider string `json:"provider"`
+				Domain   string `json:"domain"`
+				Key      string `json:"key"`
+				Crt      string `json:"crt"`
+			}{
+				Provider: provider, Domain: domain, Key: key, Crt: crt,
+			})
+			logger.Tf(ctx, "query cert ok, provider=%v, domain=%v, key=%vB, crt=%vB, token=%vB",
+				provider, domain, len(key), len(crt), len(token),
+			)
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+}
+
+func handleMgmtUI(ctx context.Context, handler *http.ServeMux) {
 	// Serve UI at platform.
 	fileRoot := path.Join(conf.Pwd, "../ui/build")
 	if os.Getenv("REACT_APP_LOCALE") != "" {
@@ -839,91 +1038,11 @@ func handleDockerHTTPService(ctx context.Context, handler *http.ServeMux) error 
 		fileServer.ServeHTTP(w, r)
 	}
 
-	ep = "/mgmt"
+	ep := "/mgmt"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, mgmtHandler)
 
 	ep = "/mgmt/"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, mgmtHandler)
-
-	// Proxy to other services, migrate from mgmt.
-	createProxy := func(target string) (*httputil.ReverseProxy, error) {
-		targetObject, err := url.Parse(target)
-		if err != nil {
-			return nil, errors.Wrapf(err, "parse backend %v", target)
-		}
-		return httputil.NewSingleHostReverseProxy(targetObject), nil
-	}
-
-	proxy2023, err := createProxy("http://127.0.0.1:2023")
-	if err != nil {
-		return err
-	}
-
-	proxy1985, err := createProxy("http://127.0.0.1:1985")
-	if err != nil {
-		return err
-	}
-
-	proxy8080, err := createProxy("http://127.0.0.1:8080")
-	if err != nil {
-		return err
-	}
-
-	platformFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/www")))
-	wellKnownFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/data")))
-
-	ep = "/"
-	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
-		// Set common header.
-		ohttp.SetHeader(w)
-
-		// For version management.
-		if strings.HasPrefix(r.URL.Path, "/terraform/v1/releases") {
-			logger.Tf(ctx, "Proxy %v to backend 2023", r.URL.Path)
-			proxy2023.ServeHTTP(w, r)
-			return
-		}
-
-		// For HTTPS management.
-		if strings.HasPrefix(r.URL.Path, "/.well-known/") {
-			w.Header().Set("Cache-Control", "no-cache, max-age=0")
-			wellKnownFileServer.ServeHTTP(w, r)
-			return
-		}
-
-		// We directly serve the static files, because we overwrite the www for DVR.
-		if strings.HasPrefix(r.URL.Path, "/console/") || strings.HasPrefix(r.URL.Path, "/players/") ||
-			strings.HasPrefix(r.URL.Path, "/tools/") {
-			if r.URL.Path != "/tools/player.html" && r.URL.Path != "/tools/xgplayer.html" {
-				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 30*24*3600))
-			}
-			platformFileServer.ServeHTTP(w, r)
-			return
-		}
-
-		// Proxy to SRS HTTP streaming, console and player, by /api/, /rtc/, /live/, /console/, /players/
-		// See https://github.com/vagusX/koa-proxies
-		// TODO: FIXME: Do authentication for api.
-		if strings.HasPrefix(r.URL.Path, "/api/") || strings.HasPrefix(r.URL.Path, "/rtc/") {
-			logger.Tf(ctx, "Proxy %v to backend 1985", r.URL.Path)
-			proxy1985.ServeHTTP(w, r)
-			return
-		}
-
-		if strings.HasSuffix(r.URL.Path, ".flv") || strings.HasSuffix(r.URL.Path, ".m3u8") ||
-			strings.HasSuffix(r.URL.Path, ".ts") || strings.HasSuffix(r.URL.Path, ".aac") ||
-			strings.HasSuffix(r.URL.Path, ".mp3") {
-			logger.Tf(ctx, "Proxy %v to backend 8080", r.URL.Path)
-			proxy8080.ServeHTTP(w, r)
-			return
-
-		}
-
-		http.Redirect(w, r, "/mgmt", http.StatusFound)
-	})
-
-	return nil
 }

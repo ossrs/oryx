@@ -597,7 +597,7 @@ func (v *DvrM3u8Stream) expired() bool {
 	return false
 }
 
-// Initialize to load artifact. There is no simultaneously access, so no lock is needed.
+// Initialize to load artifact. There is no simultaneously access, so no certFileLock is needed.
 func (v *DvrM3u8Stream) Initialize(ctx context.Context, r *DvrWorker) error {
 	v.dvrWorker = r
 	logger.Tf(ctx, "dvr initialize url=%v, uuid=%v", v.M3u8URL, v.UUID)

@@ -30,12 +30,6 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-// HttpService is a HTTP server for platform.
-type HttpService interface {
-	Close() error
-	Run(ctx context.Context) error
-}
-
 // Versions is latest and stable version from SRS Stack API.
 type Versions struct {
 	Version string `json:"version"`
@@ -237,10 +231,11 @@ func discoverPlatform(ctx context.Context, cloud string) (platform string, err e
 }
 
 // Docker container names.
-const platformDockerName = "platform"
+// TODO: FIXME: Remove it.
 const srsDockerName = "srs-server"
 
 // Note that we only enable srs-server, never enable srs-dev.
+// TODO: FIXME: Remove it.
 const srsDevDockerName = "srs-dev"
 
 // Redis keys.

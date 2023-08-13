@@ -25,17 +25,15 @@ docker run --name srs --rm -it \
 Run the platform backend, or run in GoLand:
 
 ```bash
-(cd platform && AUTO_SELF_SIGNED_CERTIFICATE=true go run .)
+(cd platform && go run .)
 ```
-
-> Note: We use `AUTO_SELF_SIGNED_CERTIFICATE=true` to enable self-signed certificate.
 
 Run all tests:
 
 ```bash
 bash scripts/tools/secret.sh --output test/.env &&
-(cd test && go test -v --endpoint=http://localhost:2022) &&
-(cd test && go test -v --endpoint=https://localhost:2443)
+(cd test && go test -v --endpoint=http://localhost:2022 -init-self-signed-cert=true) &&
+(cd test && go test -v --endpoint=https://localhost:2443 -init-self-signed-cert=false)
 ```
 
 Run the platform react ui, or run in WebStorm:
@@ -492,6 +490,7 @@ Platform:
 * `/terraform/v1/mgmt/ssl` Config the system SSL config.
 * `/terraform/v1/mgmt/auto-self-signed-certificate` Create the self-signed certificate if no cert.
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
+* `/terraform/v1/mgmt/cert/query` Query the key and cert for HTTPS.
 * `/terraform/v1/host/versions` Public version api.
 * `/terraform/v1/releases` Version management for all components.
 

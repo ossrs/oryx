@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -36,6 +37,9 @@ type CertManager struct {
 
 	// httpCertificateReload is used to reload the certificate.
 	httpCertificateReload chan bool
+
+	// certFileLock is used to lock the cert file nginx.key and nginx.crt.
+	certFileLock sync.Mutex
 }
 
 func NewCertManager() *CertManager {
@@ -55,16 +59,21 @@ func (v *CertManager) Initialize(ctx context.Context) error {
 }
 
 func (v *CertManager) createSelfSignCertificate(ctx context.Context) error {
-	keyFile := path.Join(conf.Pwd, "containers/data/config/nginx.key")
-	crtFile := path.Join(conf.Pwd, "containers/data/config/nginx.crt")
-
 	var noKeyFile, noCrtFile bool
-	if _, err := os.Stat(keyFile); os.IsNotExist(err) {
-		noKeyFile = true
-	}
-	if _, err := os.Stat(crtFile); os.IsNotExist(err) {
-		noCrtFile = true
-	}
+	func() {
+		v.certFileLock.Lock()
+		defer v.certFileLock.Unlock()
+
+		keyFile := path.Join(conf.Pwd, "containers/data/config/nginx.key")
+		crtFile := path.Join(conf.Pwd, "containers/data/config/nginx.crt")
+
+		if _, err := os.Stat(keyFile); os.IsNotExist(err) {
+			noKeyFile = true
+		}
+		if _, err := os.Stat(crtFile); os.IsNotExist(err) {
+			noCrtFile = true
+		}
+	}()
 	if !noKeyFile || !noCrtFile {
 		logger.Tf(ctx, "cert: ignore for cert file exists")
 		return nil
@@ -140,6 +149,9 @@ func (v *CertManager) ReloadCertificate(ctx context.Context) {
 }
 
 func (v *CertManager) reloadCertificateFile(ctx context.Context) error {
+	v.certFileLock.Lock()
+	defer v.certFileLock.Unlock()
+
 	keyFile := path.Join(conf.Pwd, "containers/data/config/nginx.key")
 	crtFile := path.Join(conf.Pwd, "containers/data/config/nginx.crt")
 
@@ -167,8 +179,31 @@ func (v *CertManager) reloadCertificateFile(ctx context.Context) error {
 	return nil
 }
 
+func (v *CertManager) QueryCertificate() (string, string, error) {
+	v.certFileLock.Lock()
+	defer v.certFileLock.Unlock()
+
+	keyFile := path.Join(conf.Pwd, "containers/data/config/nginx.key")
+	crtFile := path.Join(conf.Pwd, "containers/data/config/nginx.crt")
+
+	key, err := ioutil.ReadFile(keyFile)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "read key %v", keyFile)
+	}
+
+	crt, err := ioutil.ReadFile(crtFile)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "read crt %v", crtFile)
+	}
+
+	return string(key), string(crt), nil
+}
+
 // updateSslFiles update the ssl files.
 func (v *CertManager) updateSslFiles(ctx context.Context, key, crt string) error {
+	v.certFileLock.Lock()
+	defer v.certFileLock.Unlock()
+
 	keyFile := path.Join(conf.Pwd, "containers/data/config/nginx.key")
 	crtFile := path.Join(conf.Pwd, "containers/data/config/nginx.crt")
 
@@ -189,6 +224,9 @@ func (v *CertManager) updateSslFiles(ctx context.Context, key, crt string) error
 
 // updateLetsEncrypt request letsencrypt and update the ssl files.
 func (v *CertManager) updateLetsEncrypt(ctx context.Context, domain string) error {
+	v.certFileLock.Lock()
+	defer v.certFileLock.Unlock()
+
 	defer v.ReloadCertificate(ctx)
 
 	if true {

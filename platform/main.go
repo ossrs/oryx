@@ -184,7 +184,7 @@ func doMain(ctx context.Context) error {
 	}
 
 	// Run HTTP service.
-	httpService := NewDockerHTTPService()
+	httpService := NewHTTPService()
 	defer httpService.Close()
 	if err := httpService.Run(ctx); err != nil {
 		return errors.Wrapf(err, "start http service")

@@ -64,9 +64,7 @@ function LoginImpl({onLogin}) {
 
       onLogin && onLogin();
       navigate('/routers-scenario');
-    }).catch(handleError).finally(() => {
-      setOperating(false);
-    });
+    }).catch(handleError).finally(setOperating);
   }, [password, handleError, onLogin, navigate, setOperating]);
 
   return (

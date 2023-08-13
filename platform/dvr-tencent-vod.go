@@ -726,7 +726,7 @@ func (v *VodM3u8Stream) expired() bool {
 	return false
 }
 
-// Initialize to load artifact. There is no simultaneously access, so no lock is needed.
+// Initialize to load artifact. There is no simultaneously access, so no certFileLock is needed.
 func (v *VodM3u8Stream) Initialize(ctx context.Context, r *VodWorker) error {
 	v.vodWorker = r
 	logger.Tf(ctx, "vod initialize url=%v, uuid=%v", v.M3u8URL, v.UUID)

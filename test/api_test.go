@@ -2,7 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	cr "crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"fmt"
+	"math/big"
 	"math/rand"
 	"os"
 	"sync"
@@ -350,6 +357,90 @@ func TestApi_TutorialsQueryBilibili(t *testing.T) {
 		r0 = err
 	} else if res.Title == "" || res.Desc == "" {
 		r0 = errors.Errorf("invalid response %v", res)
+	}
+}
+
+func TestApi_SslUpdateCert(t *testing.T) {
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	var r0 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	var key, crt string
+	if err := func() error {
+		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), cr.Reader)
+		if err != nil {
+			return errors.Wrapf(err, "generate ecdsa key")
+		}
+
+		template := x509.Certificate{
+			SerialNumber: big.NewInt(1),
+			Subject: pkix.Name{
+				CommonName: "srs.stack.local",
+			},
+			NotBefore: time.Now(),
+			NotAfter:  time.Now().AddDate(10, 0, 0),
+			KeyUsage:  x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+			ExtKeyUsage: []x509.ExtKeyUsage{
+				x509.ExtKeyUsageServerAuth,
+			},
+			BasicConstraintsValid: true,
+		}
+
+		derBytes, err := x509.CreateCertificate(cr.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+		if err != nil {
+			return errors.Wrapf(err, "create certificate")
+		}
+
+		privateKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
+		if err != nil {
+			return errors.Wrapf(err, "marshal ecdsa key")
+		}
+
+		privateKeyBlock := pem.Block{
+			Type:  "EC PRIVATE KEY",
+			Bytes: privateKeyBytes,
+		}
+		key = string(pem.EncodeToMemory(&privateKeyBlock))
+
+		certBlock := pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: derBytes,
+		}
+		crt = string(pem.EncodeToMemory(&certBlock))
+		logger.Tf(ctx, "cert: create self-signed certificate ok, key=%vB, crt=%vB", len(key), len(crt))
+		return nil
+	}(); err != nil {
+		r0 = err
+		return
+	}
+
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/ssl", &struct {
+		Key string `json:"key"`
+		Crt string `json:"crt"`
+	}{
+		Key: key, Crt: crt,
+	}, nil); err != nil {
+		r0 = err
+		return
+	}
+
+	conf := struct {
+		Provider string `json:"provider"`
+		Key      string `json:"key"`
+		Crt      string `json:"crt"`
+	}{}
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/cert/query", nil, &conf); err != nil {
+		r0 = err
+	} else if conf.Provider != "ssl" || conf.Key != key || conf.Crt != crt {
+		r0 = errors.Errorf("invalid response %v", conf)
 	}
 }
 

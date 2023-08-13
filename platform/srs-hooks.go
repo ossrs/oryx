@@ -31,7 +31,7 @@ import (
 	"github.com/tencentyun/cos-go-sdk-v5"
 )
 
-func handleDockerHooksService(ctx context.Context, handler *http.ServeMux) error {
+func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 	versionHandler := func(w http.ResponseWriter, r *http.Request) {
 		ohttp.WriteData(ctx, w, r, &struct {
 			Version string `json:"version"`

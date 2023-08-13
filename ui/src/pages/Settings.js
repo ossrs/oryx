@@ -338,9 +338,29 @@ function SettingAuth() {
 }
 
 function SettingHttps() {
-  const [key, setKey] = React.useState();
-  const [crt, setCrt] = React.useState();
-  const [domain, setDomain] = React.useState();
+  const [config, setConfig] = React.useState({});
+  const [loading, setLoading] = React.useState(true);
+  const handleError = useErrorHandler();
+
+  React.useEffect(() => {
+    setLoading(true);
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/cert/query', {
+      ...token,
+    }).then(res => {
+      setConfig(res?.data?.data || {});
+      console.log(`SSL: Query ok, provider=${res?.data?.data?.provider}`);
+    }).catch(handleError).finally(setLoading);
+  }, [handleError, setLoading, setConfig]);
+
+  return !loading ? <SettingHttpsImpl config={config} /> : <></>;
+}
+
+function SettingHttpsImpl({config}) {
+  const [key, setKey] = React.useState(config.key);
+  const [crt, setCrt] = React.useState(config.crt);
+  const [domain, setDomain] = React.useState(config.domain);
   const [operating, setOperating] = React.useState(false);
   const handleError = useErrorHandler();
   const {t} = useTranslation();
@@ -370,9 +390,7 @@ function SettingHttps() {
     }).then(res => {
       alert(t('settings.sslOk'));
       console.log(`SSL: Update ok`);
-    }).catch(handleError).finally(() => {
-      setOperating(false);
-    });
+    }).catch(handleError).finally(setOperating);
   }, [handleError, key, crt, t, setOperating]);
 
   const requestLetsEncrypt = React.useCallback((e) => {
@@ -397,13 +415,11 @@ function SettingHttps() {
     }).then(res => {
       alert(t('settings.sslLetsOk'));
       console.log(`SSL: Let's Encrypt SSL ok`);
-    }).catch(handleError).finally(() => {
-      setOperating(false);
-    });
+    }).catch(handleError).finally(setOperating);
   }, [handleError, domain, t, setOperating]);
 
   return (
-    <Accordion defaultActiveKey="0">
+    <Accordion defaultActiveKey={config?.provider === 'ssl' ? '1' : '0'}>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('settings.letsTitle')}</Accordion.Header>
         <Accordion.Body>

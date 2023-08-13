@@ -62,9 +62,7 @@ function AppImpl() {
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/init').then(res => {
       setInitialized(res.data.data.init);
-    }).catch(handleError).finally(() => {
-      setLoading(false);
-    });
+    }).catch(handleError).finally(setLoading);
   }, [handleError]);
 
   React.useEffect(() => {
