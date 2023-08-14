@@ -76,6 +76,64 @@ jobs:
           path: platform.tar
           retention-days: 1
 
+  test-image:
+    name: Test the platform image
+    needs:
+      - build-image
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install tools
+        run: |
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version
+      - uses: actions/download-artifact@v3
+        with:
+          name: platform-cache
+      - name: Run test for platform image
+        run: |
+          docker load -i platform.tar
+          docker tag platform ossrs/srs-stack:1
+          docker run --rm -d -p 2022:2022 -p 2443:2443 -p 1935:1935/tcp -p 1985:1985/tcp \
+            -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
+            -v /data:/data ossrs/srs-stack:1
+      - name: Check and Test service
+        run: |
+          # We will handle the error by ourselves.
+          set +e
+          
+          # Record all logs.
+          docker logs -f srs-stack >docker.log 2>&1 & pid_docker=$!
+          
+          echo "Wait for service ready." &&
+          make -j -C test &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+              -check-api-secret=true -test.run TestApi_Empty &&
+          
+          echo "Test HTTP service." &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true &&
+          
+          echo "Test HTTPS service." &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint https://localhost:2443 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true
+          ret=$?; echo "Test result: $ret"
+          
+          echo "Stop service"
+          docker stop srs-stack
+          kill $pid_docker 2>/dev/null
+          echo "Log of docker.log" && cat docker.log
+          
+          exit $ret
+
+    runs-on: ubuntu-20.04
+
   install-script-http:
     name: Test HTTP by script
     runs-on: ubuntu-20.04
@@ -762,6 +820,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs:
       - test
+      - test-image
       - install-script-http
       - install-script-https
       - install-bt-http
