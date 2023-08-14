@@ -17,7 +17,7 @@ docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935/tcp -p 1985:1985/tcp 
   -v $HOME/db:/data ossrs/srs-stack:1
 ```
 
-> Note: Please use `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:1` in China.
+> Note: Please use `-e REACT_APP_LOCALE=zh` and `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:1` in China.
 
 > Note: All data will be saved in `$HOME/db` directory, please change it to your directory.
 
@@ -40,7 +40,7 @@ You have the option to modify the volumes for srs-stack and direct them to diffe
 You can use environment variables to modify the settings.
 
 * `MGMT_PASSWORD`: The mgmt administrator password.
-* `REACT_APP_LOCALE`: The i18n config for ui, `en` or `zh`, default to `zh`.
+* `REACT_APP_LOCALE`: The i18n config for ui, `en` or `zh`, default to `en`.
 
 > Note: Kindly utilize the command such as `docker run -e REACT_APP_LOCALE=en` to modify the environment.
 

@@ -32,9 +32,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "env PUBLIC_URL=/mgmt REACT_APP_LOCALE=zh react-scripts start",
-    "startZh": "env PUBLIC_URL=/mgmt REACT_APP_LOCALE=zh react-scripts start",
-    "startEn": "env PUBLIC_URL=/mgmt REACT_APP_LOCALE=en react-scripts start",
+    "start": "env PUBLIC_URL=/mgmt REACT_APP_LOCALE=en react-scripts start",
+    "start-zh": "env PUBLIC_URL=/mgmt REACT_APP_LOCALE=zh react-scripts start",
+    "start-en": "env PUBLIC_URL=/mgmt REACT_APP_LOCALE=en react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --watchAll=false",
     "testWatch": "react-scripts test --watchAll=true",

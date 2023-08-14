@@ -342,8 +342,8 @@ jobs:
           
           exit $ret
 
-  install-bt-zh:
-    name: Test ZH by BT
+  install-bt:
+    name: Test by BT
     runs-on: ubuntu-20.04
     needs:
       - envs
@@ -485,8 +485,8 @@ jobs:
           
           exit $ret
 
-  install-aapanel-en:
-    name: Test EN by aaPanel
+  install-aapanel:
+    name: Test by aaPanel
     runs-on: ubuntu-20.04
     needs:
       - envs
@@ -634,8 +634,8 @@ jobs:
       - install-docker-en
       - install-script-zh
       - install-script-en
-      - install-bt-zh
-      - install-aapanel-en
+      - install-bt
+      - install-aapanel
     steps:
       - uses: geekyeggo/delete-artifact@v2
         with:
