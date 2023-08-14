@@ -1005,12 +1005,7 @@ func handleMgmtCertQuery(ctx context.Context, handler *http.ServeMux) {
 
 func handleMgmtUI(ctx context.Context, handler *http.ServeMux) {
 	// Serve UI at platform.
-	fileRoot := path.Join(conf.Pwd, "../ui/build")
-	if os.Getenv("REACT_APP_LOCALE") != "" {
-		fileRoot = path.Join(fileRoot, os.Getenv("REACT_APP_LOCALE"))
-	} else {
-		fileRoot = path.Join(fileRoot, "zh")
-	}
+	fileRoot := path.Join(conf.Pwd, "../ui/build", os.Getenv("REACT_APP_LOCALE"))
 
 	fileServer := http.FileServer(http.Dir(fileRoot))
 	logger.Tf(ctx, "File server at %v", fileRoot)

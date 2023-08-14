@@ -90,6 +90,8 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("NODE_ENV", "development")
 	// For platform, HTTP server listen port.
 	setEnvDefault("PLATFORM_LISTEN", "2024")
+	// Set the default language to zh.
+	setEnvDefault("REACT_APP_LOCALE", "zh")
 
 	// Migrate from mgmt.
 	setEnvDefault("REDIS_PORT", "6379")
