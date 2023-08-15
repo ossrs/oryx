@@ -11,7 +11,9 @@ Start redis and SRS by docker:
 docker rm -f redis srs 2>/dev/null &&
 docker run --name redis --rm -it -v $HOME/db/redis:/data -p 6379:6379 -d redis &&
 bash scripts/tools/secret.sh --output test/.env || echo "No secret, OK" &&
+touch platform/containers/data/config/srs.server.conf platform/containers/data/config/srs.vhost.conf &&
 docker run --name srs --rm -it \
+    -v $(pwd)/platform/containers/data/config:/usr/local/srs/containers/data/config \
     -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
     -v $(pwd)/platform/containers/objs/nginx:/usr/local/srs/objs/nginx \
     -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
@@ -500,7 +502,8 @@ Platform:
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
-* `/terraform/v1/mgmt/nginx/hls` Update NGINX config, to enable HLS delivery.
+* `/terraform/v1/mgmt/hphls/update` HLS delivery in high performance mode.
+* `/terraform/v1/mgmt/hphls/query` Query HLS delivery in high performance mode.
 * `/terraform/v1/mgmt/ssl` Config the system SSL config.
 * `/terraform/v1/mgmt/auto-self-signed-certificate` Create the self-signed certificate if no cert.
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
@@ -569,32 +572,33 @@ Also provided by platform for static Files:
 The software we depend on:
 
 * Docker, `apt-get install -y docker.io`
-    * Redis, `apt-get install -y redis`
-    * Nginx, `apt-get install -y nginx`
-        * SSL: `mgmt/containers/ssl`
+* Nginx, `apt-get install -y nginx`
+    * Conf: `platform/containers/conf/nginx.conf`
+    * Include: `platform/containers/data/config/nginx.http.conf`
+    * Include: `platform/containers/data/config/nginx.server.conf`
+    * SSL Key: `platform/containers/data/config/nginx.key`
+    * Certificate: `platform/containers/data/config/nginx.crt`
 * [LEGO](https://github.com/go-acme/lego)
-    * Verify webroot: `mgmt/containers/www/.well-known/acme-challenge/`
-    * Cert files: `mgmt/containers/etc/letsencrypt/live/`
+    * Verify webroot: `platform/containers/data/.well-known/acme-challenge/`
+    * Cert files: `platform/containers/data/lego/.lego/certificates/`
 * [SRS](https://github.com/ossrs/srs)
-    * Config: `mgmt/containers/conf/srs.conf` mount as `/usr/local/srs/conf/lighthouse.conf`
-    * Volume: `mgmt/containers/objs/nginx/html` mount as `/usr/local/srs/objs/nginx/html`
-* [srs-hooks](https://github.com/ossrs/srs-stack/tree/lighthouse/hooks)
-    * Volume: `mgmt/containers/objs/nginx/html` mount as `/usr/local/mgmt/containers/objs/nginx/html`
-* [tencent-cloud](https://github.com/ossrs/srs-stack/tree/lighthouse/tencent)
-    * [CAM](https://console.cloud.tencent.com/cam/overview) Authentication by secretId and secretKey.
+    * Config: `platform/containers/conf/srs.release.conf` mount as `/usr/local/srs/conf/srs.conf`
+    * Include: `platform/containers/data/config/srs.server.conf`
+    * Include: `platform/containers/data/config/srs.vhost.conf`
+    * Volume: `platform/containers/objs/nginx/` mount as `/usr/local/srs/objs/nginx/`
 * [ffmpeg](https://github.com/ossrs/srs-stack/tree/lighthouse/ffmpeg)
-    * [FFmpeg and ffprobe](https://ffmpeg.org) tools in `ossrs/srs:node-av`
+    * [FFmpeg and ffprobe](https://ffmpeg.org) tools in `ossrs/srs:ubuntu20`
 
 ## Environments
 
-The optional environments defined by `mgmt/.env`:
+The optional environments defined by `platform/containers/data/config/.env`:
 
 * `CLOUD`: `dev|bt|aapanel|droplet|docker`, The cloud platform name, DEV for development.
 * `REGION`: `ap-guangzhou|ap-singapore|sgp1`, The region for upgrade source.
-* `SOURCE`: `github|gitee`, The source code for upgrading.
 * `REGISTRY`: `docker.io|registry.cn-hangzhou.aliyuncs.com`, The docker registry.
 * `MGMT_LISTEN`: The listen port for mgmt HTTP server. Default: 2022
 * `PLATFORM_LISTEN`: The listen port for platform HTTP server. Default: 2024
+* `HTTPS_LISTEN`: The listen port for HTTPS server. Default: 2443
 
 For testing the specified service:
 
@@ -603,8 +607,8 @@ For testing the specified service:
 
 For mgmt and containers to connect to redis:
 
-* `REDIS_PASSWORD`: The redis password.
-* `REDIS_PORT`: The redis port.
+* `REDIS_PASSWORD`: The redis password. Default: empty.
+* `REDIS_PORT`: The redis port. Default: 6379.
 
 Environments for react ui:
 
@@ -629,6 +633,7 @@ Deprecated and unused variables:
 * `PLATFORM_DOCKER`: Whether run platform in docker. Default: true
 * `USE_DOCKER`: `true|false`, if false, disable all docker containers.
 * `SRS_UTEST`: `true|false`, if true, running in utest mode.
+* `SOURCE`: `github|gitee`, The source code for upgrading.
 
 Please restart service when `.env` changed.
 

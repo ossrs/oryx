@@ -193,7 +193,7 @@ jobs:
     runs-on: ubuntu-20.04
 
   install-script-zh:
-    name: Test ZH by script
+    name: Test ZH installer
     runs-on: ubuntu-20.04
     needs:
       - envs
@@ -268,7 +268,7 @@ jobs:
           exit $ret
 
   install-script-en:
-    name: Test EN by script
+    name: Test EN installer
     runs-on: ubuntu-20.04
     needs:
       - envs
@@ -343,7 +343,7 @@ jobs:
           exit $ret
 
   install-bt:
-    name: Test by BT
+    name: Test BT plugin
     runs-on: ubuntu-20.04
     needs:
       - envs
@@ -486,7 +486,7 @@ jobs:
           exit $ret
 
   install-aapanel:
-    name: Test by aaPanel
+    name: Test aaPanel plugin
     runs-on: ubuntu-20.04
     needs:
       - envs

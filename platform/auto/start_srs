@@ -16,6 +16,11 @@ echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
 SRS_PARAMS="-c ${WORK_DIR}/containers/conf/srs.release.conf"
 echo "Run srs-server $SRS_PARAMS"
 
+# Make sure the config file exists.
+mkdir -p ${WORK_DIR}/containers/data/config &&
+touch ${WORK_DIR}/containers/data/config/srs.server.conf ${WORK_DIR}/containers/data/config/srs.vhost.conf
+if [[ $? -ne 0 ]]; then echo "Make sure the config file exists failed"; exit 1; fi
+
 # Current directory should be /usr/local/srs-stack/platform
 # We don't check the exit value, see https://github.com/ossrs/srs/issues/3757
 /usr/local/srs/objs/srs $SRS_PARAMS

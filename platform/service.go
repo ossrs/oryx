@@ -207,7 +207,8 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	handleMgmtBeianQuery(ctx, handler)
 	handleMgmtSecretQuery(ctx, handler)
 	handleMgmtBeianUpdate(ctx, handler)
-	handleMgmtNginxHls(ctx, handler)
+	handleMgmtNginxHlsUpdate(ctx, handler)
+	handleMgmtNginxHlsQuery(ctx, handler)
 	handleMgmtAutoSelfSignedCertificate(ctx, handler)
 	handleMgmtSsl(ctx, handler)
 	handleMgmtLetsEncrypt(ctx, handler)
@@ -780,8 +781,8 @@ func handleMgmtBeianUpdate(ctx context.Context, handler *http.ServeMux) {
 	})
 }
 
-func handleMgmtNginxHls(ctx context.Context, handler *http.ServeMux) {
-	ep := "/terraform/v1/mgmt/nginx/hls"
+func handleMgmtNginxHlsUpdate(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/hphls/update"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -801,15 +802,52 @@ func handleMgmtNginxHls(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			if err := nginxHlsDelivery(ctx, enabled); err != nil {
-				return errors.Wrapf(err, "nginxHlsDelivery %v", enabled)
-			}
-			if err := nginxGenerateConfig(ctx); err != nil {
-				return errors.Wrapf(err, "nginx config and reload")
+			enabledValue := fmt.Sprintf("%v", enabled)
+			if err := rdb.HSet(ctx, SRS_HP_HLS, "hls", enabledValue).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v hls %v", SRS_HP_HLS, enabledValue)
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "nginx hls ok, enabled=%v, token=%vB", enabled, len(token))
+			logger.Tf(ctx, "nginx hls update ok, enabled=%v, token=%vB", enabled, len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+}
+
+func handleMgmtNginxHlsQuery(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/hphls/query"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token *string `json:"token"`
+			}{
+				Token: &token,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			var enabled bool
+			if v, err := rdb.HGet(ctx, SRS_HP_HLS, "hls").Result(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v %v", SRS_HP_HLS, "hls")
+			} else {
+				enabled = v == "true"
+			}
+
+			ohttp.WriteData(ctx, w, r, &struct {
+				Enabled bool `json:"enabled"`
+			}{
+				Enabled: enabled,
+			})
+			logger.Tf(ctx, "nginx hls query ok, enabled=%v, token=%vB", enabled, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

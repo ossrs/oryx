@@ -67,8 +67,8 @@ function SettingsImpl2({defaultActiveTab}) {
           <Tab eventKey="https" title="HTTPS">
             <SettingHttps />
           </Tab>
-          <Tab eventKey="nginx" title="NGINX">
-            <SettingNginx />
+          <Tab eventKey="nginx" title="HLS">
+            <SettingHighPerformanceHLS />
           </Tab>
           <Tab eventKey="beian" title={t('settings.tabFooter')}>
             <SettingBeian />
@@ -85,26 +85,31 @@ function SettingsImpl2({defaultActiveTab}) {
   );
 }
 
-function SettingNginx() {
+function SettingHighPerformanceHLS() {
   const [hlsDelivery, setHlsDelivery] = React.useState();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
-  const env = React.useContext(SrsEnvContext)[0];
+
+  React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/hphls/query', {
+      ...token,
+    }).then(res => {
+      setHlsDelivery(res.data.data.enabled === true);
+      console.log(`Status: Query ok, hlsDelivery=${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError, setHlsDelivery]);
 
   const updateHlsDelivery = React.useCallback((e) => {
     e.preventDefault();
 
     const token = Token.load();
-    axios.post('/terraform/v1/mgmt/nginx/hls', {
+    axios.post('/terraform/v1/mgmt/hphls/update', {
       ...token, enabled: hlsDelivery,
     }).then(res => {
       alert(t('helper.setOk'));
     }).catch(handleError);
   }, [handleError, hlsDelivery, t]);
-
-  if (env?.mgmtDocker) {
-    return <span style={{color: 'red'}}>{t('errs.noNginx')}</span>;
-  }
 
   return (
     <Accordion defaultActiveKey="0">

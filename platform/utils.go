@@ -243,7 +243,7 @@ const (
 	// For LightHouse information, like region or source.
 	SRS_TENCENT_LH = "SRS_TENCENT_LH"
 	// For SRS stream status.
-	SRS_STREAM_NGINX = "SRS_STREAM_NGINX"
+	SRS_HP_HLS = "SRS_HP_HLS"
 	// For tencent cloud products.
 	SRS_TENCENT_CAM = "SRS_TENCENT_CAM"
 	SRS_TENCENT_COS = "SRS_TENCENT_COS"
@@ -528,17 +528,6 @@ func nginxGenerateConfig(ctx context.Context) error {
 	}
 	logger.Tf(ctx, "NGINX: Refresh nginx conf ok")
 
-	return nil
-}
-
-// nginxHlsDelivery is to set whether deliver HLS by NGINX.
-func nginxHlsDelivery(ctx context.Context, enabled bool) error {
-	enabledValue := fmt.Sprintf("%v", enabled)
-	if err := rdb.HSet(ctx, SRS_STREAM_NGINX, "hls", enabledValue).Err(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hset %v hls %v", SRS_STREAM_NGINX, enabledValue)
-	}
-
-	logger.Tf(ctx, "nginxHlsDelivery enabled=%v", enabledValue)
 	return nil
 }
 
