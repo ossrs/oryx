@@ -85,7 +85,7 @@ function SettingsImpl2({defaultActiveTab}) {
 }
 
 function SettingHighPerformanceHLS() {
-  const [hlsDelivery, setHlsDelivery] = React.useState();
+  const [noHlsCtx, setNoHlsCtx] = React.useState();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
@@ -94,21 +94,21 @@ function SettingHighPerformanceHLS() {
     axios.post('/terraform/v1/mgmt/hphls/query', {
       ...token,
     }).then(res => {
-      setHlsDelivery(res.data.data.enabled === true);
+      setNoHlsCtx(res.data.data.noHlsCtx === true);
       console.log(`Status: Query ok, hlsDelivery=${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
-  }, [handleError, setHlsDelivery]);
+  }, [handleError, setNoHlsCtx]);
 
   const updateHlsDelivery = React.useCallback((e) => {
     e.preventDefault();
 
     const token = Token.load();
     axios.post('/terraform/v1/mgmt/hphls/update', {
-      ...token, enabled: hlsDelivery,
+      ...token, noHlsCtx: noHlsCtx,
     }).then(res => {
       alert(t('helper.setOk'));
     }).catch(handleError);
-  }, [handleError, hlsDelivery, t]);
+  }, [handleError, noHlsCtx, t]);
 
   return (
     <Accordion defaultActiveKey="0">
@@ -117,7 +117,7 @@ function SettingHighPerformanceHLS() {
         <Accordion.Body>
           <Form>
             <Form.Group className="mb-3" controlId="formDvrAllCheckbox">
-              <Form.Check type="checkbox" label={t('settings.nginxHlsTip')} defaultChecked={hlsDelivery} onClick={() => setHlsDelivery(!hlsDelivery)} />
+              <Form.Check type="checkbox" label={t('settings.nginxHlsTip')} defaultChecked={noHlsCtx} onClick={() => setNoHlsCtx(!noHlsCtx)} />
             </Form.Group>
             <Button variant="primary" type="submit" onClick={(e) => updateHlsDelivery(e)}>
               {t('helper.submit')}

@@ -42,7 +42,7 @@ You can use environment variables to modify the settings.
 * `MGMT_PASSWORD`: The mgmt administrator password.
 * `REACT_APP_LOCALE`: The i18n config for ui, `en` or `zh`, default to `en`.
 
-> Note: Kindly utilize the command such as `docker run -e REACT_APP_LOCALE=en` to modify the environment.
+> Note: The `MGMT_PASSWORD` is also saved in `/data/config/.env`, you can modify it by yourself.
 
 To access additional environment variables, please refer to the [Environments](DEVELOPER.md#environments) section.
 

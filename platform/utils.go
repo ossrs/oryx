@@ -426,6 +426,162 @@ func setEnvDefault(key, value string) {
 	}
 }
 
+// srsGenerateConfig is to build SRS configuration and reload SRS.
+func srsGenerateConfig(ctx context.Context) error {
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Build the High Performance HLS config.
+	hlsConf := []string{
+		"",
+		"hls {",
+		"    enabled on;",
+		"    hls_fragment 10;",
+		"    hls_window 60;",
+		"    hls_path ./objs/nginx/html/hls;",
+		"    hls_m3u8_file [app]/[stream].m3u8;",
+		"    hls_ts_file [app]/[stream]-[seq].ts;",
+		"    hls_wait_keyframe on;",
+		"    hls_dispose 10;",
+	}
+	if noHlsCtx, err := rdb.HGet(ctx, SRS_HP_HLS, "noHlsCtx").Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hget %v hls", SRS_HP_HLS)
+	} else if noHlsCtx == "true" {
+		hlsConf = append(hlsConf, []string{
+			"    hls_ctx off;",
+			"    hls_ts_ctx off;",
+		}...)
+	}
+	hlsConf = append(hlsConf, "}")
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Build the config for SRS.
+	if true {
+		confLines := []string{
+			"# !!! Important: This file is produced and maintained by the SRS Stack, please never modify it.",
+		}
+		confLines = append(confLines, "", "")
+
+		confData := strings.Join(confLines, "\n")
+		fileName := path.Join(conf.Pwd, "containers/data/config/srs.server.conf")
+		if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
+			return errors.Wrapf(err, "open file %v", fileName)
+		} else {
+			defer f.Close()
+			if _, err = f.Write([]byte(confData)); err != nil {
+				return errors.Wrapf(err, "write file %v with %v", fileName, confData)
+			}
+		}
+	}
+	if true {
+		confLines := []string{
+			"# !!! Important: This file is produced and maintained by the SRS Stack, please never modify it.",
+		}
+		confLines = append(confLines, hlsConf...)
+		confLines = append(confLines, "", "")
+
+		confData := strings.Join(confLines, "\n")
+		fileName := path.Join(conf.Pwd, "containers/data/config/srs.vhost.conf")
+		if f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err != nil {
+			return errors.Wrapf(err, "open file %v", fileName)
+		} else {
+			defer f.Close()
+			if _, err = f.Write([]byte(confData)); err != nil {
+				return errors.Wrapf(err, "write file %v with %v", fileName, confData)
+			}
+		}
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Fetch the reload result, the ID which represents the reload transaction.
+	fetchReload := func(ctx context.Context) (string, error) {
+		// TODO: FIXME: Remove it after SRS merged https://github.com/ossrs/srs/pull/3768
+		return time.Now().String(), nil
+
+		/*api := "http://127.0.0.1:1985/api/v1/raw?rpc=reload-fetch"
+		req, err := http.NewRequestWithContext(ctx, "GET", api, nil)
+		if err != nil {
+			return "", errors.Wrapf(err, "reload fetch srs %v", api)
+		}
+
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return "", errors.Wrapf(err, "reload srs %v", api)
+		}
+		defer res.Body.Close()
+
+		b, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return "", errors.Wrapf(err, "read srs %v", api)
+		}
+
+		if res.StatusCode != http.StatusOK {
+			return "", errors.Errorf("reload srs %v, code=%v, body=%v", api, res.StatusCode, string(b))
+		}
+
+		resObj := struct {
+			Code int `json:"code"`
+			Data struct {
+				Err   int    `json:"err"`
+				Msg   string `json:"msg"`
+				State int    `json:"state"`
+				RID   string `json:"rid"`
+			} `json:"data"`
+		}{}
+		if err := json.Unmarshal(b, &resObj); err != nil {
+			return "", errors.Wrapf(err, "unmarshal reload id %v", string(b))
+		}
+
+		if resObj.Code != 0 || resObj.Data.Err != 0 {
+			return "", errors.Errorf("reload srs code=%v, err=%v, invalid %v",
+				resObj.Code, resObj.Data.Err, string(b),
+			)
+		}
+		logger.Tf(ctx, "reload fetch srs ok")
+
+		return resObj.Data.RID, nil*/
+	}
+	reloadID, err := fetchReload(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "fetch reload id")
+	}
+
+	// Reload SRS to apply the new config.
+	if true {
+		api := "http://127.0.0.1:1985/api/v1/raw?rpc=reload"
+		res, err := http.DefaultClient.Get(api)
+		if err != nil {
+			return errors.Wrapf(err, "reload srs %v", api)
+		}
+		defer res.Body.Close()
+
+		b, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return errors.Wrapf(err, "read srs %v", api)
+		}
+
+		if res.StatusCode != http.StatusOK {
+			return errors.Errorf("reload srs %v, code=%v, body=%v", api, res.StatusCode, string(b))
+		}
+		logger.Tf(ctx, "reload submit srs ok")
+	}
+
+	// Check reload result.
+	for i := 0; i < 10; i++ {
+		if newReloadID, err := fetchReload(ctx); err != nil {
+			return errors.Wrapf(err, "fetch reload id")
+		} else if newReloadID != reloadID {
+			logger.Tf(ctx, "reload fetch srs ok")
+			return nil
+		}
+
+		select {
+		case <-ctx.Done():
+		case <-time.After(time.Second):
+		}
+	}
+
+	return errors.New("reload srs timeout")
+}
+
 // nginxGenerateConfig is to build NGINX configuration and reload NGINX.
 func nginxGenerateConfig(ctx context.Context) error {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -465,7 +621,7 @@ func nginxGenerateConfig(ctx context.Context) error {
 	// Build the config for NGINX.
 	if true {
 		confLines := []string{
-			"# !!! Important: SRS will restore this file during each restart, please never modify it.",
+			"# !!! Important: This file is produced and maintained by the SRS Stack, please never modify it.",
 		}
 		confLines = append(confLines, "", "")
 
@@ -482,7 +638,7 @@ func nginxGenerateConfig(ctx context.Context) error {
 	}
 	if true {
 		confLines := []string{
-			"# !!! Important: SRS will restore this file during each restart, please never modify it.",
+			"# !!! Important: This file is produced and maintained by the SRS Stack, please never modify it.",
 		}
 		confLines = append(confLines, uploadLimit...)
 		confLines = append(confLines, sslConf...)
@@ -500,6 +656,8 @@ func nginxGenerateConfig(ctx context.Context) error {
 		}
 	}
 
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Reload NGINX to apply the new config.
 	reloadNginx := func(ctx context.Context) error {
 		defer certManager.ReloadCertificate(ctx)
 

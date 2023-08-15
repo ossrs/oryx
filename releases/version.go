@@ -6,7 +6,7 @@
 package main
 
 // The latest version of SRS Stack.
-const latest = "v1.0.306"
+const latest = "v1.0.307"
 
 // The api service version of SRS Stack.
 const api = "v1.0.374"

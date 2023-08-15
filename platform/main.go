@@ -350,7 +350,7 @@ func initPlatform(ctx context.Context) error {
 	}
 
 	// Run only once for a special version.
-	bootRelease := "v26"
+	bootRelease := "v27"
 	if firstRun, err := rdb.HGet(ctx, SRS_FIRST_BOOT, bootRelease).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v %v", SRS_FIRST_BOOT, bootRelease)
 	} else if firstRun == "" {
@@ -359,6 +359,11 @@ func initPlatform(ctx context.Context) error {
 		// Generate the dynamic config for NGINX.
 		if err := nginxGenerateConfig(ctx); err != nil {
 			return errors.Wrapf(err, "nginx config and reload")
+		}
+
+		// Generate the dynamic config for SRS.
+		if err := srsGenerateConfig(ctx); err != nil {
+			return errors.Wrapf(err, "srs config and reload")
 		}
 
 		// Run once, record in redis.

@@ -787,12 +787,12 @@ func handleMgmtNginxHlsUpdate(ctx context.Context, handler *http.ServeMux) {
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
-			var enabled bool
+			var noHlsCtx bool
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token   *string `json:"token"`
-				Enabled *bool   `json:"enabled"`
+				Token    *string `json:"token"`
+				NoHlsCtx *bool   `json:"noHlsCtx"`
 			}{
-				Token: &token, Enabled: &enabled,
+				Token: &token, NoHlsCtx: &noHlsCtx,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -802,13 +802,17 @@ func handleMgmtNginxHlsUpdate(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			enabledValue := fmt.Sprintf("%v", enabled)
-			if err := rdb.HSet(ctx, SRS_HP_HLS, "hls", enabledValue).Err(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hset %v hls %v", SRS_HP_HLS, enabledValue)
+			noHlsCtxValue := fmt.Sprintf("%v", noHlsCtx)
+			if err := rdb.HSet(ctx, SRS_HP_HLS, "noHlsCtx", noHlsCtxValue).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v noHlsCtx %v", SRS_HP_HLS, noHlsCtxValue)
+			}
+
+			if err := srsGenerateConfig(ctx); err != nil {
+				return errors.Wrapf(err, "generate SRS config")
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "nginx hls update ok, enabled=%v, token=%vB", enabled, len(token))
+			logger.Tf(ctx, "nginx hls update ok, enabled=%v, token=%vB", noHlsCtx, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -836,16 +840,16 @@ func handleMgmtNginxHlsQuery(ctx context.Context, handler *http.ServeMux) {
 			}
 
 			var enabled bool
-			if v, err := rdb.HGet(ctx, SRS_HP_HLS, "hls").Result(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hget %v %v", SRS_HP_HLS, "hls")
+			if v, err := rdb.HGet(ctx, SRS_HP_HLS, "noHlsCtx").Result(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v %v", SRS_HP_HLS, "noHlsCtx")
 			} else {
 				enabled = v == "true"
 			}
 
 			ohttp.WriteData(ctx, w, r, &struct {
-				Enabled bool `json:"enabled"`
+				NoHlsCtx bool `json:"noHlsCtx"`
 			}{
-				Enabled: enabled,
+				NoHlsCtx: enabled,
 			})
 			logger.Tf(ctx, "nginx hls query ok, enabled=%v, token=%vB", enabled, len(token))
 			return nil

@@ -10,8 +10,10 @@ Start redis and SRS by docker:
 ```bash
 docker rm -f redis srs 2>/dev/null &&
 docker run --name redis --rm -it -v $HOME/db/redis:/data -p 6379:6379 -d redis &&
-bash scripts/tools/secret.sh --output test/.env || echo "No secret, OK" &&
 touch platform/containers/data/config/srs.server.conf platform/containers/data/config/srs.vhost.conf &&
+echo "TODO: FIXME: Remove it after SRS supports empty config file." &&
+if [[ ! -s platform/containers/data/config/srs.server.conf ]]; then echo '# OK' > platform/containers/data/config/srs.server.conf; fi &&
+if [[ ! -s platform/containers/data/config/srs.vhost.conf ]]; then echo '# OK' > platform/containers/data/config/srs.vhost.conf; fi &&
 docker run --name srs --rm -it \
     -v $(pwd)/platform/containers/data/config:/usr/local/srs/containers/data/config \
     -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
