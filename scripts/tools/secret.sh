@@ -56,7 +56,9 @@ for ((i=0; i<3; i++)); do
     # Start by develop.
     if [[ -z $SRS_PLATFORM_SECRET ]]; then
         SRS_PLATFORM_SECRET=$(redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
-        MGMT_PASSWORD=$(. ${WORK_DIR}/platform/containers/data/config/.env && echo $MGMT_PASSWORD)
+        if [[ -f ${WORK_DIR}/platform/containers/data/config/.env ]]; then
+            MGMT_PASSWORD=$(. ${WORK_DIR}/platform/containers/data/config/.env && echo $MGMT_PASSWORD)
+        fi
     fi
 
     if [[ ! -z $SRS_PLATFORM_SECRET ]]; then break; fi

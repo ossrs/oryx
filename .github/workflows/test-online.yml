@@ -103,13 +103,13 @@ jobs:
       - name: Build package
         run: |
           # Build files for test, should run in ubuntu20.
-          bash scripts/setup-ubuntu/build.sh --version $SRS_TAG --output $(pwd)/build
+          bash scripts/setup-ubuntu/build.sh --language en --version $SRS_TAG --output $(pwd)/build
           make -j -C test
           
           # All files in provision will be uploaded to server.
           mkdir -p provision provision/test
           cp test/srs-stack.test provision/test/
-          cp build/linux-srs_stack-zh.tar.gz platform/containers/conf/nginx.conf \
+          cp build/linux-srs_stack-en.tar.gz platform/containers/conf/nginx.conf \
             scripts/tools/secret.sh provision/
       - name: Copy file via ssh key
         uses: appleboy/scp-action@v0.1.4
@@ -234,7 +234,7 @@ jobs:
             docker image prune -f
             docker images
             
-            tar xf linux-srs_stack-zh.tar.gz
+            tar xf linux-srs_stack-en.tar.gz
             bash srs_stack/scripts/setup-ubuntu/install.sh
             
             # Setup journald to write logs.
@@ -312,8 +312,8 @@ jobs:
       SRS_DROPLET_EIP: ${{ env.SRS_DROPLET_EIP }}
     runs-on: ubuntu-20.04
 
-  waiting:
-    name: Waiting debug
+  dispose:
+    name: Dispose
     if: always()
     needs:
       - envs
@@ -329,6 +329,9 @@ jobs:
           name: platform-cache
       - name: Tips for Debugging
         run: |
+          # We will handle the error by ourselves.
+          set +e
+          
           echo "Please use the following command to login the server:"
           echo "  ssh root@$SRS_DROPLET_EIP"
           echo "Or check by web console:"
@@ -352,6 +355,9 @@ jobs:
           port: 22
           timeout: 1800s
           script: |
+            # We will handle the error by ourselves.
+            set +e
+            
             if [[ -f ctrl-test-done && ! -f ctrl-debugging ]]; then
               echo "Test done normally."
             else
@@ -362,22 +368,9 @@ jobs:
               for ((i=60; i>0; i--)); do
                 echo "Dispose in ${i}s..."; sleep 3
                 if [[ -f ctrl-abort ]]; then echo "Abort by user."; break; fi
-                if [[ -f ctrl-reset ]]; then echo "Reset by user."; rm -f ctrl-reset; i=600; fi
+                if [[ -f ctrl-reset ]]; then echo "Reset by user."; rm -f ctrl-reset; let i=i+600; fi
               done
             fi
-    runs-on: ubuntu-20.04
-
-  # Use a seperate job to ensure the VM and domain is disposed.
-  test-online-final:
-    name: test-online-final
-    if: always()
-    needs:
-      - envs
-      - waiting
-    steps:
-      - name: Covert output to env
-        run: |
-          echo "SRS_DOMAIN=${{ needs.envs.outputs.SRS_DOMAIN }}" >> $GITHUB_ENV
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
@@ -401,5 +394,16 @@ jobs:
             echo "Remove $DOMAIN_ID" &&
             doctl compute domain records delete ossrs.io $DOMAIN_ID -f
           fi
+      - run: echo OK
+    runs-on: ubuntu-20.04
+
+  # Final test result, fail if any jobs failed.
+  test-online-final:
+    name: test-online-final
+    needs:
+      - envs
+      - run-test
+      - dispose
+    steps:
       - run: echo OK
     runs-on: ubuntu-20.04

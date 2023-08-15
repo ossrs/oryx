@@ -7,7 +7,6 @@ import SetupCamSecret from '../components/SetupCamSecret';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
-import {SrsEnvContext} from "../components/SrsEnvContext";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 
 export default function Systems() {

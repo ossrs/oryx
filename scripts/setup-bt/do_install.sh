@@ -46,21 +46,8 @@ Install() {
   # Create global data directory.
   echo "Create data and config file"
   mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env &&
-  touch ${DATA_HOME}/config/nginx.http.conf &&
-  touch ${DATA_HOME}/config/nginx.server.conf
+  touch ${DATA_HOME}/config/nginx.http.conf ${DATA_HOME}/config/nginx.server.conf
   if [[ $? -ne 0 ]]; then echo "Create /data/config failed"; exit 1; fi
-
-  # TODO: FIXME: Move to code.
-  echo "Start to setup nginx.http.conf"
-  if [[ -f ${DATA_HOME}/config/nginx.http.conf && -s ${DATA_HOME}/config/nginx.http.conf ]]; then
-      echo "The nginx.http.conf already exists, skip"
-  else
-      cat << END > ${DATA_HOME}/config/nginx.server.conf
-# Limit for upload file size
-client_max_body_size 100g;
-END
-      if [[ $? -ne 0 ]]; then echo "Setup nginx.http.conf failed"; exit 1; fi
-  fi
 
   # Allow network forwarding, required by docker.
   # See https://stackoverflow.com/a/41453306/17679565
