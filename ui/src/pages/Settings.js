@@ -49,9 +49,9 @@ function SettingsImpl2({defaultActiveTab}) {
     e.preventDefault();
 
     Clipboard.copy(text).then(() => {
-      alert(`已经复制到剪切板`);
+      alert(t('helper.copyOk'));
     }).catch((err) => {
-      alert(`复制失败，请右键复制链接 ${err}`);
+      alert(`${t('helper.copyFail')} ${err}`);
     });
   }, []);
 
@@ -195,6 +195,16 @@ function SettingBeian() {
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
+  React.useEffect(() => {
+    axios.get('/terraform/v1/mgmt/beian/query')
+      .then(res => {
+        setSiteTitle(res.data.data.title);
+        setBeian(res.data.data.icp);
+        console.log(`Beian: query ${JSON.stringify(res.data.data)}`);
+      }).catch(handleError);
+  }, [handleError]);
+
+  // Update the footer for beian.
   const updateBeian = React.useCallback((e) => {
     e.preventDefault();
 
@@ -206,6 +216,7 @@ function SettingBeian() {
     }).catch(handleError);
   }, [handleError, beian, t]);
 
+  // Update the title for site.
   const updateSiteTitle = React.useCallback((e) => {
     e.preventDefault();
 
@@ -279,6 +290,16 @@ function SettingAuth() {
     console.log(`?allow-noauth=true|false, current=${allowNoAuth}, Whether allow disable auth`);
     setAllowNoAuth(allowNoAuth);
   }, [searchParams]);
+
+  React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/hooks/srs/secret/query', {
+      ...token,
+    }).then(res => {
+      setSecret(res.data.data.publish);
+      console.log(`Status: Query ok, secret=${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError]);
 
   const updateSecret = React.useCallback((e) => {
     e.preventDefault();
