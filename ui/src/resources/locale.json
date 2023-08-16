@@ -151,6 +151,7 @@
         "version": "你的版本",
         "stable": "稳定版本",
         "latest": "最新版本",
+        "versionLink": "https://ossrs.net/lts/zh-cn/faq-srs-stack#changelog",
         "autoUpgrade": "自动更新",
         "autoUpgradeTip": "是否自动更新到稳定版本",
         "upgradeManually": "若需要升级，请手动重装，或者更新镜像版本"
@@ -348,6 +349,7 @@
         "version": "Version",
         "stable": "Stable",
         "latest": "Latest",
+        "versionLink": "https://ossrs.io/lts/en-us/faq-srs-stack#changelog",
         "autoUpgrade": "Auto",
         "autoUpgradeTip": "Whether automatically upgrade",
         "upgradeManually": "Please upgrade manually by reinstall or docker pull"
