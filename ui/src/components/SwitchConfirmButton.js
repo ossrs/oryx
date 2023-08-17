@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2022-2023 Winlin
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
 import React from "react";
 import {Button, OverlayTrigger, Popover} from "react-bootstrap";
 import {useTranslation} from "react-i18next";

@@ -100,6 +100,10 @@ The features that we're developing:
 - [ ] Enhance prometheus API with authentication.
 - [ ] Integrate with prometheus and node-exporter.
 
+## License
+
+SRS Stack is an open-source project, licensed under the [AGPL-3.0-or-later](https://spdx.org/licenses/AGPL-3.0-or-later.html) license.
+
 ## Developer
 
 For development, please refer to the [Environments](DEVELOPER.md) about the API and architecture.

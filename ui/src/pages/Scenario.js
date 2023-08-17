@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2022-2023 Winlin
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
 import {useSearchParams} from "react-router-dom";
 import {Container, Tabs, Tab} from "react-bootstrap";
 import React from "react";

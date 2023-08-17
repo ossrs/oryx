@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2022-2023 Winlin
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
 import React from "react";
 import {Container, Carousel} from "react-bootstrap";
 import srsStack from "../resources/srs-stack-1296x648.png";

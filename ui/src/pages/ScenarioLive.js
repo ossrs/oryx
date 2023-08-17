@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2022-2023 Winlin
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
 import React from "react";
 import {Accordion} from "react-bootstrap";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";

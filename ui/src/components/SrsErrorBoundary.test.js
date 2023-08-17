@@ -1,4 +1,8 @@
-// See https://stackoverflow.com/a/56557915/17679565
+//
+// Copyright (c) 2022-2023 Winlin
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import {BrowserRouter} from "react-router-dom";

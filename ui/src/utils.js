@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2022-2023 Winlin
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
 const SRS_TERRAFORM_TOKEN = 'SRS_TERRAFORM_TOKEN';
 const SRS_STACK_LOCALE = 'SRS_STACK_LOCALE';
 
