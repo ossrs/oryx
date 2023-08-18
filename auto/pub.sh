@@ -26,8 +26,8 @@ if [[ "$help" == yes ]]; then
     exit 0
 fi
 
-# We increase version from the publication-v* base.
-RELEASE=$(git describe --tags --abbrev=0 --match publication-v*) &&
+# We increase version from the v* base.
+RELEASE=$(git describe --tags --abbrev=0 --match v*) &&
 REVISION=$(echo $RELEASE|awk -F . '{print $3}')
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
@@ -37,12 +37,18 @@ if [[ $refresh == yes ]]; then
 fi
 echo "Last release is $RELEASE, revision is $REVISION, next is $NEXT"
 
-VERSION="5.7.$NEXT" &&
-TAG="publication-v$VERSION" &&
+MINOR=$(grep "const version =" platform/version.go |awk -F '.' '{print $2}')
+VERSION="5.$MINOR.$NEXT" &&
+TAG="v$VERSION" &&
 echo "publish version $VERSION as tag $TAG"
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
 ######################################################################
+if [[ $(grep -q "const version = \"$TAG\"" platform/version.go || echo no) == no ]]; then
+    echo "Failed: Please update platform/version.go to $TAG"
+    echo "    sed -i '' 's|const version = \".*\"|const version = \"$TAG\"|g' platform/version.go"
+    exit 1
+fi
 if [[ $(grep versions scripts/setup-aapanel/info.json | grep -q $VERSION || echo no) == no ]]; then
     echo "Failed: Please update scripts/setup-aapanel/info.json to $VERSION"
     echo "    sed -i '' 's|\"versions\": \".*\"|\"versions\": \"$VERSION\"|g' scripts/setup-aapanel/info.json"
@@ -85,7 +91,7 @@ echo "Publish OK: $TAG"
 
 echo -e "\n\n"
 echo "Publication ok, please visit"
-echo "    Please test it after https://github.com/ossrs/srs-stack/actions/workflows/publication.yml done"
+echo "    Please test it after https://github.com/ossrs/srs-stack/actions/workflows/release.yml done"
 echo "    Download bt-srs_stack.zip from https://github.com/ossrs/srs-stack/releases"
 echo "    Then submit it to https://www.bt.cn/developer/details.html?id=600801805"
 echo "    Finally, update release at https://gitee.com/ossrs/srs-stack/releases/new"

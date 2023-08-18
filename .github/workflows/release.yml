@@ -1,13 +1,13 @@
-name: "Release Publication for Major Version"
+name: "Release SRS Stack"
 
 # @see https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#onpushpull_requestbranchestags
 on:
   push:
     tags:
-      - publication-v*
+      - v*
 
 jobs:
-  check-test:
+  check-test-dev:
     steps:
       - name: Wait for Test Workflow
         uses: fountainhead/action-wait-for-check@v1.1.0
@@ -23,9 +23,26 @@ jobs:
           echo "Test Workflow failed, aborting release" && exit 1
     runs-on: ubuntu-20.04
 
+  check-test-online:
+    steps:
+      - name: Wait for Test Online Workflow
+        uses: fountainhead/action-wait-for-check@v1.1.0
+        id: wait-for-test
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: test-online-final
+          ref: ${{ github.sha }}
+          timeoutSeconds: 3600
+      - name: Check Test Workflow result
+        if: steps.wait-for-test.outputs.conclusion != 'success'
+        run: |
+          echo "Test Workflow failed, aborting release" && exit 1
+    runs-on: ubuntu-20.04
+
   envs:
     needs:
-      - check-test
+      - check-test-dev
+      - check-test-online
     name: envs
     steps:
       # Git checkout
@@ -33,23 +50,108 @@ jobs:
         uses: actions/checkout@v3
       # The github.ref is, for example, refs/tags/v5.0.145 or refs/tags/v5.0-r8
       # Generate variables like:
-      #   SRS_TAG=publication-v4.4
-      #   SRS_TAG=publication-v4.4.1
+      #   SRS_TAG=v5.8.20
+      #   SRS_MAJOR=5
       # @see https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Generate varaiables
         run: |
           SRS_TAG=$(echo ${{ github.ref }}| awk -F '/' '{print $3}')
-          SRS_VERSION=$(echo $SRS_TAG|awk -F '-' '{print $2}')
+          SRS_MAJOR=$(echo $SRS_TAG| awk -F '.' '{print $1}' |sed 's/v//g')
           echo "SRS_TAG=$SRS_TAG" >> $GITHUB_ENV
-          echo "SRS_VERSION=$SRS_VERSION" >> $GITHUB_ENV
+          echo "SRS_MAJOR=$SRS_MAJOR" >> $GITHUB_ENV
+          echo "SRS_TAG:$SRS_TAG, SRS_MAJOR:$SRS_MAJOR"
     # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
     outputs:
       SRS_TAG: ${{ env.SRS_TAG }}
-      SRS_VERSION: ${{ env.SRS_VERSION }}
+      SRS_MAJOR: ${{ env.SRS_MAJOR }}
+    runs-on: ubuntu-20.04
+
+  docker:
+    needs:
+      - envs
+    steps:
+      - name: Covert output to env
+        run: |
+          echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
+          echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
+      # Git checkout
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      # See https://github.com/crazy-max/ghaction-docker-buildx#moved-to-docker-organization
+      # https://github.com/docker/setup-qemu-action
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      # https://github.com/docker/setup-buildx-action
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      # Create main images for Docker
+      - name: Login to docker hub
+        uses: docker/login-action@v2
+        with:
+          username: "${{ secrets.DOCKER_USERNAME }}"
+          password: "${{ secrets.DOCKER_PASSWORD }}"
+      - name: Build the ui for multiple archs
+        run: |
+          echo "Build multiple language ui"
+          cd ui && make build-cn -j && make build-en -j
+      - name: Build SRS docker image
+        run: |
+          echo "Release ossrs/srs-stack:$SRS_TAG"
+          docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
+            --output "type=image,push=true" --build-arg MAKEARGS=build-no-ui \
+            --tag ossrs/srs-stack:$SRS_TAG -f Dockerfile .
+      - name: Docker alias images for ossrs/srs-stack
+        uses: akhilerm/tag-push-action@v2.1.0
+        with:
+          src: ossrs/srs-stack:${{ env.SRS_TAG }}
+          dst: |
+            ossrs/srs-stack:${{ env.SRS_MAJOR }}
+            ossrs/srs-stack:v${{ env.SRS_MAJOR }}
+            ossrs/srs-cloud:${{ env.SRS_TAG }}
+            ossrs/srs-cloud:${{ env.SRS_MAJOR }}
+            ossrs/srs-cloud:v${{ env.SRS_MAJOR }}
+            ossrs/srs-cloud:platform-${{ env.SRS_TAG }}
+            ossrs/srs-cloud:platform-${{ env.SRS_MAJOR }}
+            ossrs/srs-cloud:platform-v${{ env.SRS_MAJOR }}
+    runs-on: ubuntu-20.04
+
+  aliyun:
+    needs:
+      - envs
+      - docker
+    steps:
+      - name: Covert output to env
+        run: |
+          echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
+          echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
+      # Aliyun ACR
+      - name: Login Aliyun docker hub
+        uses: docker/login-action@v2
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
+      - name: Docker alias images for ossrs/srs-stack
+        uses: akhilerm/tag-push-action@v2.1.0
+        with:
+          src: ossrs/srs-stack:${{ env.SRS_TAG }}
+          dst: |
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_TAG }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:v${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_TAG }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:v${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-${{ env.SRS_TAG }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-v${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
   draft:
     name: draft
+    needs:
+      - envs
+      - aliyun
     steps:
       - name: Create release draft
         id: create_draft
@@ -60,7 +162,7 @@ jobs:
           allowUpdates: true
           tag: ${{ github.ref }}
           draft: true
-          prerelease: false
+          prerelease: true
     # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
     outputs:
       SRS_RELEASE_ID: ${{ steps.create_draft.outputs.id }}
@@ -70,7 +172,6 @@ jobs:
     name: release-publication
     runs-on: ubuntu-20.04
     needs:
-      - envs
       - draft
     steps:
       ##################################################################################################################
@@ -80,7 +181,6 @@ jobs:
       - name: Covert output to env
         run: |
           echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
-          echo "SRS_VERSION=${{ needs.envs.outputs.SRS_VERSION }}" >> $GITHUB_ENV
           echo "SRS_RELEASE_ID=${{ needs.draft.outputs.SRS_RELEASE_ID }}" >> $GITHUB_ENV
       ##################################################################################################################
       # Create source tar for release. Note that it's for OpenWRT package srs-server, so the filename MUST be
@@ -139,7 +239,7 @@ jobs:
         with:
           allowUpdates: true
           tag: ${{ github.ref }}
-          name: Release SRS Stack ${{ env.SRS_VERSION }}
+          name: Release SRS Stack ${{ env.SRS_TAG }}
           body: |
             [${{ github.event.head_commit.message }}](https://github.com/ossrs/srs-stack/commit/${{ github.sha }})
             
@@ -158,5 +258,5 @@ jobs:
             * [Changelog](https://ossrs.net/lts/zh-cn/faq-srs-stack#changelog)
             * [Features](https://ossrs.net/lts/zh-cn/faq-srs-stack#features)
           draft: false
-          prerelease: false
-          makeLatest: true
+          prerelease: true
+          makeLatest: false

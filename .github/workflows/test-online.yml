@@ -3,7 +3,7 @@ name: Test Online Environment
 on:
   push:
     tags:
-      - v1*
+      - v*
   # See https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow
   workflow_dispatch:
 
