@@ -98,6 +98,8 @@ jobs:
           echo "  ssh root@$SRS_DROPLET_EIP touch ctrl-reset"
           echo "To always wait for debugging:"
           echo "  ssh root@$SRS_DROPLET_EIP touch ctrl-debugging"
+          echo "Never dispose:"
+          echo "  for((;;)); do ssh root@$SRS_DROPLET_EIP touch ctrl-debugging ctrl-reset; sleep 3; done"
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Build package
@@ -342,6 +344,8 @@ jobs:
           echo "  ssh root@$SRS_DROPLET_EIP touch ctrl-reset"
           echo "To always wait for debugging:"
           echo "  ssh root@$SRS_DROPLET_EIP touch ctrl-debugging"
+          echo "Never dispose:"
+          echo "  for((;;)); do ssh root@$SRS_DROPLET_EIP touch ctrl-debugging ctrl-reset; sleep 3; done"
           if [[ -f test/.env ]]; then
             echo "Environment variables:"
             cat test/.env

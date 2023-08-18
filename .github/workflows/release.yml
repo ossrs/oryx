@@ -236,6 +236,7 @@ jobs:
         uses: ncipollo/release-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SRS_TAG: ${{ env.SRS_TAG }}
         with:
           allowUpdates: true
           tag: ${{ github.ref }}

@@ -553,19 +553,19 @@ func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 	select {
 	case <-ctx.Done():
 	case <-ffprobe.ProbeDoneCtx().Done():
-		defer cancel()
+		cancel()
+	}
 
-		str, m := ffprobe.Result()
-		if len(m.Streams) != 2 {
-			r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
-		}
+	str, m := ffprobe.Result()
+	if len(m.Streams) != 2 {
+		r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
+	}
 
-		if ts := 90; m.Format.ProbeScore < ts {
-			r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
-		}
-		if dv := m.Duration(); dv < duration {
-			r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
-		}
+	if ts := 90; m.Format.ProbeScore < ts {
+		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
+	}
+	if dv := m.Duration(); dv < duration {
+		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
 
@@ -630,19 +630,19 @@ func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 	select {
 	case <-ctx.Done():
 	case <-ffprobe.ProbeDoneCtx().Done():
-		defer cancel()
+		cancel()
+	}
 
-		str, m := ffprobe.Result()
-		if len(m.Streams) != 2 {
-			r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
-		}
+	str, m := ffprobe.Result()
+	if len(m.Streams) != 2 {
+		r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
+	}
 
-		if ts := 90; m.Format.ProbeScore < ts {
-			r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
-		}
-		if dv := m.Duration(); dv < duration {
-			r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
-		}
+	if ts := 90; m.Format.ProbeScore < ts {
+		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
+	}
+	if dv := m.Duration(); dv < duration {
+		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
 
@@ -681,7 +681,7 @@ func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 			"-f", "lavfi", "-i", "testsrc=size=1280x720", "-f", "lavfi", "-i", "sine=frequency=440",
 			"-pix_fmt", "yuv420p", "-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
 			"-acodec", "aac", "-ar", "44100", "-ac", "2",
-			"-f", "flv", streamURL,
+			"-f", "flvs", streamURL,
 		}
 	})
 	wg.Add(1)
@@ -707,18 +707,18 @@ func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 	select {
 	case <-ctx.Done():
 	case <-ffprobe.ProbeDoneCtx().Done():
-		defer cancel()
+		cancel()
+	}
 
-		str, m := ffprobe.Result()
-		if len(m.Streams) != 2 {
-			r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
-		}
+	str, m := ffprobe.Result()
+	if len(m.Streams) != 2 {
+		r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
+	}
 
-		// Note that HLS score is low, so we only check duration. Note that only check half of duration, because we
-		// might get only some pieces of segments.
-		if dv := m.Duration(); dv < duration/2 {
-			r4 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration/2, m.String(), str)
-		}
+	// Note that HLS score is low, so we only check duration. Note that only check half of duration, because we
+	// might get only some pieces of segments.
+	if dv := m.Duration(); dv < duration/2 {
+		r4 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration/2, m.String(), str)
 	}
 }
 
@@ -783,18 +783,18 @@ func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 	select {
 	case <-ctx.Done():
 	case <-ffprobe.ProbeDoneCtx().Done():
-		defer cancel()
+		cancel()
+	}
 
-		str, m := ffprobe.Result()
-		if len(m.Streams) != 2 {
-			r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
-		}
+	str, m := ffprobe.Result()
+	if len(m.Streams) != 2 {
+		r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
+	}
 
-		if ts := 90; m.Format.ProbeScore < ts {
-			r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
-		}
-		if dv := m.Duration(); dv < duration {
-			r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
-		}
+	if ts := 90; m.Format.ProbeScore < ts {
+		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
+	}
+	if dv := m.Duration(); dv < duration {
+		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
