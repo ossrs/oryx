@@ -58,7 +58,7 @@ function SettingsImpl2({defaultActiveTab}) {
     }).catch((err) => {
       alert(`${t('helper.copyFail')} ${err}`);
     });
-  }, []);
+  }, [t]);
 
   return (
     <>
