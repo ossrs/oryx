@@ -14,7 +14,7 @@ Run srs-stack in one docker:
 ```bash
 docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935/tcp -p 1985:1985/tcp \
   -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
-  -v $HOME/db:/data ossrs/srs-stack:1
+  -v $HOME/db:/data ossrs/srs-stack:5
 ```
 
 > Note: Please use `-e REACT_APP_LOCALE=zh` and `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:1` in China.
