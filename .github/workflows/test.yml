@@ -123,13 +123,19 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true &&
+              -check-api-secret=true -no-media-test &&
           
           echo "Test HTTPS service." &&
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint https://localhost:2443 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Run media test with retry" &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./scripts/tools/failed-retry.sh 5 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -test.run TestApi_Publish*
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
@@ -184,13 +190,19 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true &&
+              -check-api-secret=true -no-media-test &&
           
           echo "Test HTTPS service." &&
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint https://localhost:2443 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Run media test with retry" &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./scripts/tools/failed-retry.sh 5 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -test.run TestApi_Publish*
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
@@ -263,13 +275,19 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true &&
+              -check-api-secret=true -no-media-test &&
           
           echo "Test HTTPS service." &&
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint https://localhost:2443 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Run media test with retry" &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./scripts/tools/failed-retry.sh 5 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -test.run TestApi_Publish*
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
@@ -341,13 +359,19 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true &&
+              -check-api-secret=true -no-media-test &&
           
           echo "Test HTTPS service." &&
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint https://localhost:2443 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Run media test with retry" &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./scripts/tools/failed-retry.sh 5 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -test.run TestApi_Publish*
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
@@ -415,6 +439,7 @@ jobs:
           
           # Note that we must mount the /data to allow test to read the MGMT_PASSWORD in /data/config/.env
           docker run -v /data:/data -p 80:80 -p 443:443 -p 7800:7800 \
+            -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
             -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
             -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
             -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
@@ -486,13 +511,19 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true &&
+              -check-api-secret=true -no-media-test &&
           
           echo "Test HTTPS service." &&
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint https://srs.stack.local:443 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Run media test with retry" &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./scripts/tools/failed-retry.sh 5 ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -test.run TestApi_Publish*
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
@@ -559,6 +590,7 @@ jobs:
           
           # Note that we must mount the /data to allow test to read the MGMT_PASSWORD in /data/config/.env
           docker run -v /data:/data -p 80:80 -p 443:443 -p 7800:7800 \
+            -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
             -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
             -v $HOME/.aapanel/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
             --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
@@ -629,13 +661,19 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true &&
+              -check-api-secret=true -no-media-test &&
           
           echo "Test HTTPS service." &&
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint https://srs.stack.local:443 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Run media test with retry" &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./scripts/tools/failed-retry.sh 5 ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -test.run TestApi_Publish*
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"

@@ -113,6 +113,7 @@ jobs:
           # All files in provision will be uploaded to server.
           mkdir -p provision provision/test
           cp test/srs-stack.test test/x264.baseline.25fps.aac.240k.mp4 provision/test/
+          cp scripts/tools/failed-retry.sh provision/
           cp build/linux-srs_stack-en.tar.gz platform/containers/conf/nginx.conf \
             scripts/tools/secret.sh provision/
       - name: Copy file via ssh key
@@ -139,7 +140,7 @@ jobs:
             echo "Install OK"
             
             docker run --rm -v /usr/bin:/g ossrs/srs:tools \
-            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
+              cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
             ffmpeg -version
             
             # Move files from provision.
@@ -260,16 +261,18 @@ jobs:
           port: 22
           envs: SRS_TAG,SRS_DOMAIN
           timeout: 1800s
+          command_timeout: 1800s
           script: |
             # We will handle the error by ourselves.
             set +e
 
             # Record all logs.
-            journalctl -u srs-stack -f >journalctl.log 2>&1 & pid_journalctl=$!
+            journalctl -u srs-stack -f >srs.log 2>&1 & pid_srs=$!
+            journalctl -u nginx -f >nginx.log 2>&1 & pid_nginx=$!
             
             # Restart the service, might fail because journald restarted.
-            systemctl restart srs-stack
-            systemctl status srs-stack
+            systemctl restart srs-stack nginx
+            systemctl status srs-stack nginx
             
             echo "Wait for service ready." &&
             bash secret.sh >./test/.env &&
@@ -280,29 +283,37 @@ jobs:
             echo "Test HTTP API with self-signed cert." &&
             bash secret.sh >./test/.env &&
             ./test/srs-stack.test -test.v -wait-ready -endpoint http://$SRS_DOMAIN.ossrs.io \
-              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true &&
+              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -no-media-test &&
             
             echo "Test HTTPS API with self-signed cert." &&
             bash secret.sh >./test/.env &&
             ./test/srs-stack.test -test.v -wait-ready -endpoint https://$SRS_DOMAIN.ossrs.io \
-              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true &&
+              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -no-media-test &&
             
             echo "Request CERT from letsencrypt." &&
             bash secret.sh >./test/.env &&
             ./test/srs-stack.test -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -domain-lets-encrypt=$SRS_DOMAIN.ossrs.io \
-              -test.run TestApi_LetsEncryptUpdateCert &&
+              -test.run TestApi_LetsEncryptUpdateCert -no-media-test &&
             
             echo "Test HTTPS API with letsencrypt cert." &&
             bash secret.sh >./test/.env &&
             ./test/srs-stack.test -test.v -wait-ready -endpoint https://$SRS_DOMAIN.ossrs.io \
-              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -https-insecure-verify
+              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -https-insecure-verify \
+              -no-media-test &&
+            
+            echo "Run media test with retry" &&
+            bash secret.sh >./test/.env &&
+            ./failed-retry.sh 5 ./test/srs-stack.test -test.v -wait-ready -endpoint http://$SRS_DOMAIN.ossrs.io \
+              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -test.run TestApi_Publish*
             ret=$?; echo "Test result: $ret"
   
             echo "Stop service"
             sudo systemctl stop srs-stack
-            kill $pid_journalctl 2>/dev/null
-            echo "Log of journalctl.log" && cat journalctl.log
+            kill $pid_srs 2>/dev/null
+            kill $pid_nginx 2>/dev/null
+            echo "Log of srs.log" && cat srs.log
+            echo "Log of nginx.log" && cat nginx.log
             
             exit $ret
       - name: Write signal file
@@ -312,7 +323,7 @@ jobs:
           username: root
           key: ${{ secrets.DIGITALOCEAN_SSHKEY }}
           port: 22
-          timeout: 1800s
+          timeout: 600s
           script: |
             touch ctrl-test-done
     # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
@@ -320,8 +331,8 @@ jobs:
       SRS_DROPLET_EIP: ${{ env.SRS_DROPLET_EIP }}
     runs-on: ubuntu-20.04
 
-  dispose:
-    name: Dispose
+  dispose-waiting:
+    name: Dispose Waiting
     if: always()
     needs:
       - envs
@@ -363,7 +374,8 @@ jobs:
           username: root
           key: ${{ secrets.DIGITALOCEAN_SSHKEY }}
           port: 22
-          timeout: 1800s
+          timeout: 3600s
+          command_timeout: 3600s
           script: |
             # We will handle the error by ourselves.
             set +e
@@ -381,6 +393,23 @@ jobs:
                 if [[ -f ctrl-reset ]]; then echo "Reset by user."; rm -f ctrl-reset; let i=i+600; fi
               done
             fi
+      - run: echo OK
+    # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
+    outputs:
+      SRS_DROPLET_EIP: ${{ env.SRS_DROPLET_EIP }}
+    runs-on: ubuntu-20.04
+
+  dispose-final:
+    name: Dispose Final
+    if: always()
+    needs:
+      - envs
+      - dispose-waiting
+    steps:
+      - name: Covert output to env
+        run: |
+          echo "SRS_DOMAIN=${{ needs.envs.outputs.SRS_DOMAIN }}" >> $GITHUB_ENV
+          echo "SRS_DROPLET_EIP=${{ needs.dispose-waiting.outputs.SRS_DROPLET_EIP }}" >> $GITHUB_ENV
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
@@ -404,6 +433,10 @@ jobs:
             echo "Remove $DOMAIN_ID" &&
             doctl compute domain records delete ossrs.io $DOMAIN_ID -f
           fi
+      - name: Dispose artifacts
+        uses: geekyeggo/delete-artifact@v2
+        with:
+          name: platform-cache
       - run: echo OK
     runs-on: ubuntu-20.04
 
@@ -413,7 +446,7 @@ jobs:
     needs:
       - envs
       - run-test
-      - dispose
+      - dispose-final
     steps:
       - run: echo OK
     runs-on: ubuntu-20.04

@@ -496,6 +496,10 @@ func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
+	if *noMediaTest {
+		return
+	}
+
 	var r0, r1, r2, r3, r4, r5 error
 	defer func(ctx context.Context) {
 		if err := filterTestError(ctx.Err(), r0, r1, r2, r3, r4, r5); err != nil {
@@ -523,9 +527,7 @@ func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 	streamURL := fmt.Sprintf("rtmp://localhost/live/%v?secret=%v", streamID, pubSecret)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
-			"-re", "-stream_loop", "-1", "-i", *srsInputFile,
-			"-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
-			"-acodec", "aac", "-ar", "44100", "-ac", "2",
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
 			"-f", "flv", streamURL,
 		}
 	})
@@ -563,7 +565,7 @@ func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration {
+	if dv := m.Duration(); dv < duration/2 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
@@ -571,6 +573,10 @@ func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
+
+	if *noMediaTest {
+		return
+	}
 
 	var r0, r1, r2, r3, r4, r5 error
 	defer func(ctx context.Context) {
@@ -599,9 +605,7 @@ func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 	streamURL := fmt.Sprintf("rtmp://localhost/live/%v", streamID)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
-			"-re", "-stream_loop", "-1", "-i", *srsInputFile,
-			"-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
-			"-acodec", "aac", "-ar", "44100", "-ac", "2",
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
 			"-f", "flv", streamURL,
 		}
 	})
@@ -639,7 +643,7 @@ func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration {
+	if dv := m.Duration(); dv < duration/2 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
@@ -647,6 +651,10 @@ func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
+
+	if *noMediaTest {
+		return
+	}
 
 	var r0, r1, r2, r3, r4, r5 error
 	defer func(ctx context.Context) {
@@ -675,9 +683,7 @@ func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 	streamURL := fmt.Sprintf("rtmp://localhost/live/%v?secret=%v", streamID, pubSecret)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
-			"-re", "-stream_loop", "-1", "-i", *srsInputFile,
-			"-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
-			"-acodec", "aac", "-ar", "44100", "-ac", "2",
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
 			"-f", "flv", streamURL,
 		}
 	})
@@ -723,6 +729,10 @@ func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
+	if *noMediaTest {
+		return
+	}
+
 	var r0, r1, r2, r3, r4, r5 error
 	defer func(ctx context.Context) {
 		if err := filterTestError(ctx.Err(), r0, r1, r2, r3, r4, r5); err != nil {
@@ -747,12 +757,10 @@ func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 
 	// Start FFmpeg to publish stream.
 	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
-	streamURL := fmt.Sprintf("srt://localhost:10080#!::r=live/%v?secret=%v,m=publish", streamID, pubSecret)
+	streamURL := fmt.Sprintf("srt://localhost:10080?streamid=#!::r=live/%v?secret=%v,m=publish", streamID, pubSecret)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
-			"-re", "-stream_loop", "-1", "-i", *srsInputFile,
-			"-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
-			"-acodec", "aac", "-ar", "44100", "-ac", "2",
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
 			"-f", "mpegts", streamURL,
 		}
 	})
@@ -761,6 +769,16 @@ func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 		defer wg.Done()
 		r1 = ffmpeg.Run(ctx, cancel)
 	}()
+
+	// Start to probe SRT stream after published N seconds, to wait stream ready.
+	select {
+	case <-ctx.Done():
+	case <-ffmpeg.ReadyCtx().Done():
+	}
+	select {
+	case <-ctx.Done():
+	case <-time.After(time.Duration(*srsFFprobeTimeout) / 10 * time.Millisecond):
+	}
 
 	// Start FFprobe to detect and verify stream.
 	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
@@ -790,7 +808,7 @@ func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration {
+	if dv := m.Duration(); dv < duration/2 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }

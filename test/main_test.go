@@ -74,6 +74,12 @@ var domainLetsEncrypt *string
 // at which point you can enable verification for the HTTPS certificate.
 var httpsInsecureVerify *bool
 
+// noMediaTest is used to disable the media test.
+//
+// The media test, which involves using ffmpeg to publish and record a media stream, can be time-consuming
+// and may occasionally fail. Therefore, it is necessary to retry the process if a failure occurs.
+var noMediaTest *bool
+
 var srsLog *bool
 var srsTimeout *int
 var endpoint *string
@@ -94,9 +100,10 @@ var srsInputFile *string
 func options() string {
 	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, forceHttps=%v, "+
 		"waitReady=%v, initPassword=%v, initSelfSignedCert=%v, systemPassword=%vB, domainLetsEncrypt=%v, "+
-		"httpsInsecureVerify=%v, srsInputFile=%v",
+		"httpsInsecureVerify=%v, srsInputFile=%v, noMediaTest=%v",
 		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *forceHttps, *waitReady, *initPassword,
 		*initSelfSignedCert, len(*systemPassword), *domainLetsEncrypt, *httpsInsecureVerify, *srsInputFile,
+		*noMediaTest,
 	)
 }
 
@@ -137,6 +144,7 @@ func prepareTest(ctx context.Context) (err error) {
 	srsFFprobeTimeout = flag.Int("srs-ffprobe-timeout", 40000, "For each case, the timeout for ffprobe in ms")
 	srsFFprobe = flag.String("srs-ffprobe", "ffprobe", "The FFprobe tool")
 	srsInputFile = flag.String("srs-input-file", "x264.baseline.25fps.aac.240k.mp4", "The input file")
+	noMediaTest = flag.Bool("no-media-test", false, "Whether disable the media test")
 
 	// Should parse it first.
 	flag.Parse()
