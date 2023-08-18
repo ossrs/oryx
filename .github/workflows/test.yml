@@ -53,7 +53,8 @@ jobs:
           go-version: '>=1.16.0'
       - name: Install tools
         run: |
-          sudo apt-get install -y ffmpeg
+          docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
       - name: Test by jest and Go
         run: |
@@ -86,9 +87,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          lfs: true
       - name: Install tools
         run: |
-          sudo apt-get install -y ffmpeg
+          docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
       - uses: actions/download-artifact@v3
         with:
@@ -144,9 +148,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          lfs: true
       - name: Install tools
         run: |
-          sudo apt-get install -y ffmpeg
+          docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
       - uses: actions/download-artifact@v3
         with:
@@ -207,9 +214,12 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          lfs: true
       - name: Install tools
         run: |
-          sudo apt-get install -y ffmpeg
+          docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
       - name: Start Nginx service
         run: |
@@ -282,9 +292,12 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          lfs: true
       - name: Install tools
         run: |
-          sudo apt-get install -y ffmpeg
+          docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
       - name: Start Nginx service
         run: |
@@ -366,9 +379,12 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          lfs: true
       - name: Install tools
         run: |
-          sudo apt-get install -y ffmpeg
+          docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
       - uses: actions/download-artifact@v3
         with:
@@ -509,9 +525,12 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          lfs: true
       - name: Install tools
         run: |
-          sudo apt-get install -y ffmpeg
+          docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
       - uses: actions/download-artifact@v3
         with:

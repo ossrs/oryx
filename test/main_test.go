@@ -89,13 +89,15 @@ var srsDVRStderr *bool
 var srsFFprobeStdout *bool
 var srsFFprobeDuration *int
 var srsFFprobeTimeout *int
+var srsInputFile *string
 
 func options() string {
 	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, forceHttps=%v, "+
 		"waitReady=%v, initPassword=%v, initSelfSignedCert=%v, systemPassword=%vB, domainLetsEncrypt=%v, "+
-		"httpsInsecureVerify=%v",
+		"httpsInsecureVerify=%v, srsInputFile=%v",
 		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *forceHttps, *waitReady, *initPassword,
-		*initSelfSignedCert, len(*systemPassword), *domainLetsEncrypt, *httpsInsecureVerify)
+		*initSelfSignedCert, len(*systemPassword), *domainLetsEncrypt, *httpsInsecureVerify, *srsInputFile,
+	)
 }
 
 func prepareTest(ctx context.Context) (err error) {
@@ -134,6 +136,7 @@ func prepareTest(ctx context.Context) (err error) {
 	srsFFprobeDuration = flag.Int("srs-ffprobe-duration", 30000, "For each case, the duration for ffprobe in ms")
 	srsFFprobeTimeout = flag.Int("srs-ffprobe-timeout", 40000, "For each case, the timeout for ffprobe in ms")
 	srsFFprobe = flag.String("srs-ffprobe", "ffprobe", "The FFprobe tool")
+	srsInputFile = flag.String("srs-input-file", "x264.baseline.25fps.aac.240k.mp4", "The input file")
 
 	// Should parse it first.
 	flag.Parse()
@@ -172,6 +175,11 @@ func prepareTest(ctx context.Context) (err error) {
 	}
 	if *srsFFprobe, err = tryOpenFile(*srsFFprobe); err != nil {
 		return err
+	}
+	if *srsInputFile, err = tryOpenFile(*srsInputFile); err != nil {
+		if *srsInputFile, err = tryOpenFile(path.Join("test", *srsInputFile)); err != nil {
+			return errors.Wrapf(err, "not found input file %v", *srsInputFile)
+		}
 	}
 
 	return nil

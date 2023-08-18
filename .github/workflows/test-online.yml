@@ -102,6 +102,8 @@ jobs:
           echo "  for((;;)); do ssh root@$SRS_DROPLET_EIP touch ctrl-debugging ctrl-reset; sleep 3; done"
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          lfs: true
       - name: Build package
         run: |
           # Build files for test, should run in ubuntu20.
@@ -110,7 +112,7 @@ jobs:
           
           # All files in provision will be uploaded to server.
           mkdir -p provision provision/test
-          cp test/srs-stack.test provision/test/
+          cp test/srs-stack.test test/x264.baseline.25fps.aac.240k.mp4 provision/test/
           cp build/linux-srs_stack-en.tar.gz platform/containers/conf/nginx.conf \
             scripts/tools/secret.sh provision/
       - name: Copy file via ssh key
@@ -133,8 +135,12 @@ jobs:
           timeout: 600s
           script: |
             apt-get update -y &&
-            apt-get install -y docker.io nginx ffmpeg unzip net-tools tree &&
+            apt-get install -y docker.io nginx unzip net-tools tree &&
             echo "Install OK"
+            
+            docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
+            ffmpeg -version
             
             # Move files from provision.
             mv -f provision/* .

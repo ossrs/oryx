@@ -523,9 +523,8 @@ func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 	streamURL := fmt.Sprintf("rtmp://localhost/live/%v?secret=%v", streamID, pubSecret)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
-			"-re",
-			"-f", "lavfi", "-i", "testsrc=size=1280x720", "-f", "lavfi", "-i", "sine=frequency=440",
-			"-pix_fmt", "yuv420p", "-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile,
+			"-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
 			"-acodec", "aac", "-ar", "44100", "-ac", "2",
 			"-f", "flv", streamURL,
 		}
@@ -600,9 +599,8 @@ func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 	streamURL := fmt.Sprintf("rtmp://localhost/live/%v", streamID)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
-			"-re",
-			"-f", "lavfi", "-i", "testsrc=size=1280x720", "-f", "lavfi", "-i", "sine=frequency=440",
-			"-pix_fmt", "yuv420p", "-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile,
+			"-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
 			"-acodec", "aac", "-ar", "44100", "-ac", "2",
 			"-f", "flv", streamURL,
 		}
@@ -677,9 +675,8 @@ func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 	streamURL := fmt.Sprintf("rtmp://localhost/live/%v?secret=%v", streamID, pubSecret)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
-			"-re",
-			"-f", "lavfi", "-i", "testsrc=size=1280x720", "-f", "lavfi", "-i", "sine=frequency=440",
-			"-pix_fmt", "yuv420p", "-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile,
+			"-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
 			"-acodec", "aac", "-ar", "44100", "-ac", "2",
 			"-f", "flv", streamURL,
 		}
@@ -753,9 +750,8 @@ func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 	streamURL := fmt.Sprintf("srt://localhost:10080#!::r=live/%v?secret=%v,m=publish", streamID, pubSecret)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
-			"-re",
-			"-f", "lavfi", "-i", "testsrc=size=1280x720", "-f", "lavfi", "-i", "sine=frequency=440",
-			"-pix_fmt", "yuv420p", "-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile,
+			"-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
 			"-acodec", "aac", "-ar", "44100", "-ac", "2",
 			"-f", "mpegts", streamURL,
 		}

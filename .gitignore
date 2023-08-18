@@ -134,7 +134,7 @@ t.md
 __pycache__
 *.flv
 *.mp4
-/*.ts
+*.ts
 /docs
 /lighthouse
 /.*.txt
