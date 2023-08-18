@@ -436,7 +436,7 @@ func srsGenerateConfig(ctx context.Context) error {
 		"    enabled on;",
 		"    hls_fragment 10;",
 		"    hls_window 60;",
-		"    hls_path ./objs/nginx/html/hls;",
+		"    hls_path ./objs/nginx/html;",
 		"    hls_m3u8_file [app]/[stream].m3u8;",
 		"    hls_ts_file [app]/[stream]-[seq].ts;",
 		"    hls_wait_keyframe on;",
