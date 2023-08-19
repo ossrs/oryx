@@ -344,6 +344,37 @@ func filterTestError(errs ...error) error {
 }
 
 func apiRequest(ctx context.Context, apiPath string, data interface{}, response interface{}) (err error) {
+	apiEndpoint := *endpoint
+	if *forceHttps {
+		apiEndpoint = strings.ReplaceAll(apiEndpoint, "http://", "https://")
+		apiEndpoint = strings.ReplaceAll(apiEndpoint, ":2022", ":2443")
+	}
+
+	api := fmt.Sprintf("%s%s", apiEndpoint, apiPath)
+
+	var b string
+	if err = httpRequest(ctx, api, data, &b); err != nil {
+		return errors.Wrapf(err, "http request")
+	}
+
+	obj := &struct {
+		Code int         `json:"code"`
+		Data interface{} `json:"data"`
+	}{
+		Data: response,
+	}
+	if err = json.Unmarshal([]byte(b), obj); err != nil {
+		return errors.Wrapf(err, "unmarshal %s", b)
+	}
+
+	if obj.Code != 0 {
+		return errors.Errorf("invalid code %v of %s", obj.Code, b)
+	}
+
+	return nil
+}
+
+func httpRequest(ctx context.Context, api string, data interface{}, response *string) (err error) {
 	var body io.Reader
 	if data != nil {
 		if b, err := json.Marshal(data); err != nil {
@@ -358,14 +389,7 @@ func apiRequest(ctx context.Context, apiPath string, data interface{}, response 
 		m = http.MethodGet
 	}
 
-	apiEndpoint := *endpoint
-	if *forceHttps {
-		apiEndpoint = strings.ReplaceAll(apiEndpoint, "http://", "https://")
-		apiEndpoint = strings.ReplaceAll(apiEndpoint, ":2022", ":2443")
-	}
-
-	u := fmt.Sprintf("%s%s", apiEndpoint, apiPath)
-	req, err := http.NewRequestWithContext(ctx, m, u, body)
+	req, err := http.NewRequestWithContext(ctx, m, api, body)
 	if err != nil {
 		return errors.Wrapf(err, "new request")
 	}
@@ -373,7 +397,7 @@ func apiRequest(ctx context.Context, apiPath string, data interface{}, response 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", *apiSecret))
 
 	var resp *http.Response
-	if strings.HasPrefix(apiEndpoint, "https://") {
+	if strings.HasPrefix(api, "https://") {
 		tlsConfig := &tls.Config{
 			InsecureSkipVerify: !*httpsInsecureVerify,
 		}
@@ -401,20 +425,7 @@ func apiRequest(ctx context.Context, apiPath string, data interface{}, response 
 		return errors.Wrapf(err, "read body")
 	}
 
-	obj := &struct {
-		Code int         `json:"code"`
-		Data interface{} `json:"data"`
-	}{
-		Data: response,
-	}
-	if err = json.Unmarshal(b, obj); err != nil {
-		return errors.Wrapf(err, "unmarshal %s", b)
-	}
-
-	if obj.Code != 0 {
-		return errors.Errorf("invalid code %v of %s", obj.Code, b)
-	}
-
+	*response = string(b)
 	return nil
 }
 

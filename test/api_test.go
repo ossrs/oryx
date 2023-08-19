@@ -12,6 +12,7 @@ import (
 	"math/big"
 	"math/rand"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -492,6 +493,96 @@ func TestApi_LetsEncryptUpdateCert(t *testing.T) {
 	}
 }
 
+func TestApi_SetupHpHLSNoHlsCtx(t *testing.T) {
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	var r0 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	type Data struct {
+		NoHlsCtx bool `json:"noHlsCtx"`
+	}
+
+	if true {
+		initData := Data{}
+		if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &initData); err != nil {
+			r0 = err
+			return
+		}
+		defer func() {
+			if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
+				logger.Tf(ctx, "restore hphls config failed %+v", err)
+			}
+		}()
+	}
+
+	noHlsCtx := Data{NoHlsCtx: true}
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &noHlsCtx, nil); err != nil {
+		r0 = err
+		return
+	}
+
+	verifyData := Data{}
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &verifyData); err != nil {
+		r0 = err
+		return
+	} else if verifyData.NoHlsCtx != true {
+		r0 = errors.Errorf("invalid response %+v", verifyData)
+	}
+}
+
+func TestApi_SetupHpHLSWithHlsCtx(t *testing.T) {
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	var r0 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	type Data struct {
+		NoHlsCtx bool `json:"noHlsCtx"`
+	}
+
+	if true {
+		initData := Data{}
+		if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &initData); err != nil {
+			r0 = err
+			return
+		}
+		defer func() {
+			if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
+				logger.Tf(ctx, "restore hphls config failed %+v", err)
+			}
+		}()
+	}
+
+	noHlsCtx := Data{NoHlsCtx: false}
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &noHlsCtx, nil); err != nil {
+		r0 = err
+		return
+	}
+
+	verifyData := Data{}
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &verifyData); err != nil {
+		r0 = err
+		return
+	} else if verifyData.NoHlsCtx != false {
+		r0 = errors.Errorf("invalid response %+v", verifyData)
+	}
+}
+
 func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
@@ -811,4 +902,286 @@ func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 	if dv := m.Duration(); dv < duration/2 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
+}
+
+func TestApi_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	if *noMediaTest {
+		return
+	}
+
+	var r0, r1, r2, r3, r4, r5 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0, r1, r2, r3, r4, r5); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	type Data struct {
+		NoHlsCtx bool `json:"noHlsCtx"`
+	}
+
+	if true {
+		initData := Data{}
+		if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &initData); err != nil {
+			r0 = err
+			return
+		}
+		defer func() {
+			if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
+				logger.Tf(ctx, "restore hphls config failed %+v", err)
+			}
+		}()
+	}
+
+	noHlsCtx := Data{NoHlsCtx: true}
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &noHlsCtx, nil); err != nil {
+		r0 = err
+		return
+	}
+
+	verifyData := Data{}
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &verifyData); err != nil {
+		r0 = err
+		return
+	} else if verifyData.NoHlsCtx != true {
+		r0 = errors.Errorf("invalid response %+v", verifyData)
+	}
+
+	// TODO: FIXME: Remove it after fix the bug.
+	time.Sleep(3 * time.Second)
+
+	///////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////
+	var pubSecret string
+	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+		Publish *string `json:"publish"`
+	}{
+		Publish: &pubSecret,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	// Don't cancel the context, for we need to verify the HLS stream.
+	_, noCancel := context.WithCancel(context.Background())
+
+	// Start FFmpeg to publish stream.
+	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
+	streamURL := fmt.Sprintf("rtmp://localhost/live/%v?secret=%v", streamID, pubSecret)
+	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
+		v.args = []string{
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
+			"-f", "flv", streamURL,
+		}
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r1 = ffmpeg.Run(ctx, noCancel)
+	}()
+
+	// Start FFprobe to detect and verify stream.
+	var hlsStreamURL string
+	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
+	ffprobe := NewFFprobe(func(v *ffprobeClient) {
+		v.dvrFile = fmt.Sprintf("srs-ffprobe-%v.flv", streamID)
+		v.streamURL = fmt.Sprintf("http://localhost:8080/live/%v.m3u8", streamID)
+		v.duration, v.timeout = duration, time.Duration(*srsFFprobeTimeout)*time.Millisecond
+		hlsStreamURL = v.streamURL
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r2 = ffprobe.Run(ctx, noCancel)
+	}()
+
+	// Don't quit for probe done.
+	select {
+	case <-ctx.Done():
+	case <-ffprobe.ProbeDoneCtx().Done():
+	}
+
+	str, m := ffprobe.Result()
+	if len(m.Streams) != 2 {
+		r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
+	}
+
+	// Note that HLS score is low, so we only check duration. Note that only check half of duration, because we
+	// might get only some pieces of segments.
+	if dv := m.Duration(); dv < duration/2 {
+		r4 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration/2, m.String(), str)
+	}
+
+	// Check the HLS playlist, should with hls context.
+	var body string
+	if err := httpRequest(ctx, hlsStreamURL, nil, &body); err != nil {
+		r5 = err
+		return
+	}
+
+	// #EXTM3U
+	// #EXT-X-VERSION:3
+	// #EXT-X-MEDIA-SEQUENCE:0
+	// #EXT-X-TARGETDURATION:15
+	// #EXT-X-DISCONTINUITY
+	// #EXTINF:10.008, no desc
+	// stream-15318-7260362267190950336-0.ts
+	// #EXTINF:11.989, no desc
+	// stream-15318-7260362267190950336-1.ts
+	// #EXTINF:11.994, no desc
+	// stream-15318-7260362267190950336-2.ts
+	if strings.Contains(body, ".m3u8?hls_ctx=") {
+		r5 = errors.Errorf("invalid hls playlist=%v", body)
+	}
+	if !strings.Contains(body, "#EXTINF:") {
+		r5 = errors.Errorf("invalid hls playlist=%v", body)
+	}
+
+	cancel()
+}
+
+func TestApi_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	if *noMediaTest {
+		return
+	}
+
+	var r0, r1, r2, r3, r4, r5 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0, r1, r2, r3, r4, r5); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	type Data struct {
+		NoHlsCtx bool `json:"noHlsCtx"`
+	}
+
+	if true {
+		initData := Data{}
+		if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &initData); err != nil {
+			r0 = err
+			return
+		}
+		defer func() {
+			if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
+				logger.Tf(ctx, "restore hphls config failed %+v", err)
+			}
+		}()
+	}
+
+	noHlsCtx := Data{NoHlsCtx: false}
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &noHlsCtx, nil); err != nil {
+		r0 = err
+		return
+	}
+
+	verifyData := Data{}
+	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &verifyData); err != nil {
+		r0 = err
+		return
+	} else if verifyData.NoHlsCtx != false {
+		r0 = errors.Errorf("invalid response %+v", verifyData)
+	}
+
+	// TODO: FIXME: Remove it after fix the bug.
+	time.Sleep(3 * time.Second)
+
+	///////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////
+	var pubSecret string
+	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+		Publish *string `json:"publish"`
+	}{
+		Publish: &pubSecret,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	// Don't cancel the context, for we need to verify the HLS stream.
+	_, noCancel := context.WithCancel(context.Background())
+
+	// Start FFmpeg to publish stream.
+	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
+	streamURL := fmt.Sprintf("rtmp://localhost/live/%v?secret=%v", streamID, pubSecret)
+	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
+		v.args = []string{
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
+			"-f", "flv", streamURL,
+		}
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r1 = ffmpeg.Run(ctx, noCancel)
+	}()
+
+	// Start FFprobe to detect and verify stream.
+	var hlsStreamURL string
+	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
+	ffprobe := NewFFprobe(func(v *ffprobeClient) {
+		v.dvrFile = fmt.Sprintf("srs-ffprobe-%v.flv", streamID)
+		v.streamURL = fmt.Sprintf("http://localhost:8080/live/%v.m3u8", streamID)
+		v.duration, v.timeout = duration, time.Duration(*srsFFprobeTimeout)*time.Millisecond
+		hlsStreamURL = v.streamURL
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r2 = ffprobe.Run(ctx, noCancel)
+	}()
+
+	// Don't quit for probe done.
+	select {
+	case <-ctx.Done():
+	case <-ffprobe.ProbeDoneCtx().Done():
+	}
+
+	str, m := ffprobe.Result()
+	if len(m.Streams) != 2 {
+		r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
+	}
+
+	// Note that HLS score is low, so we only check duration. Note that only check half of duration, because we
+	// might get only some pieces of segments.
+	if dv := m.Duration(); dv < duration/2 {
+		r4 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration/2, m.String(), str)
+	}
+
+	// Check the HLS playlist, should with hls context.
+	var body string
+	if err := httpRequest(ctx, hlsStreamURL, nil, &body); err != nil {
+		r5 = err
+		return
+	}
+
+	// #EXTM3U
+	// #EXT-X-STREAM-INF:BANDWIDTH=1,AVERAGE-BANDWIDTH=1
+	// /live/stream-22525-1463247945540465917.m3u8?hls_ctx=84q1332s
+	if !strings.Contains(body, ".m3u8?hls_ctx=") {
+		r5 = errors.Errorf("invalid hls playlist=%v", body)
+	}
+	if strings.Contains(body, "#EXTINF:") {
+		r5 = errors.Errorf("invalid hls playlist=%v", body)
+	}
+
+	cancel()
 }

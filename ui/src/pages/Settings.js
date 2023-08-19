@@ -28,7 +28,7 @@ function SystemsImpl() {
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'auth';
-    console.log(`?tab=https|auth|tencent|beian|platform, current=${tab}, Select the tab to render`);
+    console.log(`?tab=https|hls|auth|tencent|beian|platform, current=${tab}, Select the tab to render`);
     setDefaultActiveTab(tab);
   }, [searchParams]);
 
@@ -71,7 +71,7 @@ function SettingsImpl2({defaultActiveTab}) {
           <Tab eventKey="https" title="HTTPS">
             <SettingHttps />
           </Tab>
-          <Tab eventKey="nginx" title="HLS">
+          <Tab eventKey="hls" title="HLS">
             <SettingHighPerformanceHLS />
           </Tab>
           <Tab eventKey="beian" title={t('settings.tabFooter')}>
