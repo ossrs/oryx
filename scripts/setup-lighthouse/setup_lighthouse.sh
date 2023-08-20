@@ -28,7 +28,7 @@ cd $WORK_DIR
 # The main directory.
 SRS_HOME=/usr/local/srs-stack
 DATA_HOME=/data
-IMAGE_URL=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:1
+IMAGE_URL=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:5
 SOURCE=$WORK_DIR
 
 mkdir -p /usr/local/lighthouse/softwares/srs-stack &&

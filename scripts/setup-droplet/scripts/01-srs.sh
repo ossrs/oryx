@@ -3,7 +3,7 @@
 # The main directory.
 SRS_HOME=/usr/local/srs-stack
 DATA_HOME=/data
-IMAGE_URL=docker.io/ossrs/srs-stack:1
+IMAGE_URL=docker.io/ossrs/srs-stack:5
 
 # When droplet created, it might fail as:
 #   gnutls_handshake() failed: The TLS connection was non-properly terminated.

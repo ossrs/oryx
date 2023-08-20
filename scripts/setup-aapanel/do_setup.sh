@@ -19,7 +19,7 @@ VERBOSE=no
 LANGUAGE=en
 REGISTRY=auto
 REGION=auto
-IMAGE=ossrs/srs-stack:1
+IMAGE=ossrs/srs-stack:5
 
 # Allow use config to override the default values.
 # For aaPanel, should never use .env, because it will be removed when install.

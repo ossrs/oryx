@@ -100,10 +100,10 @@ jobs:
       - name: Run test for platform image
         run: |
           docker load -i platform.tar
-          docker tag platform ossrs/srs-stack:1
+          docker tag platform ossrs/srs-stack:5
           docker run --rm -d -p 2022:2022 -p 2443:2443 -p 1935:1935/tcp -p 1985:1985/tcp \
             -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
-            -v /data:/data -e REACT_APP_LOCALE=zh ossrs/srs-stack:1
+            -v /data:/data -e REACT_APP_LOCALE=zh ossrs/srs-stack:5
       - name: Check and Test service
         run: |
           # We will handle the error by ourselves.
@@ -167,10 +167,10 @@ jobs:
       - name: Run test for platform image
         run: |
           docker load -i platform.tar
-          docker tag platform ossrs/srs-stack:1
+          docker tag platform ossrs/srs-stack:5
           docker run --rm -d -p 2022:2022 -p 2443:2443 -p 1935:1935/tcp -p 1985:1985/tcp \
             -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
-            -v /data:/data -e REACT_APP_LOCALE=en ossrs/srs-stack:1
+            -v /data:/data -e REACT_APP_LOCALE=en ossrs/srs-stack:5
       - name: Check and Test service
         run: |
           # We will handle the error by ourselves.

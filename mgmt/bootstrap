@@ -9,7 +9,7 @@ cd ${WORK_DIR}
 
 DATA_HOME=/data
 WELL_KNOWN=${DATA_HOME}/.well-known
-IMAGE=ossrs/srs-stack:1
+IMAGE=ossrs/srs-stack:5
 MGMT_PORT=2022
 HTTPS_PORT=2443
 RTMP_PORT=1935

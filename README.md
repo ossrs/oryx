@@ -17,7 +17,7 @@ docker run --rm -p 2022:2022 -p 2443:2443 -p 1935:1935/tcp -p 1985:1985/tcp \
   -v $HOME/db:/data ossrs/srs-stack:5
 ```
 
-> Note: Please use `-e REACT_APP_LOCALE=zh` and `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:1` in China.
+> Note: Please use `-e REACT_APP_LOCALE=zh` and `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:5` in China.
 
 > Note: All data will be saved in `$HOME/db` directory, please change it to your directory.
 
