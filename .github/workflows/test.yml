@@ -2,7 +2,9 @@ name: Test Dev Environment
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - release/*
 
 jobs:
   envs:
