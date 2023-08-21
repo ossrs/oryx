@@ -132,8 +132,8 @@ t.md
 /srs-stack2
 /test/srs-stack.test
 __pycache__
-/*.flv
-/*.mp4
+*.flv
+*.mp4
 /*.ts
 /docs
 /lighthouse

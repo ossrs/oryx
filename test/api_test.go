@@ -681,7 +681,7 @@ func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 			"-f", "lavfi", "-i", "testsrc=size=1280x720", "-f", "lavfi", "-i", "sine=frequency=440",
 			"-pix_fmt", "yuv420p", "-vcodec", "libx264", "-profile:v", "baseline", "-r", "25", "-g", "50",
 			"-acodec", "aac", "-ar", "44100", "-ac", "2",
-			"-f", "flvs", streamURL,
+			"-f", "flv", streamURL,
 		}
 	})
 	wg.Add(1)
