@@ -9,11 +9,13 @@ cd ${WORK_DIR}
 
 help=no
 refresh=no
+target=
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) help=yes; shift ;;
         -refresh|--refresh) refresh=yes; shift ;;
+        -target|--target) target="$2"; shift 2;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
@@ -23,11 +25,18 @@ if [[ "$help" == yes ]]; then
     echo "Options:"
     echo "  -h, --help           Show this help message and exit"
     echo "  -refresh, --refresh  Refresh current tag. Default: no"
+    echo "  -target, --target    The target version to release, for example, v5.7.28"
     exit 0
 fi
 
-# We increase version from the v* base.
-RELEASE=$(git describe --tags --abbrev=0 --match v*) &&
+if [[ ! -z $target ]]; then
+    RELEASE=$target
+    refresh=yes
+else
+    RELEASE=$(git describe --tags --abbrev=0 --match v*)
+fi
+if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
+
 REVISION=$(echo $RELEASE|awk -F . '{print $3}')
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 

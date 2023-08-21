@@ -932,6 +932,9 @@ func TestApi_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 			return
 		}
 		defer func() {
+			// TODO: FIXME: Remove it after fix the bug.
+			time.Sleep(10 * time.Second)
+
 			if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
 				logger.Tf(ctx, "restore hphls config failed %+v", err)
 			}
@@ -953,7 +956,7 @@ func TestApi_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 	}
 
 	// TODO: FIXME: Remove it after fix the bug.
-	time.Sleep(3 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	///////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////
@@ -1077,6 +1080,9 @@ func TestApi_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
 			return
 		}
 		defer func() {
+			// TODO: FIXME: Remove it after fix the bug.
+			time.Sleep(10 * time.Second)
+
 			if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
 				logger.Tf(ctx, "restore hphls config failed %+v", err)
 			}
@@ -1098,7 +1104,7 @@ func TestApi_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
 	}
 
 	// TODO: FIXME: Remove it after fix the bug.
-	time.Sleep(3 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	///////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////

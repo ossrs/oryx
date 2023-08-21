@@ -32,6 +32,8 @@ Run the platform backend, or run in GoLand:
 (cd platform && go run .)
 ```
 
+> Note: Set `AUTO_SELF_SIGNED_CERTIFICATE=true` if need to generate self-signed certificate.
+
 Run all tests:
 
 ```bash
@@ -438,6 +440,16 @@ Query domain and droplet:
 ```bash
 doctl compute domain records ls ossrs.io |grep lego &&
 doctl compute droplet ls |grep lego
+```
+
+## Develop the NGINX Proxy
+
+If you want to use NGINX as proxy, run by docker:
+
+```bash
+docker run --rm -it -p 80:80 --name nginx -e SRS_STACK_SERVER=host.docker.internal:2022 \
+    -v $(pwd)/scripts/nginx-hls-cdn/nginx.proxy.srs-stack.conf.template:/etc/nginx/templates/default.conf.template \
+    nginx
 ```
 
 # Tips

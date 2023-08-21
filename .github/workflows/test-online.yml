@@ -137,9 +137,14 @@ jobs:
           port: 22
           timeout: 600s
           script: |
-            apt-get update -y &&
-            apt-get install -y docker.io nginx unzip net-tools tree &&
-            echo "Install OK"
+            for ((i=0; i<3; i++)); do
+              apt-get update -y &&
+              apt-get install -y docker.io nginx unzip net-tools tree &&
+              echo "Install OK" && break
+            
+              echo "Install failed, retry" && 
+              sleep 3
+            done
             
             docker run --rm -v /usr/bin:/g ossrs/srs:tools \
               cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
