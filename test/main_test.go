@@ -143,7 +143,7 @@ func prepareTest(ctx context.Context) (err error) {
 	srsFFprobeDuration = flag.Int("srs-ffprobe-duration", 30000, "For each case, the duration for ffprobe in ms")
 	srsFFprobeTimeout = flag.Int("srs-ffprobe-timeout", 40000, "For each case, the timeout for ffprobe in ms")
 	srsFFprobe = flag.String("srs-ffprobe", "ffprobe", "The FFprobe tool")
-	srsInputFile = flag.String("srs-input-file", "x264.baseline.25fps.aac.240k.mp4", "The input file")
+	srsInputFile = flag.String("srs-input-file", "source.200kbps.768x320.flv", "The input file")
 	noMediaTest = flag.Bool("no-media-test", false, "Whether disable the media test")
 
 	// Should parse it first.

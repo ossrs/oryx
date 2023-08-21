@@ -102,8 +102,10 @@ jobs:
           echo "  for((;;)); do ssh root@$SRS_DROPLET_EIP touch ctrl-debugging ctrl-reset; sleep 3; done"
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          lfs: true
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
       - name: Build package
         run: |
           # Build files for test, should run in ubuntu20.
@@ -112,7 +114,7 @@ jobs:
           
           # All files in provision will be uploaded to server.
           mkdir -p provision provision/test
-          cp test/srs-stack.test test/x264.baseline.25fps.aac.240k.mp4 provision/test/
+          cp test/srs-stack.test test/source.200kbps.768x320.flv provision/test/
           cp scripts/tools/failed-retry.sh provision/
           cp build/linux-srs_stack-en.tar.gz platform/containers/conf/nginx.conf \
             scripts/tools/secret.sh provision/

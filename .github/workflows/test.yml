@@ -40,6 +40,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
       - name: Setup the npm node
         uses: actions/setup-node@v3
         with:
@@ -87,8 +91,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          lfs: true
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
       - name: Install tools
         run: |
           docker run --rm -v /usr/bin:/g ossrs/srs:tools \
@@ -154,8 +160,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          lfs: true
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
       - name: Install tools
         run: |
           docker run --rm -v /usr/bin:/g ossrs/srs:tools \
@@ -226,8 +234,10 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          lfs: true
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
       - name: Install tools
         run: |
           docker run --rm -v /usr/bin:/g ossrs/srs:tools \
@@ -310,8 +320,10 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          lfs: true
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
       - name: Install tools
         run: |
           docker run --rm -v /usr/bin:/g ossrs/srs:tools \
@@ -403,8 +415,10 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          lfs: true
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
       - name: Install tools
         run: |
           docker run --rm -v /usr/bin:/g ossrs/srs:tools \
@@ -556,8 +570,10 @@ jobs:
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          lfs: true
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
       - name: Install tools
         run: |
           docker run --rm -v /usr/bin:/g ossrs/srs:tools \
