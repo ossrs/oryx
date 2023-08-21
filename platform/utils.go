@@ -15,6 +15,8 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"path"
 	"runtime"
@@ -1237,4 +1239,36 @@ func Authenticate(ctx context.Context, apiSecret, token string, header http.Head
 	}
 
 	return nil
+}
+
+// httpAllowCORS allow CORS for HTTP request.
+func httpAllowCORS(w http.ResponseWriter, r *http.Request) {
+	// Ignore if no CORS required.
+	if r.Header.Get("Origin") == "" {
+		return
+	}
+
+	// SRS does not need cookie or credentials, so we disable CORS credentials, and use * for CORS origin,
+	// headers, expose headers and methods.
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	// See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers
+	w.Header().Set("Access-Control-Allow-Headers", "*")
+	// See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods
+	w.Header().Set("Access-Control-Allow-Methods", "*")
+}
+
+// httpCreateProxy create a reverse proxy for target URL.
+func httpCreateProxy(targetURL string) (*httputil.ReverseProxy, error) {
+	target, err := url.Parse(targetURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parse backend %v", targetURL)
+	}
+
+	proxy := httputil.NewSingleHostReverseProxy(target)
+	proxy.ModifyResponse = func(resp *http.Response) error {
+		resp.Header.Del("Server")
+		return nil
+	}
+
+	return proxy, nil
 }

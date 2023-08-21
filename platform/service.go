@@ -13,8 +13,6 @@ import (
 	"github.com/joho/godotenv"
 	"io/ioutil"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -215,32 +213,35 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	handleMgmtCertQuery(ctx, handler)
 	handleMgmtUI(ctx, handler)
 
-	// Proxy to other services, migrate from mgmt.
-	createProxy := func(target string) (*httputil.ReverseProxy, error) {
-		targetObject, err := url.Parse(target)
-		if err != nil {
-			return nil, errors.Wrapf(err, "parse backend %v", target)
-		}
-		return httputil.NewSingleHostReverseProxy(targetObject), nil
-	}
-
-	proxy2023, err := createProxy("http://127.0.0.1:2023")
+	proxy2023, err := httpCreateProxy("http://127.0.0.1:2023")
 	if err != nil {
 		return err
 	}
 
-	proxy1985, err := createProxy("http://127.0.0.1:1985")
+	proxy1985, err := httpCreateProxy("http://127.0.0.1:1985")
 	if err != nil {
 		return err
 	}
 
-	proxy8080, err := createProxy("http://127.0.0.1:8080")
+	proxy8080, err := httpCreateProxy("http://127.0.0.1:8080")
 	if err != nil {
 		return err
 	}
 
 	platformFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/www")))
 	wellKnownFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/data")))
+	hlsFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/objs/nginx/html")))
+
+	// Fast and simple cache for HP HLS.
+	var hpHlsEnabled bool
+	go func() {
+		for {
+			if v, err := rdb.HGet(ctx, SRS_HP_HLS, "noHlsCtx").Result(); err == nil {
+				hpHlsEnabled = v == "true"
+			}
+			time.Sleep(time.Second * 3)
+		}
+	}()
 
 	ep = "/"
 	logger.Tf(ctx, "Handle %v", ep)
@@ -278,6 +279,20 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 		if strings.HasPrefix(r.URL.Path, "/api/") || strings.HasPrefix(r.URL.Path, "/rtc/") {
 			logger.Tf(ctx, "Proxy %v to backend 1985", r.URL.Path)
 			proxy1985.ServeHTTP(w, r)
+			return
+		}
+
+		// Always directly serve the HLS ts files.
+		if hpHlsEnabled && strings.HasSuffix(r.URL.Path, ".m3u8") {
+			httpAllowCORS(w, r)
+			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 10))
+			hlsFileServer.ServeHTTP(w, r)
+			return
+		}
+		if strings.HasSuffix(r.URL.Path, ".ts") {
+			httpAllowCORS(w, r)
+			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 300))
+			hlsFileServer.ServeHTTP(w, r)
 			return
 		}
 

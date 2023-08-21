@@ -1,0 +1,47 @@
+
+proxy_cache_path  /data/nginx-cache levels=1:2 keys_zone=srs_cache:8m max_size=1000m inactive=600m;
+proxy_temp_path /data/nginx-cache/tmp;
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    proxy_cache_valid  404      10s;
+    proxy_cache_lock on;
+    proxy_cache_lock_age 300s;
+    proxy_cache_lock_timeout 300s;
+    proxy_cache_min_uses 1;
+
+    location ~ /.+/.*\.(m3u8)$ {
+        if ($request_method = 'OPTIONS') {
+          add_header 'Access-Control-Allow-Origin' '*';
+          add_header 'Content-Length' 0;
+          return 204;
+        }
+
+        proxy_set_header Host $host;
+        proxy_hide_header Access-Control-Allow-Origin;
+        add_header 'Access-Control-Allow-Origin' '*';
+        proxy_pass http://${SRS_STACK_SERVER}$request_uri;
+
+        proxy_cache srs_cache;
+        proxy_cache_key $scheme$proxy_host$uri$args;
+        proxy_cache_valid  200 302  10s;
+    }
+    location ~ /.+/.*\.(ts)$ {
+        if ($request_method = 'OPTIONS') {
+          add_header 'Access-Control-Allow-Origin' '*';
+          add_header 'Content-Length' 0;
+          return 204;
+        }
+
+        proxy_set_header Host $host;
+        proxy_hide_header Access-Control-Allow-Origin;
+        add_header 'Access-Control-Allow-Origin' '*';
+        proxy_pass http://${SRS_STACK_SERVER}$request_uri;
+
+        proxy_cache srs_cache;
+        proxy_cache_key $scheme$proxy_host$uri;
+        proxy_cache_valid  200 302  60m;
+    }
+}
