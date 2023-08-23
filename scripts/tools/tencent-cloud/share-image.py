@@ -25,11 +25,19 @@ if os.getenv("SECRET_KEY") == None:
 if os.getenv("LH_ACCOUNT") == None:
     print("Please set LH_ACCOUNT in .env or ~/.lighthouse/.env file")
     exit(1)
+if os.getenv("LH_PROD") == None:
+    print("Please set LH_PROD in .env or ~/.lighthouse/.env file")
+    exit(1)
 
 region = "ap-beijing"
 image_id = args.image
+
 account_id = os.getenv("LH_ACCOUNT")
 print(f"Share image id={image_id}, region={region} to account={account_id}")
+tools.share_image(region, image_id, account_id)
+print(f"Image {image_id} shared to account {account_id}")
 
+account_id = os.getenv("LH_PROD")
+print(f"Share image id={image_id}, region={region} to account={account_id}")
 tools.share_image(region, image_id, account_id)
 print(f"Image {image_id} shared to account {account_id}")
