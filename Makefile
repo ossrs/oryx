@@ -32,7 +32,7 @@ ifeq ($(shell pwd), $(__REAL_INSTALL))
 else
 	rm -rf $(__REAL_INSTALL)
 	mkdir -p $(__REAL_INSTALL)/mgmt $(__REAL_INSTALL)/platform $(__REAL_INSTALL)/ui
-	cp -rf mgmt $(__REAL_INSTALL)/mgmt
+	cp -f mgmt/bootstrap $(__REAL_INSTALL)/mgmt/bootstrap
 	cp -rf ui/build $(__REAL_INSTALL)/ui/build
 	cp -f platform/platform $(__REAL_INSTALL)/platform/platform
 	cp -f platform/bootstrap $(__REAL_INSTALL)/platform/bootstrap

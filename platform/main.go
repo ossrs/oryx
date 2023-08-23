@@ -377,9 +377,7 @@ func initPlatform(ctx context.Context) error {
 	}
 
 	// For development, request the releases from itself which proxy to the releases service.
-	if err := refreshLatestVersion(ctx); err != nil {
-		return errors.Wrapf(err, "refresh latest version")
-	}
+	go refreshLatestVersion(ctx)
 
 	// Disable srs-dev, only enable srs-server.
 	if srsDevEnabled, err := rdb.HGet(ctx, SRS_CONTAINER_DISABLED, srsDevDockerName).Result(); err != nil && err != redis.Nil {

@@ -66,6 +66,11 @@ func NewConfig() *Config {
 	return &Config{
 		ipv4:     net.IPv4zero,
 		IsDarwin: runtime.GOOS == "darwin",
+		Versions: Versions{
+			Version: "v0.0.0",
+			Latest:  "v0.0.0",
+			Stable:  "v0.0.0",
+		},
 	}
 }
 

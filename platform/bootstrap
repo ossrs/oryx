@@ -27,7 +27,7 @@ stop_services() {
     # potentially result in a timeout.
     bash auto/before_stop
 
-    if [[ ! -z $(pidof platform) ]]; then
+    if [[ $(ps aux |grep platform |grep -v grep |grep -v usr |grep -q platform && echo yes) == yes ]]; then
         kill -s SIGTERM $(pidof platform)
     fi
     bash auto/stop_redis
@@ -46,15 +46,15 @@ trap 'handle_signals SIGINT' SIGINT
 while true; do
     sleep 3
 
-    if [[ -z $(pidof redis-server) ]]; then
+    if [[ $(ps aux |grep redis |grep -q server || echo no) == no ]]; then
         echo "Redis server stopped, exit."
         break
     fi
-    if [[ -z $(pidof srs) ]]; then
+    if [[ $(ps aux |grep srs |grep -q conf || echo no) == no ]]; then
         echo "SRS server stopped, exit."
         break
     fi
-    if [[ -z $(pidof platform) ]]; then
+    if [[ $(ps aux |grep platform |grep -v grep |grep -v usr |grep -q platform || echo no) == no ]]; then
         echo "Platform stopped, exit."
         break
     fi
