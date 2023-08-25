@@ -53,13 +53,9 @@ apt-get update -y && apt-get install -y docker.io curl net-tools ffmpeg pcp
 
 Next, set up NGINX to proxy port 80 to the SRS Stack:
 
-You will receive an internet IP address, for example, `39.100.104.8`. Log in and run:
-
 ```bash
 docker run --rm -it -p 80:80 -e SRS_STACK_SERVER=39.100.99.176:2022 \
-    -v $(pwd)/nginx.edge.conf.template:/etc/nginx/templates/default.conf.template \
-    -v /data/nginx-cache:/data/nginx-cache -d \
-    nginx
+    ossrs/srs-stack:nginx-hls-cdn
 ```
 
 > Note: Please replace the IP with yours.
@@ -113,44 +109,7 @@ Please configure the SRS Stack using the web console.
 Open `System > HLS > Delivery HLS in High Performance mode` and click the `Submit` button. This will enable
 high-performance HLS and allow NGINX to cache the m3u8 and ts files.
 
-## Step 2 (Optional): Proxy SRS Stack to port 80
-
-If you like, set up NGINX to proxy port 80 to the SRS Stack. Edit `/etc/nginx/sites-enabled/default` and modify
-the `location /` to proxy to the SRS Stack:
-
-```nginx
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    location / {
-        proxy_pass http://127.0.0.1:2022;
-        proxy_set_header Host $host;
-    }
-}
-```
-
-Reload NGINX with:
-
-```bash
-/etc/init.d/nginx reload
-```
-
-Or use NGINX docker to proxy, for example, replace `10.78.22.70` with your SRS Stack IP:
-
-```bash
-docker run --rm -it -p 80:80 -e SRS_STACK_SERVER=10.78.22.70:2022 \
-    -v $(pwd)/nginx.proxy.srs-stack.conf.template:/etc/nginx/templates/default.conf.template \
-    nginx
-```
-
-Now, you can access the SRS Stack at [http://39.100.99.176](http://39.100.99.176) via the default HTTP port.
-Follow the instructions from [Scenarios / Streaming / OBS or vMix](http://39.100.99.176/mgmt/en/routers-scenario?tab=live)
-to publish a live stream using OBS, and play the stream via HLS.
-
-A HLS stream should be available at [http://39.100.99.176/live/livestream.m3u8](http://39.100.99.176/live/livestream.m3u8),
-and in the following steps, we will use NGINX to deliver it.
-
-## Step 3: Create an NGINX Edge server
+## Step 2: Create an NGINX Edge server
 
 Create a Digital Ocean droplet, or use another VPS:
 
@@ -193,14 +152,14 @@ server {
     proxy_cache_min_uses 1;
 
     location ~ /.+/.*\.(m3u8)$ {
-        proxy_pass http://39.100.99.176$request_uri;
+        proxy_pass http://39.100.99.176:2022$request_uri;
         
         proxy_cache srs_cache;
         proxy_cache_key $scheme$proxy_host$uri$args;
         proxy_cache_valid  200 302  10s;
     }
     location ~ /.+/.*\.(ts)$ {
-        proxy_pass http://39.100.99.176$request_uri;
+        proxy_pass http://39.100.99.176:2022$request_uri;
         
         proxy_cache srs_cache;
         proxy_cache_key $scheme$proxy_host$uri;
@@ -211,8 +170,6 @@ server {
 
 > Note: Please replace the IP with yours.
 
-> Note: If didn't setup the proxy for SRS Stack, replace the IP with `39.100.99.176:2022` instead.
-
 Reload NGINX with:
 
 ```bash
@@ -222,7 +179,7 @@ Reload NGINX with:
 A HLS stream should be available at [http://39.100.104.8/live/livestream.m3u8](http://39.100.104.8/live/livestream.m3u8),
 and in the following steps, you can create more NGINX servers to deliver HLS stream.
 
-## Step 4: Test the NGINX server
+## Step 3: Test the NGINX server
 
 You can use srs-bench to test the NGINX server, for example, to simulate 500 clients to play HLS stream:
 

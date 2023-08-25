@@ -444,13 +444,41 @@ doctl compute droplet ls |grep lego
 
 ## Develop the NGINX Proxy
 
+Run SRS Stack by previous steps, such as [Develop All in macOS](#develop-all-in-macos), publish stream 
+and there should be a HLS stream:
+
+* [http://localhost:2022/live/livestream.m3u8](http://localhost:2022/tools/player.html?url=http://localhost:2022/live/livestream.m3u8)
+
+Build the image of nginx:
+
+```bash
+docker rm -f nginx 2>/dev/null &&
+docker rmi scripts/nginx-hls-cdn 2>/dev/null || echo OK &&
+docker build -t ossrs/srs-stack:nginx-hls-cdn scripts/nginx-hls-cdn
+```
+
 If you want to use NGINX as proxy, run by docker:
 
 ```bash
-docker run --rm -it -p 80:80 --name nginx -e SRS_STACK_SERVER=host.docker.internal:2022 \
-    -v $(pwd)/scripts/nginx-hls-cdn/nginx.proxy.srs-stack.conf.template:/etc/nginx/templates/default.conf.template \
-    nginx
+SRS_STACK_SERVER=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') &&
+docker run --rm -it -p 80:80 --name nginx -e SRS_STACK_SERVER=${SRS_STACK_SERVER}:2022 \
+    ossrs/srs-stack:nginx-hls-cdn
 ```
+
+There should be a new HLS stream, cached by NGINX:
+
+* [http://localhost/live/livestream.m3u8](http://localhost:2022/tools/player.html?url=http://localhost/live/livestream.m3u8)
+
+> Note: To test the CROS with `OPTIONS`, use [HTTP-REST](http://ossrs.net/http-rest/) tool. 
+
+To start a [srs-bench](https://github.com/ossrs/srs-bench) to test the performance:
+
+```bash
+docker run --rm -d ossrs/srs:sb ./objs/sb_hls_load \
+    -c 100 -r http://host.docker.internal/live/livestream.m3u8
+```
+
+The load should be taken by NGINX, not the SRS Stack.
 
 # Tips
 
