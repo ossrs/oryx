@@ -7,6 +7,10 @@
 
 SRS Stack is a video solution that is lightweight, open-source, and based on Go, Reactjs, SRS, FFmpeg, WebRTC, etc.
 
+[![](https://ossrs.io/lts/en-us/img/SRS-Stack-5-sd.png?v=1)](https://ossrs.io/lts/en-us/img/SRS-Stack-5-hd.png)
+
+> Note: For more details on the SRS Stack, please visit the following [link](https://www.figma.com/file/Ju5h2DZeJMzUtx5k7D0Oak/SRS-Stack).
+
 ## Usage
 
 Run srs-stack in one docker:
