@@ -92,9 +92,9 @@ The features that we're developing:
 - [x] [Support DVR to local disk](https://github.com/ossrs/srs-stack/issues/42).
 - [x] Support upgrade to latest version manually.
 - [x] Support HTTPS by let's encrypt with LEGO.
+- [x] Support virtual live streaming, covert file or other resource to live.
 - [ ] Support GB28181 by SRS 5.0 container.
 - [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
-- [ ] Support virtual live streaming, covert file or other resource to live.
 - [ ] Support WebRTC face to face chat, see [#2857](https://github.com/ossrs/srs/issues/2857).
 - [ ] Support WebRTC video chat room, see [#2924](https://github.com/ossrs/srs/issues/2924).
 - [ ] Support a set of tools for developer, see [#2891](https://github.com/ossrs/srs/issues/2891).

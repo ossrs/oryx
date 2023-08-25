@@ -488,35 +488,7 @@ docker run --rm -d ossrs/srs:sb ./objs/sb_hls_load \
 
 The load should be taken by NGINX, not the SRS Stack.
 
-# Tips
-
-Other tips for developers.
-
-## Release
-
-Release bugfix:
-
-* For mgmt: `./auto/platform.sh`
-* Then test the specified version of mgmt.
-
-> Note: The [features](https://github.com/ossrs/srs-stack/issues/4) might need to be updated.
-
-Release version for BT and aaPanel:
-
-* Then run `./auto/release.sh`
-* Finally, download [bt-srs_stack.zip](https://github.com/ossrs/srs-stack/releases) then submit to [bt.cn](https://www.bt.cn/developer/details.html?id=600801805)
-
-> Note: The [BT forum](https://www.bt.cn/bbs/thread-90890-1-1.html) and [FAQ](https://github.com/ossrs/srs-stack/issues/4) might need to be updated.
-
-To refresh current tag for mgmt and platform:
-
-* Run `./auto/platform.sh -refresh`
-
-The upgrade feature has been disabled, which means we no longer update the
-[version API](https://api.ossrs.net/terraform/v1/releases), nor do we update
-the `releases/version.go` file, and we don't use `./auto/releases_pub.sh`.
-
-## Ports
+## Docker Allocated Ports
 
 The ports allocated:
 
@@ -537,7 +509,7 @@ The ports allocated:
 
 > Note: Mgmt(2022) has been migrated to platform(2024).
 
-## APIs
+## HTTP Open APIs
 
 Platform:
 
@@ -617,7 +589,7 @@ Also provided by platform for static Files:
 * `/terraform/v1/host/exec` Exec command sync, response the stdout and stderr.
 * `/terraform/v1/mgmt/secret/token` Create token for OpenAPI.
 
-## Depends
+## Depends Softwares
 
 The software we depend on:
 
@@ -639,7 +611,7 @@ The software we depend on:
 * [ffmpeg](https://github.com/ossrs/srs-stack/tree/lighthouse/ffmpeg)
     * [FFmpeg and ffprobe](https://ffmpeg.org) tools in `ossrs/srs:ubuntu20`
 
-## Environments
+## Environment Variables
 
 The optional environments defined by `platform/containers/data/config/.env`:
 
@@ -686,35 +658,3 @@ Deprecated and unused variables:
 * `SOURCE`: `github|gitee`, The source code for upgrading.
 
 Please restart service when `.env` changed.
-
-## Architecture
-
-The architecture of [srs-stack](https://github.com/ossrs/srs-stack#architecture) by
-[mermaid](https://mermaid.live/edit#pako:eNqNkctuwjAQRX_F8qIKEiH7tEKqCLRSXyhp2ZAuTDx5iNiOnDEFIf69jtMWwqoL2zPjozt37CPNFAca0rxWX1nJNJLn-DaVhMiiknvi-1MiCoFet91tdDDdHMiDGjmkqzkiiRN3Piq1bb2mZpgrLYKyS0c9gRqYuDdYkhsSrWK7r1TkVLqsQ2ZvyVB1sRANFGe5PO_yQWufLH9u_zByYbD35f9HaUo-mkIzDi6OoQbWwhB4B5mBxFmtDD9rXVb7WWf3L2u7AjtQYIf8HKostRKAJZjWWXu1zz_fN0oj6CEYqWx7XZvL3dqbgNy5r8g0cNu6YnU7wT2OrjrFwKt27bmDPK3sNR1TAVqwitsfP3ZwSq0VASkNbcghZ6bGlKbyZFHTcIYw5xUqTUPUBsaUGVTJQWa_ec9EFbNvJ2iYWytw-gba_8FA)
-
-```mermaid
-flowchart LR;
-  nginx --> mgmt(mgmt<br/>by Go);
-  mgmt --> SRS --> Hooks(platform/hooks) --> StreamAuth & DVR & VoD;
-  DVR --> COS;
-  mgmt --> FFmpeg(platform/ffmpeg);
-  mgmt --- Platform(platform by Go);
-  SRS --- FFmpeg(platform/ffmpeg);
-  mgmt --> Upgrade --> Release;
-  mgmt --> TencentCloud(platform/TencentCloud) --> CAM[CAM/COS/VoD];
-  mgmt --> Prometheus --- NodeExporter;
-  mgmt --> Docker;
-  mgmt --> Env[(.env<br/>credentials.txt)];
-  mgmt --> Redis[(Redis KV)];
-```
-
-> Note: It's a single node, also light-weighted, video cloud for tiny company, personal user and starter.
-
-```mermaid
-flowchart LR;
-  nginx --> mgmt(mgmt<br/>by Go);
-  aaPanel --> mgmt;
-  aaPanel --> nginx;
-```
-
-> Note: This is an optional workflow for user to use aaPanel to deploy srs-stack.
