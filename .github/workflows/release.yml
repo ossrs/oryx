@@ -1,4 +1,4 @@
-name: "Release SRS Stack"
+name: "Release Stable Version"
 
 # @see https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#onpushpull_requestbranchestags
 on:
