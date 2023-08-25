@@ -442,7 +442,7 @@ doctl compute domain records ls ossrs.io |grep lego &&
 doctl compute droplet ls |grep lego
 ```
 
-## Develop the NGINX Proxy
+## Develop the NGINX HLS CDN
 
 Run SRS Stack by previous steps, such as [Develop All in macOS](#develop-all-in-macos), publish stream 
 and there should be a HLS stream:
@@ -457,6 +457,9 @@ docker rmi scripts/nginx-hls-cdn 2>/dev/null || echo OK &&
 docker build -t ossrs/srs-stack:nginx-hls-cdn scripts/nginx-hls-cdn
 ```
 
+> Note: The official image is build by [workflow](https://github.com/ossrs/srs-stack/actions/runs/5970907929) 
+> which is triggered manually.
+
 If you want to use NGINX as proxy, run by docker:
 
 ```bash
@@ -469,7 +472,12 @@ There should be a new HLS stream, cached by NGINX:
 
 * [http://localhost/live/livestream.m3u8](http://localhost:2022/tools/player.html?url=http://localhost/live/livestream.m3u8)
 
-> Note: To test the CROS with `OPTIONS`, use [HTTP-REST](http://ossrs.net/http-rest/) tool. 
+To test the CROS with `OPTIONS`, use [HTTP-REST](http://ossrs.net/http-rest/) tool, or by curl:
+
+```bash
+curl 'http://localhost/live/livestream.m3u8' -X 'OPTIONS' -H 'Origin: http://ossrs.net' -v
+curl 'http://localhost/live/livestream.m3u8' -X 'GET' -H 'Origin: http://ossrs.net' -v
+```
 
 To start a [srs-bench](https://github.com/ossrs/srs-bench) to test the performance:
 

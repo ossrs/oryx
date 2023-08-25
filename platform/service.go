@@ -249,6 +249,13 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 		// Set common header.
 		ohttp.SetHeader(w)
 
+		// Allow OPTIONS for CORS.
+		if r.Method == http.MethodOptions {
+			httpAllowCORS(w, r)
+			w.Write(nil)
+			return
+		}
+
 		// For version management.
 		if strings.HasPrefix(r.URL.Path, "/terraform/v1/releases") {
 			logger.Tf(ctx, "Proxy %v to backend 2023", r.URL.Path)
