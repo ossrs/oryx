@@ -4,6 +4,7 @@
 [![](https://badgen.net/discord/members/bQUPDRqy79)](https://discord.gg/bQUPDRqy79)
 [![](https://ossrs.net/wiki/images/wechat-badge4.svg)](https://ossrs.net/lts/zh-cn/contact#discussion)
 [![](https://ossrs.net/wiki/images/do-btn-srs-125x20.svg)](https://cloud.digitalocean.com/droplets/new?appId=133468816&size=s-1vcpu-512mb-10gb&region=sgp1&image=ossrs-srs&type=applications)
+[![](https://opencollective.com/srs-server/tiers/badge.svg)](https://opencollective.com/srs-server)
 
 SRS Stack is a video solution that is lightweight, open-source, and based on Go, Reactjs, SRS, FFmpeg, WebRTC, etc.
 
@@ -49,6 +50,23 @@ You can use environment variables to modify the settings.
 > Note: The `MGMT_PASSWORD` is also saved in `/data/config/.env`, you can modify it by yourself.
 
 To access additional environment variables, please refer to the [Environments](DEVELOPER.md#environments) section.
+
+## Sponsor
+
+Would you like additional assistance from us? By becoming a sponsor or backer of SRS, we can provide you
+with the support you need:
+
+* Backer: $5 per month, online text chat support through Discord.
+* Sponsor: $100 per month, online meeting support, 1 meeting per month in 1 hour.
+
+Please visit [OpenCollective](https://opencollective.com/srs-server) to become a backer or sponsor, and send
+us a direct message on [Discord](https://discord.gg/bQUPDRqy79). We are currently providing support to the 
+developers listed below:
+
+[![](https://opencollective.com/srs-server/backers.svg?width=800&button=false)](https://opencollective.com/srs-server)
+
+We at SRS aim to establish a non-profit, open-source community that assists developers worldwide in creating
+your own high-quality streaming and RTC platforms to support your businesses.
 
 ## FAQ
 
