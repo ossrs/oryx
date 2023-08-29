@@ -67,6 +67,7 @@
         "upgradeWindowOk": "升级窗口更新成功",
         "tabAuth": "流鉴权",
         "tabTencent": "腾讯云",
+        "tabLimit": "限流",
         "tabFooter": "网站",
         "tabTool": "工具",
         "tabPlatform": "平台",
@@ -110,6 +111,8 @@
         "upgradeStart": "开始时间",
         "upgradeEnd": "结束时间",
         "upgradeSubmit": "设置窗口",
+        "limitTotalTitle": "总时长限制",
+        "limitConsumed": "用量",
         "nginxHlsTitle": "HLS分发",
         "nginxHlsTip": "开启高性能分发HLS",
         "nginxHomeTitle": "首页设置",
@@ -166,6 +169,14 @@
         "secretCopy": "复制ApiSecret",
         "apiPublishSecret": "[API] 获取推流密钥",
         "secretEmpty": "没有ApiSecret，请先运行"
+      },
+      "limit": {
+        "totalText": "总时长(小时/月)",
+        "totalTip": "限制推流和拉流的总时长",
+        "updateOk": "设置限流成功",
+        "selectLimit": "请选择限流选项",
+        "limitStartDate": "计量开始日期",
+        "limitConsumedDuration": "已经消耗时长"
       },
       "tutorials": {
         "view": "播放次数",
@@ -265,6 +276,7 @@
         "upgradeWindowOk": "Upgrade window setup ok",
         "tabAuth": "Authentication",
         "tabTencent": "TencentCloud",
+        "tabLimit": "Limit",
         "tabFooter": "Website",
         "tabTool": "Tools",
         "tabPlatform": "Platform",
@@ -308,6 +320,8 @@
         "upgradeStart": "Start",
         "upgradeEnd": "End",
         "upgradeSubmit": "Submit",
+        "limitTotalTitle": "Total Streaming Duration",
+        "limitConsumed": "Usage",
         "nginxHlsTitle": "HLS Streaming",
         "nginxHlsTip": "Deliver HLS in High Performance mode",
         "nginxHomeTitle": "Homepage",
@@ -364,6 +378,14 @@
         "secretCopy": "Copy ApiSecret",
         "apiPublishSecret": "[API] Query Publish Secret",
         "secretEmpty": "No ApiSecret, please run "
+      },
+      "limit": {
+        "totalText": "Total Duration(hours/month)",
+        "totalTip": "Limit the total duration of pushing and pulling streams",
+        "updateOk": "Update the limit OK",
+        "selectLimit": "Please select the limit",
+        "limitStartDate": "Start Date",
+        "limitConsumedDuration": "Consumed Duration"
       },
       "tutorials": {
         "view": "View",

@@ -86,6 +86,7 @@ your own high-quality streaming and RTC platforms to support your businesses.
 - [x] [Support Virtual Live Streaming](https://mp.weixin.qq.com/s/I0Kmxtc24txpngO-PiR_tQ).
 - [x] [Automatical HTTPS](https://mp.weixin.qq.com/s/O70Fz-mxNedZpxgGXQ8DsA).
 - [ ] [Dashboard by Prometheus](https://mp.weixin.qq.com/s/ub9ZGmntOy_-S11oxFkxvg).
+- [ ] Support build small HLS deliver CDN by Nginx.
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
 
@@ -111,6 +112,8 @@ The features that we're developing:
 - [x] Support upgrade to latest version manually.
 - [x] Support HTTPS by let's encrypt with LEGO.
 - [x] Support virtual live streaming, covert file or other resource to live.
+- [x] Support build small HLS deliver CDN by Nginx.
+- [ ] Support limit the streaming duration to limit the fee.
 - [ ] Support GB28181 by SRS 5.0 container.
 - [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
 - [ ] Support WebRTC face to face chat, see [#2857](https://github.com/ossrs/srs/issues/2857).

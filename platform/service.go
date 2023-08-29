@@ -205,6 +205,8 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	handleMgmtBeianQuery(ctx, handler)
 	handleMgmtSecretQuery(ctx, handler)
 	handleMgmtBeianUpdate(ctx, handler)
+	handleMgmtLimitQuery(ctx, handler)
+	handleMgmtLimitUpdate(ctx, handler)
 	handleMgmtNginxHlsUpdate(ctx, handler)
 	handleMgmtNginxHlsQuery(ctx, handler)
 	handleMgmtAutoSelfSignedCertificate(ctx, handler)
@@ -796,6 +798,73 @@ func handleMgmtBeianUpdate(ctx context.Context, handler *http.ServeMux) {
 
 			ohttp.WriteData(ctx, w, r, nil)
 			logger.Tf(ctx, "beian: update ok, beian=%v, text=%v, token=%vB", beian, text, len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+}
+
+func handleMgmtLimitQuery(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/limit/query"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			if err := limitWorker.Parse(ctx); err != nil {
+				return errors.Wrapf(err, "parse")
+			}
+
+			ohttp.WriteData(ctx, w, r, &struct {
+				TotalDuration    int64  `json:"totalDuration"`
+				StartDate        string `json:"startDate"`
+				LastUpdateDate   string `json:"lastUpdateDate"`
+				ConsumedDuration int64  `json:"consumedDuration"`
+			}{
+				TotalDuration:    limitWorker.TotalDuration,
+				StartDate:        limitWorker.StartDate.Format(time.RFC3339),
+				LastUpdateDate:   limitWorker.LastUpdateDate.Format(time.RFC3339),
+				ConsumedDuration: limitWorker.ConsumedDuration,
+			})
+			logger.Tf(ctx, "limit: query ok")
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+}
+
+func handleMgmtLimitUpdate(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/limit/update"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var totalDuration int64
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token         *string `json:"token"`
+				TotalDuration *int64  `json:"totalDuration"`
+			}{
+				Token: &token, TotalDuration: &totalDuration,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			if totalDuration == 0 {
+				return errors.New("no limit")
+			}
+
+			limitWorker.TotalDuration = totalDuration
+			if err := limitWorker.Flush(ctx); err != nil {
+				return errors.Wrapf(err, "update")
+			}
+
+			ohttp.WriteData(ctx, w, r, nil)
+			logger.Tf(ctx, "limit: update ok, totalDuration=%v, token=%vB", totalDuration, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

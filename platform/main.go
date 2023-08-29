@@ -185,6 +185,13 @@ func doMain(ctx context.Context) error {
 		return errors.Wrapf(err, "start crontab worker")
 	}
 
+	// Create worker for system limits.
+	limitWorker = NewLimitWorker()
+	defer limitWorker.Close()
+	if err := limitWorker.Start(ctx); err != nil {
+		return errors.Wrapf(err, "start limit worker")
+	}
+
 	// Run HTTP service.
 	httpService := NewHTTPService()
 	defer httpService.Close()

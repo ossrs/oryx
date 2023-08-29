@@ -295,6 +295,7 @@ const (
 	SRS_BEIAN           = "SRS_BEIAN"
 	SRS_HTTPS           = "SRS_HTTPS"
 	SRS_HTTPS_DOMAIN    = "SRS_HTTPS_DOMAIN"
+	SRS_LIMIT           = "SRS_LIMIT"
 )
 
 // Tencent cloud consts.
