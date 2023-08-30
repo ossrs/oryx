@@ -80,6 +80,9 @@ var httpsInsecureVerify *bool
 // and may occasionally fail. Therefore, it is necessary to retry the process if a failure occurs.
 var noMediaTest *bool
 
+// noBilibiliTest is used to disable the bilibili test.
+var noBilibiliTest *bool
+
 var srsLog *bool
 var srsTimeout *int
 var endpoint *string
@@ -100,10 +103,10 @@ var srsInputFile *string
 func options() string {
 	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, forceHttps=%v, "+
 		"waitReady=%v, initPassword=%v, initSelfSignedCert=%v, systemPassword=%vB, domainLetsEncrypt=%v, "+
-		"httpsInsecureVerify=%v, srsInputFile=%v, noMediaTest=%v",
+		"httpsInsecureVerify=%v, srsInputFile=%v, noMediaTest=%v, noBilibiliTest=%v",
 		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *forceHttps, *waitReady, *initPassword,
 		*initSelfSignedCert, len(*systemPassword), *domainLetsEncrypt, *httpsInsecureVerify, *srsInputFile,
-		*noMediaTest,
+		*noMediaTest, *noBilibiliTest,
 	)
 }
 
@@ -145,6 +148,7 @@ func prepareTest(ctx context.Context) (err error) {
 	srsFFprobe = flag.String("srs-ffprobe", "ffprobe", "The FFprobe tool")
 	srsInputFile = flag.String("srs-input-file", "source.200kbps.768x320.flv", "The input file")
 	noMediaTest = flag.Bool("no-media-test", false, "Whether disable the media test")
+	noBilibiliTest = flag.Bool("no-bilibili-test", false, "Whether disable the bilibili test")
 
 	// Should parse it first.
 	flag.Parse()

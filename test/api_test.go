@@ -341,6 +341,10 @@ func TestApi_TutorialsQueryBilibili(t *testing.T) {
 		return
 	}
 
+	if *noBilibiliTest {
+		return
+	}
+
 	var r0 error
 	defer func(ctx context.Context) {
 		if err := filterTestError(ctx.Err(), r0); err != nil {
@@ -935,6 +939,8 @@ func TestApi_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 			// TODO: FIXME: Remove it after fix the bug.
 			time.Sleep(10 * time.Second)
 
+			// The ctx has already been cancelled by test case, which will cause the request failed.
+			ctx := context.Background()
 			if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
 				logger.Tf(ctx, "restore hphls config failed %+v", err)
 			}
@@ -1083,6 +1089,8 @@ func TestApi_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
 			// TODO: FIXME: Remove it after fix the bug.
 			time.Sleep(10 * time.Second)
 
+			// The ctx has already been cancelled by test case, which will cause the request failed.
+			ctx := context.Background()
 			if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
 				logger.Tf(ctx, "restore hphls config failed %+v", err)
 			}
