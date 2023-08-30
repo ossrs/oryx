@@ -68,11 +68,12 @@ jobs:
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      # Note that s-1vcpu-512mb-10gb is too small for test, at least s-1vcpu-1gb size.
       - name: Create test machine
         run: |
           sshkey=$(doctl compute ssh-key list --no-header |grep srs |awk '{print $1}')
           doctl compute droplet create $SRS_DOMAIN \
-            --image ubuntu-20-04-x64 --region sgp1 --size s-1vcpu-512mb-10gb \
+            --image ubuntu-20-04-x64 --region sgp1 --size s-1vcpu-1gb \
             --ssh-keys $sshkey --wait
       - name: Query IP of Server
         run: |
