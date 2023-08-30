@@ -12,7 +12,7 @@
       "api_token": "{{user `do_token`}}",
       "image": "ubuntu-20-04-x64",
       "region": "sgp1",
-      "size": "s-2vcpu-4gb",
+      "size": "s-2vcpu-2gb",
       "ssh_username": "root",
       "snapshot_name": "{{user `image_name`}}"
     }

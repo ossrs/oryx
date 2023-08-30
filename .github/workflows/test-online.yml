@@ -68,7 +68,8 @@ jobs:
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-      # Note that s-1vcpu-512mb-10gb is too small for test, use s-1vcpu-1gb or s-2vcpu-4gb size.
+      # Note that s-1vcpu-512mb-10gb is too small for test, because it leads to overload and failure due
+      # to the process kswapd. It is recommendded to use either s-1vcpu-1gb or s-2vcpu-2gb size instead.
       - name: Create test machine
         run: |
           sshkey=$(doctl compute ssh-key list --no-header |grep srs |awk '{print $1}')
