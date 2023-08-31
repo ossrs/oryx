@@ -320,6 +320,7 @@ to `~/.lighthouse/.env` file:
 
 ```bash
 LH_ACCOUNT=xxxxxx
+LH_PROD=xxxxxx
 SECRET_ID=xxxxxx
 SECRET_KEY=xxxxxx
 ```
@@ -349,6 +350,26 @@ VM_TOKEN=$(cat /tmp/lh-token2.txt) bash scripts/tools/tencent-cloud/helper.sh cr
 bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat /tmp/lh-test.txt) --id /tmp/lh-ip2.txt && 
 echo "IP: ubuntu@$(cat /tmp/lh-ip2.txt), Password: $(cat /tmp/lh-token2.txt)" &&
 echo "http://$(cat /tmp/lh-ip2.txt)"
+```
+
+Test the CVM instance:
+
+```bash
+scp scripts/tools/secret.sh ubuntu@$(cat /tmp/lh-ip2.txt):~ &&
+make -j -C test &&
+ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo bash secret.sh >test/.env &&
+./test/srs-stack.test -test.v -endpoint http://$(cat /tmp/lh-ip2.txt):2022 \
+    -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
+    -test.run TestApi_Empty &&
+ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo bash secret.sh >test/.env &&
+./test/srs-stack.test -test.v -wait-ready -endpoint http://$(cat /tmp/lh-ip2.txt):2022 \
+    -endpoint-rtmp rtmp://$(cat /tmp/lh-ip2.txt) -endpoint-http http://$(cat /tmp/lh-ip2.txt) -endpoint-srt srt://$(cat /tmp/lh-ip2.txt):10080 \
+    -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
+    -test.parallel 3 &&
+./test/srs-stack.test -test.v -wait-ready -endpoint https://$(cat /tmp/lh-ip2.txt):2443 \
+    -endpoint-rtmp rtmp://$(cat /tmp/lh-ip2.txt) -endpoint-http https://$(cat /tmp/lh-ip2.txt) -endpoint-srt srt://$(cat /tmp/lh-ip2.txt):10080 \
+    -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
+    -test.parallel 3
 ```
 
 Verify then cleanup the test CVM instance:

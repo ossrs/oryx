@@ -86,6 +86,9 @@ var noBilibiliTest *bool
 var srsLog *bool
 var srsTimeout *int
 var endpoint *string
+var endpointRTMP *string
+var endpointHTTP *string
+var endpointSRT *string
 var forceHttps *bool
 var apiSecret *string
 var checkApiSecret *bool
@@ -103,10 +106,11 @@ var srsInputFile *string
 func options() string {
 	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, forceHttps=%v, "+
 		"waitReady=%v, initPassword=%v, initSelfSignedCert=%v, systemPassword=%vB, domainLetsEncrypt=%v, "+
-		"httpsInsecureVerify=%v, srsInputFile=%v, noMediaTest=%v, noBilibiliTest=%v",
+		"httpsInsecureVerify=%v, srsInputFile=%v, noMediaTest=%v, noBilibiliTest=%v, endpointRTMP=%v, endpointHTTP=%v, "+
+		"endpointSRT=%v",
 		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *forceHttps, *waitReady, *initPassword,
 		*initSelfSignedCert, len(*systemPassword), *domainLetsEncrypt, *httpsInsecureVerify, *srsInputFile,
-		*noMediaTest, *noBilibiliTest,
+		*noMediaTest, *noBilibiliTest, *endpointRTMP, *endpointHTTP, *endpointSRT,
 	)
 }
 
@@ -131,6 +135,9 @@ func prepareTest(ctx context.Context) (err error) {
 	apiSecret = flag.String("api-secret", os.Getenv("SRS_PLATFORM_SECRET"), "The secret for api")
 	checkApiSecret = flag.Bool("check-api-secret", true, "Whether check the api secret")
 	endpoint = flag.String("endpoint", "http://localhost:2022", "The endpoint for api, can be http or https")
+	endpointRTMP = flag.String("endpoint-rtmp", "rtmp://localhost:1935", "The endpoint for rtmp")
+	endpointHTTP = flag.String("endpoint-http", "http://localhost:8080", "The endpoint for http")
+	endpointSRT = flag.String("endpoint-srt", "srt://localhost:10080", "The endpoint for srt")
 	forceHttps = flag.Bool("force-https", false, "Force to use HTTPS api")
 	waitReady = flag.Bool("wait-ready", false, "Whether wait for the service ready")
 	apiReadyimeout = flag.Int("api-ready-timeout", 30000, "Check when startup, the timeout in ms")
@@ -167,7 +174,7 @@ func prepareTest(ctx context.Context) (err error) {
 
 		// If we run in GoLand, the current directory is in blackbox, so we use parent directory.
 		nFilename := path.Join("../", filename)
-		if _, err := os.Stat(nFilename); err == nil {
+		if stat, err := os.Stat(nFilename); err == nil && !stat.IsDir() {
 			return nFilename, nil
 		}
 

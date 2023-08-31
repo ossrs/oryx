@@ -32,7 +32,8 @@ IMAGE_URL=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:5
 SOURCE=$WORK_DIR
 
 mkdir -p /usr/local/lighthouse/softwares/srs-stack &&
-rm -rf $SRS_HOME && ln -sf /usr/local/lighthouse/softwares/srs-stack $SRS_HOME
+rm -rf $SRS_HOME && ln -sf /usr/local/lighthouse/softwares/srs-stack $SRS_HOME &&
+(cd /usr/local/lighthouse/softwares && rm -rf srs-terraform && ln -sf srs-stack srs-terraform)
 ret=$?; if [[ 0 -ne $ret ]]; then echo "Failed to create $SRS_HOME"; exit $ret; fi
 
 if [[ $(id -un lighthouse 2>/dev/null) == '' ]]; then

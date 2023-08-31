@@ -619,7 +619,7 @@ func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 
 	// Start FFmpeg to publish stream.
 	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
-	streamURL := fmt.Sprintf("rtmp://localhost/live/%v?secret=%v", streamID, pubSecret)
+	streamURL := fmt.Sprintf("%v/live/%v?secret=%v", *endpointRTMP, streamID, pubSecret)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
 			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
@@ -636,7 +636,7 @@ func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
 	ffprobe := NewFFprobe(func(v *ffprobeClient) {
 		v.dvrFile = fmt.Sprintf("srs-ffprobe-%v.flv", streamID)
-		v.streamURL = fmt.Sprintf("http://localhost:8080/live/%v.flv", streamID)
+		v.streamURL = fmt.Sprintf("%v/live/%v.flv", *endpointHTTP, streamID)
 		v.duration, v.timeout = duration, time.Duration(*srsFFprobeTimeout)*time.Millisecond
 	})
 	wg.Add(1)
@@ -697,7 +697,7 @@ func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 
 	// Start FFmpeg to publish stream.
 	streamID := fmt.Sprintf("stream-%v-%v-%v", pubSecret, os.Getpid(), rand.Int())
-	streamURL := fmt.Sprintf("rtmp://localhost/live/%v", streamID)
+	streamURL := fmt.Sprintf("%v/live/%v", *endpointRTMP, streamID)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
 			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
@@ -714,7 +714,7 @@ func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
 	ffprobe := NewFFprobe(func(v *ffprobeClient) {
 		v.dvrFile = fmt.Sprintf("srs-ffprobe-%v.flv", streamID)
-		v.streamURL = fmt.Sprintf("http://localhost:8080/live/%v.flv", streamID)
+		v.streamURL = fmt.Sprintf("%v/live/%v.flv", *endpointHTTP, streamID)
 		v.duration, v.timeout = duration, time.Duration(*srsFFprobeTimeout)*time.Millisecond
 	})
 	wg.Add(1)
@@ -775,7 +775,7 @@ func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 
 	// Start FFmpeg to publish stream.
 	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
-	streamURL := fmt.Sprintf("rtmp://localhost/live/%v?secret=%v", streamID, pubSecret)
+	streamURL := fmt.Sprintf("%v/live/%v?secret=%v", *endpointRTMP, streamID, pubSecret)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
 			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
@@ -792,7 +792,7 @@ func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
 	ffprobe := NewFFprobe(func(v *ffprobeClient) {
 		v.dvrFile = fmt.Sprintf("srs-ffprobe-%v.flv", streamID)
-		v.streamURL = fmt.Sprintf("http://localhost:8080/live/%v.m3u8", streamID)
+		v.streamURL = fmt.Sprintf("%v/live/%v.m3u8", *endpointHTTP, streamID)
 		v.duration, v.timeout = duration, time.Duration(*srsFFprobeTimeout)*time.Millisecond
 	})
 	wg.Add(1)
@@ -852,7 +852,7 @@ func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 
 	// Start FFmpeg to publish stream.
 	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
-	streamURL := fmt.Sprintf("srt://localhost:10080?streamid=#!::r=live/%v?secret=%v,m=publish", streamID, pubSecret)
+	streamURL := fmt.Sprintf("%v?streamid=#!::r=live/%v?secret=%v,m=publish", *endpointSRT, streamID, pubSecret)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
 			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
@@ -879,7 +879,7 @@ func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
 	ffprobe := NewFFprobe(func(v *ffprobeClient) {
 		v.dvrFile = fmt.Sprintf("srs-ffprobe-%v.flv", streamID)
-		v.streamURL = fmt.Sprintf("http://localhost:8080/live/%v.flv", streamID)
+		v.streamURL = fmt.Sprintf("%v/live/%v.flv", *endpointHTTP, streamID)
 		v.duration, v.timeout = duration, time.Duration(*srsFFprobeTimeout)*time.Millisecond
 	})
 	wg.Add(1)
@@ -985,7 +985,7 @@ func TestApi_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 
 	// Start FFmpeg to publish stream.
 	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
-	streamURL := fmt.Sprintf("rtmp://localhost/live/%v?secret=%v", streamID, pubSecret)
+	streamURL := fmt.Sprintf("%v/live/%v?secret=%v", *endpointRTMP, streamID, pubSecret)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
 			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
@@ -1003,7 +1003,7 @@ func TestApi_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
 	ffprobe := NewFFprobe(func(v *ffprobeClient) {
 		v.dvrFile = fmt.Sprintf("srs-ffprobe-%v.flv", streamID)
-		v.streamURL = fmt.Sprintf("http://localhost:8080/live/%v.m3u8", streamID)
+		v.streamURL = fmt.Sprintf("%v/live/%v.m3u8", *endpointHTTP, streamID)
 		v.duration, v.timeout = duration, time.Duration(*srsFFprobeTimeout)*time.Millisecond
 		hlsStreamURL = v.streamURL
 	})
@@ -1135,7 +1135,7 @@ func TestApi_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
 
 	// Start FFmpeg to publish stream.
 	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
-	streamURL := fmt.Sprintf("rtmp://localhost/live/%v?secret=%v", streamID, pubSecret)
+	streamURL := fmt.Sprintf("%v/live/%v?secret=%v", *endpointRTMP, streamID, pubSecret)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
 			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
@@ -1153,7 +1153,7 @@ func TestApi_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
 	duration := time.Duration(*srsFFprobeDuration) * time.Millisecond
 	ffprobe := NewFFprobe(func(v *ffprobeClient) {
 		v.dvrFile = fmt.Sprintf("srs-ffprobe-%v.flv", streamID)
-		v.streamURL = fmt.Sprintf("http://localhost:8080/live/%v.m3u8", streamID)
+		v.streamURL = fmt.Sprintf("%v/live/%v.m3u8", *endpointHTTP, streamID)
 		v.duration, v.timeout = duration, time.Duration(*srsFFprobeTimeout)*time.Millisecond
 		hlsStreamURL = v.streamURL
 	})
