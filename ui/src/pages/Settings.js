@@ -78,11 +78,9 @@ function SettingsImpl2({defaultActiveTab}) {
           <Tab eventKey="beian" title={t('settings.tabFooter')}>
             <SettingBeian />
           </Tab>
-          {false &&
           <Tab eventKey="limit" title={t('settings.tabLimit')}>
             <SettingLimit />
           </Tab>
-          }
           <Tab eventKey="api" title="OpenAPI">
             <SettingOpenApi {...{copyToClipboard}}/>
           </Tab>
