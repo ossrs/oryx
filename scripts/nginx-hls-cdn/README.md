@@ -37,6 +37,8 @@ Please configure the SRS Stack using the web console.
 Open `System > HLS > Delivery HLS in High Performance mode` and click the `Submit` button. This will enable
 high-performance HLS and allow NGINX to cache the m3u8 and ts files.
 
+![](./nginx-hls-cdn-02.png)
+
 Then you can publish a stream to SRS Stack, for example, to use ffmpeg to push a stream:
 
 ```bash
@@ -77,8 +79,9 @@ docker run --rm -it -e SRS_STACK_SERVER=128.199.114.145:2022 \
 A HLS stream should be available at [http://128.199.93.163/live/livestream.m3u8](http://128.199.114.145:2022/tools/player.html?url=http://128.199.93.163/live/livestream.m3u8),
 and in the following steps, you can create more NGINX servers to deliver HLS stream.
 
-You can perform this step multiple times to set up additional NGINX edge servers, which will enable you 
-to serve a larger number of clients.
+This step can be repeated multiple times to establish more NGINX edge servers, allowing you to serve 
+a greater number of clients. Additionally, you can configure NGINX servers to retrieve HLS streams 
+from other NGINX servers, creating a new layer of servers that can support millions of viewers.
 
 ## Step 3: Test the NGINX Edge server
 
@@ -95,5 +98,8 @@ Check the bandwidth by dstat:
 dstat -Nlo,eth0,eth1
 ```
 
-You will find all the load is on the nginx01 server, and the SRS Stack server should be idle.
+All network traffic will be handled and transmitted by nginx01 instead of the SRS Stack. This structure 
+allows for the expansion and addition of more NGINX servers to accommodate more viewers, potentially 
+supporting thousands or even millions. Since the SRS Stack only needs to serve the NGINX servers, the 
+load will consistently remain low.
 

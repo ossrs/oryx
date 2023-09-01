@@ -46,7 +46,7 @@ if [[ $refresh == yes ]]; then
 fi
 echo "Last release is $RELEASE, revision is $REVISION, next is $NEXT"
 
-MINOR=$(grep "const version =" platform/version.go |awk -F '.' '{print $2}')
+MINOR=$(echo $RELEASE |awk -F '.' '{print $2}')
 VERSION="5.$MINOR.$NEXT" &&
 TAG="v$VERSION" &&
 echo "publish version $VERSION as tag $TAG"
