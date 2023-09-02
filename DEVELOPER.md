@@ -509,6 +509,63 @@ docker run --rm -d ossrs/srs:sb ./objs/sb_hls_load \
 
 The load should be taken by NGINX, not the SRS Stack.
 
+## Product the NGINX HLS CDN
+
+Install SRS Stack by BT or aaPanel or docker, assume the domain is `bt.ossrs.net`, publish
+a RTMP stream to SRS Stack:
+
+```bash
+ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy \
+    -f flv rtmp://bt.ossrs.net/live/livestream?secret=xxx
+```
+
+Open the [http://bt.ossrs.net/live/livestream.m3u8](http://bt.ossrs.net/tools/player.html?url=http://bt.ossrs.net/live/livestream.m3u8) 
+to Check it.
+
+Create a new domain `bt2.ossrs.net` for the same server:
+
+```bash
+doctl compute domain records create ossrs.net \
+    --record-type A --record-name bt2 --record-data 39.100.79.15 \
+    --record-ttl 3600
+```
+
+Create a new WebSite `bt2.ossrs.net` by BT or aaPanel, proxy to NGINX HLS Edge server:
+
+```nginx
+location /tools/ {
+  proxy_pass http://localhost:2022;
+}
+location / {
+  proxy_pass http://localhost:23080;
+}
+```
+
+Start a NGINX HLS Edge server:
+
+```bash
+docker rm -f srs-stack-nginx01 || echo OK &&
+docker run --rm -it -e SRS_STACK_SERVER=192.168.0.3:2022 \
+    -p 23080:80 --name srs-stack-nginx01 -d \
+    ossrs/srs-stack:nginx-hls-cdn
+```
+
+Open the [http://bt2.ossrs.net/live/livestream.m3u8](http://bt.ossrs.net/tools/player.html?url=http://bt2.ossrs.net/live/livestream.m3u8)
+to Check it.
+
+Use curl to test the HLS cache:
+
+```bash
+curl -v http://bt.ossrs.net/live/livestream.m3u8
+curl -v http://bt.ossrs.net/live/livestream.m3u8 -H 'Origin: http://test.com'
+curl -v http://bt2.ossrs.net/live/livestream.m3u8
+curl -v http://bt2.ossrs.net/live/livestream.m3u8 -H 'Origin: http://test.com'
+```
+
+Be aware that the cache will store the CORS headers as well. This means that if you query 
+and obtain HLS without CORS, it will remain without CORS even when a request includes an 
+Origin header that necessitates CORS.
+
 ## Docker Allocated Ports
 
 The ports allocated:
