@@ -2,7 +2,7 @@
   "title": "SRS音视频服务器",
   "name": "srs_stack",
   "ps": "直播和WebRTC音视频能力，支持RTMP、WebRTC、HLS、HTTP-FLV、SRT、MPEG-DASH和GB28181等常用协议",
-  "versions": "5.8.28",
+  "versions": "5.8.30",
   "checks": "/www/server/panel/plugin/srs_stack",
   "author": "Winlin",
   "home": "https://github.com/ossrs/srs-stack"

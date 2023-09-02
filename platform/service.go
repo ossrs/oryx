@@ -300,7 +300,7 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 		}
 		if strings.HasSuffix(r.URL.Path, ".ts") {
 			httpAllowCORS(w, r)
-			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 300))
+			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 600))
 			hlsFileServer.ServeHTTP(w, r)
 			return
 		}
