@@ -446,7 +446,7 @@ func srsGenerateConfig(ctx context.Context) error {
 		"    hls_window 60;",
 		"    hls_path ./objs/nginx/html;",
 		"    hls_m3u8_file [app]/[stream].m3u8;",
-		"    hls_ts_file [app]/[stream]-[seq].ts;",
+		"    hls_ts_file [app]/[stream]-[seq]-[timestamp].ts;",
 		"    hls_wait_keyframe on;",
 		"    hls_dispose 10;",
 	}
@@ -1248,12 +1248,8 @@ func Authenticate(ctx context.Context, apiSecret, token string, header http.Head
 }
 
 // httpAllowCORS allow CORS for HTTP request.
+// Note that we always enable CROS because we enable HTTP cache.
 func httpAllowCORS(w http.ResponseWriter, r *http.Request) {
-	// Ignore if no CORS required.
-	if r.Header.Get("Origin") == "" {
-		return
-	}
-
 	// SRS does not need cookie or credentials, so we disable CORS credentials, and use * for CORS origin,
 	// headers, expose headers and methods.
 	w.Header().Set("Access-Control-Allow-Origin", "*")
