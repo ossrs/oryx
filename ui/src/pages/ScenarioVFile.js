@@ -270,11 +270,6 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
             </Form.Group>
             <Row>
               <Col xs='auto'>
-                <Form.Group className="mb-3" controlId="formKuaishouEnabledCheckbox">
-                  <Form.Check type="checkbox" label="开启虚拟直播" defaultChecked={kuaishouEnabled} onClick={() => setKuaishouEnabled(!kuaishouEnabled)} />
-                </Form.Group>
-              </Col>
-              <Col xs='auto'>
                 <Form.Group className="mb-3" controlId="formKuaishouCustomCheckbox">
                   <Form.Check type="checkbox" label="自定义平台" defaultChecked={kuaishouCustom} onClick={() => setKuaishouCustom(!kuaishouCustom)} />
                 </Form.Group>
