@@ -78,9 +78,6 @@ function SettingsImpl2({defaultActiveTab}) {
           <Tab eventKey="beian" title={t('settings.tabFooter')}>
             <SettingBeian />
           </Tab>
-          <Tab eventKey="limit" title={t('settings.tabLimit')}>
-            <SettingLimit />
-          </Tab>
           <Tab eventKey="api" title="OpenAPI">
             <SettingOpenApi {...{copyToClipboard}}/>
           </Tab>
@@ -90,103 +87,6 @@ function SettingsImpl2({defaultActiveTab}) {
         </Tabs>
       </Container>
     </>
-  );
-}
-
-function SettingLimit() {
-  const [defaultLimit, setDefaultLimit] = React.useState();
-  const handleError = useErrorHandler();
-
-  React.useEffect(() => {
-    axios.get('/terraform/v1/mgmt/limit/query')
-      .then(res => {
-        setDefaultLimit(res.data.data);
-        console.log(`Limit: query ${JSON.stringify(res.data.data)}`);
-      }).catch(handleError);
-  }, [handleError, setDefaultLimit]);
-
-  if (!defaultLimit) return <></>;
-  defaultLimit.totalDurationInHours = defaultLimit.totalDuration;
-  if (defaultLimit.totalDuration > 0) defaultLimit.totalDurationInHours = defaultLimit.totalDuration / 3600;
-  defaultLimit.startDate = moment(defaultLimit.startDate);
-  return <SettingLimitImpl defaultLimit={defaultLimit} />;
-}
-
-function SettingLimitImpl({defaultLimit}) {
-  console.warn(defaultLimit);
-
-  const [totalDuration, setTotalDuration] = React.useState(defaultLimit.totalDurationInHours);
-  const handleError = useErrorHandler();
-  const {t} = useTranslation();
-
-  const limitOptions = React.useMemo(() => {
-    return [
-      {value: 0, label: 'Select the limit'},
-      {value: 1, label: '1 hours/month'},
-      {value: 3, label: '3 hours/month'},
-      {value: 15, label: '15 hours/month'},
-      {value: 30, label: '30 hours/month'},
-      {value: 90, label: '90 hours/month'},
-      {value: -1, label: 'No limit'},
-    ];
-  }, []);
-
-  const updateLimit = React.useCallback((e) => {
-    e.preventDefault();
-    if (!totalDuration) {
-      alert(t('limit.selectLimit'));
-      return;
-    }
-
-    const value = totalDuration === -1 ? -1 : totalDuration * 3600;
-    const token = Token.load();
-    axios.post('/terraform/v1/mgmt/limit/update', {
-      ...token, totalDuration: value,
-    }).then(res => {
-      alert(t('limit.updateOk'));
-    }).catch(handleError);
-  }, [handleError, totalDuration, t]);
-
-  const onSelectLimit = React.useCallback((e) => {
-    e.preventDefault();
-    if (isNaN(e.target.value)) {
-      setTotalDuration(null);
-      return;
-    }
-
-    setTotalDuration(parseInt(e.target.value));
-    console.log(`Set limit to ${parseInt(e.target.value)} seconds`);
-  }, [setTotalDuration]);
-
-  return (
-    <Accordion defaultActiveKey={['0', '1']} alwaysOpen={true}>
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>{t('settings.limitTotalTitle')}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('limit.totalText')}</Form.Label>
-              <Form.Text> * {t('limit.totalTip')}</Form.Text>
-              <Form.Select defaultValue={defaultLimit.totalDurationInHours} onChange={(e) => onSelectLimit(e)}>
-                {limitOptions.map((e, index) => {
-                  return <option key={index} value={e.value}>{e.label}</option>;
-                })}
-              </Form.Select>
-            </Form.Group>
-            <Button variant="primary" type="submit" onClick={(e) => updateLimit(e)}>
-              {t('helper.submit')}
-            </Button>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="1">
-        <Accordion.Header>{t('settings.limitConsumed')}</Accordion.Header>
-        <Accordion.Body>
-          <p>{t('limit.limitStartDate')}: {defaultLimit.startDate.format('YYYY-MM-DD HH:mm:ss')}</p>
-          <p>{t('limit.limitConsumedDuration')}: {Number(defaultLimit.consumedDuration / 3600.0).toFixed(2)} hours</p>
-        </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
   );
 }
 

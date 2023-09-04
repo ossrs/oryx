@@ -612,8 +612,6 @@ Platform:
 * `/terraform/v1/mgmt/auto-self-signed-certificate` Create the self-signed certificate if no cert.
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
 * `/terraform/v1/mgmt/cert/query` Query the key and cert for HTTPS.
-* `/terraform/v1/mgmt/limit/query` Query the limit information.
-* `/terraform/v1/mgmt/limit/update` Update the limit information.
 * `/terraform/v1/host/versions` Public version api.
 * `/terraform/v1/releases` Version management for all components.
 
