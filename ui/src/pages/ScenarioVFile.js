@@ -79,7 +79,7 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
   const [kuaishouSecret, setKuaishouSecret] = React.useState(defaultSecrets?.kuaishou?.secret);
   const [kuaishouCustom, setKuaishouCustom] = React.useState(defaultSecrets?.kuaishou?.custom);
   const [kuaishouLabel, setKuaishouLabel] = React.useState(defaultSecrets?.kuaishou?.label);
-  const [kuaishouFiles, setKuaishoudFiles] = React.useState(defaultSecrets?.kuaishou?.files);
+  const [kuaishouFiles, setKuaishouFiles] = React.useState(defaultSecrets?.kuaishou?.files);
   const [vLives, setVLives] = React.useState();
   const [submiting, setSubmiting] = React.useState();
   const handleError = useErrorHandler();
@@ -267,7 +267,7 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Label>视频源</Form.Label>
               <Form.Text> * 虚拟直播就是将视频源(文件)转换成直播流</Form.Text>
               <SrsErrorBoundary>
-                <VLiveFileUploader platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishoudFiles} />
+                <VLiveFileUploader platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} />
               </SrsErrorBoundary>
             </Form.Group>
             <Form.Group className="mb-3">
