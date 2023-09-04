@@ -408,6 +408,11 @@ function VLiveFileServer({platform, vLiveFiles, setVLiveFiles}) {
   
   const CheckLocalFile = function() {
     if (!inputFile) return alert('请输入文件路径');
+    if (!inputFile.startsWith('/data') && !inputFile.startsWith('upload/')) return alert('文件必须在 /data 目录下');
+
+    const fileExtension = inputFile.slice(inputFile.lastIndexOf('.'));
+    if (!['.mp4', '.flv', '.ts'].includes(fileExtension)) return alert('文件必须是 mp4/flv/ts 格式');
+
     const token = Token.load();
     axios.get(`/terraform/v1/ffmpeg/vlive/server?file=${inputFile}`).then(res => {
       console.log(`检查服务器文件成功，${JSON.stringify(res.data.data)}`);
