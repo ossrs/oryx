@@ -108,7 +108,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
   const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label) => {
     e.preventDefault();
     if (!server) return alert('请输入推流地址');
-    if (custom && !label) return alert('自定义平台请输入名称，否则不好区分转推状态');
+    if (custom && !label) return alert('自定义平台请输入名称，否则不好区分转播状态');
 
     try {
       setSubmiting(true);
@@ -117,7 +117,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
       axios.post('/terraform/v1/ffmpeg/forward/secret', {
         ...token, action, platform, server, secret, enabled: !!enabled, custom: !!custom, label,
       }).then(res => {
-        alert('转推设置成功');
+        alert('转播设置成功');
       }).catch(handleError);
     } finally {
       new Promise(resolve => setTimeout(resolve, 3000)).then(() => setSubmiting(false));
@@ -130,17 +130,17 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
         <Accordion.Header>场景介绍</Accordion.Header>
         <Accordion.Body>
           <div>
-            多平台转播<TutorialsButton prefixLine={true} tutorials={forwardTutorials} />，将流转发给其他平台，比如视频号直播、快手、B站等。
+            多平台转播<TutorialsButton prefixLine={true} tutorials={forwardTutorials} />，将流转播给其他平台，比如视频号直播、快手、B站等。
             <p></p>
           </div>
           <p>可应用的具体场景包括：</p>
           <ul>
-            <li>节约上行带宽，避免客户端推多路流，服务器转发更有保障</li>
+            <li>节约上行带宽，避免客户端推多路流，服务器转播更有保障</li>
           </ul>
           <p>使用说明：</p>
           <ul>
             <li>首先使用适合你的场景推流</li>
-            <li>然后设置转发的平台</li>
+            <li>然后设置转播的平台</li>
           </ul>
         </Accordion.Body>
       </Accordion.Item>
@@ -165,11 +165,6 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
             </Form.Group>
             <Row>
               <Col xs='auto'>
-                <Form.Group className="mb-3" controlId="formWxEnabledCheckbox">
-                  <Form.Check type="checkbox" label="开启转推" defaultChecked={wxEnabled} onClick={() => setWxEnabled(!wxEnabled)} />
-                </Form.Group>
-              </Col>
-              <Col xs='auto'>
                 <Form.Group className="mb-3" controlId="formWxCustomCheckbox">
                   <Form.Check type="checkbox" label="自定义平台" defaultChecked={wxCustom} onClick={() => setWxCustom(!wxCustom)} />
                 </Form.Group>
@@ -179,9 +174,12 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
               variant="primary"
               type="submit"
               disabled={submiting}
-              onClick={(e) => updateSecrets(e, 'update', 'wx', wxServer, wxSecret, wxEnabled, wxCustom, wxLabel)}
+              onClick={(e) => {
+                setWxEnabled(!wxEnabled);
+                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel);
+              }}
             >
-              更新配置
+              {wxEnabled ? '停止转播' : '开始转播'}
             </Button> &nbsp;
             <TutorialsButton prefixLine={true} tutorials={forwardTutorials} /> &nbsp;
             <Form.Text> * 若有多个流，随机选择一个</Form.Text>
@@ -209,11 +207,6 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
             </Form.Group>
             <Row>
               <Col xs='auto'>
-                <Form.Group className="mb-3" controlId="formBilibiliEnabledCheckbox">
-                  <Form.Check type="checkbox" label="开启转推" defaultChecked={bilibiliEnabled} onClick={() => setBilibiliEnabled(!bilibiliEnabled)} />
-                </Form.Group>
-              </Col>
-              <Col xs='auto'>
                 <Form.Group className="mb-3" controlId="formBilibiliCustomCheckbox">
                   <Form.Check type="checkbox" label="自定义平台" defaultChecked={bilibiliCustom} onClick={() => setBilibiliCustom(!bilibiliCustom)} />
                 </Form.Group>
@@ -223,9 +216,12 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
               variant="primary"
               type="submit"
               disabled={submiting}
-              onClick={(e) => updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, bilibiliEnabled, bilibiliCustom, bilibiliLabel)}
+              onClick={(e) => {
+                setBilibiliEnabled(!bilibiliEnabled);
+                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel);
+              }}
             >
-              更新配置
+              {bilibiliEnabled ? '停止转播' : '开始转播'}
             </Button> &nbsp;
             <TutorialsButton prefixLine={true} tutorials={forwardTutorials} /> &nbsp;
             <Form.Text> * 若有多个流，随机选择一个</Form.Text>
@@ -253,11 +249,6 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
             </Form.Group>
             <Row>
               <Col xs='auto'>
-                <Form.Group className="mb-3" controlId="formKuaishouEnabledCheckbox">
-                  <Form.Check type="checkbox" label="开启转推" defaultChecked={kuaishouEnabled} onClick={() => setKuaishouEnabled(!kuaishouEnabled)} />
-                </Form.Group>
-              </Col>
-              <Col xs='auto'>
                 <Form.Group className="mb-3" controlId="formKuaishouCustomCheckbox">
                   <Form.Check type="checkbox" label="自定义平台" defaultChecked={kuaishouCustom} onClick={() => setKuaishouCustom(!kuaishouCustom)} />
                 </Form.Group>
@@ -267,9 +258,12 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
               variant="primary"
               type="submit"
               disabled={submiting}
-              onClick={(e) => updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, kuaishouEnabled, kuaishouCustom, kuaishouLabel)}
+              onClick={(e) => {
+                setKuaishouEnabled(!kuaishouEnabled);
+                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel);
+              }}
             >
-              更新配置
+              {bilibiliEnabled ? '停止转播' : '开始转播'}
             </Button> &nbsp;
             <TutorialsButton prefixLine={true} tutorials={forwardTutorials} /> &nbsp;
             <Form.Text> * 若有多个流，随机选择一个</Form.Text>
@@ -277,7 +271,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="99">
-        <Accordion.Header>转推状态</Accordion.Header>
+        <Accordion.Header>转播状态</Accordion.Header>
         <Accordion.Body>
           {
             forwards?.length ? (
@@ -288,7 +282,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
                   <th>平台</th>
                   <th>状态</th>
                   <th>更新时间</th>
-                  <th>转发流</th>
+                  <th>转播流</th>
                   <th>日志</th>
                 </tr>
                 </thead>
@@ -300,7 +294,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
                       <td>{file.custom ? (file.label ? '' : '自定义平台') : file.name} {file.label}</td>
                       <td>
                         <Badge bg={file.enabled ? (file.frame ? 'success' : 'primary') : 'secondary'}>
-                          {file.enabled ? (file.frame ? '转发中' : '等待中') : '未开启'}
+                          {file.enabled ? (file.frame ? '转播中' : '等待中') : '未开启'}
                         </Badge>
                       </td>
                       <td>{file.update && `${file.update?.format('YYYY-MM-DD HH:mm:ss')}`}</td>
@@ -313,7 +307,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
               </Table>
             ) : ''
           }
-          {!forwards?.length ? '没有流。请开启转发并推流后，等待大约30秒左右，转发列表会自动更新' : ''}
+          {!forwards?.length ? '没有流。请开启转播并推流后，等待大约30秒左右，转播列表会自动更新' : ''}
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
