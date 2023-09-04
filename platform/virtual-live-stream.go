@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -215,6 +216,39 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 		}
 	})
 
+	ep = "/terraform/v1/ffmpeg/vlive/local/"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			q := r.URL.Query()
+			fileAbsPath := filepath.Clean(q.Get("file"))
+			info, err := os.Stat(fileAbsPath)
+			if err != nil {
+				return errors.Wrapf(err, "stat %v", fileAbsPath)
+			}
+			targetUUID := uuid.NewString()
+			targetFileName := path.Join(dirUploadPath, fmt.Sprintf("%v%v", targetUUID, path.Ext(info.Name())))
+			if err = os.Link(fileAbsPath, targetFileName); err != nil {
+				return errors.Wrapf(err, "link %v to %v", fileAbsPath, targetFileName)
+			}
+			ohttp.WriteData(ctx, w, r, &struct {
+				Name string `json:"name"`
+				UUID string `json:"uuid"`
+				Target string `json:"target"`
+				Size int `json:"size"`
+			}{
+				Name: info.Name(),
+				UUID: targetUUID,
+				Target: targetFileName,
+				Size: int(info.Size()),
+			})
+			logger.Tf(ctx, "Got vlive local file target=%v, size=%v", targetFileName, info.Size())
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
 	ep = "/terraform/v1/ffmpeg/vlive/upload/"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
@@ -282,7 +316,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			type VLiveTempFile struct {
-				Name   string `json"name"`
+				Name   string `json:"name"`
 				Size   int64  `json:"size"`
 				UUID   string `json:"uuid"`
 				Target string `json:"target"`

@@ -167,13 +167,9 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Text> * {wxCustom ? '(必选)' : '(可选)'} 起一个好记的名字</Form.Text>
               <Form.Control as="input" defaultValue={wxLabel} onChange={(e) => setWxLabel(e.target.value)}/>
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>视频源</Form.Label>
-              <Form.Text> * 虚拟直播就是将视频源(文件)转换成直播流</Form.Text>
-              <SrsErrorBoundary>
-                <VLiveFileUploader platform='wx' vLiveFiles={wxFiles} setVLiveFiles={setWxFiles} />
-              </SrsErrorBoundary>
-            </Form.Group>
+            <SrsErrorBoundary>
+              <ChooseVideoSource platform='wx' vLiveFiles={wxFiles} setVLiveFiles={setWxFiles} />
+            </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>推流地址</Form.Label>
               {!wxCustom && <Form.Text> * 请先<a href='https://channels.weixin.qq.com/platform/live/liveBuild' target='_blank' rel='noreferrer'>创建直播</a>，然后获取推流地址</Form.Text>}
@@ -215,13 +211,9 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Text> * {bilibiliCustom ? '(必选)' : '(可选)'} 起一个好记的名字</Form.Text>
               <Form.Control as="input" defaultValue={bilibiliLabel} onChange={(e) => setBilibiliLabel(e.target.value)}/>
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>视频源</Form.Label>
-              <Form.Text> * 虚拟直播就是将视频源(文件)转换成直播流</Form.Text>
-              <SrsErrorBoundary>
-                <VLiveFileUploader platform='bilibili' vLiveFiles={bilibiliFiles} setVLiveFiles={setBilibiliFiles} />
-              </SrsErrorBoundary>
-            </Form.Group>
+            <SrsErrorBoundary>
+              <ChooseVideoSource platform='bilibili' vLiveFiles={bilibiliFiles} setVLiveFiles={setBilibiliFiles} />
+            </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>推流地址</Form.Label>
               {!bilibiliCustom && <Form.Text> * 请先<a href='https://link.bilibili.com/p/center/index#/my-room/start-live' target='_blank' rel='noreferrer'>开始直播</a>，然后获取推流地址</Form.Text>}
@@ -263,13 +255,9 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Text> * {kuaishouCustom ? '(必选)' : '(可选)'} 起一个好记的名字</Form.Text>
               <Form.Control as="input" defaultValue={kuaishouLabel} onChange={(e) => setKuaishouLabel(e.target.value)}/>
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>视频源</Form.Label>
-              <Form.Text> * 虚拟直播就是将视频源(文件)转换成直播流</Form.Text>
-              <SrsErrorBoundary>
-                <VLiveFileUploader platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} />
-              </SrsErrorBoundary>
-            </Form.Group>
+            <SrsErrorBoundary>
+              <ChooseVideoSource platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} />
+            </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>推流地址</Form.Label>
               {!kuaishouCustom && <Form.Text> * 请先<a href='https://studio.kuaishou.com/live/list' target='_blank' rel='noreferrer'>创建直播</a>，进入直播详情页，然后获取推流地址</Form.Text>}
@@ -384,6 +372,65 @@ function VLiveFileList({files, onChangeFiles}) {
       </Col>
     </Row>
   );
+}
+
+function ChooseVideoSource({platform, vLiveFiles, setVLiveFiles}) {
+  const [checkType, setCheckType] = React.useState('upload');
+  return (<>
+    <Form.Group className="mb-2">
+      <Form.Label>视频源</Form.Label>
+      <Form.Text> * 虚拟直播就是将视频源(文件)转换成直播流</Form.Text>
+      <Form.Check type="radio" label="上传视频文件" id="upload" checked={checkType === 'upload'} name="chooseSource" onChange={e => setCheckType(e.target.id)} />
+      {checkType === 'upload' && 
+      <SrsErrorBoundary>
+        <VLiveFileUploader platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles} />
+      </SrsErrorBoundary>}
+    </Form.Group>
+    <Form.Group className="mb-3">
+      <Form.Check type="radio" label="填写服务器文件地址(本地)" id="useLocal" checked={checkType === 'useLocal'} name="chooseSource" onChange={e => setCheckType(e.target.id)} />
+      {checkType === 'useLocal' && 
+      <SrsErrorBoundary>
+        <VLiveFileLocal platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
+      </SrsErrorBoundary>}
+    </Form.Group>
+  </>);
+}
+
+function VLiveFileLocal({platform, vLiveFiles, setVLiveFiles}) {
+  const handleError = useErrorHandler();
+  const [inputFile, setInputFile] = React.useState('');
+  
+  const CheckLocalFile = function() {
+    if (!inputFile) return alert('请输入文件路径');
+    const token = Token.load();
+    axios.get(`/terraform/v1/ffmpeg/vlive/local?file=${inputFile}`).then(res => {
+      console.log(`检查本地文件成功，${JSON.stringify(res.data.data)}`);
+      const localFileObj = res.data.data;
+      const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target}];
+      axios.post('/terraform/v1/ffmpeg/vlive/source', {
+        ...token, platform, files,
+      }).then(res => {
+        console.log(`更新虚拟直播文件为本地文件成功，${JSON.stringify(res.data.data)}`);
+        setVLiveFiles(res.data.data.files);
+      }).catch(handleError);
+    }).catch(handleError);
+  };
+
+  return (<>
+    <Form.Control as="div">
+      {!vLiveFiles?.length && 
+        <Row>
+            <Col>
+              <Form.Control type="text" value={inputFile} placeholder="请输入文件路径" onChange={e => setInputFile(e.target.value)} />
+            </Col>
+            <Col xs="auto">
+              <Button variant="primary" onClick={CheckLocalFile}>确认</Button>
+            </Col>
+        </Row>
+      }
+      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
+    </Form.Control>
+  </>);
 }
 
 function VLiveFileUploader({platform, vLiveFiles, setVLiveFiles}) {
