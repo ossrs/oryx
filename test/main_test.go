@@ -321,6 +321,29 @@ func initSystemPassword(ctx context.Context) error {
 	return nil
 }
 
+// Get the first exsits file in dest directories.
+func getExistsFile(ctx context.Context, filename string, destDirs ...string) string {
+	for _, destDir := range destDirs {
+		fn := path.Join(destDir, filename)
+		if stat, err := os.Stat(fn); err == nil && !stat.IsDir() {
+			return fn
+		}
+	}
+	return ""
+}
+
+// Copy the file to dest directories.
+func copyToDest(ctx context.Context, sourceFile string, destDirs ...string) error {
+	for _, destDir := range destDirs {
+		if stat, err := os.Stat(destDir); err == nil && stat.IsDir() {
+			if err = exec.CommandContext(ctx, "cp", "-f", sourceFile, destDir).Run(); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // Filter the test error, ignore context.Canceled
 func filterTestError(errs ...error) error {
 	var filteredErrors []error

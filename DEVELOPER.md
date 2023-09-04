@@ -570,6 +570,17 @@ Be aware that the cache will store the CORS headers as well. This means that if 
 and obtain HLS without CORS, it will remain without CORS even when a request includes an 
 Origin header that necessitates CORS.
 
+## Run test in Goland
+
+Prepare the .env:
+
+```bash
+bash scripts/tools/secret.sh --output test/.env &&
+cp ~/git/srs/trunk/doc/source.200kbps.768x320.flv test/
+```
+
+Run testcase in Goland.
+
 ## Docker Allocated Ports
 
 The ports allocated:
