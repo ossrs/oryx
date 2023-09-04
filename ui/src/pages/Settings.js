@@ -29,7 +29,7 @@ function SystemsImpl() {
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'auth';
-    console.log(`?tab=https|hls|auth|tencent|beian|platform, current=${tab}, Select the tab to render`);
+    console.log(`?tab=https|hls|auth|beian|platform, current=${tab}, Select the tab to render`);
     setDefaultActiveTab(tab);
   }, [searchParams]);
 
@@ -80,9 +80,6 @@ function SettingsImpl2({defaultActiveTab}) {
           </Tab>
           <Tab eventKey="api" title="OpenAPI">
             <SettingOpenApi {...{copyToClipboard}}/>
-          </Tab>
-          <Tab eventKey="tencent" title={t('settings.tabTencent')}>
-            <SettingTencent />
           </Tab>
         </Tabs>
       </Container>

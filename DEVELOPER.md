@@ -629,17 +629,12 @@ Also by platform module:
 * `/terraform/v1/hooks/record/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.
 * `/terraform/v1/hooks/record/hls/:uuid/index.m3u8` Hooks: Serve HLS m3u8 files.
 * `/terraform/v1/hooks/record/hls/:dir/:m3u8/:uuid.ts` Hooks: Serve HLS ts files.
-* `/terraform/v1/hooks/dvr/apply` Hooks: Apply the DVR pattern.
-* `/terraform/v1/hooks/dvr/query` Hooks: Query the DVR pattern.
-* `/terraform/v1/hooks/dvr/files` Hooks: List the DVR files.
-* `/terraform/v1/hooks/dvr/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.
-* `/terraform/v1/hooks/vod/query` Hooks: Query the VoD pattern.
-* `/terraform/v1/hooks/vod/apply` Hooks: Apply the VoD pattern.
-* `/terraform/v1/hooks/vod/files` Hooks: List the VoD files.
-* `/terraform/v1/hooks/vod/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.
-* `/terraform/v1/tencent/cam/secret` Tencent: Setup the CAM SecretId and SecretKey.
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
+* `/terraform/v1/ffmpeg/vlive/secret` Setup the Virtual Live streaming secret.
+* `/terraform/v1/ffmpeg/vlive/streams` Query the Virtual Live streaming streams.
+* `/terraform/v1/ffmpeg/vlive/upload/` Upload Virtual Live source file.
+* `/terraform/v1/ffmpeg/vlive/source` Setup Virtual Live source file.
 
 Also provided by platform for market:
 
@@ -653,6 +648,18 @@ Also provided by platform for static Files:
 * `/console/` The SRS console, serve by mgmt.
 * `/players/` The SRS player, serve by mgmt.
 * `/mgmt/` The ui for mgmt, serve by mgmt.
+
+**Deprecated** API:
+
+* `/terraform/v1/tencent/cam/secret` Tencent: Setup the CAM SecretId and SecretKey.
+* `/terraform/v1/hooks/dvr/apply` Hooks: Apply the DVR pattern.
+* `/terraform/v1/hooks/dvr/query` Hooks: Query the DVR pattern.
+* `/terraform/v1/hooks/dvr/files` Hooks: List the DVR files.
+* `/terraform/v1/hooks/dvr/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.
+* `/terraform/v1/hooks/vod/query` Hooks: Query the VoD pattern.
+* `/terraform/v1/hooks/vod/apply` Hooks: Apply the VoD pattern.
+* `/terraform/v1/hooks/vod/files` Hooks: List the VoD files.
+* `/terraform/v1/hooks/vod/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.
 
 **Removed** API:
 
