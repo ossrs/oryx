@@ -380,37 +380,43 @@ function ChooseVideoSource({platform, vLiveFiles, setVLiveFiles}) {
     <Form.Group className="mb-2">
       <Form.Label>视频源</Form.Label>
       <Form.Text> * 虚拟直播就是将视频源(文件)转换成直播流</Form.Text>
-      <Form.Check type="radio" label="上传视频文件" id="upload" checked={checkType === 'upload'} name="chooseSource" onChange={e => setCheckType(e.target.id)} />
+      <Form.Check type="radio" label="上传本地文件" id={'upload-' + platform} checked={checkType === 'upload'}
+        name={'chooseSource-' + platform} onChange={e => setCheckType('upload')}
+      />
       {checkType === 'upload' && 
       <SrsErrorBoundary>
         <VLiveFileUploader platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles} />
-      </SrsErrorBoundary>}
+      </SrsErrorBoundary>
+      }
     </Form.Group>
     <Form.Group className="mb-3">
-      <Form.Check type="radio" label="填写服务器文件地址(本地)" id="useLocal" checked={checkType === 'useLocal'} name="chooseSource" onChange={e => setCheckType(e.target.id)} />
-      {checkType === 'useLocal' && 
+      <Form.Check type="radio" label="指定服务器文件" id={'server-' + platform} checked={checkType === 'server'}
+        name={'chooseSource' + platform} onChange={e => setCheckType('server')}
+      />
+      {checkType === 'server' &&
       <SrsErrorBoundary>
-        <VLiveFileLocal platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
-      </SrsErrorBoundary>}
+        <VLiveFileServer platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
+      </SrsErrorBoundary>
+      }
     </Form.Group>
   </>);
 }
 
-function VLiveFileLocal({platform, vLiveFiles, setVLiveFiles}) {
+function VLiveFileServer({platform, vLiveFiles, setVLiveFiles}) {
   const handleError = useErrorHandler();
   const [inputFile, setInputFile] = React.useState('');
   
   const CheckLocalFile = function() {
     if (!inputFile) return alert('请输入文件路径');
     const token = Token.load();
-    axios.get(`/terraform/v1/ffmpeg/vlive/local?file=${inputFile}`).then(res => {
-      console.log(`检查本地文件成功，${JSON.stringify(res.data.data)}`);
+    axios.get(`/terraform/v1/ffmpeg/vlive/server?file=${inputFile}`).then(res => {
+      console.log(`检查服务器文件成功，${JSON.stringify(res.data.data)}`);
       const localFileObj = res.data.data;
       const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target}];
       axios.post('/terraform/v1/ffmpeg/vlive/source', {
         ...token, platform, files,
       }).then(res => {
-        console.log(`更新虚拟直播文件为本地文件成功，${JSON.stringify(res.data.data)}`);
+        console.log(`更新虚拟直播源为服务器文件成功，${JSON.stringify(res.data.data)}`);
         setVLiveFiles(res.data.data.files);
       }).catch(handleError);
     }).catch(handleError);

@@ -216,31 +216,66 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 		}
 	})
 
-	ep = "/terraform/v1/ffmpeg/vlive/local/"
+	ep = "/terraform/v1/ffmpeg/vlive/server/"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			q := r.URL.Query()
-			fileAbsPath := filepath.Clean(q.Get("file"))
+			qFile := filepath.Clean(q.Get("file"))
+			fileAbsPath, err := filepath.Abs(qFile)
+			if err != nil {
+				return errors.Wrapf(err, "abs %v", qFile)
+			}
+
+			if !strings.HasPrefix(fileAbsPath, serverDataDirectory) && !strings.HasPrefix(qFile, dirUploadPath) {
+				return errors.Errorf("invalid file %v, should in %v", fileAbsPath, serverDataDirectory)
+			}
+
+			var validExtension bool
+			for _, ext := range serverAllowVideoFiles {
+				if strings.HasSuffix(fileAbsPath, ext) {
+					validExtension = true
+					break
+				}
+			}
+			if !validExtension {
+				return errors.Errorf("invalid file extension %v, should be %v", fileAbsPath, serverAllowVideoFiles)
+			}
+
 			info, err := os.Stat(fileAbsPath)
 			if err != nil {
 				return errors.Wrapf(err, "stat %v", fileAbsPath)
 			}
+
 			targetUUID := uuid.NewString()
 			targetFileName := path.Join(dirUploadPath, fmt.Sprintf("%v%v", targetUUID, path.Ext(info.Name())))
-			if err = os.Link(fileAbsPath, targetFileName); err != nil {
-				return errors.Wrapf(err, "link %v to %v", fileAbsPath, targetFileName)
+
+			targetFile, err := os.OpenFile(targetFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+			if err != nil {
+				return errors.Wrapf(err, "open file %v", targetFileName)
 			}
+			defer targetFile.Close()
+
+			sourceFile, err := os.Open(fileAbsPath)
+			if err != nil {
+				return errors.Wrapf(err, "open file %v", fileAbsPath)
+			}
+			defer sourceFile.Close()
+
+			if _, err = io.Copy(targetFile, sourceFile); err != nil {
+				return errors.Wrapf(err, "copy %v to %v", fileAbsPath, targetFileName)
+			}
+
 			ohttp.WriteData(ctx, w, r, &struct {
-				Name string `json:"name"`
-				UUID string `json:"uuid"`
+				Name   string `json:"name"`
+				UUID   string `json:"uuid"`
 				Target string `json:"target"`
-				Size int `json:"size"`
+				Size   int    `json:"size"`
 			}{
-				Name: info.Name(),
-				UUID: targetUUID,
+				Name:   info.Name(),
+				UUID:   targetUUID,
 				Target: targetFileName,
-				Size: int(info.Size()),
+				Size:   int(info.Size()),
 			})
 			logger.Tf(ctx, "Got vlive local file target=%v, size=%v", targetFileName, info.Size())
 			return nil
