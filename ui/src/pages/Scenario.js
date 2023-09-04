@@ -30,7 +30,7 @@ export default function Scenario() {
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'tutorials';
-    console.log(`?tab=tutorials|live|srt|rgroup|vgroup|ogroup, current=${tab}, Select the tab to render`);
+    console.log(`?tab=tutorials|live|rgroup|vgroup|ogroup, current=${tab}, Select the tab to render`);
     setDefaultActiveTab(tab);
   }, [searchParams, language]);
 
@@ -93,9 +93,6 @@ function ScenarioImpl({defaultActiveTab}) {
           <Tab eventKey="live" title={t('scenario.live')}>
             {activeTab === 'live' && <ScenarioLive {...{updateStreamName, copyToClipboard, urls}} />}
           </Tab>
-          <Tab eventKey="srt" title={t('scenario.srt')}>
-            {activeTab === 'srt' && <ScenarioSrt {...{updateStreamName, copyToClipboard, urls}} />}
-          </Tab>
           <Tab eventKey="forward" title={t('scenario.restream')}>
             {activeTab === 'forward' && <ScenarioForward/>}
           </Tab>
@@ -120,9 +117,41 @@ function ScenarioVxOthers() {
   const language = useSrsLanguage();
   const {t} = useTranslation();
 
+  const [secret, setSecret] = React.useState();
+  const [streamName, setStreamName] = React.useState('livestream');
+  const handleError = useErrorHandler();
+  const urls = useUrls({secret, streamName});
+
+  React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/hooks/srs/secret/query', {
+      ...token,
+    }).then(res => {
+      setSecret(res.data.data);
+      console.log(`Status: Query ok, secret=${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError]);
+
+  const updateStreamName = React.useCallback(() => {
+    setStreamName(Math.random().toString(16).slice(-6).split('').map(e => {
+      return (e >= '0' && e <= '9') ? String.fromCharCode('a'.charCodeAt(0) + (parseInt(Math.random() * 16 + e) % 25)) : e;
+    }).join(''));
+    alert(t('helper.changeStream'));
+  }, [t]);
+
+  const copyToClipboard = React.useCallback((e, text) => {
+    e.preventDefault();
+
+    Clipboard.copy(text).then(() => {
+      alert(t('helper.copyOk'));
+    }).catch((err) => {
+      alert(`${t('helper.copyFail')} ${err}`);
+    });
+  }, [t]);
+
   React.useEffect(() => {
     const ctab = searchParams.get('ctab') || 'other';
-    console.log(`?ctab=other|dvr|vod, current=${ctab}, Select the child tab to render`);
+    console.log(`?ctab=other|srt|dvr|vod, current=${ctab}, Select the child tab to render`);
     setActiveChildTab(ctab);
   }, [searchParams, language, setActiveChildTab]);
 
@@ -137,6 +166,9 @@ function ScenarioVxOthers() {
             onSelect={(k) => onSelectChildTab(k)}>
         <Tab eventKey="other" title={t('scenario.other')}>
           {activeChildTab === 'other' && <ScenarioOther/>}
+        </Tab>
+        <Tab eventKey="srt" title={t('scenario.srt')}>
+          {activeChildTab === 'srt' && <ScenarioSrt {...{updateStreamName, copyToClipboard, urls}} />}
         </Tab>
         <Tab eventKey="dvr" title={t('scenario.dvr')}>
           {activeChildTab === 'dvr' && <ScenarioDvr/>}
