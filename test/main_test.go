@@ -169,6 +169,12 @@ func prepareTest(ctx context.Context) (err error) {
 			return nFilename, nil
 		}
 
+		// Try to open files in test directory.
+		nFilename = path.Join("test", filename)
+		if stat, err := os.Stat(nFilename); err == nil && !stat.IsDir() {
+			return nFilename, nil
+		}
+
 		// Try to find file by which if it's a command like ffmpeg.
 		cmd := exec.Command("which", filename)
 		cmd.Env = []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
@@ -181,15 +187,13 @@ func prepareTest(ctx context.Context) (err error) {
 
 	// Check and relocate path of tools.
 	if *srsFFmpeg, err = tryOpenFile(*srsFFmpeg); err != nil {
-		return err
+		return errors.Wrapf(err, "not found ffmpeg %v", *srsFFmpeg)
 	}
 	if *srsFFprobe, err = tryOpenFile(*srsFFprobe); err != nil {
-		return err
+		return errors.Wrapf(err, "not found ffprobe %v", *srsFFprobe)
 	}
 	if *srsInputFile, err = tryOpenFile(*srsInputFile); err != nil {
-		if *srsInputFile, err = tryOpenFile(path.Join("test", *srsInputFile)); err != nil {
-			return errors.Wrapf(err, "not found input file %v", *srsInputFile)
-		}
+		return errors.Wrapf(err, "not found input file %v", *srsInputFile)
 	}
 
 	return nil

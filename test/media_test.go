@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -667,7 +668,7 @@ func TestApi_PublishVLivePlayFlv(t *testing.T) {
 	}
 
 	// Get first matched source file.
-	sourceFile := getExistsFile(ctx, *srsInputFile, destDirs...)
+	sourceFile := getExistsFile(ctx, filepath.Base(*srsInputFile), destDirs...)
 	if sourceFile == "" {
 		r0 = errors.Errorf("no source file found")
 		return

@@ -295,6 +295,9 @@ jobs:
             ./test/srs-stack.test -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
               -test.run TestApi_Empty -no-bilibili-test=true &&
+
+            echo "Make upload writable." &&
+            sudo chmod 777 /data/upload &&
             
             echo "Test HTTP API with self-signed cert." &&
             bash secret.sh >./test/.env &&

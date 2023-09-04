@@ -32,7 +32,7 @@ jobs:
       SRS_MAJOR: ${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
-  test:
+  run-test:
     name: Run UTest
     runs-on: ubuntu-20.04
     needs:
@@ -64,7 +64,7 @@ jobs:
         run: |
           make -j && make test -j
 
-  build-image:
+  build-platform-image:
     name: Build platform image
     runs-on: ubuntu-20.04
     needs:
@@ -83,11 +83,11 @@ jobs:
           path: platform.tar
           retention-days: 1
 
-  install-docker-zh:
+  test-zh-image:
     name: Test ZH image
     needs:
       - envs
-      - build-image
+      - build-platform-image
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -125,6 +125,9 @@ jobs:
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
               -check-api-secret=true -test.run TestApi_Empty &&
           
+          echo "Make upload writable." &&
+          sudo chmod 777 /data/upload &&
+          
           echo "Test HTTP service." &&
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
@@ -139,7 +142,7 @@ jobs:
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 5 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run TestApi_Publish*
           ret=$?; echo "Test result: $ret"
@@ -152,11 +155,11 @@ jobs:
           exit $ret
     runs-on: ubuntu-20.04
 
-  install-docker-en:
+  test-en-image:
     name: Test EN image
     needs:
       - envs
-      - build-image
+      - build-platform-image
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -194,6 +197,9 @@ jobs:
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
               -check-api-secret=true -test.run TestApi_Empty &&
           
+          echo "Make upload writable." &&
+          sudo chmod 777 /data/upload &&
+          
           echo "Test HTTP service." &&
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
@@ -208,7 +214,7 @@ jobs:
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 5 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run TestApi_Publish*
           ret=$?; echo "Test result: $ret"
@@ -221,12 +227,12 @@ jobs:
           exit $ret
     runs-on: ubuntu-20.04
 
-  install-script-zh:
+  test-zh-installer:
     name: Test ZH installer
     runs-on: ubuntu-20.04
     needs:
       - envs
-      - build-image
+      - build-platform-image
     steps:
       - name: Covert output to env
         run: |
@@ -281,6 +287,9 @@ jobs:
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
               -check-api-secret=true -test.run TestApi_Empty &&
           
+          echo "Make upload writable." &&
+          sudo chmod 777 /data/upload &&
+          
           echo "Test HTTP service." &&
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
@@ -295,7 +304,7 @@ jobs:
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 5 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run TestApi_Publish*
           ret=$?; echo "Test result: $ret"
@@ -307,12 +316,12 @@ jobs:
           
           exit $ret
 
-  install-script-en:
+  test-en-installer:
     name: Test EN installer
     runs-on: ubuntu-20.04
     needs:
       - envs
-      - build-image
+      - build-platform-image
     steps:
       - name: Covert output to env
         run: |
@@ -367,6 +376,9 @@ jobs:
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
               -check-api-secret=true -test.run TestApi_Empty &&
           
+          echo "Make upload writable." &&
+          sudo chmod 777 /data/upload &&
+          
           echo "Test HTTP service." &&
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
@@ -381,7 +393,7 @@ jobs:
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 5 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run TestApi_Publish*
           ret=$?; echo "Test result: $ret"
@@ -393,12 +405,12 @@ jobs:
           
           exit $ret
 
-  install-bt:
+  test-bt-plugin:
     name: Test BT plugin
     runs-on: ubuntu-20.04
     needs:
       - envs
-      - build-image
+      - build-platform-image
     steps:
       - name: Remove unnecessary files
         run: |
@@ -521,6 +533,9 @@ jobs:
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
               -check-api-secret=true -test.run TestApi_Empty &&
           
+          echo "Make upload writable." &&
+          sudo chmod 777 /data/upload &&
+          
           echo "Test HTTP service." &&
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
@@ -535,7 +550,7 @@ jobs:
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 5 ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run TestApi_Publish*
           ret=$?; echo "Test result: $ret"
@@ -548,12 +563,12 @@ jobs:
           
           exit $ret
 
-  install-aapanel:
+  test-aapanel-plugin:
     name: Test aaPanel plugin
     runs-on: ubuntu-20.04
     needs:
       - envs
-      - build-image
+      - build-platform-image
     steps:
       - name: Remove unnecessary files
         run: |
@@ -673,6 +688,9 @@ jobs:
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
               -check-api-secret=true -test.run TestApi_Empty &&
           
+          echo "Make upload writable." &&
+          sudo chmod 777 /data/upload &&
+          
           echo "Test HTTP service." &&
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
@@ -687,7 +705,7 @@ jobs:
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 5 ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run TestApi_Publish*
           ret=$?; echo "Test result: $ret"
@@ -704,13 +722,13 @@ jobs:
     name: test-final
     runs-on: ubuntu-20.04
     needs:
-      - test
-      - install-docker-zh
-      - install-docker-en
-      - install-script-zh
-      - install-script-en
-      - install-bt
-      - install-aapanel
+      - run-test
+      - test-zh-image
+      - test-en-image
+      - test-zh-installer
+      - test-en-installer
+      - test-bt-plugin
+      - test-aapanel-plugin
     steps:
       - uses: geekyeggo/delete-artifact@v2
         with:

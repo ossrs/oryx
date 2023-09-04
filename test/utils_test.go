@@ -38,8 +38,9 @@ func getExistsFile(ctx context.Context, filename string, destDirs ...string) str
 func copyToDest(ctx context.Context, sourceFile string, destDirs ...string) error {
 	for _, destDir := range destDirs {
 		if stat, err := os.Stat(destDir); err == nil && stat.IsDir() {
-			if err = exec.CommandContext(ctx, "cp", "-f", sourceFile, destDir).Run(); err != nil {
-				return err
+			cmd := exec.CommandContext(ctx, "cp", "-f", sourceFile, destDir)
+			if b, err := cmd.CombinedOutput(); err != nil {
+				return errors.Wrapf(err, "cp %s to %s failed, output %s", sourceFile, destDir, string(b))
 			}
 		}
 	}
