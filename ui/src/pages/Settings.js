@@ -8,12 +8,10 @@ import {Accordion, Container, Form, Button, Tabs, Tab, Spinner} from "react-boot
 import {Clipboard, Token} from "../utils";
 import axios from "axios";
 import {useSearchParams} from "react-router-dom";
-import SetupCamSecret from '../components/SetupCamSecret';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
-import moment from "moment";
 
 export default function Systems() {
   return (
@@ -259,21 +257,6 @@ function SettingBeian() {
               {t('settings.headerSubmit')}
             </Button>
           </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
-  );
-}
-
-function SettingTencent() {
-  const {t} = useTranslation();
-
-  return (
-    <Accordion defaultActiveKey="0">
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>{t('settings.tecentTitle')}</Accordion.Header>
-        <Accordion.Body>
-          <SetupCamSecret />
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>

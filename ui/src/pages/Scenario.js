@@ -227,7 +227,7 @@ function ScenarioVxGroup() {
 
   React.useEffect(() => {
     const ctab = searchParams.get('ctab') || 'vfile';
-    console.log(`?ctab=vfile|vstream, current=${ctab}, Select the child tab to render`);
+    console.log(`?ctab=vfile, current=${ctab}, Select the child tab to render`);
     setActiveChildTab(ctab);
   }, [searchParams, language, setActiveChildTab]);
 
@@ -243,15 +243,8 @@ function ScenarioVxGroup() {
         <Tab eventKey="vfile" title={t('scenario.vfile')}>
           {activeChildTab === 'vfile' && <ScenarioVFile/>}
         </Tab>
-        <Tab eventKey="vstream" title={t('scenario.vstream')}>
-          {activeChildTab === 'vstream' && <ScenarioVStream/>}
-        </Tab>
       </Tabs>
     }
   </>;
-}
-
-function ScenarioVStream() {
-  return <>On the way.</>
 }
 
