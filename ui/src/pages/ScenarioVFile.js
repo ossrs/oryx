@@ -186,11 +186,6 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
             </Form.Group>
             <Row>
               <Col xs='auto'>
-                <Form.Group className="mb-3" controlId="formWxEnabledCheckbox">
-                  <Form.Check type="checkbox" label="开启虚拟直播" defaultChecked={wxEnabled} onClick={() => setWxEnabled(!wxEnabled)} />
-                </Form.Group>
-              </Col>
-              <Col xs='auto'>
                 <Form.Group className="mb-3" controlId="formWxCustomCheckbox">
                   <Form.Check type="checkbox" label="自定义平台" defaultChecked={wxCustom} onClick={() => setWxCustom(!wxCustom)} />
                 </Form.Group>
@@ -200,9 +195,12 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
               variant="primary"
               type="submit"
               disabled={submiting}
-              onClick={(e) => updateSecrets(e, 'update', 'wx', wxServer, wxSecret, wxEnabled, wxCustom, wxLabel, wxFiles)}
+              onClick={(e) => {
+                setWxEnabled(!wxEnabled);
+                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel, wxFiles);
+              }}
             >
-              更新配置
+              {wxEnabled ? '停止直播' : '开始直播'}
             </Button> &nbsp;
             <Form.Text> * 若有多个流，随机选择一个</Form.Text>
           </Form>
@@ -236,11 +234,6 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
             </Form.Group>
             <Row>
               <Col xs='auto'>
-                <Form.Group className="mb-3" controlId="formBilibiliEnabledCheckbox">
-                  <Form.Check type="checkbox" label="开启虚拟直播" defaultChecked={bilibiliEnabled} onClick={() => setBilibiliEnabled(!bilibiliEnabled)} />
-                </Form.Group>
-              </Col>
-              <Col xs='auto'>
                 <Form.Group className="mb-3" controlId="formBilibiliCustomCheckbox">
                   <Form.Check type="checkbox" label="自定义平台" defaultChecked={bilibiliCustom} onClick={() => setBilibiliCustom(!bilibiliCustom)} />
                 </Form.Group>
@@ -250,9 +243,12 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
               variant="primary"
               type="submit"
               disabled={submiting}
-              onClick={(e) => updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, bilibiliEnabled, bilibiliCustom, bilibiliLabel, bilibiliFiles)}
+              onClick={(e) => {
+                setBilibiliEnabled(!bilibiliEnabled);
+                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel, bilibiliFiles);
+              }}
             >
-              更新配置
+              {bilibiliEnabled ? '停止直播' : '开始直播'}
             </Button> &nbsp;
             <Form.Text> * 若有多个流，随机选择一个</Form.Text>
           </Form>
@@ -300,9 +296,12 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
               variant="primary"
               type="submit"
               disabled={submiting}
-              onClick={(e) => updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, kuaishouEnabled, kuaishouCustom, kuaishouLabel, kuaishouFiles)}
+              onClick={(e) => {
+                setKuaishouEnabled(!kuaishouEnabled);
+                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel, kuaishouFiles);
+              }}
             >
-              更新配置
+              {kuaishouEnabled ? '停止直播' : '开始直播'}
             </Button> &nbsp;
             <Form.Text> * 若有多个流，随机选择一个</Form.Text>
           </Form>
