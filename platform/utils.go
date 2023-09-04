@@ -307,6 +307,12 @@ const (
 var dirUploadPath = path.Join(".", "upload")
 var dirVLivePath = path.Join(".", "vlive")
 
+// For SRS Stack to use the files.
+const serverDataDirectory = "/data"
+
+// The files allowed to use by SRS Stack.
+var serverAllowVideoFiles []string = []string{".mp4", ".flv", ".ts"}
+
 // rdb is a global redis client object.
 var rdb *redis.Client
 

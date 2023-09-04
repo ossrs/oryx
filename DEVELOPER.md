@@ -634,6 +634,7 @@ Also by platform module:
 * `/terraform/v1/ffmpeg/vlive/secret` Setup the Virtual Live streaming secret.
 * `/terraform/v1/ffmpeg/vlive/streams` Query the Virtual Live streaming streams.
 * `/terraform/v1/ffmpeg/vlive/upload/` Upload Virtual Live source file.
+* `/terraform/v1/ffmpeg/vlive/server/` Use server file as Virtual Live source.
 * `/terraform/v1/ffmpeg/vlive/source` Setup Virtual Live source file.
 
 Also provided by platform for market:
