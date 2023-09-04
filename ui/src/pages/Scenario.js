@@ -102,12 +102,21 @@ function ScenarioImpl({defaultActiveTab}) {
           <Tab eventKey="vgroup" title={t('scenario.vgroup')}>
             {activeTab === 'vgroup' && <ScenarioVxGroup/>}
           </Tab>
+          <Tab eventKey="transcode" title={t('scenario.transcode')}>
+            {activeTab === 'transcode' && <ScenarioTranscode/>}
+          </Tab>
           <Tab eventKey="ogroup" title={t('scenario.ogroup')}>
             {activeTab === 'ogroup' && <ScenarioVxOthers/>}
           </Tab>
         </Tabs>
       </Container>
     </>
+  );
+}
+
+function ScenarioTranscode() {
+  return (
+    <span>On the way...</span>
   );
 }
 
