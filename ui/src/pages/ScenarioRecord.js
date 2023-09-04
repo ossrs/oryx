@@ -90,7 +90,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
     return () => clearInterval(timer);
   }, [handleError, refreshNow]);
 
-  const setupRecordPattern = (e) => {
+  const setupRecordPattern = React.useCallback((e, recordAll) => {
     e.preventDefault();
 
     const token = Token.load();
@@ -100,7 +100,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
       alert('设置录制规则成功');
       console.log(`Record: Apply patterns ok, all=${recordAll}`);
     }).catch(handleError);
-  };
+  }, [handleError]);
 
   const removeRecord = React.useCallback((file) => {
     const token = Token.load();
@@ -163,12 +163,13 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
         <Accordion.Header>设置录制规则</Accordion.Header>
         <Accordion.Body>
           <Form>
-            <Form.Group className="mb-3" controlId="formRecordAllCheckbox">
-              <Form.Check type="checkbox" label="录制所有流" defaultChecked={recordAll} onClick={() => setRecordAll(!recordAll)} />
-            </Form.Group>
-            <Button variant="primary" type="submit" onClick={(e) => setupRecordPattern(e)}>
-              提交
-            </Button>
+            <Button variant="primary" type="submit" onClick={(e) => {
+              setRecordAll(!recordAll);
+              setupRecordPattern(e, !recordAll);
+            }}>
+              {recordAll ? '停止录制' : '开始录制'}
+            </Button> &nbsp;
+            <Form.Text> * 录制所有流</Form.Text>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
