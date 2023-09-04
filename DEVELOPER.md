@@ -537,6 +537,9 @@ location /tools/ {
   proxy_pass http://localhost:2022;
 }
 location / {
+  proxy_no_cache 1;
+  proxy_cache_bypass 1;
+  add_header X-Cache-Status-Proxy $upstream_cache_status;
   proxy_pass http://localhost:23080;
 }
 ```
@@ -545,7 +548,8 @@ Start a NGINX HLS Edge server:
 
 ```bash
 docker rm -f srs-stack-nginx01 || echo OK &&
-docker run --rm -it -e SRS_STACK_SERVER=192.168.0.3:2022 \
+PIP=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}') &&
+docker run --rm -it -e SRS_STACK_SERVER=$PIP:2022 \
     -p 23080:80 --name srs-stack-nginx01 -d \
     ossrs/srs-stack:nginx-hls-cdn
 ```
