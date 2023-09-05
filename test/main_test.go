@@ -76,6 +76,7 @@ var noBilibiliTest *bool
 
 var srsLog *bool
 var srsTimeout *int
+var srsLongTimeout *int
 var endpoint *string
 var endpointRTMP *string
 var endpointHTTP *string
@@ -98,10 +99,10 @@ func options() string {
 	return fmt.Sprintf("log=%v, timeout=%vms, secret=%vB, checkApiSecret=%v, endpoint=%v, forceHttps=%v, "+
 		"waitReady=%v, initPassword=%v, initSelfSignedCert=%v, systemPassword=%vB, domainLetsEncrypt=%v, "+
 		"httpsInsecureVerify=%v, srsInputFile=%v, noMediaTest=%v, noBilibiliTest=%v, endpointRTMP=%v, endpointHTTP=%v, "+
-		"endpointSRT=%v",
+		"endpointSRT=%v, srsLongTimeout=%v",
 		*srsLog, *srsTimeout, len(*apiSecret), *checkApiSecret, *endpoint, *forceHttps, *waitReady, *initPassword,
 		*initSelfSignedCert, len(*systemPassword), *domainLetsEncrypt, *httpsInsecureVerify, *srsInputFile,
-		*noMediaTest, *noBilibiliTest, *endpointRTMP, *endpointHTTP, *endpointSRT,
+		*noMediaTest, *noBilibiliTest, *endpointRTMP, *endpointHTTP, *endpointSRT, *srsLongTimeout,
 	)
 }
 
@@ -123,6 +124,7 @@ func prepareTest(ctx context.Context) (err error) {
 	// Parse the options.
 	srsLog = flag.Bool("srs-log", false, "Whether enable the detail log")
 	srsTimeout = flag.Int("srs-timeout", 60000, "For each case, the timeout in ms")
+	srsLongTimeout = flag.Int("srs-long-timeout", 900000, "For each case, the long timeout in ms")
 	apiSecret = flag.String("api-secret", os.Getenv("SRS_PLATFORM_SECRET"), "The secret for api")
 	checkApiSecret = flag.Bool("check-api-secret", true, "Whether check the api secret")
 	endpoint = flag.String("endpoint", "http://localhost:2022", "The endpoint for api, can be http or https")

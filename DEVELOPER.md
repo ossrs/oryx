@@ -309,7 +309,9 @@ cd scripts/setup-droplet && packer build srs.json)
 
 > Note: You can also create a [token](https://cloud.digitalocean.com/account/api/tokens) and setup the env `DIGITALOCEAN_TOKEN`.
 
-Please check the [snapshot](https://cloud.digitalocean.com/images/snapshots/droplets).
+Please check the [snapshot](https://cloud.digitalocean.com/images/snapshots/droplets), and create a test droplet.
+
+TODO: FIXME: Test it.
 
 ## Develop the TencentCloud Lighthouse Image
 
@@ -350,6 +352,15 @@ VM_TOKEN=$(cat /tmp/lh-token2.txt) bash scripts/tools/tencent-cloud/helper.sh cr
 bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat /tmp/lh-test.txt) --id /tmp/lh-ip2.txt && 
 echo "IP: ubuntu@$(cat /tmp/lh-ip2.txt), Password: $(cat /tmp/lh-token2.txt)" &&
 echo "http://$(cat /tmp/lh-ip2.txt)"
+```
+
+Prepare test environment:
+
+```bash
+ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo mkdir -p /data/upload &&
+ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo chmod 777 /data/upload &&
+cp ~/git/srs/trunk/doc/source.200kbps.768x320.flv test/ &&
+scp test/source.200kbps.768x320.flv ubuntu@$(cat /tmp/lh-ip2.txt):/data/upload/
 ```
 
 Test the CVM instance:
