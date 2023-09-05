@@ -311,7 +311,54 @@ cd scripts/setup-droplet && packer build srs.json)
 
 Please check the [snapshot](https://cloud.digitalocean.com/images/snapshots/droplets), and create a test droplet.
 
-TODO: FIXME: Test it.
+```bash
+IMAGE=$(doctl compute snapshot list --context market --format ID --no-header) &&
+sshkey=$(doctl compute ssh-key list --context market --no-header |grep srs |awk '{print $1}') &&
+doctl compute droplet create srs-stack-test --context market --image $IMAGE \
+    --region sgp1 --size s-2vcpu-2gb --ssh-keys $sshkey --wait &&
+SRS_DROPLET_EIP=$(doctl compute droplet get srs-stack-test --context market --format PublicIPv4 --no-header)
+```
+
+Prepare test environment:
+
+```bash
+ssh root@$SRS_DROPLET_EIP sudo mkdir -p /data/upload &&
+ssh root@$SRS_DROPLET_EIP sudo chmod 777 /data/upload &&
+cp ~/git/srs/trunk/doc/source.200kbps.768x320.flv test/ &&
+scp test/source.200kbps.768x320.flv root@$SRS_DROPLET_EIP:/data/upload/
+```
+
+Test the droplet instance:
+
+```bash
+scp scripts/tools/secret.sh root@$SRS_DROPLET_EIP:~ &&
+make -j -C test &&
+ssh root@$SRS_DROPLET_EIP sudo bash secret.sh >test/.env &&
+./test/srs-stack.test -test.v -endpoint http://$SRS_DROPLET_EIP:2022 \
+    -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
+    -test.run TestApi_Empty &&
+ssh root@$SRS_DROPLET_EIP sudo bash secret.sh >test/.env &&
+./test/srs-stack.test -test.v -wait-ready -endpoint http://$SRS_DROPLET_EIP:2022 \
+    -endpoint-rtmp rtmp://$SRS_DROPLET_EIP -endpoint-http http://$SRS_DROPLET_EIP -endpoint-srt srt://$SRS_DROPLET_EIP:10080 \
+    -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
+    -test.parallel 1 &&
+./test/srs-stack.test -test.v -wait-ready -endpoint https://$SRS_DROPLET_EIP:2443 \
+    -endpoint-rtmp rtmp://$SRS_DROPLET_EIP -endpoint-http https://$SRS_DROPLET_EIP -endpoint-srt srt://$SRS_DROPLET_EIP:10080 \
+    -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
+    -test.parallel 1
+```
+
+Remove the droplet instance:
+
+```bash
+doctl compute droplet delete srs-stack-test --context market --force
+```
+
+After submit to [marketplace](https://cloud.digitalocean.com/vendorportal/624145d53da4ad68de259945/10/edit), cleanup the snapshot:
+
+```bash
+doctl compute snapshot delete $IMAGE --context market --force
+```
 
 ## Develop the TencentCloud Lighthouse Image
 

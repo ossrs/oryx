@@ -653,7 +653,7 @@ func (v *RecordM3u8Stream) removeMessage(msg *SrsOnHlsObject) {
 	v.Update = time.Now().Format(time.RFC3339)
 }
 
-func (v *RecordM3u8Stream) expired() bool {
+func (v *RecordM3u8Stream) expired(ctx context.Context) bool {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
@@ -662,8 +662,13 @@ func (v *RecordM3u8Stream) expired() bool {
 		return true
 	}
 
+	var enabled bool
+	if all, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "all").Result(); err == nil {
+		enabled = all == "true"
+	}
+
 	duration := 30 * time.Second
-	if os.Getenv("NODE_ENV") != "development" {
+	if enabled && os.Getenv("NODE_ENV") != "development" {
 		duration = 300 * time.Second
 	}
 
@@ -734,7 +739,7 @@ func (v *RecordM3u8Stream) Run(ctx context.Context) error {
 		}
 
 		// Check whether expired.
-		if !v.expired() {
+		if !v.expired(ctx) {
 			return nil
 		}
 

@@ -276,6 +276,7 @@ func TestApi_PublishRtmpRecordMp4(t *testing.T) {
 		r0 = errors.Wrapf(err, "request record apply failed")
 		return
 	}
+	logger.Tf(ctx, "stop record worker done")
 
 	// Query the record file.
 	type RecordFile struct {
@@ -297,6 +298,7 @@ func TestApi_PublishRtmpRecordMp4(t *testing.T) {
 			UUID string `json:"uuid"`
 		}{recordFile.UUID}, nil)
 	}()
+	defer cancel()
 
 	for i := 0; i < 60; i++ {
 		files := []RecordFile{}
