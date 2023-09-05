@@ -162,7 +162,7 @@ jobs:
           allowUpdates: true
           tag: ${{ github.ref }}
           draft: true
-          prerelease: true
+          prerelease: false
     # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
     outputs:
       SRS_RELEASE_ID: ${{ steps.create_draft.outputs.id }}
@@ -264,5 +264,5 @@ jobs:
             * [Changelog](https://ossrs.net/lts/zh-cn/faq-srs-stack#changelog)
             * [Features](https://ossrs.net/lts/zh-cn/faq-srs-stack#features)
           draft: false
-          prerelease: true
-          makeLatest: false
+          prerelease: false
+          makeLatest: true
