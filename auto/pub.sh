@@ -49,23 +49,34 @@ echo "Last release is $RELEASE, revision is $REVISION, next is $NEXT"
 MINOR=$(echo $RELEASE |awk -F '.' '{print $2}')
 VERSION="5.$MINOR.$NEXT" &&
 TAG="v$VERSION" &&
-echo "publish version $VERSION as tag $TAG"
+BRANCH=$(git branch |grep '*' |awk '{print $2}') &&
+echo "publish version $VERSION as tag $TAG, BRANCH=${BRANCH}"
 if [[ $? -ne 0 ]]; then echo "Release failed"; exit 1; fi
 
 ######################################################################
 if [[ $(grep -q "const version = \"$TAG\"" platform/version.go || echo no) == no ]]; then
-    echo "Failed: Please update platform/version.go to $TAG"
-    echo "    sed -i '' 's|const version = \".*\"|const version = \"$TAG\"|g' platform/version.go"
-    exit 1
+    VERSION0="sed -i '' 's|const version = \".*\"|const version = \"$TAG\"|g' platform/version.go"
 fi
 if [[ $(grep versions scripts/setup-aapanel/info.json | grep -q $VERSION || echo no) == no ]]; then
-    echo "Failed: Please update scripts/setup-aapanel/info.json to $VERSION"
-    echo "    sed -i '' 's|\"versions\": \".*\"|\"versions\": \"$VERSION\"|g' scripts/setup-aapanel/info.json"
-    exit 1
+    VERSION1="sed -i '' 's|\"versions\": \".*\"|\"versions\": \"$VERSION\"|g' scripts/setup-aapanel/info.json"
 fi
 if [[ $(grep versions scripts/setup-bt/info.json | grep -q $VERSION || echo no) == no ]]; then
-    echo "Failed: Please update scripts/setup-bt/info.json to $VERSION"
-    echo "    sed -i '' 's|\"versions\": \".*\"|\"versions\": \"$VERSION\"|g' scripts/setup-bt/info.json"
+    VERSION2="sed -i '' 's|\"versions\": \".*\"|\"versions\": \"$VERSION\"|g' scripts/setup-bt/info.json"
+fi
+if [[ $(grep application_version scripts/setup-droplet/srs.json |grep -v user | grep -q $VERSION || echo no) == no ]]; then
+    VERSION3="sed -i '' 's|\"application_version\": \".*\"|\"application_version\": \"$VERSION\"|g' scripts/setup-droplet/srs.json"
+fi
+if [[ $(grep -q 'git clone -b main' scripts/setup-droplet/scripts/01-srs.sh && echo no) == no ]]; then
+    VERSION4="sed -i '' 's|git clone -b main|git clone -b $BRANCH|g' scripts/setup-droplet/scripts/01-srs.sh"
+fi
+if [[ ! -z $VERSION0 || ! -z $VERSION1 || ! -z $VERSION2 || ! -z $VERSION3 || ! -z $VERSION4 ]]; then
+    echo "Please update version to $VERSION"
+    if [[ ! -z $VERSION0 ]]; then echo "    $VERSION0 &&"; fi
+    if [[ ! -z $VERSION1 ]]; then echo "    $VERSION1 &&"; fi
+    if [[ ! -z $VERSION2 ]]; then echo "    $VERSION2 &&"; fi
+    if [[ ! -z $VERSION3 ]]; then echo "    $VERSION3 &&"; fi
+    if [[ ! -z $VERSION4 ]]; then echo "    $VERSION4 &&"; fi
+    echo "    echo ok"
     exit 1
 fi
 
@@ -84,7 +95,6 @@ fi
 echo "Sync OK"
 
 git fetch gitee
-BRANCH=$(git branch |grep '*' |awk '{print $2}')
 if [[ $(git diff origin/${BRANCH} gitee/${BRANCH} |grep -q diff && echo no) == no ]]; then
   git diff origin/${BRANCH} gitee/${BRANCH} |grep diff
   echo "Failed: Please sync gitee ${BRANCH} before release";
