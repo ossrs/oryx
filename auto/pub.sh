@@ -84,9 +84,10 @@ fi
 echo "Sync OK"
 
 git fetch gitee
-if [[ $(git diff origin/main gitee/main |grep -q diff && echo no) == no ]]; then
-  git diff origin/main gitee/main |grep diff
-  echo "Failed: Please sync gitee before release";
+BRANCH=$(git branch |grep '*' |awk '{print $2}')
+if [[ $(git diff origin/${BRANCH} gitee/${BRANCH} |grep -q diff && echo no) == no ]]; then
+  git diff origin/${BRANCH} gitee/${BRANCH} |grep diff
+  echo "Failed: Please sync gitee ${BRANCH} before release";
   exit 1
 fi
 echo "Sync gitee OK"
