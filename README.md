@@ -78,11 +78,15 @@ your own high-quality streaming and RTC platforms to support your businesses.
 
 - [x] Getting Started: [Blog](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-1-click-e9fe6f314ac6), [EN](https://ossrs.io/lts/en-us/docs/v6/doc/getting-started-stack), [CN](https://ossrs.net/lts/zh-cn/docs/v5/doc/getting-started-stack).
 - [x] Support WordPress Plugin: [Blog](https://blog.ossrs.io/publish-your-srs-livestream-through-wordpress-ec18dfae7d6f), [EN](https://ossrs.io/lts/en-us/blog/WordPress-Plugin), [CN](https://ossrs.net/lts/zh-cn/blog/WordPress-Plugin) or [WordPress Plugin](https://wordpress.org/plugins/srs-player).
-- [x] Support Automatical HTTPS: [Blog](https://blog.ossrs.io/how-to-secure-srs-with-lets-encrypt-by-1-click-cb618777639f), [EN](https://ossrs.io/lts/en-us/blog/SRS-Stack-Tutorial), [CN](https://ossrs.net/lts/zh-cn/blog/SRS-Stack-HTTPS).
+- [x] Support Automatic HTTPS: [Blog](https://blog.ossrs.io/how-to-secure-srs-with-lets-encrypt-by-1-click-cb618777639f), [EN](https://ossrs.io/lts/en-us/blog/SRS-Stack-Tutorial), [CN](https://ossrs.net/lts/zh-cn/blog/SRS-Stack-HTTPS).
 - [x] Support aaPanel to install on any linux: [Blog](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-aapanel-9748ae754c8c), [EN](https://ossrs.io/lts/en-us/blog/BT-aaPanel), [CN](https://ossrs.net/lts/zh-cn/blog/BT-aaPanel).
 - [x] [Support DVR to local disk](https://github.com/ossrs/srs-stack/issues/42).
 - [x] Support Virtual Live Streaming: [CN](https://mp.weixin.qq.com/s/I0Kmxtc24txpngO-PiR_tQ).
 - [x] Support build small [HLS deliver CDN](https://github.com/ossrs/srs-stack/tree/main/scripts/nginx-hls-cdn) by Nginx.
+- [x] Support Live Streaming: [CN](https://mp.weixin.qq.com/s/AKqVWIdk3SBD-6uiTMliyA).
+- [x] Support Realtime SRT Streaming: [CN](https://mp.weixin.qq.com/s/HQb3gLRyJHHu56pnyHerxA).
+- [x] Support DVR to Tencent Cloud Storage or VoD: [CN](https://mp.weixin.qq.com/s/UXR5EBKZ-LnthwKN_rlIjg).
+- [x] Support Typecho Plugin: [CN](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
 
@@ -106,10 +110,9 @@ The features that we're developing:
 - [x] Support upgrade to latest version manually.
 - [x] Support HTTPS by let's encrypt with LEGO.
 - [x] Support virtual live streaming, covert file or other resource to live.
-- [x] Support build small HLS deliver CDN by Nginx.
 - [x] [Support self-host HLS CDN, to serve 10k+ viewers](https://github.com/ossrs/srs-stack/tree/main/scripts/nginx-hls-cdn)
-- [ ] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
-- [ ] Support DVR to cloud storage, see [#1193](https://github.com/ossrs/srs/issues/1193).
+- [x] [Support Typecho Plugin](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
+- [x] Support DVR to cloud storage, see [#1193](https://github.com/ossrs/srs/issues/1193).
 - [ ] Support limit the streaming duration to limit the fee.
 - [ ] Support GB28181 by SRS 5.0 container.
 - [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
