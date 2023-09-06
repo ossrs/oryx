@@ -360,6 +360,8 @@ After submit to [marketplace](https://cloud.digitalocean.com/vendorportal/624145
 doctl compute snapshot delete $IMAGE --context market --force
 ```
 
+> Note: The snapshot should be removed if submit to marketplace, so you don't need to delete it.
+
 ## Develop the Lighthouse Image
 
 To build SRS image for [TencentCloud Lighthouse](https://cloud.tencent.com/product/lighthouse).

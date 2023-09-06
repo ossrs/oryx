@@ -66,7 +66,7 @@ fi
 if [[ $(grep application_version scripts/setup-droplet/srs.json |grep -v user | grep -q $VERSION || echo no) == no ]]; then
     VERSION3="sed -i '' 's|\"application_version\": \".*\"|\"application_version\": \"$VERSION\"|g' scripts/setup-droplet/srs.json"
 fi
-if [[ $(grep -q 'git clone -b main' scripts/setup-droplet/scripts/01-srs.sh && echo no) == no ]]; then
+if [[ $(grep 'git clone -b' scripts/setup-droplet/scripts/01-srs.sh |grep -q $BRANCH || echo no) == no ]]; then
     VERSION4="sed -i '' 's|git clone -b main|git clone -b $BRANCH|g' scripts/setup-droplet/scripts/01-srs.sh"
 fi
 if [[ ! -z $VERSION0 || ! -z $VERSION1 || ! -z $VERSION2 || ! -z $VERSION3 || ! -z $VERSION4 ]]; then
