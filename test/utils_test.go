@@ -314,6 +314,14 @@ func (v *backendService) Run(ctx context.Context, cancel context.CancelFunc) err
 		select {
 		case <-ctx.Done():
 		case <-time.After(v.duration):
+			// Before kill the process, use SIGTERM to try to gracefully quit.
+			logger.Tf(ctx, "Process graceful quit duration=%v, pid=%v, name=%v, args=%v", v.duration, v.pid, v.name, v.args)
+			cmd.Process.Signal(syscall.SIGTERM)
+			select {
+			case <-ctx.Done():
+			case <-time.After(1 * time.Second):
+			}
+
 			logger.Tf(ctx, "Process killed duration=%v, pid=%v, name=%v, args=%v", v.duration, v.pid, v.name, v.args)
 			cmd.Process.Kill()
 		}
@@ -477,6 +485,8 @@ type ffprobeClient struct {
 	// The DVR file for ffprobe. Stream should be DVR to file, then use ffprobe to detect it. If DVR by FFmpeg, we will
 	// start a FFmpeg process to do the DVR, or the DVR should be done by other tools.
 	dvrFile string
+	// The transmuxed mp4 file.
+	dvrFileMp4 string
 	// The timeout to wait for task to done.
 	timeout time.Duration
 
@@ -602,18 +612,32 @@ func (v *ffprobeClient) doDVR(ctx context.Context) error {
 }
 
 func (v *ffprobeClient) doProbe(ctx context.Context, cancel context.CancelFunc) error {
+	// Use ffmpeg to transmux to mp4 first.
+	v.dvrFileMp4 = fmt.Sprintf("%v.mp4", v.dvrFile)
+	tranxCmd := exec.CommandContext(ctx, *srsFFmpeg, "-i", v.dvrFile, "-c", "copy", "-y", v.dvrFileMp4)
+	if b, err := tranxCmd.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "transmux to mp4 failed, output=%v", string(b))
+	}
+	defer func() {
+		if _, err := os.Stat(v.dvrFile); !os.IsNotExist(err) {
+			os.Remove(v.dvrFile)
+		}
+	}()
+	logger.Tf(ctx, "Transmux to mp4 ok, file=%v", v.dvrFileMp4)
+
+	// Probe the mp4 file.
 	process := newBackendService()
 	process.name = *srsFFprobe
 	process.args = []string{
 		"-show_error", "-show_private_data", "-v", "quiet", "-find_stream_info",
 		"-analyzeduration", fmt.Sprintf("%v", int64(v.duration/time.Microsecond)),
-		"-print_format", "json", "-show_format", "-show_streams", v.dvrFile,
+		"-print_format", "json", "-show_format", "-show_streams", v.dvrFileMp4,
 	}
 	process.env = os.Environ()
 
 	process.onDispose = func(ctx context.Context, bs *backendService) error {
-		if _, err := os.Stat(v.dvrFile); !os.IsNotExist(err) {
-			os.Remove(v.dvrFile)
+		if _, err := os.Stat(v.dvrFileMp4); !os.IsNotExist(err) {
+			os.Remove(v.dvrFileMp4)
 		}
 		return nil
 	}

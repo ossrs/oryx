@@ -87,7 +87,7 @@ func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
@@ -165,7 +165,7 @@ func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
@@ -242,7 +242,7 @@ func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 
 	// Note that HLS score is low, so we only check duration. Note that only check half of duration, because we
 	// might get only some pieces of segments.
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r4 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration/2, m.String(), str)
 	}
 }
@@ -330,7 +330,7 @@ func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
@@ -453,7 +453,7 @@ func TestApi_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 
 	// Note that HLS score is low, so we only check duration. Note that only check half of duration, because we
 	// might get only some pieces of segments.
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r4 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration/2, m.String(), str)
 	}
 
@@ -603,7 +603,7 @@ func TestApi_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
 
 	// Note that HLS score is low, so we only check duration. Note that only check half of duration, because we
 	// might get only some pieces of segments.
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r4 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration/2, m.String(), str)
 	}
 

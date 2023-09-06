@@ -360,7 +360,7 @@ After submit to [marketplace](https://cloud.digitalocean.com/vendorportal/624145
 doctl compute snapshot delete $IMAGE --context market --force
 ```
 
-## Develop the TencentCloud Lighthouse Image
+## Develop the Lighthouse Image
 
 To build SRS image for [TencentCloud Lighthouse](https://cloud.tencent.com/product/lighthouse).
 
