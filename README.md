@@ -19,12 +19,12 @@ Run srs-stack in one docker:
 ```bash
 docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935 \
   -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
-  -v $HOME/db:/data ossrs/srs-stack:5
+  -v $HOME/data:/data ossrs/srs-stack:5
 ```
 
 > Note: Please use `-e REACT_APP_LOCALE=zh` and `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:5` in China.
 
-> Note: All data will be saved in `$HOME/db` directory, please change it to your directory.
+> Note: All data will be saved in `$HOME/data` directory, please change it to your directory.
 
 Then open http://localhost:2022 in browser.
 

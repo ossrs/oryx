@@ -28,7 +28,7 @@ apt-get update -y && apt-get install -y docker.io curl net-tools ffmpeg pcp &&
 docker rm -f srs-stack || echo OK &&
 docker run --rm -p 2022:2022 -p 2443:2443 -p 1935:1935/tcp -p 1985:1985/tcp \
   -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp --name srs-stack -d \
-  -v $HOME/db:/data ossrs/srs-stack:5
+  -v $HOME/data:/data ossrs/srs-stack:5
 ```
 
 After installation, you can access SRS Stack at [http://128.199.114.145:2022](http://128.199.114.145:2022).

@@ -9,7 +9,7 @@ Start redis and SRS by docker:
 
 ```bash
 docker rm -f redis srs 2>/dev/null &&
-docker run --name redis --rm -it -v $HOME/db/redis:/data -p 6379:6379 -d redis &&
+docker run --name redis --rm -it -v $HOME/data/redis:/data -p 6379:6379 -d redis &&
 touch platform/containers/data/config/srs.server.conf platform/containers/data/config/srs.vhost.conf &&
 echo "TODO: FIXME: Remove it after SRS supports empty config file." &&
 if [[ ! -s platform/containers/data/config/srs.server.conf ]]; then echo '# OK' > platform/containers/data/config/srs.server.conf; fi &&
@@ -654,7 +654,7 @@ docker build -t srs-stack-env -f Dockerfile .
 Setup the logging to file:
 
 ```bash
-echo 'SRS_LOG_TANK=file' > $HOME/db/config/.srs.env
+echo 'SRS_LOG_TANK=file' > $HOME/data/config/.srs.env
 ```
 
 Run SRS Stack by docker:
@@ -662,7 +662,7 @@ Run SRS Stack by docker:
 ```bash
 docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935 \
   -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
-  -v $HOME/db:/data srs-stack-env
+  -v $HOME/data:/data srs-stack-env
 ```
 
 Note that the logs should be written to file, there is no log `write log to console`, instead there
