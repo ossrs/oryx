@@ -28,7 +28,7 @@
     </style>
 </head>
 <body>
-<img src='https://ossrs.net/gif/v1/sls.gif?site=ossrs.net&path=/player/srsplayer'/>
+<img src='//ossrs.net/gif/v1/sls.gif?site=ossrs.net&path=/player/srsplayer'/>
 <div class="navbar navbar-fixed-top">
     <div class="navbar-inner">
         <div class="container">
@@ -129,7 +129,7 @@
                     <textarea class="span6" id="txt_rtc_url" rows="2"></textarea>
                     <button class="btn btn-primary" id="btn_rtc_play">RTC播放</button>
                     <div>RTC播放，需要后台启用RTC功能才能正常播放， 
-                        <a href='https://github.com/ossrs/srs/wiki/v4_CN_RTCWiki'>RTC配置参考</a>
+                        <a href='https://ossrs.net/lts/zh-cn/docs/v4/doc/webrtc'>RTC配置参考</a>
                     </div>
                   </div>
                   <div>
@@ -233,7 +233,7 @@
     </footer>
 </div>
 </body>
-<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="js/jquery-1.12.2.min.js"></script>
 <script type="text/javascript" src="js/bootstrap.min.js"></script>
 <script type="text/javascript" src="js/json2.js"></script>
 <script type="text/javascript" src="js/srs.page.js"></script>
@@ -556,19 +556,19 @@
                     .replace("rtc://", "http://");
 
                 var vhost = a.hostname;
-                var app = a.pathname.substr(1, a.pathname.lastIndexOf("/") - 1);
-                var stream = a.pathname.substr(a.pathname.lastIndexOf("/") + 1);
+                var app = a.pathname.substring(1, a.pathname.lastIndexOf("/"));
+                var stream = a.pathname.slice(a.pathname.lastIndexOf("/") + 1);
 
                 // parse the vhost in the params of app, that srs supports.
                 app = app.replace("...vhost...", "?vhost=");
                 if (app.indexOf("?") >= 0) {
-                    var params = app.substr(app.indexOf("?"));
-                    app = app.substr(0, app.indexOf("?"));
+                    var params = app.slice(app.indexOf("?"));
+                    app = app.slice(0, app.indexOf("?"));
 
                     if (params.indexOf("vhost=") > 0) {
-                        vhost = params.substr(params.indexOf("vhost=") + "vhost=".length);
+                        vhost = params.slice(params.indexOf("vhost=") + "vhost=".length);
                         if (vhost.indexOf("&") > 0) {
-                            vhost = vhost.substr(0, vhost.indexOf("&"));
+                            vhost = vhost.slice(0, vhost.indexOf("&"));
                         }
                     }
                 }
@@ -585,7 +585,7 @@
                 // parse the schema
                 var schema = "rtmp";
                 if (url.indexOf("://") > 0) {
-                    schema = url.substr(0, url.indexOf("://"));
+                    schema = url.slice(0, url.indexOf("://"));
                 }
 
                 var port = a.port;
