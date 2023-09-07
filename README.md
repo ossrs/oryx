@@ -17,7 +17,7 @@ SRS Stack is a video solution that is lightweight, open-source, and based on Go,
 Run srs-stack in one docker:
 
 ```bash
-docker run --rm -p 2022:2022 -p 2443:2443 -p 1935:1935 \
+docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935 \
   -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
   -v $HOME/db:/data ossrs/srs-stack:5
 ```

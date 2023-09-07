@@ -21,7 +21,7 @@ NGINX_RELOAD="/etc/init.d/nginx reload"
 
 echo -n "DATA_HOME=${DATA_HOME}, WELL_KNOWN=${WELL_KNOWN}, IMAGE=${IMAGE}, MGMT_PORT=${MGMT_PORT}, RTMP_PORT=${RTMP_PORT}"
 echo -n ", API_PORT=${API_PORT}, HTTP_PORT=${HTTP_PORT}, RTC_PORT=${RTC_PORT}, SRT_PORT=${SRT_PORT}, NGINX_RELOAD=${NGINX_RELOAD}"
-echo ", HTTPS_PORT=${HTTPS_PORT}"
+echo ", HTTPS_PORT=${HTTPS_PORT}, EXTRA_PARAMS=${EXTRA_PARAMS}"
 
 echo "Force to stop platform container"
 docker rm -f srs-stack 2>/dev/null

@@ -9,6 +9,13 @@ cd ${WORK_DIR}
 
 echo "Start SRS server, WORK_DIR:${WORK_DIR}"
 
+# Load the environment variables for SRS server.
+if [[ -f ${WORK_DIR}/containers/data/config/.srs.env ]]; then
+    echo "Load variables for SRS from ${WORK_DIR}/containers/data/config/.srs.env"
+    echo "export $(grep -v '^#' ${WORK_DIR}/containers/data/config/.srs.env | xargs)"
+    export $(grep -v '^#' ${WORK_DIR}/containers/data/config/.srs.env | xargs)
+fi
+
 # Get the metadata of machine.
 if [[ -f ${WORK_DIR}/containers/data/config/.env ]]; then source ${WORK_DIR}/containers/data/config/.env; fi
 echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"

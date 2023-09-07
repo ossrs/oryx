@@ -641,6 +641,33 @@ cp ~/git/srs/trunk/doc/source.200kbps.768x320.flv test/
 
 Run testcase in Goland.
 
+## Config SRS Container
+
+The SRS container is configured by environment variables, which loads the `/data/config/.srs.env` 
+file. To build a test image:
+
+```bash
+docker rmi srs-stack-env 2>/dev/null || echo OK &&
+docker build -t srs-stack-env -f Dockerfile .
+```
+
+Setup the logging to file:
+
+```bash
+echo 'SRS_LOG_TANK=file' > $HOME/db/config/.srs.env
+```
+
+Run SRS Stack by docker:
+
+```bash
+docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935 \
+  -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
+  -v $HOME/db:/data srs-stack-env
+```
+
+Note that the logs should be written to file, there is no log `write log to console`, instead there
+should be a log like `you can check log by`.
+
 ## Docker Allocated Ports
 
 The ports allocated:
