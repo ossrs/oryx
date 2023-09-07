@@ -459,7 +459,7 @@ func TestApi_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 
 	// Check the HLS playlist, should with hls context.
 	var body string
-	if err := httpRequest(ctx, hlsStreamURL, nil, &body); err != nil {
+	if err := httpRequest(ctx, hlsStreamURL, nil, true, &body); err != nil {
 		r5 = err
 		return
 	}
@@ -609,7 +609,7 @@ func TestApi_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
 
 	// Check the HLS playlist, should with hls context.
 	var body string
-	if err := httpRequest(ctx, hlsStreamURL, nil, &body); err != nil {
+	if err := httpRequest(ctx, hlsStreamURL, nil, true, &body); err != nil {
 		r5 = err
 		return
 	}

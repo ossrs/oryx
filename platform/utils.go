@@ -1219,8 +1219,14 @@ func Authenticate(ctx context.Context, apiSecret, token string, header http.Head
 		return errors.New("no api secret")
 	}
 
+	// Should use bearer secret or token.
+	authorization := header.Get("Authorization")
+	if authorization == "" && token == "" {
+		return errors.New("no Authorization or token")
+	}
+
 	// Verify bearer secret first.
-	if authorization := header.Get("Authorization"); authorization != "" {
+	if authorization != "" {
 		parseBearerToken := func(authorization string) (string, error) {
 			authParts := strings.Split(authorization, " ")
 			if len(authParts) != 2 || strings.ToLower(authParts[0]) != "bearer" {

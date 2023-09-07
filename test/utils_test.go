@@ -90,8 +90,12 @@ func apiRequest(ctx context.Context, apiPath string, data interface{}, response 
 	api := fmt.Sprintf("%s%s", apiEndpoint, apiPath)
 
 	var b string
-	if err = httpRequest(ctx, api, data, &b); err != nil {
+	if err = httpRequest(ctx, api, data, true, &b); err != nil {
 		return errors.Wrapf(err, "http request")
+	}
+
+	if response == nil {
+		return nil
 	}
 
 	obj := &struct {
@@ -111,10 +115,47 @@ func apiRequest(ctx context.Context, apiPath string, data interface{}, response 
 	return nil
 }
 
-func httpRequest(ctx context.Context, api string, data interface{}, response *string) (err error) {
+func apiRequestNoAuth(ctx context.Context, apiPath string, data interface{}, response interface{}) (err error) {
+	apiEndpoint := *endpoint
+	if *forceHttps {
+		apiEndpoint = strings.ReplaceAll(apiEndpoint, "http://", "https://")
+		apiEndpoint = strings.ReplaceAll(apiEndpoint, ":2022", ":2443")
+	}
+
+	api := fmt.Sprintf("%s%s", apiEndpoint, apiPath)
+
+	var b string
+	if err = httpRequest(ctx, api, data, false, &b); err != nil {
+		return errors.Wrapf(err, "http request")
+	}
+
+	if response == nil {
+		return nil
+	}
+
+	obj := &struct {
+		Code int         `json:"code"`
+		Data interface{} `json:"data"`
+	}{
+		Data: response,
+	}
+	if err = json.Unmarshal([]byte(b), obj); err != nil {
+		return errors.Wrapf(err, "unmarshal %s", b)
+	}
+
+	if obj.Code != 0 {
+		return errors.Errorf("invalid code %v of %s", obj.Code, b)
+	}
+
+	return nil
+}
+
+func httpRequest(ctx context.Context, api string, data interface{}, auth bool, response *string) (err error) {
 	var body io.Reader
 	if data != nil {
-		if b, err := json.Marshal(data); err != nil {
+		if s, ok := data.(string); ok {
+			body = strings.NewReader(s)
+		} else if b, err := json.Marshal(data); err != nil {
 			return errors.Wrapf(err, "marshal data")
 		} else {
 			body = bytes.NewReader(b)
@@ -131,7 +172,9 @@ func httpRequest(ctx context.Context, api string, data interface{}, response *st
 		return errors.Wrapf(err, "new request")
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", *apiSecret))
+	if auth {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", *apiSecret))
+	}
 
 	var resp *http.Response
 	if strings.HasPrefix(api, "https://") {
@@ -153,7 +196,7 @@ func httpRequest(ctx context.Context, api string, data interface{}, response *st
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return errors.Errorf("invalid status code %v", resp.StatusCode)
 	}
 

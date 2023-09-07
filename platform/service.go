@@ -280,10 +280,24 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 			return
 		}
 
-		// Proxy to SRS HTTP streaming, console and player, by /api/, /rtc/, /live/, /console/, /players/
-		// See https://github.com/vagusX/koa-proxies
-		// TODO: FIXME: Do authentication for api.
-		if strings.HasPrefix(r.URL.Path, "/api/") || strings.HasPrefix(r.URL.Path, "/rtc/") {
+		// Proxy to SRS RTC API, by /rtc/ prefix.
+		// Use versions API as health check API, no auth.
+		if strings.HasPrefix(r.URL.Path, "/rtc/") || r.URL.Path == "/api/v1/versions" {
+			logger.Tf(ctx, "Proxy %v to backend 1985", r.URL.Path)
+			proxy1985.ServeHTTP(w, r)
+			return
+		}
+
+		// Proxy to SRS HTTP API, for console, by /api/ prefix.
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			token := r.URL.Query().Get("token")
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				ohttp.WriteError(ctx, w, r, err)
+				return
+			}
+
 			logger.Tf(ctx, "Proxy %v to backend 1985", r.URL.Path)
 			proxy1985.ServeHTTP(w, r)
 			return
