@@ -1,4 +1,4 @@
-name: "Release Stable Version"
+name: "Release New Version"
 
 # @see https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#onpushpull_requestbranchestags
 on:
