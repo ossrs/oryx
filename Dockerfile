@@ -38,6 +38,9 @@ RUN make clean && make -j ${MAKEARGS} && make install
 #FROM ${ARCH}ubuntu:focal AS dist
 FROM ${ARCH}ossrs/srs-stack:focal-1 AS dist
 
+# Expose ports @see https://github.com/ossrs/srs-stack/blob/main/DEVELOPER.md#docker-allocated-ports
+EXPOSE 2022 2443 1935 8080 5060 9000 8000/udp 10080/udp
+
 # For srs-stack, build it.
 COPY --from=build /usr/local/srs-stack /usr/local/srs-stack
 # For SRS server, always use the latest release version.

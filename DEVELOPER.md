@@ -18,7 +18,7 @@ docker run --name srs --rm -it \
     -v $(pwd)/platform/containers/data/config:/usr/local/srs/containers/data/config \
     -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
     -v $(pwd)/platform/containers/objs/nginx:/usr/local/srs/objs/nginx \
-    -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+    -p 1935:1935 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
     -d ossrs/srs:5
 ```
 
@@ -64,8 +64,8 @@ Create a docker container in daemon:
 
 ```bash
 docker rm -f script 2>/dev/null &&
-docker run -p 2022:2022 -p 2443:2443 -p 1935:1935/tcp -p 1985:1985/tcp \
-    -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+docker run -p 2022:2022 -p 2443:2443 -p 1935:1935 \
+    -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
     -d --rm -it -v $(pwd):/g -w /g --name=script srs-script-dev
 ```
@@ -126,7 +126,7 @@ Start a container and mount as plugin:
 docker rm -f bt aapanel 2>/dev/null &&
 AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3) &&
 docker run -p 80:80 -p 443:443 -p 7800:7800 \
-    -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+    -p 1935:1935 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
     -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
@@ -209,7 +209,7 @@ Start a container and mount as plugin:
 docker rm -f bt aapanel 2>/dev/null &&
 BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3) &&
 docker run -p 80:80 -p 443:443 -p 7800:7800 \
-    -p 1935:1935/tcp -p 1985:1985/tcp -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+    -p 1935:1935 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
     -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
     -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
