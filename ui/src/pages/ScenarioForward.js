@@ -71,7 +71,7 @@ function ScenarioForwardImplCn({defaultActiveKey, defaultSecrets}) {
   const [kuaishouEnabled, setKuaishouEnabled] = React.useState(defaultSecrets?.kuaishou?.enabled);
   const [kuaishouServer, setKuaishouServer] = React.useState(defaultSecrets?.kuaishou?.server);
   const [kuaishouSecret, setKuaishouSecret] = React.useState(defaultSecrets?.kuaishou?.secret);
-  const [kuaishouCustom, setKuaishouCustom] = React.useState(defaultSecrets?.kuaishou?.custom);
+  const [kuaishouCustom, setKuaishouCustom] = React.useState(defaultSecrets?.kuaishou?.custom || true);
   const [kuaishouLabel, setKuaishouLabel] = React.useState(defaultSecrets?.kuaishou?.label);
   const [forwards, setForwards] = React.useState();
   const [submiting, setSubmiting] = React.useState();
@@ -104,7 +104,7 @@ function ScenarioForwardImplCn({defaultActiveKey, defaultSecrets}) {
     return () => clearInterval(timer);
   }, [handleError]);
 
-  const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label) => {
+  const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, onSuccess) => {
     e.preventDefault();
     if (!server) return alert('请输入推流地址');
     if (custom && !label) return alert('自定义平台请输入名称，否则不好区分转播状态');
@@ -117,6 +117,7 @@ function ScenarioForwardImplCn({defaultActiveKey, defaultSecrets}) {
         ...token, action, platform, server, secret, enabled: !!enabled, custom: !!custom, label,
       }).then(res => {
         alert('转播设置成功');
+        onSuccess && onSuccess();
       }).catch(handleError);
     } finally {
       new Promise(resolve => setTimeout(resolve, 3000)).then(() => setSubmiting(false));
@@ -174,8 +175,9 @@ function ScenarioForwardImplCn({defaultActiveKey, defaultSecrets}) {
               type="submit"
               disabled={submiting}
               onClick={(e) => {
-                setWxEnabled(!wxEnabled);
-                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel);
+                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel, () => {
+                  setWxEnabled(!wxEnabled);
+                });
               }}
             >
               {wxEnabled ? '停止转播' : '开始转播'}
@@ -216,8 +218,9 @@ function ScenarioForwardImplCn({defaultActiveKey, defaultSecrets}) {
               type="submit"
               disabled={submiting}
               onClick={(e) => {
-                setBilibiliEnabled(!bilibiliEnabled);
-                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel);
+                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel, () => {
+                  setBilibiliEnabled(!bilibiliEnabled);
+                });
               }}
             >
               {bilibiliEnabled ? '停止转播' : '开始转播'}
@@ -258,8 +261,9 @@ function ScenarioForwardImplCn({defaultActiveKey, defaultSecrets}) {
               type="submit"
               disabled={submiting}
               onClick={(e) => {
-                setKuaishouEnabled(!kuaishouEnabled);
-                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel);
+                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel, () => {
+                  setKuaishouEnabled(!kuaishouEnabled);
+                });
               }}
             >
               {kuaishouEnabled ? '停止转播' : '开始转播'}
@@ -354,7 +358,7 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
     return () => clearInterval(timer);
   }, [handleError]);
 
-  const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label) => {
+  const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, onSuccess) => {
     e.preventDefault();
     if (!server) return alert('Please input streaming server URL');
     if (custom && !label) return alert('Please enter a name for the custom platform, to distinguish the streaming status.');
@@ -367,6 +371,7 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
         ...token, action, platform, server, secret, enabled: !!enabled, custom: !!custom, label,
       }).then(res => {
         alert('Setup OK');
+        onSuccess && onSuccess();
       }).catch(handleError);
     } finally {
       new Promise(resolve => setTimeout(resolve, 3000)).then(() => setSubmiting(false));
@@ -424,8 +429,9 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
               type="submit"
               disabled={submiting}
               onClick={(e) => {
-                setWxEnabled(!wxEnabled);
-                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel);
+                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel, () => {
+                  setWxEnabled(!wxEnabled);
+                });
               }}
             >
               {wxEnabled ? 'Stop Forward' : 'Start Forward'}
@@ -464,8 +470,9 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
               type="submit"
               disabled={submiting}
               onClick={(e) => {
-                setBilibiliEnabled(!bilibiliEnabled);
-                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel);
+                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel, () => {
+                  setBilibiliEnabled(!bilibiliEnabled);
+                });
               }}
             >
               {bilibiliEnabled ? 'Stop Forward' : 'Start Forward'}
@@ -504,8 +511,9 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
               type="submit"
               disabled={submiting}
               onClick={(e) => {
-                setKuaishouEnabled(!kuaishouEnabled);
-                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel);
+                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel, () => {
+                  setKuaishouEnabled(!kuaishouEnabled);
+                });
               }}
             >
               {kuaishouEnabled ? 'Stop Forward' : 'Start Forward'}

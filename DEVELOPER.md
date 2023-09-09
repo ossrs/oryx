@@ -18,7 +18,7 @@ docker run --name srs --rm -it \
     -v $(pwd)/platform/containers/data/config:/usr/local/srs/containers/data/config \
     -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
     -v $(pwd)/platform/containers/objs/nginx:/usr/local/srs/objs/nginx \
-    -p 1935:1935 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
+    -p 1935:1935 -p 1985:1985 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
     -d ossrs/srs:5
 ```
 
