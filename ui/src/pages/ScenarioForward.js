@@ -13,15 +13,11 @@ import {useErrorHandler} from "react-error-boundary";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 
 export default function ScenarioForward() {
-  const language = useSrsLanguage();
-  return language === 'zh' ? <ScenarioForwardCn /> : <ScenarioForwardEn />;
-}
-
-function ScenarioForwardCn() {
   const [init, setInit] = React.useState();
   const [activeKey, setActiveKey] = React.useState();
   const [secrets, setSecrets] = React.useState();
   const handleError = useErrorHandler();
+  const language = useSrsLanguage();
 
   React.useEffect(() => {
     const token = Token.load();
@@ -53,12 +49,15 @@ function ScenarioForwardCn() {
     }
   }, [init, secrets]);
 
-  return <>
-    {activeKey && <ScenarioForwardImpl defaultActiveKey={activeKey} defaultSecrets={secrets}/>}
-  </>;
+  if (!activeKey) return <></>;
+
+  if (language === 'zh') {
+    return <ScenarioForwardImplCn defaultActiveKey={activeKey} defaultSecrets={secrets}/>;
+  }
+  return <ScenarioForwardImplEn defaultActiveKey={activeKey} defaultSecrets={secrets}/>;
 }
 
-function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
+function ScenarioForwardImplCn({defaultActiveKey, defaultSecrets}) {
   const [wxEnabled, setWxEnabled] = React.useState(defaultSecrets?.wx?.enabled);
   const [wxServer, setWxServer] = React.useState(defaultSecrets?.wx?.server);
   const [wxSecret, setWxSecret] = React.useState(defaultSecrets?.wx?.secret);
@@ -263,7 +262,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
                 updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel);
               }}
             >
-              {bilibiliEnabled ? '停止转播' : '开始转播'}
+              {kuaishouEnabled ? '停止转播' : '开始转播'}
             </Button> &nbsp;
             <TutorialsButton prefixLine={true} tutorials={forwardTutorials} /> &nbsp;
             <Form.Text> * 若有多个流，随机选择一个</Form.Text>
@@ -314,9 +313,248 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
   );
 }
 
-function ScenarioForwardEn() {
+function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
+  const [wxEnabled, setWxEnabled] = React.useState(defaultSecrets?.wx?.enabled);
+  const [wxServer, setWxServer] = React.useState(defaultSecrets?.wx?.server);
+  const [wxSecret, setWxSecret] = React.useState(defaultSecrets?.wx?.secret);
+  const [wxCustom, setWxCustom] = React.useState(defaultSecrets?.wx?.custom);
+  const [wxLabel, setWxLabel] = React.useState(defaultSecrets?.wx?.label);
+  const [bilibiliEnabled, setBilibiliEnabled] = React.useState(defaultSecrets?.bilibili?.enabled);
+  const [bilibiliServer, setBilibiliServer] = React.useState(defaultSecrets?.bilibili?.server || 'rtmp://live.twitch.tv/app');
+  const [bilibiliSecret, setBilibiliSecret] = React.useState(defaultSecrets?.bilibili?.secret);
+  const [bilibiliCustom, setBilibiliCustom] = React.useState(defaultSecrets?.bilibili?.custom);
+  const [bilibiliLabel, setBilibiliLabel] = React.useState(defaultSecrets?.bilibili?.label);
+  const [kuaishouEnabled, setKuaishouEnabled] = React.useState(defaultSecrets?.kuaishou?.enabled);
+  const [kuaishouServer, setKuaishouServer] = React.useState(defaultSecrets?.kuaishou?.server || 'rtmps://live-api-s.facebook.com:443/rtmp');
+  const [kuaishouSecret, setKuaishouSecret] = React.useState(defaultSecrets?.kuaishou?.secret);
+  const [kuaishouCustom, setKuaishouCustom] = React.useState(defaultSecrets?.kuaishou?.custom);
+  const [kuaishouLabel, setKuaishouLabel] = React.useState(defaultSecrets?.kuaishou?.label);
+  const [forwards, setForwards] = React.useState();
+  const [submiting, setSubmiting] = React.useState();
+  const handleError = useErrorHandler();
+
+  React.useEffect(() => {
+    const refreshStreams = () => {
+      const token = Token.load();
+      axios.post('/terraform/v1/ffmpeg/forward/streams', {
+        ...token,
+      }).then(res => {
+        setForwards(res.data.data.map((e, i) => ({
+          ...e,
+          name: {wx: 'YouTube', bilibili: 'Twitch', kuaishou: 'Facebook'}[e.platform],
+          update: e.frame?.update ? moment(e.frame.update) : null,
+          i,
+        })));
+        console.log(`Forward: Query streams ${JSON.stringify(res.data.data)}`);
+      }).catch(handleError);
+    };
+
+    refreshStreams();
+    const timer = setInterval(() => refreshStreams(), 10 * 1000);
+    return () => clearInterval(timer);
+  }, [handleError]);
+
+  const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label) => {
+    e.preventDefault();
+    if (!server) return alert('Please input streaming server URL');
+    if (custom && !label) return alert('Please enter a name for the custom platform, to distinguish the streaming status.');
+
+    try {
+      setSubmiting(true);
+
+      const token = Token.load();
+      axios.post('/terraform/v1/ffmpeg/forward/secret', {
+        ...token, action, platform, server, secret, enabled: !!enabled, custom: !!custom, label,
+      }).then(res => {
+        alert('Setup OK');
+      }).catch(handleError);
+    } finally {
+      new Promise(resolve => setTimeout(resolve, 3000)).then(() => setSubmiting(false));
+    }
+  }, [handleError, setSubmiting]);
+
   return (
-    <span>On the way...</span>
+    <Accordion defaultActiveKey={defaultActiveKey}>
+      <Accordion.Item eventKey="0">
+        <Accordion.Header>Introduction</Accordion.Header>
+        <Accordion.Body>
+          <div>
+            Multi-platform streaming, restream to other platforms, such as YouTube, Twitch, TikTok, etc.
+            <p></p>
+          </div>
+          <p>Specific application scenarios include:</p>
+          <ul>
+            <li>Save on upstream bandwidth, avoid pushing multiple streams from the client, and server streaming is more secure</li>
+          </ul>
+          <p>Usage instructions:</p>
+          <ul>
+            <li>First, use the appropriate streaming method for your scenario</li>
+            <li>Then set the platform for streaming</li>
+          </ul>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="1">
+        <Accordion.Header>{wxCustom ? 'Custom' : 'YouTube'} {wxLabel}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Label</Form.Label>
+              <Form.Text> * {wxCustom ? '(Required)' : '(Optional)'} Stream event label</Form.Text>
+              <Form.Control as="input" defaultValue={wxLabel} onChange={(e) => setWxLabel(e.target.value)}/>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>{wxCustom ? 'Server' : 'Stream URL'}</Form.Label>
+              {!wxCustom && <Form.Text> * Please click <a href='https://studio.youtube.com/channel/UC/livestreaming' target='_blank' rel='noreferrer'>Go live</a>, then copy the Stream URL</Form.Text>}
+              <Form.Control as="input" defaultValue={wxServer} onChange={(e) => setWxServer(e.target.value)}/>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Stream Key</Form.Label>
+              {!wxCustom && <Form.Text> * Please click <a href='https://channels.weixin.qq.com/platform/live/liveBuild' target='_blank' rel='noreferrer'>Go live</a>, then copy the Stream Key</Form.Text>}
+              <Form.Control as="input" defaultValue={wxSecret} onChange={(e) => setWxSecret(e.target.value)}/>
+            </Form.Group>
+            <Row>
+              <Col xs='auto'>
+                <Form.Group className="mb-3" controlId="formWxCustomCheckbox">
+                  <Form.Check type="checkbox" label="Custom" defaultChecked={wxCustom} onClick={() => setWxCustom(!wxCustom)} />
+                </Form.Group>
+              </Col>
+            </Row>
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={submiting}
+              onClick={(e) => {
+                setWxEnabled(!wxEnabled);
+                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel);
+              }}
+            >
+              {wxEnabled ? 'Stop Restreaming' : 'Start Restreaming'}
+            </Button> &nbsp;
+            <Form.Text> * If there are multiple streams, randomly select one.</Form.Text>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="2">
+        <Accordion.Header>{bilibiliCustom ? 'Custom' : 'Twitch'} {bilibiliLabel}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Label</Form.Label>
+              <Form.Text> * {bilibiliCustom ? '(Required)' : '(Optional)'} Stream event label</Form.Text>
+              <Form.Control as="input" defaultValue={bilibiliLabel} onChange={(e) => setBilibiliLabel(e.target.value)}/>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Server</Form.Label>
+              <Form.Control as="input" defaultValue={bilibiliServer} onChange={(e) => setBilibiliServer(e.target.value)}/>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Stream Key</Form.Label>
+              {!bilibiliCustom && <Form.Text> * Please click <a href='https://www.twitch.tv/dashboard/settings' target='_blank' rel='noreferrer'>Dashboard</a>, then click Settings Stream and Copy the stream key</Form.Text>}
+              <Form.Control as="input" defaultValue={bilibiliSecret} onChange={(e) => setBilibiliSecret(e.target.value)}/>
+            </Form.Group>
+            <Row>
+              <Col xs='auto'>
+                <Form.Group className="mb-3" controlId="formBilibiliCustomCheckbox">
+                  <Form.Check type="checkbox" label="Custom" defaultChecked={bilibiliCustom} onClick={() => setBilibiliCustom(!bilibiliCustom)} />
+                </Form.Group>
+              </Col>
+            </Row>
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={submiting}
+              onClick={(e) => {
+                setBilibiliEnabled(!bilibiliEnabled);
+                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel);
+              }}
+            >
+              {bilibiliEnabled ? 'Stop Restreaming' : 'Start Restreaming'}
+            </Button> &nbsp;
+            <Form.Text> * If there are multiple streams, randomly select one.</Form.Text>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="3">
+        <Accordion.Header>{kuaishouCustom ? 'Custom' : 'Facebook'} {kuaishouLabel}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Label</Form.Label>
+              <Form.Text> * {kuaishouCustom ? '(Required)' : '(Optional)'} Stream event label</Form.Text>
+              <Form.Control as="input" defaultValue={kuaishouLabel} onChange={(e) => setKuaishouLabel(e.target.value)}/>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Server</Form.Label>
+              <Form.Control as="input" defaultValue={kuaishouServer} onChange={(e) => setKuaishouServer(e.target.value)}/>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Stream Key</Form.Label>
+              {!kuaishouCustom && <Form.Text> * Please click <a href='https://www.facebook.com/live/producer?ref=OBS' target='_blank' rel='noreferrer'>Live Producer</a>, then click Go live then select Streaming software, copy the Stream key</Form.Text>}
+              <Form.Control as="input" defaultValue={kuaishouSecret} onChange={(e) => setKuaishouSecret(e.target.value)}/>
+            </Form.Group>
+            <Row>
+              <Col xs='auto'>
+                <Form.Group className="mb-3" controlId="formKuaishouCustomCheckbox">
+                  <Form.Check type="checkbox" label="Custom" defaultChecked={kuaishouCustom} onClick={() => setKuaishouCustom(!kuaishouCustom)} />
+                </Form.Group>
+              </Col>
+            </Row>
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={submiting}
+              onClick={(e) => {
+                setKuaishouEnabled(!kuaishouEnabled);
+                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel);
+              }}
+            >
+              {kuaishouEnabled ? 'Stop Restreaming' : 'Start Restreaming'}
+            </Button> &nbsp;
+            <Form.Text> * If there are multiple streams, randomly select one.</Form.Text>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="99">
+        <Accordion.Header>Restreaming Status</Accordion.Header>
+        <Accordion.Body>
+          {
+            forwards?.length ? (
+              <Table striped bordered hover>
+                <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Platform</th>
+                  <th>Status</th>
+                  <th>Update</th>
+                  <th>Source Stream</th>
+                  <th>Logging</th>
+                </tr>
+                </thead>
+                <tbody>
+                {
+                  forwards?.map(file => {
+                    return <tr key={file.platform} style={{verticalAlign: 'middle'}}>
+                      <td>{file.i}</td>
+                      <td>{file.custom ? (file.label ? '' : 'Custom') : file.name} {file.label}</td>
+                      <td>
+                        <Badge bg={file.enabled ? (file.frame ? 'success' : 'primary') : 'secondary'}>
+                          {file.enabled ? (file.frame ? 'Restreaming' : 'Wating') : 'Inactive'}
+                        </Badge>
+                      </td>
+                      <td>{file.update && `${file.update?.format('YYYY-MM-DD HH:mm:ss')}`}</td>
+                      <td>{file.stream}</td>
+                      <td>{file.frame?.log}</td>
+                    </tr>;
+                  })
+                }
+                </tbody>
+              </Table>
+            ) : ''
+          }
+          {!forwards?.length ? 'No stream. Please turn on the broadcast and push the stream, then wait for about 30 seconds, and the broadcast list will automatically update.' : ''}
+        </Accordion.Body>
+      </Accordion.Item>
+    </Accordion>
   );
 }
 

@@ -346,9 +346,20 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
       <Accordion.Item eventKey="0">
         <Accordion.Header>Introduction</Accordion.Header>
         <Accordion.Body>
-          <p>
-            Build a live streaming service.
-          </p>
+          <div>
+            Private live streaming room, a live streaming room that can be used directly on the public network, with authentication so that only you can push the stream.
+            <p></p>
+          </div>
+          <p>Specific application scenarios include:</p>
+          <ul>
+            <li>Watching movies together, long-distance couples, or a few good friends, watching your favorite movies together</li>
+            <li>Remote production and directing, outdoor live streaming using mobile phones or cameras to push the stream to SRS Stack, then broadcast after production with OBS/vMix/Xingxiang, editors don't need to be at the live scene</li>
+          </ul>
+          <p>Usage instructions:</p>
+          <ul>
+            <li>For pushing the stream, OBS is generally easier to operate, but you can also choose FFmpeg or WebRTC</li>
+            <li>For playback, you can directly copy the playback link and watch it using the Chrome browser, or you can choose VLC to play the stream address</li>
+          </ul>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">
