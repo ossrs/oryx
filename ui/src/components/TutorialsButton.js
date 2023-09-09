@@ -31,6 +31,16 @@ function useTutorialsEn(mediumRef) {
   const ref = React.useRef({tutorials:[]});
 
   const dict = React.useRef({
+    '9748ae754c8c': {
+      author: 'Winlin Yang',
+      link: 'https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-aapanel-9748ae754c8c',
+      title: 'How to Setup a Video Streaming Service with aaPanel'
+    },
+    '38be22beec57': {
+      author: 'Winlin Yang',
+      link: 'https://blog.ossrs.io/maximize-your-live-streaming-reach-a-guide-to-multi-platform-streaming-38be22beec57',
+      title: 'Maximize Your Live Streaming Reach: A Guide to Multi-Platform Streaming'
+    },
     'e9fe6f314ac6': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-1-click-e9fe6f314ac6',

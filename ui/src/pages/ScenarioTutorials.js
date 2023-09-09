@@ -24,8 +24,10 @@ export default function ScenarioTutorials() {
     ]),
     medium: React.useRef([
       {id: 'e9fe6f314ac6'},
+      {id: '9748ae754c8c'},
       {id: 'ec18dfae7d6f'},
       {id: 'cb618777639f'},
+      {id: '38be22beec57'},
     ])
   });
 
