@@ -379,7 +379,7 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
         <Accordion.Header>Introduction</Accordion.Header>
         <Accordion.Body>
           <div>
-            Multi-platform streaming, restream to other platforms, such as YouTube, Twitch, TikTok, etc.
+            Multi-platform streaming, forward to other platforms, such as YouTube, Twitch, TikTok, etc.
             <p></p>
           </div>
           <p>Specific application scenarios include:</p>
@@ -428,7 +428,7 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
                 updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel);
               }}
             >
-              {wxEnabled ? 'Stop Restreaming' : 'Start Restreaming'}
+              {wxEnabled ? 'Stop Forward' : 'Start Forward'}
             </Button> &nbsp;
             <Form.Text> * If there are multiple streams, randomly select one.</Form.Text>
           </Form>
@@ -468,7 +468,7 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
                 updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel);
               }}
             >
-              {bilibiliEnabled ? 'Stop Restreaming' : 'Start Restreaming'}
+              {bilibiliEnabled ? 'Stop Forward' : 'Start Forward'}
             </Button> &nbsp;
             <Form.Text> * If there are multiple streams, randomly select one.</Form.Text>
           </Form>
@@ -508,14 +508,14 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
                 updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel);
               }}
             >
-              {kuaishouEnabled ? 'Stop Restreaming' : 'Start Restreaming'}
+              {kuaishouEnabled ? 'Stop Forward' : 'Start Forward'}
             </Button> &nbsp;
             <Form.Text> * If there are multiple streams, randomly select one.</Form.Text>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="99">
-        <Accordion.Header>Restreaming Status</Accordion.Header>
+        <Accordion.Header>Forward Status</Accordion.Header>
         <Accordion.Body>
           {
             forwards?.length ? (
@@ -538,7 +538,7 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
                       <td>{file.custom ? (file.label ? '' : 'Custom') : file.name} {file.label}</td>
                       <td>
                         <Badge bg={file.enabled ? (file.frame ? 'success' : 'primary') : 'secondary'}>
-                          {file.enabled ? (file.frame ? 'Restreaming' : 'Wating') : 'Inactive'}
+                          {file.enabled ? (file.frame ? 'Forwarding' : 'Waiting') : 'Inactive'}
                         </Badge>
                       </td>
                       <td>{file.update && `${file.update?.format('YYYY-MM-DD HH:mm:ss')}`}</td>

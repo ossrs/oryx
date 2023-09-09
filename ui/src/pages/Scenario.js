@@ -93,7 +93,7 @@ function ScenarioImpl({defaultActiveTab}) {
           <Tab eventKey="live" title={t('scenario.live')}>
             {activeTab === 'live' && <ScenarioLive {...{updateStreamName, copyToClipboard, urls}} />}
           </Tab>
-          <Tab eventKey="forward" title={t('scenario.restream')}>
+          <Tab eventKey="forward" title={t('scenario.forward')}>
             {activeTab === 'forward' && <ScenarioForward/>}
           </Tab>
           <Tab eventKey="rgroup" title={t('scenario.rgroup')}>
