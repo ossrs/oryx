@@ -2,7 +2,7 @@
   "title": "SRS Stack",
   "name": "srs_stack",
   "ps": "SRS is a simple, high efficiency and realtime video server, supports RTMP, WebRTC, HLS, HTTP-FLV, and SRT.",
-  "versions": "5.9.15",
+  "versions": "5.9.19",
   "checks": "/www/server/panel/plugin/srs_stack",
   "author": "Winlin",
   "home": "https://github.com/ossrs/srs-stack"
