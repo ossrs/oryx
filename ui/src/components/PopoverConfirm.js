@@ -7,7 +7,7 @@ import React from "react";
 import {Button, OverlayTrigger, Popover} from "react-bootstrap";
 import {useSrsLanguage} from "./LanguageSwitch";
 
-export default function PopoverConfirm({onClick, trigger, children}) {
+export default function PopoverConfirm({onClick, trigger, children, placement}) {
   const [startUpgrade, setStartUpgrade] = React.useState();
   const language = useSrsLanguage();
 
@@ -46,7 +46,7 @@ export default function PopoverConfirm({onClick, trigger, children}) {
   );
 
   return (
-    <OverlayTrigger trigger="click" placement="right" overlay={popover} show={startUpgrade}>
+    <OverlayTrigger trigger="click" placement={placement || 'right'} overlay={popover} show={startUpgrade}>
       <span onClick={(e) => {
         e.preventDefault();
         setStartUpgrade(!startUpgrade);

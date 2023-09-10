@@ -10,7 +10,6 @@ import {Clipboard, Token} from "../utils";
 import axios from "axios";
 import ScenarioLive from './ScenarioLive';
 import useUrls from "../components/UrlGenerator";
-import ScenarioRecordVod from './ScenarioRecordVod';
 import ScenarioForward from './ScenarioForward';
 import {useErrorHandler} from 'react-error-boundary';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
