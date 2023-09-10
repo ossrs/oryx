@@ -94,10 +94,10 @@ function ScenarioImpl({defaultActiveTab}) {
             {activeTab === 'forward' && <ScenarioForward/>}
           </Tab>
           <Tab eventKey="rgroup" title={t('scenario.rgroup')}>
-            {activeTab === 'rgroup' && <ScenarioRxGroup/>}
+            {activeTab === 'rgroup' && <ScenarioRecord/>}
           </Tab>
           <Tab eventKey="vgroup" title={t('scenario.vgroup')}>
-            {activeTab === 'vgroup' && <ScenarioVxGroup/>}
+            {activeTab === 'vgroup' && <ScenarioVLive/>}
           </Tab>
           <Tab eventKey="transcode" title={t('scenario.transcode')}>
             {activeTab === 'transcode' && <ScenarioTranscode/>}
@@ -115,63 +115,5 @@ function ScenarioTranscode() {
   return (
     <span>On the way...</span>
   );
-}
-
-function ScenarioRxGroup() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [activeChildTab, setActiveChildTab] = React.useState();
-  const language = useSrsLanguage();
-  const {t} = useTranslation();
-
-  React.useEffect(() => {
-    const ctab = searchParams.get('ctab') || 'record';
-    console.log(`?ctab=record, current=${ctab}, Select the child tab to render`);
-    setActiveChildTab(ctab);
-  }, [searchParams, language, setActiveChildTab]);
-
-  const onSelectChildTab = React.useCallback((k) => {
-    setSearchParams({...searchParams, 'tab': 'rgroup', 'ctab': k});
-    setActiveChildTab(k);
-  }, [searchParams, setSearchParams, setActiveChildTab]);
-
-  return <>
-    {activeChildTab &&
-      <Tabs defaultActiveKey={activeChildTab} id="ctab0" className="mb-3"
-            onSelect={(k) => onSelectChildTab(k)}>
-        <Tab eventKey="record" title={t('scenario.record')}>
-          {activeChildTab === 'record' && <ScenarioRecord/>}
-        </Tab>
-      </Tabs>
-    }
-  </>;
-}
-
-function ScenarioVxGroup() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [activeChildTab, setActiveChildTab] = React.useState();
-  const language = useSrsLanguage();
-  const {t} = useTranslation();
-
-  React.useEffect(() => {
-    const ctab = searchParams.get('ctab') || 'vfile';
-    console.log(`?ctab=vfile, current=${ctab}, Select the child tab to render`);
-    setActiveChildTab(ctab);
-  }, [searchParams, language, setActiveChildTab]);
-
-  const onSelectChildTab = React.useCallback((k) => {
-    setSearchParams({...searchParams, 'tab': 'vgroup', 'ctab': k});
-    setActiveChildTab(k);
-  }, [searchParams, setSearchParams, setActiveChildTab]);
-
-  return <>
-    {activeChildTab &&
-      <Tabs defaultActiveKey={activeChildTab} id="ctab1" className="mb-3"
-            onSelect={(k) => onSelectChildTab(k)}>
-        <Tab eventKey="vfile" title={t('scenario.vfile')}>
-          {activeChildTab === 'vfile' && <ScenarioVLive/>}
-        </Tab>
-      </Tabs>
-    }
-  </>;
 }
 
