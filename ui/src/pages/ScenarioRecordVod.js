@@ -15,12 +15,12 @@ import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 
-export default function ScenarioVod() {
+export default function ScenarioRecordVod() {
   const language = useSrsLanguage();
-  return language === 'zh' ? <ScenarioVodCn /> : <ScenarioVodEn />;
+  return language === 'zh' ? <ScenarioRecordVodCn /> : <ScenarioRecordVodEn />;
 }
 
-function ScenarioVodCn() {
+function ScenarioRecordVodCn() {
   const [activeKey, setActiveKey] = React.useState();
   const [dvrStatus, vodStatus] = useDvrVodStatus();
 
@@ -48,12 +48,12 @@ function ScenarioVodCn() {
 
   return (
     <>
-      { activeKey && <ScenarioVodImpl activeKey={activeKey} defaultApplyAll={vodStatus.all} enabled={!dvrStatus?.all || vodStatus.all} /> }
+      { activeKey && <ScenarioRecordVodImpl activeKey={activeKey} defaultApplyAll={vodStatus.all} enabled={!dvrStatus?.all || vodStatus.all} /> }
     </>
   );
 }
 
-function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
+function ScenarioRecordVodImpl({activeKey, defaultApplyAll, enabled}) {
   const [vodAll, setVodAll] = React.useState(defaultApplyAll);
   const [vodFiles, setVodFiles] = React.useState();
   const handleError = useErrorHandler();
@@ -235,7 +235,7 @@ function ScenarioVodImpl({activeKey, defaultApplyAll, enabled}) {
   );
 }
 
-function ScenarioVodEn() {
+function ScenarioRecordVodEn() {
   return (
     <span>On the way...</span>
   );

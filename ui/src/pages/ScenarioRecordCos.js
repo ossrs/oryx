@@ -15,12 +15,12 @@ import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 
-export default function ScenarioDvr() {
+export default function ScenarioRecordCos() {
   const language = useSrsLanguage();
-  return language === 'zh' ? <ScenarioDvrCn /> : <ScenarioDvrEn />;
+  return language === 'zh' ? <ScenarioRecordCosCn /> : <ScenarioRecordCosEn />;
 }
 
-function ScenarioDvrCn() {
+function ScenarioRecordCosCn() {
   const [dvrStatus, vodStatus] = useDvrVodStatus();
   const [activeKey, setActiveKey] = React.useState();
 
@@ -47,12 +47,12 @@ function ScenarioDvrCn() {
 
   return (
     <>
-      { activeKey && <ScenarioDvrImpl activeKey={activeKey} defaultApplyAll={dvrStatus.all} enabled={!vodStatus?.all || dvrStatus.all} /> }
+      { activeKey && <ScenarioRecordCosImpl activeKey={activeKey} defaultApplyAll={dvrStatus.all} enabled={!vodStatus?.all || dvrStatus.all} /> }
     </>
   );
 }
 
-function ScenarioDvrImpl({activeKey, defaultApplyAll, enabled}) {
+function ScenarioRecordCosImpl({activeKey, defaultApplyAll, enabled}) {
   const [dvrAll, setDvrAll] = React.useState(defaultApplyAll);
   const [dvrFiles, setDvrFiles] = React.useState();
   const handleError = useErrorHandler();
@@ -225,7 +225,7 @@ function ScenarioDvrImpl({activeKey, defaultApplyAll, enabled}) {
   );
 }
 
-function ScenarioDvrEn() {
+function ScenarioRecordCosEn() {
   return (
     <span>On the way...</span>
   );
