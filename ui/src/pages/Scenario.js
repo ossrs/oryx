@@ -17,7 +17,7 @@ import ScenarioTutorials from './ScenarioTutorials';
 import {useTranslation} from "react-i18next";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 import ScenarioRecord from "./ScenarioRecord";
-import ScenarioVFile from "./ScenarioVFile";
+import ScenarioVLive from "./ScenarioVLive";
 import {ScenarioVxOthers} from "./ScenarioOthers";
 
 export default function Scenario() {
@@ -168,7 +168,7 @@ function ScenarioVxGroup() {
       <Tabs defaultActiveKey={activeChildTab} id="ctab1" className="mb-3"
             onSelect={(k) => onSelectChildTab(k)}>
         <Tab eventKey="vfile" title={t('scenario.vfile')}>
-          {activeChildTab === 'vfile' && <ScenarioVFile/>}
+          {activeChildTab === 'vfile' && <ScenarioVLive/>}
         </Tab>
       </Tabs>
     }

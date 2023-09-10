@@ -31,6 +31,11 @@ function useTutorialsEn(mediumRef) {
   const ref = React.useRef({tutorials:[]});
 
   const dict = React.useRef({
+    '2aa792c35b25': {
+      author: 'Winlin Yang',
+      link: 'https://blog.ossrs.io/how-to-record-live-streaming-to-mp4-file-2aa792c35b25',
+      title: 'How to Record Live Streaming to MP4 File'
+    },
     '9748ae754c8c': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-aapanel-9748ae754c8c',

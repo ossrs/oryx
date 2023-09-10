@@ -28,6 +28,7 @@ export default function ScenarioTutorials() {
       {id: 'ec18dfae7d6f'},
       {id: 'cb618777639f'},
       {id: '38be22beec57'},
+      {id: '2aa792c35b25'},
     ])
   });
 

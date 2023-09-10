@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
-import {Accordion, Badge, Button, Col, Form, ListGroup, Row, Table} from "react-bootstrap";
+import {Accordion, Badge, Button, Col, Form, InputGroup, ListGroup, Row, Table} from "react-bootstrap";
 import React from "react";
 import {Token} from "../utils";
 import axios from "axios";
@@ -15,16 +15,12 @@ import {useTranslation} from "react-i18next";
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 
-export default function ScenarioVFile() {
-  const language = useSrsLanguage();
-  return language === 'zh' ? <ScenarioVFileCn /> : <ScenarioVFileEn />;
-}
-
-function ScenarioVFileCn() {
+export default function ScenarioVLive() {
   const [init, setInit] = React.useState();
   const [activeKey, setActiveKey] = React.useState();
   const [secrets, setSecrets] = React.useState();
   const handleError = useErrorHandler();
+  const language = useSrsLanguage();
 
   React.useEffect(() => {
     const token = Token.load();
@@ -56,12 +52,14 @@ function ScenarioVFileCn() {
     }
   }, [init, secrets]);
 
-  return <>
-    {activeKey && <ScenarioVFileImpl defaultActiveKey={activeKey} defaultSecrets={secrets}/>}
-  </>;
+  if (!activeKey) return <></>;
+  if (language === 'zh') {
+    return <ScenarioVLiveImplCn defaultActiveKey={activeKey} defaultSecrets={secrets}/>;
+  }
+  return <></>;
 }
 
-function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
+function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
   const [wxEnabled, setWxEnabled] = React.useState(defaultSecrets?.wx?.enabled);
   const [wxServer, setWxServer] = React.useState(defaultSecrets?.wx?.server);
   const [wxSecret, setWxSecret] = React.useState(defaultSecrets?.wx?.secret);
@@ -168,7 +166,7 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Control as="input" defaultValue={wxLabel} onChange={(e) => setWxLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSource platform='wx' vLiveFiles={wxFiles} setVLiveFiles={setWxFiles} />
+              <ChooseVideoSourceCn platform='wx' vLiveFiles={wxFiles} setVLiveFiles={setWxFiles} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>推流地址</Form.Label>
@@ -212,7 +210,7 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Control as="input" defaultValue={bilibiliLabel} onChange={(e) => setBilibiliLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSource platform='bilibili' vLiveFiles={bilibiliFiles} setVLiveFiles={setBilibiliFiles} />
+              <ChooseVideoSourceCn platform='bilibili' vLiveFiles={bilibiliFiles} setVLiveFiles={setBilibiliFiles} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>推流地址</Form.Label>
@@ -256,7 +254,7 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Control as="input" defaultValue={kuaishouLabel} onChange={(e) => setKuaishouLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSource platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} />
+              <ChooseVideoSourceCn platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>推流地址</Form.Label>
@@ -340,12 +338,6 @@ function ScenarioVFileImpl({defaultActiveKey, defaultSecrets}) {
   );
 }
 
-function ScenarioVFileEn() {
-  return (
-    <span>On the way...</span>
-  );
-}
-
 function VLiveFileList({files, onChangeFiles}) {
   const {t} = useTranslation();
   return (
@@ -369,7 +361,7 @@ function VLiveFileList({files, onChangeFiles}) {
   );
 }
 
-function ChooseVideoSource({platform, vLiveFiles, setVLiveFiles}) {
+function ChooseVideoSourceCn({platform, vLiveFiles, setVLiveFiles}) {
   const [checkType, setCheckType] = React.useState('upload');
   return (<>
     <Form.Group className="mb-2">
@@ -380,24 +372,27 @@ function ChooseVideoSource({platform, vLiveFiles, setVLiveFiles}) {
       />
       {checkType === 'upload' && 
       <SrsErrorBoundary>
-        <VLiveFileUploader platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles} />
+        <VLiveFileUploaderCn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles} />
       </SrsErrorBoundary>
       }
     </Form.Group>
     <Form.Group className="mb-3">
-      <Form.Check type="radio" label="指定服务器文件" id={'server-' + platform} checked={checkType === 'server'}
-        name={'chooseSource' + platform} onChange={e => setCheckType('server')}
-      />
+      <InputGroup>
+        <Form.Check type="radio" label="指定服务器文件" id={'server-' + platform} checked={checkType === 'server'}
+                    name={'chooseSource' + platform} onChange={e => setCheckType('server')}
+        /> &nbsp;
+        <Form.Text> * 文件必须在 /data 目录下面</Form.Text>
+      </InputGroup>
       {checkType === 'server' &&
       <SrsErrorBoundary>
-        <VLiveFileServer platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
+        <VLiveFileSelectorCn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
       </SrsErrorBoundary>
       }
     </Form.Group>
   </>);
 }
 
-function VLiveFileServer({platform, vLiveFiles, setVLiveFiles}) {
+function VLiveFileSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
   const handleError = useErrorHandler();
   const [inputFile, setInputFile] = React.useState('');
   
@@ -424,22 +419,22 @@ function VLiveFileServer({platform, vLiveFiles, setVLiveFiles}) {
 
   return (<>
     <Form.Control as="div">
-      {!vLiveFiles?.length && 
+      {!vLiveFiles?.length && <>
         <Row>
-            <Col>
-              <Form.Control type="text" value={inputFile} placeholder="请输入文件路径" onChange={e => setInputFile(e.target.value)} />
-            </Col>
-            <Col xs="auto">
-              <Button variant="primary" onClick={CheckLocalFile}>确认</Button>
-            </Col>
-        </Row>
+          <Col>
+            <Form.Control type="text" value={inputFile} placeholder="请输入文件路径" onChange={e => setInputFile(e.target.value)} />
+          </Col>
+          <Col xs="auto">
+            <Button variant="primary" onClick={CheckLocalFile}>确认</Button>
+          </Col>
+        </Row></>
       }
       {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
     </Form.Control>
   </>);
 }
 
-function VLiveFileUploader({platform, vLiveFiles, setVLiveFiles}) {
+function VLiveFileUploaderCn({platform, vLiveFiles, setVLiveFiles}) {
   const handleError = useErrorHandler();
   const updateSources = React.useCallback((platform, files, setFiles) => {
     if (!files?.length) return alert('无上传文件');
