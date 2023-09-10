@@ -112,7 +112,7 @@ function SettingHighPerformanceHLS() {
   }, [handleError, noHlsCtx, t]);
 
   return (
-    <Accordion defaultActiveKey="0">
+    <Accordion defaultActiveKey={["0"]} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('settings.nginxHlsTitle')}</Accordion.Header>
         <Accordion.Body>
@@ -150,7 +150,7 @@ function SettingOpenApi({copyToClipboard}) {
   }, [copyToClipboard]);
 
   return (
-    <Accordion defaultActiveKey="0">
+    <Accordion defaultActiveKey={["0"]} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('openapi.title')}</Accordion.Header>
         <Accordion.Body>
@@ -230,7 +230,7 @@ function SettingBeian() {
   }, [handleError, siteTitle, t]);
 
   return (
-    <Accordion defaultActiveKey="1">
+    <Accordion defaultActiveKey={["1"]} alwaysOpen>
       <Accordion.Item eventKey="1">
         <Accordion.Header>{t('settings.footerTitle')}</Accordion.Header>
         <Accordion.Body>
@@ -315,7 +315,7 @@ function SettingAuth() {
   }, [handleError, t, noAuth])
 
   return (
-    <Accordion defaultActiveKey="0">
+    <Accordion defaultActiveKey={["0"]} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('settings.authTitle')}</Accordion.Header>
         <Accordion.Body>
@@ -429,8 +429,9 @@ function SettingHttpsImpl({config}) {
     }).catch(handleError).finally(setOperating);
   }, [handleError, domain, t, setOperating]);
 
+  const defaultKey = config?.provider === 'ssl' ? '1' : '0';
   return (
-    <Accordion defaultActiveKey={config?.provider === 'ssl' ? '1' : '0'}>
+    <Accordion defaultActiveKey={[defaultKey]} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('settings.letsTitle')}</Accordion.Header>
         <Accordion.Body>

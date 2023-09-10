@@ -42,7 +42,7 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
   });
 
   return (
-    <Accordion defaultActiveKey="1">
+    <Accordion defaultActiveKey={["1"]} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>场景介绍</Accordion.Header>
         <Accordion.Body>
@@ -342,7 +342,7 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
   const rtc2UrlShortCode = `[srs_publisher url="${rtcPublishUrl}"]`;
 
   return (
-    <Accordion defaultActiveKey="1">
+    <Accordion defaultActiveKey={["1"]} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>Introduction</Accordion.Header>
         <Accordion.Body>

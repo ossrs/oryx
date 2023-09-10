@@ -415,7 +415,7 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
   }, [handleError, setSubmiting]);
 
   return (
-    <Accordion defaultActiveKey={defaultActiveKey}>
+    <Accordion defaultActiveKey={[defaultActiveKey]} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>Introduction</Accordion.Header>
         <Accordion.Body>

@@ -119,7 +119,7 @@ function ScenarioRecordImplCn({activeKey, defaultApplyAll, recordHome}) {
   }, [t]);
 
   return (
-    <Accordion defaultActiveKey={activeKey}>
+    <Accordion defaultActiveKey={[activeKey]} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>场景介绍</Accordion.Header>
         <Accordion.Body>
@@ -305,7 +305,7 @@ function ScenarioRecordImplEn({activeKey, defaultApplyAll, recordHome}) {
   }, [t]);
 
   return (
-    <Accordion defaultActiveKey={activeKey}>
+    <Accordion defaultActiveKey={[activeKey]} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>Introduction</Accordion.Header>
         <Accordion.Body>

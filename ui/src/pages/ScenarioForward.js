@@ -125,7 +125,7 @@ function ScenarioForwardImplCn({defaultActiveKey, defaultSecrets}) {
   }, [handleError, setSubmiting]);
 
   return (
-    <Accordion defaultActiveKey={defaultActiveKey}>
+    <Accordion defaultActiveKey={[defaultActiveKey]} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>场景介绍</Accordion.Header>
         <Accordion.Body>
@@ -379,7 +379,7 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
   }, [handleError, setSubmiting]);
 
   return (
-    <Accordion defaultActiveKey={defaultActiveKey}>
+    <Accordion defaultActiveKey={[defaultActiveKey]} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>Introduction</Accordion.Header>
         <Accordion.Body>

@@ -68,8 +68,8 @@ function ContactEn() {
         </li>
         <li>
           GitHub:
-          <a href='https://github.com/ossrs/srs' target='_blank' rel='noreferrer'>
-            https://github.com/ossrs/srs
+          <a href='https://github.com/ossrs/srs-stack' target='_blank' rel='noreferrer'>
+            https://github.com/ossrs/srs-stack
           </a>
         </li>
       </ul>
