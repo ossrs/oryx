@@ -350,13 +350,13 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
   const [wxLabel, setWxLabel] = React.useState(defaultSecrets?.wx?.label);
   const [wxFiles, setWxFiles] = React.useState(defaultSecrets?.wx?.files);
   const [bilibiliEnabled, setBilibiliEnabled] = React.useState(defaultSecrets?.bilibili?.enabled);
-  const [bilibiliServer, setBilibiliServer] = React.useState(defaultSecrets?.bilibili?.server);
+  const [bilibiliServer, setBilibiliServer] = React.useState(defaultSecrets?.bilibili?.server || 'rtmp://live.twitch.tv/app');
   const [bilibiliSecret, setBilibiliSecret] = React.useState(defaultSecrets?.bilibili?.secret);
   const [bilibiliCustom, setBilibiliCustom] = React.useState(defaultSecrets?.bilibili?.custom);
   const [bilibiliLabel, setBilibiliLabel] = React.useState(defaultSecrets?.bilibili?.label);
   const [bilibiliFiles, setBilibiliFiles] = React.useState(defaultSecrets?.bilibili?.files);
   const [kuaishouEnabled, setKuaishouEnabled] = React.useState(defaultSecrets?.kuaishou?.enabled);
-  const [kuaishouServer, setKuaishouServer] = React.useState(defaultSecrets?.kuaishou?.server);
+  const [kuaishouServer, setKuaishouServer] = React.useState(defaultSecrets?.kuaishou?.server || 'rtmps://live-api-s.facebook.com:443/rtmp');
   const [kuaishouSecret, setKuaishouSecret] = React.useState(defaultSecrets?.kuaishou?.secret);
   const [kuaishouCustom, setKuaishouCustom] = React.useState(defaultSecrets?.kuaishou?.custom);
   const [kuaishouLabel, setKuaishouLabel] = React.useState(defaultSecrets?.kuaishou?.label);

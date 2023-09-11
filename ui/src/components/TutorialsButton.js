@@ -31,6 +31,11 @@ function useTutorialsEn(mediumRef) {
   const ref = React.useRef({tutorials:[]});
 
   const dict = React.useRef({
+    'ba1895828b4f': {
+      author: 'Winlin Yang',
+      link: 'https://blog.ossrs.io/virtual-live-events-revolutionizing-the-way-we-experience-entertainment-ba1895828b4f',
+      title: 'Virtual Live Events: Revolutionizing the Way We Experience Entertainment'
+    },
     '2aa792c35b25': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/how-to-record-live-streaming-to-mp4-file-2aa792c35b25',
