@@ -6,7 +6,11 @@
 [![](https://ossrs.net/wiki/images/do-btn-srs-125x20.svg)](https://cloud.digitalocean.com/droplets/new?appId=133468816&size=s-2vcpu-2gb&region=sgp1&image=ossrs-srs&type=applications)
 [![](https://opencollective.com/srs-server/tiers/badge.svg)](https://opencollective.com/srs-server)
 
-SRS Stack makes it easy for you to create an online video service with just one click, either on cloud platforms like DigitalOcean or AWS or by self-hosting. This open-source, simple video solution is made using Go, Reactjs, SRS, FFmpeg, and WebRTC. It supports protocols like RTMP, WebRTC, HLS, HTTP-FLV, and SRT. It offers features like authentication, streaming on multiple platforms, recording, virtual live events, automatic HTTPS, and an easy-to-use HTTP Open API.
+SRS Stack makes it easy for you to create an online video service with just one click, either on cloud 
+platforms like DigitalOcean or AWS or by self-hosting. This open-source, simple video solution is made 
+using Go, Reactjs, SRS, FFmpeg, and WebRTC. It supports protocols like RTMP, WebRTC, HLS, HTTP-FLV, and 
+SRT. It offers features like authentication, streaming on multiple platforms, recording, virtual live 
+events, automatic HTTPS, and an easy-to-use HTTP Open API.
 
 [![](https://ossrs.io/lts/en-us/img/SRS-Stack-5-sd.png?v=1)](https://ossrs.io/lts/en-us/img/SRS-Stack-5-hd.png)
 
