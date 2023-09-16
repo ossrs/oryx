@@ -3,7 +3,8 @@
 # The main directory.
 SRS_HOME=/usr/local/srs-stack
 DATA_HOME=/data
-IMAGE_URL=docker.io/ossrs/srs-stack:5
+IMAGE_URL=docker.io/ossrs/srs-stack:v${application_version}
+echo "SRS_HOME=$SRS_HOME, DATA_HOME=$DATA_HOME, IMAGE_URL=$IMAGE_URL"
 
 # When droplet created, it might fail as:
 #   gnutls_handshake() failed: The TLS connection was non-properly terminated.
@@ -12,7 +13,7 @@ SOURCE=/tmp/srs-stack
 echo "Install srs-stack at $SOURCE"
 for ((i=0; i<30; i++)); do
   cd $(dirname $SOURCE) && rm -rf srs-stack &&
-  git clone -b main --depth 1 https://github.com/ossrs/srs-stack.git &&
+  git clone -b release/5.9 --depth 1 https://github.com/ossrs/srs-stack.git &&
   GIT_DONE=YES
   if [[ $? -eq 0 ]]; then break; fi
   echo "Ignore error and try later..."; sleep 3;
