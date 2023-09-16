@@ -330,27 +330,30 @@ SRS_DROPLET_EIP=$(doctl compute droplet get srs-stack-test --context market --fo
 Prepare test environment:
 
 ```bash
-ssh root@$SRS_DROPLET_EIP sudo mkdir -p /data/upload &&
+ssh root@$SRS_DROPLET_EIP sudo mkdir -p /data/upload test scripts/tools &&
 ssh root@$SRS_DROPLET_EIP sudo chmod 777 /data/upload &&
 cp ~/git/srs/trunk/doc/source.200kbps.768x320.flv test/ &&
-scp test/source.200kbps.768x320.flv root@$SRS_DROPLET_EIP:/data/upload/
+scp ./test/source.200kbps.768x320.flv root@$SRS_DROPLET_EIP:/data/upload/ &&
+docker run --rm -it -v $(pwd):/g -w /g ossrs/srs:ubuntu20 make -C test clean default &&
+scp ./test/srs-stack.test ./test/source.200kbps.768x320.flv root@$SRS_DROPLET_EIP:~/test/ &&
+scp ./scripts/tools/secret.sh root@$SRS_DROPLET_EIP:~/scripts/tools &&
+ssh root@$SRS_DROPLET_EIP docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+    cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
 ```
 
 Test the droplet instance:
 
 ```bash
-scp scripts/tools/secret.sh root@$SRS_DROPLET_EIP:~ &&
-make -j -C test &&
-ssh root@$SRS_DROPLET_EIP sudo bash secret.sh >test/.env &&
-./test/srs-stack.test -test.v -endpoint http://$SRS_DROPLET_EIP:2022 \
+ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh --output test/.env &&
+ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.v -endpoint http://$SRS_DROPLET_EIP:2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestApi_Empty &&
-ssh root@$SRS_DROPLET_EIP sudo bash secret.sh >test/.env &&
-./test/srs-stack.test -test.v -wait-ready -endpoint http://$SRS_DROPLET_EIP:2022 \
+ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh >test/.env &&
+ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.v -wait-ready -endpoint http://$SRS_DROPLET_EIP:2022 \
     -endpoint-rtmp rtmp://$SRS_DROPLET_EIP -endpoint-http http://$SRS_DROPLET_EIP -endpoint-srt srt://$SRS_DROPLET_EIP:10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 1 &&
-./test/srs-stack.test -test.v -wait-ready -endpoint https://$SRS_DROPLET_EIP:2443 \
+ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.v -wait-ready -endpoint https://$SRS_DROPLET_EIP:2443 \
     -endpoint-rtmp rtmp://$SRS_DROPLET_EIP -endpoint-http https://$SRS_DROPLET_EIP -endpoint-srt srt://$SRS_DROPLET_EIP:10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 1
@@ -419,24 +422,27 @@ Prepare test environment:
 ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo mkdir -p /data/upload &&
 ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo chmod 777 /data/upload &&
 cp ~/git/srs/trunk/doc/source.200kbps.768x320.flv test/ &&
-scp test/source.200kbps.768x320.flv ubuntu@$(cat /tmp/lh-ip2.txt):/data/upload/
+scp test/source.200kbps.768x320.flv ubuntu@$(cat /tmp/lh-ip2.txt):/data/upload/ &&
+docker run --rm -it -v $(pwd):/g -w /g ossrs/srs:ubuntu20 make -C test clean default &&
+scp ./test/srs-stack.test ./test/source.200kbps.768x320.flv ubuntu@$(cat /tmp/lh-ip2.txt):~/test/ &&
+scp ./scripts/tools/secret.sh ubuntu@$(cat /tmp/lh-ip2.txt):~/scripts/tools &&
+ssh ubuntu@$(cat /tmp/lh-ip2.txt) docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+    cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
 ```
 
 Test the CVM instance:
 
 ```bash
-scp scripts/tools/secret.sh ubuntu@$(cat /tmp/lh-ip2.txt):~ &&
-make -j -C test &&
-ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo bash secret.sh >test/.env &&
-./test/srs-stack.test -test.v -endpoint http://$(cat /tmp/lh-ip2.txt):2022 \
+ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
+ssh ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -endpoint http://$(cat /tmp/lh-ip2.txt):2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestApi_Empty &&
-ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo bash secret.sh >test/.env &&
-./test/srs-stack.test -test.v -wait-ready -endpoint http://$(cat /tmp/lh-ip2.txt):2022 \
+ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
+ssh ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -endpoint http://$(cat /tmp/lh-ip2.txt):2022 \
     -endpoint-rtmp rtmp://$(cat /tmp/lh-ip2.txt) -endpoint-http http://$(cat /tmp/lh-ip2.txt) -endpoint-srt srt://$(cat /tmp/lh-ip2.txt):10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-./test/srs-stack.test -test.v -wait-ready -endpoint https://$(cat /tmp/lh-ip2.txt):2443 \
+ssh ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -endpoint https://$(cat /tmp/lh-ip2.txt):2443 \
     -endpoint-rtmp rtmp://$(cat /tmp/lh-ip2.txt) -endpoint-http https://$(cat /tmp/lh-ip2.txt) -endpoint-srt srt://$(cat /tmp/lh-ip2.txt):10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
