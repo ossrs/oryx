@@ -52,6 +52,8 @@ Access the browser: http://localhost:3000
 
 ## Develop the Script Installer
 
+> Note: Please note that BT plugin will use the current branch version, including develop version.
+
 Build a docker image:
 
 ```bash
@@ -119,6 +121,8 @@ docker exec -it script ./test/srs-stack.test -test.v -wait-ready -endpoint https
 Access the browser: [http://localhost:2022](http://localhost:2022)
 
 ## Develop the aaPanel Plugin
+
+> Note: Please note that BT plugin will use the current branch version, including develop version.
 
 Start a container and mount as plugin:
 
@@ -292,7 +296,7 @@ In the [application store](http://localhost:7800/soft), there is a `srs_stack` p
 
 ## Develop the Droplet Image
 
-> Note: Please note that DO will use the latest release `ossrs/srs-stack:5` version, does not support develop version.
+> Note: Please note that BT plugin will use the current branch version, including develop version.
 
 To build SRS droplet image for [DigitalOcean Marketplace](https://marketplace.digitalocean.com/).
 
@@ -368,7 +372,7 @@ doctl compute snapshot delete $IMAGE --context market --force
 
 ## Develop the Lighthouse Image
 
-> Note: Please note that Lighthouse will use the latest release `ossrs/srs-stack:5` version, does not support develop version.
+> Note: Please note that BT plugin will use the current branch version, including develop version.
 
 To build SRS image for [TencentCloud Lighthouse](https://cloud.tencent.com/product/lighthouse).
 
