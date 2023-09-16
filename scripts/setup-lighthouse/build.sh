@@ -12,6 +12,7 @@ user=
 password=
 cleanup=yes
 SOURCE=$WORK_DIR
+VERSION=$(bash ${WORK_DIR}/scripts/version.sh)
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -21,6 +22,7 @@ while [[ "$#" -gt 0 ]]; do
         --user) user=$2; shift 2;;
         --password) password=$2; shift 2;;
         --cleanup) cleanup=$2; shift 2;;
+        --version) VERSION=$2; shift 2 ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
@@ -34,6 +36,7 @@ if [[ "$help" == yes ]]; then
     echo "  --user          The user of server to build. For example: ubuntu"
     echo "  --password      The password of server to build."
     echo "  --cleanup       Whether do cleanup. yes or no. Default: $cleanup"
+    echo "  --version     The image version to use. Default: ${VERSION}"
     exit 0
 fi
 
@@ -41,8 +44,10 @@ if [[ -z $ip ]]; then echo "No ip"; exit 1; fi
 if [[ -z $os ]]; then echo "No os"; exit 1; fi
 if [[ -z $user ]]; then echo "No user"; exit 1; fi
 if [[ -z $password ]]; then echo "No password"; exit 1; fi
+if [[ -z $VERSION ]]; then echo "No VERSION"; exit 1; fi
 
-echo "SOURCE=$SOURCE, ip=$ip, os=$os, user=$user, password=${#password}B, cleanup=$cleanup"
+IMAGE_URL="registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$VERSION"
+echo "SOURCE=$SOURCE, ip=$ip, os=$os, user=$user, password=${#password}B, cleanup=$cleanup, VERSION=$VERSION, IMAGE_URL=$IMAGE_URL"
 
 sshCmd="sshpass -p $password ssh -o StrictHostKeyChecking=no"
 scpCmd="sshpass -p $password scp -o StrictHostKeyChecking=no"
@@ -64,6 +69,11 @@ cp ${SOURCE}/README.md ${SRS_HOME}/README.md &&
 cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap &&
 cp ${SOURCE}/platform/containers/conf/nginx.conf ${SRS_HOME}/platform/containers/conf/nginx.conf
 if [[ $? -ne 0 ]]; then echo "Copy srs-stack failed"; exit 1; fi
+
+echo "Start to update bootstrap"
+sed -i "s|^IMAGE=.*|IMAGE=${IMAGE_URL}|g" ${SRS_HOME}/mgmt/bootstrap
+if [[ $? -ne 0 ]]; then echo "Update bootstrap failed"; exit 1; fi
+echo "Update bootstrap ok"
 
 tgzName=/tmp/lighthouse/srs-stack.zip &&
 (cd $(dirname $tgzName) && rm -f $tgzName && zip -q -r $tgzName $(basename $SRS_HOME)) &&

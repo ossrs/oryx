@@ -203,6 +203,8 @@ In the [application store](http://localhost:7800/soft), there is a `srs_stack` p
 
 ## Develop the BT Plugin
 
+> Note: Please note that BT plugin will use the current branch version, including develop version.
+
 Start a container and mount as plugin:
 
 ```bash
@@ -290,6 +292,8 @@ In the [application store](http://localhost:7800/soft), there is a `srs_stack` p
 
 ## Develop the Droplet Image
 
+> Note: Please note that DO will use the latest release `ossrs/srs-stack:5` version, does not support develop version.
+
 To build SRS droplet image for [DigitalOcean Marketplace](https://marketplace.digitalocean.com/).
 
 For the first run, please [install Packer](https://www.packer.io/intro/getting-started/install.html) and plugin:
@@ -363,6 +367,8 @@ doctl compute snapshot delete $IMAGE --context market --force
 > Note: The snapshot should be removed if submit to marketplace, so you don't need to delete it.
 
 ## Develop the Lighthouse Image
+
+> Note: Please note that Lighthouse will use the latest release `ossrs/srs-stack:5` version, does not support develop version.
 
 To build SRS image for [TencentCloud Lighthouse](https://cloud.tencent.com/product/lighthouse).
 
