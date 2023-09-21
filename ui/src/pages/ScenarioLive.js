@@ -18,13 +18,15 @@ export default function ScenarioLive(props) {
 function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
   const {
     flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcUrl, rtcPlayer, cnConsole, rtcPublisher,
-    srtPublishUrl, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2, rtcPublishUrl,
+    srtPublishUrl, srtPlayUrl, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2, rtcPublishUrl,
   } = urls;
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
   const xgFlvPlayerUrl = flvPlayer?.replace('player.html', 'xgplayer.html');
   const xgHlsPlayerUrl = hlsPlayer?.replace('player.html', 'xgplayer.html');
   const ffmpegPublishCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv ${rtmpPublishUrl}`;
   const ffmpegSrtCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -pes_payload_size 0 -f mpegts '${srtPublishUrl}'`;
+  const ffplayWindows = `ffplay -fflags nobuffer -flags low_delay -i "${srtPlayUrl}"`;
+  const ffplayMac = `ffplay -fflags nobuffer -flags low_delay -i '${srtPlayUrl}'`;
 
   // Shortcodes of WordPress.
   const flvUrlShortCode = `[srs_player url="${flvUrl}"]`;
@@ -42,12 +44,12 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
   });
 
   return (
-    <Accordion defaultActiveKey={["1"]} alwaysOpen>
+    <Accordion defaultActiveKey="1">
       <Accordion.Item eventKey="0">
         <Accordion.Header>场景介绍</Accordion.Header>
         <Accordion.Body>
           <div>
-            私人直播间<TutorialsButton prefixLine={true} tutorials={movieTutorials} />，公网可以直接使用的直播间，带鉴权只有自己能推流。
+            推拉直播流<TutorialsButton prefixLine={true} tutorials={movieTutorials} />，公网可以直接使用的直播间，带鉴权只有自己能推流。
             <p></p>
           </div>
           <p>可应用的具体场景包括：</p>
@@ -63,7 +65,7 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">
-        <Accordion.Header>OBS或vMix推流</Accordion.Header>
+        <Accordion.Header>RTMP: OBS或vMix推流</Accordion.Header>
         <Accordion.Body>
           <div>
             <p style={{display: 'inline-block'}}><strong>操作步骤：</strong></p>
@@ -142,22 +144,12 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
                 </li>
               </ul>
             </li>
-            <li>
-              可选，SRT推流地址（服务器）：<br/>
-              <code>{srtPublishUrl}</code> &nbsp;
-              <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
-                <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
-              </div> &nbsp;
-              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
-                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPublishUrl)} />
-              </div>
-            </li>
             <li>可选，点击进入<a id="cnConsole" href={cnConsole}>SRS控制台</a>查看流信息</li>
           </ol>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="2">
-        <Accordion.Header>FFmpeg/芯象推流</Accordion.Header>
+        <Accordion.Header>RTMP: FFmpeg/芯象推流</Accordion.Header>
         <Accordion.Body>
           <div>
             <p style={{display: 'inline-block'}}><strong>操作步骤：</strong></p>
@@ -238,8 +230,22 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
                 </li>
               </ul>
             </li>
+            <li>可选，点击进入<a id="cnConsole" href={cnConsole}>SRS控制台</a>查看流信息</li>
+          </ol>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="3">
+        <Accordion.Header>SRT: FFmpeg/芯象推流</Accordion.Header>
+        <Accordion.Body>
+          <div>
+            <p style={{display: 'inline-block'}}><strong>操作步骤：</strong></p>
+            <TutorialsButton prefixLine={false} tutorials={movieTutorials} />
+          </div>
+          <ol>
+            <li>先在防火墙开启<code>TCP/1935</code>端口</li>
+            <li>请<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>下载FFmpeg</a>工具</li>
             <li>
-              可选，SRT推流：<br/>
+              FFmpeg推流命令：<br/>
               <code>{ffmpegSrtCli}</code> &nbsp;
               <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
                 <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
@@ -248,12 +254,101 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
                 <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffmpegSrtCli)} />
               </div>
             </li>
+            <li>
+              推流地址：<br/>
+              <code>{srtPublishUrl}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='更换流名称'>
+                <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+              </div> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPublishUrl)} />
+              </div>
+              <br/>
+              <SrsQRCode url={srtPublishUrl} />
+            </li>
+            <li>
+              请选择播放的流：
+              <ul>
+                <li>
+                  SRT流播放地址：<br/><code>{srtPlayUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPlayUrl)} />
+                  </div>
+                </li>
+                <li>下载<a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>ffplay</a>，FFmpeg自带的低延迟播放器</li>
+                <li>
+                  Windows，执行命令：<br/>
+                  <code>{ffplayWindows}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffplayWindows)} />
+                  </div>
+                </li>
+                <li>
+                  Mac或Linux，执行命令：<br/>
+                  <code>{ffplayMac}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffplayMac)} />
+                  </div>
+                </li>
+                <li>SRT流画面出来较慢，请稍安勿躁</li>
+                <li>
+                  也可以快速预览其他格式的流，注意延迟比直接播放SRT流会高很多：<br/>
+                  <ul>
+                    <li>
+                      播放HTTP-FLV流, 请选择
+                      <a href={flvPlayer} target='_blank' rel='noreferrer'>简易</a>或
+                      <a href={xgFlvPlayerUrl} target='_blank' rel='noreferrer'>西瓜</a>播放器&nbsp;
+                      <code>{flvUrl}</code> &nbsp;
+                      <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                        <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrl)} />
+                      </div>
+                    </li>
+                    <li>
+                      播放HLS流, 请选择
+                      <a href={hlsPlayer} target='_blank' rel='noreferrer'>简易</a>或
+                      <a href={xgHlsPlayerUrl} target='_blank' rel='noreferrer'>西瓜</a>播放器&nbsp;
+                      <code>{m3u8Url}</code> &nbsp;
+                      <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                        <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+                      </div>
+                    </li>
+                    <li>播放<a href={rtcPlayer} target='_blank' rel='noreferrer'>WebRTC流</a></li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+            <li>
+              你也可以嵌入到WordPress：
+              <ul>
+                <li>
+                  嵌入HTTP-FLV流 &nbsp;
+                  <code>{flvUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  嵌入HLS流 &nbsp;
+                  <code>{m3u8UrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  嵌入WebRTC流 &nbsp;
+                  <code>{rtcUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='拷贝'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
+                  </div>
+                </li>
+              </ul>
+            </li>
             <li>可选，点击进入<a id="cnConsole" href={cnConsole}>SRS控制台</a>查看流信息</li>
           </ol>
         </Accordion.Body>
       </Accordion.Item>
-      <Accordion.Item eventKey="3">
-        <Accordion.Header>WebRTC推流</Accordion.Header>
+      <Accordion.Item eventKey="4">
+        <Accordion.Header>WebRTC: 网页推流</Accordion.Header>
         <Accordion.Body>
           <div>
             <p style={{display: 'inline-block'}}><strong>操作步骤：</strong></p>
@@ -330,10 +425,13 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
 function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
   const {
     flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcUrl, rtcPlayer, enConsole, rtcPublisher,
-    flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2, rtcPublishUrl,
+    flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2, rtcPublishUrl, srtPublishUrl, srtPlayUrl,
   } = urls;
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
   const ffmpegPublishCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv ${rtmpPublishUrl}`;
+  const ffmpegSrtCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -pes_payload_size 0 -f mpegts '${srtPublishUrl}'`;
+  const ffplayWindows = `ffplay -fflags nobuffer -flags low_delay -i "${srtPlayUrl}"`;
+  const ffplayMac = `ffplay -fflags nobuffer -flags low_delay -i '${srtPlayUrl}'`;
 
   // Shortcodes of WordPress.
   const flvUrlShortCode = `[srs_player url="${flvUrl}"]`;
@@ -342,7 +440,7 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
   const rtc2UrlShortCode = `[srs_publisher url="${rtcPublishUrl}"]`;
 
   return (
-    <Accordion defaultActiveKey={["1"]} alwaysOpen>
+    <Accordion defaultActiveKey="1">
       <Accordion.Item eventKey="0">
         <Accordion.Header>Introduction</Accordion.Header>
         <Accordion.Body>
@@ -363,7 +461,7 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">
-        <Accordion.Header>OBS or vMix</Accordion.Header>
+        <Accordion.Header>RTMP: OBS or vMix</Accordion.Header>
         <Accordion.Body>
           <div>
             <p style={{display: 'inline-block'}}><strong>Usage:</strong></p>
@@ -441,7 +539,7 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="2">
-        <Accordion.Header>FFmpeg</Accordion.Header>
+        <Accordion.Header>RTMP: FFmpeg</Accordion.Header>
         <Accordion.Body>
           <div>
             <p style={{display: 'inline-block'}}><strong>Usage:</strong></p>
@@ -450,9 +548,7 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
             <li>Download FFmpeg from <a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>here</a>.</li>
             <li>
               FFmpeg cli: <br/>
-              <code>
-                ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv {rtmpPublishUrl}
-              </code> &nbsp;
+              <code>{ffmpegPublishCli}</code> &nbsp;
               <div role='button' style={{display: 'inline-block'}} title='Change Stream'>
                 <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
               </div> &nbsp;
@@ -521,7 +617,97 @@ function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="3">
-        <Accordion.Header>WebRTC</Accordion.Header>
+        <Accordion.Header>SRT: FFmpeg</Accordion.Header>
+        <Accordion.Body>
+          <div>
+            <p style={{display: 'inline-block'}}><strong>Usage:</strong></p>
+          </div>
+          <ol>
+            <li>Download FFmpeg from <a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>here</a>.</li>
+            <li>
+              FFmpeg cli: <br/>
+              <code>{ffmpegSrtCli}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='Change Stream'>
+                <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+              </div> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffmpegSrtCli)} />
+              </div>
+            </li>
+            <li>
+              SRT URL: <br/><code>{srtPlayUrl}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPlayUrl)} />
+              </div>
+            </li>
+            <li>Download ffplay from <a href='https://ffmpeg.org/download.html' target='_blank' rel='noreferrer'>here</a>, a low latency player by FFmpeg</li>
+            <li>
+              For Windows:<br/>
+              <code>{ffplayWindows}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffplayWindows)} />
+              </div>
+            </li>
+            <li>
+              For Mac or Linux:<br/>
+              <code>{ffplayMac}</code> &nbsp;
+              <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, ffplayMac)} />
+              </div>
+            </li>
+            <li>It takes a while to render the SRT stream, please wait.</li>
+            <li>
+              You're able to play by H5<br/>
+              <ul>
+                <li>For ffplay, please read other section</li>
+                <li>
+                  <a href={flvPlayer} target='_blank' rel='noreferrer'>HTTP-FLV</a> <code>{flvUrl}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrl)} />
+                  </div>
+                </li>
+                <li>
+                  HLS by <a href={hlsPlayer} target='_blank' rel='noreferrer'>H5</a> &nbsp;
+                  <code>{m3u8Url}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+                  </div>
+                </li>
+                <li>WebRTC by <a href={rtcPlayer} target='_blank' rel='noreferrer'>H5</a></li>
+              </ul>
+            </li>
+            <li>
+              Embed in WordPress post/page：
+              <ul>
+                <li>
+                  For HTTP-FLV &nbsp;
+                  <code>{flvUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, flvUrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  For HLS &nbsp;
+                  <code>{m3u8UrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8UrlShortCode)} />
+                  </div>
+                </li>
+                <li>
+                  For WebRTC &nbsp;
+                  <code>{rtcUrlShortCode}</code> &nbsp;
+                  <div role='button' style={{display: 'inline-block'}} title='Copy'>
+                    <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtcUrlShortCode)} />
+                  </div>
+                </li>
+              </ul>
+            </li>
+            <li>Optional, check by <a href={enConsole} target='_blank' rel='noreferrer'>console</a></li>
+          </ol>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="4">
+        <Accordion.Header>WebRTC: Webpage</Accordion.Header>
         <Accordion.Body>
           <div>
             <p style={{display: 'inline-block'}}><strong>Usage:</strong></p>
