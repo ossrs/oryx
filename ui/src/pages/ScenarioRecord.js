@@ -151,7 +151,7 @@ function ScenarioRecordImplCn({activeKey, defaultApplyAll, recordHome}) {
             <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, recordHome)} />
           </div> &nbsp;
           <TutorialsText prefixLine={true} title='如何修改目录?'>
-            你可以使用软链接，将本目录软链到其他磁盘的目录，然后<font color='red'>重启服务</font>(必须)
+            你可以使用软链接，将根目录<font color='red'>/data</font>软链到其他磁盘的目录，然后<font color='red'>重启服务</font>(必须)
           </TutorialsText>
         </Accordion.Body>
       </Accordion.Item>
@@ -337,7 +337,7 @@ function ScenarioRecordImplEn({activeKey, defaultApplyAll, recordHome}) {
             <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, recordHome)} />
           </div> &nbsp;
           <TutorialsText prefixLine={true} title='How to modify the directory?'>
-            You can use a symbolic link to link this directory to a directory on another disk, and then <font color='red'>restart the service</font> (required).
+            You can use a symbolic link to link the <font color='red'>/data</font> directory to a directory on another disk, and then <font color='red'>restart the service</font> (required).
           </TutorialsText>
         </Accordion.Body>
       </Accordion.Item>
