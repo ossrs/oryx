@@ -31,7 +31,7 @@
         "live": "推拉直播流",
         "srt": "超清实时直播",
         "forward": "多平台转播",
-        "transcode": "内容处理",
+        "transcode": "直播转码",
         "rgroup": "直播录制",
         "record": "本地录制",
         "dvr": "云录制",
