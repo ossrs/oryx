@@ -249,7 +249,6 @@ jobs:
             [${{ github.event.head_commit.message }}](https://github.com/ossrs/srs-stack/commit/${{ github.sha }})
             
             ## English
-            * [docker pull ossrs/srs-stack:5](https://ossrs.io/lts/en-us/docs/v5/doc/getting-started-stack#docker)
             * [docker pull ossrs/srs-stack:${{ env.SRS_TAG }}](https://ossrs.io/lts/en-us/docs/v5/doc/getting-started-stack#docker)
             * [DigitalOcean](https://marketplace.digitalocean.com/apps/srs): [Tutorial](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-1-click-e9fe6f314ac6)
             * Ubuntu Script: ${{ env.SRS_UBUNTU_EN_SOURCE_FILE_MD5 }} [${{ env.SRS_UBUNTU_EN_SOURCE_FILE }}](https://github.com/ossrs/srs-stack/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_UBUNTU_EN_SOURCE_FILE }})
