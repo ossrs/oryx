@@ -453,7 +453,7 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Stream Key</Form.Label>
-              {!wxCustom && <Form.Text> * Please click <a href='https://channels.weixin.qq.com/platform/live/liveBuild' target='_blank' rel='noreferrer'>Go live</a>, then copy the Stream Key</Form.Text>}
+              {!wxCustom && <Form.Text> * Please click <a href='https://studio.youtube.com/channel/UC/livestreaming' target='_blank' rel='noreferrer'>Go live</a>, then copy the Stream Key</Form.Text>}
               <Form.Control as="input" defaultValue={wxSecret} onChange={(e) => setWxSecret(e.target.value)}/>
             </Form.Group>
             <Row>
