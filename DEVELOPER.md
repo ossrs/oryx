@@ -395,7 +395,7 @@ Create a CVM instance:
 
 ```bash
 rm -f /tmp/lh-*.txt &&
-echo $(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32) >/tmp/lh-token.txt &&
+echo $(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 16) >/tmp/lh-token.txt &&
 VM_TOKEN=$(cat /tmp/lh-token.txt) bash scripts/tools/tencent-cloud/helper.sh create-cvm.py --id /tmp/lh-instance.txt
 bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat /tmp/lh-instance.txt) --id /tmp/lh-ip.txt &&
 echo "Instance: $(cat /tmp/lh-instance.txt), IP: ubuntu@$(cat /tmp/lh-ip.txt), Password: $(cat /tmp/lh-token.txt)" && sleep 5 &&
@@ -409,7 +409,7 @@ bash scripts/tools/tencent-cloud/helper.sh remove-cvm.py --instance $(cat /tmp/l
 Next, create a test CVM instance with the image:
 
 ```bash
-echo $(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32) >/tmp/lh-token2.txt &&
+echo $(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 16) >/tmp/lh-token2.txt &&
 VM_TOKEN=$(cat /tmp/lh-token2.txt) bash scripts/tools/tencent-cloud/helper.sh create-verify.py --image $(cat /tmp/lh-image.txt) --id /tmp/lh-test.txt &&
 bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat /tmp/lh-test.txt) --id /tmp/lh-ip2.txt && 
 echo "IP: ubuntu@$(cat /tmp/lh-ip2.txt), Password: $(cat /tmp/lh-token2.txt)" &&
@@ -419,26 +419,30 @@ echo "http://$(cat /tmp/lh-ip2.txt)"
 Prepare test environment:
 
 ```bash
-ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo mkdir -p /data/upload &&
-ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo chmod 777 /data/upload &&
+sshCmd="sshpass -p $(cat /tmp/lh-token2.txt) ssh -o StrictHostKeyChecking=no -t" &&
+scpCmd="sshpass -p $(cat /tmp/lh-token2.txt) scp -o StrictHostKeyChecking=no" &&
+$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) sudo mkdir -p /data/upload &&
+$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) mkdir -p test scripts/tools &&
+$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) sudo chmod 777 /data/upload &&
 cp ~/git/srs/trunk/doc/source.200kbps.768x320.flv test/ &&
-scp test/source.200kbps.768x320.flv ubuntu@$(cat /tmp/lh-ip2.txt):/data/upload/ &&
+$scpCmd test/source.200kbps.768x320.flv ubuntu@$(cat /tmp/lh-ip2.txt):/data/upload/ &&
 docker run --rm -it -v $(pwd):/g -w /g ossrs/srs:ubuntu20 make -C test clean default &&
-scp ./test/srs-stack.test ./test/source.200kbps.768x320.flv ubuntu@$(cat /tmp/lh-ip2.txt):~/test/ &&
-scp ./scripts/tools/secret.sh ubuntu@$(cat /tmp/lh-ip2.txt):~/scripts/tools &&
-ssh ubuntu@$(cat /tmp/lh-ip2.txt) docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+$scpCmd ./test/srs-stack.test ./test/source.200kbps.768x320.flv ubuntu@$(cat /tmp/lh-ip2.txt):~/test/ &&
+$scpCmd ./scripts/tools/secret.sh ubuntu@$(cat /tmp/lh-ip2.txt):~/scripts/tools &&
+$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) sudo docker run --rm -v /usr/bin:/g \
+    registry.cn-hangzhou.aliyuncs.com/ossrs/srs:tools \
     cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
 ```
 
 Test the CVM instance:
 
 ```bash
-ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
-ssh ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -endpoint http://$(cat /tmp/lh-ip2.txt):2022 \
+$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
+$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -endpoint http://$(cat /tmp/lh-ip2.txt):2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestApi_Empty &&
-ssh ubuntu@$(cat /tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
-ssh ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -endpoint http://$(cat /tmp/lh-ip2.txt):2022 \
+$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
+$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -endpoint http://$(cat /tmp/lh-ip2.txt):2022 \
     -endpoint-rtmp rtmp://$(cat /tmp/lh-ip2.txt) -endpoint-http http://$(cat /tmp/lh-ip2.txt) -endpoint-srt srt://$(cat /tmp/lh-ip2.txt):10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
