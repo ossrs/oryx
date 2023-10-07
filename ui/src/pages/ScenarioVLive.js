@@ -678,10 +678,10 @@ function ChooseVideoSourceCn({platform, vLiveFiles, setVLiveFiles}) {
     </Form.Group>
     <Form.Group className="mb-3">
       <InputGroup>
-        <Form.Check type="radio" label="指定流" id={'stream-' + platform} checked={checkType === 'stream'}
+        <Form.Check type="radio" label="拉流转推" id={'stream-' + platform} checked={checkType === 'stream'}
                     name={'chooseSource' + platform} onChange={e => setCheckType('stream')}
         /> &nbsp;
-        <Form.Text> * 流必须是 rtmp/http-flv/hls 格式</Form.Text>
+        <Form.Text> * 流地址支持 rtmp, http, https, 或 rtsp 等格式</Form.Text>
       </InputGroup>
       {checkType === 'stream' &&
       <SrsErrorBoundary>
@@ -730,10 +730,10 @@ function ChooseVideoSourceEn({platform, vLiveFiles, setVLiveFiles}) {
     </Form.Group>
     <Form.Group className="mb-3">
       <InputGroup>
-        <Form.Check type="radio" label="Use stream" id={'stream-' + platform} checked={checkType === 'stream'}
+        <Form.Check type="radio" label="Forward stream" id={'stream-' + platform} checked={checkType === 'stream'}
                     name={'chooseSource' + platform} onChange={e => setCheckType('stream')}
         /> &nbsp;
-        <Form.Text> * The stream must be in rtmp/http-flv/hls format.</Form.Text>
+        <Form.Text> * The stream URL should start with rtmp, http, https, or rtsp.</Form.Text>
       </InputGroup>
       {checkType === 'stream' &&
         <SrsErrorBoundary>
@@ -750,8 +750,10 @@ function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
 
   const checkStreamUrl = function() {
     if (!inputStream) return alert('请输入流地址');
-    // check stream url if valid. start with rtmp/rtsp/http-flv/hls.
-    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !inputStream.startsWith('http://') && !inputStream.startsWith('https://')) return alert('流地址必须是 rtmp/rtsp/http-flv/hls 格式');
+    const isHTTP = inputStream.startsWith('http://') || inputStream.startsWith('https://');
+    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !isHTTP) return alert('流地址必须是 rtmp/http/https/rtsp 格式');
+    if (isHTTP && inputStream.indexOf('.flv') < 0 && inputStream.indexOf('.m3u8') < 0) return alert('HTTP流必须是 http-flv或hls 格式');
+
     const token = Token.load();
     axios.post(`/terraform/v1/ffmpeg/vlive/streamUrl?url=${inputStream}`).then(res => {
       console.log(`检查流地址成功，${JSON.stringify(res.data.data)}`);
@@ -789,8 +791,10 @@ function VLiveStreamSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
 
   const checkStreamUrl = function() {
     if (!inputStream) return alert('Please input stream URL');
-    // check stream url if valid. start with rtmp/rtsp/http-flv/hls.
-    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !inputStream.startsWith('http://') && !inputStream.startsWith('https://')) return alert('The stream must be in rtmp/rtsp/http-flv/hls format.');
+    const isHTTP = inputStream.startsWith('http://') || inputStream.startsWith('https://');
+    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !isHTTP) return alert('The stream must be rtmp/http/https/rtsp');
+    if (isHTTP && inputStream.indexOf('.flv') < 0 && inputStream.indexOf('.m3u8') < 0) return alert('The HTTP stream must be http-flv/hls');
+
     const token = Token.load();
     axios.post(`/terraform/v1/ffmpeg/vlive/streamUrl?url=${inputStream}`).then(res => {
       console.log(`Check stream url ok，${JSON.stringify(res.data.data)}`);
