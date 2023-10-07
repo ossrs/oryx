@@ -651,7 +651,7 @@ function ChooseVideoSourceCn({platform, vLiveFiles, setVLiveFiles}) {
     }
   }, [vLiveFiles]);
   return (<>
-    <Form.Group className="mb-2">
+    <Form.Group className="mb-3">
       <Form.Label>视频源</Form.Label>
       <Form.Text> * 虚拟直播就是将视频源(文件/流)转换成直播流</Form.Text>
       <Form.Check type="radio" label="上传本地文件" id={'upload-' + platform} checked={checkType === 'upload'}
@@ -703,7 +703,7 @@ function ChooseVideoSourceEn({platform, vLiveFiles, setVLiveFiles}) {
     }
   }, [vLiveFiles]);
   return (<>
-    <Form.Group className="mb-2">
+    <Form.Group className="mb-3">
       <Form.Label>Live Stream Source</Form.Label>
       <Form.Text> * Virtual live streaming is the process of converting a video source (file) into a live stream.</Form.Text>
       <Form.Check type="radio" label="Upload local file" id={'upload-' + platform} checked={checkType === 'upload'}
