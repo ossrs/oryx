@@ -295,6 +295,9 @@ const (
 	SRS_BEIAN           = "SRS_BEIAN"
 	SRS_HTTPS           = "SRS_HTTPS"
 	SRS_HTTPS_DOMAIN    = "SRS_HTTPS_DOMAIN"
+
+	SRS_SOURCE_TYPE_FILE = "file"
+	SRS_SOURCE_TYPE_STREAM  = "stream"
 )
 
 // Tencent cloud consts.

@@ -642,10 +642,15 @@ function VLiveFileList({files, onChangeFiles}) {
 
 function ChooseVideoSourceCn({platform, vLiveFiles, setVLiveFiles}) {
   const [checkType, setCheckType] = React.useState('upload');
+  React.useEffect(() => {
+    if (vLiveFiles?.length && vLiveFiles[0].type === 'stream') {
+        setCheckType('stream');
+    }
+  }, [vLiveFiles]);
   return (<>
     <Form.Group className="mb-2">
       <Form.Label>视频源</Form.Label>
-      <Form.Text> * 虚拟直播就是将视频源(文件)转换成直播流</Form.Text>
+      <Form.Text> * 虚拟直播就是将视频源(文件/流)转换成直播流</Form.Text>
       <Form.Check type="radio" label="上传本地文件" id={'upload-' + platform} checked={checkType === 'upload'}
         name={'chooseSource-' + platform} onChange={e => setCheckType('upload')}
       />
@@ -668,11 +673,29 @@ function ChooseVideoSourceCn({platform, vLiveFiles, setVLiveFiles}) {
       </SrsErrorBoundary>
       }
     </Form.Group>
+    <Form.Group className="mb-3">
+      <InputGroup>
+        <Form.Check type="radio" label="指定流" id={'stream-' + platform} checked={checkType === 'stream'}
+                    name={'chooseSource' + platform} onChange={e => setCheckType('stream')}
+        /> &nbsp;
+        <Form.Text> * 流必须是 rtmp/http-flv/hls 格式</Form.Text>
+      </InputGroup>
+      {checkType === 'stream' &&
+      <SrsErrorBoundary>
+        <VLiveStreamSelectorCn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
+      </SrsErrorBoundary>
+      }
+    </Form.Group>
   </>);
 }
 
 function ChooseVideoSourceEn({platform, vLiveFiles, setVLiveFiles}) {
   const [checkType, setCheckType] = React.useState('upload');
+  React.useEffect(() => {
+    if (vLiveFiles?.length && vLiveFiles[0].type === 'stream') {
+        setCheckType('stream');
+    }
+  }, [vLiveFiles]);
   return (<>
     <Form.Group className="mb-2">
       <Form.Label>Live Stream Source</Form.Label>
@@ -699,7 +722,98 @@ function ChooseVideoSourceEn({platform, vLiveFiles, setVLiveFiles}) {
         </SrsErrorBoundary>
       }
     </Form.Group>
+    <Form.Group className="mb-3">
+      <InputGroup>
+        <Form.Check type="radio" label="Use stream" id={'stream-' + platform} checked={checkType === 'stream'}
+                    name={'chooseSource' + platform} onChange={e => setCheckType('stream')}
+        /> &nbsp;
+        <Form.Text> * The stream must be in rtmp/http-flv/hls format.</Form.Text>
+      </InputGroup>
+      {checkType === 'stream' &&
+        <SrsErrorBoundary>
+          <VLiveStreamSelectorEn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
+        </SrsErrorBoundary>
+      }
+    </Form.Group>
   </>);
+}
+
+function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
+  const handleError = useErrorHandler();
+  const [inputStream, setInputStream] = React.useState('');
+
+  const checkStreamUrl = function() {
+    if (!inputStream) return alert('请输入流地址');
+    // check stream url if valid. start with rtmp/http-flv/hls.
+    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('http://') && !inputStream.startsWith('https://')) return alert('流地址必须是 rtmp/http-flv/hls 格式');
+    const token = Token.load();
+    axios.post(`/terraform/v1/ffmpeg/vlive/streamUrl?url=${inputStream}`).then(res => {
+      console.log(`检查流地址成功，${JSON.stringify(res.data.data)}`);
+      const streamObj = res.data.data;
+      const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
+      axios.post('/terraform/v1/ffmpeg/vlive/source', {
+        ...token, platform, files,
+      }).then(res => {
+        console.log(`更新虚拟直播源为流地址成功，${JSON.stringify(res.data.data)}`);
+        setVLiveFiles(res.data.data.files);
+      }).catch(handleError);
+    }).catch(handleError);
+  }
+
+  return (<>
+    <Form.Control as="div">
+      {!vLiveFiles?.length && <>
+        <Row>
+          <Col>
+            <Form.Control type="text" value={inputStream} placeholder="请输入流地址" onChange={e => setInputStream(e.target.value)} />
+          </Col>
+          <Col xs="auto">
+            <Button variant="primary" onClick={checkStreamUrl}>确认</Button>
+          </Col>
+        </Row></>
+      }
+      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
+    </Form.Control>
+  </>);
+}
+
+function VLiveStreamSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
+  const handleError = useErrorHandler();
+  const [inputStream, setInputStream] = React.useState('');
+
+  const checkStreamUrl = function() {
+    if (!inputStream) return alert('Please input stream URL');
+    // check stream url if valid. start with rtmp/http-flv/hls.
+    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('http://') && !inputStream.startsWith('https://')) return alert('The stream must be in rtmp/http-flv/hls format.');
+    const token = Token.load();
+    axios.post(`/terraform/v1/ffmpeg/vlive/streamUrl?url=${inputStream}`).then(res => {
+      console.log(`Check stream url ok，${JSON.stringify(res.data.data)}`);
+      const streamObj = res.data.data;
+      const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
+      axios.post('/terraform/v1/ffmpeg/vlive/source', {
+        ...token, platform, files,
+      }).then(res => {
+        console.log(`Setup the virtual live stream ok，${JSON.stringify(res.data.data)}`);
+        setVLiveFiles(res.data.data.files);
+      }).catch(handleError);
+    }).catch(handleError);
+  }
+
+  return (<>
+    <Form.Control as="div">
+      {!vLiveFiles?.length && <>
+        <Row>
+          <Col>
+            <Form.Control type="text" value={inputStream} placeholder="please input stream URL" onChange={e => setInputStream(e.target.value)} />
+          </Col>
+          <Col xs="auto">
+            <Button variant="primary" onClick={checkStreamUrl}>Submit</Button>
+          </Col>
+        </Row></>
+      }
+      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
+    </Form.Control>
+  </>)
 }
 
 function VLiveFileSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
@@ -838,8 +952,18 @@ function VLiveFileFormatInfo({file}) {
   const f = file;
   if (!f?.format) return <></>;
   return <>
-    {Number(f?.size/1024/1024).toFixed(1)}MB &nbsp;
-    {Number(f?.format?.duration).toFixed(0)}s &nbsp;
+    {f?.type !== 'stream' && 
+      <>
+      File &nbsp;
+      {Number(f?.size/1024/1024).toFixed(1)}MB &nbsp;
+      {Number(f?.format?.duration).toFixed(0)}s &nbsp;
+      </>
+    }
+    {f?.type === 'stream' &&
+      <>
+      Stream &nbsp;
+      </>
+    }
     {Number(f?.format?.bit_rate/1000).toFixed(1)}Kbps
   </>;
 }
