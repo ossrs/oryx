@@ -643,8 +643,11 @@ function VLiveFileList({files, onChangeFiles}) {
 function ChooseVideoSourceCn({platform, vLiveFiles, setVLiveFiles}) {
   const [checkType, setCheckType] = React.useState('upload');
   React.useEffect(() => {
-    if (vLiveFiles?.length && vLiveFiles[0].type === 'stream') {
-        setCheckType('stream');
+    if (vLiveFiles?.length) {
+      const type = vLiveFiles[0].type;
+      if (type === 'upload' || type === 'server' || type === 'stream') {
+        setCheckType(type);
+      }
     }
   }, [vLiveFiles]);
   return (<>
@@ -692,8 +695,11 @@ function ChooseVideoSourceCn({platform, vLiveFiles, setVLiveFiles}) {
 function ChooseVideoSourceEn({platform, vLiveFiles, setVLiveFiles}) {
   const [checkType, setCheckType] = React.useState('upload');
   React.useEffect(() => {
-    if (vLiveFiles?.length && vLiveFiles[0].type === 'stream') {
-        setCheckType('stream');
+    if (vLiveFiles?.length) {
+      const type = vLiveFiles[0].type;
+      if (type === 'upload' || type === 'server' || type === 'stream') {
+        setCheckType(type);
+      }
     }
   }, [vLiveFiles]);
   return (<>
@@ -744,8 +750,8 @@ function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
 
   const checkStreamUrl = function() {
     if (!inputStream) return alert('请输入流地址');
-    // check stream url if valid. start with rtmp/http-flv/hls.
-    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('http://') && !inputStream.startsWith('https://')) return alert('流地址必须是 rtmp/http-flv/hls 格式');
+    // check stream url if valid. start with rtmp/rtsp/http-flv/hls.
+    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !inputStream.startsWith('http://') && !inputStream.startsWith('https://')) return alert('流地址必须是 rtmp/rtsp/http-flv/hls 格式');
     const token = Token.load();
     axios.post(`/terraform/v1/ffmpeg/vlive/streamUrl?url=${inputStream}`).then(res => {
       console.log(`检查流地址成功，${JSON.stringify(res.data.data)}`);
@@ -783,8 +789,8 @@ function VLiveStreamSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
 
   const checkStreamUrl = function() {
     if (!inputStream) return alert('Please input stream URL');
-    // check stream url if valid. start with rtmp/http-flv/hls.
-    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('http://') && !inputStream.startsWith('https://')) return alert('The stream must be in rtmp/http-flv/hls format.');
+    // check stream url if valid. start with rtmp/rtsp/http-flv/hls.
+    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !inputStream.startsWith('http://') && !inputStream.startsWith('https://')) return alert('The stream must be in rtmp/rtsp/http-flv/hls format.');
     const token = Token.load();
     axios.post(`/terraform/v1/ffmpeg/vlive/streamUrl?url=${inputStream}`).then(res => {
       console.log(`Check stream url ok，${JSON.stringify(res.data.data)}`);
@@ -831,7 +837,7 @@ function VLiveFileSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
     axios.post(`/terraform/v1/ffmpeg/vlive/server?file=${inputFile}`).then(res => {
       console.log(`检查服务器文件成功，${JSON.stringify(res.data.data)}`);
       const localFileObj = res.data.data;
-      const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target}];
+      const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target, type: "file"}];
       axios.post('/terraform/v1/ffmpeg/vlive/source', {
         ...token, platform, files,
       }).then(res => {
@@ -873,7 +879,7 @@ function VLiveFileSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
     axios.post(`/terraform/v1/ffmpeg/vlive/server?file=${inputFile}`).then(res => {
       console.log(`Check server file ok，${JSON.stringify(res.data.data)}`);
       const localFileObj = res.data.data;
-      const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target}];
+      const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target, type: "file"}];
       axios.post('/terraform/v1/ffmpeg/vlive/source', {
         ...token, platform, files,
       }).then(res => {
@@ -908,7 +914,7 @@ function VLiveFileUploaderCn({platform, vLiveFiles, setVLiveFiles}) {
     const token = Token.load();
     axios.post('/terraform/v1/ffmpeg/vlive/source', {
       ...token, platform, files: files.map(f => {
-        return {name: f.name, size: f.size, uuid: f.uuid, target: f.target};
+        return {name: f.name, size: f.size, uuid: f.uuid, target: f.target, type: "upload"};
       }),
     }).then(res => {
       console.log(`虚拟直播文件源设置成功, ${JSON.stringify(res.data.data)}`);
@@ -932,7 +938,7 @@ function VLiveFileUploaderEn({platform, vLiveFiles, setVLiveFiles}) {
     const token = Token.load();
     axios.post('/terraform/v1/ffmpeg/vlive/source', {
       ...token, platform, files: files.map(f => {
-        return {name: f.name, size: f.size, uuid: f.uuid, target: f.target};
+        return {name: f.name, size: f.size, uuid: f.uuid, target: f.target, type: "upload"};
       }),
     }).then(res => {
       console.log(`Set file source ok, ${JSON.stringify(res.data.data)}`);

@@ -227,15 +227,15 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			if err != nil {
 				return errors.Wrapf(err, "parse %v", qUrl)
 			}
-			// check url if valid rtmp or http-flv or https-flv or hls live url
-			if u.Scheme != "rtmp" && u.Scheme != "http" && u.Scheme != "https" {
+			// check url if valid rtmp or rtsp or http-flv or https-flv or hls live url
+			if u.Scheme != "rtmp" && u.Scheme != "rtsp" && u.Scheme != "http" && u.Scheme != "https" {
 				return errors.Errorf("invalid url scheme %v", u.Scheme)
 			}
 			if u.Scheme == "http" || u.Scheme == "https" {
 				if u.Path == "" {
 					return errors.Errorf("url path %v empty", u.Path)
 				}
-				if !strings.HasSuffix(u.Path, ".flv") && !strings.HasSuffix(u.Path, ".m3u8") {
+				if !strings.HasSuffix(u.Path, ".flv") && !strings.HasSuffix(u.Path, ".m3u8") && !strings.HasSuffix(u.Path, ".ts") {
 					return errors.Errorf("invalid url path suffix %v", u.Path)
 				}
 			}
@@ -395,7 +395,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				Size   int64  `json:"size"`
 				UUID   string `json:"uuid"`
 				Target string `json:"target"`
-				Type  string `json:"type"`
+				Type  SrsVLiveSourceType `json:"type"`
 			}
 
 			var token, platform string
@@ -422,7 +422,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			// Always cleanup the files in upload.
 			var tempFiles []string
 			for _, f := range files {
-				if f.Type != SRS_SOURCE_TYPE_STREAM {
+				if f.Type != SrsVLiveSourceTypeStream {
 					tempFiles = append(tempFiles, f.Target)
 				}
 			}
@@ -440,7 +440,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				if f.Target == "" {
 					return errors.New("no target")
 				}
-				if f.Type != SRS_SOURCE_TYPE_STREAM {
+				if f.Type != SrsVLiveSourceTypeStream {
 					if _, err := os.Stat(f.Target); err != nil {
 						return errors.Wrapf(err, "no file %v", f.Target)
 					}
@@ -465,7 +465,9 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			// Parse file information and move file from dirUploadPath to dirVLivePath.
 			for _, file := range files {
 				// Probe file information.
-				stdout, err := exec.CommandContext(ctx, "ffprobe",
+				toCtx, toCancelFunc := context.WithTimeout(ctx, 15*time.Second)
+				defer toCancelFunc()
+				stdout, err := exec.CommandContext(toCtx, "ffprobe",
 					"-show_error", "-show_private_data", "-v", "quiet", "-find_stream_info", "-print_format", "json",
 					"-show_format", "-show_streams", file.Target,
 				).Output()
@@ -516,7 +518,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					Type: file.Type,
 					Format: &format.Format, Video: matchVideo, Audio: matchAudio,
 				}
-				if file.Type != SRS_SOURCE_TYPE_STREAM {
+				if file.Type != SrsVLiveSourceTypeStream {
 					parsedFile.Target = path.Join(dirVLivePath, fmt.Sprintf("%v%v", file.UUID, path.Ext(file.Target)))
 					if err = os.Rename(file.Target, parsedFile.Target); err != nil {
 						return errors.Wrapf(err, "rename %v to %v", file.Target, parsedFile.Target)
@@ -539,7 +541,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 
 			// Remove old files.
 			for _, f := range confObj.Files {
-				if f.Type != SRS_SOURCE_TYPE_STREAM {
+				if f.Type != SrsVLiveSourceTypeStream {
 					if _, err := os.Stat(f.Target); err == nil {
 						os.Remove(f.Target)
 					}
@@ -743,14 +745,14 @@ func (v *VLiveFileAudio) String() string {
 }
 
 type VLiveSourceFile struct {
-	Name   string           `json:"name"`
-	Size   uint64           `json:"size"`
-	UUID   string           `json:"uuid"`
-	Target string           `json:"target"`
-	Type   string 		    `json:"type"`
-	Format *VLiveFileFormat `json:"format"`
-	Video  *VLiveFileVideo  `json:"video"`
-	Audio  *VLiveFileAudio  `json:"audio"`
+	Name   string             `json:"name"`
+	Size   uint64             `json:"size"`
+	UUID   string             `json:"uuid"`
+	Target string             `json:"target"`
+	Type   SrsVLiveSourceType `json:"type"`
+	Format *VLiveFileFormat   `json:"format"`
+	Video  *VLiveFileVideo    `json:"video"`
+	Audio  *VLiveFileAudio    `json:"audio"`
 }
 
 func (v *VLiveSourceFile) String() string {
@@ -989,7 +991,7 @@ func (v *VLiveTask) doVLive(ctx context.Context, input *VLiveSourceFile) error {
 
 	// Start FFmpeg process.
 	args := []string{}
-	if input.Type != SRS_SOURCE_TYPE_STREAM {
+	if input.Type != SrsVLiveSourceTypeStream {
 		args = append(args, "-stream_loop", "-1")
 	}
 	args = append(args, "-re", "-i", input.Target, "-c", "copy", "-f", "flv", outputURL)

@@ -295,9 +295,6 @@ const (
 	SRS_BEIAN           = "SRS_BEIAN"
 	SRS_HTTPS           = "SRS_HTTPS"
 	SRS_HTTPS_DOMAIN    = "SRS_HTTPS_DOMAIN"
-
-	SRS_SOURCE_TYPE_FILE = "file"
-	SRS_SOURCE_TYPE_STREAM  = "stream"
 )
 
 // Tencent cloud consts.
@@ -305,6 +302,12 @@ const (
 	TENCENT_CLOUD_CAM_ENDPOINT = "cam.tencentcloudapi.com"
 	TENCENT_CLOUD_VOD_ENDPOINT = "vod.tencentcloudapi.com"
 )
+
+// SrsVLiveSourceType defines the source type of vLive.
+type SrsVLiveSourceType string
+const SrsVLiveSourceTypeUpload SrsVLiveSourceType = "upload"
+const SrsVLiveSourceTypeFile SrsVLiveSourceType = "file"
+const SrsVLiveSourceTypeStream SrsVLiveSourceType = "stream"
 
 // For vLive upload directory.
 var dirUploadPath = path.Join(".", "upload")
