@@ -241,13 +241,16 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}
 			targetUUID := uuid.NewString()
 			ohttp.WriteData(ctx, w, r, &struct {
+				// The file name.
 				Name string `json:"name"`
+				// The file UUID.
 				UUID string `json:"uuid"`
+				// The file target name.
 				Target string `json:"target"`
 			}{
-				 Name: path.Base(u.Path),
-				 UUID: targetUUID,
-				 Target: qUrl,
+				Name:   path.Base(u.Path),
+				UUID:   targetUUID,
+				Target: qUrl,
 			})
 			logger.Tf(ctx, "vLive stream url ok, url=%v, uuid=%v", qUrl, targetUUID)
 			return nil
@@ -334,6 +337,30 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			targetFileName := path.Join(dirUploadPath, fmt.Sprintf("%v%v", targetUUID, path.Ext(filename)))
 			logger.Tf(ctx, "create %v for %v", targetFileName, filename)
 
+			var uploadDone bool
+			created := time.Now()
+			defer func() {
+				// If upload is not done, remove the target file
+				if !uploadDone {
+					os.Remove(targetFileName)
+					logger.Wf(ctx, "remove %v, done=%v, created=%v", targetFileName, uploadDone, created)
+				}
+			}()
+			go func() {
+				// If the temporary file still exists for a long time, remove it
+				duration := 2 * time.Hour
+				if os.Getenv("NODE_ENV") == "development" {
+					duration = time.Duration(30) * time.Second
+				}
+				time.Sleep(duration)
+
+				if _, err := os.Stat(targetFileName); err == nil {
+					os.Remove(targetFileName)
+					logger.Wf(ctx, "remove %v, done=%v, created=%v, duration=%v, elapsed=%v",
+						targetFileName, uploadDone, created, duration, time.Now().Sub(created))
+				}
+			}()
+
 			targetFile, err := os.OpenFile(targetFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 			if err != nil {
 				return errors.Wrapf(err, "open file %v", targetFileName)
@@ -373,13 +400,18 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				}
 			}
 
+			// After write file success, set the upload done to keep the file.
+			uploadDone = true
+
 			ohttp.WriteData(ctx, w, r, &struct {
-				UUID   string `json:"uuid"`
+				// The file UUID.
+				UUID string `json:"uuid"`
+				// The target file name.
 				Target string `json:"target"`
 			}{
 				UUID: targetUUID, Target: targetFileName,
 			})
-			logger.Tf(ctx, "Got vlive target=%v, size=%v, cost=%v", targetFileName, written, time.Now().Sub(starttime))
+			logger.Tf(ctx, "Got vlive target=%v, size=%v, done=%v, cost=%v", targetFileName, written, uploadDone, time.Now().Sub(starttime))
 			return nil
 		}(logger.WithContext(ctx)); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -391,11 +423,16 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			type VLiveTempFile struct {
-				Name   string `json:"name"`
-				Size   int64  `json:"size"`
-				UUID   string `json:"uuid"`
+				// The file name.
+				Name string `json:"name"`
+				// The file size in bytes.
+				Size int64 `json:"size"`
+				// The UUID for file.
+				UUID string `json:"uuid"`
+				// The target file name.
 				Target string `json:"target"`
-				Type  SrsVLiveSourceType `json:"type"`
+				// The source type.
+				Type SrsVLiveSourceType `json:"type"`
 			}
 
 			var token, platform string
@@ -515,7 +552,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				parsedFile := &VLiveSourceFile{
 					Name: file.Name, Size: uint64(file.Size), UUID: file.UUID,
 					Target: file.Target,
-					Type: file.Type,
+					Type:   file.Type,
 					Format: &format.Format, Video: matchVideo, Audio: matchAudio,
 				}
 				if file.Type != SrsVLiveSourceTypeStream {
