@@ -1,4 +1,4 @@
-name: Test Dev Environment
+name: Test Dev for PullRequest
 
 on: [pull_request]
 
