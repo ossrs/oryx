@@ -1,0 +1,417 @@
+name: Test Dev for PullRequest
+
+on: [pull_request]
+
+jobs:
+  envs:
+    name: envs
+    steps:
+      ##################################################################################################################
+      # Git checkout
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      # The github.ref is, for example, refs/tags/v5.0.145 or refs/tags/v5.0-r8
+      # Generate variables like:
+      #   SRS_TAG=v1.0.52
+      #   SRS_MAJOR=1
+      # @see https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
+      - name: Generate varaiables
+        run: |
+          SRS_TAG=$(bash scripts/version.sh)
+          echo "SRS_TAG=$SRS_TAG" >> $GITHUB_ENV
+          SRS_MAJOR=$(echo $SRS_TAG| awk -F '.' '{print $1}' |sed 's/v//g')
+          echo "SRS_MAJOR=$SRS_MAJOR" >> $GITHUB_ENV
+          echo "SRS_TAG:$SRS_TAG, SRS_MAJOR:$SRS_MAJOR"
+    # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
+    outputs:
+      SRS_TAG: ${{ env.SRS_TAG }}
+      SRS_MAJOR: ${{ env.SRS_MAJOR }}
+    runs-on: ubuntu-20.04
+
+  run-test:
+    name: Run UTest
+    runs-on: ubuntu-20.04
+    needs:
+      - envs
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
+      - name: Setup the npm node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: |
+            ui/package-lock.json
+      - name: Setup the Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '>=1.16.0'
+      - name: Install tools
+        run: |
+          docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
+          ffmpeg -version
+      - name: Test by jest and Go
+        run: |
+          make -j && make test -j
+
+  build-platform-image:
+    name: Build platform image
+    runs-on: ubuntu-20.04
+    needs:
+      - envs
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Build image for platform
+        run: |
+          docker build -t platform:latest -f Dockerfile .
+          docker images
+          docker save -o platform.tar platform:latest
+      - uses: actions/upload-artifact@v3
+        with:
+          name: platform-cache
+          path: platform.tar
+          retention-days: 1
+
+  test-zh-image:
+    name: Test ZH image
+    needs:
+      - envs
+      - build-platform-image
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
+      - name: Install tools
+        run: |
+          docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
+          ffmpeg -version
+      - uses: actions/download-artifact@v3
+        with:
+          name: platform-cache
+      - name: Run test for platform image
+        run: |
+          docker load -i platform.tar
+          docker tag platform ossrs/srs-stack:5
+          docker run --rm -d -p 2022:2022 -p 2443:2443 -p 1935:1935 \
+            -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
+            -v /data:/data -e REACT_APP_LOCALE=zh ossrs/srs-stack:5
+      - name: Check and Test service
+        run: |
+          # We will handle the error by ourselves.
+          set +e
+          
+          # Record all logs.
+          docker logs -f srs-stack >docker.log 2>&1 & pid_docker=$!
+          
+          echo "Wait for service ready." &&
+          make -j -C test &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+              -check-api-secret=true -test.run TestApi_Empty &&
+          
+          echo "Make upload writable." &&
+          sudo chmod 777 /data/upload &&
+          
+          echo "Test HTTP service." &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Test HTTPS service." &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint https://localhost:2443 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Run media test with retry" &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -test.run TestApi_Publish*
+          ret=$?; echo "Test result: $ret"
+          
+          echo "Stop service"
+          docker stop srs-stack
+          kill $pid_docker 2>/dev/null
+          echo "Log of docker.log" && cat docker.log
+          
+          exit $ret
+    runs-on: ubuntu-20.04
+
+  test-en-image:
+    name: Test EN image
+    needs:
+      - envs
+      - build-platform-image
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
+      - name: Install tools
+        run: |
+          docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
+          ffmpeg -version
+      - uses: actions/download-artifact@v3
+        with:
+          name: platform-cache
+      - name: Run test for platform image
+        run: |
+          docker load -i platform.tar
+          docker tag platform ossrs/srs-stack:5
+          docker run --rm -d -p 2022:2022 -p 2443:2443 -p 1935:1935 \
+            -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
+            -v /data:/data -e REACT_APP_LOCALE=en ossrs/srs-stack:5
+      - name: Check and Test service
+        run: |
+          # We will handle the error by ourselves.
+          set +e
+          
+          # Record all logs.
+          docker logs -f srs-stack >docker.log 2>&1 & pid_docker=$!
+          
+          echo "Wait for service ready." &&
+          make -j -C test &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+              -check-api-secret=true -test.run TestApi_Empty &&
+          
+          echo "Make upload writable." &&
+          sudo chmod 777 /data/upload &&
+          
+          echo "Test HTTP service." &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Test HTTPS service." &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint https://localhost:2443 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Run media test with retry" &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -test.run TestApi_Publish*
+          ret=$?; echo "Test result: $ret"
+          
+          echo "Stop service"
+          docker stop srs-stack
+          kill $pid_docker 2>/dev/null
+          echo "Log of docker.log" && cat docker.log
+          
+          exit $ret
+    runs-on: ubuntu-20.04
+
+  test-zh-installer:
+    name: Test ZH installer
+    runs-on: ubuntu-20.04
+    needs:
+      - envs
+      - build-platform-image
+    steps:
+      - name: Covert output to env
+        run: |
+          echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
+          echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
+      - name: Install tools
+        run: |
+          docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
+          ffmpeg -version
+      - name: Start Nginx service
+        run: |
+          sudo systemctl start nginx
+          sudo systemctl status nginx
+      - uses: actions/download-artifact@v3
+        with:
+          name: platform-cache
+      - name: Load platform image
+        run: |
+          docker load -i platform.tar
+          docker tag platform:latest ossrs/srs-stack:$SRS_TAG
+          docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
+          docker images
+      - name: Build package
+        run: |
+          bash scripts/setup-ubuntu/build.sh --language zh --version $SRS_TAG \
+              --output $(pwd)/build --extract
+          du -sh $(pwd)/build/*
+      - name: Install package
+        run: |
+          sudo bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
+          echo "" && echo "/usr/local/srs-stack/" && du -sh /usr/local/srs-stack/*
+          echo "" && ls -lha /data /data/config
+      - name: Check and Test service
+        run: |
+          # We will handle the error by ourselves.
+          set +e
+          
+          # Record all logs.
+          journalctl -u srs-stack -f >journalctl.log 2>&1 & pid_journalctl=$!
+          
+          echo "Wait for service ready." &&
+          make -j -C test &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+              -check-api-secret=true -test.run TestApi_Empty &&
+          
+          echo "Make upload writable." &&
+          sudo chmod 777 /data/upload &&
+          
+          echo "Test HTTP service." &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Test HTTPS service." &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint https://localhost:2443 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Run media test with retry" &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -test.run TestApi_Publish*
+          ret=$?; echo "Test result: $ret"
+          
+          echo "Stop service"
+          sudo systemctl stop srs-stack
+          kill $pid_journalctl 2>/dev/null
+          echo "Log of journalctl.log" && cat journalctl.log
+          
+          exit $ret
+
+  test-en-installer:
+    name: Test EN installer
+    runs-on: ubuntu-20.04
+    needs:
+      - envs
+      - build-platform-image
+    steps:
+      - name: Covert output to env
+        run: |
+          echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
+          echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download test file
+        run: |
+          curl --location --output test/source.200kbps.768x320.flv \
+            https://github.com/ossrs/srs/raw/develop/trunk/doc/source.200kbps.768x320.flv
+      - name: Install tools
+        run: |
+          docker run --rm -v /usr/bin:/g ossrs/srs:tools \
+            cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
+          ffmpeg -version
+      - name: Start Nginx service
+        run: |
+          sudo systemctl start nginx
+          sudo systemctl status nginx
+      - uses: actions/download-artifact@v3
+        with:
+          name: platform-cache
+      - name: Load platform image
+        run: |
+          docker load -i platform.tar
+          docker tag platform:latest ossrs/srs-stack:$SRS_TAG
+          docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
+          docker images
+      - name: Build package
+        run: |
+          bash scripts/setup-ubuntu/build.sh --language en --version $SRS_TAG \
+              --output $(pwd)/build --extract
+          du -sh $(pwd)/build/*
+      - name: Install package
+        run: |
+          sudo bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
+          echo "" && echo "/usr/local/srs-stack/" && du -sh /usr/local/srs-stack/*
+          echo "" && ls -lha /data /data/config
+      - name: Check and Test service
+        run: |
+          # We will handle the error by ourselves.
+          set +e
+          
+          # Record all logs.
+          journalctl -u srs-stack -f >journalctl.log 2>&1 & pid_journalctl=$!
+          
+          echo "Wait for service ready." &&
+          make -j -C test &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
+              -check-api-secret=true -test.run TestApi_Empty &&
+          
+          echo "Make upload writable." &&
+          sudo chmod 777 /data/upload &&
+          
+          echo "Test HTTP service." &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Test HTTPS service." &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./test/srs-stack.test -test.v -endpoint https://localhost:2443 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -no-media-test &&
+          
+          echo "Run media test with retry" &&
+          bash scripts/tools/secret.sh --output test/.env &&
+          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+              -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
+              -check-api-secret=true -test.run TestApi_Publish*
+          ret=$?; echo "Test result: $ret"
+          
+          echo "Stop service"
+          sudo systemctl stop srs-stack
+          kill $pid_journalctl 2>/dev/null
+          echo "Log of journalctl.log" && cat journalctl.log
+          
+          exit $ret
+
+  test-final:
+    name: test-final
+    runs-on: ubuntu-20.04
+    needs:
+      - run-test
+      - test-zh-image
+      - test-en-image
+      - test-zh-installer
+      - test-en-installer
+    steps:
+      - uses: geekyeggo/delete-artifact@v2
+        with:
+          name: platform-cache
+      - run: echo OK

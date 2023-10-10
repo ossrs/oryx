@@ -303,6 +303,12 @@ const (
 	TENCENT_CLOUD_VOD_ENDPOINT = "vod.tencentcloudapi.com"
 )
 
+// SrsVLiveSourceType defines the source type of vLive.
+type SrsVLiveSourceType string
+const SrsVLiveSourceTypeUpload SrsVLiveSourceType = "upload"
+const SrsVLiveSourceTypeFile SrsVLiveSourceType = "file"
+const SrsVLiveSourceTypeStream SrsVLiveSourceType = "stream"
+
 // For vLive upload directory.
 var dirUploadPath = path.Join(".", "upload")
 var dirVLivePath = path.Join(".", "vlive")

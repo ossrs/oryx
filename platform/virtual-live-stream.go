@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -216,6 +217,45 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 		}
 	})
 
+	ep = "/terraform/v1/ffmpeg/vlive/streamUrl/"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			q := r.URL.Query()
+			qUrl := q.Get("url")
+			u, err := url.Parse(qUrl)
+			if err != nil {
+				return errors.Wrapf(err, "parse %v", qUrl)
+			}
+			// check url if valid rtmp or rtsp or http-flv or https-flv or hls live url
+			if u.Scheme != "rtmp" && u.Scheme != "rtsp" && u.Scheme != "http" && u.Scheme != "https" {
+				return errors.Errorf("invalid url scheme %v", u.Scheme)
+			}
+			if u.Scheme == "http" || u.Scheme == "https" {
+				if u.Path == "" {
+					return errors.Errorf("url path %v empty", u.Path)
+				}
+				if !strings.HasSuffix(u.Path, ".flv") && !strings.HasSuffix(u.Path, ".m3u8") && !strings.HasSuffix(u.Path, ".ts") {
+					return errors.Errorf("invalid url path suffix %v", u.Path)
+				}
+			}
+			targetUUID := uuid.NewString()
+			ohttp.WriteData(ctx, w, r, &struct {
+				Name string `json:"name"`
+				UUID string `json:"uuid"`
+				Target string `json:"target"`
+			}{
+				 Name: path.Base(u.Path),
+				 UUID: targetUUID,
+				 Target: qUrl,
+			})
+			logger.Tf(ctx, "vLive stream url ok, url=%v, uuid=%v", qUrl, targetUUID)
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
 	ep = "/terraform/v1/ffmpeg/vlive/server/"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
@@ -355,6 +395,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				Size   int64  `json:"size"`
 				UUID   string `json:"uuid"`
 				Target string `json:"target"`
+				Type  SrsVLiveSourceType `json:"type"`
 			}
 
 			var token, platform string
@@ -381,7 +422,9 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			// Always cleanup the files in upload.
 			var tempFiles []string
 			for _, f := range files {
-				tempFiles = append(tempFiles, f.Target)
+				if f.Type != SrsVLiveSourceTypeStream {
+					tempFiles = append(tempFiles, f.Target)
+				}
 			}
 			defer func() {
 				for _, tempFile := range tempFiles {
@@ -397,11 +440,13 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				if f.Target == "" {
 					return errors.New("no target")
 				}
-				if _, err := os.Stat(f.Target); err != nil {
-					return errors.Wrapf(err, "no file %v", f.Target)
-				}
-				if !strings.HasPrefix(f.Target, dirUploadPath) {
-					return errors.Errorf("invalid target %v", f.Target)
+				if f.Type != SrsVLiveSourceTypeStream {
+					if _, err := os.Stat(f.Target); err != nil {
+						return errors.Wrapf(err, "no file %v", f.Target)
+					}
+					if !strings.HasPrefix(f.Target, dirUploadPath) {
+						return errors.Errorf("invalid target %v", f.Target)
+					}
 				}
 			}
 
@@ -420,7 +465,9 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			// Parse file information and move file from dirUploadPath to dirVLivePath.
 			for _, file := range files {
 				// Probe file information.
-				stdout, err := exec.CommandContext(ctx, "ffprobe",
+				toCtx, toCancelFunc := context.WithTimeout(ctx, 15*time.Second)
+				defer toCancelFunc()
+				stdout, err := exec.CommandContext(toCtx, "ffprobe",
 					"-show_error", "-show_private_data", "-v", "quiet", "-find_stream_info", "-print_format", "json",
 					"-show_format", "-show_streams", file.Target,
 				).Output()
@@ -467,11 +514,15 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 
 				parsedFile := &VLiveSourceFile{
 					Name: file.Name, Size: uint64(file.Size), UUID: file.UUID,
-					Target: path.Join(dirVLivePath, fmt.Sprintf("%v%v", file.UUID, path.Ext(file.Target))),
+					Target: file.Target,
+					Type: file.Type,
 					Format: &format.Format, Video: matchVideo, Audio: matchAudio,
 				}
-				if err = os.Rename(file.Target, parsedFile.Target); err != nil {
-					return errors.Wrapf(err, "rename %v to %v", file.Target, parsedFile.Target)
+				if file.Type != SrsVLiveSourceTypeStream {
+					parsedFile.Target = path.Join(dirVLivePath, fmt.Sprintf("%v%v", file.UUID, path.Ext(file.Target)))
+					if err = os.Rename(file.Target, parsedFile.Target); err != nil {
+						return errors.Wrapf(err, "rename %v to %v", file.Target, parsedFile.Target)
+					}
 				}
 
 				parsedFiles = append(parsedFiles, parsedFile)
@@ -490,8 +541,10 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 
 			// Remove old files.
 			for _, f := range confObj.Files {
-				if _, err := os.Stat(f.Target); err == nil {
-					os.Remove(f.Target)
+				if f.Type != SrsVLiveSourceTypeStream {
+					if _, err := os.Stat(f.Target); err == nil {
+						os.Remove(f.Target)
+					}
 				}
 			}
 			confObj.Files = parsedFiles
@@ -692,13 +745,14 @@ func (v *VLiveFileAudio) String() string {
 }
 
 type VLiveSourceFile struct {
-	Name   string           `json:"name"`
-	Size   uint64           `json:"size"`
-	UUID   string           `json:"uuid"`
-	Target string           `json:"target"`
-	Format *VLiveFileFormat `json:"format"`
-	Video  *VLiveFileVideo  `json:"video"`
-	Audio  *VLiveFileAudio  `json:"audio"`
+	Name   string             `json:"name"`
+	Size   uint64             `json:"size"`
+	UUID   string             `json:"uuid"`
+	Target string             `json:"target"`
+	Type   SrsVLiveSourceType `json:"type"`
+	Format *VLiveFileFormat   `json:"format"`
+	Video  *VLiveFileVideo    `json:"video"`
+	Audio  *VLiveFileAudio    `json:"audio"`
 }
 
 func (v *VLiveSourceFile) String() string {
@@ -936,9 +990,11 @@ func (v *VLiveTask) doVLive(ctx context.Context, input *VLiveSourceFile) error {
 	outputURL := fmt.Sprintf("%v%v", outputServer, v.config.Secret)
 
 	// Start FFmpeg process.
-	args := []string{
-		"-stream_loop", "-1", "-re", "-i", input.Target, "-c", "copy", "-f", "flv", outputURL,
+	args := []string{}
+	if input.Type != SrsVLiveSourceTypeStream {
+		args = append(args, "-stream_loop", "-1")
 	}
+	args = append(args, "-re", "-i", input.Target, "-c", "copy", "-f", "flv", outputURL)
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
 	stderr, err := cmd.StderrPipe()

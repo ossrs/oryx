@@ -207,7 +207,7 @@
         "submit": "提交",
         "setOk": "设置成功",
         "upload": "上传文件",
-        "changeFiles": "更换文件"
+        "changeFiles": "更换文件/流"
       }
     }
   },
@@ -419,7 +419,7 @@
         "submit": "Submit",
         "setOk": "Setup OK",
         "upload": "Upload File",
-        "changeFiles": "Change File"
+        "changeFiles": "Change File/Stream"
       }
     }
   }
