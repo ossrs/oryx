@@ -71,7 +71,7 @@ cp ${SOURCE}/platform/containers/conf/nginx.conf ${SRS_HOME}/platform/containers
 if [[ $? -ne 0 ]]; then echo "Copy srs-stack failed"; exit 1; fi
 
 echo "Start to update bootstrap"
-sed -i "s|^IMAGE=.*|IMAGE=${IMAGE_URL}|g" ${SRS_HOME}/mgmt/bootstrap
+sed -i '' "s|^IMAGE=.*|IMAGE=${IMAGE_URL}|g" ${SRS_HOME}/mgmt/bootstrap
 if [[ $? -ne 0 ]]; then echo "Update bootstrap failed"; exit 1; fi
 echo "Update bootstrap ok"
 
