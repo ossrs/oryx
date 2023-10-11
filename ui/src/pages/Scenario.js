@@ -27,7 +27,7 @@ export default function Scenario() {
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'tutorials';
-    console.log(`?tab=tutorials|live|rgroup|vgroup|ogroup, current=${tab}, Select the tab to render`);
+    console.log(`?tab=tutorials|live|record|vlive|others, current=${tab}, Select the tab to render`);
     setDefaultActiveTab(tab);
   }, [searchParams, language]);
 
@@ -93,17 +93,17 @@ function ScenarioImpl({defaultActiveTab}) {
           <Tab eventKey="forward" title={t('scenario.forward')}>
             {activeTab === 'forward' && <ScenarioForward/>}
           </Tab>
-          <Tab eventKey="rgroup" title={t('scenario.rgroup')}>
-            {activeTab === 'rgroup' && <ScenarioRecord/>}
+          <Tab eventKey="record" title={t('scenario.record')}>
+            {activeTab === 'record' && <ScenarioRecord/>}
           </Tab>
-          <Tab eventKey="vgroup" title={t('scenario.vgroup')}>
-            {activeTab === 'vgroup' && <ScenarioVLive/>}
+          <Tab eventKey="vlive" title={t('scenario.vlive')}>
+            {activeTab === 'vlive' && <ScenarioVLive/>}
           </Tab>
           <Tab eventKey="transcode" title={t('scenario.transcode')}>
             {activeTab === 'transcode' && <ScenarioTranscode/>}
           </Tab>
-          <Tab eventKey="ogroup" title={t('scenario.ogroup')}>
-            {activeTab === 'ogroup' && <ScenarioVxOthers/>}
+          <Tab eventKey="others" title={t('scenario.others')}>
+            {activeTab === 'others' && <ScenarioVxOthers/>}
           </Tab>
         </Tabs>
       </Container>

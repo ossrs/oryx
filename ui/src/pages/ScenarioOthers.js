@@ -61,7 +61,7 @@ export function ScenarioVxOthers() {
   }, [searchParams, language, setActiveChildTab]);
 
   const onSelectChildTab = React.useCallback((k) => {
-    setSearchParams({...searchParams, 'tab': 'ogroup', 'ctab': k});
+    setSearchParams({...searchParams, 'tab': 'others', 'ctab': k});
     setActiveChildTab(k);
   }, [searchParams, setSearchParams, setActiveChildTab]);
 
