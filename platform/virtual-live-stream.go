@@ -1031,7 +1031,12 @@ func (v *VLiveTask) doVLive(ctx context.Context, input *VLiveSourceFile) error {
 	if input.Type != SrsVLiveSourceTypeStream {
 		args = append(args, "-stream_loop", "-1")
 	}
-	args = append(args, "-re", "-i", input.Target, "-c", "copy", "-f", "flv", outputURL)
+	args = append(args, "-re")
+	// For RTSP stream source, always use TCP transport.
+	if strings.HasPrefix(input.Target, "rtsp://") {
+		args = append(args, "-rtsp_transport", "tcp")
+	}
+	args = append(args, "-i", input.Target, "-c", "copy", "-f", "flv", outputURL)
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
 	stderr, err := cmd.StderrPipe()
