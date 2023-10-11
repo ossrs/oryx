@@ -452,6 +452,21 @@ ssh ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -end
     -test.parallel 3
 ```
 
+Test the HTTPS, create a domain `lighthouse.ossrs.net`:
+
+```bash
+# Create the test domain for lighthouse
+doctl compute domain records create ossrs.net \
+    --record-type A --record-name lighthouse --record-data $(cat /tmp/lh-ip2.txt) \
+    --record-ttl 3600 &&
+echo "https://lighthouse.ossrs.net"
+
+# Remove the test domain for lighthouse
+doctl compute domain records delete ossrs.net -f \
+    $(doctl compute domain records list ossrs.net --no-header |grep lighthouse |awk '{print $1}') &&
+echo "Record lighthouse.ossrs.net removed"
+```
+
 Verify then cleanup the test CVM instance:
 
 ```bash

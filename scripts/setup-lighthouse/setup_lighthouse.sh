@@ -144,6 +144,18 @@ systemctl daemon-reload && systemctl enable srs-stack
 if [[ $? -ne 0 ]]; then echo "Install srs-stack failed"; exit 1; fi
 
 ########################################################################################################################
+# Create srs-cloud soft link, to keep compatible with lighthouse HTTPS management.
+(cd /usr/local/lighthouse/softwares && rm -rf srs-cloud && ln -sf srs-stack srs-cloud) &&
+mkdir -p /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/conf/default.d &&
+cat << END > /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/conf/default.d/proxy.conf
+  location / {
+    proxy_pass http://127.0.0.1:2022;
+    proxy_set_header Host \$host;
+  }
+END
+if [[ $? -ne 0 ]]; then echo "Compatible lighthouse HTTPS failed"; exit 1; fi
+
+########################################################################################################################
 # Note that we keep files as root, because we run srs-stack as root, see https://stackoverflow.com/a/70953525/17679565
 chown lighthouse:lighthouse ${DATA_HOME}/config/.env
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
