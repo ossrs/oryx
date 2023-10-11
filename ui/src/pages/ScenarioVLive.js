@@ -645,7 +645,7 @@ function ChooseVideoSourceCn({platform, vLiveFiles, setVLiveFiles}) {
   React.useEffect(() => {
     if (vLiveFiles?.length) {
       const type = vLiveFiles[0].type;
-      if (type === 'upload' || type === 'server' || type === 'stream') {
+      if (type === 'upload' || type === 'file' || type === 'stream') {
         setCheckType(type);
       }
     }
@@ -665,12 +665,12 @@ function ChooseVideoSourceCn({platform, vLiveFiles, setVLiveFiles}) {
     </Form.Group>
     <Form.Group className="mb-3">
       <InputGroup>
-        <Form.Check type="radio" label="指定服务器文件" id={'server-' + platform} checked={checkType === 'server'}
-                    name={'chooseSource' + platform} onChange={e => setCheckType('server')}
+        <Form.Check type="radio" label="指定服务器文件" id={'server-' + platform} checked={checkType === 'file'}
+                    name={'chooseSource' + platform} onChange={e => setCheckType('file')}
         /> &nbsp;
         <Form.Text> * 文件必须在 /data 目录下面</Form.Text>
       </InputGroup>
-      {checkType === 'server' &&
+      {checkType === 'file' &&
       <SrsErrorBoundary>
         <VLiveFileSelectorCn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
       </SrsErrorBoundary>
@@ -697,7 +697,7 @@ function ChooseVideoSourceEn({platform, vLiveFiles, setVLiveFiles}) {
   React.useEffect(() => {
     if (vLiveFiles?.length) {
       const type = vLiveFiles[0].type;
-      if (type === 'upload' || type === 'server' || type === 'stream') {
+      if (type === 'upload' || type === 'file' || type === 'stream') {
         setCheckType(type);
       }
     }
@@ -717,12 +717,12 @@ function ChooseVideoSourceEn({platform, vLiveFiles, setVLiveFiles}) {
     </Form.Group>
     <Form.Group className="mb-3">
       <InputGroup>
-        <Form.Check type="radio" label="Use server file" id={'server-' + platform} checked={checkType === 'server'}
-                    name={'chooseSource' + platform} onChange={e => setCheckType('server')}
+        <Form.Check type="radio" label="Use server file" id={'server-' + platform} checked={checkType === 'file'}
+                    name={'chooseSource' + platform} onChange={e => setCheckType('file')}
         /> &nbsp;
         <Form.Text> * The file must be in the /data directory.</Form.Text>
       </InputGroup>
-      {checkType === 'server' &&
+      {checkType === 'file' &&
         <SrsErrorBoundary>
           <VLiveFileSelectorEn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
         </SrsErrorBoundary>
@@ -832,7 +832,7 @@ function VLiveFileSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
   
   const CheckLocalFile = function() {
     if (!inputFile) return alert('请输入文件路径');
-    if (!inputFile.startsWith('/data') && !inputFile.startsWith('upload/')) return alert('文件必须在 /data 目录下');
+    if (!inputFile.startsWith('/data') && !inputFile.startsWith('upload/') && !inputFile.startsWith('./upload/')) return alert('文件必须在 /data 目录下');
 
     const fileExtension = inputFile.slice(inputFile.lastIndexOf('.'));
     if (!['.mp4', '.flv', '.ts'].includes(fileExtension)) return alert('文件必须是 mp4/flv/ts 格式');
@@ -874,7 +874,7 @@ function VLiveFileSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
 
   const CheckLocalFile = function() {
     if (!inputFile) return alert('Please input file path');
-    if (!inputFile.startsWith('/data') && !inputFile.startsWith('upload/')) return alert('The file must be in the /data directory.');
+    if (!inputFile.startsWith('/data') && !inputFile.startsWith('upload/') && !inputFile.startsWith('./upload/')) return alert('The file must be in the /data directory.');
 
     const fileExtension = inputFile.slice(inputFile.lastIndexOf('.'));
     if (!['.mp4', '.flv', '.ts'].includes(fileExtension)) return alert('The file must be in mp4/flv/ts format.');

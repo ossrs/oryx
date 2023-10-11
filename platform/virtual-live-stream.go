@@ -217,7 +217,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 		}
 	})
 
-	ep = "/terraform/v1/ffmpeg/vlive/streamUrl/"
+	ep = "/terraform/v1/ffmpeg/vlive/streamUrl"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -259,7 +259,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 		}
 	})
 
-	ep = "/terraform/v1/ffmpeg/vlive/server/"
+	ep = "/terraform/v1/ffmpeg/vlive/server"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
