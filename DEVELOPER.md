@@ -379,7 +379,7 @@ doctl compute snapshot delete $IMAGE --context market --force
 
 To build SRS image for [TencentCloud Lighthouse](https://cloud.tencent.com/product/lighthouse).
 
-For the first run, please create a [TencentCloud Secret](https://console.cloud.tencent.com/cam/capi) and save 
+For the first run, please create a [TencentCloud Secret](https://console.cloud.tencent.com/cam/capi) and save
 to `~/.lighthouse/.env` file:
 
 ```bash
@@ -458,7 +458,7 @@ Test the HTTPS, create a domain `lighthouse.ossrs.net`:
 # Create the test domain for lighthouse
 doctl compute domain records create ossrs.net \
     --record-type A --record-name lighthouse --record-data $(cat /tmp/lh-ip2.txt) \
-    --record-ttl 3600 &&
+    --record-ttl 300 &&
 echo "https://lighthouse.ossrs.net"
 
 # Remove the test domain for lighthouse
