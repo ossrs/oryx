@@ -3,7 +3,7 @@
     "do_token": "{{env `DIGITALOCEAN_TOKEN`}}",
     "image_name": "srs-5-snapshot-{{timestamp}}",
     "application_name": "SRS",
-    "application_version": "5.10.2"
+    "application_version": "5.10.7"
   },
   "sensitive-variables": ["do_token"],
   "builders": [
