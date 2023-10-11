@@ -395,7 +395,7 @@ Create a CVM instance:
 
 ```bash
 rm -f /tmp/lh-*.txt &&
-echo $(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 16) >/tmp/lh-token.txt &&
+echo "$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 16)A0" >/tmp/lh-token.txt &&
 VM_TOKEN=$(cat /tmp/lh-token.txt) bash scripts/tools/tencent-cloud/helper.sh create-cvm.py --id /tmp/lh-instance.txt
 bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat /tmp/lh-instance.txt) --id /tmp/lh-ip.txt &&
 echo "Instance: $(cat /tmp/lh-instance.txt), IP: ubuntu@$(cat /tmp/lh-ip.txt), Password: $(cat /tmp/lh-token.txt)" && sleep 5 &&
@@ -409,7 +409,7 @@ bash scripts/tools/tencent-cloud/helper.sh remove-cvm.py --instance $(cat /tmp/l
 Next, create a test CVM instance with the image:
 
 ```bash
-echo $(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 16) >/tmp/lh-token2.txt &&
+echo "$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 16)A0" >/tmp/lh-token2.txt &&
 VM_TOKEN=$(cat /tmp/lh-token2.txt) bash scripts/tools/tencent-cloud/helper.sh create-verify.py --image $(cat /tmp/lh-image.txt) --id /tmp/lh-test.txt &&
 bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat /tmp/lh-test.txt) --id /tmp/lh-ip2.txt && 
 echo "IP: ubuntu@$(cat /tmp/lh-ip2.txt), Password: $(cat /tmp/lh-token2.txt)" &&
@@ -452,7 +452,19 @@ ssh ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -end
     -test.parallel 3
 ```
 
-Test the HTTPS, create a domain `lighthouse.ossrs.net`:
+Verify then cleanup the test CVM instance:
+
+```bash
+bash scripts/tools/tencent-cloud/helper.sh remove-cvm.py --instance $(cat /tmp/lh-test.txt)
+```
+
+After publish to lighthouse, cleanup the CVM, disk images, and snapshots:
+
+```bash
+bash scripts/tools/tencent-cloud/helper.sh remove-image.py --image $(cat /tmp/lh-image.txt)
+```
+
+If need to test the domain of lighthouse, create a domain `lighthouse.ossrs.net`:
 
 ```bash
 # Create the test domain for lighthouse
@@ -465,18 +477,6 @@ echo "https://lighthouse.ossrs.net"
 doctl compute domain records delete ossrs.net -f \
     $(doctl compute domain records list ossrs.net --no-header |grep lighthouse |awk '{print $1}') &&
 echo "Record lighthouse.ossrs.net removed"
-```
-
-Verify then cleanup the test CVM instance:
-
-```bash
-bash scripts/tools/tencent-cloud/helper.sh remove-cvm.py --instance $(cat /tmp/lh-test.txt)
-```
-
-After publish to lighthouse, cleanup the CVM, disk images, and snapshots:
-
-```bash
-bash scripts/tools/tencent-cloud/helper.sh remove-image.py --image $(cat /tmp/lh-image.txt)
 ```
 
 ## Develop the SSL Cert for HTTPS 
