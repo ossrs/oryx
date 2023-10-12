@@ -77,11 +77,27 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		params["forward"] = fmt.Sprintf("%v", r0)
 	}
 
-	// Report about FFmpeg virtual live from file source.
+	// Report about FFmpeg virtual live from file or other source.
 	if r0, err := rdb.HLen(ctx, SRS_VLIVE_TASK).Result(); err != nil && err != redis.Nil {
 		return nil, errors.Wrapf(err, "hlen %v", SRS_VLIVE_TASK)
 	} else if r0 > 0 {
 		params["vfile"] = fmt.Sprintf("%v", r0)
+	}
+	if configs, err := rdb.HGetAll(ctx, SRS_VLIVE_CONFIG).Result(); err == nil {
+		for _, v := range configs {
+			var obj VLiveConfigure
+			if err = json.Unmarshal([]byte(v), &obj); err == nil {
+				for _, vFile := range obj.Files {
+					if vFile.Type == SrsVLiveSourceTypeFile {
+						params["vft0"] = "1"
+					} else if vFile.Type == SrsVLiveSourceTypeUpload {
+						params["vft1"] = "1"
+					} else if vFile.Type == SrsVLiveSourceTypeStream {
+						params["vft2"] = "1"
+					}
+				}
+			}
+		}
 	}
 
 	// Report about active streams.
