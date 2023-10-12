@@ -144,7 +144,10 @@ systemctl daemon-reload && systemctl enable srs-stack
 if [[ $? -ne 0 ]]; then echo "Install srs-stack failed"; exit 1; fi
 
 ########################################################################################################################
-# Create srs-cloud soft link, to keep compatible with lighthouse HTTPS management.
+# Create srs-cloud soft link, to keep compatible with lighthouse HTTPS management. If user user lighthouse to
+# setup the HTTPS and domain, the lighthouse will create a file like /etc/nginx/init.d/yourdomain.conf, which
+# includes the file /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/conf/default.d/proxy.conf, which
+# finally proxy to srs-stack.
 (cd /usr/local/lighthouse/softwares && rm -rf srs-cloud && ln -sf srs-stack srs-cloud) &&
 mkdir -p /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/conf/default.d &&
 cat << END > /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/conf/default.d/proxy.conf
