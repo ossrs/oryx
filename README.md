@@ -86,6 +86,7 @@ your own high-quality streaming and RTC platforms to support your businesses.
 - [x] Support aaPanel to install on any linux: [Blog](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-aapanel-9748ae754c8c), [EN](https://ossrs.io/lts/en-us/blog/BT-aaPanel), [CN](https://ossrs.net/lts/zh-cn/blog/BT-aaPanel).
 - [x] Support DVR to local disk: [Blog](https://blog.ossrs.io/how-to-record-live-streaming-to-mp4-file-2aa792c35b25), [EN](https://ossrs.io/lts/en-us/blog/Record-Live-Streaming), [CN](https://mp.weixin.qq.com/s/axN_TPo-Gk_H7CbdqUud6g).
 - [x] Support Virtual Live Streaming: [CN](https://mp.weixin.qq.com/s/I0Kmxtc24txpngO-PiR_tQ).
+- [x] Support Stream IP Camera: [Blog](https://blog.ossrs.io/easily-stream-your-rtsp-ip-camera-to-youtube-twitch-or-facebook-c078db917149), [EN](http://ossrs.io/lts/en-us/blog/Stream-IP-Camera-Events), [CN](https://ossrs.net/lts/zh-cn/blog/Stream-IP-Camera-Events).
 - [x] Support build small [HLS deliver CDN](https://github.com/ossrs/srs-stack/tree/main/scripts/nginx-hls-cdn) by Nginx.
 - [x] Support Live Streaming: [CN](https://mp.weixin.qq.com/s/AKqVWIdk3SBD-6uiTMliyA).
 - [x] Support Realtime SRT Streaming: [CN](https://mp.weixin.qq.com/s/HQb3gLRyJHHu56pnyHerxA).
@@ -117,6 +118,7 @@ The features that we're developing:
 - [x] Support self-host HLS CDN, to serve 10k+ viewers.
 - [x] Support Typecho Plugin: Typecho-Plugin-SrsPlayer.
 - [x] Support DVR to TencentCloud storage.
+- [x] Support pull RTSP from IP Camera and stream to YouTube/Twitch/Facebook.
 - [ ] Support limit the streaming duration to limit the fee.
 - [ ] Support GB28181 by SRS 5.0 container.
 - [ ] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
