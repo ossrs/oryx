@@ -92,6 +92,18 @@ docker run --rm -d ossrs/srs:sb ./objs/sb_hls_load \
     -c 500 -r http://128.199.93.163/live/livestream.m3u8
 ```
 
+Since each load test can only support simulating less than 500 clients, if you want to simulate more clients, 
+like 1500 clients, please run three load tests:
+
+```bash
+docker run --rm -d ossrs/srs:sb ./objs/sb_hls_load \
+    -c 500 -r http://128.199.93.163/live/livestream.m3u8
+docker run --rm -d ossrs/srs:sb ./objs/sb_hls_load \
+    -c 500 -r http://128.199.93.163/live/livestream.m3u8
+docker run --rm -d ossrs/srs:sb ./objs/sb_hls_load \
+    -c 500 -r http://128.199.93.163/live/livestream.m3u8
+```
+
 Check the bandwidth by dstat:
 
 ```bash
