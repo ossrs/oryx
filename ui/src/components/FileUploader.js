@@ -102,7 +102,7 @@ export default function FileUploader({onFilesUploaded}) {
   return (<>
     <Row>
       <Col xs='auto'>
-        <Form.Control type="file" accept={accept} multiple={multiple} disabled={uploading} onChange={onUploadFile}/>
+        <FilePicker {...{accept, multiple, disabled: uploading, onChange: onUploadFile}} />
       </Col>
       <Col xs='auto'>
         <Button variant="primary" type="button" disabled={uploading || !filesToUpload?.length}
@@ -111,6 +111,44 @@ export default function FileUploader({onFilesUploaded}) {
     </Row>
     <UploadingFiles filesUploading={filesUploading} filesToUpload={filesToUpload} />
   </>);
+}
+
+function FilePicker({accept, multiple, disabled, onChange}) {
+  const {t} = useTranslation();
+  const [filesToUpload, setFilesToUpload] = React.useState([]);
+  const [hover, setHover] = React.useState(false);
+
+  const onUploadFile = React.useCallback((e) => {
+    const files = [];
+    for (const file of e.target.files) files.push(file);
+    setFilesToUpload(files);
+    onChange && onChange(e);
+  }, [setFilesToUpload, onChange]);
+
+  const filePickerId = `file-picker-${Math.random().toString(16).slice(-6)}`;
+  return <>
+    <label htmlFor={filePickerId} style={{
+      cursor: 'pointer',
+      padding: '7px 12px 7px 12px',
+      backgroundColor: hover ? '#d9d9d9' : '#e9e9e9',
+      borderBottomLeftRadius: '5px',
+      borderTopLeftRadius: '5px'
+    }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      {t('fp.label')}
+    </label>
+    <label htmlFor={filePickerId} style={{
+      cursor: 'pointer',
+      padding: '6px 130px 6px 10px',
+      backgroundColor: '#fefefe',
+      border: '1px solid #e0e0e0',
+      borderBottomRightRadius: '5px',
+      borderTopRightRadius: '5px'
+    }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      {filesToUpload?.length ? filesToUpload.map(f => f.name).join(', ') : t('fp.nofile')}
+    </label>
+    <Form.Control style={{display: 'none'}} id={filePickerId} type="file" accept={accept}
+                  multiple={multiple} disabled={disabled} onChange={onUploadFile}/>
+  </>;
 }
 
 function UploadingFiles({filesUploading, filesToUpload}) {

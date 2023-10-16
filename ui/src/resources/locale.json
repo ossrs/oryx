@@ -192,6 +192,10 @@
         "redis1": "正在启动Redis中，请等会儿再刷新页面试试",
         "noNginx": "纯Docker启动时，不支持Nginx分发"
       },
+      "fp": {
+        "label": "选择文件",
+        "nofile": "未选择任何文件"
+      },
       "helper": {
         "changeStream": "更换流名称成功",
         "copyOk": "已经复制到剪切板",
@@ -402,6 +406,10 @@
         "btHttps1": "Please use aaPanel or certbot to configure HTTPS",
         "redis1": "Redis is not ready now, please retry later",
         "noNginx": "No nginx support for docker"
+      },
+      "fp": {
+        "label": "Choose File",
+        "nofile": "No file choosen"
       },
       "helper": {
         "changeStream": "Stream name changed",
