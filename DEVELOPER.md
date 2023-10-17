@@ -19,6 +19,7 @@ docker run --name srs --rm -it \
     -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
     -v $(pwd)/platform/containers/objs/nginx:/usr/local/srs/objs/nginx \
     -p 1935:1935 -p 1985:1985 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
+    --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
     -d ossrs/srs:5
 ```
 
@@ -68,6 +69,7 @@ Create a docker container in daemon:
 docker rm -f script 2>/dev/null &&
 docker run -p 2022:2022 -p 2443:2443 -p 1935:1935 \
     -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
+    --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
     -d --rm -it -v $(pwd):/g -w /g --name=script srs-script-dev
 ```
@@ -131,6 +133,7 @@ docker rm -f bt aapanel 2>/dev/null &&
 AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3) &&
 docker run -p 80:80 -p 443:443 -p 7800:7800 \
     -p 1935:1935 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
+    --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
     -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
@@ -216,6 +219,7 @@ docker rm -f bt aapanel 2>/dev/null &&
 BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3) &&
 docker run -p 80:80 -p 443:443 -p 7800:7800 \
     -p 1935:1935 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
+    --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
     -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
     -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
@@ -394,42 +398,42 @@ SECRET_KEY=xxxxxx
 Create a CVM instance:
 
 ```bash
-rm -f /tmp/lh-*.txt &&
-echo "$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 16)A0" >/tmp/lh-token.txt &&
-VM_TOKEN=$(cat /tmp/lh-token.txt) bash scripts/tools/tencent-cloud/helper.sh create-cvm.py --id /tmp/lh-instance.txt
-bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat /tmp/lh-instance.txt) --id /tmp/lh-ip.txt &&
-echo "Instance: $(cat /tmp/lh-instance.txt), IP: ubuntu@$(cat /tmp/lh-ip.txt), Password: $(cat /tmp/lh-token.txt)" && sleep 5 &&
-bash scripts/setup-lighthouse/build.sh --ip $(cat /tmp/lh-ip.txt) --os ubuntu --user ubuntu --password $(cat /tmp/lh-token.txt) &&
-bash scripts/tools/tencent-cloud/helper.sh create-image.py --instance $(cat /tmp/lh-instance.txt) --id /tmp/lh-image.txt &&
-bash scripts/tools/tencent-cloud/helper.sh share-image.py --image $(cat /tmp/lh-image.txt) &&
-echo "Image: $(cat /tmp/lh-image.txt) created and shared." &&
-bash scripts/tools/tencent-cloud/helper.sh remove-cvm.py --instance $(cat /tmp/lh-instance.txt)
+rm -f .tmp/lh-*.txt &&
+echo "$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 16)A0" >.tmp/lh-token.txt &&
+VM_TOKEN=$(cat .tmp/lh-token.txt) bash scripts/tools/tencent-cloud/helper.sh create-cvm.py --id .tmp/lh-instance.txt
+bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat .tmp/lh-instance.txt) --id .tmp/lh-ip.txt &&
+echo "Instance: $(cat .tmp/lh-instance.txt), IP: ubuntu@$(cat .tmp/lh-ip.txt), Password: $(cat .tmp/lh-token.txt)" && sleep 5 &&
+bash scripts/setup-lighthouse/build.sh --ip $(cat .tmp/lh-ip.txt) --os ubuntu --user ubuntu --password $(cat .tmp/lh-token.txt) &&
+bash scripts/tools/tencent-cloud/helper.sh create-image.py --instance $(cat .tmp/lh-instance.txt) --id .tmp/lh-image.txt &&
+bash scripts/tools/tencent-cloud/helper.sh share-image.py --image $(cat .tmp/lh-image.txt) &&
+echo "Image: $(cat .tmp/lh-image.txt) created and shared." &&
+bash scripts/tools/tencent-cloud/helper.sh remove-cvm.py --instance $(cat .tmp/lh-instance.txt)
 ```
 
 Next, create a test CVM instance with the image:
 
 ```bash
-echo "$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 16)A0" >/tmp/lh-token2.txt &&
-VM_TOKEN=$(cat /tmp/lh-token2.txt) bash scripts/tools/tencent-cloud/helper.sh create-verify.py --image $(cat /tmp/lh-image.txt) --id /tmp/lh-test.txt &&
-bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat /tmp/lh-test.txt) --id /tmp/lh-ip2.txt && 
-echo "IP: ubuntu@$(cat /tmp/lh-ip2.txt), Password: $(cat /tmp/lh-token2.txt)" &&
-echo "http://$(cat /tmp/lh-ip2.txt)"
+echo "$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 16)A0" >.tmp/lh-token2.txt &&
+VM_TOKEN=$(cat .tmp/lh-token2.txt) bash scripts/tools/tencent-cloud/helper.sh create-verify.py --image $(cat .tmp/lh-image.txt) --id .tmp/lh-test.txt &&
+bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat .tmp/lh-test.txt) --id .tmp/lh-ip2.txt && 
+echo "IP: ubuntu@$(cat .tmp/lh-ip2.txt), Password: $(cat .tmp/lh-token2.txt)" &&
+echo "http://$(cat .tmp/lh-ip2.txt)"
 ```
 
 Prepare test environment:
 
 ```bash
-sshCmd="sshpass -p $(cat /tmp/lh-token2.txt) ssh -o StrictHostKeyChecking=no -t" &&
-scpCmd="sshpass -p $(cat /tmp/lh-token2.txt) scp -o StrictHostKeyChecking=no" &&
-$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) sudo mkdir -p /data/upload &&
-$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) mkdir -p test scripts/tools &&
-$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) sudo chmod 777 /data/upload &&
+sshCmd="sshpass -p $(cat .tmp/lh-token2.txt) ssh -o StrictHostKeyChecking=no -t" &&
+scpCmd="sshpass -p $(cat .tmp/lh-token2.txt) scp -o StrictHostKeyChecking=no" &&
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo mkdir -p /data/upload &&
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) mkdir -p test scripts/tools &&
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo chmod 777 /data/upload &&
 cp ~/git/srs/trunk/doc/source.200kbps.768x320.flv test/ &&
-$scpCmd test/source.200kbps.768x320.flv ubuntu@$(cat /tmp/lh-ip2.txt):/data/upload/ &&
+$scpCmd test/source.200kbps.768x320.flv ubuntu@$(cat .tmp/lh-ip2.txt):/data/upload/ &&
 docker run --rm -it -v $(pwd):/g -w /g ossrs/srs:ubuntu20 make -C test clean default &&
-$scpCmd ./test/srs-stack.test ./test/source.200kbps.768x320.flv ubuntu@$(cat /tmp/lh-ip2.txt):~/test/ &&
-$scpCmd ./scripts/tools/secret.sh ubuntu@$(cat /tmp/lh-ip2.txt):~/scripts/tools &&
-$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) sudo docker run --rm -v /usr/bin:/g \
+$scpCmd ./test/srs-stack.test ./test/source.200kbps.768x320.flv ubuntu@$(cat .tmp/lh-ip2.txt):~/test/ &&
+$scpCmd ./scripts/tools/secret.sh ubuntu@$(cat .tmp/lh-ip2.txt):~/scripts/tools &&
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo docker run --rm -v /usr/bin:/g \
     registry.cn-hangzhou.aliyuncs.com/ossrs/srs:tools \
     cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
 ```
@@ -437,17 +441,17 @@ $sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) sudo docker run --rm -v /usr/bin:/g \
 Test the CVM instance:
 
 ```bash
-$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
-$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -endpoint http://$(cat /tmp/lh-ip2.txt):2022 \
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestApi_Empty &&
-$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
-$sshCmd ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -endpoint http://$(cat /tmp/lh-ip2.txt):2022 \
-    -endpoint-rtmp rtmp://$(cat /tmp/lh-ip2.txt) -endpoint-http http://$(cat /tmp/lh-ip2.txt) -endpoint-srt srt://$(cat /tmp/lh-ip2.txt):10080 \
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
+    -endpoint-rtmp rtmp://$(cat .tmp/lh-ip2.txt) -endpoint-http http://$(cat .tmp/lh-ip2.txt) -endpoint-srt srt://$(cat .tmp/lh-ip2.txt):10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-ssh ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -endpoint https://$(cat /tmp/lh-ip2.txt):2443 \
-    -endpoint-rtmp rtmp://$(cat /tmp/lh-ip2.txt) -endpoint-http https://$(cat /tmp/lh-ip2.txt) -endpoint-srt srt://$(cat /tmp/lh-ip2.txt):10080 \
+ssh ubuntu@$(cat .tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -endpoint https://$(cat .tmp/lh-ip2.txt):2443 \
+    -endpoint-rtmp rtmp://$(cat .tmp/lh-ip2.txt) -endpoint-http https://$(cat .tmp/lh-ip2.txt) -endpoint-srt srt://$(cat .tmp/lh-ip2.txt):10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
 ```
@@ -455,13 +459,13 @@ ssh ubuntu@$(cat /tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -end
 Verify then cleanup the test CVM instance:
 
 ```bash
-bash scripts/tools/tencent-cloud/helper.sh remove-cvm.py --instance $(cat /tmp/lh-test.txt)
+bash scripts/tools/tencent-cloud/helper.sh remove-cvm.py --instance $(cat .tmp/lh-test.txt)
 ```
 
 After publish to lighthouse, cleanup the CVM, disk images, and snapshots:
 
 ```bash
-bash scripts/tools/tencent-cloud/helper.sh remove-image.py --image $(cat /tmp/lh-image.txt)
+bash scripts/tools/tencent-cloud/helper.sh remove-image.py --image $(cat .tmp/lh-image.txt)
 ```
 
 If need to test the domain of lighthouse, create a domain `lighthouse.ossrs.net`:
@@ -469,7 +473,7 @@ If need to test the domain of lighthouse, create a domain `lighthouse.ossrs.net`
 ```bash
 # Create the test domain for lighthouse
 doctl compute domain records create ossrs.net \
-    --record-type A --record-name lighthouse --record-data $(cat /tmp/lh-ip2.txt) \
+    --record-type A --record-name lighthouse --record-data $(cat .tmp/lh-ip2.txt) \
     --record-ttl 300 &&
 echo "https://lighthouse.ossrs.net"
 
@@ -697,6 +701,7 @@ Run SRS Stack by docker:
 ```bash
 docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935 \
   -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
+    --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
   -v $HOME/data:/data srs-stack-env
 ```
 
