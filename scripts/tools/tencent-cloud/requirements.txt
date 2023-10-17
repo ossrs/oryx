@@ -4,4 +4,4 @@ idna==3.4
 python-dotenv==1.0.0
 requests==2.31.0
 tencentcloud-sdk-python==3.0.953
-urllib3==2.0.4
+urllib3==2.0.7
