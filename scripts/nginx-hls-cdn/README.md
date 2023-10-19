@@ -26,9 +26,9 @@ You will receive an internet IP address, for example, `128.199.114.145`. Log in 
 ```bash
 apt-get update -y && apt-get install -y docker.io curl net-tools ffmpeg pcp &&
 docker rm -f srs-stack || echo OK &&
-docker run --rm -p 2022:2022 -p 2443:2443 -p 1935:1935/tcp -p 1985:1985/tcp \
-  -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp --name srs-stack -d \
-  -v $HOME/data:/data ossrs/srs-stack:5
+docker run --rm --name srs-stack -d -v $HOME/data:/data \
+  -p 2022:2022 -p 2443:2443 -p 1935:1935/tcp -p 8000:8000/udp -p 10080:10080/udp \
+  ossrs/srs-stack:5
 ```
 
 After installation, you can access SRS Stack at [http://128.199.114.145:2022](http://128.199.114.145:2022).
@@ -69,9 +69,9 @@ You will receive an internet IP address, for example, `128.199.93.163`. Log in a
 ```bash
 apt-get update -y && apt-get install -y docker.io curl net-tools ffmpeg pcp &&
 docker rm -f srs-stack-nginx01 || echo OK &&
-docker run --rm -it -e SRS_STACK_SERVER=128.199.114.145:2022 \
-    -p 80:80 --name srs-stack-nginx01 -d \
-    ossrs/srs-stack:nginx-hls-cdn
+docker run --rm -it --name srs-stack-nginx01 -d \
+  -p 80:80 -e SRS_STACK_SERVER=128.199.114.145:2022 \
+  ossrs/srs-stack:nginx-hls-cdn
 ```
 
 > Note: Please replace the IP `128.199.114.145` with your SRS Stack.
