@@ -31,6 +31,11 @@ function useTutorialsEn(mediumRef) {
   const ref = React.useRef({tutorials:[]});
 
   const dict = React.useRef({
+    '39bd001af02d': {
+      author: 'Winlin Yang',
+      link: 'https://blog.ossrs.io/efficient-live-streaming-transcoding-for-reducing-bandwidth-and-saving-costs-39bd001af02d',
+      title: 'Efficient Live Streaming Transcoding for Reducing Bandwidth and Saving Costs'
+    },
     'c078db917149': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/easily-stream-your-rtsp-ip-camera-to-youtube-twitch-or-facebook-c078db917149',
