@@ -99,13 +99,13 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
     if (!vpreset || !['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow'].includes(vpreset)) return alert(`Invalid vpreset ${vpreset}, should be in [ultrafast, superfast, veryfast, faster, fast, medium, slow]`);
     if (!acodec || acodec !== 'aac') return alert(`Invalid acodec ${acodec}, should be aac`);
     if (achannels === undefined || achannels === null || achannels === '') return alert(`Invalid achannels ${achannels}, should not empty`);
-    if (![0, 1, 2].includes(parseInt(achannels))) return alert(`Invalid achannels ${achannels}, should be in [0, 1, 2]`);
+    if (![0, 1, 2].includes(achannels)) return alert(`Invalid achannels ${achannels}, should be in [0, 1, 2]`);
     if (!server) return alert(`Invalid server ${server}`);
     if (!secret) return alert(`Invalid key ${secret}`);
 
     const token = Token.load();
     axios.post('/terraform/v1/ffmpeg/transcode/apply', {
-      ...token, all: enabled, vcodec, acodec, vbitrate, abitrate, achannels: parseInt(achannels), vprofile, vpreset,
+      ...token, all: enabled, vcodec, acodec, vbitrate, abitrate, achannels: achannels, vprofile, vpreset,
       server, secret,
     }).then(res => {
       alert('设置转码规则成功');
@@ -169,12 +169,12 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
             <Form.Group className="mb-3">
               <Form.Label>{t('transcode.config.vbitrate')}</Form.Label>
               <Form.Text> * {t('transcode.config.vbitrate2')}</Form.Text>
-              <Form.Control as="input" defaultValue={vbitrate} onChange={(e) => setVbitrate(e.target.value)} />
+              <Form.Control as="input" defaultValue={vbitrate} onChange={(e) => setVbitrate(parseInt(e.target.value))} />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>{t('transcode.config.abitrate')}</Form.Label>
               <Form.Text> * {t('transcode.config.abitrate2')}</Form.Text>
-              <Form.Control as="input" defaultValue={abitrate} onChange={(e) => setAbitrate(e.target.value)} />
+              <Form.Control as="input" defaultValue={abitrate} onChange={(e) => setAbitrate(parseInt(e.target.value))} />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>{t('transcode.config.vcodec')}</Form.Label>
@@ -219,7 +219,7 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
             <Form.Group className="mb-3">
               <Form.Label>{t('transcode.config.achannel')}</Form.Label>
               <Form.Text> * {t('transcode.config.achannelN')}</Form.Text>
-              <Form.Select defaultValue={achannels} onChange={(e) => setAchannels(e.target.value)}>
+              <Form.Select defaultValue={achannels} onChange={(e) => setAchannels(parseInt(e.target.value))}>
                 <option value="">--{t('helper.noSelect')}--</option>
                 <option value="0">{t('transcode.config.achannel0')}</option>
                 <option value="1">{t('transcode.config.achannel1')}</option>
