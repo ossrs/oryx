@@ -1031,7 +1031,9 @@ func (v *VLiveTask) doVLive(ctx context.Context, input *VLiveSourceFile) error {
 	if input.Type != SrsVLiveSourceTypeStream {
 		args = append(args, "-stream_loop", "-1")
 	}
-	args = append(args, "-re")
+	args = append(args, "-re",
+		"-fflags", "nobuffer", // Reduce the latency introduced by optional buffering.
+	)
 	// For RTSP stream source, always use TCP transport.
 	if strings.HasPrefix(input.Target, "rtsp://") {
 		args = append(args, "-rtsp_transport", "tcp")
