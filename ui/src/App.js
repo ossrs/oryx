@@ -48,7 +48,9 @@ function AppPreImpl() {
   React.useEffect(() => {
     if (!setEnv) return;
 
-    axios.get('/terraform/v1/mgmt/envs').then(res => {
+    axios.post('/terraform/v1/mgmt/envs', {
+      locale: Locale.current()
+    }).then(res => {
       setEnv(res.data.data);
       console.log(`Env ok, ${JSON.stringify(res.data)}`);
     }).catch(handleError);

@@ -21,9 +21,9 @@ events, automatic HTTPS, and an easy-to-use HTTP Open API.
 Run srs-stack in one docker:
 
 ```bash
-docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935 \
-  -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
-  -v $HOME/data:/data ossrs/srs-stack:5
+docker run --rm -it --name srs-stack -v $HOME/data:/data \
+  -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
+  ossrs/srs-stack:5
 ```
 
 > Note: Please use `-e REACT_APP_LOCALE=zh` and `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:5` in China.
@@ -31,6 +31,14 @@ docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935 \
 > Note: All data will be saved in `$HOME/data` directory, please change it to your directory.
 
 Then open http://localhost:2022 in browser.
+
+The ports used for SRS Stack:
+
+* `2022/tcp`: The HTTP port, you can also use `80` instead, such as `-p 80:2022` etc.
+* `2443/tcp`: The HTTPS port, you can also use `443` instead, such as `-p 443:2443` etc.
+* `1935/tcp`: The RTMP port, to support publish stream by RTMP to SRS Stack.
+* `8000/udp`: The WebRTC UDP port, to transport WebRTC media data like RTP packets.
+* `10080/udp`: The SRT UDP port, to support publish stream via SRT protocol.
 
 You have the option to modify the volumes for srs-stack and direct them to different directories.
 

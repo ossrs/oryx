@@ -476,11 +476,26 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
+			var locale string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Locale *string `json:"locale"`
+			}{
+				Locale: &locale,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			if err := rdb.Set(ctx, SRS_LOCALE, locale, 0).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "set %v %v", SRS_LOCALE, locale)
+			}
+
 			ohttp.WriteData(ctx, w, r, &struct {
 				MgmtDocker bool `json:"mgmtDocker"`
 			}{
 				MgmtDocker: true,
 			})
+
+			logger.Tf(ctx, "mgmt envs ok, locale=%v", locale)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
