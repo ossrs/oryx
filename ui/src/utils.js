@@ -44,7 +44,7 @@ export const StreamName = {
     localStorage.setItem(SRS_STREAM_NAME, name);
   },
   load: () => {
-    return localStorage.getItem(SRS_STREAM_NAME);
+    return localStorage.getItem(SRS_STREAM_NAME) || 'livestream';
   }
 };
 
