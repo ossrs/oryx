@@ -100,6 +100,7 @@ your own high-quality streaming and RTC platforms to support your businesses.
 - [x] Support Realtime SRT Streaming: [CN](https://mp.weixin.qq.com/s/HQb3gLRyJHHu56pnyHerxA).
 - [x] Support DVR to Tencent Cloud Storage or VoD: [CN](https://mp.weixin.qq.com/s/UXR5EBKZ-LnthwKN_rlIjg).
 - [x] Support Typecho Plugin: [CN](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
+- [ ] Support live stream transcoding.
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
 

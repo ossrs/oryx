@@ -6,12 +6,9 @@
 import {useSearchParams} from "react-router-dom";
 import {Container, Tabs, Tab} from "react-bootstrap";
 import React from "react";
-import {Clipboard, Token} from "../utils";
-import axios from "axios";
 import ScenarioLive from './ScenarioLive';
 import useUrls from "../components/UrlGenerator";
 import ScenarioForward from './ScenarioForward';
-import {useErrorHandler} from 'react-error-boundary';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import ScenarioTutorials from './ScenarioTutorials';
 import {useTranslation} from "react-i18next";
@@ -19,6 +16,7 @@ import {useSrsLanguage} from "../components/LanguageSwitch";
 import ScenarioRecord from "./ScenarioRecord";
 import ScenarioVLive from "./ScenarioVLive";
 import {ScenarioVxOthers} from "./ScenarioOthers";
+import ScenarioTranscode from "./ScenarioTranscode";
 
 export default function Scenario() {
   const [searchParams] = useSearchParams();
@@ -39,45 +37,15 @@ export default function Scenario() {
 }
 
 function ScenarioImpl({defaultActiveTab}) {
-  const [secret, setSecret] = React.useState();
-  const [streamName, setStreamName] = React.useState('livestream');
   const [activeTab, setActiveTab] = React.useState(defaultActiveTab);
   const setSearchParams = useSearchParams()[1];
-  const handleError = useErrorHandler();
-  const urls = useUrls({secret, streamName});
   const {t} = useTranslation();
-
-  React.useEffect(() => {
-    const token = Token.load();
-    axios.post('/terraform/v1/hooks/srs/secret/query', {
-      ...token,
-    }).then(res => {
-      setSecret(res.data.data);
-      console.log(`Status: Query ok, secret=${JSON.stringify(res.data.data)}`);
-    }).catch(handleError);
-  }, [handleError]);
+  const urls = useUrls();
 
   const onSelectTab = React.useCallback((k) => {
     setSearchParams({'tab': k});
     setActiveTab(k);
   }, [setSearchParams]);
-
-  const updateStreamName = React.useCallback(() => {
-    setStreamName(Math.random().toString(16).slice(-6).split('').map(e => {
-      return (e >= '0' && e <= '9') ? String.fromCharCode('a'.charCodeAt(0) + (parseInt(Math.random() * 16 + e) % 25)) : e;
-    }).join(''));
-    alert(t('helper.changeStream'));
-  }, [t]);
-
-  const copyToClipboard = React.useCallback((e, text) => {
-    e.preventDefault();
-
-    Clipboard.copy(text).then(() => {
-      alert(t('helper.copyOk'));
-    }).catch((err) => {
-      alert(`${t('helper.copyFail')} ${err}`);
-    });
-  }, [t]);
 
   return (
     <>
@@ -88,7 +56,7 @@ function ScenarioImpl({defaultActiveTab}) {
             {activeTab === 'tutorials' && <ScenarioTutorials/>}
           </Tab>
           <Tab eventKey="live" title={t('scenario.live')}>
-            {activeTab === 'live' && <ScenarioLive {...{updateStreamName, copyToClipboard, urls}} />}
+            {activeTab === 'live' && <ScenarioLive {...{urls}} />}
           </Tab>
           <Tab eventKey="forward" title={t('scenario.forward')}>
             {activeTab === 'forward' && <ScenarioForward/>}
@@ -100,20 +68,14 @@ function ScenarioImpl({defaultActiveTab}) {
             {activeTab === 'vlive' && <ScenarioVLive/>}
           </Tab>
           <Tab eventKey="transcode" title={t('scenario.transcode')}>
-            {activeTab === 'transcode' && <ScenarioTranscode/>}
+            {activeTab === 'transcode' && <ScenarioTranscode {...{urls}} />}
           </Tab>
           <Tab eventKey="others" title={t('scenario.others')}>
-            {activeTab === 'others' && <ScenarioVxOthers/>}
+            {activeTab === 'others' && <ScenarioVxOthers {...{urls}} />}
           </Tab>
         </Tabs>
       </Container>
     </>
-  );
-}
-
-function ScenarioTranscode() {
-  return (
-    <span>On the way...</span>
   );
 }
 

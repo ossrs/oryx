@@ -18,6 +18,7 @@ import (
 	"syscall"
 	"time"
 
+	// From ossrs.
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
@@ -112,7 +113,7 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 				}
 
 				// Restart the forwarding if exists.
-				if task := forwardWorker.GetTask(userConf.Platform); task != nil {
+				if task := v.GetTask(userConf.Platform); task != nil {
 					if err := task.Restart(ctx); err != nil {
 						return errors.Wrapf(err, "restart task %v", userConf.String())
 					}
@@ -166,15 +167,15 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 			if configs, err := rdb.HGetAll(ctx, SRS_FORWARD_CONFIG).Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hgetall %v", SRS_FORWARD_CONFIG)
 			} else if len(configs) > 0 {
-				for k, v := range configs {
+				for k, value := range configs {
 					var conf ForwardConfigure
-					if err = json.Unmarshal([]byte(v), &conf); err != nil {
-						return errors.Wrapf(err, "unmarshal %v %v", k, v)
+					if err = json.Unmarshal([]byte(value), &conf); err != nil {
+						return errors.Wrapf(err, "unmarshal %value %value", k, value)
 					}
 
 					var pid int32
 					var streamURL, frame, update string
-					if task := forwardWorker.GetTask(conf.Platform); task != nil {
+					if task := v.GetTask(conf.Platform); task != nil {
 						pid, streamURL, frame, update = task.queryFrame()
 					}
 
@@ -460,7 +461,7 @@ func (v *ForwardTask) updateFrame(frame string) {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	v.frame = frame
+	v.frame = strings.TrimSpace(frame)
 	v.update = time.Now().Format(time.RFC3339)
 }
 

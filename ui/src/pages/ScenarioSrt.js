@@ -15,8 +15,8 @@ export default function ScenarioSrt(props) {
   return language === 'zh' ? <ScenarioSrtCn {...props} /> : <ScenarioSrtEn {...props} />;
 }
 
-function ScenarioSrtCn({updateStreamName, copyToClipboard, urls}) {
-  const {srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer} = urls;
+function ScenarioSrtCn({copyToClipboard, urls}) {
+  const {srtPublishUrl, srtPlayUrl, flvPlayer, hlsPlayer, flvUrl, m3u8Url, rtcPlayer, updateStreamName} = urls;
   const [hostname, setHostname] = React.useState();
   const [srtPort, setSrtPort] = React.useState();
   const [srtPublishStreamId, setPublishStreamId] = React.useState();

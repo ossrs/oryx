@@ -143,6 +143,13 @@ func doMain(ctx context.Context) error {
 	}
 	logger.Tf(ctx, "initialize platform region=%v, registry=%v, version=%v", conf.Region, conf.Registry, version)
 
+	// Create transcode worker for transcoding.
+	transcodeWorker = NewTranscodeWorker()
+	defer transcodeWorker.Close()
+	if err := transcodeWorker.Start(ctx); err != nil {
+		return errors.Wrapf(err, "start transcode worker")
+	}
+
 	// Create worker for RECORD, covert live stream to local file.
 	recordWorker = NewRecordWorker()
 	defer recordWorker.Close()

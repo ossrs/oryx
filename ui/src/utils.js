@@ -5,36 +5,46 @@
 //
 const SRS_TERRAFORM_TOKEN = 'SRS_TERRAFORM_TOKEN';
 const SRS_STACK_LOCALE = 'SRS_STACK_LOCALE';
+const SRS_STREAM_NAME = 'SRS_STREAM_NAME';
 
 export const Token = {
-  save(data) {
+  save: (data) => {
     localStorage.setItem(SRS_TERRAFORM_TOKEN, JSON.stringify(data));
   },
-  load() {
+  load: () => {
     const info = localStorage.getItem(SRS_TERRAFORM_TOKEN);
     if (!info) return null;
 
     const o = JSON.parse(info);
     return {token: o.token};
   },
-  remove() {
+  remove: () => {
     localStorage.removeItem(SRS_TERRAFORM_TOKEN);
   },
 };
 
 export const Locale = {
   _cache: null,
-  save(data) {
-    this._cache = data;
+  save: (data) => {
+    Locale._cache = data;
     localStorage.setItem(SRS_STACK_LOCALE, JSON.stringify(data));
   },
-  load() {
+  load: () => {
     const info = localStorage.getItem(SRS_STACK_LOCALE);
-    this._cache = info ? JSON.parse(info) : null;
-    return this._cache;
+    Locale._cache = info ? JSON.parse(info) : null;
+    return Locale._cache;
   },
-  current() {
-    return this._cache?.lang || process.env.REACT_APP_LOCALE || 'zh';
+  current: () => {
+    return Locale._cache?.lang || process.env.REACT_APP_LOCALE || 'zh';
+  }
+};
+
+export const StreamName = {
+  save: (name) => {
+    localStorage.setItem(SRS_STREAM_NAME, name);
+  },
+  load: () => {
+    return localStorage.getItem(SRS_STREAM_NAME);
   }
 };
 

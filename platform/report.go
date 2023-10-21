@@ -34,6 +34,18 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		params["nid"] = r0
 	}
 
+	// Report about transcoding.
+	var transcodeConf TranscodeConfig
+	if b, err := rdb.HGet(ctx, SRS_TRANSCODE_CONFIG, "global").Result(); err != nil && err != redis.Nil {
+		return nil, errors.Wrapf(err, "hget %v global", SRS_TRANSCODE_CONFIG)
+	} else if len(b) > 0 {
+		if err := json.Unmarshal([]byte(b), &transcodeConf); err != nil {
+			return nil, errors.Wrapf(err, "unmarshal %v", b)
+		} else if transcodeConf.All {
+			params["tran"] = "1"
+		}
+	}
+
 	// Report about local Reocrd.
 	if r0, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "all").Result(); err != nil && err != redis.Nil {
 		return nil, errors.Wrapf(err, "hget %v all", SRS_RECORD_PATTERNS)

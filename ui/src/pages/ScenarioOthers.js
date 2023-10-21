@@ -8,41 +8,16 @@ import {useSrsLanguage} from "../components/LanguageSwitch";
 import {Accordion, Tab, Tabs} from "react-bootstrap";
 import {useSearchParams} from "react-router-dom";
 import {useTranslation} from "react-i18next";
-import {useErrorHandler} from "react-error-boundary";
-import useUrls from "../components/UrlGenerator";
-import {Clipboard, Token} from "../utils";
-import axios from "axios";
+import {Clipboard} from "../utils";
 import ScenarioSrt from "./ScenarioSrt";
 import ScenarioRecordCos from "./ScenarioRecordCos";
 import ScenarioRecordVod from "./ScenarioRecordVod";
 
-export function ScenarioVxOthers() {
+export function ScenarioVxOthers({urls}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeChildTab, setActiveChildTab] = React.useState();
   const language = useSrsLanguage();
   const {t} = useTranslation();
-
-  const [secret, setSecret] = React.useState();
-  const [streamName, setStreamName] = React.useState('livestream');
-  const handleError = useErrorHandler();
-  const urls = useUrls({secret, streamName});
-
-  React.useEffect(() => {
-    const token = Token.load();
-    axios.post('/terraform/v1/hooks/srs/secret/query', {
-      ...token,
-    }).then(res => {
-      setSecret(res.data.data);
-      console.log(`Status: Query ok, secret=${JSON.stringify(res.data.data)}`);
-    }).catch(handleError);
-  }, [handleError]);
-
-  const updateStreamName = React.useCallback(() => {
-    setStreamName(Math.random().toString(16).slice(-6).split('').map(e => {
-      return (e >= '0' && e <= '9') ? String.fromCharCode('a'.charCodeAt(0) + (parseInt(Math.random() * 16 + e) % 25)) : e;
-    }).join(''));
-    alert(t('helper.changeStream'));
-  }, [t]);
 
   const copyToClipboard = React.useCallback((e, text) => {
     e.preventDefault();
@@ -73,7 +48,7 @@ export function ScenarioVxOthers() {
           {activeChildTab === 'other' && <ScenarioOther/>}
         </Tab>
         <Tab eventKey="srt" title={t('scenario.srt')}>
-          {activeChildTab === 'srt' && <ScenarioSrt {...{updateStreamName, copyToClipboard, urls}} />}
+          {activeChildTab === 'srt' && <ScenarioSrt {...{copyToClipboard, urls}} />}
         </Tab>
         <Tab eventKey="dvr" title={t('scenario.dvr')}>
           {activeChildTab === 'dvr' && <ScenarioRecordCos/>}

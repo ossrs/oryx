@@ -102,12 +102,12 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			if all, err := rdb.HSet(ctx, SRS_RECORD_PATTERNS, "all", fmt.Sprintf("%v", all)).Result(); err != nil && err != redis.Nil {
+			if err := rdb.HSet(ctx, SRS_RECORD_PATTERNS, "all", fmt.Sprintf("%v", all)).Err(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hset %v all %v", SRS_RECORD_PATTERNS, all)
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "record query ok, token=%vB", len(token))
+			logger.Tf(ctx, "record apply ok, all=%v, token=%vB", all, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

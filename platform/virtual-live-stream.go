@@ -817,7 +817,7 @@ type VLiveConfigure struct {
 	Files []*VLiveSourceFile `json:"files"`
 }
 
-func (v *VLiveConfigure) String() string {
+func (v VLiveConfigure) String() string {
 	return fmt.Sprintf("platform=%v, server=%v, secret=%v, enabled=%v, customed=%v, label=%v, files=%v",
 		v.Platform, v.Server, v.Secret, v.Enabled, v.Customed, v.Label, v.Files,
 	)

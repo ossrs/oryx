@@ -210,12 +210,99 @@
         "submit": "提交",
         "setOk": "设置成功",
         "upload": "上传文件",
-        "changeFiles": "更换文件/流"
+        "changeFiles": "更换文件/流",
+        "noSelect": "请选择"
+      },
+      "transcode": {
+        "config": {
+          "header": "转码配置",
+          "vbitrate": "视频码率",
+          "vbitrate2": "Kbps, 指定转码输出的视频的码率",
+          "abitrate": "音频码率",
+          "abitrate2": "Kbps, 指定转码输出的音频的码率",
+          "vcodec": "视频编码器",
+          "vcodec2": "暂时只支持软件编码器",
+          "vcodec3": "软件编码器(x264)",
+          "vprofile": "视频编码配置",
+          "vprofile2": "决定了编码的基础配置，和视频编码预设集一起决定了CPU消耗和视频质量",
+          "vprofile3": "Baseline(基线配置)",
+          "vprofile4": "Main(主要配置)",
+          "vprofile5": "High(高级配置)",
+          "vpreset": "视频编码预设集",
+          "vpreset2": "决定了编码的速度和质量，越快消耗的CPU越少但质量越低，越慢消耗的CPU越多但质量越高",
+          "vpreset3": "低CPU消耗，低质量",
+          "vpreset4": "中等CPU消耗，标准质量",
+          "vpreset5": "高CPU消耗，高质量",
+          "acodec": "音频编码器",
+          "acodec2": "暂时只支持软件编码器",
+          "acodec3": "FFmpeg内置编码器(aac)",
+          "achannel": "音频声道数",
+          "achannelN": "设置音频的声道数目",
+          "achannel0": "跟随源，设置为输入流的声道数",
+          "achannel1": "单声道，Mono",
+          "achannel2": "双声道，Stereo, 即立体声",
+          "server": "推流地址",
+          "server2": "转码流输出的地址，可以是SRS Stack或其他直播流平台的地址",
+          "key": "推流密钥",
+          "key2": "转码流输出的流密钥，可以是SRS Stack或其他直播流平台的流密钥"
+        },
+        "status": {
+          "header": "转码状态",
+          "stop": "停止转码",
+          "start": "开始转码",
+          "transcoding": "转码中",
+          "waiting": "等待中",
+          "inactive": "未开启",
+          "preview": "预览"
+        }
       }
     }
   },
   "en": {
     "translation": {
+      "transcode": {
+        "status": {
+          "preview": "Preview",
+          "inactive": "Inactive",
+          "waiting": "Waiting",
+          "transcoding": "Transcoding",
+          "header": "Transcode Status",
+          "stop": "Stop Transcode",
+          "start": "Start Transcode"
+        },
+        "config": {
+          "key2": "Output stream key for transcoded stream, can be SRS Stack or other live streaming platform.",
+          "key": "Stream Key",
+          "server2": "Output server address for transcoded stream, can be SRS Stack or other live streaming platform.",
+          "server": "Server",
+          "achannel0": "Same to the channels of input stream",
+          "achannel1": "Mono, single channel",
+          "achannel2": "Stereo, two channels",
+          "achannelN": "Set the number of audio channels",
+          "achannel": "Audio Channels",
+          "acodec3": "FFmpeg(aac)",
+          "acodec2": "Currently only supports software encoders",
+          "acodec": "Audio Encoder",
+          "vpreset5": "High CPU usage, high quality",
+          "vpreset4": "Medium CPU usage, standard quality",
+          "vpreset3": "Low CPU usage, lowest quality",
+          "vpreset2": "Faster encoding uses less CPU, lower quality; slower encoding, more CPU, higher quality.",
+          "vpreset": "Video Encoder Preset",
+          "vprofile5": "High",
+          "vprofile4": "Main",
+          "vprofile3": "Baseline",
+          "vprofile2": "Sets basic encoding settings, influenced by preset, affecting CPU usage and video quality.",
+          "vprofile": "Video Encoder Profile",
+          "vcodec3": "Software(x264)",
+          "vcodec2": "Currently only supports software encoders",
+          "vcodec": "Video Encoder",
+          "abitrate2": "Kbps, the output audio bitrate for transcoding",
+          "abitrate": "Audio Bitrate",
+          "vbitrate2": "Kbps, the output video bitrate for transcoding",
+          "vbitrate": "Video Bitrate",
+          "header": "Transcode Config"
+        }
+      },
       "setup": {
         "passwordLabel": "Admin Password",
         "passwordTip": "Please remember the password",
@@ -425,7 +512,8 @@
         "submit": "Submit",
         "setOk": "Setup OK",
         "upload": "Upload File",
-        "changeFiles": "Change File/Stream"
+        "changeFiles": "Change File/Stream",
+        "noSelect": "No selection"
       }
     }
   }

@@ -774,6 +774,9 @@ Also by platform module:
 * `/terraform/v1/ffmpeg/vlive/upload/` Upload Virtual Live source file.
 * `/terraform/v1/ffmpeg/vlive/server/` Use server file as Virtual Live source.
 * `/terraform/v1/ffmpeg/vlive/source` Setup Virtual Live source file.
+* `/terraform/v1/ffmpeg/transcode/query` Query transcode config.
+* `/terraform/v1/ffmpeg/transcode/apply` Apply transcode config.
+* `/terraform/v1/ffmpeg/transcode/task` Query transcode task.
 
 Also provided by platform for market:
 

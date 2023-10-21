@@ -102,7 +102,7 @@ function ScenarioForwardImplCn({defaultActiveKey, defaultSecrets}) {
     refreshStreams();
     const timer = setInterval(() => refreshStreams(), 10 * 1000);
     return () => clearInterval(timer);
-  }, [handleError]);
+  }, [handleError, setForwards]);
 
   const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, onSuccess) => {
     e.preventDefault();

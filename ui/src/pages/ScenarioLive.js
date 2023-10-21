@@ -9,17 +9,31 @@ import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import SrsQRCode from "../components/SrsQRCode";
 import * as Icon from 'react-bootstrap-icons';
 import {useSrsLanguage} from "../components/LanguageSwitch";
+import {Clipboard} from "../utils";
+import {useTranslation} from "react-i18next";
 
-export default function ScenarioLive(props) {
+export default function ScenarioLive({urls}) {
+  const {t} = useTranslation();
+  const copyToClipboard = React.useCallback((e, text) => {
+    e.preventDefault();
+
+    Clipboard.copy(text).then(() => {
+      alert(t('helper.copyOk'));
+    }).catch((err) => {
+      alert(`${t('helper.copyFail')} ${err}`);
+    });
+  }, [t]);
+
   const language = useSrsLanguage();
-  return language === 'zh' ? <ScenarioLiveCn {...props} /> : <ScenarioLiveEn {...props} />;
+  return language === 'zh' ? <ScenarioLiveCn {...{urls, copyToClipboard}} /> : <ScenarioLiveEn {...{urls, copyToClipboard}} />;
 }
 
-function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
+function ScenarioLiveCn({copyToClipboard, urls}) {
   const {
     flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcUrl, rtcPlayer, cnConsole, rtcPublisher,
-    srtPublishUrl, srtPlayUrl, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2, rtcPublishUrl,
+    srtPublishUrl, srtPlayUrl, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2, rtcPublishUrl, updateStreamName,
   } = urls;
+
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
   const xgFlvPlayerUrl = flvPlayer?.replace('player.html', 'xgplayer.html');
   const xgHlsPlayerUrl = hlsPlayer?.replace('player.html', 'xgplayer.html');
@@ -529,11 +543,12 @@ function ScenarioLiveCn({updateStreamName, copyToClipboard, urls}) {
   );
 }
 
-function ScenarioLiveEn({updateStreamName, copyToClipboard, urls}) {
+function ScenarioLiveEn({copyToClipboard, urls}) {
   const {
     flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcUrl, rtcPlayer, enConsole, rtcPublisher,
-    flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2, rtcPublishUrl, srtPublishUrl, srtPlayUrl,
+    flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2, rtcPublishUrl, srtPublishUrl, srtPlayUrl, updateStreamName,
   } = urls;
+
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
   const ffmpegPublishCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -f flv ${rtmpPublishUrl}`;
   const ffmpegSrtCli = `ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy -pes_payload_size 0 -f mpegts '${srtPublishUrl}'`;
