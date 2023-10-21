@@ -148,6 +148,13 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		params["https"] = r0
 	}
 
+	// Report about locale feature.
+	if r0, err := rdb.Get(ctx, SRS_LOCALE).Result(); err != nil && err != redis.Nil {
+		return nil, errors.Wrapf(err, "get %v", SRS_LOCALE)
+	} else if r0 != "" {
+		params["lan"] = r0
+	}
+
 	// Report about upgrade window feature.
 	if r0, err := rdb.HGet(ctx, SRS_UPGRADE_WINDOW, "update").Result(); err != nil && err != redis.Nil {
 		return nil, errors.Wrapf(err, "hget %v update", SRS_UPGRADE_WINDOW)
