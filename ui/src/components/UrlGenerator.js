@@ -63,7 +63,7 @@ export function buildUrls(defaultUrl, secret) {
     // /tools/player.html?url=http://localhost:3000/live/livestream.m3u8
     urls.flvPlayer = `/tools/player.html?url=${schema}://${defaultHost}/${defaultApp}/${defaultStream}.flv`;
     urls.hlsPlayer = `/tools/player.html?url=${schema}://${defaultHost}/${defaultApp}/${defaultStream}.m3u8`;
-    urls.rtcPlayer = `/players/rtc_player.html?schema=${schema}&port=${httpPort}&api=${httpPort}&autostart=true&stream=${defaultStream}`;
+    urls.rtcPlayer = `/players/whep.html?schema=${schema}&port=${httpPort}&api=${httpPort}&autostart=true&stream=${defaultStream}`;
   }
 
   // For WebRTC url.
@@ -74,7 +74,7 @@ export function buildUrls(defaultUrl, secret) {
     urls.rtcPublisher = `/players/rtc_publisher.html?schema=https&port=443&api=443&autostart=true&stream=${defaultStream}${secretQuery}`;
     urls.flvPlayer2 = `/players/srs_player.html?schema=https&port=443&api=443&autostart=true&stream=${defaultStream}.flv`;
     urls.hlsPlayer2 = `/players/srs_player.html?schema=https&port=443&api=443&autostart=true&stream=${defaultStream}.m3u8`;
-    urls.rtcPlayer2 = `/players/rtc_player.html?schema=https&port=443&api=443&autostart=true&stream=${defaultStream}`;
+    urls.rtcPlayer2 = `/players/whep.html?schema=https&port=443&api=443&autostart=true&stream=${defaultStream}`;
   }
 
   // For transcode stream and urls.

@@ -197,6 +197,7 @@
         "nofile": "未选择任何文件"
       },
       "helper": {
+        "switchStream": "更换流名称",
         "changeStream": "更换流名称成功",
         "copyOk": "已经复制到剪切板",
         "copyFail": "复制失败，请右键复制链接",
@@ -211,7 +212,10 @@
         "setOk": "设置成功",
         "upload": "上传文件",
         "changeFiles": "更换文件/流",
-        "noSelect": "请选择"
+        "noSelect": "请选择",
+        "link": "链接",
+        "copy": "拷贝",
+        "see": "请参考"
       },
       "transcode": {
         "config": {
@@ -255,11 +259,113 @@
           "inactive": "未开启",
           "preview": "预览"
         }
+      },
+      "live": {
+        "share": {
+          "title": "请选择播放的流：",
+          "flv": "播放HTTP-FLV流, 请选择播放器：",
+          "simple": "简易播放器",
+          "xg": "西瓜播放器",
+          "hls": "播放HLS流, 请选择播放器",
+          "rtc": "播放WebRTC流, 请选择播放器：",
+          "wp": "你也可以嵌入到WordPress：",
+          "wpflv": "嵌入HTTP-FLV流",
+          "wphls": "嵌入HLS流",
+          "wprtc": "嵌入WebRTC流",
+          "step": "操作步骤：",
+          "fw": "在服务器防火墙开启端口：",
+          "console": "点击进入SRS控制台，查看流信息："
+        },
+        "obs": {
+          "title": "RTMP: OBS或vMix推流",
+          "download": "请下载OBS并安装：",
+          "config": "在OBS输入",
+          "server": "推流地址（服务器）",
+          "key": "推流密钥（串流密钥）",
+          "service": "服务",
+          "custom": "自定义",
+          "nokey": "无，注意请不要填任何字符串"
+        },
+        "ffmpeg": {
+          "title": "RTMP: FFmpeg/芯象推流",
+          "download": "请下载FFmpeg并安装：",
+          "cli": "FFmpeg推流命令：",
+          "url": "推流地址："
+        },
+        "srt": {
+          "title": "SRT: OBS或vMix推流",
+          "url": "SRT流播放地址",
+          "ffplay": "下载ffplay，FFmpeg自带的低延迟播放器:",
+          "win": "Windows，执行命令：",
+          "mac": "Mac或Linux，执行命令：",
+          "wait": "SRT流画面出来较慢，请稍安勿躁",
+          "wait2": "也可以快速预览其他格式的流，注意延迟比直接播放SRT流会高很多：",
+          "ff": "SRT: FFmpeg/芯象推流"
+        },
+        "rtc": {
+          "title": "WebRTC: 网页推流",
+          "https": "请使用HTTPS访问管理后台。若使用自签名证书，请点页面空白处然后敲",
+          "tip": "打开页面推流：",
+          "tip2": "注意先停止掉FFmpeg/OBS推流。",
+          "wp": "使用WordPress页面推流：",
+          "sc": "WordPress简码"
+        }
       }
     }
   },
   "en": {
     "translation": {
+      "live": {
+        "rtc": {
+          "sc": "WordPress Shortcode",
+          "wp": "Publish by WordPress:",
+          "tip2": "Please stop FFmpeg/OBS before publishing.",
+          "tip": "Open this page to publish:",
+          "https": "Please use HTTPS to access this page. If you use a self-signed certificate, please click on the blank area of the page and then type",
+          "title": "WebRTC: Webpage"
+        },
+        "srt": {
+          "ff": "SRT: FFmpeg",
+          "wait2": "You're able to play by H5:",
+          "wait": "It takes a while to render the SRT stream, please wait.",
+          "mac": "For Mac or Linux:",
+          "win": "For Windows:",
+          "ffplay": "Download ffplay, the low latency player in FFmpeg:",
+          "url": "SRT URL",
+          "title": "SRT: OBS or vMix"
+        },
+        "ffmpeg": {
+          "url": "Stream URL:",
+          "title": "RTMP: FFmpeg",
+          "download": "Download FFmpeg from this",
+          "cli": "FFmpeg command line:"
+        },
+        "obs": {
+          "key": "Stream Key:",
+          "server": "Server:",
+          "config": "OBS configuration",
+          "download": "Download OBS from this",
+          "title": "RTMP: OBS or vMix",
+          "service": "Service",
+          "custom": "Custom",
+          "nokey": "Empty. Please keep it empty."
+        },
+        "share": {
+          "step": "Usage:",
+          "fw": "Allow port in firewall:",
+          "console": "Click to SRS console to see stream info:",
+          "wprtc": "For WebRTC",
+          "wphls": "For HLS",
+          "wpflv": "For HTTP-FLV",
+          "wp": "You can also embed to WordPress:",
+          "rtc": "Play WebRTC stream, choose player:",
+          "hls": "Play HLS stream, choose player:",
+          "xg": "Xigua Player",
+          "simple": "Simple Player",
+          "flv": "Play HTTP-FLV stream, choose player:",
+          "title": "Play the stream by:"
+        }
+      },
       "transcode": {
         "status": {
           "preview": "Preview",
@@ -499,6 +605,7 @@
         "nofile": "No file choosen"
       },
       "helper": {
+        "switchStream": "Change stream",
         "changeStream": "Stream name changed",
         "copyOk": "Copy to clipboard OK",
         "copyFail": "Copy to clipboard failed",
@@ -513,7 +620,10 @@
         "setOk": "Setup OK",
         "upload": "Upload File",
         "changeFiles": "Change File/Stream",
-        "noSelect": "No selection"
+        "noSelect": "No selection",
+        "link": "link",
+        "copy": "Copy",
+        "see": "Please see"
       }
     }
   }

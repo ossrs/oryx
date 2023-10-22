@@ -108,7 +108,7 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
       ...token, all: enabled, vcodec, acodec, vbitrate, abitrate, achannels: achannels, vprofile, vpreset,
       server, secret,
     }).then(res => {
-      alert('设置转码规则成功');
+      alert(t('helper.setOk'));
       console.log(`Transcode: Apply patterns ok, all=${enabled}, vbitrate=${vbitrate}, abitrate=${abitrate}, vcodec=${vcodec}, vprofile=${vprofile}, vpreset=${vpreset}, acodec=${acodec}, server=${server}, secret=${secret}`);
       success && success();
     }).catch(handleError);
