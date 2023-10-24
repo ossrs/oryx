@@ -112,7 +112,7 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
       console.log(`Transcode: Apply patterns ok, all=${enabled}, vbitrate=${vbitrate}, abitrate=${abitrate}, vcodec=${vcodec}, vprofile=${vprofile}, vpreset=${vpreset}, acodec=${acodec}, server=${server}, secret=${secret}`);
       success && success();
     }).catch(handleError);
-  }, [handleError, vbitrate, abitrate, achannels, vcodec, vprofile, vpreset, acodec, server, secret]);
+  }, [handleError, t, vbitrate, abitrate, achannels, vcodec, vprofile, vpreset, acodec, server, secret]);
 
   return (
     <Accordion defaultActiveKey={[activeKey]} alwaysOpen>

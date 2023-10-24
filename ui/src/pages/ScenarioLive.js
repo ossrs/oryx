@@ -32,7 +32,7 @@ function ScenarioLiveImpl({copyToClipboard, urls}) {
   const {t} = useTranslation();
   const {
     flvPlayer, rtmpServer, flvUrl, rtmpStreamKey, hlsPlayer, m3u8Url, rtcUrl, rtcPlayer, cnConsole, enConsole, rtcPublisher,
-    srtPublishUrl, srtPlayUrl, flvPlayer2, flvUrl2, hlsPlayer2, m3u8Url2, rtcPlayer2, rtcPublishUrl, updateStreamName,
+    srtPublishUrl, srtPlayUrl, rtcPublishUrl, updateStreamName,
   } = urls;
 
   const rtmpPublishUrl = `${rtmpServer}${rtmpStreamKey}`;
