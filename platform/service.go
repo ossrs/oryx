@@ -178,6 +178,10 @@ func (v *httpService) Run(ctx context.Context) error {
 func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	ohttp.Server = fmt.Sprintf("srs-stack/%v", version)
 
+	if err := callbackWorker.Handle(ctx, handler); err != nil {
+		return errors.Wrapf(err, "handle callback")
+	}
+
 	if err := transcodeWorker.Handle(ctx, handler); err != nil {
 		return errors.Wrapf(err, "handle transcode")
 	}

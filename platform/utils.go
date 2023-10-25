@@ -298,6 +298,7 @@ const (
 	SRS_BEIAN           = "SRS_BEIAN"
 	SRS_HTTPS           = "SRS_HTTPS"
 	SRS_HTTPS_DOMAIN    = "SRS_HTTPS_DOMAIN"
+	SRS_HOOKS           = "SRS_HOOKS"
 )
 
 // Tencent cloud consts.
@@ -916,7 +917,7 @@ func (v *VodTaskArtifact) String() string {
 // SrsOnHlsMessage is the SRS on_hls callback message.
 type SrsOnHlsMessage struct {
 	// Must be on_hls
-	Action string `json:"action"`
+	Action SrsAction `json:"action"`
 	// The ts file path, such as ./objs/nginx/html/live/livestream/2015-04-23/01/476584165.ts
 	File string `json:"file"`
 	// The duration of ts file, in seconds, such as 9.36

@@ -31,6 +31,17 @@ import (
 	"github.com/tencentyun/cos-go-sdk-v5"
 )
 
+type SrsAction string
+
+const (
+	// The publish action.
+	SrsActionOnPublish SrsAction = "on_publish"
+	// The unpublish action.
+	SrsActionOnUnpublish = "on_unpublish"
+	// The hls action.
+	SrsActionOnHls = "on_hls"
+)
+
 func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 	versionHandler := func(w http.ResponseWriter, r *http.Request) {
 		ohttp.WriteData(ctx, w, r, &struct {
@@ -48,7 +59,7 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, versionHandler)
 
-	// See https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
+	// See https://ossrs.io/lts/en-us/docs/v5/doc/http-callback
 	ep = "/terraform/v1/hooks/srs/verify"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
@@ -67,10 +78,10 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 			}
 			requestBody := string(b)
 
-			var action string
+			var action SrsAction
 			var streamObj SrsStream
 			if err := json.Unmarshal(b, &struct {
-				Action *string `json:"action"`
+				Action *SrsAction `json:"action"`
 				*SrsStream
 			}{
 				Action: &action, SrsStream: &streamObj,
@@ -78,7 +89,7 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "json unmarshal %v", string(b))
 			}
 
-			if action == "on_publish" {
+			if action == SrsActionOnPublish {
 				publish, err := rdb.HGet(ctx, SRS_AUTH_SECRET, "pubSecret").Result()
 				if err != nil && err != redis.Nil {
 					return errors.Wrapf(err, "hget %v pubSecret", SRS_AUTH_SECRET)
@@ -97,9 +108,17 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}
 
+			// Verify some actions, before all other hooks.
+			preAllHook := action == SrsActionOnPublish
+			if preAllHook {
+				if err := callbackWorker.OnMessage(ctx, action, &streamObj); err != nil {
+					return errors.Wrapf(err, "callback action=%v", action)
+				}
+			}
+
 			// Automatically add by SRS.
 			streamURL := streamObj.StreamURL()
-			if action == "on_publish" {
+			if action == SrsActionOnPublish {
 				streamObj.Update = time.Now().Format(time.RFC3339)
 
 				b, err := json.Marshal(&streamObj)
@@ -122,7 +141,7 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 						return errors.Wrapf(err, "hset %v %v %v", SRS_STREAM_RTC_ACTIVE, streamURL, string(b))
 					}
 				}
-			} else if action == "on_unpublish" {
+			} else if action == SrsActionOnUnpublish {
 				if err := rdb.HDel(ctx, SRS_STREAM_ACTIVE, streamURL).Err(); err != nil && err != redis.Nil {
 					return errors.Wrapf(err, "hset %v %v", SRS_STREAM_ACTIVE, streamURL)
 				}
@@ -139,6 +158,13 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 			} else if action == "on_play" {
 				if err := rdb.HIncrBy(ctx, SRS_STAT_COUNTER, "play", 1).Err(); err != nil && err != redis.Nil {
 					return errors.Wrapf(err, "hincrby %v play 1", SRS_STAT_COUNTER)
+				}
+			}
+
+			// For some events, hook after all other hooks are done.
+			if !preAllHook {
+				if err := callbackWorker.OnMessage(ctx, action, &streamObj); err != nil {
+					return errors.Wrapf(err, "callback action=%v", action)
 				}
 			}
 
@@ -677,7 +703,7 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 			if err := json.Unmarshal(b, &msg); err != nil {
 				return errors.Wrapf(err, "json unmarshal %v", string(b))
 			}
-			if msg.Action != "on_hls" {
+			if msg.Action != SrsActionOnHls {
 				return errors.Errorf("invalid action=%v", msg.Action)
 			}
 			if _, err := os.Stat(msg.File); err != nil {

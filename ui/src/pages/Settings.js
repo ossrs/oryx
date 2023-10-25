@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
 import React from "react";
-import {Accordion, Container, Form, Button, Tabs, Tab, Spinner} from "react-bootstrap";
+import {Accordion, Container, Form, Button, Tabs, Tab, Spinner, Stack, Badge} from "react-bootstrap";
 import {Clipboard, Token} from "../utils";
 import axios from "axios";
 import {useSearchParams} from "react-router-dom";
@@ -12,6 +12,8 @@ import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
+import moment from "moment";
+import {buildUrls} from "../components/UrlGenerator";
 
 export default function Systems() {
   return (
@@ -27,7 +29,7 @@ function SystemsImpl() {
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'auth';
-    console.log(`?tab=https|hls|auth|beian|platform, current=${tab}, Select the tab to render`);
+    console.log(`?tab=https|hls|auth|beian|callback|platform, current=${tab}, Select the tab to render`);
     setDefaultActiveTab(tab);
   }, [searchParams]);
 
@@ -75,6 +77,9 @@ function SettingsImpl2({defaultActiveTab}) {
           </Tab>
           <Tab eventKey="beian" title={t('settings.tabFooter')}>
             <SettingBeian />
+          </Tab>
+          <Tab eventKey="callback" title={t('settings.tabCallback')}>
+            <SettingCallback />
           </Tab>
           <Tab eventKey="api" title="OpenAPI">
             <SettingOpenApi {...{copyToClipboard}}/>
@@ -188,6 +193,146 @@ function SettingOpenApi({copyToClipboard}) {
       </Accordion.Item>
     </Accordion>
   );
+}
+
+function SettingCallback() {
+  const handleError = useErrorHandler();
+  const [config, setConfig] = React.useState();
+  const [activeKey, setActiveKey] = React.useState();
+
+  React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/hooks/query', {
+      ...token
+    }).then(res => {
+      const data = res.data.data;
+
+      setConfig(data);
+      if (data.all) {
+        setActiveKey('2');
+      } else {
+        setActiveKey('1');
+      }
+      console.log(`Hooks: Query ok, ${JSON.stringify(data)}`);
+    }).catch(handleError);
+  }, [handleError]);
+
+  if (!activeKey) return <></>;
+  return <SettingCallbackImpl {...{
+    activeKey, defaultEnabled: config?.all, defaultConf: config
+  }}/>;
+}
+
+function SettingCallbackImpl({activeKey, defaultEnabled, defaultConf}) {
+  const defaultUrl = `${window.location.protocol}//${window.location.host}/terraform/v1/mgmt/hooks/example?fail=false`;
+  const handleError = useErrorHandler();
+  const {t} = useTranslation();
+  const [target, setTarget] = React.useState(defaultConf.target || defaultUrl);
+  const [opaque, setOpaque] = React.useState(defaultConf.opaque);
+  const [allEvents, setAllEvents] = React.useState(defaultEnabled);
+  const [task, setTask] = React.useState();
+
+  React.useEffect(() => {
+    const refreshTask = () => {
+      const token = Token.load();
+      axios.post('/terraform/v1/mgmt/hooks/query', {
+        ...token,
+      }).then(res => {
+        const task = res.data.data;
+        if (task?.req) task.req = JSON.parse(task.req);
+        if (task?.res) task.res = JSON.parse(task.res);
+        setTask(task);
+        console.log(`Hooks: Query task ${JSON.stringify(task)}`);
+      }).catch(handleError);
+    };
+
+    refreshTask();
+    const timer = setInterval(() => refreshTask(), 10 * 1000);
+    return () => clearInterval(timer);
+  }, [handleError, setTask]);
+
+  const onUpdateCallback = React.useCallback((e) => {
+    e.preventDefault();
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/hooks/apply', {
+      ...token, all: !!allEvents, target, opaque,
+    }).then(res => {
+      alert(t('helper.setOk'));
+      console.log(`Hooks apply ok, all=${allEvents}, target=${target}, opaque=${opaque}, response=${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError, allEvents, target, opaque]);
+
+  return <Accordion defaultActiveKey={[activeKey]} alwaysOpen>
+    <Accordion.Item eventKey="0">
+      <Accordion.Header>{t('cb.title')}</Accordion.Header>
+      <Accordion.Body>
+        <div>
+          {t('cb.summary')}
+          <p></p>
+        </div>
+        <p>Usage:</p>
+        <ul>
+          <li> {t('cb.usage1')} </li>
+          <li> {t('cb.usage2')} </li>
+        </ul>
+      </Accordion.Body>
+    </Accordion.Item>
+    <Accordion.Item eventKey="1">
+      <Accordion.Header>{t('cb.setting')}</Accordion.Header>
+      <Accordion.Body>
+        <Form>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('cb.target')}</Form.Label>
+            <Form.Text>* {t('cb.target2')}</Form.Text>
+            <Form.Control as="input" placeholder='For example: http://your-server/callback' defaultValue={target}
+                          onChange={(e) => setTarget(e.target.value)} />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('cb.opaque')}</Form.Label>
+            <Form.Text>* {t('cb.opaque2')}</Form.Text>
+            <Form.Control as="input" placeholder='For example: authentication secret for hooks' defaultValue={opaque}
+                          onChange={(e) => setOpaque(e.target.value)} />
+          </Form.Group>
+          <Form.Group className="mb-3" controlId="formCbAllCheckbox">
+            <Form.Label>{t('cb.event')}</Form.Label>
+            <Form.Text>
+              * {t('cb.event2')}: &nbsp;
+              <a href={t('helper.doc')+'#http-callback-on_publish'} target='_blank'>publish,</a> &nbsp;
+              <a href={t('helper.doc')+'#http-callback-on_unpublish'} target='_blank'>unpublish</a> &nbsp;
+            </Form.Text>
+            <Form.Check type="checkbox" defaultChecked={allEvents} label={t('cb.event3')}
+                        onChange={(e) => setAllEvents(!allEvents)} />
+          </Form.Group>
+          <Button variant="primary" type="submit" onClick={(e) => onUpdateCallback(e)}>
+            {t('settings.footerSubmit')}
+          </Button>
+        </Form>
+      </Accordion.Body>
+    </Accordion.Item>
+    <Accordion.Item eventKey="2">
+      <Accordion.Header>{t('cb.show')}</Accordion.Header>
+      <Accordion.Body>
+        <Stack gap={1}>
+          <div>
+            <Badge bg={allEvents ? 'success' : 'secondary'}>
+              {allEvents ? t('cb.active') : t('cb.inactive')}
+            </Badge>
+          </div>
+          <div>{t('cb.show2')}</div>
+          <div>{t('cb.target')}: {target}</div>
+          <div>
+            {t('cb.req')}:
+            <pre>{task?.req && JSON.stringify(task.req, null, 2)}</pre>
+          </div>
+          <div>
+            {t('cb.res')}:
+            <pre>{task?.res && JSON.stringify(task.res, null, 2)}</pre>
+          </div>
+        </Stack>
+      </Accordion.Body>
+    </Accordion.Item>
+  </Accordion>;
 }
 
 function SettingBeian() {

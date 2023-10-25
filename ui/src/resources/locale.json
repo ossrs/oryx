@@ -71,6 +71,7 @@
         "tabTencent": "腾讯云",
         "tabLimit": "限流",
         "tabFooter": "网站",
+        "tabCallback": "回调",
         "tabTool": "工具",
         "tabPlatform": "平台",
         "letsTitle": "HTTPS: 自动HTTPS证书",
@@ -139,7 +140,7 @@
         "redis": "Redis(数据库)",
         "node": "NodeExporter(节点监控)",
         "platform": "Platform(平台管理)",
-        "host": "Host(主机管理)",
+        "host": "Host(Platform)",
         "containerName": "容器名",
         "containerId": "容器ID",
         "containerState": "状态",
@@ -215,7 +216,8 @@
         "noSelect": "请选择",
         "link": "链接",
         "copy": "拷贝",
-        "see": "请参考"
+        "see": "请参考",
+        "doc": "https://ossrs.net/lts/zh-cn/faq-srs-stack"
       },
       "transcode": {
         "config": {
@@ -310,11 +312,51 @@
           "wp": "使用WordPress页面推流：",
           "sc": "WordPress简码"
         }
+      },
+      "cb": {
+        "title": "场景介绍",
+        "summary": "设置回调后，SRS Stack会发起HTTP请求，回调你的服务，支持HTTP或HTTPS地址",
+        "usage1": "实现更加高级的鉴权，比如只有在某些时间段才允许推流",
+        "usage2": "实现数据统计和分析，可以通过回调获取流的信息和状态",
+        "setting": "回调设置",
+        "target": "回调地址",
+        "target2": "请输入回调的地址，可以是HTTP或HTTPS地址",
+        "event3": "所有事件",
+        "event": "事件",
+        "event2": "请选择回调的事件",
+        "show": "事件列表",
+        "show2": "最后一个回调事件的详细信息.",
+        "opaque": "凭证",
+        "opaque2": "回调时透传的凭证信息，用于判断回调是否合法",
+        "active": "回调开启",
+        "inactive": "回调关闭",
+        "req": "最后发送的请求",
+        "res": "最后收到的响应"
       }
     }
   },
   "en": {
     "translation": {
+      "cb": {
+        "res": "Last response from target",
+        "req": "Last request to target",
+        "inactive": "Disabled",
+        "active": "Active",
+        "opaque2": "The opaque information passed through when callback, used to authenticate the callback",
+        "opaque": "Opaque",
+        "show2": "The detailed information of the last callback event.",
+        "show": "Events List",
+        "event2": "Please select the callback event",
+        "event": "Events",
+        "event3": "All Events",
+        "target2": "Please input the callback address, can be HTTP or HTTPS address",
+        "target": "Target URL",
+        "setting": "Callback Settings",
+        "usage2": "Implement data statistics and analysis, you can get stream information and status through callbacks",
+        "usage1": "Implement more advanced authentication, such as only allowing publishing in certain time periods",
+        "summary": "After setting the callback, SRS Stack will initiate an HTTP request to your service, supporting HTTP or HTTPS addresses",
+        "title": "Introduction"
+      },
       "live": {
         "rtc": {
           "sc": "WordPress Shortcode",
@@ -479,6 +521,7 @@
         "tabTencent": "TencentCloud",
         "tabLimit": "Limit",
         "tabFooter": "Website",
+        "tabCallback": "Callback",
         "tabTool": "Tools",
         "tabPlatform": "Platform",
         "letsTitle": "HTTPS: Let's Encrypt",
@@ -547,7 +590,7 @@
         "redis": "Redis(KV)",
         "node": "NodeExporter(Monitor)",
         "platform": "Platform(Mgmt)",
-        "host": "Host(Mgmt)",
+        "host": "Host(Platform)",
         "containerName": "Name",
         "containerId": "ID",
         "containerState": "State",
@@ -623,7 +666,8 @@
         "noSelect": "No selection",
         "link": "link",
         "copy": "Copy",
-        "see": "Please see"
+        "see": "Please see",
+        "doc": "https://ossrs.io/lts/en-us/faq-srs-stack"
       }
     }
   }

@@ -143,6 +143,13 @@ func doMain(ctx context.Context) error {
 	}
 	logger.Tf(ctx, "initialize platform region=%v, registry=%v, version=%v", conf.Region, conf.Registry, version)
 
+	// Create callback worker.
+	callbackWorker = NewCallbackWorker()
+	defer callbackWorker.Close()
+	if err := callbackWorker.Start(ctx); err != nil {
+		return errors.Wrapf(err, "start callback worker")
+	}
+
 	// Create transcode worker for transcoding.
 	transcodeWorker = NewTranscodeWorker()
 	defer transcodeWorker.Close()
