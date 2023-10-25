@@ -12,8 +12,6 @@ import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
-import moment from "moment";
-import {buildUrls} from "../components/UrlGenerator";
 
 export default function Systems() {
   return (
@@ -261,7 +259,7 @@ function SettingCallbackImpl({activeKey, defaultEnabled, defaultConf}) {
       alert(t('helper.setOk'));
       console.log(`Hooks apply ok, all=${allEvents}, target=${target}, opaque=${opaque}, response=${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
-  }, [handleError, allEvents, target, opaque]);
+  }, [handleError, t, allEvents, target, opaque]);
 
   return <Accordion defaultActiveKey={[activeKey]} alwaysOpen>
     <Accordion.Item eventKey="0">
@@ -298,8 +296,8 @@ function SettingCallbackImpl({activeKey, defaultEnabled, defaultConf}) {
             <Form.Label>{t('cb.event')}</Form.Label>
             <Form.Text>
               * {t('cb.event2')}: &nbsp;
-              <a href={t('helper.doc')+'#http-callback-on_publish'} target='_blank'>publish,</a> &nbsp;
-              <a href={t('helper.doc')+'#http-callback-on_unpublish'} target='_blank'>unpublish</a> &nbsp;
+              <a href={t('helper.doc')+'#http-callback-on_publish'} target='_blank' rel='noreferrer'>publish,</a> &nbsp;
+              <a href={t('helper.doc')+'#http-callback-on_unpublish'} target='_blank' rel='noreferrer'>unpublish</a> &nbsp;
             </Form.Text>
             <Form.Check type="checkbox" defaultChecked={allEvents} label={t('cb.event3')}
                         onChange={(e) => setAllEvents(!allEvents)} />
