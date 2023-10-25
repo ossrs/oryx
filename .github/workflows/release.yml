@@ -107,13 +107,12 @@ jobs:
           dst: |
             ossrs/srs-cloud:${{ env.SRS_TAG }}
             ossrs/srs-cloud:platform-${{ env.SRS_TAG }}
-        # TODO: FIXME: If stable release, update it.
-        #ossrs/srs-stack:${{ env.SRS_MAJOR }}
-        #ossrs/srs-stack:v${{ env.SRS_MAJOR }}
-        #ossrs/srs-cloud:${{ env.SRS_MAJOR }}
-        #ossrs/srs-cloud:v${{ env.SRS_MAJOR }}
-        #ossrs/srs-cloud:platform-${{ env.SRS_MAJOR }}
-        #ossrs/srs-cloud:platform-v${{ env.SRS_MAJOR }}
+            ossrs/srs-stack:${{ env.SRS_MAJOR }}
+            ossrs/srs-stack:v${{ env.SRS_MAJOR }}
+            ossrs/srs-cloud:${{ env.SRS_MAJOR }}
+            ossrs/srs-cloud:v${{ env.SRS_MAJOR }}
+            ossrs/srs-cloud:platform-${{ env.SRS_MAJOR }}
+            ossrs/srs-cloud:platform-v${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
   aliyun:
@@ -140,13 +139,12 @@ jobs:
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_TAG }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_TAG }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-${{ env.SRS_TAG }}
-        # TODO: FIXME: If stable release, update it.
-        #registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR }}
-        #registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:v${{ env.SRS_MAJOR }}
-        #registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_MAJOR }}
-        #registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:v${{ env.SRS_MAJOR }}
-        #registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-${{ env.SRS_MAJOR }}
-        #registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-v${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:v${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:v${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:platform-v${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
   draft:
@@ -164,8 +162,7 @@ jobs:
           allowUpdates: true
           tag: ${{ github.ref }}
           draft: true
-          # TODO: FIXME: If stable release, update it.
-          prerelease: true
+          prerelease: false
     # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
     outputs:
       SRS_RELEASE_ID: ${{ steps.create_draft.outputs.id }}
@@ -250,6 +247,7 @@ jobs:
             
             ## English
             * [docker pull ossrs/srs-stack:${{ env.SRS_TAG }}](https://ossrs.io/lts/en-us/docs/v5/doc/getting-started-stack#docker)
+            * [docker pull ossrs/srs-stack:5](https://ossrs.io/lts/en-us/docs/v5/doc/getting-started-stack#docker)
             * [DigitalOcean](https://marketplace.digitalocean.com/apps/srs): [Tutorial](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-1-click-e9fe6f314ac6)
             * Ubuntu Script: ${{ env.SRS_UBUNTU_EN_SOURCE_FILE_MD5 }} [${{ env.SRS_UBUNTU_EN_SOURCE_FILE }}](https://github.com/ossrs/srs-stack/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_UBUNTU_EN_SOURCE_FILE }})
             * [aaPanel](https://aapanel.com) Plugin: ${{ env.SRS_AAPANEL_SOURCE_MD5 }} [${{ env.SRS_AAPANEL_SOURCE_FILE }}](https://github.com/ossrs/srs-stack/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_AAPANEL_SOURCE_FILE }})
@@ -258,18 +256,13 @@ jobs:
 
             ## Chinese
             * [docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_TAG }}](https://ossrs.net/lts/zh-cn/docs/v5/doc/getting-started-stack#docker)
+            * [docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:5](https://ossrs.net/lts/zh-cn/docs/v5/doc/getting-started-stack#docker)
             * [Lighthouse](https://mp.weixin.qq.com/s/fWmdkw-2AoFD_pEmE_EIkA): [Tutorial](https://www.bilibili.com/video/BV1844y1L7dL)
             * Ubuntu Script: ${{ env.SRS_UBUNTU_ZH_SOURCE_FILE_MD5 }} [${{ env.SRS_UBUNTU_ZH_SOURCE_FILE }}](https://gitee.com/ossrs/srs-stack/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_UBUNTU_ZH_SOURCE_FILE }})
             * [BT](https://bt.cn) Plugin: ${{ env.SRS_BT_SOURCE_MD5 }} [${{ env.SRS_BT_SOURCE_FILE }}](https://gitee.com/ossrs/srs-stack/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_BT_SOURCE_FILE }})
             * [aaPanel](https://aapanel.com) Plugin: ${{ env.SRS_AAPANEL_SOURCE_MD5 }} [${{ env.SRS_AAPANEL_SOURCE_FILE }}](https://gitee.com/ossrs/srs-stack/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_AAPANEL_SOURCE_FILE }})
             * [Changelog](https://ossrs.net/lts/zh-cn/faq-srs-stack#changelog)
             * [Features](https://ossrs.net/lts/zh-cn/faq-srs-stack#features)
-          # TODO: FIXME: If stable release, update it.
-          ## English
-          #* [docker pull ossrs/srs-stack:5](https://ossrs.io/lts/en-us/docs/v5/doc/getting-started-stack#docker)
-          ## Chinese
-          #* [docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:5](https://ossrs.net/lts/zh-cn/docs/v5/doc/getting-started-stack#docker)
           draft: false
-          # TODO: FIXME: If stable release, update it.
-          prerelease: true
-          makeLatest: false
+          prerelease: false
+          makeLatest: true
