@@ -6,4 +6,4 @@
 package main
 
 // The version for platform.
-const version = "v5.10.11"
+const version = "v5.10.15"
