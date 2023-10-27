@@ -111,9 +111,9 @@ tmp.json
 platform/containers/etc/letsencrypt/*
 platform/containers/var/lib/letsencrypt/*
 platform/containers/var/log/letsencrypt/*
-platform/containers/objs/nginx/html/*
+platform/containers/objs/nginx/html/live/*
 platform/containers/data/*
-platform/containers/www/*
+platform/containers/www/live/*
 platform/containers/ssl/*
 platform/containers/bin/*
 platform/containers/conf/conf.d/nginx.vhost.conf
