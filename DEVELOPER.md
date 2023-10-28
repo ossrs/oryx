@@ -870,7 +870,7 @@ The optional environments defined by `platform/containers/data/config/.env`:
 
 For feature control:
 
-* `NAME_LOOKUP`: Whether enable the host name lookup, true or false. Default: true
+* `NAME_LOOKUP`: Whether enable the host name lookup, true or false. Default: false
 
 For testing the specified service:
 
