@@ -45,7 +45,7 @@ Run the platform backend, or run in GoLand:
 (cd platform && go run .)
 ```
 
-> Note: Set `AUTO_SELF_SIGNED_CERTIFICATE=true` if need to generate self-signed certificate.
+> Note: Set `AUTO_SELF_SIGNED_CERTIFICATE=on` if need to generate self-signed certificate.
 
 Run all tests:
 
@@ -870,12 +870,12 @@ The optional environments defined by `platform/containers/data/config/.env`:
 
 For feature control:
 
-* `NAME_LOOKUP`: Whether enable the host name lookup, true or false. Default: false
+* `NAME_LOOKUP`: `on|off`, whether enable the host name lookup, on or off. Default: off
 
 For testing the specified service:
 
 * `NODE_ENV`: `development|production`, if development, use local redis; otherwise, use `mgmt.srs.local` in docker.
-* `LOCAL_RELEASE`: `true|false`, whether use local release service.
+* `LOCAL_RELEASE`: `on|off`, whether use local release service. Default: off
 
 For mgmt and containers to connect to redis:
 
@@ -895,16 +895,16 @@ Removed variables in .env:
 
 For HTTPS, automatically generate a self-signed certificate:
 
-* `AUTO_SELF_SIGNED_CERTIFICATE`: `true|false`, whether generate self-signed certificate.
+* `AUTO_SELF_SIGNED_CERTIFICATE`: `on|off`, whether generate self-signed certificate.
 
 Deprecated and unused variables:
 
-* `SRS_DOCKERIZED`: `true|false` Indicates the OS is in docker.
+* `SRS_DOCKERIZED`: `on|off`, indicates the OS is in docker.
 * `SRS_DOCKER`: `srs` to enfore use `ossrs/srs` docker image.
-* `MGMT_DOCKER`: Whether run mgmt in docker. Default: false
-* `PLATFORM_DOCKER`: Whether run platform in docker. Default: true
-* `USE_DOCKER`: `true|false`, if false, disable all docker containers.
-* `SRS_UTEST`: `true|false`, if true, running in utest mode.
+* `MGMT_DOCKER`: `on|off`, whether run mgmt in docker. Default: false
+* `PLATFORM_DOCKER`: `on|off`, whether run platform in docker. Default: on
+* `USE_DOCKER`: `on|off`, if false, disable all docker containers.
+* `SRS_UTEST`: `on|off`, if on, running in utest mode.
 * `SOURCE`: `github|gitee`, The source code for upgrading.
 
 Please restart service when `.env` changed.

@@ -96,14 +96,14 @@ func doMain(ctx context.Context) error {
 	// Migrate from mgmt.
 	setEnvDefault("REDIS_PORT", "6379")
 	setEnvDefault("MGMT_LISTEN", "2022")
-	setEnvDefault("PLATFORM_DOCKER", "true")
+	setEnvDefault("PLATFORM_DOCKER", "on")
 
 	// For HTTPS.
 	setEnvDefault("HTTPS_LISTEN", "2443")
-	setEnvDefault("AUTO_SELF_SIGNED_CERTIFICATE", "false")
+	setEnvDefault("AUTO_SELF_SIGNED_CERTIFICATE", "off")
 
 	// For feature control.
-	setEnvDefault("NAME_LOOKUP", "false")
+	setEnvDefault("NAME_LOOKUP", "off")
 
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, "+
 		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, "+

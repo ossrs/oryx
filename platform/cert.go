@@ -49,7 +49,7 @@ func NewCertManager() *CertManager {
 }
 
 func (v *CertManager) Initialize(ctx context.Context) error {
-	if os.Getenv("AUTO_SELF_SIGNED_CERTIFICATE") == "true" {
+	if os.Getenv("AUTO_SELF_SIGNED_CERTIFICATE") == "on" {
 		if err := v.createSelfSignCertificate(ctx); err != nil {
 			return errors.Wrapf(err, "create self-signed certificate")
 		}

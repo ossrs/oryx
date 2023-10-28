@@ -214,7 +214,7 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		params["version"] = version
 		params["ts"] = fmt.Sprintf("%v", time.Now().UnixNano()/int64(time.Millisecond))
 		releaseServer := "https://api.ossrs.net"
-		if os.Getenv("LOCAL_RELEASE") != "" {
+		if os.Getenv("LOCAL_RELEASE") == "on" {
 			releaseServer = "http://localhost:2023"
 		}
 		logger.Tf(ctx, "Query %v with %v", releaseServer, params)

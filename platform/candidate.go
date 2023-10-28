@@ -48,7 +48,7 @@ func (v *CandidateWorker) Start(ctx context.Context) error {
 // set env NAME_LOOKUP to false.
 func (v *CandidateWorker) Resolve(host string) (net.IP, error) {
 	// Ignore the resolving.
-	if os.Getenv("NAME_LOOKUP") == "false" {
+	if os.Getenv("NAME_LOOKUP") == "off" {
 		return nil, nil
 	}
 
