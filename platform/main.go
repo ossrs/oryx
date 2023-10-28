@@ -102,17 +102,21 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("HTTPS_LISTEN", "2443")
 	setEnvDefault("AUTO_SELF_SIGNED_CERTIFICATE", "false")
 
+	// For feature control.
+	setEnvDefault("NAME_LOOKUP", "true")
+
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, "+
 		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, "+
 		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, "+
 		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, "+
-		"REGISTRY=%v, MGMT_LISTEN=%v, HTTPS_LISTEN=%v, AUTO_SELF_SIGNED_CERTIFICATE=%v",
+		"REGISTRY=%v, MGMT_LISTEN=%v, HTTPS_LISTEN=%v, AUTO_SELF_SIGNED_CERTIFICATE=%v, "+
+		"NAME_LOOKUP=%v",
 		len(os.Getenv("MGMT_PASSWORD")), len(os.Getenv("SRS_PLATFORM_SECRET")), os.Getenv("CLOUD"),
 		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("NODE_ENV"), os.Getenv("LOCAL_RELEASE"),
 		len(os.Getenv("REDIS_PASSWORD")), os.Getenv("REDIS_PORT"), os.Getenv("PUBLIC_URL"),
 		os.Getenv("BUILD_PATH"), os.Getenv("REACT_APP_LOCALE"), os.Getenv("PLATFORM_LISTEN"),
 		os.Getenv("REGISTRY"), os.Getenv("MGMT_LISTEN"), os.Getenv("HTTPS_LISTEN"),
-		os.Getenv("AUTO_SELF_SIGNED_CERTIFICATE"),
+		os.Getenv("AUTO_SELF_SIGNED_CERTIFICATE"), os.Getenv("NAME_LOOKUP"),
 	)
 
 	// Setup the base OS for redis, which should never depends on redis.
@@ -142,6 +146,13 @@ func doMain(ctx context.Context) error {
 		return errors.Wrapf(err, "init mgmt")
 	}
 	logger.Tf(ctx, "initialize platform region=%v, registry=%v, version=%v", conf.Region, conf.Registry, version)
+
+	// Create candidate worker for resolving domain to ip.
+	candidateWorker = NewCandidateWorker()
+	defer candidateWorker.Close()
+	if err := candidateWorker.Start(ctx); err != nil {
+		return errors.Wrapf(err, "start candidate worker")
+	}
 
 	// Create callback worker.
 	callbackWorker = NewCallbackWorker()

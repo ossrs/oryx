@@ -11,9 +11,21 @@ Start redis and SRS by docker:
 docker rm -f redis srs 2>/dev/null &&
 docker run --name redis --rm -it -v $HOME/data/redis:/data -p 6379:6379 -d redis &&
 touch platform/containers/data/config/srs.server.conf platform/containers/data/config/srs.vhost.conf &&
-echo "TODO: FIXME: Remove it after SRS supports empty config file." &&
-if [[ ! -s platform/containers/data/config/srs.server.conf ]]; then echo '# OK' > platform/containers/data/config/srs.server.conf; fi &&
-if [[ ! -s platform/containers/data/config/srs.vhost.conf ]]; then echo '# OK' > platform/containers/data/config/srs.vhost.conf; fi &&
+docker run --name srs --rm -it \
+    -v $(pwd)/platform/containers/data/config:/usr/local/srs/containers/data/config \
+    -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
+    -v $(pwd)/platform/containers/objs/nginx:/usr/local/srs/objs/nginx \
+    -p 1935:1935 -p 1985:1985 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
+    -e SRS_RTC_SERVER_USE_AUTO_DETECT_NETWORK_IP=off -e SRS_RTC_SERVER_API_AS_CANDIDATES=off \
+    -d ossrs/srs:5
+```
+
+Or set the candidate explicitly:
+
+```bash
+docker rm -f redis srs 2>/dev/null &&
+docker run --name redis --rm -it -v $HOME/data/redis:/data -p 6379:6379 -d redis &&
+touch platform/containers/data/config/srs.server.conf platform/containers/data/config/srs.vhost.conf &&
 docker run --name srs --rm -it \
     -v $(pwd)/platform/containers/data/config:/usr/local/srs/containers/data/config \
     -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
@@ -855,6 +867,10 @@ The optional environments defined by `platform/containers/data/config/.env`:
 * `MGMT_LISTEN`: The listen port for mgmt HTTP server. Default: 2022
 * `PLATFORM_LISTEN`: The listen port for platform HTTP server. Default: 2024
 * `HTTPS_LISTEN`: The listen port for HTTPS server. Default: 2443
+
+For feature control:
+
+* `NAME_LOOKUP`: Whether enable the host name lookup, true or false. Default: true
 
 For testing the specified service:
 

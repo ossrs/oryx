@@ -289,8 +289,31 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 		}
 
 		// Proxy to SRS RTC API, by /rtc/ prefix.
+		if strings.HasPrefix(r.URL.Path, "/rtc/") {
+			if eip := r.URL.Query().Get("eip"); eip != "" {
+				logger.Tf(ctx, "Proxy %v to backend 1985, eip=%v, query is %v",
+					r.URL.Path, eip, r.URL.RawQuery)
+			} else {
+				starttime := time.Now()
+				if ip, err := candidateWorker.Resolve(r.Host); err != nil {
+					logger.Ef(ctx, "Proxy %v to backend 1985, resolve %v failed, cost=%v, err is %v",
+						r.URL.Path, r.Host, time.Now().Sub(starttime), err)
+					ohttp.WriteError(ctx, w, r, err)
+					return
+				} else if ip != nil {
+					eip = ip.String()
+					r.URL.RawQuery += fmt.Sprintf("&eip=%v", eip)
+					logger.Tf(ctx, "Proxy %v to backend 1985, host=%v, resolved ip=%v, cost=%v, query is %v",
+						r.URL.Path, r.Host, eip, time.Now().Sub(starttime), r.URL.RawQuery)
+				}
+			}
+
+			proxy1985.ServeHTTP(w, r)
+			return
+		}
+
 		// Use versions API as health check API, no auth.
-		if strings.HasPrefix(r.URL.Path, "/rtc/") || r.URL.Path == "/api/v1/versions" {
+		if r.URL.Path == "/api/v1/versions" {
 			logger.Tf(ctx, "Proxy %v to backend 1985", r.URL.Path)
 			proxy1985.ServeHTTP(w, r)
 			return
