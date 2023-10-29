@@ -400,11 +400,11 @@ Create a CVM instance:
 ```bash
 rm -f .tmp/lh-*.txt &&
 echo "$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 16)A0" >.tmp/lh-token.txt &&
-VM_TOKEN=$(cat .tmp/lh-token.txt) bash scripts/tools/tencent-cloud/helper.sh create-cvm.py --id .tmp/lh-instance.txt
-bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat .tmp/lh-instance.txt) --id .tmp/lh-ip.txt &&
+VM_TOKEN=$(cat .tmp/lh-token.txt) bash scripts/tools/tencent-cloud/helper.sh create-cvm.py --id $(pwd)/.tmp/lh-instance.txt &&
+bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat .tmp/lh-instance.txt) --id $(pwd)/.tmp/lh-ip.txt &&
 echo "Instance: $(cat .tmp/lh-instance.txt), IP: ubuntu@$(cat .tmp/lh-ip.txt), Password: $(cat .tmp/lh-token.txt)" && sleep 5 &&
 bash scripts/setup-lighthouse/build.sh --ip $(cat .tmp/lh-ip.txt) --os ubuntu --user ubuntu --password $(cat .tmp/lh-token.txt) &&
-bash scripts/tools/tencent-cloud/helper.sh create-image.py --instance $(cat .tmp/lh-instance.txt) --id .tmp/lh-image.txt &&
+bash scripts/tools/tencent-cloud/helper.sh create-image.py --instance $(cat .tmp/lh-instance.txt) --id $(pwd)/.tmp/lh-image.txt &&
 bash scripts/tools/tencent-cloud/helper.sh share-image.py --image $(cat .tmp/lh-image.txt) &&
 echo "Image: $(cat .tmp/lh-image.txt) created and shared." &&
 bash scripts/tools/tencent-cloud/helper.sh remove-cvm.py --instance $(cat .tmp/lh-instance.txt)
@@ -414,8 +414,8 @@ Next, create a test CVM instance with the image:
 
 ```bash
 echo "$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 16)A0" >.tmp/lh-token2.txt &&
-VM_TOKEN=$(cat .tmp/lh-token2.txt) bash scripts/tools/tencent-cloud/helper.sh create-verify.py --image $(cat .tmp/lh-image.txt) --id .tmp/lh-test.txt &&
-bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat .tmp/lh-test.txt) --id .tmp/lh-ip2.txt && 
+VM_TOKEN=$(cat .tmp/lh-token2.txt) bash scripts/tools/tencent-cloud/helper.sh create-verify.py --image $(cat .tmp/lh-image.txt) --id $(pwd)/.tmp/lh-test.txt &&
+bash scripts/tools/tencent-cloud/helper.sh query-cvm-ip.py --instance $(cat .tmp/lh-test.txt) --id $(pwd)/.tmp/lh-ip2.txt && 
 echo "IP: ubuntu@$(cat .tmp/lh-ip2.txt), Password: $(cat .tmp/lh-token2.txt)" &&
 echo "http://$(cat .tmp/lh-ip2.txt)"
 ```
