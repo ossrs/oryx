@@ -470,7 +470,6 @@ jobs:
             -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
             -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
             --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
-            --add-host srs.stack.local:127.0.0.1 \
             -d --rm -v $(pwd):/g -w /g --name=bt ossrs/bt-plugin-dev:1
           echo "BT docker started."
       - name: Wait for systemd service start
@@ -496,7 +495,9 @@ jobs:
           echo "Import platform image to BT ok."
           
           docker exec bt docker tag platform:latest ossrs/srs-stack:$SRS_TAG
+          docker exec bt docker tag platform:latest ossrs/srs-stack:$SRS_MAJOR
           docker exec bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
+          docker exec bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_MAJOR
           echo "Tag platform image to BT ok."
           
           docker exec bt docker images
@@ -513,6 +514,13 @@ jobs:
             --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
             --www /www/wwwroot --site srs.stack.local
           echo "Setup SRS Stack plugin ok."
+          
+          echo "Setup the dns lookup for domain"
+          PIP=$(docker exec bt ifconfig eth0 |grep 'inet ' |awk '{print $2}') &&
+          docker exec bt bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
+          docker exec bt cat /etc/hosts && echo OK &&
+          docker exec bt docker exec srs-stack bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
+          docker exec bt docker exec srs-stack cat /etc/hosts
           
           set +e
           docker exec bt systemctl status srs-stack
@@ -625,7 +633,6 @@ jobs:
             -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
             -v $HOME/.aapanel/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
             --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
-            --add-host srs.stack.local:127.0.0.1 \
             -d --rm -v $(pwd):/g -w /g --name=aapanel ossrs/aapanel-plugin-dev:1
           echo "aaPanel docker started."
       - name: Wait for systemd service start
@@ -651,7 +658,9 @@ jobs:
           echo "Import platform image to aaPanel ok."
           
           docker exec aapanel docker tag platform:latest ossrs/srs-stack:$SRS_TAG
+          docker exec aapanel docker tag platform:latest ossrs/srs-stack:$SRS_MAJOR
           docker exec aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
+          docker exec aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_MAJOR
           echo "Tag platform image to aaPanel ok."
           
           docker exec aapanel docker images
@@ -668,6 +677,13 @@ jobs:
             --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
             --www /www/wwwroot --site srs.stack.local
           echo "Setup SRS Stack plugin ok."
+          
+          echo "Setup the dns lookup for domain"
+          PIP=$(docker exec aapanel ifconfig eth0 |grep 'inet ' |awk '{print $2}') &&
+          docker exec aapanel bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
+          docker exec aapanel cat /etc/hosts && echo OK &&
+          docker exec aapanel docker exec srs-stack bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
+          docker exec aapanel docker exec srs-stack cat /etc/hosts
           
           set +e
           docker exec aapanel systemctl status srs-stack

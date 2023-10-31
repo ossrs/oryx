@@ -69,12 +69,7 @@ export function buildUrls(defaultUrl, secret) {
   // For WebRTC url.
   if (true) {
     const secretQuery = secret ? `&&secret=${secret.publish}` : '';
-    urls.flvUrl2 = `https://${defaultHostname}/${defaultApp}/${defaultStream}.flv`;
-    urls.m3u8Url2 = `https://${defaultHostname}/${defaultApp}/${defaultStream}.m3u8`;
-    urls.rtcPublisher = `/players/whip.html?schema=https&port=443&api=443&autostart=true&stream=${defaultStream}${secretQuery}`;
-    urls.flvPlayer2 = `/players/srs_player.html?schema=https&port=443&api=443&autostart=true&stream=${defaultStream}.flv`;
-    urls.hlsPlayer2 = `/players/srs_player.html?schema=https&port=443&api=443&autostart=true&stream=${defaultStream}.m3u8`;
-    urls.rtcPlayer2 = `/players/whep.html?schema=https&port=443&api=443&autostart=true&stream=${defaultStream}`;
+    urls.rtcPublisher = `/players/whip.html?schema=https&port=${defaultPort}&api=${defaultPort}&autostart=true&stream=${defaultStream}${secretQuery}`;
   }
 
   // For transcode stream and urls.
@@ -105,11 +100,6 @@ export default function useUrls() {
   const [hlsPlayer, setHlsPlayer] = React.useState();
   const [rtcPlayer, setRtcPlayer] = React.useState();
   const [rtcPublisher, setRtcPublisher] = React.useState();
-  const [flvPlayer2, setFlvPlayer2] = React.useState();
-  const [hlsPlayer2, setHlsPlayer2] = React.useState();
-  const [rtcPlayer2, setRtcPlayer2] = React.useState();
-  const [flvUrl2, setFlvUrl2] = React.useState();
-  const [m3u8Url2, setM3u8Url2] = React.useState();
 
   const [transcodeStreamName, setTranscodeStreamName] = React.useState();
   const [transcodeStreamKey, setTranscodeStreamKey] = React.useState();
@@ -180,12 +170,7 @@ export default function useUrls() {
 
     // For WebRTC url.
     if (true) {
-      setFlvUrl2(urls.flvUrl2);
-      setM3u8Url2(urls.m3u8Url2);
       setRtcPublisher(urls.rtcPublisher);
-      setFlvPlayer2(urls.flvPlayer2);
-      setHlsPlayer2(urls.hlsPlayer2);
-      setRtcPlayer2(urls.rtcPlayer2);
     }
 
     // For transcode stream and urls.
@@ -216,12 +201,6 @@ export default function useUrls() {
     hlsPlayer,
     rtcPlayer,
     rtcPublisher,
-    // HTTPS URLS.
-    flvPlayer2,
-    hlsPlayer2,
-    rtcPlayer2,
-    flvUrl2,
-    m3u8Url2,
     // For transcode.
     transcodeStreamName,
     transcodeStreamKey,

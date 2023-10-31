@@ -5,7 +5,7 @@ resources, and ports, as well as development on Mac or using Docker.
 
 ## Develop All in macOS
 
-Start redis and SRS by docker:
+Start redis and SRS by docker, set the candidate explicitly:
 
 ```bash
 docker rm -f redis srs 2>/dev/null &&
@@ -13,27 +13,15 @@ docker run --name redis --rm -it -v $HOME/data/redis:/data -p 6379:6379 -d redis
 touch platform/containers/data/config/srs.server.conf platform/containers/data/config/srs.vhost.conf &&
 docker run --name srs --rm -it \
     -v $(pwd)/platform/containers/data/config:/usr/local/srs/containers/data/config \
-    -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
+    -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/docker.conf \
     -v $(pwd)/platform/containers/objs/nginx:/usr/local/srs/objs/nginx \
     -p 1935:1935 -p 1985:1985 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
     -e SRS_RTC_SERVER_USE_AUTO_DETECT_NETWORK_IP=off -e SRS_RTC_SERVER_API_AS_CANDIDATES=off \
-    -d ossrs/srs:5
-```
-
-Or set the candidate explicitly:
-
-```bash
-docker rm -f redis srs 2>/dev/null &&
-docker run --name redis --rm -it -v $HOME/data/redis:/data -p 6379:6379 -d redis &&
-touch platform/containers/data/config/srs.server.conf platform/containers/data/config/srs.vhost.conf &&
-docker run --name srs --rm -it \
-    -v $(pwd)/platform/containers/data/config:/usr/local/srs/containers/data/config \
-    -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/srs.conf \
-    -v $(pwd)/platform/containers/objs/nginx:/usr/local/srs/objs/nginx \
-    -p 1935:1935 -p 1985:1985 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
     --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
     -d ossrs/srs:5
 ```
+
+> Note: Use the intranet IP for WebRTC to set the candidate.
 
 > Note: Stop service by `docker rm -f redis srs`
 
@@ -71,7 +59,7 @@ Build a docker image:
 
 ```bash
 docker rm -f script 2>/dev/null &&
-docker rmi srs-script-dev 2>/dev/null &&
+docker rmi srs-script-dev 2>/dev/null || echo OK &&
 docker build -t srs-script-dev -f scripts/setup-ubuntu/Dockerfile.script .
 ```
 
@@ -109,7 +97,7 @@ docker exec -it script docker images
 Test the build script, in the docker container:
 
 ```bash
-docker exec -it bt rm -f /data/config/.env &&
+docker exec -it script rm -f /data/config/.env &&
 docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/uninstall.sh 2>/dev/null || echo OK &&
 bash scripts/setup-ubuntu/build.sh --output $(pwd)/build --extract &&
 docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
@@ -118,6 +106,7 @@ docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/install.sh --ve
 Run test for script:
 
 ```bash
+rm -f test/srs-stack.test &&
 docker exec -it script make -j -C test &&
 bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it script ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
@@ -149,7 +138,6 @@ docker run -p 80:80 -p 443:443 -p 7800:7800 \
     -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
-    --add-host srs.stack.local:127.0.0.1 \
     -d --rm -it -v $(pwd):/g -w /g --name=aapanel ossrs/aapanel-plugin-dev:1
 ```
 
@@ -170,9 +158,12 @@ Enter the docker container:
 
 ```bash
 version=$(bash scripts/version.sh) &&
+major=$(echo $version |awk -F '.' '{print $1}' |sed 's/v//g') &&
 docker exec -it aapanel docker load -i platform.tar && 
 docker exec -it aapanel docker tag platform:latest ossrs/srs-stack:$version &&
+docker exec -it aapanel docker tag platform:latest ossrs/srs-stack:$major &&
 docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
+docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$major &&
 docker exec -it aapanel docker images
 ```
 
@@ -196,9 +187,22 @@ docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/setup.sh \
     --www /www/wwwroot --site srs.stack.local
 ```
 
+Setup the dns lookup for domain `srs.stack.local`:
+
+```bash
+PIP=$(docker exec -it aapanel ifconfig eth0 |grep 'inet ' |awk '{print $2}') &&
+docker exec -it aapanel bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
+docker exec -it aapanel cat /etc/hosts && echo OK &&
+docker exec -it aapanel docker exec -it srs-stack bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
+docker exec -it aapanel docker exec -it srs-stack cat /etc/hosts
+```
+> Note: We add host `srs.stack.local` to the ip of eth0, because we need to access it in the
+> srs-stack docker in docker.
+
 Run test for aaPanel:
 
 ```bash
+rm -f test/srs-stack.test &&
 docker exec -it aapanel make -j -C test &&
 bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it aapanel ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
@@ -236,7 +240,6 @@ docker run -p 80:80 -p 443:443 -p 7800:7800 \
     -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
-    --add-host srs.stack.local:127.0.0.1 \
     -d --rm -it -v $(pwd):/g -w /g --name=bt ossrs/bt-plugin-dev:1
 ```
 
@@ -260,9 +263,12 @@ Enter the docker container:
 
 ```bash
 version=$(bash scripts/version.sh) &&
+major=$(echo $version |awk -F '.' '{print $1}' |sed 's/v//g') &&
 docker exec -it bt docker load -i platform.tar && 
 docker exec -it bt docker tag platform:latest ossrs/srs-stack:$version &&
+docker exec -it bt docker tag platform:latest ossrs/srs-stack:$major &&
 docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
+docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$major &&
 docker exec -it bt docker images
 ```
 
@@ -286,9 +292,22 @@ docker exec -it bt bash /www/server/panel/plugin/srs_stack/setup.sh \
     --www /www/wwwroot --site srs.stack.local
 ```
 
+Setup the dns lookup for domain `srs.stack.local`:
+
+```bash
+PIP=$(docker exec -it bt ifconfig eth0 |grep 'inet ' |awk '{print $2}') &&
+docker exec -it bt bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
+docker exec -it bt cat /etc/hosts && echo OK &&
+docker exec -it bt docker exec -it srs-stack bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
+docker exec -it bt docker exec -it srs-stack cat /etc/hosts
+```
+> Note: We add host `srs.stack.local` to the ip of eth0, because we need to access it in the
+> srs-stack docker in docker.
+
 Run test for BT:
 
 ```bash
+rm -f test/srs-stack.test &&
 docker exec -it bt make -j -C test &&
 bash scripts/tools/secret.sh --output test/.env &&
 docker exec -it bt ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \

@@ -103,7 +103,7 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("AUTO_SELF_SIGNED_CERTIFICATE", "off")
 
 	// For feature control.
-	setEnvDefault("NAME_LOOKUP", "off")
+	setEnvDefault("NAME_LOOKUP", "on")
 
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, "+
 		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, "+

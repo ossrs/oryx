@@ -67,7 +67,8 @@ ret=$?; if [[ 0 -ne ${ret} ]]; then echo "mv failed, ret=$ret"; exit $ret; fi
 echo "Move $INSTALL_FILE to ${OUTPUT}"
 
 if [[ $EXTRACT == yes ]]; then
-    (cd ${OUTPUT} && rm -rf srs_stack && unzip -q $INSTALL_FILE)
+    if [[ -d $OUTPUT/srs_stack ]]; then rm -rf $OUTPUT/srs_stack/*; fi &&
+    (cd ${OUTPUT} && unzip -q $INSTALL_FILE)
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "tar failed, ret=$ret"; exit $ret; fi
     echo "Extract $INSTALL_FILE to ${OUTPUT}"
 fi

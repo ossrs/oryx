@@ -500,6 +500,14 @@ func TestApi_SrsApiNoAuth(t *testing.T) {
 		return
 	}
 
+	// Should OK for RTC api.
+	offer := strings.ReplaceAll(exampleOffer, "\n", "\r\n")
+	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
+	if err := apiRequestNoAuth(ctx, fmt.Sprintf("/rtc/v1/whip/?app=live&stream=%v&secret=%v", streamID, pubSecret), offer, nil); err != nil {
+		r0 = errors.Wrapf(err, "should ok for rtc publish api")
+		return
+	}
+
 	// For health check api, should ok.
 	if err := apiRequestNoAuth(ctx, "/api/v1/versions", nil, nil); err != nil {
 		r0 = errors.Wrapf(err, "should ok for health check api")
@@ -509,14 +517,6 @@ func TestApi_SrsApiNoAuth(t *testing.T) {
 	// Should failed if no auth.
 	if err := apiRequestNoAuth(ctx, "/api/v1/summaries", nil, nil); err == nil {
 		r0 = errors.Errorf("should failed if no auth")
-		return
-	}
-
-	// Should OK for RTC api.
-	offer := strings.ReplaceAll(exampleOffer, "\n", "\r\n")
-	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
-	if err := apiRequestNoAuth(ctx, fmt.Sprintf("/rtc/v1/whip/?app=live&stream=%v&secret=%v", streamID, pubSecret), offer, nil); err != nil {
-		r0 = errors.Wrapf(err, "should ok for rtc publish api")
 		return
 	}
 }

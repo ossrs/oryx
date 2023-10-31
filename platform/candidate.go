@@ -61,6 +61,11 @@ func (v *CandidateWorker) Resolve(host string) (net.IP, error) {
 		}
 	}
 
+	// Ignore localhost.
+	if host == "localhost" {
+	  return nil, nil
+	}
+
 	// Directly use the ip if not name.
 	if ip := net.ParseIP(host); ip != nil {
 		return ip, nil

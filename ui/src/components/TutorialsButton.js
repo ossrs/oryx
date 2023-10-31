@@ -44,7 +44,7 @@ function useTutorialsEn(mediumRef) {
     'ba1895828b4f': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/virtual-live-events-revolutionizing-the-way-we-experience-entertainment-ba1895828b4f',
-      title: 'Virtual Live Events: Revolutionizing the Way We Experience Entertainment'
+      title: 'Mastering Virtual Live Events: Harness the Power of Pre-Recorded Content for Seamless and Engaging Live Streaming Experiences'
     },
     '2aa792c35b25': {
       author: 'Winlin Yang',

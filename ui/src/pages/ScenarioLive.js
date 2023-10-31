@@ -533,7 +533,9 @@ function ScenarioLiveImpl({copyToClipboard, urls}) {
           </div>
           <ol>
             <li>{t('live.share.fw')} <code>UDP/8000</code></li>
-            {window.location.protocol === 'http:' && <li>{t('live.rtc.https')} <code>thisisunsafe</code></li>}
+            {window.location.hostname !== 'localhost' && window.location.protocol === 'http:' &&
+              <li>{t('live.rtc.https')} <code>thisisunsafe</code></li>
+            }
             <li>
               {t('live.rtc.tip')} <a href={rtcPublisher} target='_blank' rel='noreferrer'>{t('helper.link')}</a> &nbsp;
               <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
