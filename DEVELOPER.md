@@ -16,8 +16,6 @@ docker run --name srs --rm -it \
     -v $(pwd)/platform/containers/conf/srs.release-mac.conf:/usr/local/srs/conf/docker.conf \
     -v $(pwd)/platform/containers/objs/nginx:/usr/local/srs/objs/nginx \
     -p 1935:1935 -p 1985:1985 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
-    -e SRS_RTC_SERVER_USE_AUTO_DETECT_NETWORK_IP=off -e SRS_RTC_SERVER_API_AS_CANDIDATES=off \
-    --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
     -d ossrs/srs:5
 ```
 
@@ -26,6 +24,8 @@ docker run --name srs --rm -it \
 > Note: Stop service by `docker rm -f redis srs`
 
 > Note: Also, you can run SRS by `(cd platform && ~/git/srs/trunk/objs/srs -c containers/conf/srs.release-local.conf)`
+
+> Note: You can set the candidate for WebRTC by `--env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}')`
 
 Run the platform backend, or run in GoLand:
 
@@ -739,6 +739,22 @@ docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935 \
 Note that the logs should be written to file, there is no log `write log to console`, instead there
 should be a log like `you can check log by`.
 
+## WebRTC Candidate
+
+SRS Stack follows the rules for WebRTC candidate, see [CANDIDATE](https://ossrs.io/lts/en-us/docs/v5/doc/webrtc#config-candidate),
+but also has extra improvements for we can do more after proxy the API.
+
+1. Disable `use_auto_detect_network_ip` and `api_as_candidates` in SRS config.
+1. Always use `?eip=xxx` and ignore any other config, if user force to use the specified IP.
+1. If `NAME_LOOKUP` (default is `on`) isn't `off`, try to resolve the candidate from `Host` of HTTP API by SRS Stack.
+  1. If access SRS Stack by `localhost` for debugging or run in localhost.
+    1. If `PLATFORM_DOCKER` is `off`, such as directly run in host, not in docker, use the private ip of SRS Stack.
+    1. If run in macOS docker, try to resolve `host.docker.internal` as the private ip of SRS Stack.
+    1. Use `127.0.0.1` for OBS WHIP or native client to access SRS Stack by localhost.
+  1. Use `Host` if it's a valid IP address, for example, to access SRS Stack by public ip address.
+  1. Use DNS lookup if `Host` is a domain, for example, to access SRS Stack by domain name.
+1. If no candidate, use docker IP address discovered by SRS. 
+
 ## Docker Allocated Ports
 
 The ports allocated:
@@ -895,6 +911,7 @@ For testing the specified service:
 
 * `NODE_ENV`: `development|production`, if development, use local redis; otherwise, use `mgmt.srs.local` in docker.
 * `LOCAL_RELEASE`: `on|off`, whether use local release service. Default: off
+* `PLATFORM_DOCKER`: `on|off`, whether run platform in docker. Default: off
 
 For mgmt and containers to connect to redis:
 
@@ -921,7 +938,6 @@ Deprecated and unused variables:
 * `SRS_DOCKERIZED`: `on|off`, indicates the OS is in docker.
 * `SRS_DOCKER`: `srs` to enfore use `ossrs/srs` docker image.
 * `MGMT_DOCKER`: `on|off`, whether run mgmt in docker. Default: false
-* `PLATFORM_DOCKER`: `on|off`, whether run platform in docker. Default: on
 * `USE_DOCKER`: `on|off`, if false, disable all docker containers.
 * `SRS_UTEST`: `on|off`, if on, running in utest mode.
 * `SOURCE`: `github|gitee`, The source code for upgrading.
