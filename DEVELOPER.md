@@ -749,11 +749,12 @@ but also has extra improvements for we can do more after proxy the API.
 1. If `NAME_LOOKUP` (default is `on`) isn't `off`, try to resolve the candidate from `Host` of HTTP API by SRS Stack.
   1. If access SRS Stack by `localhost` for debugging or run in localhost.
     1. If `PLATFORM_DOCKER` is `off`, such as directly run in host, not in docker, use the private ip of SRS Stack.
-    1. If run in macOS docker, try to resolve `host.docker.internal` as the private ip of SRS Stack.
     1. Use `127.0.0.1` for OBS WHIP or native client to access SRS Stack by localhost.
   1. Use `Host` if it's a valid IP address, for example, to access SRS Stack by public ip address.
   1. Use DNS lookup if `Host` is a domain, for example, to access SRS Stack by domain name.
 1. If no candidate, use docker IP address discovered by SRS. 
+
+> Note: Never use `host.docker.internal` because it's only available in docker, not in host server.
 
 ## Docker Allocated Ports
 

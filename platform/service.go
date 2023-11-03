@@ -520,13 +520,20 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "set %v %v", SRS_LOCALE, locale)
 			}
 
+			platformDocker := os.Getenv("PLATFORM_DOCKER") != "off"
+			candidate := os.Getenv("CANDIDATE") != ""
 			ohttp.WriteData(ctx, w, r, &struct {
-				MgmtDocker bool `json:"mgmtDocker"`
+				MgmtDocker     bool `json:"mgmtDocker"`
+				PlatformDocker bool `json:"platformDocker"`
+				Candidate      bool `json:"candidate"`
 			}{
-				MgmtDocker: true,
+				MgmtDocker:     true,
+				PlatformDocker: platformDocker,
+				Candidate:      candidate,
 			})
 
-			logger.Tf(ctx, "mgmt envs ok, locale=%v", locale)
+			logger.Tf(ctx, "mgmt envs ok, locale=%v, platformDocker=%v, candidate=%v",
+				locale, platformDocker, candidate)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

@@ -68,8 +68,10 @@ export function buildUrls(defaultUrl, secret) {
 
   // For WebRTC url.
   if (true) {
-    const secretQuery = secret ? `&&secret=${secret.publish}` : '';
+    const secretQuery = secret ? `&secret=${secret.publish}` : '';
     urls.rtcPublisher = `/players/whip.html?schema=https&port=${defaultPort}&api=${defaultPort}&autostart=true&stream=${defaultStream}${secretQuery}`;
+    urls.whipUrl = `${defaultSchema}://${defaultHostname}:${defaultPort}/rtc/v1/whip/?app=${defaultApp}&stream=${defaultStream}${secretQuery}`;
+    urls.whepUrl = `${defaultSchema}://${defaultHostname}:${defaultPort}/rtc/v1/whep/?app=${defaultApp}&stream=${defaultStream}`;
   }
 
   // For transcode stream and urls.
@@ -100,6 +102,8 @@ export default function useUrls() {
   const [hlsPlayer, setHlsPlayer] = React.useState();
   const [rtcPlayer, setRtcPlayer] = React.useState();
   const [rtcPublisher, setRtcPublisher] = React.useState();
+  const [whipUrl, setWhipUrl] = React.useState();
+  const [whepUrl, setWhepUrl] = React.useState();
 
   const [transcodeStreamName, setTranscodeStreamName] = React.useState();
   const [transcodeStreamKey, setTranscodeStreamKey] = React.useState();
@@ -171,6 +175,8 @@ export default function useUrls() {
     // For WebRTC url.
     if (true) {
       setRtcPublisher(urls.rtcPublisher);
+      setWhipUrl(urls.whipUrl);
+      setWhepUrl(urls.whepUrl);
     }
 
     // For transcode stream and urls.
@@ -201,6 +207,8 @@ export default function useUrls() {
     hlsPlayer,
     rtcPlayer,
     rtcPublisher,
+    whipUrl,
+    whepUrl,
     // For transcode.
     transcodeStreamName,
     transcodeStreamKey,

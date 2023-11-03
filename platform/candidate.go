@@ -68,11 +68,6 @@ func (v *CandidateWorker) Resolve(host string) (net.IP, error) {
 			return conf.ipv4, nil
 		}
 
-		// For macOS to access by host.docker.internal.
-		if conf.macIpv4 != nil {
-			return conf.macIpv4, nil
-		}
-
 		// Return lo for OBS WHIP or native client to access it.
 		return net.IPv4(127, 0, 0, 1), nil
 	}

@@ -269,7 +269,7 @@
           "simple": "简易播放器",
           "xg": "西瓜播放器",
           "hls": "播放HLS流, 请选择播放器",
-          "rtc": "播放WebRTC流, 请选择播放器：",
+          "rtc": "播放WebRTC流, 请选择WHEP播放器：",
           "wp": "你也可以嵌入到WordPress：",
           "wpflv": "嵌入HTTP-FLV流",
           "wphls": "嵌入HLS流",
@@ -284,8 +284,10 @@
           "config": "在OBS输入",
           "server": "推流地址（服务器）",
           "key": "推流密钥（串流密钥）",
+          "bearer": "Bearer 令牌",
           "service": "服务",
           "custom": "自定义",
+          "whip": "WHIP",
           "nokey": "无，注意请不要填任何字符串"
         },
         "ffmpeg": {
@@ -305,12 +307,19 @@
           "ff": "SRT: FFmpeg/芯象推流"
         },
         "rtc": {
-          "title": "WebRTC: 网页推流",
-          "https": "请使用HTTPS访问管理后台。若使用自签名证书，请点页面空白处然后敲",
+          "check": "检查网络连通性请参考",
+          "connectivity": "https://ossrs.net/lts/zh-cn/docs/v5/doc/webrtc#connection-failures",
+          "title": "WebRTC: WHIP网页推流",
+          "whep": "请使用内网或公网IP访问后台，WHEP不支持localhost访问。",
+          "https": "请使用HTTPS访问管理后台。若使用自签名证书，请点击高级，然后继续访问",
           "tip": "打开页面推流：",
           "tip2": "注意先停止掉FFmpeg/OBS推流。",
           "wp": "使用WordPress页面推流：",
-          "sc": "WordPress简码"
+          "sc": "WordPress简码",
+          "nolo": "SRS Stack不支持localhost WHIP推流，请使用内网或公网IP访问"
+        },
+        "rtc2": {
+          "title": "WebRTC: WHIP OBS"
         }
       },
       "cb": {
@@ -358,13 +367,20 @@
         "title": "Introduction"
       },
       "live": {
+        "rtc2": {
+          "title": "WebRTC: WHIP OBS"
+        },
         "rtc": {
+          "nolo": "SRS Stack does not support localhost WHIP publishing, please use intranet or public network IP to access",
           "sc": "WordPress Shortcode",
           "wp": "Publish by WordPress:",
           "tip2": "Please stop FFmpeg/OBS before publishing.",
           "tip": "Open this page to publish:",
-          "https": "Please use HTTPS to access this page. If you use a self-signed certificate, please click on the blank area of the page and then type",
-          "title": "WebRTC: Webpage"
+          "whep": "Please use intranet or public network IP to access the background, WHEP does not support localhost access.",
+          "https": "Please use HTTPS to access this page. If you use a self-signed certificate, please click Advanced, then Proceed to unsafe",
+          "title": "WebRTC: WHIP Browser",
+          "connectivity": "https://ossrs.io/lts/en-us/docs/v5/doc/webrtc#connection-failures",
+          "check": "check connectivity by"
         },
         "srt": {
           "ff": "SRT: FFmpeg",
@@ -384,12 +400,14 @@
         },
         "obs": {
           "key": "Stream Key:",
+          "bearer": "Bearer Token:",
           "server": "Server:",
           "config": "OBS configuration",
           "download": "Download OBS from this",
           "title": "RTMP: OBS or vMix",
-          "service": "Service",
+          "service": "Service:",
           "custom": "Custom",
+          "whip": "WHIP",
           "nokey": "Empty. Please keep it empty."
         },
         "share": {
@@ -400,7 +418,7 @@
           "wphls": "For HLS",
           "wpflv": "For HTTP-FLV",
           "wp": "You can also embed to WordPress:",
-          "rtc": "Play WebRTC stream, choose player:",
+          "rtc": "Play WebRTC stream, WHEP player:",
           "hls": "Play HLS stream, choose player:",
           "xg": "Xigua Player",
           "simple": "Simple Player",

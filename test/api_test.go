@@ -39,7 +39,7 @@ func TestApi_SetupWebsiteFooter(t *testing.T) {
 	}{
 		Beian: "icp", Text: "TestFooter",
 	}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/update", &req, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/beian/update", &req, nil); err != nil {
 		r0 = err
 		return
 	}
@@ -47,7 +47,7 @@ func TestApi_SetupWebsiteFooter(t *testing.T) {
 	res := struct {
 		ICP string `json:"icp"`
 	}{}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/query", nil, &res); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/beian/query", nil, &res); err != nil {
 		r0 = err
 	} else if res.ICP != "TestFooter" {
 		r0 = errors.Errorf("invalid response %v", res)
@@ -68,7 +68,7 @@ func TestApi_SetupWebsiteTitle(t *testing.T) {
 	}(ctx)
 
 	var title string
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/beian/query", nil, &struct {
 		Title *string `json:"title"`
 	}{
 		Title: &title,
@@ -79,7 +79,7 @@ func TestApi_SetupWebsiteTitle(t *testing.T) {
 		title = "SRS"
 	}
 	defer func() {
-		if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/update", &struct {
+		if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/beian/update", &struct {
 			Beian string `json:"beian"`
 			Text  string `json:"text"`
 		}{
@@ -95,7 +95,7 @@ func TestApi_SetupWebsiteTitle(t *testing.T) {
 	}{
 		Beian: "title", Text: "TestTitle",
 	}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/update", &req, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/beian/update", &req, nil); err != nil {
 		r0 = err
 		return
 	}
@@ -103,7 +103,7 @@ func TestApi_SetupWebsiteTitle(t *testing.T) {
 	res := struct {
 		Title string `json:"title"`
 	}{}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/beian/query", nil, &res); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/beian/query", nil, &res); err != nil {
 		r0 = err
 	} else if res.Title != "TestTitle" {
 		r0 = errors.Errorf("invalid response %v", res)
@@ -126,7 +126,7 @@ func TestApi_UpdatePublishSecret(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -141,7 +141,7 @@ func TestApi_UpdatePublishSecret(t *testing.T) {
 	// Reset the publish secret to the original value.
 	defer func() {
 		logger.Tf(ctx, "Reset publish secret to %v", pubSecret)
-		if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/update", &struct {
+		if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/update", &struct {
 			Secret string `json:"secret"`
 		}{
 			Secret: pubSecret,
@@ -150,7 +150,7 @@ func TestApi_UpdatePublishSecret(t *testing.T) {
 		}
 	}()
 
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/update", &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/update", &struct {
 		Secret string `json:"secret"`
 	}{
 		Secret: "TestPublish",
@@ -162,7 +162,7 @@ func TestApi_UpdatePublishSecret(t *testing.T) {
 	res := struct {
 		Publish string `json:"publish"`
 	}{}
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &res); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &res); err != nil {
 		r0 = err
 	} else if res.Publish != "TestPublish" {
 		r0 = errors.Errorf("invalid response %v", res)
@@ -200,7 +200,7 @@ func TestApi_TutorialsQueryBilibili(t *testing.T) {
 		Title string `json:"title"`
 		Desc  string `json:"desc"`
 	}{}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/bilibili", &req, &res); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/bilibili", &req, &res); err != nil {
 		r0 = err
 	} else if res.Title == "" || res.Desc == "" {
 		r0 = errors.Errorf("invalid response %v", res)
@@ -274,7 +274,7 @@ func TestApi_SslUpdateCert(t *testing.T) {
 		return
 	}
 
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/ssl", &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/ssl", &struct {
 		Key string `json:"key"`
 		Crt string `json:"crt"`
 	}{
@@ -289,7 +289,7 @@ func TestApi_SslUpdateCert(t *testing.T) {
 		Key      string `json:"key"`
 		Crt      string `json:"crt"`
 	}{}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/cert/query", nil, &conf); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/cert/query", nil, &conf); err != nil {
 		r0 = err
 	} else if conf.Provider != "ssl" || conf.Key != key || conf.Crt != crt {
 		r0 = errors.Errorf("invalid response %v", conf)
@@ -313,7 +313,7 @@ func TestApi_LetsEncryptUpdateCert(t *testing.T) {
 		}
 	}(ctx)
 
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/letsencrypt", &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/letsencrypt", &struct {
 		Domain string `json:"domain"`
 	}{
 		Domain: *domainLetsEncrypt,
@@ -327,7 +327,7 @@ func TestApi_LetsEncryptUpdateCert(t *testing.T) {
 		Key      string `json:"key"`
 		Crt      string `json:"crt"`
 	}{}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/cert/query", nil, &conf); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/cert/query", nil, &conf); err != nil {
 		r0 = err
 	} else if conf.Provider != "lets" || conf.Key == "" || conf.Crt == "" {
 		r0 = errors.Errorf("invalid response %v", conf)
@@ -353,25 +353,25 @@ func TestApi_SetupHpHLSNoHlsCtx(t *testing.T) {
 
 	if true {
 		initData := Data{}
-		if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &initData); err != nil {
+		if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/query", nil, &initData); err != nil {
 			r0 = err
 			return
 		}
 		defer func() {
-			if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
+			if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
 				logger.Tf(ctx, "restore hphls config failed %+v", err)
 			}
 		}()
 	}
 
 	noHlsCtx := Data{NoHlsCtx: true}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &noHlsCtx, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/update", &noHlsCtx, nil); err != nil {
 		r0 = err
 		return
 	}
 
 	verifyData := Data{}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &verifyData); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/query", nil, &verifyData); err != nil {
 		r0 = err
 		return
 	} else if verifyData.NoHlsCtx != true {
@@ -398,25 +398,25 @@ func TestApi_SetupHpHLSWithHlsCtx(t *testing.T) {
 
 	if true {
 		initData := Data{}
-		if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &initData); err != nil {
+		if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/query", nil, &initData); err != nil {
 			r0 = err
 			return
 		}
 		defer func() {
-			if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
+			if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
 				logger.Tf(ctx, "restore hphls config failed %+v", err)
 			}
 		}()
 	}
 
 	noHlsCtx := Data{NoHlsCtx: false}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &noHlsCtx, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/update", &noHlsCtx, nil); err != nil {
 		r0 = err
 		return
 	}
 
 	verifyData := Data{}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &verifyData); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/query", nil, &verifyData); err != nil {
 		r0 = err
 		return
 	} else if verifyData.NoHlsCtx != false {
@@ -438,7 +438,7 @@ func TestApi_SrsApiNoAuth(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -450,19 +450,19 @@ func TestApi_SrsApiNoAuth(t *testing.T) {
 	// Should OK for RTC api.
 	offer := strings.ReplaceAll(SrsLarixExampleOffer, "\n", "\r\n")
 	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
-	if err := apiRequestNoAuth(ctx, fmt.Sprintf("/rtc/v1/whip/?app=live&stream=%v&secret=%v", streamID, pubSecret), offer, nil); err != nil {
+	if err := NewApi().NoAuth(ctx, fmt.Sprintf("/rtc/v1/whip/?app=live&stream=%v&secret=%v", streamID, pubSecret), offer, nil); err != nil {
 		r0 = errors.Wrapf(err, "should ok for rtc publish api")
 		return
 	}
 
 	// For health check api, should ok.
-	if err := apiRequestNoAuth(ctx, "/api/v1/versions", nil, nil); err != nil {
+	if err := NewApi().NoAuth(ctx, "/api/v1/versions", nil, nil); err != nil {
 		r0 = errors.Wrapf(err, "should ok for health check api")
 		return
 	}
 
 	// Should failed if no auth.
-	if err := apiRequestNoAuth(ctx, "/api/v1/summaries", nil, nil); err == nil {
+	if err := NewApi().NoAuth(ctx, "/api/v1/summaries", nil, nil); err == nil {
 		r0 = errors.Errorf("should failed if no auth")
 		return
 	}
@@ -482,7 +482,7 @@ func TestApi_SrsApiWithAuth(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -497,7 +497,7 @@ func TestApi_SrsApiWithAuth(t *testing.T) {
 		Revision int    `json:"revision"`
 		Version  string `json:"version"`
 	}{}
-	if err := apiRequest(ctx, "/api/v1/versions", nil, &ver); err != nil {
+	if err := NewApi().WithAuth(ctx, "/api/v1/versions", nil, &ver); err != nil {
 		r0 = errors.Wrapf(err, "request failed")
 	} else if ver.Major != 5 {
 		r0 = errors.Errorf("invalid response %v", ver)
@@ -512,7 +512,7 @@ func TestApi_SrsApiWithAuth(t *testing.T) {
 			CPUs int `json:"cpus"`
 		} `json:"system"`
 	}{}
-	if err := apiRequest(ctx, "/api/v1/summaries", nil, &summaries); err != nil {
+	if err := NewApi().WithAuth(ctx, "/api/v1/summaries", nil, &summaries); err != nil {
 		r0 = errors.Wrapf(err, "request failed")
 	} else if ver.Version != summaries.Self.Version {
 		r0 = errors.Errorf("invalid response %v %v", summaries, ver)
@@ -523,7 +523,7 @@ func TestApi_SrsApiWithAuth(t *testing.T) {
 	// Should OK for RTC api.
 	offer := strings.ReplaceAll(SrsLarixExampleOffer, "\n", "\r\n")
 	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
-	if err := apiRequest(ctx, fmt.Sprintf("/rtc/v1/whip/?app=live&stream=%v&secret=%v", streamID, pubSecret), offer, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, fmt.Sprintf("/rtc/v1/whip/?app=live&stream=%v&secret=%v", streamID, pubSecret), offer, nil); err != nil {
 		r0 = errors.Wrapf(err, "should ok for rtc publish api")
 		return
 	}

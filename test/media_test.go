@@ -32,7 +32,7 @@ func TestMedia_WithStream_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -110,7 +110,7 @@ func TestMedia_WithStream_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -188,7 +188,7 @@ func TestMedia_WithStream_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -265,7 +265,7 @@ func TestMedia_WithStream_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -358,7 +358,7 @@ func TestMedia_WithStream_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 
 	if true {
 		initData := Data{}
-		if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &initData); err != nil {
+		if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/query", nil, &initData); err != nil {
 			r0 = err
 			return
 		}
@@ -368,20 +368,20 @@ func TestMedia_WithStream_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 
 			// The ctx has already been cancelled by test case, which will cause the request failed.
 			ctx := context.Background()
-			if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
+			if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
 				logger.Tf(ctx, "restore hphls config failed %+v", err)
 			}
 		}()
 	}
 
 	noHlsCtx := Data{NoHlsCtx: true}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &noHlsCtx, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/update", &noHlsCtx, nil); err != nil {
 		r0 = err
 		return
 	}
 
 	verifyData := Data{}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &verifyData); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/query", nil, &verifyData); err != nil {
 		r0 = err
 		return
 	} else if verifyData.NoHlsCtx != true {
@@ -395,7 +395,7 @@ func TestMedia_WithStream_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 	///////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -459,7 +459,7 @@ func TestMedia_WithStream_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 
 	// Check the HLS playlist, should with hls context.
 	var body string
-	if err := httpRequest(ctx, hlsStreamURL, nil, true, &body); err != nil {
+	if err := NewApi().Request(ctx, hlsStreamURL, nil, true, &body); err != nil {
 		r5 = err
 		return
 	}
@@ -508,7 +508,7 @@ func TestMedia_WithStream_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
 
 	if true {
 		initData := Data{}
-		if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &initData); err != nil {
+		if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/query", nil, &initData); err != nil {
 			r0 = err
 			return
 		}
@@ -518,20 +518,20 @@ func TestMedia_WithStream_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
 
 			// The ctx has already been cancelled by test case, which will cause the request failed.
 			ctx := context.Background()
-			if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
+			if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/update", &initData, nil); err != nil {
 				logger.Tf(ctx, "restore hphls config failed %+v", err)
 			}
 		}()
 	}
 
 	noHlsCtx := Data{NoHlsCtx: false}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/update", &noHlsCtx, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/update", &noHlsCtx, nil); err != nil {
 		r0 = err
 		return
 	}
 
 	verifyData := Data{}
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/hphls/query", nil, &verifyData); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hphls/query", nil, &verifyData); err != nil {
 		r0 = err
 		return
 	} else if verifyData.NoHlsCtx != false {
@@ -545,7 +545,7 @@ func TestMedia_WithStream_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
 	///////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -609,7 +609,7 @@ func TestMedia_WithStream_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
 
 	// Check the HLS playlist, should with hls context.
 	var body string
-	if err := httpRequest(ctx, hlsStreamURL, nil, true, &body); err != nil {
+	if err := NewApi().Request(ctx, hlsStreamURL, nil, true, &body); err != nil {
 		r5 = err
 		return
 	}

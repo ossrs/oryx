@@ -58,8 +58,6 @@ type Config struct {
 	// Discover by iface.
 	ipv4  net.IP
 	Iface string
-	// Discover by host.docker.internal for macOS.
-	macIpv4 net.IP
 
 	// The latest and stable version from SRS Stack API.
 	Versions Versions
@@ -428,20 +426,6 @@ func refreshIPv4(ctx context.Context) error {
 				conf.ipv4 = ipv4
 				conf.Iface = name
 				ipv4Cancel()
-			}
-
-			// The ip address might change, so we should always resolve it.
-			time.Sleep(time.Duration(30) * time.Second)
-		}
-	}()
-
-	go func() {
-		ctx := logger.WithContext(ctx)
-		for ctx.Err() == nil {
-			if ips, err := net.LookupHost("host.docker.internal"); err == nil && len(ips) > 0 {
-				if ip := net.ParseIP(ips[0]); ip != nil && !ip.IsLoopback() {
-					conf.macIpv4 = ip
-				}
 			}
 
 			// The ip address might change, so we should always resolve it.

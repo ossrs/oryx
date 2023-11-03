@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
@@ -300,7 +301,7 @@ func TestMain(m *testing.M) {
 	}
 
 	if *initSelfSignedCert {
-		if err := apiRequest(ctx, "/terraform/v1/mgmt/auto-self-signed-certificate", nil, nil); err != nil {
+		if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/auto-self-signed-certificate", nil, nil); err != nil {
 			logger.Ef(ctx, "Init self-signed cert fail, err %+v", err)
 			os.Exit(-1)
 		}
@@ -320,7 +321,7 @@ func waitForServiceReady(ctx context.Context) error {
 			return ctx.Err()
 		}
 
-		err := apiRequest(ctx, "/terraform/v1/host/versions", nil, nil)
+		err := NewApi().WithAuth(ctx, "/terraform/v1/host/versions", nil, nil)
 		if err == nil {
 			break
 		}
@@ -346,7 +347,7 @@ func initSystemPassword(ctx context.Context) error {
 
 	// Initialize the system by password.
 	var token string
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/init", &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/init", &struct {
 		Password string `json:"password"`
 	}{
 		Password: password,
@@ -363,7 +364,7 @@ func initSystemPassword(ctx context.Context) error {
 
 	// Login the system by password.
 	var token2 string
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/login", &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/login", &struct {
 		Password string `json:"password"`
 	}{
 		Password: password,
@@ -438,7 +439,19 @@ func filterTestError(errs ...error) error {
 	return errors.Wrapf(filteredErrors[0], "with %v", strings.Join(descs, ","))
 }
 
-func apiRequest(ctx context.Context, apiPath string, data interface{}, response interface{}) (err error) {
+type testApi struct {
+	InjectRequest func(req *http.Request)
+}
+
+func NewApi(pfns ...func(v *testApi)) *testApi {
+	v := &testApi{}
+	for _, pfn := range pfns {
+		pfn(v)
+	}
+	return v
+}
+
+func (v *testApi) WithAuth(ctx context.Context, apiPath string, data interface{}, response interface{}) (err error) {
 	apiEndpoint := *endpoint
 	if *forceHttps {
 		apiEndpoint = strings.ReplaceAll(apiEndpoint, "http://", "https://")
@@ -448,11 +461,16 @@ func apiRequest(ctx context.Context, apiPath string, data interface{}, response 
 	api := fmt.Sprintf("%s%s", apiEndpoint, apiPath)
 
 	var b string
-	if err = httpRequest(ctx, api, data, true, &b); err != nil {
+	if err = v.Request(ctx, api, data, true, &b); err != nil {
 		return errors.Wrapf(err, "http request")
 	}
 
 	if response == nil {
+		return nil
+	}
+
+	if ps, ok := response.(*string); ok {
+		*ps = b
 		return nil
 	}
 
@@ -473,7 +491,7 @@ func apiRequest(ctx context.Context, apiPath string, data interface{}, response 
 	return nil
 }
 
-func apiRequestNoAuth(ctx context.Context, apiPath string, data interface{}, response interface{}) (err error) {
+func (v *testApi) NoAuth(ctx context.Context, apiPath string, data interface{}, response interface{}) (err error) {
 	apiEndpoint := *endpoint
 	if *forceHttps {
 		apiEndpoint = strings.ReplaceAll(apiEndpoint, "http://", "https://")
@@ -483,11 +501,16 @@ func apiRequestNoAuth(ctx context.Context, apiPath string, data interface{}, res
 	api := fmt.Sprintf("%s%s", apiEndpoint, apiPath)
 
 	var b string
-	if err = httpRequest(ctx, api, data, false, &b); err != nil {
+	if err = v.Request(ctx, api, data, false, &b); err != nil {
 		return errors.Wrapf(err, "http request")
 	}
 
 	if response == nil {
+		return nil
+	}
+
+	if ps, ok := response.(*string); ok {
+		*ps = b
 		return nil
 	}
 
@@ -508,7 +531,7 @@ func apiRequestNoAuth(ctx context.Context, apiPath string, data interface{}, res
 	return nil
 }
 
-func httpRequest(ctx context.Context, api string, data interface{}, auth bool, response *string) (err error) {
+func (v *testApi) Request(ctx context.Context, api string, data interface{}, auth bool, response *string) (err error) {
 	var body io.Reader
 	if data != nil {
 		if s, ok := data.(string); ok {
@@ -532,6 +555,10 @@ func httpRequest(ctx context.Context, api string, data interface{}, auth bool, r
 
 	if auth {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", *apiSecret))
+	}
+
+	if v.InjectRequest != nil {
+		v.InjectRequest(req)
 	}
 
 	var resp *http.Response
@@ -1306,4 +1333,17 @@ func (v *ffprobeObject) Audio() *ffprobeObjectMedia {
 		}
 	}
 	return nil
+}
+
+// Scan str line by line, find by pfn, return line if pfn return true.
+func StringContainsLine(str string, pfn func(line string) bool) string {
+	scanner := bufio.NewScanner(strings.NewReader(str))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if pfn(line) {
+			return line
+		}
+	}
+
+	return ""
 }

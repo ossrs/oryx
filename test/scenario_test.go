@@ -34,7 +34,7 @@ func TestScenario_WithStream_PublishVliveStreamUrl(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -75,7 +75,7 @@ func TestScenario_WithStream_PublishVliveStreamUrl(t *testing.T) {
 		Size   int64  `json:"size"`
 		Type   string `json:"type"`
 	}{}
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/vlive/streamUrl?url="+streamURL, nil, &res); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/streamUrl?url="+streamURL, nil, &res); err != nil {
 		r0 = errors.Wrapf(err, "request ffmpeg vlive streamUrl failed")
 		return
 	}
@@ -97,7 +97,7 @@ func TestScenario_WithStream_PublishVliveStreamUrl(t *testing.T) {
 			Height    int    `json:"height"`
 		} `json:"video"`
 	}{}
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/vlive/source", &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/source", &struct {
 		Platform string        `json:"platform"`
 		Files    []interface{} `json:"files"`
 	}{
@@ -140,7 +140,7 @@ func TestScenario_WithStream_PublishVliveStreamUrl(t *testing.T) {
 		Action   string      `json:"action"`
 	}
 	conf := make(map[string]*VLiveConfig)
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/vlive/secret", nil, &conf); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/secret", nil, &conf); err != nil {
 		r0 = errors.Wrapf(err, "request ffmpeg vlive secret failed")
 		return
 	}
@@ -167,14 +167,14 @@ func TestScenario_WithStream_PublishVliveStreamUrl(t *testing.T) {
 
 		// The ctx has already been cancelled by test case, which will cause the request failed.
 		ctx := context.Background()
-		apiRequest(ctx, "/terraform/v1/ffmpeg/vlive/secret", backup, nil)
+		NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/secret", backup, nil)
 	}()
 
 	publishStreamID := fmt.Sprintf("publish-stream-%v-%v", os.Getpid(), rand.Int())
 	bilibili.Secret = fmt.Sprintf("%v?secret=%v", publishStreamID, pubSecret)
 	bilibili.Server = "rtmp://localhost/live/"
 	bilibili.Enabled = true
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/vlive/secret", &bilibili, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/secret", &bilibili, nil); err != nil {
 		r0 = errors.Wrapf(err, "request ffmpeg vlive secret failed")
 		return
 	}
@@ -230,7 +230,7 @@ func TestScenario_WithStream_PublishVLivePlayFlv(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -269,7 +269,7 @@ func TestScenario_WithStream_PublishVLivePlayFlv(t *testing.T) {
 		Target string `json:"target"`
 		UUID   string `json:"uuid"`
 	}{}
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/vlive/server?file="+sourceFile, nil, &res); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/server?file="+sourceFile, nil, &res); err != nil {
 		r0 = errors.Wrapf(err, "request ffmpeg vlive server failed")
 		return
 	}
@@ -289,7 +289,7 @@ func TestScenario_WithStream_PublishVLivePlayFlv(t *testing.T) {
 			Height    int    `json:"height"`
 		} `json:"video"`
 	}{}
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/vlive/source", &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/source", &struct {
 		Platform string        `json:"platform"`
 		Files    []interface{} `json:"files"`
 	}{
@@ -332,7 +332,7 @@ func TestScenario_WithStream_PublishVLivePlayFlv(t *testing.T) {
 		Action   string      `json:"action"`
 	}
 	conf := make(map[string]*VLiveConfig)
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/vlive/secret", nil, &conf); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/secret", nil, &conf); err != nil {
 		r0 = errors.Wrapf(err, "request ffmpeg vlive secret failed")
 		return
 	}
@@ -358,14 +358,14 @@ func TestScenario_WithStream_PublishVLivePlayFlv(t *testing.T) {
 
 		// The ctx has already been cancelled by test case, which will cause the request failed.
 		ctx := context.Background()
-		apiRequest(ctx, "/terraform/v1/ffmpeg/vlive/secret", backup, nil)
+		NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/secret", backup, nil)
 	}()
 
 	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
 	bilibili.Secret = fmt.Sprintf("%v?secret=%v", streamID, pubSecret)
 	bilibili.Server = "rtmp://localhost/live/"
 	bilibili.Enabled = true
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/vlive/secret", &bilibili, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/secret", &bilibili, nil); err != nil {
 		r0 = errors.Wrapf(err, "request ffmpeg vlive secret failed")
 		return
 	}
@@ -424,7 +424,7 @@ func TestScenario_WithStream_PublishRtmpRecordMp4(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -435,7 +435,7 @@ func TestScenario_WithStream_PublishRtmpRecordMp4(t *testing.T) {
 
 	// Query the old config.
 	backup := make(map[string]interface{})
-	if err := apiRequest(ctx, "/terraform/v1/hooks/record/query", nil, &backup); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/query", nil, &backup); err != nil {
 		r0 = errors.Wrapf(err, "request record query failed")
 		return
 	}
@@ -444,11 +444,11 @@ func TestScenario_WithStream_PublishRtmpRecordMp4(t *testing.T) {
 
 		// The ctx has already been cancelled by test case, which will cause the request failed.
 		ctx := context.Background()
-		apiRequest(ctx, "/terraform/v1/hooks/record/apply", backup, nil)
+		NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/apply", backup, nil)
 	}()
 
 	// Enable the record worker.
-	if err := apiRequest(ctx, "/terraform/v1/hooks/record/apply", &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/apply", &struct {
 		All bool `json:"all"`
 	}{true}, nil); err != nil {
 		r0 = errors.Wrapf(err, "request record apply failed")
@@ -480,7 +480,7 @@ func TestScenario_WithStream_PublishRtmpRecordMp4(t *testing.T) {
 	}
 
 	// Stop record worker.
-	if err := apiRequest(ctx, "/terraform/v1/hooks/record/apply", &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/apply", &struct {
 		All bool `json:"all"`
 	}{false}, nil); err != nil {
 		r0 = errors.Wrapf(err, "request record apply failed")
@@ -504,7 +504,7 @@ func TestScenario_WithStream_PublishRtmpRecordMp4(t *testing.T) {
 
 		// The ctx has already been cancelled by test case, which will cause the request failed.
 		ctx := context.Background()
-		apiRequest(ctx, "/terraform/v1/hooks/record/remove", &struct {
+		NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/remove", &struct {
 			UUID string `json:"uuid"`
 		}{recordFile.UUID}, nil)
 	}()
@@ -512,7 +512,7 @@ func TestScenario_WithStream_PublishRtmpRecordMp4(t *testing.T) {
 
 	for i := 0; i < 60; i++ {
 		files := []RecordFile{}
-		if err := apiRequest(ctx, "/terraform/v1/hooks/record/files", nil, &files); err != nil {
+		if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/files", nil, &files); err != nil {
 			r0 = errors.Wrapf(err, "request record files failed")
 			return
 		}
@@ -572,7 +572,7 @@ func TestScenario_WithStream_PublishRtmpForwardPlatform(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -592,7 +592,7 @@ func TestScenario_WithStream_PublishRtmpForwardPlatform(t *testing.T) {
 		Server   string `json:"server"`
 	}
 	conf := make(map[string]*ForwardConfig)
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/forward/secret", nil, &conf); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/forward/secret", nil, &conf); err != nil {
 		r0 = errors.Wrapf(err, "request forward query failed")
 		return
 	}
@@ -619,7 +619,7 @@ func TestScenario_WithStream_PublishRtmpForwardPlatform(t *testing.T) {
 
 		// The ctx has already been cancelled by test case, which will cause the request failed.
 		ctx := context.Background()
-		apiRequest(ctx, "/terraform/v1/ffmpeg/forward/secret", backup, nil)
+		NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/forward/secret", backup, nil)
 	}()
 
 	var wg sync.WaitGroup
@@ -656,7 +656,7 @@ func TestScenario_WithStream_PublishRtmpForwardPlatform(t *testing.T) {
 	bilibili.Secret = fmt.Sprintf("%v?secret=%v", forwardStreamID, pubSecret)
 	bilibili.Server = "rtmp://localhost/live/"
 	bilibili.Enabled = true
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/forward/secret", bilibili, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/forward/secret", bilibili, nil); err != nil {
 		r0 = errors.Wrapf(err, "request forward apply failed")
 		return
 	}
@@ -712,7 +712,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeDefault(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -735,7 +735,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeDefault(t *testing.T) {
 		Secret        string `json:"secret"`
 	}
 	var conf TranscodeConfig
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/query", nil, &conf); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/query", nil, &conf); err != nil {
 		r0 = errors.Wrapf(err, "request transcode query failed")
 		return
 	}
@@ -747,7 +747,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeDefault(t *testing.T) {
 
 		// The ctx has already been cancelled by test case, which will cause the request failed.
 		ctx := context.Background()
-		apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/apply", backup, nil)
+		NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/apply", backup, nil)
 	}()
 
 	var wg sync.WaitGroup
@@ -791,7 +791,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeDefault(t *testing.T) {
 	conf.VideoPreset = "ultrafast"
 	conf.AudioCodec = "aac"
 	conf.AudioBitrate = 16
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/apply", &conf, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/apply", &conf, nil); err != nil {
 		r0 = errors.Wrapf(err, "request transcode apply failed")
 		return
 	}
@@ -812,7 +812,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeDefault(t *testing.T) {
 			Update string `json:"update"`
 		} `json:"frame"`
 	}{}
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/task", nil, &task); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/task", nil, &task); err != nil {
 		r0 = errors.Wrapf(err, "request transcode query failed")
 		return
 	}
@@ -877,7 +877,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeFollow(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -900,7 +900,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeFollow(t *testing.T) {
 		Secret        string `json:"secret"`
 	}
 	var conf TranscodeConfig
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/query", nil, &conf); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/query", nil, &conf); err != nil {
 		r0 = errors.Wrapf(err, "request transcode query failed")
 		return
 	}
@@ -912,7 +912,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeFollow(t *testing.T) {
 
 		// The ctx has already been cancelled by test case, which will cause the request failed.
 		ctx := context.Background()
-		apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/apply", backup, nil)
+		NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/apply", backup, nil)
 	}()
 
 	var wg sync.WaitGroup
@@ -957,7 +957,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeFollow(t *testing.T) {
 	conf.AudioCodec = "aac"
 	conf.AudioBitrate = 16
 	conf.AudioChannels = 0
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/apply", &conf, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/apply", &conf, nil); err != nil {
 		r0 = errors.Wrapf(err, "request transcode apply failed")
 		return
 	}
@@ -1017,7 +1017,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeMono(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -1040,7 +1040,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeMono(t *testing.T) {
 		Secret        string `json:"secret"`
 	}
 	var conf TranscodeConfig
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/query", nil, &conf); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/query", nil, &conf); err != nil {
 		r0 = errors.Wrapf(err, "request transcode query failed")
 		return
 	}
@@ -1052,7 +1052,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeMono(t *testing.T) {
 
 		// The ctx has already been cancelled by test case, which will cause the request failed.
 		ctx := context.Background()
-		apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/apply", backup, nil)
+		NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/apply", backup, nil)
 	}()
 
 	var wg sync.WaitGroup
@@ -1097,7 +1097,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeMono(t *testing.T) {
 	conf.AudioCodec = "aac"
 	conf.AudioBitrate = 16
 	conf.AudioChannels = 1
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/apply", &conf, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/apply", &conf, nil); err != nil {
 		r0 = errors.Wrapf(err, "request transcode apply failed")
 		return
 	}
@@ -1157,7 +1157,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeStereo(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -1180,7 +1180,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeStereo(t *testing.T) {
 		Secret        string `json:"secret"`
 	}
 	var conf TranscodeConfig
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/query", nil, &conf); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/query", nil, &conf); err != nil {
 		r0 = errors.Wrapf(err, "request transcode query failed")
 		return
 	}
@@ -1192,7 +1192,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeStereo(t *testing.T) {
 
 		// The ctx has already been cancelled by test case, which will cause the request failed.
 		ctx := context.Background()
-		apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/apply", backup, nil)
+		NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/apply", backup, nil)
 	}()
 
 	var wg sync.WaitGroup
@@ -1237,7 +1237,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeStereo(t *testing.T) {
 	conf.AudioCodec = "aac"
 	conf.AudioBitrate = 16
 	conf.AudioChannels = 2
-	if err := apiRequest(ctx, "/terraform/v1/ffmpeg/transcode/apply", &conf, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/transcode/apply", &conf, nil); err != nil {
 		r0 = errors.Wrapf(err, "request transcode apply failed")
 		return
 	}
@@ -1297,7 +1297,7 @@ func TestScenario_WithStream_CallbackOnPublishSuccess(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -1312,7 +1312,7 @@ func TestScenario_WithStream_CallbackOnPublishSuccess(t *testing.T) {
 		Target string `json:"target"`
 	}
 	var conf CallbackConfig
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/hooks/query", nil, &conf); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hooks/query", nil, &conf); err != nil {
 		r0 = errors.Wrapf(err, "request hooks apply failed")
 		return
 	}
@@ -1324,14 +1324,14 @@ func TestScenario_WithStream_CallbackOnPublishSuccess(t *testing.T) {
 
 		// The ctx has already been cancelled by test case, which will cause the request failed.
 		ctx := context.Background()
-		apiRequest(ctx, "/terraform/v1/mgmt/hooks/apply", backup, nil)
+		NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hooks/apply", backup, nil)
 	}()
 
 	// Enable the callback worker.
 	conf.All = true
 	conf.Target = fmt.Sprintf("%v/terraform/v1/mgmt/hooks/example?fail=false", *endpoint)
 	conf.Opaque = fmt.Sprintf("opaque-%v", rand.Int())
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/hooks/apply", &conf, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hooks/apply", &conf, nil); err != nil {
 		r0 = errors.Wrapf(err, "request hooks apply failed")
 		return
 	}
@@ -1405,7 +1405,7 @@ func TestScenario_WithStream_CallbackOnPublishFailed(t *testing.T) {
 	}(ctx)
 
 	var pubSecret string
-	if err := apiRequest(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
 		Publish *string `json:"publish"`
 	}{
 		Publish: &pubSecret,
@@ -1420,7 +1420,7 @@ func TestScenario_WithStream_CallbackOnPublishFailed(t *testing.T) {
 		Target string `json:"target"`
 	}
 	var conf CallbackConfig
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/hooks/query", nil, &conf); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hooks/query", nil, &conf); err != nil {
 		r0 = errors.Wrapf(err, "request hooks apply failed")
 		return
 	}
@@ -1432,14 +1432,14 @@ func TestScenario_WithStream_CallbackOnPublishFailed(t *testing.T) {
 
 		// The ctx has already been cancelled by test case, which will cause the request failed.
 		ctx := context.Background()
-		apiRequest(ctx, "/terraform/v1/mgmt/hooks/apply", backup, nil)
+		NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hooks/apply", backup, nil)
 	}()
 
 	// Enable the callback worker.
 	conf.All = true
 	conf.Target = fmt.Sprintf("%v/terraform/v1/mgmt/hooks/example?fail=true", *endpoint)
 	conf.Opaque = fmt.Sprintf("opaque-%v", rand.Int())
-	if err := apiRequest(ctx, "/terraform/v1/mgmt/hooks/apply", &conf, nil); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hooks/apply", &conf, nil); err != nil {
 		r0 = errors.Wrapf(err, "request hooks apply failed")
 		return
 	}
