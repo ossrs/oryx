@@ -424,59 +424,6 @@ func TestApi_SetupHpHLSWithHlsCtx(t *testing.T) {
 	}
 }
 
-var exampleOffer = `v=0
-o=- 8155286585472813923 1679356492 IN IP4 0.0.0.0
-s=-
-t=0 0
-a=fingerprint:sha-256 70:C7:51:C8:37:57:54:F0:2A:4A:A8:B5:78:59:55:8E:DC:E8:60:4E:81:ED:6F:BA:D0:C8:4B:40:FA:11:7C:CC
-a=ice-lite
-a=extmap-allow-mixed
-a=group:BUNDLE 0 1
-m=video 9 UDP/TLS/RTP/SAVPF 97 98
-c=IN IP4 0.0.0.0
-a=setup:actpass
-a=mid:0
-a=ice-ufrag:gvJoSLvvsgHgCAnj
-a=ice-pwd:PoDmihiESWHpaBeyieudWrIoOEtywnqZ
-a=rtcp-mux
-a=rtcp-rsize
-a=rtpmap:97 H264/90000
-a=fmtp:97 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=640032
-a=rtcp-fb:97 nack 
-a=rtcp-fb:97 nack pli
-a=rtcp-fb:97 transport-cc 
-a=rtpmap:98 H264/90000
-a=fmtp:98 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42001f
-a=rtcp-fb:98 nack 
-a=rtcp-fb:98 nack pli
-a=rtcp-fb:98 transport-cc 
-a=extmap:1 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
-a=ssrc:2918296482 cname:Larix
-a=ssrc:2918296482 msid:Larix video
-a=ssrc:2918296482 mslabel:Larix
-a=ssrc:2918296482 label:video
-a=msid:Larix video
-a=sendonly
-m=audio 9 UDP/TLS/RTP/SAVPF 96
-c=IN IP4 0.0.0.0
-a=setup:actpass
-a=mid:1
-a=ice-ufrag:gvJoSLvvsgHgCAnj
-a=ice-pwd:PoDmihiESWHpaBeyieudWrIoOEtywnqZ
-a=rtcp-mux
-a=rtcp-rsize
-a=rtpmap:96 opus/48000/2
-a=rtcp-fb:96 nack 
-a=rtcp-fb:96 transport-cc 
-a=extmap:1 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
-a=ssrc:881261638 cname:Larix
-a=ssrc:881261638 msid:Larix audio
-a=ssrc:881261638 mslabel:Larix
-a=ssrc:881261638 label:audio
-a=msid:Larix audio
-a=sendonly
-`
-
 func TestApi_SrsApiNoAuth(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
@@ -501,7 +448,7 @@ func TestApi_SrsApiNoAuth(t *testing.T) {
 	}
 
 	// Should OK for RTC api.
-	offer := strings.ReplaceAll(exampleOffer, "\n", "\r\n")
+	offer := strings.ReplaceAll(SrsLarixExampleOffer, "\n", "\r\n")
 	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
 	if err := apiRequestNoAuth(ctx, fmt.Sprintf("/rtc/v1/whip/?app=live&stream=%v&secret=%v", streamID, pubSecret), offer, nil); err != nil {
 		r0 = errors.Wrapf(err, "should ok for rtc publish api")
@@ -574,7 +521,7 @@ func TestApi_SrsApiWithAuth(t *testing.T) {
 	}
 
 	// Should OK for RTC api.
-	offer := strings.ReplaceAll(exampleOffer, "\n", "\r\n")
+	offer := strings.ReplaceAll(SrsLarixExampleOffer, "\n", "\r\n")
 	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
 	if err := apiRequest(ctx, fmt.Sprintf("/rtc/v1/whip/?app=live&stream=%v&secret=%v", streamID, pubSecret), offer, nil); err != nil {
 		r0 = errors.Wrapf(err, "should ok for rtc publish api")

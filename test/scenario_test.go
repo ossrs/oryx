@@ -16,7 +16,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/logger"
 )
 
-func TestApi_PublishVliveStreamUrl(t *testing.T) {
+func TestScenario_WithStream_PublishVliveStreamUrl(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -212,7 +212,7 @@ func TestApi_PublishVliveStreamUrl(t *testing.T) {
 	}
 }
 
-func TestApi_PublishVLivePlayFlv(t *testing.T) {
+func TestScenario_WithStream_PublishVLivePlayFlv(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -406,7 +406,7 @@ func TestApi_PublishVLivePlayFlv(t *testing.T) {
 	}
 }
 
-func TestApi_PublishRtmpRecordMp4(t *testing.T) {
+func TestScenario_WithStream_PublishRtmpRecordMp4(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsLongTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -554,7 +554,7 @@ func TestApi_PublishRtmpRecordMp4(t *testing.T) {
 	cancel()
 }
 
-func TestApi_PublishRtmpForwardPlatform(t *testing.T) {
+func TestScenario_WithStream_PublishRtmpForwardPlatform(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -694,7 +694,7 @@ func TestApi_PublishRtmpForwardPlatform(t *testing.T) {
 	}
 }
 
-func TestApi_PublishRtmpTranscodeDefault(t *testing.T) {
+func TestScenario_WithStream_PublishRtmpTranscodeDefault(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -859,7 +859,7 @@ func TestApi_PublishRtmpTranscodeDefault(t *testing.T) {
 	}
 }
 
-func TestApi_PublishRtmpTranscodeFollow(t *testing.T) {
+func TestScenario_WithStream_PublishRtmpTranscodeFollow(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -999,7 +999,7 @@ func TestApi_PublishRtmpTranscodeFollow(t *testing.T) {
 	}
 }
 
-func TestApi_PublishRtmpTranscodeMono(t *testing.T) {
+func TestScenario_WithStream_PublishRtmpTranscodeMono(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -1139,7 +1139,7 @@ func TestApi_PublishRtmpTranscodeMono(t *testing.T) {
 	}
 }
 
-func TestApi_PublishRtmpTranscodeStereo(t *testing.T) {
+func TestScenario_WithStream_PublishRtmpTranscodeStereo(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -1279,7 +1279,7 @@ func TestApi_PublishRtmpTranscodeStereo(t *testing.T) {
 	}
 }
 
-func TestApi_CallbackOnPublishSuccess(t *testing.T) {
+func TestScenario_WithStream_CallbackOnPublishSuccess(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -1387,7 +1387,7 @@ func TestApi_CallbackOnPublishSuccess(t *testing.T) {
 	}
 }
 
-func TestApi_CallbackOnPublishFailed(t *testing.T) {
+func TestScenario_WithStream_CallbackOnPublishFailed(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 

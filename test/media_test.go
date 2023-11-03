@@ -14,7 +14,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/logger"
 )
 
-func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
+func TestMedia_WithStream_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -92,7 +92,7 @@ func TestApi_PublishRtmpPlayFlv_SecretQuery(t *testing.T) {
 	}
 }
 
-func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
+func TestMedia_WithStream_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -170,7 +170,7 @@ func TestApi_PublishRtmpPlayFlv_SecretStream(t *testing.T) {
 	}
 }
 
-func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
+func TestMedia_WithStream_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -247,7 +247,7 @@ func TestApi_PublishRtmpPlayHls_SecretQuery(t *testing.T) {
 	}
 }
 
-func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
+func TestMedia_WithStream_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -335,7 +335,7 @@ func TestApi_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 	}
 }
 
-func TestApi_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
+func TestMedia_WithStream_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -485,7 +485,7 @@ func TestApi_PublishRtmpPlayHls_NoHlsCtx(t *testing.T) {
 	cancel()
 }
 
-func TestApi_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
+func TestMedia_WithStream_PublishRtmpPlayHls_WithHlsCtx(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 

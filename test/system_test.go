@@ -9,12 +9,12 @@ import (
 	"github.com/ossrs/go-oryx-lib/logger"
 )
 
-func TestApi_Empty(t *testing.T) {
+func TestSystem_Empty(t *testing.T) {
 	ctx := logger.WithContext(context.Background())
 	logger.Tf(ctx, "test done")
 }
 
-func TestApi_Ready(t *testing.T) {
+func TestSystem_Ready(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -25,7 +25,7 @@ func TestApi_Ready(t *testing.T) {
 	}
 }
 
-func TestApi_QueryPublishSecret(t *testing.T) {
+func TestSystem_QueryPublishSecret(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -50,7 +50,7 @@ func TestApi_QueryPublishSecret(t *testing.T) {
 	}
 }
 
-func TestApi_LoginByPassword(t *testing.T) {
+func TestSystem_LoginByPassword(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -79,7 +79,7 @@ func TestApi_LoginByPassword(t *testing.T) {
 	}
 }
 
-func TestApi_BootstrapQueryEnvs(t *testing.T) {
+func TestSystem_BootstrapQueryEnvs(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -102,7 +102,7 @@ func TestApi_BootstrapQueryEnvs(t *testing.T) {
 	}
 }
 
-func TestApi_BootstrapQueryInit(t *testing.T) {
+func TestSystem_BootstrapQueryInit(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -125,7 +125,7 @@ func TestApi_BootstrapQueryInit(t *testing.T) {
 	}
 }
 
-func TestApi_BootstrapQueryCheck(t *testing.T) {
+func TestSystem_BootstrapQueryCheck(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -148,7 +148,7 @@ func TestApi_BootstrapQueryCheck(t *testing.T) {
 	}
 }
 
-func TestApi_BootstrapQueryVersions(t *testing.T) {
+func TestSystem_BootstrapQueryVersions(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
 

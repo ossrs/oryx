@@ -294,7 +294,7 @@ jobs:
             bash secret.sh >./test/.env &&
             ./test/srs-stack.test -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
-              -test.run TestApi_Empty -no-bilibili-test=true &&
+              -test.run TestSystem_Empty -no-bilibili-test=true &&
 
             echo "Make upload writable." &&
             sudo chmod 777 /data/upload &&
@@ -327,7 +327,7 @@ jobs:
             echo "Run media test with retry" &&
             bash secret.sh >./test/.env &&
             ./failed-retry.sh 5 ./test/srs-stack.test -test.v -wait-ready -endpoint http://$SRS_DOMAIN.ossrs.io \
-              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -test.run TestApi_Publish* \
+              -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -test.run WithStream \
               -no-bilibili-test=true
             ret=$?; echo "Test result: $ret"
   

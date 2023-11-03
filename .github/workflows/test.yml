@@ -123,7 +123,7 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
-              -check-api-secret=true -test.run TestApi_Empty &&
+              -check-api-secret=true -test.run TestSystem_Empty &&
           
           echo "Make upload writable." &&
           sudo chmod 777 /data/upload &&
@@ -144,7 +144,7 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true -test.run TestApi_Publish*
+              -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
@@ -195,7 +195,7 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
-              -check-api-secret=true -test.run TestApi_Empty &&
+              -check-api-secret=true -test.run TestSystem_Empty &&
           
           echo "Make upload writable." &&
           sudo chmod 777 /data/upload &&
@@ -216,7 +216,7 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true -test.run TestApi_Publish*
+              -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
@@ -285,7 +285,7 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
-              -check-api-secret=true -test.run TestApi_Empty &&
+              -check-api-secret=true -test.run TestSystem_Empty &&
           
           echo "Make upload writable." &&
           sudo chmod 777 /data/upload &&
@@ -306,7 +306,7 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true -test.run TestApi_Publish*
+              -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
@@ -374,7 +374,7 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
-              -check-api-secret=true -test.run TestApi_Empty &&
+              -check-api-secret=true -test.run TestSystem_Empty &&
           
           echo "Make upload writable." &&
           sudo chmod 777 /data/upload &&
@@ -395,7 +395,7 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true -test.run TestApi_Publish*
+              -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
@@ -539,7 +539,7 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
-              -check-api-secret=true -test.run TestApi_Empty &&
+              -check-api-secret=true -test.run TestSystem_Empty &&
           
           echo "Make upload writable." &&
           sudo chmod 777 /data/upload &&
@@ -560,7 +560,7 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true -test.run TestApi_Publish*
+              -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
@@ -702,7 +702,7 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
-              -check-api-secret=true -test.run TestApi_Empty &&
+              -check-api-secret=true -test.run TestSystem_Empty &&
           
           echo "Make upload writable." &&
           sudo chmod 777 /data/upload &&
@@ -723,7 +723,7 @@ jobs:
           bash scripts/tools/secret.sh --output test/.env &&
           ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
-              -check-api-secret=true -test.run TestApi_Publish*
+              -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
