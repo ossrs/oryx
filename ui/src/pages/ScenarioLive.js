@@ -589,6 +589,9 @@ function ScenarioLiveImpl({copyToClipboard, urls}) {
                 {t('live.rtc.tip')} <a href={rtcPublisher} target='_blank' rel='noreferrer'>{whipUrl}</a> &nbsp;
                 <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
                   <Icon.ArrowRepeat size={20} onClick={updateStreamName}/>
+                </div> &nbsp;
+                <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
+                  <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, whipUrl)} />
                 </div>
                 <br/>
                 <code>{t('live.rtc.tip2')}</code>
