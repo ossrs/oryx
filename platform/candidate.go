@@ -68,6 +68,11 @@ func (v *CandidateWorker) Resolve(host string) (net.IP, error) {
 			return conf.ipv4, nil
 		}
 
+		// If already set CANDIDATE, ignore lo.
+		if os.Getenv("CANDIDATE") != "" {
+			return nil, nil
+		}
+
 		// Return lo for OBS WHIP or native client to access it.
 		return net.IPv4(127, 0, 0, 1), nil
 	}

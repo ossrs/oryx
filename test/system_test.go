@@ -245,7 +245,7 @@ func TestSystem_CandidateByHostIp(t *testing.T) {
 	var answer string
 	if err := NewApi(func(v *testApi) {
 		v.InjectRequest = func(req *http.Request) {
-			req.Host = eip
+			req.Header.Set("X-Real-Host", eip)
 		}
 	}).NoAuth(ctx, fmt.Sprintf("/rtc/v1/whip/?app=live&stream=%v&secret=%v", streamID, pubSecret), offer, &answer); err != nil {
 		r0 = errors.Wrapf(err, "should ok for rtc publish api")

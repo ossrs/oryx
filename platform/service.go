@@ -290,21 +290,29 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 
 		// Proxy to SRS RTC API, by /rtc/ prefix.
 		if strings.HasPrefix(r.URL.Path, "/rtc/") {
-			if eip := r.URL.Query().Get("eip"); eip != "" {
+			q := r.URL.Query()
+			if eip := q.Get("eip"); eip != "" {
 				logger.Tf(ctx, "Proxy %v to backend 1985, eip=%v, query is %v",
 					r.URL.Path, eip, r.URL.RawQuery)
 			} else {
+				// Allow test to mock and overwrite the host.
+				host := r.Header.Get("X-Real-Host")
+				if host == "" {
+					host = r.Host
+				}
+
+				// Resolve the host to ip.
 				starttime := time.Now()
-				if ip, err := candidateWorker.Resolve(r.Host); err != nil {
-					logger.Ef(ctx, "Proxy %v to backend 1985, resolve %v failed, cost=%v, err is %v",
-						r.URL.Path, r.Host, time.Now().Sub(starttime), err)
+				if ip, err := candidateWorker.Resolve(host); err != nil {
+					logger.Ef(ctx, "Proxy %v to backend 1985, resolve %v/%v failed, cost=%v, err is %v",
+						r.URL.Path, r.Host, host, time.Now().Sub(starttime), err)
 					ohttp.WriteError(ctx, w, r, err)
 					return
 				} else if ip != nil {
 					eip = ip.String()
 					r.URL.RawQuery += fmt.Sprintf("&eip=%v", eip)
-					logger.Tf(ctx, "Proxy %v to backend 1985, host=%v, resolved ip=%v, cost=%v, query is %v",
-						r.URL.Path, r.Host, eip, time.Now().Sub(starttime), r.URL.RawQuery)
+					logger.Tf(ctx, "Proxy %v to backend 1985, host=%v/%v, resolved ip=%v, cost=%v, query is %v",
+						r.URL.Path, r.Host, host, eip, time.Now().Sub(starttime), r.URL.RawQuery)
 				}
 			}
 
