@@ -18,7 +18,7 @@ virtual live events, automatic HTTPS, and an easy-to-use HTTP Open API.
 
 ## Usage
 
-Run srs-stack in one docker:
+Run srs-stack in one docker, then open http://localhost:2022 in browser:
 
 ```bash
 docker run --rm -it --name srs-stack -v $HOME/data:/data \
@@ -26,11 +26,16 @@ docker run --rm -it --name srs-stack -v $HOME/data:/data \
   ossrs/srs-stack:5
 ```
 
-> Note: Please use `-e REACT_APP_LOCALE=zh` and `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:5` in China.
+> Important: Remember to mount the `/data` volume to avoid losing data when the container restarts. For instance, 
+> if you mount `/data` to `$HOME/data`, all data will be stored in the `$HOME/data` folder. Be sure to modify this 
+> according to your desired directory.
 
-> Note: All data will be saved in `$HOME/data` directory, please change it to your directory.
+> Important: To use WebRTC WHIP in a browser, avoid using localhost or 127.0.0.1. Instead, use a private IP (e.g., https://192.168.3.85:2443), 
+> a public IP (e.g., https://136.12.117.13:2443), or a domain (e.g., https://your-domain.com:2443). To set up HTTPS, 
+> refer to [this post](https://blog.ossrs.io/how-to-secure-srs-with-lets-encrypt-by-1-click-cb618777639f).
 
-Then open http://localhost:2022 in browser.
+> Note: In China, use `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:5` to accelerate the Docker pull process 
+> and ensure the proper language is set.
 
 The ports used for SRS Stack:
 
