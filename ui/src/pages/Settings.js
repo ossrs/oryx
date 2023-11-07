@@ -152,16 +152,35 @@ function SettingOpenApi({copyToClipboard}) {
     copyToClipboard(e, apiSecret);
   }, [copyToClipboard]);
 
+  const curlCode = `
+curl ${window.location.protocol}//${window.location.host}/terraform/v1/hooks/srs/secret/query \\
+  -X POST -H 'Authorization: Bearer ${apiSecret}' \\
+  -H 'Content-Type: application/json' --data '{}'
+  `;
+
+  const jQueryCode = `
+$.ajax({
+  url: '${window.location.protocol}//${window.location.host}/terraform/v1/hooks/srs/secret/query',
+  type: 'POST',
+  headers: {
+    "Authorization": "Bearer ${apiSecret}",
+  },
+  dataType: 'json',
+  contentType: "application/json",
+  data: {}, 
+  success: function () {},
+  error: function () {},
+});
+  `;
+
   return (
-    <Accordion defaultActiveKey={["0"]} alwaysOpen>
+    <Accordion defaultActiveKey={["0", "1", "2", "3", "4"]} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('openapi.title')}</Accordion.Header>
         <Accordion.Body>
           <div>
             {t('openapi.summary')}
-            <p></p>
           </div>
-          <p>Usage:</p>
           <ul>
             <li> {t('openapi.usage1')} </li>
             <li> {t('openapi.usage2')} </li>
@@ -183,10 +202,28 @@ function SettingOpenApi({copyToClipboard}) {
           </Form>
         </Accordion.Body>
       </Accordion.Item>
-      <Accordion.Item eventKey="3">
+      <Accordion.Item eventKey="2">
         <Accordion.Header>{t('openapi.apiPublishSecret')}</Accordion.Header>
         <Accordion.Body>
           <RunOpenAPI apiSecret={apiSecret} api='/terraform/v1/hooks/srs/secret/query' />
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="3">
+        <Accordion.Header>{t('openapi.apiPublishSecret2')}</Accordion.Header>
+        <Accordion.Body>
+          <pre>{curlCode}</pre>
+          <Button variant="primary" type="submit" onClick={(e) => copyApiSecret(e, curlCode)}>
+            {t('openapi.curlCopy')}
+          </Button>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="4">
+        <Accordion.Header>{t('openapi.apiPublishSecret3')}</Accordion.Header>
+        <Accordion.Body>
+          <pre>{jQueryCode}</pre>
+          <Button variant="primary" type="submit" onClick={(e) => copyApiSecret(e, jQueryCode)}>
+            {t('openapi.codeCopy')}
+          </Button>
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
@@ -661,7 +698,7 @@ function RunOpenAPI(props) {
         { showResult && <SrsErrorBoundary><OpenAPIResult {...props} /></SrsErrorBoundary> }
       </Form.Group>
       <Button variant="primary" type="submit" onClick={(e) => onClick(e)}>
-        {showResult ? 'Reset' : 'Run'}
+        {showResult ? 'Reset' : 'Try it out'}
       </Button> &nbsp;
     </Form>
   );

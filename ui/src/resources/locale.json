@@ -170,9 +170,13 @@
         "usage1": "ApiSecret是OpenAPI接口调用凭据, 调用各接口时都需要使用ApiSecret",
         "usage2": "请按照下面的步骤，依次点击，可以看到调用的步骤",
         "secret": "拷贝ApiSecret",
-        "secretTip": "使用ApiSecret生成Token，用于访问OpenAPI",
+        "secretTip": "使用ApiSecret作为Bearer Token，用于访问OpenAPI",
         "secretCopy": "复制ApiSecret",
-        "apiPublishSecret": "[API] 获取推流密钥",
+        "apiPublishSecret": "[API] 获取推流密钥，网页执行",
+        "apiPublishSecret2": "[API] 获取推流密钥，使用curl",
+        "apiPublishSecret3": "[API] 获取推流密钥，使用jQuery",
+        "curlCopy": "拷贝命令",
+        "codeCopy": "拷贝代码",
         "secretEmpty": "没有ApiSecret，请先运行"
       },
       "limit": {
@@ -640,9 +644,13 @@
         "usage1": "ApiSecret is used for authentication of OpenAPI",
         "usage2": "Please click the bellow steps",
         "secret": "Copy ApiSecret",
-        "secretTip": "Use ApiSecret to create Token",
+        "secretTip": "Use ApiSecret to as Bearer Token",
         "secretCopy": "Copy ApiSecret",
-        "apiPublishSecret": "[API] Query Publish Secret",
+        "apiPublishSecret": "[API] Query Publish Secret by Web",
+        "apiPublishSecret2": "[API] Query Publish Secret by curl",
+        "apiPublishSecret3": "[API] Query Publish Secret by jQuery",
+        "curlCopy": "Copy Command",
+        "codeCopy": "Copy Code",
         "secretEmpty": "No ApiSecret, please run "
       },
       "limit": {
