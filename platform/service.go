@@ -64,8 +64,28 @@ func (v *httpService) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 
 	handler := http.NewServeMux()
-	if err := handleHTTPService(ctx, handler); err != nil {
-		return errors.Wrapf(err, "handle service")
+	if true {
+		serviceHandler := http.NewServeMux()
+		if err := handleHTTPService(ctx, serviceHandler); err != nil {
+			return errors.Wrapf(err, "handle service")
+		}
+
+		handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			// Set common header.
+			ohttp.SetHeader(w)
+
+			// Always allow CORS.
+			httpAllowCORS(w, r)
+
+			// Allow OPTIONS for CORS.
+			if r.Method == http.MethodOptions {
+				w.Write(nil)
+				return
+			}
+
+			// Handle by service handler.
+			serviceHandler.ServeHTTP(w, r)
+		})
 	}
 
 	var r0 error
@@ -254,16 +274,6 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	ep = "/"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
-		// Set common header.
-		ohttp.SetHeader(w)
-
-		// Allow OPTIONS for CORS.
-		if r.Method == http.MethodOptions {
-			httpAllowCORS(w, r)
-			w.Write(nil)
-			return
-		}
-
 		// For version management.
 		if strings.HasPrefix(r.URL.Path, "/terraform/v1/releases") {
 			logger.Tf(ctx, "Proxy %v to backend 2023", r.URL.Path)
@@ -344,13 +354,11 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 
 		// Always directly serve the HLS ts files.
 		if hpHlsEnabled && strings.HasSuffix(r.URL.Path, ".m3u8") {
-			httpAllowCORS(w, r)
 			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 10))
 			hlsFileServer.ServeHTTP(w, r)
 			return
 		}
 		if strings.HasSuffix(r.URL.Path, ".ts") {
-			httpAllowCORS(w, r)
 			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 600))
 			hlsFileServer.ServeHTTP(w, r)
 			return
