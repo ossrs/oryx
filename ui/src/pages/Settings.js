@@ -551,14 +551,16 @@ function SettingHttpsImpl({config}) {
     e.preventDefault();
 
     if (!domain) {
-      alert(t('settings.sslNoDomain'));
-      return;
+      return alert(t('settings.sslNoDomain'));
     }
 
     const domainRegex = /^(?=.{1,253})(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.?)+[A-Za-z]{2,6}$/;
     if (!domainRegex.test(domain)) {
-      alert(t('settings.sslInvalidDomain'));
-      return;
+      return alert(t('settings.sslInvalidDomain'));
+    }
+
+    if (!domainRegex.test(window.location.hostname) || window.location.hostname !== domain) {
+      return alert(`${t('settings.sslInvalidHost')} "${window.location.hostname}", ${t('settings.sslInvalidHost2')} "${domain}"`);
     }
 
     setOperating(true);
