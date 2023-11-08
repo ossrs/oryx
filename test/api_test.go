@@ -569,17 +569,17 @@ func TestApi_SrsApiCorsNoOrigin(t *testing.T) {
 				for _, header := range []struct {
 					Key, Value string
 				}{
-					{"Access-Control-Allow-Origin", ""},
-					{"Access-Control-Allow-Headers", ""},
-					{"Access-Control-Allow-Methods", ""},
-					{"Access-Control-Expose-Headers", ""},
-					{"Access-Control-Allow-Credentials", ""},
+					{"Access-Control-Allow-Origin", "*"},
+					{"Access-Control-Allow-Headers", "*"},
+					{"Access-Control-Allow-Methods", "*"},
+					{"Access-Control-Expose-Headers", "*"},
+					{"Access-Control-Allow-Credentials", "true"},
 				} {
 					if value := resp.Header.Get(header.Key); value != header.Value {
 						r1 = errors.Errorf("invalid CORS %v=%v, expect %v", header.Key, header.Value, value)
 					}
-					if values := resp.Header.Values(header.Key); len(values) != 0 {
-						r1 = errors.Errorf("invalid CORS %v=%v, expect no one", header.Key, values)
+					if values := resp.Header.Values(header.Key); len(values) != 1 {
+						r1 = errors.Errorf("invalid CORS %v=%v, expect only one", header.Key, values)
 					}
 				}
 			}
