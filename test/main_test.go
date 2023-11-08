@@ -440,7 +440,8 @@ func filterTestError(errs ...error) error {
 }
 
 type testApi struct {
-	InjectRequest func(req *http.Request)
+	InjectRequest  func(req *http.Request)
+	InjectResponse func(res *http.Response)
 }
 
 func NewApi(pfns ...func(v *testApi)) *testApi {
@@ -580,6 +581,10 @@ func (v *testApi) Request(ctx context.Context, api string, data interface{}, aut
 		return errors.Wrapf(err, "do request")
 	}
 	defer resp.Body.Close()
+
+	if v.InjectResponse != nil {
+		v.InjectResponse(resp)
+	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return errors.Errorf("invalid status code %v", resp.StatusCode)

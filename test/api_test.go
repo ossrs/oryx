@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math/big"
 	"math/rand"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -526,5 +527,136 @@ func TestApi_SrsApiWithAuth(t *testing.T) {
 	if err := NewApi().WithAuth(ctx, fmt.Sprintf("/rtc/v1/whip/?app=live&stream=%v&secret=%v", streamID, pubSecret), offer, nil); err != nil {
 		r0 = errors.Wrapf(err, "should ok for rtc publish api")
 		return
+	}
+}
+
+func TestApi_SrsApiCorsNoOrigin(t *testing.T) {
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	var r0, r1 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0, r1); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	var pubSecret string
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+		Publish *string `json:"publish"`
+	}{
+		Publish: &pubSecret,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	offer := strings.ReplaceAll(SrsLarixExampleOffer, "\n", "\r\n")
+	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
+
+	for _, api := range []struct {
+		Api  string
+		Data interface{}
+	}{
+		{"/terraform/v1/host/versions", nil},
+		{"/api/v1/versions", nil},
+		{fmt.Sprintf("/rtc/v1/whip/?app=live&stream=%v&secret=%v", streamID, pubSecret), offer},
+	} {
+		if err := NewApi(func(v *testApi) {
+			v.InjectResponse = func(resp *http.Response) {
+				for _, header := range []struct {
+					Key, Value string
+				}{
+					{"Access-Control-Allow-Origin", ""},
+					{"Access-Control-Allow-Headers", ""},
+					{"Access-Control-Allow-Methods", ""},
+					{"Access-Control-Expose-Headers", ""},
+					{"Access-Control-Allow-Credentials", ""},
+				} {
+					if value := resp.Header.Get(header.Key); value != header.Value {
+						r1 = errors.Errorf("invalid CORS %v=%v, expect %v", header.Key, header.Value, value)
+					}
+					if values := resp.Header.Values(header.Key); len(values) != 0 {
+						r1 = errors.Errorf("invalid CORS %v=%v, expect no one", header.Key, values)
+					}
+				}
+			}
+		}).NoAuth(ctx, api.Api, api.Data, nil); err != nil {
+			r0 = errors.Errorf("should be ok for api %v", api)
+			return
+		}
+		if r1 != nil {
+			r1 = errors.Wrapf(r1, "should be ok for api %v", api)
+			return
+		}
+	}
+}
+
+func TestApi_SrsApiCorsWithOrigin(t *testing.T) {
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	var r0, r1 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0, r1); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	var pubSecret string
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+		Publish *string `json:"publish"`
+	}{
+		Publish: &pubSecret,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	offer := strings.ReplaceAll(SrsLarixExampleOffer, "\n", "\r\n")
+	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
+
+	for _, api := range []struct {
+		Api  string
+		Data interface{}
+	}{
+		{"/terraform/v1/host/versions", nil},
+		{"/api/v1/versions", nil},
+		{fmt.Sprintf("/rtc/v1/whip/?app=live&stream=%v&secret=%v", streamID, pubSecret), offer},
+	} {
+		if err := NewApi(func(v *testApi) {
+			v.InjectRequest = func(req *http.Request) {
+				req.Header.Set("Origin", "http://always-cors.ossrs.io")
+			}
+			v.InjectResponse = func(resp *http.Response) {
+				for _, header := range []struct {
+					Key, Value string
+				}{
+					{"Access-Control-Allow-Origin", "*"},
+					{"Access-Control-Allow-Headers", "*"},
+					{"Access-Control-Allow-Methods", "*"},
+					{"Access-Control-Expose-Headers", "*"},
+					{"Access-Control-Allow-Credentials", "true"},
+				} {
+					if value := resp.Header.Get(header.Key); value != header.Value {
+						r1 = errors.Errorf("invalid CORS %v=%v, expect %v", header.Key, header.Value, value)
+					}
+					if values := resp.Header.Values(header.Key); len(values) != 1 {
+						r1 = errors.Errorf("invalid CORS %v=%v, expect only one", header.Key, values)
+					}
+				}
+			}
+		}).NoAuth(ctx, api.Api, api.Data, nil); err != nil {
+			r0 = errors.Errorf("should be ok for api %v", api)
+			return
+		}
+		if r1 != nil {
+			r1 = errors.Wrapf(r1, "should be ok for api %v", api)
+			return
+		}
 	}
 }

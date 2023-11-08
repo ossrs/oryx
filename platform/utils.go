@@ -1082,6 +1082,11 @@ func httpAllowCORS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 	// See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods
 	w.Header().Set("Access-Control-Allow-Methods", "*")
+	// See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
+	w.Header().Set("Access-Control-Expose-Headers", "*")
+	// https://stackoverflow.com/a/24689738/17679565
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 }
 
 // httpCreateProxy create a reverse proxy for target URL.
@@ -1093,7 +1098,19 @@ func httpCreateProxy(targetURL string) (*httputil.ReverseProxy, error) {
 
 	proxy := httputil.NewSingleHostReverseProxy(target)
 	proxy.ModifyResponse = func(resp *http.Response) error {
+		// We will set the server field.
 		resp.Header.Del("Server")
+
+		// We will set the CORS headers.
+		resp.Header.Del("Access-Control-Allow-Origin")
+		resp.Header.Del("Access-Control-Allow-Headers")
+		resp.Header.Del("Access-Control-Allow-Methods")
+		resp.Header.Del("Access-Control-Expose-Headers")
+		resp.Header.Del("Access-Control-Allow-Credentials")
+
+		// Not used right now.
+		resp.Header.Del("Access-Control-Request-Private-Network")
+
 		return nil
 	}
 
