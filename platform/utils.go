@@ -6,6 +6,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -1115,4 +1116,40 @@ func httpCreateProxy(targetURL string) (*httputil.ReverseProxy, error) {
 	}
 
 	return proxy, nil
+}
+
+type whxpResponseModifier struct {
+	w http.ResponseWriter
+}
+
+func (w *whxpResponseModifier) Header() http.Header {
+	return w.w.Header()
+}
+
+func (w *whxpResponseModifier) Write(b []byte) (int, error) {
+	// TODO: FIXME: Should pass the rtc port to WHIP/WHEP api, because the port maybe not the same length to 8000,
+	//  for example, 80, 443, 18000, etc, in such case, the sdp length will change.
+	if port := os.Getenv("RTC_PORT"); port != "8000" {
+		// Read line by line, replace " 8000 " with " {port} " if contains "candidate".
+		scan := bufio.NewScanner(strings.NewReader(string(b)))
+
+		var lines []string
+		for scan.Scan() {
+			line := scan.Text()
+			if strings.Contains(line, "candidate") {
+				line = strings.ReplaceAll(line, " 8000 ", fmt.Sprintf(" %v ", port))
+			}
+			lines = append(lines, line)
+		}
+
+		// Join lines with "\r\n"
+		sdp := strings.Join(lines, "\r\n") + "\r\n"
+
+		return w.w.Write([]byte(sdp))
+	}
+	return w.w.Write(b)
+}
+
+func (w *whxpResponseModifier) WriteHeader(statusCode int) {
+	w.w.WriteHeader(statusCode)
 }

@@ -105,16 +105,23 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("NAME_LOOKUP", "on")
 	setEnvDefault("PLATFORM_DOCKER", "off")
 
+	// For multiple ports.
+	setEnvDefault("RTMP_PORT", "1935")
+	setEnvDefault("HTTP_PORT", "")
+	setEnvDefault("SRT_PORT", "10080")
+	setEnvDefault("RTC_PORT", "8000")
+
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, "+
-		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, "+
-		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, "+
-		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, "+
+		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, SRT_PORT=%v, RTC_PORT=%v, "+
+		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, RTMP_PORT=%v, "+
+		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, HTTP_PORT=%v, "+
 		"REGISTRY=%v, MGMT_LISTEN=%v, HTTPS_LISTEN=%v, AUTO_SELF_SIGNED_CERTIFICATE=%v, "+
 		"NAME_LOOKUP=%v, PLATFORM_DOCKER=%v",
 		len(os.Getenv("MGMT_PASSWORD")), len(os.Getenv("SRS_PLATFORM_SECRET")), os.Getenv("CLOUD"),
-		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("NODE_ENV"), os.Getenv("LOCAL_RELEASE"),
-		len(os.Getenv("REDIS_PASSWORD")), os.Getenv("REDIS_PORT"), os.Getenv("PUBLIC_URL"),
-		os.Getenv("BUILD_PATH"), os.Getenv("REACT_APP_LOCALE"), os.Getenv("PLATFORM_LISTEN"),
+		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("SRT_PORT"), os.Getenv("RTC_PORT"),
+		os.Getenv("NODE_ENV"), os.Getenv("LOCAL_RELEASE"),
+		len(os.Getenv("REDIS_PASSWORD")), os.Getenv("REDIS_PORT"), os.Getenv("RTMP_PORT"), os.Getenv("PUBLIC_URL"),
+		os.Getenv("BUILD_PATH"), os.Getenv("REACT_APP_LOCALE"), os.Getenv("PLATFORM_LISTEN"), os.Getenv("HTTP_PORT"),
 		os.Getenv("REGISTRY"), os.Getenv("MGMT_LISTEN"), os.Getenv("HTTPS_LISTEN"),
 		os.Getenv("AUTO_SELF_SIGNED_CERTIFICATE"), os.Getenv("NAME_LOOKUP"),
 		os.Getenv("PLATFORM_DOCKER"),

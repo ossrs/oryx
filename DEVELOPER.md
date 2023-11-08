@@ -926,6 +926,13 @@ The optional environments defined by `platform/containers/data/config/.env`:
 * `PLATFORM_LISTEN`: The listen port for platform HTTP server. Default: 2024
 * `HTTPS_LISTEN`: The listen port for HTTPS server. Default: 2443
 
+For multiple ports running in multiple containers in one host server:
+
+* `HTTP_PORT`: The listen port for HTTP server. Default to port to access dashboard.
+* `RTMP_PORT`: The listen port for RTMP server. Default: 1935
+* `SRT_PORT`: The listen UDP port for SRT server. Default: 10080
+* `RTC_PORT`: The listen UDP port for RTC server. Default: 8000
+
 For feature control:
 
 * `NAME_LOOKUP`: `on|off`, whether enable the host name lookup, on or off. Default: off

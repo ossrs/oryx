@@ -8,8 +8,9 @@ import {Token, StreamName} from "../utils";
 import axios from "axios";
 import {useTranslation} from "react-i18next";
 import {useErrorHandler} from "react-error-boundary";
+import {SrsEnvContext} from "./SrsEnvContext";
 
-export function buildUrls(defaultUrl, secret) {
+export function buildUrls(defaultUrl, secret, env) {
   if (!defaultUrl) defaultUrl = `live/livestream`;
   if (defaultUrl.indexOf('://') > 0) {
     const a0 = document.createElement("a");
@@ -33,20 +34,22 @@ export function buildUrls(defaultUrl, secret) {
 
   // Build RTMP url.
   if (true) {
-    urls.rtmpServer = `rtmp://${defaultHostname}/${defaultApp}/`;
+    const rtmpPort = env.rtmpPort ? `:${env.rtmpPort}` : '';
+    urls.rtmpServer = `rtmp://${defaultHostname}${rtmpPort}/${defaultApp}/`;
     urls.rtmpStreamKey = secret ? `${defaultStream}?secret=${secret.publish}` : defaultStream;
   }
 
   // Build SRT url.
   if (true) {
     const secretQuery = secret ? `?secret=${secret.publish}` : '';
-    urls.srtPublishUrl = `srt://${defaultHostname}:10080?streamid=#!::r=${defaultApp}/${defaultStream}${secretQuery},m=publish`;
-    urls.srtPlayUrl = `srt://${defaultHostname}:10080?streamid=#!::r=${defaultApp}/${defaultStream},latency=20,m=request`;
+    const srtPort = env.srtPort ? `:${env.srtPort}` : '';
+    urls.srtPublishUrl = `srt://${defaultHostname}${srtPort}?streamid=#!::r=${defaultApp}/${defaultStream}${secretQuery},m=publish`;
+    urls.srtPlayUrl = `srt://${defaultHostname}${srtPort}?streamid=#!::r=${defaultApp}/${defaultStream},latency=20,m=request`;
   }
 
   // Build console url.
   if (true) {
-    const httpPort = defaultPort;
+    const httpPort = env.httpPort ? env.httpPort : defaultPort;
     urls.cnConsole = `/console/ng_index.html#/summaries?port=${httpPort}&http=${httpPort}`;
     urls.enConsole = `/console/en_index.html#/summaries?port=${httpPort}&http=${httpPort}`;
   }
@@ -55,23 +58,25 @@ export function buildUrls(defaultUrl, secret) {
   if (true) {
     const secretQuery = secret ? `?secret=${secret.publish}` : '';
     const schema = defaultSchema;
-    const httpPort = defaultPort;
-    urls.flvUrl = `${schema}://${defaultHostname}/${defaultApp}/${defaultStream}.flv`;
-    urls.m3u8Url = `${schema}://${defaultHostname}/${defaultApp}/${defaultStream}.m3u8`;
-    urls.rtcUrl = `webrtc://${defaultHostname}/${defaultApp}/${defaultStream}`;
-    urls.rtcPublishUrl = `webrtc://${defaultHostname}/${defaultApp}/${defaultStream}${secretQuery}`;
+    const httpPort = env.httpPort ? env.httpPort : defaultPort;
+    const httpUrlPort = `:${httpPort}`;
+    urls.flvUrl = `${schema}://${defaultHostname}${httpUrlPort}/${defaultApp}/${defaultStream}.flv`;
+    urls.m3u8Url = `${schema}://${defaultHostname}${httpUrlPort}/${defaultApp}/${defaultStream}.m3u8`;
+    urls.rtcUrl = `webrtc://${defaultHostname}${httpUrlPort}/${defaultApp}/${defaultStream}`;
+    urls.rtcPublishUrl = `webrtc://${defaultHostname}${httpUrlPort}/${defaultApp}/${defaultStream}${secretQuery}`;
     // /tools/player.html?url=http://localhost:3000/live/livestream.m3u8
-    urls.flvPlayer = `/tools/player.html?url=${schema}://${defaultHost}/${defaultApp}/${defaultStream}.flv`;
-    urls.hlsPlayer = `/tools/player.html?url=${schema}://${defaultHost}/${defaultApp}/${defaultStream}.m3u8`;
+    urls.flvPlayer = `/tools/player.html?url=${schema}://${defaultHostname}${httpUrlPort}/${defaultApp}/${defaultStream}.flv`;
+    urls.hlsPlayer = `/tools/player.html?url=${schema}://${defaultHostname}${httpUrlPort}/${defaultApp}/${defaultStream}.m3u8`;
     urls.rtcPlayer = `/players/whep.html?schema=${schema}&port=${httpPort}&api=${httpPort}&autostart=true&stream=${defaultStream}`;
   }
 
   // For WebRTC url.
   if (true) {
     const secretQuery = secret ? `&secret=${secret.publish}` : '';
-    urls.rtcPublisher = `/players/whip.html?schema=https&port=${defaultPort}&api=${defaultPort}&autostart=true&stream=${defaultStream}${secretQuery}`;
-    urls.whipUrl = `${defaultSchema}://${defaultHostname}:${defaultPort}/rtc/v1/whip/?app=${defaultApp}&stream=${defaultStream}${secretQuery}`;
-    urls.whepUrl = `${defaultSchema}://${defaultHostname}:${defaultPort}/rtc/v1/whep/?app=${defaultApp}&stream=${defaultStream}`;
+    const httpPort = env.httpPort ? env.httpPort : defaultPort;
+    urls.rtcPublisher = `/players/whip.html?schema=https&port=${httpPort}&api=${httpPort}&autostart=true&stream=${defaultStream}${secretQuery}`;
+    urls.whipUrl = `${defaultSchema}://${defaultHostname}:${httpPort}/rtc/v1/whip/?app=${defaultApp}&stream=${defaultStream}${secretQuery}`;
+    urls.whepUrl = `${defaultSchema}://${defaultHostname}:${httpPort}/rtc/v1/whep/?app=${defaultApp}&stream=${defaultStream}`;
   }
 
   // For transcode stream and urls.
@@ -80,7 +85,9 @@ export function buildUrls(defaultUrl, secret) {
     urls.transcodeStreamName = transcodeStreamName;
     urls.transcodeStreamKey = secret ? `${transcodeStreamName}?secret=${secret.publish}` : transcodeStreamName;
     const schema = defaultSchema;
-    urls.transcodeFlvPlayer = `/tools/player.html?url=${schema}://${defaultHost}/${defaultApp}/${transcodeStreamName}.flv`;
+    const httpPort = env.httpPort ? env.httpPort : defaultPort;
+    const httpUrlPort = `:${httpPort}`;
+    urls.transcodeFlvPlayer = `/tools/player.html?url=${schema}://${defaultHostname}${httpUrlPort}/${defaultApp}/${transcodeStreamName}.flv`;
   }
 
   return urls;
@@ -113,6 +120,7 @@ export default function useUrls() {
   const [secret, setSecret] = React.useState();
   const {t} = useTranslation();
   const handleError = useErrorHandler();
+  const env = React.useContext(SrsEnvContext)[0];
 
   const updateStreamName = React.useCallback(() => {
     const name = Math.random().toString(16).slice(-6).split('').map(e => {
@@ -140,7 +148,7 @@ export default function useUrls() {
     // Ignore if not loaded the secret.
     if (loading) return;
 
-    const urls = buildUrls(`live/${rtmpStreamName}`, secret);
+    const urls = buildUrls(`live/${rtmpStreamName}`, secret, env);
 
     // Build RTMP url.
     if (true) {

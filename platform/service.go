@@ -251,6 +251,11 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 		return err
 	}
 
+	proxyWhxp, err := httpCreateProxy("http://127.0.0.1:1985")
+	if err != nil {
+		return err
+	}
+
 	proxy8080, err := httpCreateProxy("http://127.0.0.1:8080")
 	if err != nil {
 		return err
@@ -326,7 +331,7 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}
 
-			proxy1985.ServeHTTP(w, r)
+			proxyWhxp.ServeHTTP(&whxpResponseModifier{w}, r)
 			return
 		}
 
@@ -539,17 +544,33 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 			platformDocker := os.Getenv("PLATFORM_DOCKER") != "off"
 			candidate := os.Getenv("CANDIDATE") != ""
 			ohttp.WriteData(ctx, w, r, &struct {
-				MgmtDocker     bool `json:"mgmtDocker"`
+				// Whether mgmt run in docker.
+				MgmtDocker bool `json:"mgmtDocker"`
+				// Whether platform run in docker.
 				PlatformDocker bool `json:"platformDocker"`
-				Candidate      bool `json:"candidate"`
+				// Whether set the env CANDIDATE for WebRTC.
+				Candidate bool `json:"candidate"`
+				// The exposed RTMP port.
+				RTMPPort string `json:"rtmpPort"`
+				// The exposed HTTP port.
+				HTTPPort string `json:"httpPort"`
+				// The exposed SRT port.
+				SRTPort string `json:"srtPort"`
+				// The exposed RTC port.
+				RTCPort string `json:"rtcPort"`
 			}{
 				MgmtDocker:     true,
 				PlatformDocker: platformDocker,
 				Candidate:      candidate,
+				RTMPPort:       os.Getenv("RTMP_PORT"),
+				HTTPPort:       os.Getenv("HTTP_PORT"),
+				SRTPort:        os.Getenv("SRT_PORT"),
+				RTCPort:        os.Getenv("RTC_PORT"),
 			})
 
-			logger.Tf(ctx, "mgmt envs ok, locale=%v, platformDocker=%v, candidate=%v",
-				locale, platformDocker, candidate)
+			logger.Tf(ctx, "mgmt envs ok, locale=%v, platformDocker=%v, candidate=%v, rtmpPort=%v, httpPort=%v, srtPort=%v, rtcPort=%v",
+				locale, platformDocker, candidate, os.Getenv("RTMP_PORT"), os.Getenv("HTTP_PORT"),
+				os.Getenv("SRT_PORT"), os.Getenv("RTC_PORT"))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

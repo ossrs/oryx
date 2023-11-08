@@ -7,6 +7,7 @@ import {Token} from "../utils";
 import axios from "axios";
 import {buildUrls} from "../components/UrlGenerator";
 import moment from "moment/moment";
+import {SrsEnvContext} from "../components/SrsEnvContext";
 
 export default function ScenarioTranscode(props) {
   const handleError = useErrorHandler();
@@ -55,6 +56,7 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
   const [task, setTask] = React.useState();
   const [taskInputUrls, setTaskInputUrls] = React.useState();
   const [taskOutputUrls, setTaskOutputUrls] = React.useState();
+  const env = React.useContext(SrsEnvContext)[0];
 
   React.useEffect(() => {
     const refreshTask = () => {
@@ -80,8 +82,8 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
         }
 
         setTask(task);
-        if (task?.input) setTaskInputUrls(buildUrls(task.input, urls.secret));
-        if (task?.output) setTaskOutputUrls(buildUrls(task.output, urls.secret));
+        if (task?.input) setTaskInputUrls(buildUrls(task.input, urls.secret, env));
+        if (task?.output) setTaskOutputUrls(buildUrls(task.output, urls.secret, env));
         console.log(`Transcode: Query task ${JSON.stringify(task)}`);
       }).catch(handleError);
     };
