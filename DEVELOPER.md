@@ -700,6 +700,36 @@ Be aware that the cache will store the CORS headers as well. This means that if 
 and obtain HLS without CORS, it will remain without CORS even when a request includes an 
 Origin header that necessitates CORS.
 
+## Use HELM to Install SRS Stack
+
+Install [HELM](https://helm.sh/docs/intro/install/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/),
+then add repo of SRS Stack:
+
+```bash
+helm repo add srs http://helm.ossrs.io/stable
+```
+
+Install the latest SRS Stack:
+
+```bash
+helm install srs srs/srs-stack
+```
+
+Or, install from file:
+
+```bash
+helm install srs ~/git/srs-helm/stable/srs-stack-1.0.5.tgz
+```
+
+Or, setup the persistence directory:
+
+```bash
+helm install srs ~/git/srs-helm/stable/srs-stack-1.0.5.tgz \
+  --set persistence.path=$HOME/data
+```
+
+Finally, open [http://localhost](http://localhost) to check it.
+
 ## Run test in Goland
 
 Prepare the .env:
@@ -762,24 +792,14 @@ but also has extra improvements for we can do more after proxy the API.
 
 The ports allocated:
 
-| Module | TCP Ports | UDP Ports | Notes                                                                                   |
-| ------ | --------- | --------- |-----------------------------------------------------------------------------------------|
-| SRS | 1935, 1985, 8080,<br/> 8088, 1990, 554,<br/> 8936 | 8000, 8935, 10080,<br/> 1989 | See [SRS ports](https://github.com/ossrs/srs/blob/develop/trunk/doc/Resources.md#ports) |
-| platform | 2024 |  - | Mount at `/terraform/v1/mgmt/`, `/terraform/v1/hooks/`, `/terraform/v1/ffmpeg/` and `/terraform/v1/tencent/`    |
-| releases | 2023 |  - | Mount at `/terraform/v1/releases`                                                       |
-| mgmt | 2022 |  - | Mount at `/mgmt/` and `/terraform/v1/mgmt/`                                             |
-| node-exporter | 9100 | - | -                                                                                       |
-| redis | 56379 | - | -                                                                                       |
+| Module | TCP Ports                                         | UDP Ports | Notes                                                                                                                                            |
+| ------ |---------------------------------------------------| --------- |--------------------------------------------------------------------------------------------------------------------------------------------------|
+| SRS | 1935, 1985, 8080,<br/> 8088, 1990, 554,<br/> 8936 | 8000, 8935, 10080,<br/> 1989 | See [SRS ports](https://github.com/ossrs/srs/blob/develop/trunk/doc/Resources.md#ports)                                                          |
+| platform | 2022                                              |  - | Mount at `/mgmt/`, `/terraform/v1/mgmt/`, `/terraform/v1/hooks/`, `/terraform/v1/ffmpeg/` and `/terraform/v1/tencent/` |
 
-> Note: Hooks(2021) has been migrated to platform(2024).
+> Note: FFmpeg(2019), TencentCloud(2020), Hooks(2021), Mgmt(2022), Platform(2024) has been migrated to platform(2024).
 
-> Note: FFmpeg(2019) has been migrated to platform(2024).
-
-> Note: TencentCloud(2020) has been migrated to platform(2024).
-
-> Note: Mgmt(2022) has been migrated to platform(2024).
-
-## HTTP Open APIs
+## HTTP OpenAPI
 
 Platform:
 
@@ -892,7 +912,7 @@ The software we depend on:
     * Include: `platform/containers/data/config/srs.server.conf`
     * Include: `platform/containers/data/config/srs.vhost.conf`
     * Volume: `platform/containers/objs/nginx/` mount as `/usr/local/srs/objs/nginx/`
-* [ffmpeg](https://github.com/ossrs/srs-stack/tree/lighthouse/ffmpeg)
+* FFmpeg:
     * [FFmpeg and ffprobe](https://ffmpeg.org) tools in `ossrs/srs:ubuntu20`
 
 ## Environment Variables
