@@ -556,6 +556,13 @@ function SettingHttpsImpl({config}) {
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
+  const domainRegex = /^(?=.{1,253})(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.?)+[A-Za-z]{2,6}$/;
+  React.useEffect(() => {
+    if (!domainRegex.test(window.location.hostname)) return;
+    if (domain) return;
+    setDomain(window.location.hostname);
+  }, [domain, domainRegex, setDomain]);
+
   const sslTutorials = useTutorials({
     bilibili: React.useRef([
       {author: '程晓龙', id: 'BV1tZ4y1R7qp'},
@@ -587,16 +594,24 @@ function SettingHttpsImpl({config}) {
   const requestLetsEncrypt = React.useCallback((e) => {
     e.preventDefault();
 
+    const port = window.location.port;
+    if (port && port !== '80' && port !== '3000') {
+      return alert(`${t('settings.sslInvalidPort')} ${port} (${window.location.host})`);
+    }
+
+    if (!domainRegex.test(window.location.hostname)) {
+      return alert(`${t('settings.sslInvalidHost')} "${window.location.hostname}", ${t('settings.sslInvalidHost3')}`);
+    }
+
     if (!domain) {
       return alert(t('settings.sslNoDomain'));
     }
 
-    const domainRegex = /^(?=.{1,253})(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.?)+[A-Za-z]{2,6}$/;
     if (!domainRegex.test(domain)) {
       return alert(t('settings.sslInvalidDomain'));
     }
 
-    if (!domainRegex.test(window.location.hostname) || window.location.hostname !== domain) {
+    if (window.location.hostname !== domain) {
       return alert(`${t('settings.sslInvalidHost')} "${window.location.hostname}", ${t('settings.sslInvalidHost2')} "${domain}"`);
     }
 
