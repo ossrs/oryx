@@ -13,11 +13,16 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y && apt-get install -y upx
 
 COPY --from=lego /lego /usr/local/bin/
-RUN upx --best --lzma /usr/local/bin/lego
-
 COPY --from=build /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /usr/local/bin/
-RUN upx --best --lzma /usr/local/bin/ffmpeg
-RUN upx --best --lzma /usr/local/bin/ffprobe
+COPY --from=redis /usr/local/bin/redis-cli /usr/local/bin/redis-server /usr/local/bin/
+
+RUN echo "Before UPX" && ls -lh /usr/local/bin && \
+    upx --best --lzma /usr/local/bin/lego && \
+    upx --best --lzma /usr/local/bin/ffmpeg && \
+    upx --best --lzma /usr/local/bin/ffprobe && \
+    upx --best --lzma /usr/local/bin/redis-cli && \
+    upx --best --lzma /usr/local/bin/redis-server && \
+    echo "After UPX" && ls -lh /usr/local/bin
 
 # http://releases.ubuntu.com/focal/
 FROM ${ARCH}ubuntu:focal AS dist
@@ -27,8 +32,10 @@ FROM ${ARCH}ubuntu:focal AS dist
  # lego: For ACME client, request and renew the HTTPS certificate.
 COPY --from=build /etc/ssl/certs /etc/ssl/certs
 COPY --from=build /usr/share/ca-certificates /usr/share/ca-certificates
-COPY --from=redis /usr/local/bin/redis-cli /usr/local/bin/redis-server /usr/local/bin/
-COPY --from=upx /usr/local/bin/lego /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /usr/local/bin/
+COPY --from=upx /usr/local/bin/lego \
+    /usr/local/bin/ffmpeg /usr/local/bin/ffprobe \
+    /usr/local/bin/redis-cli /usr/local/bin/redis-server \
+    /usr/local/bin/
 
 # We write the common config for platform to base image, however you can
 # overwrite it if not for platform, for example, used in releases.
