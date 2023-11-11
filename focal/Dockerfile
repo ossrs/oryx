@@ -13,6 +13,7 @@ ARG TARGETPLATFORM
 ARG TARGETARCH
 RUN echo "BUILDPLATFORM: $BUILDPLATFORM, TARGETPLATFORM: $TARGETPLATFORM, TARGETARCH: $TARGETARCH"
 
+# Use UPX to compress the binary.
 # https://serverfault.com/questions/949991/how-to-install-tzdata-on-a-ubuntu-docker-image
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y && apt-get install -y upx
@@ -21,13 +22,15 @@ COPY --from=lego /lego /usr/local/bin/
 COPY --from=build /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /usr/local/bin/
 COPY --from=redis /usr/local/bin/redis-cli /usr/local/bin/redis-server /usr/local/bin/
 
-RUN echo "Before UPX for $TARGETARCH" && ls -lh /usr/local/bin && \
+RUN echo "Before UPX for $TARGETARCH" && \
+    ls -lh /usr/local/bin/* && \
     upx --best --lzma /usr/local/bin/lego && \
     upx --best --lzma /usr/local/bin/ffmpeg && \
     upx --best --lzma /usr/local/bin/ffprobe && \
     upx --best --lzma /usr/local/bin/redis-cli && \
     upx --best --lzma /usr/local/bin/redis-server && \
-    echo "After UPX for $TARGETARCH" && ls -lh /usr/local/bin
+    echo "After UPX for $TARGETARCH" && \
+    ls -lh /usr/local/bin/*
 
 # http://releases.ubuntu.com/focal/
 FROM ${ARCH}ubuntu:focal AS dist
