@@ -799,7 +799,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeDefault(t *testing.T) {
 	// Check the transcode task.
 	select {
 	case <-ctx.Done():
-	case <-time.After(1 * time.Second):
+	case <-time.After(3 * time.Second):
 	}
 
 	task := struct {

@@ -170,7 +170,7 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 				for k, value := range configs {
 					var conf ForwardConfigure
 					if err = json.Unmarshal([]byte(value), &conf); err != nil {
-						return errors.Wrapf(err, "unmarshal %value %value", k, value)
+						return errors.Wrapf(err, "unmarshal %v %v", k, value)
 					}
 
 					var pid int32

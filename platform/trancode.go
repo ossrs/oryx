@@ -327,14 +327,14 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 	selectActiveStream := func() (*SrsStream, error) {
 		streams, err := rdb.HGetAll(ctx, SRS_STREAM_ACTIVE).Result()
 		if err != nil {
-			return nil, errors.Wrapf(err, "hgetall %value", SRS_STREAM_ACTIVE)
+			return nil, errors.Wrapf(err, "hgetall %v", SRS_STREAM_ACTIVE)
 		}
 
 		var best *SrsStream
 		for _, value := range streams {
 			var stream SrsStream
 			if err := json.Unmarshal([]byte(value), &stream); err != nil {
-				return nil, errors.Wrapf(err, "unmarshal %value", value)
+				return nil, errors.Wrapf(err, "unmarshal %v", value)
 			}
 
 			// Ignore the transcode stream itself.
@@ -349,12 +349,12 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 
 			bestUpdate, err := time.Parse(time.RFC3339, best.Update)
 			if err != nil {
-				return nil, errors.Wrapf(err, "parse %value", best.Update)
+				return nil, errors.Wrapf(err, "parse %v", best.Update)
 			}
 
 			streamUpdate, err := time.Parse(time.RFC3339, stream.Update)
 			if err != nil {
-				return nil, errors.Wrapf(err, "parse %value", stream.Update)
+				return nil, errors.Wrapf(err, "parse %v", stream.Update)
 			}
 
 			if bestUpdate.Before(streamUpdate) {
@@ -367,7 +367,7 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 			return nil, nil
 		}
 
-		logger.Tf(ctx, "transcode use best=%value as input", best.StreamURL())
+		logger.Tf(ctx, "transcode use best=%v as input", best.StreamURL())
 		return best, nil
 	}
 
