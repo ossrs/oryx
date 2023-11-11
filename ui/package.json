@@ -36,6 +36,7 @@
     "start-zh": "env PUBLIC_URL=/mgmt REACT_APP_LOCALE=zh react-scripts start",
     "start-en": "env PUBLIC_URL=/mgmt REACT_APP_LOCALE=en react-scripts start",
     "build": "react-scripts build",
+    "lint": "eslint --max-warnings 0 ./src",
     "test": "react-scripts test --watchAll=false",
     "testWatch": "react-scripts test --watchAll=true",
     "eject": "react-scripts eject"

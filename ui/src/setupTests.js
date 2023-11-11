@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
-'use strict';
-
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 

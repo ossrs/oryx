@@ -7,6 +7,7 @@ build: npm build build-cn build-en
 
 npm:
 	npm install
+	npm run lint
 
 build: build-cn npm
 

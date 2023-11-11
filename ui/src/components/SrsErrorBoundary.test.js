@@ -47,6 +47,7 @@ test('renders with error desc', () => {
 
 test('renders with auth', () => {
   const TestError = () => {
+    // eslint-disable-next-line
     throw {response: {data: {code: Errors.auth}}};
   }
 
@@ -59,6 +60,7 @@ test('renders with auth', () => {
 
 test('renders with code', () => {
   const TestError = () => {
+    // eslint-disable-next-line
     throw {response: {data: {code: 100}}};
   }
 
@@ -71,6 +73,7 @@ test('renders with code', () => {
 
 test('renders with status', () => {
   const TestError = () => {
+    // eslint-disable-next-line
     throw {response: {status: 500}};
   }
 
@@ -83,6 +86,7 @@ test('renders with status', () => {
 
 test('renders with object', () => {
   const TestError = () => {
+    // eslint-disable-next-line
     throw {key: 100};
   }
 
@@ -95,6 +99,7 @@ test('renders with object', () => {
 
 test('renders with array', () => {
   const TestError = () => {
+    // eslint-disable-next-line
     throw [1, 'a', {}];
   }
 
@@ -107,6 +112,7 @@ test('renders with array', () => {
 
 test('renders with funciton', () => {
   const TestError = () => {
+    // eslint-disable-next-line
     throw ()=>{};
   }
 
@@ -119,6 +125,7 @@ test('renders with funciton', () => {
 
 test('renders with string', () => {
   const TestError = () => {
+    // eslint-disable-next-line
     throw 'Hello World!';
   }
 

@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
-'use strict';
-
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 console.log('setupProxy for development reactjs');
