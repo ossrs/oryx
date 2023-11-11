@@ -91,7 +91,7 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
     refreshTask();
     const timer = setInterval(() => refreshTask(), 10 * 1000);
     return () => clearInterval(timer);
-  }, [handleError, urls, setTask, setTaskInputUrls, setTaskOutputUrls]);
+  }, [handleError, urls, setTask, setTaskInputUrls, setTaskOutputUrls, env]);
 
   const updateTranscodeStatus = React.useCallback((enabled, success) => {
     if (!vbitrate || vbitrate < 100 || vbitrate > 100*1000) return alert(`Invalid vbitrate ${vbitrate}, should be in [100, 100000] Kbps`);

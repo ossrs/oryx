@@ -556,7 +556,10 @@ function SettingHttpsImpl({config}) {
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
-  const domainRegex = /^(?=.{1,253})(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.?)+[A-Za-z]{2,6}$/;
+  const domainRegex = React.useMemo(() => {
+    return /^(?=.{1,253})(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.?)+[A-Za-z]{2,6}$/;
+  }, []);
+
   React.useEffect(() => {
     if (!domainRegex.test(window.location.hostname)) return;
     if (domain) return;
@@ -624,7 +627,7 @@ function SettingHttpsImpl({config}) {
       alert(t('settings.sslLetsOk'));
       console.log(`SSL: Let's Encrypt SSL ok`);
     }).catch(handleError).finally(setOperating);
-  }, [handleError, domain, t, setOperating]);
+  }, [handleError, domain, t, setOperating, domainRegex]);
 
   const defaultKey = config?.provider === 'ssl' ? '1' : '0';
   return (

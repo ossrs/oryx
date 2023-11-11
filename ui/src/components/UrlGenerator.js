@@ -24,7 +24,6 @@ export function buildUrls(defaultUrl, secret, env) {
   a.href = `${window.location.protocol}//${window.location.host}/${defaultUrl}`;
 
   const defaultSchema = a.protocol.replace(':', '');
-  const defaultHost = a.host;
   const defaultHostname = a.hostname;
   const defaultPort = a.port || (a.protocol === 'http:' ? 80 : 443);
   const defaultApp = a.pathname.substring(1, a.pathname.lastIndexOf("/"));
@@ -193,7 +192,7 @@ export default function useUrls() {
       setTranscodeStreamKey(urls.transcodeStreamKey);
       setTranscodeFlvPlayer(urls.transcodeFlvPlayer);
     }
-  }, [loading, secret, rtmpStreamName])
+  }, [loading, secret, rtmpStreamName, env])
 
   return {
     // For basic stream.
