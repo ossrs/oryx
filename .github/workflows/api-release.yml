@@ -83,7 +83,7 @@ jobs:
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
-  k8s:
+  deploy:
     needs:
       - envs
       - aliyun
@@ -95,20 +95,6 @@ jobs:
       # Git checkout
       - name: Checkout repository
         uses: actions/checkout@v3
-      # K8S for terraform versions
-      - name: Release terraform versions to Aliyun ACK
-        run: |-
-          STABLE_RELEASE=platform-$(cat releases/version.go |grep 'const latest' |awk -F '"' '{print $2}')
-          echo "Check stable release $STABLE_RELEASE"
-
-          while true; do
-            docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$STABLE_RELEASE >/dev/null 2>&1 && echo "done" && break
-            echo "Image $STABLE_RELEASE not ready, wait..." && sleep 5
-          done
-
-          echo "Image is ready, lets update the releases."
-
-      ################################################################
       # Generate variables like:
       #   SRS_DROPLET_EIP=1.2.3.4
       - name: Build droplet variables
@@ -130,18 +116,24 @@ jobs:
           command_timeout: 30m
           script: |
             #
+            ufw allow 8101
+            #
             export SRS_DROPLET_PIP=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
             echo "SRS_DROPLET_PIP=$SRS_DROPLET_PIP"
             #
-            # Restart srs-stack releases
-            for ((i=0; i < 5; i++)); do
-              if [[ $(docker ps -f name=docs-cloudversion |wc -l) -eq 1 ]]; then echo "Killed"; break; fi;
-              docker rm -f docs-cloudversion; sleep 0.3;
+            # Restart SRS Stack release
+            cat << END > /root/restart_docs-stack.sh
+              docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_MAJOR
+              docker rm -f docs-cloudversion || sleep 1
+              docker run -d -it --restart always --privileged --name docs-cloudversion -p 8101:9000 \\
+                --log-driver=json-file --log-opt=max-size=500m --log-opt=max-file=3 \\
+                registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_MAJOR
+            END
+            bash /root/restart_docs-stack.sh
+            #
+            # Cleanup old docker images.
+            for image in $(docker images |grep '<none>' |awk '{print $3}'); do
+              docker rmi -f $image
+              echo "Remove image $image, r0=$?"
             done
-            # Remove the old versions.
-            OLD_IMAGE=$(docker images |grep releases |awk '{print $1":"$2}' 1>/dev/null 2>/dev/null)
-            if [[ ! -z $OLD_IMAGE ]]; then docker rmi $OLD_IMAGE; echo "Remove old image $OLD_IMAGE"; fi
-            # Start new releases.
-            docker run -d -it --restart always --name docs-cloudversion -p 8101:9000 \
-              registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
     runs-on: ubuntu-20.04
