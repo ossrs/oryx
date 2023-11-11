@@ -58,7 +58,7 @@ jobs:
         run: |
           echo "Release ossrs/srs-stack:$SRS_TAG"
           docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
-            --output "type=image,push=true" \
+            --output "type=image,push=true" --compress \
             --tag ossrs/srs-stack:$SRS_TAG -f focal/Dockerfile .
       - name: Docker alias images for ossrs/srs-stack
         uses: akhilerm/tag-push-action@v2.1.0
