@@ -99,7 +99,7 @@ func doMain(ctx context.Context) error {
 
 	// For HTTPS.
 	setEnvDefault("HTTPS_LISTEN", "2443")
-	setEnvDefault("AUTO_SELF_SIGNED_CERTIFICATE", "off")
+	setEnvDefault("AUTO_SELF_SIGNED_CERTIFICATE", "on")
 
 	// For feature control.
 	setEnvDefault("NAME_LOOKUP", "on")

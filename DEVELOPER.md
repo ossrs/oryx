@@ -3,29 +3,6 @@
 This guide is for developers and covers topics such as OpenAPI, environment variables, 
 resources, and ports, as well as development on Mac or using Docker.
 
-## Develop the Docker Image
-
-Build the docker image:
-
-```bash
-docker rmi platform:latest 2>/dev/null || echo OK &&
-docker build -t platform:latest -f Dockerfile . &&
-docker save -o platform.tar platform:latest
-```
-
-Start a container:
-
-```bash
-docker run --rm -it --name srs-stack \
-  -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
-  -p 80:2022 -p 443:2443 -e CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
-  platform
-```
-
-Access [http://localhost/mgmt](http://localhost/mgmt) to manage SRS Stack.
-
-Or [http://srs.stack.local/mgmt](http://srs.stack.local/mgmt) to test SRS Stack with domain.
-
 ## Develop All in macOS
 
 Start redis and SRS by docker, set the candidate explicitly:
@@ -56,7 +33,7 @@ Run the platform backend, or run in GoLand:
 (cd platform && go run .)
 ```
 
-> Note: Set `AUTO_SELF_SIGNED_CERTIFICATE=on` if need to generate self-signed certificate.
+> Note: Set `AUTO_SELF_SIGNED_CERTIFICATE=off` if no need to generate self-signed certificate.
 
 Run all tests:
 
@@ -73,6 +50,29 @@ Run the platform react ui, or run in WebStorm:
 ```
 
 Access the browser: http://localhost:3000
+
+## Develop the Docker Image
+
+Build the docker image:
+
+```bash
+docker rmi platform:latest 2>/dev/null || echo OK &&
+docker build -t platform:latest -f Dockerfile . &&
+docker save -o platform.tar platform:latest
+```
+
+Start a container:
+
+```bash
+docker run --rm -it --name srs-stack \
+  -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
+  -p 80:2022 -p 443:2443 -e CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
+  platform
+```
+
+Access [http://localhost/mgmt](http://localhost/mgmt) to manage SRS Stack.
+
+Or [http://srs.stack.local/mgmt](http://srs.stack.local/mgmt) to test SRS Stack with domain.
 
 ## Develop the Script Installer
 
@@ -942,34 +942,39 @@ The software we depend on:
 
 The optional environments defined by `platform/containers/data/config/.env`:
 
+* `MGMT_PASSWORD`: The mgmt administrator password.
+* `REACT_APP_LOCALE`: The i18n config for ui, `en` or `zh`, default to `en`.
+
+Other environments defined by `platform/containers/data/config/.env`:
+
 * `CLOUD`: `dev|bt|aapanel|droplet|docker`, The cloud platform name, DEV for development.
 * `REGION`: `ap-guangzhou|ap-singapore|sgp1`, The region for upgrade source.
 * `REGISTRY`: `docker.io|registry.cn-hangzhou.aliyuncs.com`, The docker registry.
-* `MGMT_LISTEN`: The listen port for mgmt HTTP server. Default: 2022
-* `PLATFORM_LISTEN`: The listen port for platform HTTP server. Default: 2024
-* `HTTPS_LISTEN`: The listen port for HTTPS server. Default: 2443
+* `MGMT_LISTEN`: The listen port for mgmt HTTP server. Default: `2022`
+* `PLATFORM_LISTEN`: The listen port for platform HTTP server. Default: `2024`
+* `HTTPS_LISTEN`: The listen port for HTTPS server. Default: `2443`
 
 For multiple ports running in multiple containers in one host server:
 
 * `HTTP_PORT`: The listen port for HTTP server. Default to port to access dashboard.
-* `RTMP_PORT`: The listen port for RTMP server. Default: 1935
-* `SRT_PORT`: The listen UDP port for SRT server. Default: 10080
-* `RTC_PORT`: The listen UDP port for RTC server. Default: 8000
+* `RTMP_PORT`: The listen port for RTMP server. Default: `1935`
+* `SRT_PORT`: The listen UDP port for SRT server. Default: `10080`
+* `RTC_PORT`: The listen UDP port for RTC server. Default: `8000`
 
 For feature control:
 
-* `NAME_LOOKUP`: `on|off`, whether enable the host name lookup, on or off. Default: off
+* `NAME_LOOKUP`: `on|off`, whether enable the host name lookup, on or off. Default: `on`
 
 For testing the specified service:
 
-* `NODE_ENV`: `development|production`, if development, use local redis; otherwise, use `mgmt.srs.local` in docker.
-* `LOCAL_RELEASE`: `on|off`, whether use local release service. Default: off
-* `PLATFORM_DOCKER`: `on|off`, whether run platform in docker. Default: off
+* `NODE_ENV`: `development|production`, if development, use local redis; otherwise, use `mgmt.srs.local` in docker. Default: 'development'
+* `LOCAL_RELEASE`: `on|off`, whether use local release service. Default: `off`
+* `PLATFORM_DOCKER`: `on|off`, whether run platform in docker. Default: `off`
 
 For mgmt and containers to connect to redis:
 
 * `REDIS_PASSWORD`: The redis password. Default: empty.
-* `REDIS_PORT`: The redis port. Default: 6379.
+* `REDIS_PORT`: The redis port. Default: `6379`.
 
 Environments for react ui:
 
@@ -984,7 +989,7 @@ Removed variables in .env:
 
 For HTTPS, automatically generate a self-signed certificate:
 
-* `AUTO_SELF_SIGNED_CERTIFICATE`: `on|off`, whether generate self-signed certificate.
+* `AUTO_SELF_SIGNED_CERTIFICATE`: `on|off`, whether generate self-signed certificate. Default: `on`.
 
 Deprecated and unused variables:
 
