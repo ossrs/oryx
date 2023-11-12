@@ -25,15 +25,18 @@ export function buildUrls(defaultUrl, secret, env) {
 
   const defaultSchema = a.protocol.replace(':', '');
   const defaultHostname = a.hostname;
-  const defaultPort = a.port || (a.protocol === 'http:' ? 80 : 443);
+  const defaultPort = a.port || (a.protocol === 'http:' ? '80' : '443');
   const defaultApp = a.pathname.substring(1, a.pathname.lastIndexOf("/"));
   const defaultStream = a.pathname.slice(a.pathname.lastIndexOf("/") + 1);
+  const isDefaultPort = (port) => {
+    return !port  || port === '1935' || port === '80' || port === '443';
+  };
 
   const urls = {};
 
   // Build RTMP url.
   if (true) {
-    const rtmpPort = env.rtmpPort ? `:${env.rtmpPort}` : '';
+    const rtmpPort = isDefaultPort(env.rtmpPort) ? '' : `:${env.rtmpPort}`;
     urls.rtmpServer = `rtmp://${defaultHostname}${rtmpPort}/${defaultApp}/`;
     urls.rtmpStreamKey = secret ? `${defaultStream}?secret=${secret.publish}` : defaultStream;
   }
@@ -58,7 +61,7 @@ export function buildUrls(defaultUrl, secret, env) {
     const secretQuery = secret ? `?secret=${secret.publish}` : '';
     const schema = defaultSchema;
     const httpPort = env.httpPort ? env.httpPort : defaultPort;
-    const httpUrlPort = `:${httpPort}`;
+    const httpUrlPort = isDefaultPort(httpPort) ? '' : `:${httpPort}`;
     urls.flvUrl = `${schema}://${defaultHostname}${httpUrlPort}/${defaultApp}/${defaultStream}.flv`;
     urls.m3u8Url = `${schema}://${defaultHostname}${httpUrlPort}/${defaultApp}/${defaultStream}.m3u8`;
     urls.rtcUrl = `webrtc://${defaultHostname}${httpUrlPort}/${defaultApp}/${defaultStream}`;
@@ -73,9 +76,10 @@ export function buildUrls(defaultUrl, secret, env) {
   if (true) {
     const secretQuery = secret ? `&secret=${secret.publish}` : '';
     const httpPort = env.httpPort ? env.httpPort : defaultPort;
+    const httpUrlPort = isDefaultPort(httpPort) ? '' : `:${httpPort}`;
     urls.rtcPublisher = `/players/whip.html?schema=https&port=${httpPort}&api=${httpPort}&autostart=true&stream=${defaultStream}${secretQuery}`;
-    urls.whipUrl = `${defaultSchema}://${defaultHostname}:${httpPort}/rtc/v1/whip/?app=${defaultApp}&stream=${defaultStream}${secretQuery}`;
-    urls.whepUrl = `${defaultSchema}://${defaultHostname}:${httpPort}/rtc/v1/whep/?app=${defaultApp}&stream=${defaultStream}`;
+    urls.whipUrl = `${defaultSchema}://${defaultHostname}${httpUrlPort}/rtc/v1/whip/?app=${defaultApp}&stream=${defaultStream}${secretQuery}`;
+    urls.whepUrl = `${defaultSchema}://${defaultHostname}${httpUrlPort}/rtc/v1/whep/?app=${defaultApp}&stream=${defaultStream}`;
   }
 
   // For transcode stream and urls.
@@ -85,7 +89,7 @@ export function buildUrls(defaultUrl, secret, env) {
     urls.transcodeStreamKey = secret ? `${transcodeStreamName}?secret=${secret.publish}` : transcodeStreamName;
     const schema = defaultSchema;
     const httpPort = env.httpPort ? env.httpPort : defaultPort;
-    const httpUrlPort = `:${httpPort}`;
+    const httpUrlPort = isDefaultPort(httpPort) ? '' : `:${httpPort}`;
     urls.transcodeFlvPlayer = `/tools/player.html?url=${schema}://${defaultHostname}${httpUrlPort}/${defaultApp}/${transcodeStreamName}.flv`;
   }
 

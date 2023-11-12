@@ -28,7 +28,7 @@ export default function ScenarioLive({urls}) {
   }, [t]);
 
   React.useEffect(() => {
-    console.log(`?allow-lo-whip=true To allow publish WHIP by localhost. Default: false, Current: ${searchParams.get('allow-lo-whip')}`);
+    console.log(`?allow-lo-rtc=true To allow publish WHIP by localhost. Default: false, Current: ${searchParams.get('allow-lo-rtc')}`);
   }, [searchParams]);
 
   return <ScenarioLiveImpl {...{urls, copyToClipboard}} />;
@@ -67,13 +67,24 @@ function ScenarioLiveImpl({copyToClipboard, urls}) {
     ])
   });
 
+  // Whether the hostname is localhost.
   const isLo = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  // Whether the protocol is https.
   const isHttps = window.location.protocol === 'https:';
-  const enableNormalWhip = !isLo && isHttps;
   // If set candidate or not in docker, we are able to discover the IP even access by localhost.
-  const enableLoWhip = searchParams.get('allow-lo-whip') === 'true' || !env.platformDocker || env.candidate;
-  const enableWhip = enableNormalWhip || enableLoWhip;
-  const enableWhep = !isLo || enableLoWhip;
+  const hasCandidate = !env.platformDocker || env.candidate;
+  // For test only, allow publish WHIP by localhost even no candidate.
+  const allowLoRtc = searchParams.get('allow-lo-rtc') === 'true';
+
+  // Whether WHEP is available.
+  const enableWhep = !isLo || hasCandidate || allowLoRtc;
+  // Whether WHIP is available.
+  const enableWhip = isHttps || (isLo && hasCandidate) || allowLoRtc;
+  // Whether WHIP is disabled for HTTPS.
+  const disableWhip4Https = !allowLoRtc && !isLo && !isHttps;
+  // Whether WHIP is disabled for localhost.
+  const disableWhip4Lo = !allowLoRtc && isLo && !hasCandidate;
+
   return (
     <Accordion defaultActiveKey="1">
       <React.Fragment>
@@ -578,10 +589,10 @@ function ScenarioLiveImpl({copyToClipboard, urls}) {
           </div>
           <ol>
             <li>{t('live.share.fw')} <code>UDP/8000</code>, {t('live.rtc.check')} <a href={t('live.rtc.connectivity')} target='_blank' rel='noreferrer'>{t('helper.link')}</a></li>
-            {!isHttps && !enableLoWhip &&
+            {disableWhip4Https &&
               <li><code>{t('live.rtc.https')}</code></li>
             }
-            {isLo && !enableLoWhip &&
+            {disableWhip4Lo &&
               <li><code>{t('live.rtc.nolo')}</code></li>
             }
             {enableWhip && <React.Fragment>

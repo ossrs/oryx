@@ -3,6 +3,29 @@
 This guide is for developers and covers topics such as OpenAPI, environment variables, 
 resources, and ports, as well as development on Mac or using Docker.
 
+## Develop the Docker Image
+
+Build the docker image:
+
+```bash
+docker rmi platform:latest 2>/dev/null || echo OK &&
+docker build -t platform:latest -f Dockerfile . &&
+docker save -o platform.tar platform:latest
+```
+
+Start a container:
+
+```bash
+docker run --rm -it --name srs-stack \
+  -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
+  -p 80:2022 -p 443:2443 -e CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
+  platform
+```
+
+Access [http://localhost/mgmt](http://localhost/mgmt) to manage SRS Stack.
+
+Or [http://srs.stack.local/mgmt](http://srs.stack.local/mgmt) to test SRS Stack with domain.
+
 ## Develop All in macOS
 
 Start redis and SRS by docker, set the candidate explicitly:
