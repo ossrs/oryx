@@ -1001,3 +1001,294 @@ Deprecated and unused variables:
 * `SOURCE`: `github|gitee`, The source code for upgrading.
 
 Please restart service when `.env` changed.
+
+## Changelog
+
+The following are the update records for the SRS Stack server.
+
+* v5.11
+    * VLive: Decrease the latency for virtual live. v5.11.1
+    * Live: Refine multiple language. v5.11.2
+    * Hooks: Support HTTP Callback and test. [v5.11.3](https://github.com/ossrs/srs-stack/releases/tag/v5.11.3)
+    * HELM: Support resolve name to ip for rtc. v5.11.4
+    * HELM: Disable NAME_LOOKUP by default. [v5.11.5](https://github.com/ossrs/srs-stack/releases/tag/v5.11.5)
+    * Refine env variable for bool. v5.11.7
+    * RTC: Refine WHIP player and enable NAME_LOOKUP by default. v5.11.8
+    * RTC: Update WHIP and WHEP player. v5.11.9
+    * RTC: Resolve candidate for lo and docker. v5.11.10
+    * RTC: Refine test and tutorial for WHIP/WHEP. [v5.11.10](https://github.com/ossrs/srs-stack/releases/tag/v5.11.10)
+    * Refine player open speed. v5.11.11
+    * HTTPS: Check dashboard and ssl domain. v5.11.12
+    * API: Add curl and jQuery example. v5.11.12
+    * API: Allow CORS by default. v5.11.13
+    * API: Remove duplicated CORS headers. [v5.11.14](https://github.com/ossrs/srs-stack/releases/tag/v5.11.14)
+    * Support expose ports for multiple containers. v5.11.15
+    * HTTPS: Check dashboard hostname and port. v5.11.15
+    * Error when eslint fail. v5.11.16
+    * Use upx to make binary smaller. v5.11.16
+    * Refine transcode test case. [v5.11.17](https://github.com/ossrs/srs-stack/releases/tag/v5.11.17)
+    * HTTPS: Enable self-signed certificate by default. v5.11.18
+* v5.10
+    * Refine README. v5.10.1
+    * Refine DO and droplet release script. v5.10.2
+    * VLive: Fix bug of link. v5.10.2
+    * Record: Fix bug of change record directory. v5.10.2 (#133)
+    * Streaming: Add SRT streaming. [v5.10.2](https://github.com/ossrs/srs-stack/releases/tag/v5.10.2)
+    * Streaming: Add OBS SRT streaming. v5.10.3
+    * Fix lighthouse script bug. v5.10.4
+    * VLive: Support forward stream. v5.10.5
+    * VLive: Cleanup temporary file when uploading. v5.10.6
+    * VLive: Use TCP transport when pull RTSP stream. [v5.10.7](https://github.com/ossrs/srs-stack/releases/tag/v5.10.7)
+    * Refine statistic and report data. v5.10.8
+    * Support file picker with language. [v5.10.9](https://github.com/ossrs/srs-stack/releases/tag/v5.10.9)
+    * Report language. v5.10.10
+    * Transcode: Support live stream transcoding. [v5.10.11](https://github.com/ossrs/srs-stack/releases/tag/v5.10.11)
+    * Transcode: Fix param bug. v5.10.12
+    * Fix default stream name bug. v5.10.13
+    * Update doc. v5.10.14
+    * New stable release. [v5.10.15](https://github.com/ossrs/srs-stack/releases/tag/v5.10.15)
+    * Fix js missing bug. v5.10.16
+    * Support docker images for helm. [v5.10.17](https://github.com/ossrs/srs-stack/releases/tag/v5.10.17)
+    * Use WHIP and WHEP for RTC. v5.10.18
+* v5.9
+    * Update NGINX HLS CDN guide. v5.9.2
+    * Move DVR and VoD to others. v5.9.3
+    * Remove the Tencent CAM setting. v5.9.4
+    * Refine Virtual Live start and stop button. v5.9.5
+    * Refine Record start and stop button. v5.9.6
+    * Refine Forward start and stop button. v5.9.7
+    * Move SRT streaming to others. v5.9.8
+    * Support vlive to use server file. v5.9.9
+    * Add test for virtual live. v5.9.10
+    * Add test for record. v5.9.11
+    * Add test for forward. v5.9.12
+    * Refine test to transmux to mp4. [v5.9.13](https://github.com/ossrs/srs-stack/releases/tag/v5.9.13)
+    * Upgrade jquery and mpegtsjs. v5.9.14
+    * Support authentication for SRS HTTP API. [v5.9.15](https://github.com/ossrs/srs-stack/releases/tag/v5.9.15)
+    * Don't expose 1985 API port. v5.9.16
+    * Load environment variables from /data/config/.srs.env. v5.9.17
+    * Change guide to use $HOME/data as home. v5.9.18
+    * Translate forward to English. [v5.9.19](https://github.com/ossrs/srs-stack/releases/tag/v5.9.19)
+    * Refine record, dvr, and vod files. v5.9.20
+    * Translate record to English. [v5.9.21](https://github.com/ossrs/srs-stack/releases/tag/v5.9.21)
+    * Refine virtual live files. v5.9.22
+    * Translate virtual live to English. v5.9.23
+    * Support always open tabs. v5.9.24
+    * Remove record and vlive group. [v5.9.25](https://github.com/ossrs/srs-stack/releases/tag/v5.9.25)
+    * Refine project description. v5.9.26
+    * Refine DO and droplet release script. [v5.9.27](https://github.com/ossrs/srs-stack/releases/tag/v5.9.27)
+    * Fix bug, release stable version. v5.9.28
+    * VLive: Fix bug of link. v5.9.28
+    * Record: Fix bug of change record directory. v5.9.28 (#133)
+    * Streaming: Add SRT streaming. [v5.9.28](https://github.com/ossrs/srs-stack/releases/tag/v5.9.28)
+    * Fix lighthouse HTTPS bug. v5.9.29
+* v5.8
+    * Always dispose DO VM and domain for test. v1.0.306
+    * Fix docker start failed, cover by test. v1.0.306
+    * Switch default language to en. v1.0.306
+    * Support include for SRS config. v1.0.306
+    * Support High Performance HLS mode. v1.0.307
+    * Show current config for settings. v1.0.307
+    * Switch MIT to AGPL License. v1.0.307
+    * Use one version strategy. [v5.8.20](https://github.com/ossrs/srs-stack/releases/tag/v5.8.20)
+    * Always check test result. v5.8.21
+    * SRT: Enable srt in default vhost. v5.8.22
+    * Add utest for HP HLS. v5.8.23
+    * Migrate docs to new website. v5.8.23
+    * BT and aaPanel plugin ID should match filename. v5.8.24
+    * Add Nginx HLS Edge tutorial. v5.8.25
+    * Download test file from SRS. v5.8.26
+    * Do not require version. v5.8.26
+    * Fix Failed to execute 'insertBefore' on 'Node'. v5.8.26
+    * Eliminate unused callback events. v5.8.26
+    * Add docker for nginx HLS CDN. v5.8.27
+    * Update SRS Stack architecture. v5.8.27
+    * Use DO droplet s-1vcpu-1gb for auto test. v5.8.28
+    * Use default context when restore hphls. [v5.8.28](https://github.com/ossrs/srs-stack/releases/tag/v5.8.28)
+    * Support remote test. v5.8.29
+    * Enable CORS and timestamp in HLS. [v5.8.30](https://github.com/ossrs/srs-stack/releases/tag/v5.8.30)
+    * Release stable version. [v5.8.31](https://github.com/ossrs/srs-stack/releases/tag/v5.8.31)
+* v5.7
+    * Refine DigitalOcean droplet image. v1.0.302
+    * Support local test all script. v1.0.302
+    * Rewrite script for lighthouse. v1.0.303
+    * Set nginx max body to 100GB. v1.0.303
+    * Use LEGO instead of certbot. v1.0.304
+    * Rename SRS Cloud to SRS Stack. v1.0.304
+    * Support HTTPS by SSL file. v1.0.305
+    * Support reload nginx for SSL. v1.0.305
+    * Support request SSL from letsencrypt. v1.0.305
+    * Support work with bt/aaPanel ssl. v1.0.305
+    * Support self-sign certificate by default. v1.0.305
+    * Query configured SSL cert. v1.0.305
+    * 2023.08.13: Support test online environment. [v5.7.19](https://github.com/ossrs/srs-stack/releases/tag/publication-v5.7.19)
+    * 2023.08.20: Fix the BT and aaPanel filename issue. [v5.7.20](https://github.com/ossrs/srs-stack/releases/tag/publication-v5.7.20)
+* 2023.08.06, v1.0.301, v5.7.18
+    * Simplify startup script, fix bug, adjust directory to `/data` top-level directory. v1.0.296
+    * Improve message prompts, script comments, and log output. v1.0.297
+    * Avoid modifying the global directory every time it starts, initialize it in the container and platform script. v1.0.298
+    * Improve release script, check version matching, manually update version. v1.0.299
+    * Remove upgrade function, maintain consistency of docker and other platforms. v1.0.300
+    * Improved BT and aaPanel scripts, added test pipeline. v1.0.300
+    * Always use the latest SRS 5.0 release. v1.0.301
+    * Use status to check SRS, not by the exit value. v1.0.301
+* 2023.04.05, v1.0.295, structural improvements
+    * Remove HTTPS certificate application, administrator authorization, NGINX reverse proxy, and other functions. v1.0.283
+    * Implement Release using Go, reducing memory requirements and image size. v1.0.284
+    * Remove dashboard and Prometheus, making it easier to support a single Docker image. v1.0.283
+    * Implement mgmt and platform using Go, reducing memory requirements and image size. v1.0.283
+    * Use Ubuntu focal(20) as the base image, reducing image size. v1.0.283
+    * Support fast upgrade, installation in about 40 seconds, upgrade in about 10 seconds. v1.0.283
+    * Solve the problem of forwarding without stream. v1.0.284
+    * Solve the problem of uploading large files and getting stuck. v1.0.286
+    * Remove AI face-changing video, B station review did not pass. v1.0.289 (stable)
+    * Remove Redis container and start Redis directly in the platform. v1.0.290
+    * Remove SRS container and start SRS directly in the platform. v1.0.291
+    * Support single container startup, including mgmt in one container. v1.0.292
+    * Support mounting to `/data` directory for persistence. v1.0.295
+* 2023.02.01, v1.0.281, experience improvement, Stable version.
+    * Allow users to turn off automatic updates and use manual updates.
+    * Adapt to the new version of Bao Ta, solve the nodejs detection problem.
+    * Bao Ta checks the plug-in status, and cannot operate before the installation is complete.
+    * Improve the display of forwarding status, add `waiting` status. v1.0.260
+    * Improve image update, not strongly dependent on certbot. #47
+    * Merge hooks/tencent/ffmpeg image into the platform. v1.0.269
+    * Support custom platform for forwarding. v1.0.270
+    * Support virtual live broadcast, file-to-live broadcast. v1.0.272
+    * Upload file limit 100GB. v1.0.274
+    * Fix bug in virtual live broadcast. v1.0.276
+    * Release service, replace Nodejs with Go, reduce image size. v1.0.280
+    * Do not use buildx to build single-architecture docker images, CentOS will fail. v1.0.281
+* 2022.11.20, v1.0.256, major version update, experience improvement, Release 4.6
+    * Proxy root site resources, such as favicon.ico
+    * Support [SrsPlayer](https://wordpress.org/plugins/srs-player) WebRTC push stream shortcode.
+    * Support [local recording](https://github.com/ossrs/srs-stack/issues/42), recording to SRS Stack local disk.
+    * Support deleting local recording files and tasks.
+    * Support local recording as MP4 files and downloads.
+    * Support local recording directory as a soft link, storing recorded content on other disks.
+    * Improve recording navigation bar, merge into recording.
+    * Resolve conflicts between home page and proxy root directory.
+    * Solve the problem of not updating NGINX configuration during upgrade.
+    * Fix the bug of setting record soft link.
+    * Replace all images with standard images `ossrs/srs`.
+    * Support setting website title and footer (filing requirements).
+    * Prompt administrator password path, can retrieve password when forgotten.
+    * Allow recovery of the page when an error occurs, no need to refresh the page.
+* 2022.06.06, v1.0.240, major version update, Bao Ta, Release 4.5
+    * Reduce disk usage, clean up docker images
+    * Improve dependencies, no longer strongly dependent on Redis and Nginx
+    * Support [Bao Ta](https://mp.weixin.qq.com/s/nutc5eJ73aUa4Hc23DbCwQ) or [aaPanel](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-aapanel-9748ae754c8c) plugin, support CentOS or Ubuntu command line installation
+    * Migrate ossrs.net to lightweight server, no longer dependent on K8s.
+    * Login password default changed to display password.
+    * Stop pushing stream for a certain time, clean up HLS cache files.
+    * Create a 2GB swap area if memory is less than 2GB.
+    * Support collecting SRS coredump.
+    * Live scene display SRT push stream address and command.
+    * Support setting NGINX root proxy path.
+* 2022.04.18, v1.0.222, minor version update, containerized Redis
+    * Improve instructions, support disabling push stream authentication.
+    * Support English guidance, [medium](https://blog.ossrs.io) articles.
+    * Improve simple player, support mute autoplay.
+    * Add CORS support when NGINX distributes HLS.
+    * Add English guidance, [Create SRS](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-1-click-e9fe6f314ac6) and [Set up HTTPS](https://blog.ossrs.io/how-to-secure-srs-with-lets-encrypt-by-1-click-cb618777639f), [WordPress](https://blog.ossrs.io/publish-your-srs-livestream-through-wordpress-ec18dfae7d6f).
+    * Enhance key length, strengthen security, and avoid brute force cracking.
+    * Support WordPress Shortcode guidance.
+    * Support setting home page redirection path, support mixed running with other websites.
+    * Support setting reverse proxy, support hanging other services under NGINX.
+    * Support applying for multiple domain names for HTTPS, solving the `www` prefix domain name problem.
+    * Change `filing` to `website`, can set home page redirection and footer filing number.
+    * Improve NGINX configuration file structure, centralize configuration in `containers` directory.
+    * Support setting simple load balancing, randomly selecting a backend NGINX for HLS distribution.
+    * Containers work in an independent `srs-stack` network.
+    * Add `System > Tools` option.
+    * Use Redis container, not dependent on host Redis service.
+* 2022.04.06, v1.0.200, major version update, multi-language, Release 4.4
+    * Support Chinese and English bilingual.
+    * Support DigitalOcean image, see [SRS Droplet](https://marketplace.digitalocean.com/apps/srs).
+    * Support OpenAPI to get push stream key, see [#19](https://github.com/ossrs/srs-stack/pull/19).
+    * Improve container image update script.
+    * Support using NGINX to distribute HLS, see [#2989](https://github.com/ossrs/srs/issues/2989#nginx-direclty-serve-hls).
+    * Improve VoD storage and service detection.
+    * Improve installation script.
+* 2022.03.18, v1.0.191, minor version update, experience improvement
+    * Scenes default to display tutorial.
+    * Support SRT address separation, play without secret.
+    * Separate Platform module, simplify mgmt logic.
+    * Improve UTest upgrade test script.
+    * Support changing stream name, randomly generating stream name.
+    * Support copying stream name, configuration, address, etc.
+    * Separate upgrade and UI, simplify mgmt logic.
+    * Separate container management and upgrade.
+    * Fast and efficient upgrade, completed within 30 seconds.
+    * Support CVM image, see [SRS CVM](https://mp.weixin.qq.com/s/x-PjoKjJj6HRF-eCKX0KzQ).
+* 2022.03.16, v1.0.162, Major version update, error handling, Release 4.3
+    * Support for React Error Boundary, friendly error display.
+    * Support for RTMP push QR code, core image guidance.
+    * Support for simple player, playing HTTP-FLV and HLS.
+    * Improved callbacks, created with React.useCallback.
+    * Improved page cache time, increased loading speed.
+    * Added REACT UI components and Nodejs project testing.
+    * Added script for installing dependency packages.
+    * Improved simple player, not muted by default, requires user click to play.
+    * Added Watermelon Player [xgplayer](https://github.com/bytedance/xgplayer), playing FLV and HLS
+* 2022.03.09, v1.0.144, Minor version update, multi-platform forwarding
+    * Support for multi-platform forwarding, video number, Bilibili, Kuaishou.
+    * Restart forwarding task when modifying forwarding configuration.
+    * Support for setting upgrade window, default upgrade from 23:00 to 5:00.
+    * Support for jest unit testing, covering mgmt.
+    * Support for switching SRS, stable version and development version.
+    * Optimized display of disabled container status.
+* 2022.03.04, v1.0.132, Minor version update, cloud on-demand
+    * Support for cloud on-demand, HLS and MP4 downloads.
+    * Cloud on-demand supports live playback, updating SessionKey.
+    * Disable password setting during upgrade to avoid environment variable conflicts.
+    * Restart all containers dependent on .env when initializing the system.
+    * Update the differences between cloud recording and cloud on-demand.
+    * SRT supports vMix tutorial.
+* 2022.02.25, v1.0.120, Minor version update, cloud recording
+    * Improved upgrade script, restarting necessary containers.
+    * Modified Redis listening port, enhanced security.
+    * Resolved cloud recording, asynchronous long time (8h+) conflict issue.
+    * Improved key creation link, using cloud API key.
+    * Improved scene and settings TAB, loaded on demand, URL address identification.
+* 2022.02.23, v1.0.113, Minor version update, cloud recording
+    * Support for resetting push key. [#2](https://github.com/ossrs/srs-terraform/pull/2)
+    * SRT push disconnects when RTMP conversion fails.
+    * Disabled containers no longer start.
+    * SRT supports QR code scanning for push and playback. [#6](https://github.com/ossrs/srs-terraform/pull/6)
+    * Support for [cloud recording](https://mp.weixin.qq.com/s/UXR5EBKZ-LnthwKN_rlIjg), recording to Tencent Cloud COS.
+* 2022.02.14, v1.0.98, Major version update, upgrade, Release 4.2
+    * Improved React static resource caching, increasing subsequent loading speed.
+    * Added Contact exclusive group QR code, scan code to join group.
+    * Support for setting Redis values, disabling automatic updates.
+    * Automatically detect overseas regions, use overseas sources for updates and upgrades.
+    * Improved upgrade prompts, countdown and status detection.
+    * Display video tutorials created by everyone on the page, sorted by play count.
+    * Support for authorizing platform administrators to access Lighthouse instances.
+    * Small memory systems, automatically create swap to avoid OOM during upgrades.
+* 2022.02.05, v1.0.74, minor update, dashboard
+    * Support for Prometheus monitoring, WebUI mounted on `/prometheus`, no authentication for now.
+    * Support for Prometheus NodeExporter, node monitoring, Lighthouse's CPU, network, disk, etc.
+    * Added dashboard, added CPU chart, can jump to [Prometheus](https://github.com/ossrs/srs/issues/2899#prometheus).
+    * Improved certbot, started with docker, not an installation package.
+    * Improved upgrade process to prevent duplicate upgrades.
+    * Support for upgrading machines with 1GB memory, disabling node's GENERATE_SOURCEMAP to prevent OOM.
+* 2022.02.01, v1.0.64, minor update, HTTPS
+    * Support for Windows version of ffplay to play SRT addresses
+    * Support for container startup hooks, stream authentication and authorization
+    * Change Redis listening on lo and eth0, otherwise container cannot access
+    * Support for setting HTTPS certificates, Nginx format, refer to [here](https://github.com/ossrs/srs/issues/2864#ssl-file)
+    * Support for Let's Encrypt automatic application of HTTPS certificates, refer to [here](https://github.com/ossrs/srs/issues/2864#lets-encrypt)
+* 2022.01.31, v1.0.58, minor update, SRT
+    * Support for ultra-clear real-time live streaming scenarios, SRT push and pull streaming, 200~500ms latency, refer to [here](https://github.com/ossrs/srs/issues/1147#lagging)
+    * Chip/OBS+SRS+ffplay push and pull SRT stream address, support authentication.
+    * Support for manual upgrade to the latest version, support for forced upgrade.
+    * Improved upgrade script, execute after updating the script
+    * Support for restarting SRS server container
+* 2022.01.27, v1.0.42, major update, stream authentication, Release 4.1
+    * Support for push stream authentication and management backend
+    * Support for updating backend, manual update
+    * Live room scenario, push stream and play guide
+    * SRS source code download, with GIT
+    * Support for Lighthouse image, refer to [SRS Lighthouse](https://mp.weixin.qq.com/s/fWmdkw-2AoFD_pEmE_EIkA).
+* 2022.01.21, Initialized.
