@@ -25,7 +25,6 @@ You will receive an internet IP address, for example, `128.199.114.145`. Log in 
 
 ```bash
 apt-get update -y && apt-get install -y docker.io curl net-tools ffmpeg pcp &&
-docker rm -f srs-stack || echo OK &&
 docker run --rm --name srs-stack -d -v $HOME/data:/data \
   -p 2022:2022 -p 2443:2443 -p 1935:1935/tcp -p 8000:8000/udp -p 10080:10080/udp \
   ossrs/srs-stack:5
@@ -68,16 +67,15 @@ You will receive an internet IP address, for example, `128.199.93.163`. Log in a
 
 ```bash
 apt-get update -y && apt-get install -y docker.io curl net-tools ffmpeg pcp &&
-docker rm -f srs-stack-nginx01 || echo OK &&
 docker run --rm -it --name srs-stack-nginx01 -d \
   -p 80:80 -e SRS_STACK_SERVER=128.199.114.145:2022 \
-  ossrs/srs-stack:nginx-hls-cdn
+  ossrs/srs-stack:nginx-hls-cdn-http
 ```
 
 > Note: Please replace the IP `128.199.114.145` with your SRS Stack.
 
 A HLS stream should be available at [http://128.199.93.163/live/livestream.m3u8](http://128.199.114.145:2022/tools/player.html?url=http://128.199.93.163/live/livestream.m3u8),
-and in the following steps, you can create more NGINX servers to deliver HLS stream.
+and now you got an Nginx server that supports HLS stream.
 
 This step can be repeated multiple times to establish more NGINX edge servers, allowing you to serve 
 a greater number of clients. Additionally, you can configure NGINX servers to retrieve HLS streams 
@@ -115,4 +113,30 @@ allows for the expansion and addition of more NGINX servers to accommodate more 
 supporting thousands or even millions. Since the SRS Stack only needs to serve the NGINX servers, the 
 load will consistently remain low.
 
- 
+## (Optional) Step 4: Setup HTTPS for Nginx Edge Server
+
+You can configure HTTPS for the Nginx Edge server if you have an SSL certificate file, or you can create
+a self-signed SSL certificate file by:
+
+```bash
+openssl genrsa -out nginx.key 2048
+openssl req -new -x509 -key nginx.key -out nginx.crt -days 3650 -subj "/CN=nginx01.your-domain.com"
+```
+
+Start Nginx with SSL certificate file:
+
+```bash
+docker run --rm -it --name srs-stack-nginx01 -d \
+  -p 80:80 -e SRS_STACK_SERVER=128.199.114.145:2022 \
+  -p 443:443 -v $(pwd)/nginx.key:/data/config/nginx.key -v $(pwd)/nginx.crt:/data/config/nginx.crt \
+  ossrs/srs-stack:nginx-hls-cdn-https
+```
+
+> Note: Please replace the IP `128.199.114.145` with your SRS Stack.
+
+A HTTPS HLS stream should be available at [https://nginx01.your-domain.com/live/livestream.m3u8](http://128.199.114.145:2022/tools/player.html?url=https://nginx01.your-domain.com/live/livestream.m3u8),
+and now you got an Nginx server that supports HLS stream over HTTPS.
+
+This step can be repeated multiple times to establish more NGINX edge servers. Since the domain 
+`nginx01.your-domain.com` is resolved to this particular IP address of the Nginx server, you require 
+a different domain, such as `nginx02.your-domain.com`, for another Nginx Edge server, etc.

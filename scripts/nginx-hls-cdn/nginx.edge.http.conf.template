@@ -1,0 +1,34 @@
+
+proxy_cache_path  /data/nginx-cache levels=1:2 keys_zone=srs_cache:8m max_size=1000m inactive=600m;
+proxy_temp_path /data/nginx-cache/tmp;
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    proxy_cache_valid  404      10s;
+    proxy_cache_lock on;
+    proxy_cache_lock_age 300s;
+    proxy_cache_lock_timeout 300s;
+    proxy_cache_min_uses 1;
+
+    location ~ /.+/.*\.(m3u8)$ {
+        proxy_set_header Host $host;
+        proxy_pass http://${SRS_STACK_SERVER}$request_uri;
+
+        proxy_cache srs_cache;
+        proxy_cache_key $scheme$proxy_host$uri$args;
+        proxy_cache_valid  200 302  10s;
+        add_header X-Cache-Status $upstream_cache_status;
+    }
+
+    location ~ /.+/.*\.(ts)$ {
+        proxy_set_header Host $host;
+        proxy_pass http://${SRS_STACK_SERVER}$request_uri;
+
+        proxy_cache srs_cache;
+        proxy_cache_key $scheme$proxy_host$uri;
+        proxy_cache_valid  200 302  60m;
+        add_header X-Cache-Status $upstream_cache_status;
+    }
+}

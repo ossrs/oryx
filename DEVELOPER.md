@@ -1028,6 +1028,7 @@ The following are the update records for the SRS Stack server.
     * Use upx to make binary smaller. v5.11.16
     * Refine transcode test case. [v5.11.17](https://github.com/ossrs/srs-stack/releases/tag/v5.11.17)
     * HTTPS: Enable self-signed certificate by default. v5.11.18
+    * HLS: Nginx HLS CDN support HTTPS. v5.11.19
 * v5.10
     * Refine README. v5.10.1
     * Refine DO and droplet release script. v5.10.2

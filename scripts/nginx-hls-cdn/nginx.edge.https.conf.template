@@ -6,6 +6,15 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
 
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    ssl_certificate ${SRS_STACK_SSL_CRT};
+    ssl_certificate_key ${SRS_STACK_SSL_KEY};
+    ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
+    add_header Strict-Transport-Security "max-age=0";
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
     proxy_cache_valid  404      10s;
     proxy_cache_lock on;
     proxy_cache_lock_age 300s;
@@ -21,6 +30,7 @@ server {
         proxy_cache_valid  200 302  10s;
         add_header X-Cache-Status $upstream_cache_status;
     }
+
     location ~ /.+/.*\.(ts)$ {
         proxy_set_header Host $host;
         proxy_pass http://${SRS_STACK_SERVER}$request_uri;

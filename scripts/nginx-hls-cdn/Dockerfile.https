@@ -1,0 +1,12 @@
+ARG ARCH
+
+FROM ${ARCH}nginx:latest AS dist
+
+# The environment variables for template.
+ENV SRS_STACK_SERVER=127.0.0.1:2022 \
+    SRS_STACK_SSL_KEY=/data/config/nginx.key \
+    SRS_STACK_SSL_CRT=/data/config/nginx.crt
+ADD nginx.edge.https.conf.template /etc/nginx/templates/default.conf.template
+
+# Create the proxy cache directory for NGINX.
+RUN mkdir -p /data/nginx-cache

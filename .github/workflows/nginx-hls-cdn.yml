@@ -9,13 +9,16 @@ jobs:
     steps:
       - name: Generate varaiables
         run: |
-          SRS_MAJOR=nginx-hls-cdn
-          SRS_TAG=nginx-hls-cdn-v1.0.0
-          echo "SRS_MAJOR=$SRS_MAJOR" >> $GITHUB_ENV
-          echo "SRS_TAG=$SRS_TAG" >> $GITHUB_ENV
+          SRS_MAJOR_HTTP=nginx-hls-cdn-http
+          SRS_MAJOR_HTTPS=nginx-hls-cdn-https
+          SRS_VERSION=v1.0.1
+          echo "SRS_MAJOR_HTTP=$SRS_MAJOR_HTTP" >> $GITHUB_ENV
+          echo "SRS_MAJOR_HTTPS=$SRS_MAJOR_HTTPS" >> $GITHUB_ENV
+          echo "SRS_VERSION=$SRS_VERSION" >> $GITHUB_ENV
     outputs:
-      SRS_TAG: ${{ env.SRS_TAG }}
-      SRS_MAJOR: ${{ env.SRS_MAJOR }}
+      SRS_VERSION: ${{ env.SRS_VERSION }}
+      SRS_MAJOR_HTTP: ${{ env.SRS_MAJOR_HTTP }}
+      SRS_MAJOR_HTTPS: ${{ env.SRS_MAJOR_HTTPS }}
     runs-on: ubuntu-20.04
 
   docker:
@@ -24,8 +27,9 @@ jobs:
     steps:
       - name: Covert output to env
         run: |
-          echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
-          echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
+          echo "SRS_VERSION=${{ needs.envs.outputs.SRS_VERSION }}" >> $GITHUB_ENV
+          echo "SRS_MAJOR_HTTP=${{ needs.envs.outputs.SRS_MAJOR_HTTP }}" >> $GITHUB_ENV
+          echo "SRS_MAJOR_HTTPS=${{ needs.envs.outputs.SRS_MAJOR_HTTPS }}" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Set up QEMU
@@ -37,20 +41,36 @@ jobs:
         with:
           username: "${{ secrets.DOCKER_USERNAME }}"
           password: "${{ secrets.DOCKER_PASSWORD }}"
-      - name: Build SRS docker image
+      - name: Build HTTP docker image
         run: |
-          echo "Release ossrs/srs-stack:$SRS_TAG"
+          echo "Release ossrs/srs-stack:$SRS_MAJOR_HTTP-$SRS_VERSION"
           docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
             --output "type=image,push=true" \
-            --tag ossrs/srs-stack:$SRS_TAG scripts/nginx-hls-cdn
-      - name: Docker alias images for ossrs/srs-stack
+            --tag ossrs/srs-stack:$SRS_MAJOR_HTTP \
+            -f scripts/nginx-hls-cdn/Dockerfile.http \
+            scripts/nginx-hls-cdn
+      - name: Alias HTTP docker image
         uses: akhilerm/tag-push-action@v2.1.0
         with:
-          src: ossrs/srs-stack:${{ env.SRS_TAG }}
+          src: ossrs/srs-stack:${{ env.SRS_MAJOR_HTTP }}
           dst: |
-            ossrs/srs-cloud:${{ env.SRS_TAG }}
-            ossrs/srs-cloud:${{ env.SRS_MAJOR }}
-            ossrs/srs-stack:${{ env.SRS_MAJOR }}
+            ossrs/srs-stack:${{ env.SRS_MAJOR_HTTP }}-${{ env.SRS_VERSION }}
+            ossrs/srs-stack:nginx-hls-cdn-${{ env.SRS_VERSION }}
+            ossrs/srs-stack:nginx-hls-cdn
+      - name: Build HTTPS docker image
+        run: |
+          echo "Release ossrs/srs-stack:$SRS_MAJOR_HTTPS-$SRS_VERSION"
+          docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
+            --output "type=image,push=true" \
+            --tag ossrs/srs-stack:$SRS_MAJOR_HTTPS \
+            -f scripts/nginx-hls-cdn/Dockerfile.https \
+            scripts/nginx-hls-cdn
+      - name: Alias HTTPS docker image
+        uses: akhilerm/tag-push-action@v2.1.0
+        with:
+          src: ossrs/srs-stack:${{ env.SRS_MAJOR_HTTPS }}
+          dst: |
+            ossrs/srs-stack:${{ env.SRS_MAJOR_HTTPS }}-${{ env.SRS_VERSION }}
     runs-on: ubuntu-20.04
 
   aliyun:
@@ -60,21 +80,29 @@ jobs:
     steps:
       - name: Covert output to env
         run: |
-          echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
-          echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
+          echo "SRS_VERSION=${{ needs.envs.outputs.SRS_VERSION }}" >> $GITHUB_ENV
+          echo "SRS_MAJOR_HTTP=${{ needs.envs.outputs.SRS_MAJOR_HTTP }}" >> $GITHUB_ENV
+          echo "SRS_MAJOR_HTTPS=${{ needs.envs.outputs.SRS_MAJOR_HTTPS }}" >> $GITHUB_ENV
       - name: Login Aliyun docker hub
         uses: docker/login-action@v2
         with:
           registry: registry.cn-hangzhou.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
           password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Docker alias images for ossrs/srs-stack
+      - name: Alias HTTP docker images
         uses: akhilerm/tag-push-action@v2.1.0
         with:
-          src: ossrs/srs-stack:${{ env.SRS_TAG }}
+          src: ossrs/srs-stack:${{ env.SRS_MAJOR_HTTP }}
           dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_TAG }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_TAG }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-cloud:${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR_HTTP }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR_HTTP }}-${{ env.SRS_VERSION }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:nginx-hls-cdn-${{ env.SRS_VERSION }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:nginx-hls-cdn
+      - name: Alias HTTPS docker images
+        uses: akhilerm/tag-push-action@v2.1.0
+        with:
+          src: ossrs/srs-stack:${{ env.SRS_MAJOR_HTTPS }}
+          dst: |
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR_HTTPS }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR_HTTPS }}-${{ env.SRS_VERSION }}
     runs-on: ubuntu-20.04
