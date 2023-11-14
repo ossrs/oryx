@@ -1030,6 +1030,7 @@ The following are the update records for the SRS Stack server.
     * HTTPS: Enable self-signed certificate by default. v5.11.18
     * HLS: Nginx HLS CDN support HTTPS. v5.11.19
     * Refine scenarios with discouraged and deprecated. v5.11.20
+    * Transcode: Refine stream compare algorithm. v5.11.21
 * v5.10
     * Refine README. v5.10.1
     * Refine DO and droplet release script. v5.10.2
@@ -1052,6 +1053,7 @@ The following are the update records for the SRS Stack server.
     * Fix js missing bug. v5.10.16
     * Support docker images for helm. [v5.10.17](https://github.com/ossrs/srs-stack/releases/tag/v5.10.17)
     * Use WHIP and WHEP for RTC. v5.10.18
+    * Transcode: Refine stream compare algorithm. v5.10.19
 * v5.9
     * Update NGINX HLS CDN guide. v5.9.2
     * Move DVR and VoD to others. v5.9.3

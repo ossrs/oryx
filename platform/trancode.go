@@ -10,8 +10,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"sync"
 	"syscall"
@@ -324,6 +326,24 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	logger.Tf(ctx, "transcode run task %v", v.String())
 
+	isSameStream := func(a, b string) bool {
+		ua, err := url.Parse(a)
+		if err != nil {
+			return false
+		}
+
+		ub, err := url.Parse(b)
+		if err != nil {
+			return false
+		}
+
+		if path.Clean(ua.Path) == path.Clean(ub.Path) {
+			return true
+		}
+
+		return false
+	}
+
 	selectActiveStream := func() (*SrsStream, error) {
 		streams, err := rdb.HGetAll(ctx, SRS_STREAM_ACTIVE).Result()
 		if err != nil {
@@ -338,7 +358,8 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 			}
 
 			// Ignore the transcode stream itself.
-			if strings.HasPrefix(v.config.Secret, stream.Stream) {
+			if isSameStream(fmt.Sprintf("%v/%v", v.config.Server, v.config.Secret),
+				fmt.Sprintf("rtmp://%v/%v/%v", stream.Vhost, stream.App, stream.Stream)) {
 				continue
 			}
 
