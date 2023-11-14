@@ -590,7 +590,9 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 
 	// Start FFmpeg process.
 	args := []string{
-		"-stream_loop", "-1", "-i", inputURL, "-c", "copy", "-f", "flv", outputURL,
+		"-stream_loop", "-1",
+		"-fflags", "nobuffer", // Reduce the latency introduced by optional buffering.
+		"-i", inputURL, "-c", "copy", "-f", "flv", outputURL,
 	}
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
