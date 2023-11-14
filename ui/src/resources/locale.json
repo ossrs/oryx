@@ -36,14 +36,15 @@
         "dvr": "云录制",
         "vod": "云点播",
         "code": "源代码",
-        "other": "其他场景",
+        "other": "不推荐",
         "rmFileTip1": "删除文件，会造成",
         "rmFileTip2": "流不可访问，",
         "rmFileTip3": "确认继续删除么？",
         "vlive": "虚拟直播",
         "vfile": "文件转直播",
         "vstream": "拉流转推",
-        "others": "其他"
+        "others": "其他",
+        "deprecated": "已废弃"
       },
       "tencent": {
         "secretOk": "腾讯云访问密钥设置成功",
@@ -512,14 +513,15 @@
         "dvr": "DVR",
         "vod": "VoD",
         "code": "Source",
-        "other": "Other",
+        "other": "Discouraged",
         "rmFileTip1": "It will cause",
         "rmFileTip2": "stream unavailable. ",
         "rmFileTip3": "Are you sure to continue?",
         "vlive": "VirtualLive",
         "vfile": "FileSource",
         "vstream": "StreamSource",
-        "others": "Others"
+        "others": "Others",
+        "deprecated": "Deprecated"
       },
       "tencent": {
         "secretOk": "Set Tencent Cloud Secret ok",

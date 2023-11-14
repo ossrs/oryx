@@ -19,19 +19,9 @@ export function ScenarioVxOthers({urls}) {
   const language = useSrsLanguage();
   const {t} = useTranslation();
 
-  const copyToClipboard = React.useCallback((e, text) => {
-    e.preventDefault();
-
-    Clipboard.copy(text).then(() => {
-      alert(t('helper.copyOk'));
-    }).catch((err) => {
-      alert(`${t('helper.copyFail')} ${err}`);
-    });
-  }, [t]);
-
   React.useEffect(() => {
     const ctab = searchParams.get('ctab') || 'other';
-    console.log(`?ctab=other|srt|dvr|vod, current=${ctab}, Select the child tab to render`);
+    console.log(`?ctab=other|deprecated|srt|dvr|vod, current=${ctab}, Select the child tab to render`);
     setActiveChildTab(ctab);
   }, [searchParams, language, setActiveChildTab]);
 
@@ -45,48 +35,79 @@ export function ScenarioVxOthers({urls}) {
       <Tabs defaultActiveKey={activeChildTab} id="ctab0" className="mb-3"
             onSelect={(k) => onSelectChildTab(k)}>
         <Tab eventKey="other" title={t('scenario.other')}>
-          {activeChildTab === 'other' && <ScenarioOther/>}
+          {activeChildTab === 'other' && <ScenarioOther {...{urls}} />}
         </Tab>
-        <Tab eventKey="srt" title={t('scenario.srt')}>
-          {activeChildTab === 'srt' && <ScenarioSrt {...{copyToClipboard, urls}} />}
-        </Tab>
-        <Tab eventKey="dvr" title={t('scenario.dvr')}>
-          {activeChildTab === 'dvr' && <ScenarioRecordCos/>}
-        </Tab>
-        <Tab eventKey="vod" title={t('scenario.vod')}>
-          {activeChildTab === 'vod' && <ScenarioRecordVod/>}
+        <Tab eventKey="deprecated" title={t('scenario.deprecated')}>
+          {activeChildTab === 'deprecated' && <ScenarioDeprecated/>}
         </Tab>
       </Tabs>
     }
   </>;
 }
 
-function ScenarioOther() {
+function ScenarioOther({urls}) {
+  const {t} = useTranslation();
   const language = useSrsLanguage();
-  if (language === 'zh') {
-    return <>
-      <Accordion defaultActiveKey='0'>
-        <Accordion.Item eventKey="0">
-          <Accordion.Header>场景介绍</Accordion.Header>
-          <Accordion.Body>
-            <div>
-              其他非常用场景。
-              <p></p>
-            </div>
-          </Accordion.Body>
-        </Accordion.Item>
-      </Accordion>
-    </>;
-  }
+  const isZh = language === 'zh';
+
+  const copyToClipboard = React.useCallback((e, text) => {
+    e.preventDefault();
+
+    Clipboard.copy(text).then(() => {
+      alert(t('helper.copyOk'));
+    }).catch((err) => {
+      alert(`${t('helper.copyFail')} ${err}`);
+    });
+  }, [t]);
+
   return <>
     <Accordion defaultActiveKey='0'>
       <Accordion.Item eventKey="0">
-        <Accordion.Header>Introduction</Accordion.Header>
+        <Accordion.Header>{isZh ? '场景介绍' : 'Introduction'}</Accordion.Header>
         <Accordion.Body>
           <div>
-            Other less common scenarios.
+            {isZh ? '其他较少使用的低频场景，请用其他常用场景替代。' : 'Other less common used scenarios, please use other common scenarios instead.'}
             <p></p>
           </div>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="1">
+        <Accordion.Header>{t('scenario.srt')}</Accordion.Header>
+        <Accordion.Body>
+          <p>{isZh ? '可使用基本的推拉流场景实现，已经支持了SRT协议的教程。' : 'You can implement basic streaming scenarios with a tutorial that already supports the SRT protocol.'}</p>
+          <ScenarioSrt {...{copyToClipboard, urls}} />
+        </Accordion.Body>
+      </Accordion.Item>
+    </Accordion>
+  </>;
+}
+
+function ScenarioDeprecated() {
+  const {t} = useTranslation();
+  const language = useSrsLanguage();
+  const isZh = language === 'zh';
+
+  return <>
+    <Accordion defaultActiveKey='0'>
+      <Accordion.Item eventKey="0">
+        <Accordion.Header>{isZh ? '场景介绍' : 'Introduction'}</Accordion.Header>
+        <Accordion.Body>
+          <div>
+            {isZh ? '其他废弃场景，未来会移除，请不要使用。' : 'Other deprecated scenarios, will be removed in the future, please do not use.'}
+            <p></p>
+          </div>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="1">
+        <Accordion.Header>{t('scenario.dvr')}</Accordion.Header>
+        <Accordion.Body>
+          <ScenarioRecordCos/>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="2">
+        <Accordion.Header>{t('scenario.vod')}</Accordion.Header>
+        <Accordion.Body>
+          <ScenarioRecordVod/>
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
