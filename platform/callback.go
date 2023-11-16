@@ -8,12 +8,14 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -286,14 +288,34 @@ func (v *CallbackWorker) OnMessage(ctx context.Context, action SrsAction, stream
 	}
 
 	pfn2 := func(b []byte) error {
-		res, err := http.Post(conf.Target, "application/json", bytes.NewReader(b))
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, conf.Target, bytes.NewReader(b))
+		if err != nil {
+			return errors.Wrapf(err, "new request")
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+
+		var res *http.Response
+		if strings.HasPrefix(conf.Target, "https://") {
+			client := &http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{
+						InsecureSkipVerify: true,
+					},
+				},
+			}
+			res, err = client.Do(req)
+		} else {
+			res, err = http.DefaultClient.Do(req)
+		}
 		if err != nil {
 			return errors.Wrapf(err, "http post")
 		}
+		defer res.Body.Close()
+
 		if res.StatusCode != http.StatusOK {
 			return errors.Errorf("response status %v", res.StatusCode)
 		}
-		defer res.Body.Close()
 
 		b2, err := ioutil.ReadAll(res.Body)
 		if err != nil {

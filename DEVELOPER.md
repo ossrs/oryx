@@ -1031,6 +1031,7 @@ The following are the update records for the SRS Stack server.
     * HLS: Nginx HLS CDN support HTTPS. v5.11.19
     * Refine scenarios with discouraged and deprecated. v5.11.20
     * Transcode: Refine stream compare algorithm. v5.11.21
+    * Hooks: Support callback self-sign HTTPS URL. v5.11.22
 * v5.10
     * Refine README. v5.10.1
     * Refine DO and droplet release script. v5.10.2
