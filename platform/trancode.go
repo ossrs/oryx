@@ -466,9 +466,7 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 
 	// Start FFmpeg process.
 	args := []string{
-		"-stream_loop", "-1",
-		"-fflags", "nobuffer", // Reduce the latency introduced by optional buffering.
-		"-i", inputURL,
+		"-stream_loop", "-1", "-i", inputURL,
 		"-vcodec", v.config.VideoCodec,
 		"-profile:v", v.config.VideoProfile,
 		"-preset:v", v.config.VideoPreset,

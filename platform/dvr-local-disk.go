@@ -824,10 +824,7 @@ func (v *RecordM3u8Stream) finishM3u8(ctx context.Context) error {
 	logger.Tf(ctx, "record to %v ok, type=%v, duration=%v", hls, contentType, duration)
 
 	mp4 := path.Join("record", v.UUID, "index.mp4")
-	if b, err := exec.CommandContext(ctx, "ffmpeg",
-		"-fflags", "nobuffer", // Reduce the latency introduced by optional buffering.
-	  "-i", hls, "-c", "copy", "-y", mp4,
-  ).Output(); err != nil {
+	if b, err := exec.CommandContext(ctx, "ffmpeg", "-i", hls, "-c", "copy", "-y", mp4).Output(); err != nil {
 		return errors.Wrapf(err, "covert to mp4 %v err %v", mp4, string(b))
 	}
 	logger.Tf(ctx, "record to %v ok", mp4)
