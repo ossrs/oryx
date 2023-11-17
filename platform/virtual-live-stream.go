@@ -174,23 +174,23 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Wrapf(err, "hgetall %v", SRS_VLIVE_CONFIG)
 			} else if len(configs) > 0 {
 				for k, v := range configs {
-					var conf VLiveConfigure
-					if err = json.Unmarshal([]byte(v), &conf); err != nil {
+					var config VLiveConfigure
+					if err = json.Unmarshal([]byte(v), &config); err != nil {
 						return errors.Wrapf(err, "unmarshal %v %v", k, v)
 					}
 
 					var pid int32
 					var inputUUID, frame, update string
-					if task := vLiveWorker.GetTask(conf.Platform); task != nil {
+					if task := vLiveWorker.GetTask(config.Platform); task != nil {
 						pid, inputUUID, frame, update = task.queryFrame()
 					}
 
 					elem := map[string]interface{}{
-						"platform": conf.Platform,
-						"enabled":  conf.Enabled,
-						"custom":   conf.Customed,
-						"label":    conf.Label,
-						"files":    conf.Files,
+						"platform": config.Platform,
+						"enabled":  config.Enabled,
+						"custom":   config.Customed,
+						"label":    config.Label,
+						"files":    config.Files,
 					}
 
 					if pid > 0 {
@@ -656,25 +656,25 @@ func (v *VLiveWorker) Start(ctx context.Context) error {
 
 	// Load all configurations from redis.
 	loadTasks := func() error {
-		configs, err := rdb.HGetAll(ctx, SRS_VLIVE_CONFIG).Result()
+		configItems, err := rdb.HGetAll(ctx, SRS_VLIVE_CONFIG).Result()
 		if err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "hgetall %v", SRS_VLIVE_CONFIG)
 		}
-		if len(configs) == 0 {
+		if len(configItems) == 0 {
 			return nil
 		}
 
-		for platform, config := range configs {
-			var conf VLiveConfigure
-			if err = json.Unmarshal([]byte(config), &conf); err != nil {
-				return errors.Wrapf(err, "unmarshal %v %v", platform, config)
+		for platform, configItem := range configItems {
+			var config VLiveConfigure
+			if err = json.Unmarshal([]byte(configItem), &config); err != nil {
+				return errors.Wrapf(err, "unmarshal %v %v", platform, configItem)
 			}
 
 			var task *VLiveTask
-			if tv, loaded := v.tasks.LoadOrStore(conf.Platform, &VLiveTask{
+			if tv, loaded := v.tasks.LoadOrStore(config.Platform, &VLiveTask{
 				UUID:     uuid.NewString(),
-				Platform: conf.Platform,
-				config:   &conf,
+				Platform: config.Platform,
+				config:   &config,
 			}); loaded {
 				// Ignore if exists.
 				continue

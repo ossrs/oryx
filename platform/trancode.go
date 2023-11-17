@@ -65,17 +65,17 @@ func (v *TranscodeWorker) Handle(ctx context.Context, handler *http.ServeMux) er
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			var conf TranscodeConfig
+			var config TranscodeConfig
 			if b, err := rdb.HGet(ctx, SRS_TRANSCODE_CONFIG, "global").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v global", SRS_TRANSCODE_CONFIG)
 			} else if len(b) > 0 {
-				if err := json.Unmarshal([]byte(b), &conf); err != nil {
+				if err := json.Unmarshal([]byte(b), &config); err != nil {
 					return errors.Wrapf(err, "unmarshal %v", b)
 				}
 			}
 
-			ohttp.WriteData(ctx, w, r, &conf)
-			logger.Tf(ctx, "transcode query ok, %v, token=%vB", conf, len(token))
+			ohttp.WriteData(ctx, w, r, &config)
+			logger.Tf(ctx, "transcode query ok, %v, token=%vB", config, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -87,13 +87,13 @@ func (v *TranscodeWorker) Handle(ctx context.Context, handler *http.ServeMux) er
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
-			var conf TranscodeConfig
+			var config TranscodeConfig
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token *string `json:"token"`
 				*TranscodeConfig
 			}{
 				Token:           &token,
-				TranscodeConfig: &conf,
+				TranscodeConfig: &config,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -103,18 +103,18 @@ func (v *TranscodeWorker) Handle(ctx context.Context, handler *http.ServeMux) er
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			if b, err := json.Marshal(conf); err != nil {
-				return errors.Wrapf(err, "marshal conf %v", conf)
+			if b, err := json.Marshal(config); err != nil {
+				return errors.Wrapf(err, "marshal conf %v", config)
 			} else if err := rdb.HSet(ctx, SRS_TRANSCODE_CONFIG, "global", string(b)).Err(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hset %v global %v", SRS_TRANSCODE_CONFIG, string(b))
 			}
 
 			if err := v.task.Restart(ctx); err != nil {
-				return errors.Wrapf(err, "restart task %v", conf.String())
+				return errors.Wrapf(err, "restart task %v", config.String())
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "transcode apply ok, %v, token=%vB", conf, len(token))
+			logger.Tf(ctx, "transcode apply ok, %v, token=%vB", config, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -139,11 +139,11 @@ func (v *TranscodeWorker) Handle(ctx context.Context, handler *http.ServeMux) er
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			var conf TranscodeConfig
+			var config TranscodeConfig
 			if b, err := rdb.HGet(ctx, SRS_TRANSCODE_CONFIG, "global").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v global", SRS_TRANSCODE_CONFIG)
 			} else if len(b) > 0 {
-				if err := json.Unmarshal([]byte(b), &conf); err != nil {
+				if err := json.Unmarshal([]byte(b), &config); err != nil {
 					return errors.Wrapf(err, "unmarshal %v", b)
 				}
 			}
@@ -167,7 +167,7 @@ func (v *TranscodeWorker) Handle(ctx context.Context, handler *http.ServeMux) er
 					Update string `json:"update"`
 				} `json:"frame"`
 			}{}
-			res.Enabled = conf.All
+			res.Enabled = config.All
 			res.UUID = v.task.UUID
 			if pid > 0 {
 				res.InputStream = input
@@ -178,7 +178,7 @@ func (v *TranscodeWorker) Handle(ctx context.Context, handler *http.ServeMux) er
 
 			ohttp.WriteData(ctx, w, r, &res)
 			logger.Tf(ctx, "transcode task ok, %v, pid=%v, input=%v, output=%v, frame=%v, update=%v, token=%vB",
-				conf, pid, input, output, frame, update, len(token))
+				config, pid, input, output, frame, update, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

@@ -1007,6 +1007,7 @@ Please restart service when `.env` changed.
 The following are the update records for the SRS Stack server.
 
 * v5.12
+    * Refine conf to config. v5.12.1
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2

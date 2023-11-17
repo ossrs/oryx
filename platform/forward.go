@@ -164,26 +164,26 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 			}
 
 			res := make([]map[string]interface{}, 0)
-			if configs, err := rdb.HGetAll(ctx, SRS_FORWARD_CONFIG).Result(); err != nil && err != redis.Nil {
+			if configItems, err := rdb.HGetAll(ctx, SRS_FORWARD_CONFIG).Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hgetall %v", SRS_FORWARD_CONFIG)
-			} else if len(configs) > 0 {
-				for k, value := range configs {
-					var conf ForwardConfigure
-					if err = json.Unmarshal([]byte(value), &conf); err != nil {
-						return errors.Wrapf(err, "unmarshal %v %v", k, value)
+			} else if len(configItems) > 0 {
+				for k, configItem := range configItems {
+					var config ForwardConfigure
+					if err = json.Unmarshal([]byte(configItem), &config); err != nil {
+						return errors.Wrapf(err, "unmarshal %v %v", k, configItem)
 					}
 
 					var pid int32
 					var streamURL, frame, update string
-					if task := v.GetTask(conf.Platform); task != nil {
+					if task := v.GetTask(config.Platform); task != nil {
 						pid, streamURL, frame, update = task.queryFrame()
 					}
 
 					elem := map[string]interface{}{
-						"platform": conf.Platform,
-						"enabled":  conf.Enabled,
-						"custom":   conf.Customed,
-						"label":    conf.Label,
+						"platform": config.Platform,
+						"enabled":  config.Enabled,
+						"custom":   config.Customed,
+						"label":    config.Label,
 					}
 
 					if pid > 0 {
@@ -254,25 +254,25 @@ func (v *ForwardWorker) Start(ctx context.Context) error {
 
 	// Load all configurations from redis.
 	loadTasks := func() error {
-		configs, err := rdb.HGetAll(ctx, SRS_FORWARD_CONFIG).Result()
+		configItems, err := rdb.HGetAll(ctx, SRS_FORWARD_CONFIG).Result()
 		if err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "hgetall %v", SRS_FORWARD_CONFIG)
 		}
-		if len(configs) == 0 {
+		if len(configItems) == 0 {
 			return nil
 		}
 
-		for platform, config := range configs {
-			var conf ForwardConfigure
-			if err = json.Unmarshal([]byte(config), &conf); err != nil {
-				return errors.Wrapf(err, "unmarshal %v %v", platform, config)
+		for platform, configItem := range configItems {
+			var config ForwardConfigure
+			if err = json.Unmarshal([]byte(configItem), &config); err != nil {
+				return errors.Wrapf(err, "unmarshal %v %v", platform, configItem)
 			}
 
 			var task *ForwardTask
-			if tv, loaded := v.tasks.LoadOrStore(conf.Platform, &ForwardTask{
+			if tv, loaded := v.tasks.LoadOrStore(config.Platform, &ForwardTask{
 				UUID:     uuid.NewString(),
-				Platform: conf.Platform,
-				config:   &conf,
+				Platform: config.Platform,
+				config:   &config,
 			}); loaded {
 				// Ignore if exists.
 				continue

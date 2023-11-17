@@ -68,8 +68,8 @@ func (v *CallbackWorker) Handle(ctx context.Context, handler *http.ServeMux) err
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			var conf CallbackConfig
-			if err := conf.Load(ctx); err != nil {
+			var config CallbackConfig
+			if err := config.Load(ctx); err != nil {
 				return errors.Wrapf(err, "load")
 			}
 
@@ -90,9 +90,9 @@ func (v *CallbackWorker) Handle(ctx context.Context, handler *http.ServeMux) err
 			}{
 				Request:        req,
 				Response:       res,
-				CallbackConfig: &conf,
+				CallbackConfig: &config,
 			})
-			logger.Tf(ctx, "hooks apply ok, %v, token=%vB", conf.String(), len(token))
+			logger.Tf(ctx, "hooks apply ok, %v, token=%vB", config.String(), len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -104,13 +104,13 @@ func (v *CallbackWorker) Handle(ctx context.Context, handler *http.ServeMux) err
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
-			var conf CallbackConfig
+			var config CallbackConfig
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token *string `json:"token"`
 				*CallbackConfig
 			}{
 				Token:          &token,
-				CallbackConfig: &conf,
+				CallbackConfig: &config,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -120,14 +120,14 @@ func (v *CallbackWorker) Handle(ctx context.Context, handler *http.ServeMux) err
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			if err := rdb.HSet(ctx, SRS_HOOKS, "target", conf.Target).Err(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hset %v target %v", SRS_HOOKS, conf.Target)
+			if err := rdb.HSet(ctx, SRS_HOOKS, "target", config.Target).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v target %v", SRS_HOOKS, config.Target)
 			}
-			if err := rdb.HSet(ctx, SRS_HOOKS, "opaque", conf.Opaque).Err(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hset %v opaque %v", SRS_HOOKS, conf.Opaque)
+			if err := rdb.HSet(ctx, SRS_HOOKS, "opaque", config.Opaque).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v opaque %v", SRS_HOOKS, config.Opaque)
 			}
-			if err := rdb.HSet(ctx, SRS_HOOKS, "all", fmt.Sprintf("%v", conf.All)).Err(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hset %v all %v", SRS_HOOKS, conf.All)
+			if err := rdb.HSet(ctx, SRS_HOOKS, "all", fmt.Sprintf("%v", config.All)).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v all %v", SRS_HOOKS, config.All)
 			}
 
 			// Notify the callback worker to update the config.
@@ -138,7 +138,7 @@ func (v *CallbackWorker) Handle(ctx context.Context, handler *http.ServeMux) err
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "hooks apply ok, %v, token=%vB", conf.String(), len(token))
+			logger.Tf(ctx, "hooks apply ok, %v, token=%vB", config.String(), len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -208,9 +208,9 @@ func (v *CallbackWorker) Start(ctx context.Context) error {
 		defer wg.Done()
 
 		for ctx.Err() == nil {
-			var conf CallbackConfig
-			if err := conf.Load(ctx); err != nil {
-				logger.Wf(ctx, "load config %v err %+v", conf, err)
+			var config CallbackConfig
+			if err := config.Load(ctx); err != nil {
+				logger.Wf(ctx, "load config %v err %+v", config, err)
 
 				select {
 				case <-ctx.Done():
@@ -222,7 +222,7 @@ func (v *CallbackWorker) Start(ctx context.Context) error {
 			func() {
 				v.lock.Lock()
 				defer v.lock.Unlock()
-				v.ephemeralConfig = conf
+				v.ephemeralConfig = config
 			}()
 
 			select {
@@ -241,14 +241,14 @@ func (v *CallbackWorker) OnMessage(ctx context.Context, action SrsAction, stream
 		return nil
 	}
 
-	var conf CallbackConfig
+	var config CallbackConfig
 	func() {
 		v.lock.Lock()
 		defer v.lock.Unlock()
-		conf = v.ephemeralConfig
+		config = v.ephemeralConfig
 	}()
 
-	if !conf.All || conf.Target == "" {
+	if !config.All || config.Target == "" {
 		return nil
 	}
 
@@ -258,7 +258,7 @@ func (v *CallbackWorker) OnMessage(ctx context.Context, action SrsAction, stream
 		*SrsStream
 	}{
 		Action:    string(action),
-		Opaque:    conf.Opaque,
+		Opaque:    config.Opaque,
 		SrsStream: streamObj,
 	}
 
@@ -267,7 +267,7 @@ func (v *CallbackWorker) OnMessage(ctx context.Context, action SrsAction, stream
 			return errors.Errorf("response code %v", code)
 		}
 
-		logger.Tf(ctx, "callback ok, post %v with %s, response %v", conf.String(), string(b), string(b2))
+		logger.Tf(ctx, "callback ok, post %v with %s, response %v", config.String(), string(b), string(b2))
 		return nil
 	}
 
@@ -288,7 +288,7 @@ func (v *CallbackWorker) OnMessage(ctx context.Context, action SrsAction, stream
 	}
 
 	pfn2 := func(b []byte) error {
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, conf.Target, bytes.NewReader(b))
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, config.Target, bytes.NewReader(b))
 		if err != nil {
 			return errors.Wrapf(err, "new request")
 		}
@@ -296,7 +296,7 @@ func (v *CallbackWorker) OnMessage(ctx context.Context, action SrsAction, stream
 		req.Header.Set("Content-Type", "application/json")
 
 		var res *http.Response
-		if strings.HasPrefix(conf.Target, "https://") {
+		if strings.HasPrefix(config.Target, "https://") {
 			client := &http.Client{
 				Transport: &http.Transport{
 					TLSClientConfig: &tls.Config{
@@ -351,7 +351,7 @@ func (v *CallbackWorker) OnMessage(ctx context.Context, action SrsAction, stream
 	}
 
 	if err := pfn(); err != nil {
-		return errors.Wrapf(err, "callback with conf %v, req %v", conf.String(), req)
+		return errors.Wrapf(err, "callback with conf %v, req %v", config.String(), req)
 	}
 	return nil
 }
