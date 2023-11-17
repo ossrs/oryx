@@ -1006,6 +1006,7 @@ Please restart service when `.env` changed.
 
 The following are the update records for the SRS Stack server.
 
+* v5.12
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2
@@ -1032,6 +1033,7 @@ The following are the update records for the SRS Stack server.
     * Refine scenarios with discouraged and deprecated. v5.11.20
     * Transcode: Refine stream compare algorithm. v5.11.21
     * Hooks: Support callback self-sign HTTPS URL. v5.11.22
+    * Fix utest fail. [v5.11.23](https://github.com/ossrs/srs-stack/releases/tag/v5.11.23)
 * v5.10
     * Refine README. v5.10.1
     * Refine DO and droplet release script. v5.10.2
