@@ -69,6 +69,16 @@ func doMain(ctx context.Context) error {
 		}
 	}()
 
+	// When cancelled, the program is forced to exit due to a timeout. Normally, this doesn't occur
+	// because the main thread exits after the context is cancelled. However, sometimes the main thread
+	// may be blocked for some reason, so a forced exit is necessary to ensure the program terminates.
+	go func() {
+		<-ctx.Done()
+		time.Sleep(30 * time.Second)
+		logger.Wf(ctx, "Force to exit by timeout")
+		os.Exit(1)
+	}()
+
 	// Initialize the management password and load the environment without relying on Redis.
 	if true {
 		if pwd, err := os.Getwd(); err != nil {
