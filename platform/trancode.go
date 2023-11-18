@@ -233,8 +233,19 @@ func (v *TranscodeWorker) Start(ctx context.Context) error {
 		defer wg.Done()
 
 		task := v.task
-		if err := task.Run(ctx); err != nil {
-			logger.Wf(ctx, "run task %v err %+v", task.String(), err)
+		for ctx.Err() == nil {
+			var duration time.Duration
+			if err := task.Run(ctx); err != nil {
+				logger.Wf(ctx, "run task %v err %+v", task.String(), err)
+				duration = 10 * time.Second
+			} else {
+				duration = 3 * time.Second
+			}
+
+			select {
+			case <-ctx.Done():
+			case <-time.After(duration):
+			}
 		}
 	}()
 
