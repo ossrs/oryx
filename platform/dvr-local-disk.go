@@ -261,11 +261,10 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 			return errors.Wrapf(err, "parse %v", m3u8Metadata)
 		}
 
-		contentType, m3u8Body, duration, err := buildVodM3u8(
-			ctx, &metadata, false, "", true, "/terraform/v1/hooks/record/hls/",
-		)
+		prefix := "/terraform/v1/hooks/record/hls/"
+		contentType, m3u8Body, duration, err := buildVodM3u8ForLocal(ctx, metadata.Files, true, prefix)
 		if err != nil {
-			return errors.Wrapf(err, "build vod m3u8 of %v", metadata.String())
+			return errors.Wrapf(err, "build vod m3u8 of %v with prefix=%v", metadata.String(), prefix)
 		}
 
 		w.Header().Set("Content-Type", contentType)
@@ -303,7 +302,7 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 			io.Copy(w, tsFile)
 		}
 
-		logger.Tf(ctx, "server ts file ok, uuid=%v, ts=%v", uuid, tsFilePath)
+		logger.Tf(ctx, "record server ts file ok, uuid=%v, ts=%v", uuid, tsFilePath)
 		return nil
 	}
 
@@ -807,7 +806,7 @@ func (v *RecordM3u8Stream) serveMessage(ctx context.Context, msg *SrsOnHlsObject
 }
 
 func (v *RecordM3u8Stream) finishM3u8(ctx context.Context) error {
-	contentType, m3u8Body, duration, err := buildVodM3u8(ctx, v.artifact, false, "", false, "")
+	contentType, m3u8Body, duration, err := buildVodM3u8ForLocal(ctx, v.artifact.Files, false, "")
 	if err != nil {
 		return errors.Wrapf(err, "build vod")
 	}

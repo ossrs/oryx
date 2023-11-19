@@ -733,17 +733,18 @@ func (v *VLiveWorker) Start(ctx context.Context) error {
 }
 
 type VLiveFileFormat struct {
-	Duration string `json:"duration"`
-	Bitrate  string `json:"bit_rate"`
-	Streams  int32  `json:"nb_streams"`
-	Score    int32  `json:"probe_score"`
-	HasVideo bool   `json:"has_video"`
-	HasAudio bool   `json:"has_audio"`
+	Starttime string `json:"start_time"`
+	Duration  string `json:"duration"`
+	Bitrate   string `json:"bit_rate"`
+	Streams   int32  `json:"nb_streams"`
+	Score     int32  `json:"probe_score"`
+	HasVideo  bool   `json:"has_video"`
+	HasAudio  bool   `json:"has_audio"`
 }
 
 func (v *VLiveFileFormat) String() string {
-	return fmt.Sprintf("duration=%v, bitrate=%v, streams=%v, score=%v, video=%v, audio=%v",
-		v.Duration, v.Bitrate, v.Streams, v.Score, v.HasVideo, v.HasAudio,
+	return fmt.Sprintf("starttime=%v, duration=%v, bitrate=%v, streams=%v, score=%v, video=%v, audio=%v",
+		v.Starttime, v.Duration, v.Bitrate, v.Streams, v.Score, v.HasVideo, v.HasAudio,
 	)
 }
 

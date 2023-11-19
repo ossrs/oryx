@@ -711,7 +711,7 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 			}
 			logger.Tf(ctx, "on_hls ok, %v", string(b))
 
-			// Create a Record task if enabled.
+			// Handle TS file by Record task if enabled.
 			if recordAll, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "all").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v all", SRS_RECORD_PATTERNS)
 			} else if recordAll == "true" {
@@ -721,7 +721,7 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 				logger.Tf(ctx, "record %v", msg.String())
 			}
 
-			// Create a DVR task if enabled.
+			// Handle TS file by DVR task if enabled.
 			if dvrAll, err := rdb.HGet(ctx, SRS_DVR_PATTERNS, "all").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v all", SRS_DVR_PATTERNS)
 			} else if dvrAll == "true" {
@@ -731,7 +731,7 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 				logger.Tf(ctx, "dvr %v", msg.String())
 			}
 
-			// Create a VOD task if enabled.
+			// Handle TS file by VOD task if enabled.
 			if vodAll, err := rdb.HGet(ctx, SRS_VOD_PATTERNS, "all").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v all", SRS_VOD_PATTERNS)
 			} else if vodAll == "true" {
@@ -739,6 +739,14 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 					return errors.Wrapf(err, "feed %v", msg.String())
 				}
 				logger.Tf(ctx, "vod %v", msg.String())
+			}
+
+			// Handle TS file by Transcript task if enabled.
+			if transcriptWorker.Enabled() {
+				if err = transcriptWorker.OnHlsTsMessage(ctx, &msg); err != nil {
+					return errors.Wrapf(err, "feed %v", msg.String())
+				}
+				logger.Tf(ctx, "transcript %v", msg.String())
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)

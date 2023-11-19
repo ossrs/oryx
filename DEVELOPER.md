@@ -873,6 +873,14 @@ Also by platform module:
 * `/terraform/v1/ffmpeg/transcode/query` Query transcode config.
 * `/terraform/v1/ffmpeg/transcode/apply` Apply transcode config.
 * `/terraform/v1/ffmpeg/transcode/task` Query transcode task.
+* `/terraform/v1/ai/transcript/apply` Update the settings of transcript.
+* `/terraform/v1/ai/transcript/query` Query the settings of transcript.
+* `/terraform/v1/ai/transcript/live-queue` Query the live queue of transcript.
+* `/terraform/v1/ai/transcript/asr-queue` Query the asr queue of transcript.
+* `/terraform/v1/ai/transcript/fix-queue` Query the fix queue of transcript.
+* `/terraform/v1/ai/transcript/overlay-queue` Query the overlay queue of transcript.
+* `/terraform/v1/ai/transcript/hls/overlay/:uuid.m3u8` Generate the preview HLS for transcript stream with overlay text.
+* `/terraform/v1/ai/transcript/hls/original/:uuid.m3u8` Generate the preview HLS for original stream without overlay text.
 
 Also provided by platform for market:
 
@@ -1009,6 +1017,7 @@ The following are the update records for the SRS Stack server.
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
+    * Transcript: Support convert live speech to text by whisper. v5.12.2
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2

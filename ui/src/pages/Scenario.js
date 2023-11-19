@@ -17,6 +17,7 @@ import ScenarioRecord from "./ScenarioRecord";
 import ScenarioVLive from "./ScenarioVLive";
 import {ScenarioVxOthers} from "./ScenarioOthers";
 import ScenarioTranscode from "./ScenarioTranscode";
+import ScenarioTranscript from "./ScenarioTranscript";
 
 export default function Scenario() {
   const [searchParams] = useSearchParams();
@@ -25,7 +26,7 @@ export default function Scenario() {
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'tutorials';
-    console.log(`?tab=tutorials|live|record|vlive|others, current=${tab}, Select the tab to render`);
+    console.log(`?tab=tutorials|live|record|vlive|transcode|transcript|others, current=${tab}, Select the tab to render`);
     setDefaultActiveTab(tab);
   }, [searchParams, language]);
 
@@ -69,6 +70,9 @@ function ScenarioImpl({defaultActiveTab}) {
           </Tab>
           <Tab eventKey="transcode" title={t('scenario.transcode')}>
             {activeTab === 'transcode' && <ScenarioTranscode {...{urls}} />}
+          </Tab>
+          <Tab eventKey="transcript" title={t('transcript.title')}>
+            {activeTab === 'transcript' && <ScenarioTranscript/>}
           </Tab>
           <Tab eventKey="others" title={t('scenario.others')}>
             {activeTab === 'others' && <ScenarioVxOthers {...{urls}} />}

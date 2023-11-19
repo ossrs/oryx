@@ -280,6 +280,9 @@ const (
 	// For transcoding.
 	SRS_TRANSCODE_CONFIG = "SRS_TRANSCODE_CONFIG"
 	SRS_TRANSCODE_TASK   = "SRS_TRANSCODE_TASK"
+	// For transcription.
+	SRS_TRANSCRIPT_CONFIG = "SRS_TRANSCRIPT_CONFIG"
+	SRS_TRANSCRIPT_TASK   = "SRS_TRANSCRIPT_TASK"
 	// For SRS stream status.
 	SRS_STREAM_ACTIVE     = "SRS_STREAM_ACTIVE"
 	SRS_STREAM_SRT_ACTIVE = "SRS_STREAM_SRT_ACTIVE"
@@ -459,6 +462,7 @@ func srsGenerateConfig(ctx context.Context) error {
 		"    enabled on;",
 		"    hls_fragment 10;",
 		"    hls_window 60;",
+		"    hls_aof_ratio 2.1;",
 		"    hls_path ./objs/nginx/html;",
 		"    hls_m3u8_file [app]/[stream].m3u8;",
 		"    hls_ts_file [app]/[stream]-[seq]-[timestamp].ts;",
@@ -779,6 +783,103 @@ func buildVodM3u8(
 		m3u8 = append(m3u8, tsURL)
 	}
 	m3u8 = append(m3u8, "#EXT-X-ENDLIST")
+
+	contentType = "application/vnd.apple.mpegurl"
+	m3u8Body = strings.Join(m3u8, "\n")
+	return
+}
+
+// buildVodM3u8ForLocal go generate dynamic m3u8.
+func buildVodM3u8ForLocal(
+	ctx context.Context, tsFiles []*TsFile, useKey bool, prefix string,
+) (
+	contentType, m3u8Body string, duration float64, err error,
+) {
+	if len(tsFiles) == 0 {
+		err = errors.Errorf("no files")
+		return
+	}
+
+	for _, file := range tsFiles {
+		duration += file.Duration
+	}
+
+	m3u8 := []string{
+		"#EXTM3U",
+		"#EXT-X-VERSION:3",
+		"#EXT-X-ALLOW-CACHE:YES",
+		"#EXT-X-PLAYLIST-TYPE:VOD",
+		fmt.Sprintf("#EXT-X-TARGETDURATION:%v", math.Ceil(duration)),
+		"#EXT-X-MEDIA-SEQUENCE:0",
+	}
+	for index, file := range tsFiles {
+		// TODO: FIXME: Identify discontinuity by callback.
+		if index < len(tsFiles)-2 {
+			next := tsFiles[index+1]
+			if file.SeqNo+1 != next.SeqNo {
+				m3u8 = append(m3u8, "#EXT-X-DISCONTINUITY")
+			}
+		}
+
+		m3u8 = append(m3u8, fmt.Sprintf("#EXTINF:%.2f, no desc", file.Duration))
+
+		var tsURL string
+		if useKey {
+			tsURL = fmt.Sprintf("%v%v", prefix, file.Key)
+		} else {
+			tsURL = fmt.Sprintf("%v%v.ts", prefix, file.TsID)
+		}
+		m3u8 = append(m3u8, tsURL)
+	}
+	m3u8 = append(m3u8, "#EXT-X-ENDLIST")
+
+	contentType = "application/vnd.apple.mpegurl"
+	m3u8Body = strings.Join(m3u8, "\n")
+	return
+}
+
+// buildLiveM3u8ForLocal go generate dynamic m3u8.
+func buildLiveM3u8ForLocal(
+	ctx context.Context, tsFiles []*TsFile, useKey bool, prefix string,
+) (
+	contentType, m3u8Body string, duration float64, err error,
+) {
+	if len(tsFiles) == 0 {
+		err = errors.Errorf("no files")
+		return
+	}
+
+	for _, file := range tsFiles {
+		duration = math.Max(duration, file.Duration)
+	}
+
+	first := tsFiles[0]
+
+	m3u8 := []string{
+		"#EXTM3U",
+		"#EXT-X-VERSION:3",
+		fmt.Sprintf("#EXT-X-MEDIA-SEQUENCE:%v", first.SeqNo),
+		fmt.Sprintf("#EXT-X-TARGETDURATION:%v", math.Ceil(duration)),
+	}
+	for index, file := range tsFiles {
+		// TODO: FIXME: Identify discontinuity by callback.
+		if index < len(tsFiles)-2 {
+			next := tsFiles[index+1]
+			if file.SeqNo+1 != next.SeqNo {
+				m3u8 = append(m3u8, "#EXT-X-DISCONTINUITY")
+			}
+		}
+
+		m3u8 = append(m3u8, fmt.Sprintf("#EXTINF:%.2f, no desc", file.Duration))
+
+		var tsURL string
+		if useKey {
+			tsURL = fmt.Sprintf("%v%v", prefix, file.Key)
+		} else {
+			tsURL = fmt.Sprintf("%v%v.ts", prefix, file.TsID)
+		}
+		m3u8 = append(m3u8, tsURL)
+	}
 
 	contentType = "application/vnd.apple.mpegurl"
 	m3u8Body = strings.Join(m3u8, "\n")

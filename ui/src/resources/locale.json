@@ -207,6 +207,7 @@
         "nofile": "未选择任何文件"
       },
       "helper": {
+        "eg": "例如：",
         "switchStream": "更换流名称",
         "changeStream": "更换流名称成功",
         "copyOk": "已经复制到剪切板",
@@ -350,11 +351,65 @@
         "inactive": "回调关闭",
         "req": "最后发送的请求",
         "res": "最后收到的响应"
+      },
+      "transcript": {
+        "title": "AI字幕",
+        "service": "服务设置",
+        "key": "OpenAI 密钥",
+        "key2": "请输入访问AI服务的密钥",
+        "base": "OpenAI 服务接入地址",
+        "base2": "请输入访问AI服务的地址，可以设置为OpenAI的地址或者代理地址",
+        "start": "开启AI字幕",
+        "stop": "关闭AI字幕",
+        "live": "直播切片队列",
+        "nolive": "暂无直播切片",
+        "asr": "ASR识别队列",
+        "noasr": "暂无ASR任务",
+        "eac": "提取音频耗时",
+        "fix": "人工校正队列",
+        "nofix": "暂无人工校正任务",
+        "asrc": "ASR任务耗时",
+        "overlay": "叠加字幕任务",
+        "nooverlay": "暂无叠加字幕任务",
+        "olc": "叠加字幕耗时",
+        "ops": "直播流管理操作",
+        "reset": "清理和重置任务",
+        "lang": "语言",
+        "lang2": "请输入视频的语言",
+        "porg": "预览原始直播流",
+        "pol": "预览AI字幕直播流"
       }
     }
   },
   "en": {
     "translation": {
+      "transcript": {
+        "pol": "Preview transcript live stream with subtitle",
+        "porg": "Preview original live stream",
+        "lang2": "Please input the language of the video",
+        "lang": "Language",
+        "reset": "Reset and Clean Task",
+        "ops": "Stream Operations",
+        "olc": "Overlay Subtitle Cost",
+        "nooverlay": "No overlay subtitle task",
+        "overlay": "Overlay Subtitle Task",
+        "asrc": "ASR Cost",
+        "nofix": "No manually fix task",
+        "fix": "Manually Fix Queue",
+        "eac": "Extract Audio Cost",
+        "noasr": "No ASR task",
+        "asr": "ASR Transcription Queue",
+        "nolive": "No live segments",
+        "live": "Live Segments Queue",
+        "stop": "Stop Transcription",
+        "start": "Start Transcription",
+        "base2": "Please input the service base URL or proxy URL for AI service provider",
+        "base": "OpenAI Service Base URL",
+        "key2": "Please input the secret key for AI service provider",
+        "key": "OpenAI Secret Key",
+        "service": "Service Settings",
+        "title": "Transcript"
+      },
       "cb": {
         "res": "Last response from target",
         "req": "Last request to target",
@@ -684,6 +739,7 @@
         "nofile": "No file choosen"
       },
       "helper": {
+        "eg": "For example: ",
         "switchStream": "Change stream",
         "changeStream": "Stream name changed",
         "copyOk": "Copy to clipboard OK",

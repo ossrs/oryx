@@ -238,7 +238,7 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
               <Form.Text> * {t('transcode.config.key2')}</Form.Text>
               <Form.Control as="input" defaultValue={secret} onChange={(e) => setSecret(e.target.value)} />
             </Form.Group>
-            <Button ariant="primary" type="submit"onClick={(e) => {
+            <Button ariant="primary" type="submit" onClick={(e) => {
               e.preventDefault();
               updateTranscodeStatus(!transcodeEnabled, () => {
                 setTranscodeEnabled(!transcodeEnabled);

@@ -107,7 +107,8 @@ your own high-quality streaming and RTC platforms to support your businesses.
 - [x] Support Realtime SRT Streaming: [CN](https://mp.weixin.qq.com/s/HQb3gLRyJHHu56pnyHerxA).
 - [x] Support DVR to Tencent Cloud Storage or VoD: [CN](https://mp.weixin.qq.com/s/UXR5EBKZ-LnthwKN_rlIjg).
 - [x] Support Typecho Plugin: [CN](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
-- [x] Support live stream transcoding.
+- [x] Support live stream transcoding: [Blog](https://blog.ossrs.io/efficient-live-streaming-transcoding-for-reducing-bandwidth-and-saving-costs-39bd001af02d), [EN](https://ossrs.io/lts/en-us/blog/Live-Transcoding), [CN](https://ossrs.net/lts/zh-cn/blog/Live-Transcoding).
+- [x] Support transcription for converting speech to text.
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
 
@@ -136,6 +137,7 @@ The features that we're developing:
 - [x] Support DVR to TencentCloud storage.
 - [x] Support pull RTSP from IP Camera and stream to YouTube/Twitch/Facebook.
 - [x] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
+- [x] Support transcription for converting speech to text.
 - [ ] Support limit the streaming duration to limit the fee.
 - [ ] Support GB28181 by SRS 5.0 container.
 - [ ] Support WebRTC face to face chat, see [#2857](https://github.com/ossrs/srs/issues/2857).

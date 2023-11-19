@@ -179,6 +179,13 @@ func doMain(ctx context.Context) error {
 		return errors.Wrapf(err, "start callback worker")
 	}
 
+	// Create transcript worker for transcription.
+	transcriptWorker = NewTranscriptWorker()
+	defer transcriptWorker.Close()
+	if err := transcriptWorker.Start(ctx); err != nil {
+		return errors.Wrapf(err, "start transcript worker")
+	}
+
 	// Create transcode worker for transcoding.
 	transcodeWorker = NewTranscodeWorker()
 	defer transcodeWorker.Close()
@@ -384,6 +391,7 @@ func initPlatform(ctx context.Context) error {
 		"containers/data/dvr", "containers/data/record", "containers/data/vod",
 		"containers/data/upload", "containers/data/vlive", "containers/data/signals",
 		"containers/data/lego", "containers/data/.well-known", "containers/data/config",
+		"containers/data/transcript",
 	} {
 		if _, err := os.Stat(dir); err != nil && os.IsNotExist(err) {
 			if err = os.MkdirAll(dir, os.ModeDir|os.FileMode(0755)); err != nil {
@@ -393,7 +401,7 @@ func initPlatform(ctx context.Context) error {
 	}
 
 	// Run only once for a special version.
-	bootRelease := "v2023-r29"
+	bootRelease := "v2023-r30"
 	if firstRun, err := rdb.HGet(ctx, SRS_FIRST_BOOT, bootRelease).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v %v", SRS_FIRST_BOOT, bootRelease)
 	} else if firstRun == "" {
