@@ -1017,7 +1017,7 @@ The following are the update records for the SRS Stack server.
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
-    * Transcript: Support convert live speech to text by whisper. v5.12.2
+    * Transcript: Support convert live speech to text by whisper. [v5.12.2](https://github.com/ossrs/srs-stack/releases/tag/v5.12.2)
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2

@@ -2,7 +2,7 @@
   "title": "SRS Stack",
   "name": "srs_stack",
   "ps": "SRS Stack is an all-in-one, out-of-the-box, and open-source video solution for creating online video services, including live streaming and WebRTC, on the cloud or through self-hosting. Built with SRS, FFmpeg, and WebRTC, it supports various protocols and offers features like authentication, multi-platform streaming, recording, transcoding, virtual live events, automatic HTTPS, and HTTP Open API.",
-  "versions": "5.11.17",
+  "versions": "5.12.2",
   "checks": "/www/server/panel/plugin/srs_stack",
   "author": "Winlin",
   "home": "https://github.com/ossrs/srs-stack"

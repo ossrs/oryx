@@ -2,11 +2,9 @@ import React from "react";
 import {Accordion, Button, Form, Spinner, Table} from "react-bootstrap";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 import {useTranslation} from "react-i18next";
-import {StreamURL, Token} from "../utils";
+import {Token} from "../utils";
 import axios from "axios";
 import {useErrorHandler} from "react-error-boundary";
-import moment from "moment";
-import {buildUrls} from "../components/UrlGenerator";
 
 export default function ScenarioTranscript(props) {
   const handleError = useErrorHandler();
@@ -86,7 +84,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
       console.log(`Transcript: Apply config ok.`);
       success && success();
     }).catch(handleError);
-  }, [handleError, secretKey, baseURL, targetLanguage]);
+  }, [t, handleError, secretKey, baseURL, targetLanguage]);
 
   const resetTask = React.useCallback(() => {
     setOperating(true);
@@ -100,7 +98,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
       setUuid(data.uuid);
       console.log(`Transcript: Reset task ${uuid} ok: ${JSON.stringify(data)}`);
     }).catch(handleError).finally(setOperating);
-  }, [handleError, uuid, setUuid, setOperating]);
+  }, [t, handleError, uuid, setUuid, setOperating]);
 
   React.useEffect(() => {
     const refreshLiveQueueTask = () => {
