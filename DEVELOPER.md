@@ -64,7 +64,8 @@ docker save -o platform.tar platform:latest
 Start a container:
 
 ```bash
-docker run --rm -it --name srs-stack \
+docker rm -f redis srs 2>/dev/null &&
+docker run --rm -it --name srs-stack -v $HOME/data:/data \
   -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
   -p 80:2022 -p 443:2443 -e CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
   platform
@@ -73,6 +74,26 @@ docker run --rm -it --name srs-stack \
 Access [http://localhost/mgmt](http://localhost/mgmt) to manage SRS Stack.
 
 Or [http://srs.stack.local/mgmt](http://srs.stack.local/mgmt) to test SRS Stack with domain.
+
+To update the platform in docker:
+
+```bash
+docker run --rm -it -v $(pwd)/platform:/g -w /g ossrs/srs:ubuntu20 make
+```
+
+Start a container with the new platform:
+
+```bash
+docker rm -f redis srs 2>/dev/null &&
+docker run --rm -it --name srs-stack -v $HOME/data:/data \
+  -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
+  -p 80:2022 -p 443:2443 -e CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
+  -v $(pwd)/platform/platform:/usr/local/srs-stack/platform/platform \
+  platform
+```
+
+The platform has now been updated. It is also compatible with a debugging WebUI, which listens at 
+port 3000 and proxies to the platform.
 
 ## Develop the Script Installer
 
