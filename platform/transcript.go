@@ -1588,9 +1588,6 @@ func (v *TranscriptTask) restart(ctx context.Context) error {
 }
 
 func (v *TranscriptTask) reset(ctx context.Context) error {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-
 	if v.config.All {
 		// Retry to wait for the task to apply the changed config.
 		select {
@@ -1603,17 +1600,37 @@ func (v *TranscriptTask) reset(ctx context.Context) error {
 		}
 	}
 
-	// Reset all queues.
-	v.LiveQueue.reset(ctx)
-	v.AsrQueue.reset(ctx)
-	v.FixQueue.reset(ctx)
-	v.OverlayQueue.reset(ctx)
+	if err := func() error {
+		v.lock.Lock()
+		defer v.lock.Unlock()
 
-	// Regenerate new UUID.
-	v.UUID = uuid.NewString()
+		// Reset all queues.
+		v.LiveQueue.reset(ctx)
+		v.AsrQueue.reset(ctx)
+		v.FixQueue.reset(ctx)
+		v.OverlayQueue.reset(ctx)
 
-	// Notify the main loop to persistent current task.
-	v.notifyPersistence(ctx)
+		// Reset all states.
+		v.Input = ""
+		v.PreviousAsrText = ""
+
+		// Remove previous task from redis.
+		if err := rdb.HDel(ctx, SRS_TRANSCRIPT_TASK, v.UUID).Err(); err != nil && err != redis.Nil {
+			return errors.Wrapf(err, "hdel %v %v", SRS_TRANSCRIPT_TASK, v.UUID)
+		}
+
+		// Regenerate new UUID.
+		v.UUID = uuid.NewString()
+
+		return nil
+	}(); err != nil {
+		return errors.Wrapf(err, "reset task")
+	}
+
+	// Directly do persistent current task, because the main loop may not run.
+	if err := v.saveTask(ctx); err != nil {
+		return errors.Wrapf(err, "save task")
+	}
 
 	// Wait for task to persistence and avoid to reset very fast.
 	select {

@@ -46,6 +46,14 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		}
 	}
 
+	// Report about transcript, or ASR.
+	var transcriptConf TranscriptConfig
+	if err := transcriptConf.Load(ctx); err != nil {
+		return nil, errors.Wrapf(err, "load transcript config")
+	} else if transcriptConf.All {
+		params["asr"] = "1"
+	}
+
 	// Report about local Reocrd.
 	if r0, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "all").Result(); err != nil && err != redis.Nil {
 		return nil, errors.Wrapf(err, "hget %v all", SRS_RECORD_PATTERNS)
