@@ -1298,6 +1298,15 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 		return nil
 	}
 
+	// Wait if ASR queue is full.
+	if v.AsrQueue.count() >= 30 {
+		select {
+		case <-ctx.Done():
+		case <-time.After(200 * time.Millisecond):
+		}
+		return nil
+	}
+
 	segment := v.LiveQueue.first()
 	starttime := time.Now()
 
@@ -1348,6 +1357,15 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 
 	// Ignore if not enough segments.
 	if v.AsrQueue.count() <= 0 {
+		select {
+		case <-ctx.Done():
+		case <-time.After(200 * time.Millisecond):
+		}
+		return nil
+	}
+
+	// Wait if Fix queue is full.
+	if v.FixQueue.count() >= 30 {
 		select {
 		case <-ctx.Done():
 		case <-time.After(200 * time.Millisecond):
@@ -1489,6 +1507,15 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 
 	// Ignore if not enough segments.
 	if v.FixQueue.count() <= 0 {
+		select {
+		case <-ctx.Done():
+		case <-time.After(200 * time.Millisecond):
+		}
+		return nil
+	}
+
+	// Wait if Overlay queue is full.
+	if v.OverlayQueue.count() >= 30 {
 		select {
 		case <-ctx.Done():
 		case <-time.After(200 * time.Millisecond):
