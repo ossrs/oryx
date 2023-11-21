@@ -39,6 +39,7 @@ FROM ${ARCH}ubuntu:focal AS dist
  # redis: For redis server and tools.
  # lego: For ACME client, request and renew the HTTPS certificate.
 COPY --from=build /etc/ssl/certs /etc/ssl/certs
+COPY --from=build /usr/local/share/fonts/ /usr/local/share/fonts/
 COPY --from=build /usr/share/ca-certificates /usr/share/ca-certificates
 COPY --from=upx /usr/local/bin/lego \
     /usr/local/bin/ffmpeg /usr/local/bin/ffprobe \
