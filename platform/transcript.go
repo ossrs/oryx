@@ -30,6 +30,9 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
+// The total segments in overlay HLS.
+const maxOverlaySegments = 9
+
 var transcriptWorker *TranscriptWorker
 
 type TranscriptWorker struct {
@@ -1299,7 +1302,7 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 	}
 
 	// Wait if ASR queue is full.
-	if v.AsrQueue.count() >= 30 {
+	if v.AsrQueue.count() >= maxOverlaySegments+1 {
 		select {
 		case <-ctx.Done():
 		case <-time.After(200 * time.Millisecond):
@@ -1309,6 +1312,14 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 
 	segment := v.LiveQueue.first()
 	starttime := time.Now()
+
+	// Remove segment if file not exists.
+	if _, err := os.Stat(segment.TsFile.File); err != nil && os.IsNotExist(err) {
+		v.LiveQueue.dequeue(segment)
+		segment.Dispose()
+		logger.Tf(ctx, "transcript: remove not exist ts segment %v", segment.String())
+		return nil
+	}
 
 	// Transcode to audio only mp4, mono, 16000HZ, 32kbps.
 	audioFile := &TsFile{
@@ -1365,7 +1376,7 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 	}
 
 	// Wait if Fix queue is full.
-	if v.FixQueue.count() >= 30 {
+	if v.FixQueue.count() >= maxOverlaySegments+1 {
 		select {
 		case <-ctx.Done():
 		case <-time.After(200 * time.Millisecond):
@@ -1375,6 +1386,14 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 
 	segment := v.AsrQueue.first()
 	starttime := time.Now()
+
+	// Remove segment if file not exists.
+	if _, err := os.Stat(segment.AudioFile.File); err != nil && os.IsNotExist(err) {
+		v.AsrQueue.dequeue(segment)
+		segment.Dispose()
+		logger.Tf(ctx, "transcript: remove not exist audio segment %v", segment.String())
+		return nil
+	}
 
 	// Convert the audio file to text by AI.
 	var config openai.ClientConfig
@@ -1515,7 +1534,7 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 	}
 
 	// Wait if Overlay queue is full.
-	if v.OverlayQueue.count() >= 30 {
+	if v.OverlayQueue.count() >= maxOverlaySegments+1 {
 		select {
 		case <-ctx.Done():
 		case <-time.After(200 * time.Millisecond):
@@ -1525,6 +1544,14 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 
 	segment := v.FixQueue.first()
 	starttime := time.Now()
+
+	// Remove segment if file not exists.
+	if _, err := os.Stat(segment.TsFile.File); err != nil && os.IsNotExist(err) {
+		v.FixQueue.dequeue(segment)
+		segment.Dispose()
+		logger.Tf(ctx, "transcript: remove not exist fix segment %v", segment.String())
+		return nil
+	}
 
 	// Overlay the ASR text onto the video.
 	overlayFile := &TsFile{
@@ -1584,7 +1611,7 @@ func (v *TranscriptTask) DriveOverlayQueue(ctx context.Context) error {
 	}
 
 	// Ignore if not enough segments.
-	if v.OverlayQueue.count() <= 9 {
+	if v.OverlayQueue.count() <= maxOverlaySegments {
 		select {
 		case <-ctx.Done():
 		case <-time.After(1 * time.Second):
