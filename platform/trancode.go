@@ -355,6 +355,7 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 		return false
 	}
 
+	// TODO: FIXME: Should select stream again when stream republished.
 	selectActiveStream := func() (*SrsStream, error) {
 		streams, err := rdb.HGetAll(ctx, SRS_STREAM_ACTIVE).Result()
 		if err != nil {

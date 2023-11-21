@@ -1109,7 +1109,7 @@ type TranscriptTask struct {
 	PreviousAsrText string `json:"pat,omitempty"`
 
 	// Whether persistence current task.
-	persistence chan bool
+	signalPersistence chan bool
 
 	// The configure for transcript task.
 	config TranscriptConfig
@@ -1136,7 +1136,7 @@ func NewTranscriptTask() *TranscriptTask {
 		// The overlay queue for current task.
 		OverlayQueue: NewTranscriptQueue(),
 		// Whether persistence.
-		persistence: make(chan bool, 1),
+		signalPersistence: make(chan bool, 1),
 	}
 }
 
@@ -1260,7 +1260,7 @@ func (v *TranscriptTask) doTranscript(ctx context.Context, input *SrsStream) err
 		select {
 		case <-parentCtx.Done():
 		case <-ctx.Done():
-		case <-v.persistence:
+		case <-v.signalPersistence:
 			if err := v.saveTask(ctx); err != nil {
 				return errors.Wrapf(err, "save task %v", v.String())
 			}
@@ -1681,10 +1681,8 @@ func (v *TranscriptTask) reset(ctx context.Context) error {
 		return errors.Wrapf(err, "reset task")
 	}
 
-	// Directly do persistent current task, because the main loop may not run.
-	if err := v.saveTask(ctx); err != nil {
-		return errors.Wrapf(err, "save task")
-	}
+	// Notify the main loop to persistent current task.
+	v.notifyPersistence(ctx)
 
 	// Wait for task to persistence and avoid to reset very fast.
 	select {
@@ -1747,7 +1745,7 @@ func (v *TranscriptTask) overlaySegments() []*TranscriptSegment {
 func (v *TranscriptTask) notifyPersistence(ctx context.Context) {
 	select {
 	case <-ctx.Done():
-	case v.persistence <- true:
+	case v.signalPersistence <- true:
 	default:
 	}
 }
