@@ -777,6 +777,28 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 		}
 	}()
 
+	// Watch for new stream.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		task := v.task
+		for ctx.Err() == nil {
+			var duration time.Duration
+			if err := task.WatchNewStream(ctx); err != nil {
+				logger.Wf(ctx, "transcript: task %v watch new stream err %+v", task.String(), err)
+				duration = 10 * time.Second
+			} else {
+				continue
+			}
+
+			select {
+			case <-ctx.Done():
+			case <-time.After(duration):
+			}
+		}
+	}()
+
 	// Drive the live queue to ASR.
 	wg.Add(1)
 	go func() {
@@ -1108,8 +1130,10 @@ type TranscriptTask struct {
 	// produce more accurate and robust subsequent ASR text.
 	PreviousAsrText string `json:"pat,omitempty"`
 
-	// Whether persistence current task.
+	// The signal to persistence task.
 	signalPersistence chan bool
+	// The signal to change the active stream for task.
+	signalNewStream chan *SrsStream
 
 	// The configure for transcript task.
 	config TranscriptConfig
@@ -1135,8 +1159,10 @@ func NewTranscriptTask() *TranscriptTask {
 		FixQueue: NewTranscriptQueue(),
 		// The overlay queue for current task.
 		OverlayQueue: NewTranscriptQueue(),
-		// Whether persistence.
+		// Create persistence signal.
 		signalPersistence: make(chan bool, 1),
+		// Create new stream signal.
+		signalNewStream: make(chan *SrsStream, 1),
 	}
 }
 
@@ -1150,6 +1176,96 @@ func (v *TranscriptTask) String() string {
 func (v *TranscriptTask) Run(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	logger.Tf(ctx, "transcript run task %v", v.String())
+
+	pfn := func(ctx context.Context) error {
+		// Load config from redis.
+		if err := v.config.Load(ctx); err != nil {
+			return errors.Wrapf(err, "load config")
+		}
+
+		// Ignore if not enabled.
+		if !v.config.All {
+			return nil
+		}
+
+		// Start transcript task.
+		if err := v.doTranscript(ctx); err != nil {
+			return errors.Wrapf(err, "do transcript")
+		}
+
+		return nil
+	}
+
+	for ctx.Err() == nil {
+		if err := pfn(ctx); err != nil {
+			logger.Wf(ctx, "ignore %v err %+v", v.String(), err)
+
+			select {
+			case <-ctx.Done():
+			case <-time.After(10 * time.Second):
+			}
+			continue
+		}
+
+		select {
+		case <-ctx.Done():
+		case <-time.After(300 * time.Millisecond):
+		}
+	}
+
+	return nil
+}
+
+func (v *TranscriptTask) doTranscript(ctx context.Context) error {
+	// Create context for current task.
+	parentCtx := ctx
+	ctx, v.cancel = context.WithCancel(ctx)
+
+	// Main loop, process signals from user or system.
+	for ctx.Err() == nil {
+		select {
+		case <-parentCtx.Done():
+		case <-ctx.Done():
+		case <-v.signalPersistence:
+			if err := v.saveTask(ctx); err != nil {
+				return errors.Wrapf(err, "save task %v", v.String())
+			}
+		case input := <-v.signalNewStream:
+			host := "localhost"
+			inputURL := fmt.Sprintf("rtmp://%v/%v/%v", host, input.App, input.Stream)
+			v.Input, v.inputStream = inputURL, input
+		}
+	}
+
+	return nil
+}
+
+func (v *TranscriptTask) OnTsSegment(ctx context.Context, msg *SrsOnHlsObject) error {
+	// TODO: FIXME: Cleanup the temporary files when task disabled.
+	if !v.config.All {
+		return nil
+	}
+
+	v.LiveQueue.enqueue(&TranscriptSegment{
+		Msg:    msg.Msg,
+		TsFile: msg.TsFile,
+	})
+
+	// Notify the main loop to persistent current task.
+	v.notifyPersistence(ctx)
+	return nil
+}
+
+// TODO: FIXME: Should reset the stream when republish.
+func (v *TranscriptTask) WatchNewStream(ctx context.Context) error {
+	// If not enabled, wait.
+	if !v.config.All {
+		select {
+		case <-ctx.Done():
+		case <-time.After(200 * time.Millisecond):
+		}
+		return nil
+	}
 
 	selectActiveStream := func() (*SrsStream, error) {
 		streams, err := rdb.HGetAll(ctx, SRS_STREAM_ACTIVE).Result()
@@ -1193,96 +1309,35 @@ func (v *TranscriptTask) Run(ctx context.Context) error {
 		return best, nil
 	}
 
-	pfn := func(ctx context.Context) error {
-		// Load config from redis.
-		if err := v.config.Load(ctx); err != nil {
-			return errors.Wrapf(err, "load config")
-		}
-
-		// Ignore if not enabled.
-		if !v.config.All {
-			return nil
-		}
-
-		// Use a active stream as input.
-		input, err := selectActiveStream()
-		if err != nil {
-			return errors.Wrapf(err, "select input")
-		}
-
-		if input == nil {
-			return nil
-		}
-
-		// Task is active, save the task.
-		v.notifyPersistence(ctx)
-
-		// Start transcript task.
-		if err := v.doTranscript(ctx, input); err != nil {
-			return errors.Wrapf(err, "do transcript")
-		}
-
-		return nil
+	// Use an active stream as input.
+	input, err := selectActiveStream()
+	if err != nil {
+		return errors.Wrapf(err, "select input")
 	}
 
-	for ctx.Err() == nil {
-		if err := pfn(ctx); err != nil {
-			logger.Wf(ctx, "ignore %v err %+v", v.String(), err)
+	// Whether stream exists and changed.
+	var streamNotChanged bool
+	if v.inputStream != nil && input != nil && v.inputStream.StreamURL() == input.StreamURL() {
+		streamNotChanged = true
+	}
 
-			select {
-			case <-ctx.Done():
-			case <-time.After(10 * time.Second):
-			}
-			continue
-		}
-
+	// No stream, or stream not changed, wait.
+	if input == nil || streamNotChanged {
 		select {
 		case <-ctx.Done():
-		case <-time.After(300 * time.Millisecond):
+		case <-time.After(1 * time.Second):
 		}
-	}
-
-	return nil
-}
-
-func (v *TranscriptTask) doTranscript(ctx context.Context, input *SrsStream) error {
-	// Create context for current task.
-	parentCtx := ctx
-	ctx, v.cancel = context.WithCancel(ctx)
-
-	// Build input URL.
-	host := "localhost"
-	inputURL := fmt.Sprintf("rtmp://%v/%v/%v", host, input.App, input.Stream)
-	v.Input, v.inputStream = inputURL, input
-
-	// Main loop, process signals from user or system.
-	for ctx.Err() == nil {
-		select {
-		case <-parentCtx.Done():
-		case <-ctx.Done():
-		case <-v.signalPersistence:
-			if err := v.saveTask(ctx); err != nil {
-				return errors.Wrapf(err, "save task %v", v.String())
-			}
-		}
-	}
-
-	return nil
-}
-
-func (v *TranscriptTask) OnTsSegment(ctx context.Context, msg *SrsOnHlsObject) error {
-	// TODO: FIXME: Cleanup the temporary files when task disabled.
-	if !v.config.All {
 		return nil
 	}
+	logger.Tf(ctx, "transcript: Got new stream %v", input.String())
 
-	v.LiveQueue.enqueue(&TranscriptSegment{
-		Msg:    msg.Msg,
-		TsFile: msg.TsFile,
-	})
+	// Notify the main loop to change the active stream.
+	select {
+	case <-ctx.Done():
+	case v.signalNewStream <- input:
+		logger.Tf(ctx, "transcript: Notify new stream %v", input.String())
+	}
 
-	// Notify the main loop to persistent current task.
-	v.notifyPersistence(ctx)
 	return nil
 }
 
@@ -1301,15 +1356,6 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 		return nil
 	}
 
-	// Wait if ASR queue is full.
-	if v.AsrQueue.count() >= maxOverlaySegments+1 {
-		select {
-		case <-ctx.Done():
-		case <-time.After(200 * time.Millisecond):
-		}
-		return nil
-	}
-
 	segment := v.LiveQueue.first()
 	starttime := time.Now()
 
@@ -1318,6 +1364,15 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 		v.LiveQueue.dequeue(segment)
 		segment.Dispose()
 		logger.Tf(ctx, "transcript: remove not exist ts segment %v", segment.String())
+		return nil
+	}
+
+	// Wait if ASR queue is full.
+	if v.AsrQueue.count() >= maxOverlaySegments+1 {
+		select {
+		case <-ctx.Done():
+		case <-time.After(200 * time.Millisecond):
+		}
 		return nil
 	}
 
@@ -1375,15 +1430,6 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 		return nil
 	}
 
-	// Wait if Fix queue is full.
-	if v.FixQueue.count() >= maxOverlaySegments+1 {
-		select {
-		case <-ctx.Done():
-		case <-time.After(200 * time.Millisecond):
-		}
-		return nil
-	}
-
 	segment := v.AsrQueue.first()
 	starttime := time.Now()
 
@@ -1392,6 +1438,15 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 		v.AsrQueue.dequeue(segment)
 		segment.Dispose()
 		logger.Tf(ctx, "transcript: remove not exist audio segment %v", segment.String())
+		return nil
+	}
+
+	// Wait if Fix queue is full.
+	if v.FixQueue.count() >= maxOverlaySegments+1 {
+		select {
+		case <-ctx.Done():
+		case <-time.After(200 * time.Millisecond):
+		}
 		return nil
 	}
 
@@ -1533,15 +1588,6 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		return nil
 	}
 
-	// Wait if Overlay queue is full.
-	if v.OverlayQueue.count() >= maxOverlaySegments+1 {
-		select {
-		case <-ctx.Done():
-		case <-time.After(200 * time.Millisecond):
-		}
-		return nil
-	}
-
 	segment := v.FixQueue.first()
 	starttime := time.Now()
 
@@ -1550,6 +1596,15 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		v.FixQueue.dequeue(segment)
 		segment.Dispose()
 		logger.Tf(ctx, "transcript: remove not exist fix segment %v", segment.String())
+		return nil
+	}
+
+	// Wait if Overlay queue is full.
+	if v.OverlayQueue.count() >= maxOverlaySegments+1 {
+		select {
+		case <-ctx.Done():
+		case <-time.After(200 * time.Millisecond):
+		}
 		return nil
 	}
 

@@ -1041,6 +1041,7 @@ The following are the update records for the SRS Stack server.
     * Transcript: Support convert live speech to text by whisper. [v5.12.2](https://github.com/ossrs/srs-stack/releases/tag/v5.12.2)
     * Transcript: Update base image for FFmpeg subtitles. v5.12.3
     * Transcript: Limit all queue base on overlay. v5.12.4
+    * Transcript: Allow work without active stream. [v5.12.5](https://github.com/ossrs/srs-stack/releases/tag/v5.12.5)
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2
