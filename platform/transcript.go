@@ -1523,7 +1523,7 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 			}
 
 			srt.WriteString(fmt.Sprintf("%v\n", current))
-			current = word
+			current = word + " "
 		}
 		if current != "" {
 			srt.WriteString(fmt.Sprintf("%v\n", current))
