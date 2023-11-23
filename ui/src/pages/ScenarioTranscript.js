@@ -72,6 +72,19 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
     setOriginalHlsPreview(`/players/srs_player.html?schema=${schema}&port=${httpPort}&autostart=true&app=terraform/v1/ai/transcript/hls/original&stream=${uuid}.m3u8`);
   }, [uuid, setOverlayHlsUrl, setOverlayHlsPreview, setOriginalHlsUrl, setOriginalHlsPreview]);
 
+  const testConnection = React.useCallback(() => {
+    if (!secretKey) return alert(`Invalid secret key ${secretKey}`);
+    if (!baseURL) return alert(`Invalid base url ${baseURL}`);
+
+    const token = Token.load();
+    axios.post('/terraform/v1/ai/transcript/check', {
+      ...token, secretKey, baseURL,
+    }).then(res => {
+      alert(`${t('helper.testOk')}: ${t('transcript.testOk')}`);
+      console.log(`Transcript: Test service ok.`);
+    }).catch(handleError);
+  }, [t, handleError, secretKey, baseURL]);
+
   const updateAiService = React.useCallback((enabled, success) => {
     if (!secretKey) return alert(`Invalid secret key ${secretKey}`);
     if (!baseURL) return alert(`Invalid base url ${baseURL}`);
@@ -264,6 +277,14 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
               <Form.Text> * {t('transcript.base2')}. {t('helper.eg')} <code>https://api.openai.com/v1</code></Form.Text>
               <Form.Control as="input" defaultValue={baseURL} onChange={(e) => setBaseURL(e.target.value)} />
             </Form.Group>
+            <p>
+              <Button ariant="primary" type="submit" onClick={(e) => {
+                e.preventDefault();
+                testConnection();
+              }}>
+                {t('transcript.test')}
+              </Button>
+            </p>
             <Form.Group className="mb-3">
               <Form.Label>{t('transcript.lang')}</Form.Label>
               <Form.Text> * {t('transcript.lang2')}. &nbsp;

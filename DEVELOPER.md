@@ -21,7 +21,7 @@ docker run --name srs --rm -it \
 
 > Note: Use the intranet IP for WebRTC to set the candidate.
 
-> Note: Stop service by `docker rm -f redis srs`
+> Note: Stop service by `docker stop redis srs` and note that we stop redis to allow it to save data to disk.
 
 > Note: Also, you can run SRS by `(cd platform && ~/git/srs/trunk/objs/srs -c containers/conf/srs.release-local.conf)`
 
@@ -896,6 +896,7 @@ Also by platform module:
 * `/terraform/v1/ffmpeg/transcode/task` Query transcode task.
 * `/terraform/v1/ai/transcript/apply` Update the settings of transcript.
 * `/terraform/v1/ai/transcript/query` Query the settings of transcript.
+* `/terraform/v1/ai/transcript/check` Check the OpenAI service of transcript.
 * `/terraform/v1/ai/transcript/live-queue` Query the live queue of transcript.
 * `/terraform/v1/ai/transcript/asr-queue` Query the asr queue of transcript.
 * `/terraform/v1/ai/transcript/fix-queue` Query the fix queue of transcript.
@@ -1042,6 +1043,7 @@ The following are the update records for the SRS Stack server.
     * Transcript: Update base image for FFmpeg subtitles. v5.12.3
     * Transcript: Limit all queue base on overlay. v5.12.4
     * Transcript: Allow work without active stream. [v5.12.5](https://github.com/ossrs/srs-stack/releases/tag/v5.12.5)
+    * Transcript: Support testing connection to OpenAI service. v5.12.6
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2

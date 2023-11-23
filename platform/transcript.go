@@ -149,6 +149,47 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 		}
 	})
 
+	ep = "/terraform/v1/ai/transcript/check"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var transcriptConfig TranscriptConfig
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token *string `json:"token"`
+				*TranscriptConfig
+			}{
+				Token:            &token,
+				TranscriptConfig: &transcriptConfig,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			// Query whisper-1 model detail.
+			var config openai.ClientConfig
+			config = openai.DefaultConfig(transcriptConfig.SecretKey)
+			config.BaseURL = transcriptConfig.BaseURL
+
+			client := openai.NewClientWithConfig(config)
+			model, err := client.GetModel(ctx, "whisper-1")
+			if err != nil {
+				return errors.Wrapf(err, "query model whisper-1")
+			}
+
+			ohttp.WriteData(ctx, w, r, nil)
+			logger.Tf(ctx, "transcript check ok, config=<%v>, model=<%v>, token=%vB",
+				transcriptConfig, model.ID, len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
 	ep = "/terraform/v1/ai/transcript/reset"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {

@@ -221,6 +221,7 @@
         "disable": "禁用",
         "submit": "提交",
         "setOk": "设置成功",
+        "testOk": "测试通过",
         "upload": "上传文件",
         "changeFiles": "更换文件/流",
         "noSelect": "请选择",
@@ -377,13 +378,17 @@
         "lang": "语言",
         "lang2": "请输入视频的语言",
         "porg": "预览原始直播流",
-        "pol": "预览AI字幕直播流"
+        "pol": "预览AI字幕直播流",
+        "test": "测试OpenAI服务可用性",
+        "testOk": "OpenAI服务可用"
       }
     }
   },
   "en": {
     "translation": {
       "transcript": {
+        "testOk": "OpenAI Service is OK",
+        "test": "Test OpenAI Service",
         "pol": "Preview transcript live stream with subtitle",
         "porg": "Preview original live stream",
         "lang2": "Please input the language of the video",
@@ -753,6 +758,7 @@
         "disable": "Off",
         "submit": "Submit",
         "setOk": "Setup OK",
+        "testOk": "Test OK",
         "upload": "Upload File",
         "changeFiles": "Change File/Stream",
         "noSelect": "No selection",
