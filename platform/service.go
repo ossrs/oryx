@@ -541,6 +541,11 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
+			// Filter the locale.
+			if locale != "en" && locale != "zh" {
+				locale = "un"
+			}
+
 			if err := rdb.Set(ctx, SRS_LOCALE, locale, 0).Err(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "set %v %v", SRS_LOCALE, locale)
 			}

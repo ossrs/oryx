@@ -1044,6 +1044,7 @@ The following are the update records for the SRS Stack server.
     * Transcript: Limit all queue base on overlay. v5.12.4
     * Transcript: Allow work without active stream. [v5.12.5](https://github.com/ossrs/srs-stack/releases/tag/v5.12.5)
     * Transcript: Support testing connection to OpenAI service. v5.12.6
+    * Filter locale value. v5.12.6
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2
