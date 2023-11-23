@@ -44,6 +44,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   const handleError = useErrorHandler();
 
   const [operating, setOperating] = React.useState(false);
+  const [checking, setChecking] = React.useState(false);
   const [transcriptEnabled, setTranscriptEnabled] = React.useState(defaultEnabled);
   const [secretKey, setSecretKey] = React.useState(defaultConf.secretKey);
   const [baseURL, setBaseURL] = React.useState(defaultConf.baseURL || (language === 'zh' ? '' : 'https://api.openai.com/v1'));
@@ -76,14 +77,16 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
     if (!secretKey) return alert(`Invalid secret key ${secretKey}`);
     if (!baseURL) return alert(`Invalid base url ${baseURL}`);
 
+    setChecking(true);
+
     const token = Token.load();
     axios.post('/terraform/v1/ai/transcript/check', {
       ...token, secretKey, baseURL,
     }).then(res => {
       alert(`${t('helper.testOk')}: ${t('transcript.testOk')}`);
       console.log(`Transcript: Test service ok.`);
-    }).catch(handleError);
-  }, [t, handleError, secretKey, baseURL]);
+    }).catch(handleError).finally(setChecking);
+  }, [t, handleError, secretKey, baseURL, setChecking]);
 
   const updateAiService = React.useCallback((enabled, success) => {
     if (!secretKey) return alert(`Invalid secret key ${secretKey}`);
@@ -278,12 +281,13 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
               <Form.Control as="input" defaultValue={baseURL} onChange={(e) => setBaseURL(e.target.value)} />
             </Form.Group>
             <p>
-              <Button ariant="primary" type="submit" onClick={(e) => {
+              <Button ariant="primary" type="submit" disabled={checking} onClick={(e) => {
                 e.preventDefault();
                 testConnection();
               }}>
                 {t('transcript.test')}
-              </Button>
+              </Button> &nbsp;
+              {checking && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />}
             </p>
             <Form.Group className="mb-3">
               <Form.Label>{t('transcript.lang')}</Form.Label>
