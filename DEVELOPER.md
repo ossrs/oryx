@@ -774,6 +774,18 @@ helm install srs ~/git/srs-helm/stable/srs-stack-1.0.5.tgz \
 
 Finally, open [http://localhost](http://localhost) to check it.
 
+## Setup for OpenAI Feature Test Cases
+
+Please setup the environment variable `OPENAI_API_KEY` and `OPENAI_PROXY`, if need to test the OpenAI 
+feature like transcript.
+
+```bash
+bash scripts/tools/secret.sh --output test/.env &&
+cat ~/git/issues-translation/.env |grep OPENAI >> test/.env
+```
+
+Now you can run test.
+
 ## Run test in Goland
 
 Prepare the .env:

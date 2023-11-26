@@ -1352,3 +1352,17 @@ func StringContainsLine(str string, pfn func(line string) bool) string {
 
 	return ""
 }
+
+func OpenAIConfig() (apiKey, baseUrl string) {
+	apiKey = os.Getenv("OPENAI_API_KEY")
+
+	baseUrl = os.Getenv("OPENAI_PROXY")
+	if baseUrl == "" {
+		baseUrl = "https://api.openai.com/v1"
+	}
+	if !strings.Contains(baseUrl, "://") {
+		baseUrl = fmt.Sprintf("http://%v/v1", baseUrl)
+	}
+
+	return
+}
