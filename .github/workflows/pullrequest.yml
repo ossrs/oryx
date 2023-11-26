@@ -1,6 +1,11 @@
 name: Test Dev for PullRequest
 
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - release/*
 
 jobs:
   envs:
@@ -401,8 +406,8 @@ jobs:
           
           exit $ret
 
-  test-final:
-    name: test-final
+  test-pr-final:
+    name: test-pr-final
     runs-on: ubuntu-20.04
     needs:
       - run-test
