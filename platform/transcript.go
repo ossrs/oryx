@@ -1342,7 +1342,9 @@ func (v *TranscriptTask) WatchNewStream(ctx context.Context) error {
 			return nil, nil
 		}
 
-		logger.Tf(ctx, "transcript use best=%v as input", best.StreamURL())
+		if v.inputStream != nil && v.inputStream.StreamURL() != best.StreamURL() {
+			logger.Tf(ctx, "transcript use best=%v as input", best.StreamURL())
+		}
 		return best, nil
 	}
 
