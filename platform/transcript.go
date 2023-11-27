@@ -830,7 +830,7 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 				logger.Wf(ctx, "transcript: task %v watch new stream err %+v", task.String(), err)
 				duration = 10 * time.Second
 			} else {
-				continue
+				duration = 200 * time.Millisecond
 			}
 
 			select {
@@ -852,7 +852,7 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 				logger.Wf(ctx, "transcript: task %v drive live queue err %+v", task.String(), err)
 				duration = 10 * time.Second
 			} else {
-				continue
+				duration = 200 * time.Millisecond
 			}
 
 			select {
@@ -874,7 +874,7 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 				logger.Wf(ctx, "transcript: task %v drive asr queue err %+v", task.String(), err)
 				duration = 10 * time.Second
 			} else {
-				continue
+				duration = 200 * time.Millisecond
 			}
 
 			select {
@@ -896,7 +896,7 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 				logger.Wf(ctx, "transcript: task %v drive fix queue err %+v", task.String(), err)
 				duration = 10 * time.Second
 			} else {
-				continue
+				duration = 200 * time.Millisecond
 			}
 
 			select {
@@ -918,7 +918,7 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 				logger.Wf(ctx, "transcript: task %v drive overlay queue err %+v", task.String(), err)
 				duration = 10 * time.Second
 			} else {
-				continue
+				duration = 200 * time.Millisecond
 			}
 
 			select {
@@ -1301,10 +1301,6 @@ func (v *TranscriptTask) OnTsSegment(ctx context.Context, msg *SrsOnHlsObject) e
 func (v *TranscriptTask) WatchNewStream(ctx context.Context) error {
 	// If not enabled, wait.
 	if !v.config.All {
-		select {
-		case <-ctx.Done():
-		case <-time.After(200 * time.Millisecond):
-		}
 		return nil
 	}
 
@@ -1390,10 +1386,6 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 
 	// Ignore if not enough segments.
 	if v.LiveQueue.count() <= 0 {
-		select {
-		case <-ctx.Done():
-		case <-time.After(200 * time.Millisecond):
-		}
 		return nil
 	}
 
@@ -1410,10 +1402,6 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 
 	// Wait if ASR queue is full.
 	if v.AsrQueue.count() >= maxOverlaySegments+1 {
-		select {
-		case <-ctx.Done():
-		case <-time.After(200 * time.Millisecond):
-		}
 		return nil
 	}
 
@@ -1464,10 +1452,6 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 
 	// Ignore if not enough segments.
 	if v.AsrQueue.count() <= 0 {
-		select {
-		case <-ctx.Done():
-		case <-time.After(200 * time.Millisecond):
-		}
 		return nil
 	}
 
@@ -1484,10 +1468,6 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 
 	// Wait if Fix queue is full.
 	if v.FixQueue.count() >= maxOverlaySegments+1 {
-		select {
-		case <-ctx.Done():
-		case <-time.After(200 * time.Millisecond):
-		}
 		return nil
 	}
 
@@ -1622,10 +1602,6 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 
 	// Ignore if not enough segments.
 	if v.FixQueue.count() <= 0 {
-		select {
-		case <-ctx.Done():
-		case <-time.After(200 * time.Millisecond):
-		}
 		return nil
 	}
 
@@ -1642,10 +1618,6 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 
 	// Wait if Overlay queue is full.
 	if v.OverlayQueue.count() >= maxOverlaySegments+1 {
-		select {
-		case <-ctx.Done():
-		case <-time.After(200 * time.Millisecond):
-		}
 		return nil
 	}
 
