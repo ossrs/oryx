@@ -91,11 +91,12 @@ func (v *CallbackWorker) Handle(ctx context.Context, handler *http.ServeMux) err
 				return errors.Wrapf(err, "hget %v res", SRS_HOOKS)
 			}
 
-			ohttp.WriteData(ctx, w, r, &struct {
+			type HooksQueryResult struct {
 				Request  string `json:"req"`
 				Response string `json:"res"`
 				*CallbackConfig
-			}{
+			}
+			ohttp.WriteData(ctx, w, r, &HooksQueryResult{
 				Request:        req,
 				Response:       res,
 				CallbackConfig: &config,
@@ -138,12 +139,15 @@ func (v *CallbackWorker) Handle(ctx context.Context, handler *http.ServeMux) err
 				return errors.Wrapf(err, "hset %v all %v", SRS_HOOKS, config.All)
 			}
 
-			fullHost := fmt.Sprintf("http://%v", r.Host)
-			if r.TLS != nil {
-				fullHost = fmt.Sprintf("https://%v", r.Host)
+			// Use the request host as the default host.
+			if config.Host == "" {
+				config.Host = fmt.Sprintf("http://%v", r.Host)
+				if r.TLS != nil {
+					config.Host = fmt.Sprintf("https://%v", r.Host)
+				}
 			}
-			if err := rdb.HSet(ctx, SRS_HOOKS, "host", fullHost).Err(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hset %v host %v", SRS_HOOKS, fullHost)
+			if err := rdb.HSet(ctx, SRS_HOOKS, "host", config.Host).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v host %v", SRS_HOOKS, config.Host)
 			}
 
 			// Notify the callback worker to update the config.

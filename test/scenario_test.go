@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
@@ -1487,4 +1488,248 @@ func TestScenario_WithStream_CallbackOnPublishFailed(t *testing.T) {
 	if len(m.Streams) != 0 {
 		r3 = errors.Errorf("invalid streams=%v, %v, %v", len(m.Streams), m.String(), str)
 	}
+}
+
+func TestScenario_WithStream_CallbackOnRecordMp4(t *testing.T) {
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsLongTimeout)*time.Millisecond)
+	defer cancel()
+
+	if *noMediaTest {
+		return
+	}
+
+	var r0, r1, r2, r3, r4, r5 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0, r1, r2, r3, r4, r5); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	var pubSecret string
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+		Publish *string `json:"publish"`
+	}{
+		Publish: &pubSecret,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	type CallbackConfig struct {
+		All    bool   `json:"all"`
+		Opaque string `json:"opaque"`
+		Target string `json:"target"`
+	}
+	var conf CallbackConfig
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hooks/query", nil, &conf); err != nil {
+		r0 = errors.Wrapf(err, "request hooks apply failed")
+		return
+	}
+
+	// Restore the state of transcode.
+	backupCallbackConfig := conf
+	defer func() {
+		logger.Tf(ctx, "restore config %v", backupCallbackConfig)
+
+		// The ctx has already been cancelled by test case, which will cause the request failed.
+		ctx := context.Background()
+		NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hooks/apply", backupCallbackConfig, nil)
+	}()
+
+	// Enable the callback worker.
+	conf.All = true
+	conf.Target = fmt.Sprintf("%v/terraform/v1/mgmt/hooks/example?fail=false", *endpoint)
+	conf.Opaque = fmt.Sprintf("opaque-%v", rand.Int())
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hooks/apply", &conf, nil); err != nil {
+		r0 = errors.Wrapf(err, "request hooks apply failed")
+		return
+	}
+
+	// Query the old config.
+	backupRecordConfig := make(map[string]interface{})
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/query", nil, &backupRecordConfig); err != nil {
+		r0 = errors.Wrapf(err, "request record query failed")
+		return
+	}
+	defer func() {
+		logger.Tf(ctx, "restore config %v", backupRecordConfig)
+
+		// The ctx has already been cancelled by test case, which will cause the request failed.
+		ctx := context.Background()
+		NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/apply", backupRecordConfig, nil)
+	}()
+
+	// Enable the record worker.
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/apply", &struct {
+		All bool `json:"all"`
+	}{true}, nil); err != nil {
+		r0 = errors.Wrapf(err, "request record apply failed")
+		return
+	}
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	// Start FFmpeg to publish stream.
+	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
+	streamURL := fmt.Sprintf("%v/live/%v?secret=%v", *endpointRTMP, streamID, pubSecret)
+	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
+		v.args = []string{
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
+			"-f", "flv", streamURL,
+		}
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r1 = ffmpeg.Run(ctx, cancel)
+	}()
+
+	// Wait for record to save file.
+	select {
+	case <-ctx.Done():
+	case <-time.After(25 * time.Second):
+	}
+
+	// Get the last hook request, should be record begin event.
+	var hooksReq string
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hooks/query", nil, &struct {
+		Req *string `json:"req"`
+	}{
+		Req: &hooksReq,
+	}); err != nil {
+		r0 = errors.Wrapf(err, "request hooks query failed")
+		return
+	}
+
+	type RecordHooksBeginReq struct {
+		RequestID string `json:"request_id"`
+		Action    string `json:"action"`
+		Opaque    string `json:"opaque"`
+		Stream    string `json:"stream"`
+		UUID      string `json:"uuid"`
+	}
+	var beginReq RecordHooksBeginReq
+	if err := json.Unmarshal([]byte(hooksReq), &beginReq); err != nil {
+		r0 = errors.Wrapf(err, "decode hooks req %v failed", hooksReq)
+		return
+	}
+	if beginReq.Action != "on_record_begin" || beginReq.Stream != streamID || beginReq.UUID == "" {
+		r0 = errors.Errorf("invalid hooks req %v", hooksReq)
+		return
+	}
+
+	// Stop record worker.
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/apply", &struct {
+		All bool `json:"all"`
+	}{false}, nil); err != nil {
+		r0 = errors.Wrapf(err, "request record apply failed")
+		return
+	}
+	logger.Tf(ctx, "stop record worker done")
+
+	// Query the record file.
+	type RecordFile struct {
+		Stream   string  `json:"stream"`
+		UUID     string  `json:"uuid"`
+		Duration float64 `json:"duration"`
+		Progress bool    `json:"progress"`
+	}
+	var recordFile *RecordFile
+	defer func() {
+		if recordFile == nil || recordFile.UUID == "" {
+			return
+		}
+		logger.Tf(ctx, "remove record file %v", recordFile)
+
+		// The ctx has already been cancelled by test case, which will cause the request failed.
+		ctx := context.Background()
+		NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/remove", &struct {
+			UUID string `json:"uuid"`
+		}{recordFile.UUID}, nil)
+	}()
+	defer cancel()
+
+	for i := 0; i < 60; i++ {
+		files := []RecordFile{}
+		if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/files", nil, &files); err != nil {
+			r0 = errors.Wrapf(err, "request record files failed")
+			return
+		}
+
+		for _, file := range files {
+			if file.Stream == streamID {
+				recordFile = &file
+				break
+			}
+		}
+
+		if recordFile == nil || recordFile.Progress {
+			select {
+			case <-ctx.Done():
+				r0 = errors.Wrapf(ctx.Err(), "record file not found")
+				return
+			case <-time.After(1 * time.Second):
+				continue
+			}
+		}
+		break
+	}
+
+	if recordFile == nil {
+		r0 = errors.Errorf("record file not found")
+		return
+	}
+	if recordFile.Progress {
+		r0 = errors.Errorf("record file is progress, %v", recordFile)
+		return
+	}
+	if recordFile.Duration < 10 {
+		r0 = errors.Errorf("record file duration too short, %v", recordFile)
+		return
+	}
+
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(3 * time.Second):
+	}
+	logger.Tf(ctx, "record ok, file is %v", recordFile)
+
+	// Get the last hook request, should be record end event.
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hooks/query", nil, &struct {
+		Req *string `json:"req"`
+	}{
+		Req: &hooksReq,
+	}); err != nil {
+		r0 = errors.Wrapf(err, "request hooks query failed")
+		return
+	}
+
+	type RecordHooksEndReq struct {
+		RequestID    string `json:"request_id"`
+		Action       string `json:"action"`
+		Opaque       string `json:"opaque"`
+		Stream       string `json:"stream"`
+		UUID         string `json:"uuid"`
+		ArtifactCode int    `json:"artifact_code"`
+		ArtifactPath string `json:"artifact_path"`
+		ArtifactURL  string `json:"artifact_url"`
+	}
+	var endReq RecordHooksEndReq
+	if err := json.Unmarshal([]byte(hooksReq), &endReq); err != nil {
+		r0 = errors.Wrapf(err, "decode hooks req %v failed", hooksReq)
+		return
+	}
+	if endReq.Action != "on_record_end" || endReq.Stream != streamID || endReq.UUID != recordFile.UUID ||
+		endReq.ArtifactCode != 0 || !strings.Contains(endReq.ArtifactPath, endReq.UUID) || endReq.UUID != beginReq.UUID ||
+		!strings.Contains(endReq.ArtifactURL, endReq.UUID) {
+		r0 = errors.Errorf("invalid hooks req %v", hooksReq)
+		return
+	}
+
+	logger.Tf(ctx, "record hooks ok, file is %v, hooks is %v", recordFile, hooksReq)
+	cancel()
 }
