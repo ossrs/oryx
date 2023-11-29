@@ -485,20 +485,11 @@ func (v *RecordWorker) Start(ctx context.Context) error {
 			m3u8LocalObj, freshObject = obj.(*RecordM3u8Stream), !loaded
 		}
 
-		// Serve object if fresh one.
+		// Initialize the fresh object.
 		if freshObject {
-			// Initialize object.
 			if err := m3u8LocalObj.Initialize(ctx, v); err != nil {
 				return errors.Wrapf(err, "init %v", m3u8LocalObj.String())
 			}
-
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				if err := m3u8LocalObj.Run(ctx); err != nil {
-					logger.Wf(ctx, "serve m3u8 %v err %+v", m3u8LocalObj.String(), err)
-				}
-			}()
 		}
 
 		// Append new ts file to object.
@@ -507,6 +498,17 @@ func (v *RecordWorker) Start(ctx context.Context) error {
 		// Always save the object to redis, for reloading it when restart.
 		if err := m3u8LocalObj.saveObject(ctx); err != nil {
 			return errors.Wrapf(err, "save %v", m3u8LocalObj.String())
+		}
+
+		// Serve object if fresh one.
+		if freshObject {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := m3u8LocalObj.Run(ctx); err != nil {
+					logger.Wf(ctx, "serve m3u8 %v err %+v", m3u8LocalObj.String(), err)
+				}
+			}()
 		}
 
 		return nil
@@ -713,8 +715,27 @@ func (v *RecordM3u8Stream) Initialize(ctx context.Context, r *RecordWorker) erro
 
 // Run to serve the current recording object.
 func (v *RecordM3u8Stream) Run(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(logger.WithContext(ctx))
+	parentCtx := logger.WithContext(ctx)
+	ctx, cancel := context.WithCancel(parentCtx)
 	logger.Tf(ctx, "record run task %v", v.String())
+
+	if true {
+		message, err := v.callbackBegin(ctx)
+		if err != nil {
+			logger.Wf(ctx, "ignore task %v callback start err %+v", v.String(), err)
+		}
+
+		defer func() {
+			// Keep in mind that we should not use the ctx for this record task, as it will be canceled once the
+			// task is completed. Instead, we need to use the parent ctx, which is the function parameter representing
+			// the server context that remains active until the server is shut down.
+			ctx := parentCtx
+
+			if err := v.callbackEnd(ctx, message); err != nil {
+				logger.Wf(ctx, "ignore task %v callback end err %+v", v.String(), err)
+			}
+		}()
+	}
 
 	pfn := func() error {
 		// Process message and remove it.
@@ -842,6 +863,32 @@ func (v *RecordM3u8Stream) finishM3u8(ctx context.Context) error {
 	for _, file := range files {
 		r2 := os.Remove(file.TsFile.File)
 		logger.Tf(ctx, "drop %v r2=%v", file.String(), r2)
+	}
+
+	return nil
+}
+
+func (v *RecordM3u8Stream) callbackBegin(ctx context.Context) (*SrsOnHlsObject, error) {
+	messages := v.copyMessages()
+	if len(messages) == 0 {
+		return nil, fmt.Errorf("no messages")
+	}
+
+	message := messages[0]
+	if err := callbackWorker.OnRecordMessage(ctx, SrsActionOnRecordBegin, v.UUID, message.Msg, nil); err != nil {
+		return message, errors.Wrapf(err, "on record end %v", message)
+	}
+
+	return message, nil
+}
+
+func (v *RecordM3u8Stream) callbackEnd(ctx context.Context, message *SrsOnHlsObject) error {
+	if message == nil {
+		return nil
+	}
+
+	if err := callbackWorker.OnRecordMessage(ctx, SrsActionOnRecordEnd, v.UUID, message.Msg, v.artifact); err != nil {
+		return errors.Wrapf(err, "on record end %v", message)
 	}
 
 	return nil

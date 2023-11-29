@@ -34,12 +34,19 @@ import (
 type SrsAction string
 
 const (
+	// The actions for SRS server and SRS Stack.
 	// The publish action.
 	SrsActionOnPublish SrsAction = "on_publish"
 	// The unpublish action.
 	SrsActionOnUnpublish = "on_unpublish"
-	// The hls action.
+
+	// The hls action, for SRS server only.
 	SrsActionOnHls = "on_hls"
+
+	// The on_record_begin action.
+	SrsActionOnRecordBegin = "on_record_begin"
+	// The on_record_end action.
+	SrsActionOnRecordEnd = "on_record_end"
 )
 
 func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
@@ -111,7 +118,7 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 			// Verify some actions, before all other hooks.
 			preAllHook := action == SrsActionOnPublish
 			if preAllHook {
-				if err := callbackWorker.OnMessage(ctx, action, &streamObj); err != nil {
+				if err := callbackWorker.OnStreamMessage(ctx, action, &streamObj); err != nil {
 					return errors.Wrapf(err, "callback action=%v", action)
 				}
 			}
@@ -163,7 +170,7 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 
 			// For some events, hook after all other hooks are done.
 			if !preAllHook {
-				if err := callbackWorker.OnMessage(ctx, action, &streamObj); err != nil {
+				if err := callbackWorker.OnStreamMessage(ctx, action, &streamObj); err != nil {
 					return errors.Wrapf(err, "callback action=%v", action)
 				}
 			}
