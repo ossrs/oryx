@@ -1058,6 +1058,7 @@ The following are the update records for the SRS Stack server.
     * Transcript: Support testing connection to OpenAI service. v5.12.6
     * Filter locale value. v5.12.6
     * Transcript: Add test case for OpenAI. [v5.12.7](https://github.com/ossrs/srs-stack/releases/tag/v5.12.7)
+    * Transcript: Use m4a and 30kbps bitrate to make ASR faster. v5.12.8
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2

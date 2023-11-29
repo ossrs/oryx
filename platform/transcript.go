@@ -1414,11 +1414,11 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 		SeqNo:    segment.TsFile.SeqNo,
 		Duration: segment.TsFile.Duration,
 	}
-	audioFile.File = path.Join("transcript", fmt.Sprintf("%v.mp4", audioFile.TsID))
+	audioFile.File = path.Join("transcript", fmt.Sprintf("%v.m4a", audioFile.TsID))
 
 	args := []string{
 		"-i", segment.TsFile.File,
-		"-vn", "-acodec", "aac", "-ac", "1", "-ar", "16000", "-ab", "64k",
+		"-vn", "-acodec", "aac", "-ac", "1", "-ar", "16000", "-ab", "30k",
 		"-y", audioFile.File,
 	}
 	if err := exec.CommandContext(ctx, "ffmpeg", args...).Run(); err != nil {
