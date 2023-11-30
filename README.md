@@ -108,7 +108,7 @@ your own high-quality streaming and RTC platforms to support your businesses.
 - [x] Support DVR to Tencent Cloud Storage or VoD: [CN](https://mp.weixin.qq.com/s/UXR5EBKZ-LnthwKN_rlIjg).
 - [x] Support Typecho Plugin: [CN](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
 - [x] Support live stream transcoding: [Blog](https://blog.ossrs.io/efficient-live-streaming-transcoding-for-reducing-bandwidth-and-saving-costs-39bd001af02d), [EN](https://ossrs.io/lts/en-us/blog/Live-Transcoding), [CN](https://ossrs.net/lts/zh-cn/blog/Live-Transcoding).
-- [x] Support transcription for converting speech to text.
+- [x] Support transcription for converting speech to text: [Blog](https://blog.ossrs.io/revolutionizing-live-streams-with-ai-transcription-creating-accessible-multilingual-subtitles-1e902ab856bd), [EN](https://ossrs.io/lts/en-us/blog/live-streams-transcription), [CN](https://ossrs.net/lts/zh-cn/blog/live-streams-transcription).
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
 

@@ -31,6 +31,11 @@ function useTutorialsEn(mediumRef) {
   const ref = React.useRef({tutorials:[]});
 
   const dict = React.useRef({
+    '1e902ab856bd': {
+      author: 'Winlin Yang',
+      link: 'https://blog.ossrs.io/revolutionizing-live-streams-with-ai-transcription-creating-accessible-multilingual-subtitles-1e902ab856bd',
+      title: 'Revolutionizing Live Streams with AI Transcription: Creating Accessible, Multilingual Subtitles for Diverse Audiences'
+    },
     '39bd001af02d': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/efficient-live-streaming-transcoding-for-reducing-bandwidth-and-saving-costs-39bd001af02d',
