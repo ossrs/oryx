@@ -504,10 +504,18 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				// Probe file information.
 				toCtx, toCancelFunc := context.WithTimeout(ctx, 15*time.Second)
 				defer toCancelFunc()
-				stdout, err := exec.CommandContext(toCtx, "ffprobe",
+
+				args := []string{
 					"-show_error", "-show_private_data", "-v", "quiet", "-find_stream_info", "-print_format", "json",
-					"-show_format", "-show_streams", file.Target,
-				).Output()
+					"-show_format", "-show_streams",
+				}
+				// For RTSP stream source, always use TCP transport.
+				if strings.HasPrefix(file.Target, "rtsp://") {
+					args = append(args, "-rtsp_transport", "tcp")
+				}
+				args = append(args, "-i", file.Target)
+
+				stdout, err := exec.CommandContext(toCtx, "ffprobe", args...).Output()
 				if err != nil {
 					return errors.Wrapf(err, "probe %v", file.Target)
 				}

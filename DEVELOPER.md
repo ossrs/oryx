@@ -1060,6 +1060,7 @@ The following are the update records for the SRS Stack server.
     * Transcript: Add test case for OpenAI. [v5.12.7](https://github.com/ossrs/srs-stack/releases/tag/v5.12.7)
     * Transcript: Use m4a and 30kbps bitrate to make ASR faster. v5.12.8
     * Hooks: Support callback on_record_begin and on_record_end. v5.12.9
+    * VLive: Fix ffprobe RTSP bug, always use TCP transport. v5.12.10
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2
@@ -1087,6 +1088,7 @@ The following are the update records for the SRS Stack server.
     * Transcode: Refine stream compare algorithm. v5.11.21
     * Hooks: Support callback self-sign HTTPS URL. v5.11.22
     * Fix utest fail. [v5.11.23](https://github.com/ossrs/srs-stack/releases/tag/v5.11.23)
+    * VLive: Fix ffprobe RTSP bug, always use TCP transport. [v5.11.24](https://github.com/ossrs/srs-stack/releases/tag/v5.11.24)
 * v5.10
     * Refine README. v5.10.1
     * Refine DO and droplet release script. v5.10.2
