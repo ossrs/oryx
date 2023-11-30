@@ -1033,6 +1033,7 @@ The following are the update records for the SRS Stack server.
     * Transcode: Refine stream compare algorithm. v5.11.21
     * Hooks: Support callback self-sign HTTPS URL. v5.11.22
     * Fix utest fail. [v5.11.23](https://github.com/ossrs/srs-stack/releases/tag/v5.11.23)
+    * VLive: Fix ffprobe RTSP bug, always use TCP transport. v5.11.24
 * v5.10
     * Refine README. v5.10.1
     * Refine DO and droplet release script. v5.10.2
