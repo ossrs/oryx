@@ -29,13 +29,6 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-// Error code for callback, 100 ~ 200.
-type SrsCallbackError int
-
-const (
-	SrsCallbackErrorRecord SrsCallbackError = 100
-)
-
 var callbackWorker *CallbackWorker
 
 type CallbackWorker struct {
@@ -429,7 +422,7 @@ func (v *CallbackWorker) OnRecordMessage(ctx context.Context, action SrsAction, 
 	if action == SrsActionOnRecordEnd {
 		code := 0
 		if artifact.Processing {
-			code = int(SrsCallbackErrorRecord)
+			code = int(SrsStackErrorCallbackRecord)
 		}
 		req.ArtifactCode = &code
 		req.ArtifactPath = fmt.Sprintf("%v/record/%v/index.mp4", serverDataDirectory, artifact.UUID)
