@@ -207,6 +207,9 @@
         "nofile": "未选择任何文件"
       },
       "helper": {
+        "delete": "删除",
+        "preview": "预览",
+        "seconds": "秒",
         "eg": "例如：",
         "switchStream": "更换流名称",
         "changeStream": "更换流名称成功",
@@ -227,6 +230,7 @@
         "noSelect": "请选择",
         "link": "链接",
         "copy": "拷贝",
+        "copy2": "复制",
         "see": "请参考",
         "doc": "https://ossrs.net/lts/zh-cn/faq-srs-stack"
       },
@@ -381,11 +385,65 @@
         "pol": "预览AI字幕直播流",
         "test": "测试OpenAI服务可用性",
         "testOk": "OpenAI服务可用"
+      },
+      "record": {
+        "setupOk": "设置录制规则成功",
+        "dir": "录制文件夹",
+        "dir2": "保存路径：",
+        "dir3": "如何修改目录?",
+        "dir4": "你可以使用软链接，将根目录",
+        "dir5": "软链到其他磁盘的目录，然后",
+        "dir6": "重启服务",
+        "dir7": "(必须)",
+        "rule": "设置录制规则",
+        "rule2": "录制所有流",
+        "start": "开始录制",
+        "stop": "停止录制",
+        "task": "录制任务列表",
+        "status": "状态",
+        "update": "更新时间",
+        "source": "媒体流",
+        "duration": "时长",
+        "size": "大小",
+        "slice": "切片",
+        "url": "地址",
+        "action": "操作",
+        "tip": "若300秒没有流，会自动完成录制",
+        "ing": "录制中",
+        "done": "已完成",
+        "none": "没有流。请开启录制并推流后，等待大约60秒左右，录制列表会自动更新"
       }
     }
   },
   "en": {
     "translation": {
+      "record": {
+        "none": "There is no stream. Please start the recording and push the stream, then wait for about 60 seconds, and the recording list will be automatically updated.",
+        "done": "Done",
+        "ing": "Recording",
+        "tip": "If there is no stream for 300 seconds, the recording will be automatically completed.",
+        "action": "Actions",
+        "url": "URL",
+        "slice": "Slices",
+        "size": "Size",
+        "duration": "Duration",
+        "source": "Source Stream",
+        "update": "Update",
+        "status": "Status",
+        "task": "Record Tasks",
+        "start": "Start Record",
+        "stop": "Stop Record",
+        "rule2": "Record all streams",
+        "rule": "Setup Record Rules",
+        "dir4": "You can use a symbolic link to link the",
+        "dir5": "directory to a directory on another disk, and then",
+        "dir6": "restart the service",
+        "dir7": "(required)",
+        "dir3": "How to modify the directory?",
+        "dir2": "Work Directory:",
+        "dir": "Record Directory",
+        "setupOk": "Set record rule ok"
+      },
       "transcript": {
         "testOk": "OpenAI Service is OK",
         "test": "Test OpenAI Service",
@@ -744,6 +802,9 @@
         "nofile": "No file choosen"
       },
       "helper": {
+        "delete": "Delete",
+        "preview": "Preview",
+        "seconds": "s",
         "eg": "For example: ",
         "switchStream": "Change stream",
         "changeStream": "Stream name changed",
@@ -764,6 +825,7 @@
         "noSelect": "No selection",
         "link": "link",
         "copy": "Copy",
+        "copy2": "Copy",
         "see": "Please see",
         "doc": "https://ossrs.io/lts/en-us/faq-srs-stack"
       }
