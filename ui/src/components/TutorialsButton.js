@@ -31,6 +31,16 @@ function useTutorialsEn(mediumRef) {
   const ref = React.useRef({tutorials:[]});
 
   const dict = React.useRef({
+    '68PIGFDGihU': {
+      author: 'Mr Bao',
+      link: 'https://youtu.be/68PIGFDGihU',
+      title: 'Ultimate Unmanned Live Streaming Solution: Easy, Affordable & No PC Required! Perfect for Slow Media, Sleep Music, ASMR, Movie Streaming & More!'
+    },
+    'nNOBFRshO6Q': {
+      author: 'Mr Bao',
+      link: 'https://youtu.be/nNOBFRshO6Q',
+      title: '24/7 Live Stream: Easy Stream Your Camera to YouTube with DDNS & VPS - No PC or OBS Required!'
+    },
     '1e902ab856bd': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/revolutionizing-live-streams-with-ai-transcription-creating-accessible-multilingual-subtitles-1e902ab856bd',
@@ -88,9 +98,10 @@ function useTutorialsEn(mediumRef) {
     if (!bvids || !bvids.length) return;
     if (language !== 'en') return;
     bvids.map(tutorial => {
+      const obj = dict.current[tutorial.id];
       ref.current.tutorials.push({
-        media: 'Medium',
-        ...dict.current[tutorial.id],
+        media: obj?.link?.indexOf('youtu.be') > 0 ? 'YouTube' : 'Medium',
+        ...obj,
       });
       setTutorials([...ref.current.tutorials]);
       return null;
