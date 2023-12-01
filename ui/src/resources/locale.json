@@ -16,6 +16,7 @@
       "nav": {
         "login": "登录",
         "logout": "退出",
+        "logout2": "确认退出么？",
         "dashboard": "仪表盘",
         "scenario": "应用场景",
         "system": "系统配置",
@@ -611,6 +612,7 @@
       "nav": {
         "login": "Login",
         "logout": "Logout",
+        "logout2": "Are you sure you want to logout?",
         "dashboard": "Dashboard",
         "scenario": "Scenarios",
         "system": "System",
