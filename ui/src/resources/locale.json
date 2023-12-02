@@ -421,13 +421,15 @@
         "test": "测试Glob规则",
         "test2": "请输入目标流URL，测试是否Glob规则能匹配上",
         "test3": "开始测试",
-        "globEmpty": "Glob规则不能为空"
+        "globEmpty": "Glob规则不能为空",
+        "urlEmpty": "目标流URL不能为空"
       }
     }
   },
   "en": {
     "translation": {
       "record": {
+        "urlEmpty": "Stream URL cannot be empty",
         "globEmpty": "Glob filters cannot be empty",
         "test3": "Start Test",
         "test2": "Please input the stream URL, to test whether the glob filters match the stream",

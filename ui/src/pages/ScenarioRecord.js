@@ -15,6 +15,7 @@ import {useSrsLanguage} from "../components/LanguageSwitch";
 import * as Icon from "react-bootstrap-icons";
 import PopoverConfirm from "../components/PopoverConfirm";
 import TutorialsText from "../components/TutorialsText";
+import { minimatch } from "minimatch";
 
 export default function ScenarioRecord() {
   const recordStatus = useRecordStatus();
@@ -47,6 +48,29 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
 
   const [showGlobTest, setShowGlobTest] = React.useState(false);
   const [globFilters, setGlobFilters] = React.useState(defaultGlobs ? defaultGlobs.join('\n') : '');
+  const [targetUrl, setTargetUrl] = React.useState();
+
+  const testGlobFilters = React.useCallback(() => {
+    if (!targetUrl) return alert(t('record.urlEmpty'));
+    if (!globFilters) return alert(t('record.globEmpty'));
+
+    const a0 = document.createElement("a");
+    a0.href = targetUrl.replace('rtmp:', 'http:');
+
+    let matched, matchGlob;
+    globFilters.split('\n').forEach(glob => {
+      if (minimatch(a0.pathname, glob)) {
+        matched = true;
+        matchGlob = glob;
+      }
+    });
+
+    if (matched) {
+      alert(`OK! URL ${targetUrl} is matched by glob filter: ${matchGlob}`);
+    } else {
+      alert(`Failed! URL ${targetUrl} is not matched by any glob filters!`);
+    }
+  }, [targetUrl, globFilters]);
 
   const updateGlobFilters = React.useCallback(() => {
     if (!globFilters) return alert(t('record.globEmpty'));
@@ -206,7 +230,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
                 <a href='#' onClick={(e)=>{e.preventDefault(); setShowGlobTest(!showGlobTest);}}>{t('record.glob3')}</a> &nbsp;
                 {t('record.glob4')} </Form.Text>
               <Form.Control as="textarea" type='text' rows={5} defaultValue={globFilters}
-                            placeholder="For example: /live/livestream or /live/* or *"
+                            placeholder="For example: /live/livestream or /live/* or /*/*"
                             onChange={(e) => setGlobFilters(e.target.value)} />
             </Form.Group>
             <React.Fragment>
@@ -228,9 +252,12 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
               <Form.Group className="mb-3">
                 <Form.Label>{t('record.test')}</Form.Label>
                 <Form.Text> * {t('record.test2')} </Form.Text>
-                <Form.Control as="input" type='text' rows={5} />
+                <Form.Control as="input" type='text' onChange={(e) => setTargetUrl(e.target.value)} />
               </Form.Group>
-              <Button variant="primary" type="submit">{t('record.test3')}</Button>
+              <Button variant="primary" type="submit" onClick={(e) => {
+                e.preventDefault();
+                testGlobFilters();
+              }}>{t('record.test3')}</Button>
             </React.Fragment>}
           </Form>
         </Accordion.Body>
