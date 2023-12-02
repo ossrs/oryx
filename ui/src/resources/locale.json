@@ -397,7 +397,7 @@
         "dir6": "重启服务",
         "dir7": "(必须)",
         "rule": "设置录制规则",
-        "rule2": "录制所有流",
+        "rule2": "录制所有流，使用glob匹配目标流",
         "start": "开始录制",
         "stop": "停止录制",
         "task": "录制任务列表",
@@ -412,13 +412,31 @@
         "tip": "若300秒没有流，会自动完成录制",
         "ing": "录制中",
         "done": "已完成",
-        "none": "没有流。请开启录制并推流后，等待大约60秒左右，录制列表会自动更新"
+        "none": "没有流。请开启录制并推流后，等待大约60秒左右，录制列表会自动更新",
+        "glob": "额外Glob匹配规则",
+        "glob2": "（可选）默认录制所有流。每行一个规则，可以点",
+        "glob3": "这个链接",
+        "glob4": "测试规则是否匹配某个流",
+        "update2": "更新规则",
+        "test": "测试Glob规则",
+        "test2": "请输入目标流URL，测试是否Glob规则能匹配上",
+        "test3": "开始测试",
+        "globEmpty": "Glob规则不能为空"
       }
     }
   },
   "en": {
     "translation": {
       "record": {
+        "globEmpty": "Glob filters cannot be empty",
+        "test3": "Start Test",
+        "test2": "Please input the stream URL, to test whether the glob filters match the stream",
+        "test": "Test Glob Filters with Stream URL",
+        "update2": "Update Filters",
+        "glob": "Extra Glob Filters",
+        "glob2": "(Optional) Empty to record all streams. One filter per line, you can click",
+        "glob3": "this link",
+        "glob4": "to test whether the filter matches a stream",
         "none": "There is no stream. Please start the recording and push the stream, then wait for about 60 seconds, and the recording list will be automatically updated.",
         "done": "Done",
         "ing": "Recording",
@@ -434,7 +452,7 @@
         "task": "Record Tasks",
         "start": "Start Record",
         "stop": "Stop Record",
-        "rule2": "Record all streams",
+        "rule2": "Record all streams, which filtered by glob filters",
         "rule": "Setup Record Rules",
         "dir4": "You can use a symbolic link to link the",
         "dir5": "directory to a directory on another disk, and then",

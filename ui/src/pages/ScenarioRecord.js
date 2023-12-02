@@ -33,17 +33,32 @@ export default function ScenarioRecord() {
   }, [recordStatus]);
 
   if (!activeKey) return <></>;
-  return <ScenarioRecordImpl activeKey={activeKey} defaultApplyAll={recordStatus.all} recordHome={recordStatus.home} />;
+  return <ScenarioRecordImpl activeKey={activeKey} defaultApplyAll={recordStatus.all} defaultGlobs={recordStatus.globs} recordHome={recordStatus.home} />;
 }
 
-function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
+function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHome}) {
   const language = useSrsLanguage();
   const {t} = useTranslation();
+  const handleError = useErrorHandler();
 
   const [recordAll, setRecordAll] = React.useState(defaultApplyAll);
   const [recordFiles, setRecordFiles] = React.useState();
   const [refreshNow, setRefreshNow] = React.useState();
-  const handleError = useErrorHandler();
+
+  const [showGlobTest, setShowGlobTest] = React.useState(false);
+  const [globFilters, setGlobFilters] = React.useState(defaultGlobs ? defaultGlobs.join('\n') : '');
+
+  const updateGlobFilters = React.useCallback(() => {
+    if (!globFilters) return alert(t('record.globEmpty'));
+
+    const token = Token.load();
+    axios.post('/terraform/v1/hooks/record/globs', {
+      ...token, globs: globFilters.split('\n'),
+    }).then(res => {
+      alert(t('record.setupOk'));
+      console.log(`Record: Update glob filters ok`);
+    }).catch(handleError);
+  }, [handleError, globFilters]);
 
   React.useEffect(() => {
     const refreshRecordFiles = () => {
@@ -94,7 +109,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
       alert(t('record.setupOk'));
       console.log(`Record: Apply patterns ok, all=${recordAll}`);
     }).catch(handleError);
-  }, [handleError]);
+  }, [handleError, t]);
 
   const removeRecord = React.useCallback((file) => {
     const token = Token.load();
@@ -185,13 +200,38 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, recordHome}) {
         <Accordion.Header>{t('record.rule')}</Accordion.Header>
         <Accordion.Body>
           <Form>
-            <Button variant="primary" type="submit" onClick={(e) => {
-              setRecordAll(!recordAll);
-              setupRecordPattern(e, !recordAll);
-            }}>
-              {recordAll ? t('record.stop') : t('record.start')}
-            </Button> &nbsp;
-            <Form.Text> * {t('record.rule2')}</Form.Text>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('record.glob')}</Form.Label>
+              <Form.Text> * {t('record.glob2')} &nbsp;
+                <a href='#' onClick={(e)=>{e.preventDefault(); setShowGlobTest(!showGlobTest);}}>{t('record.glob3')}</a> &nbsp;
+                {t('record.glob4')} </Form.Text>
+              <Form.Control as="textarea" type='text' rows={5} defaultValue={globFilters}
+                            placeholder="For example: /live/livestream or /live/* or *"
+                            onChange={(e) => setGlobFilters(e.target.value)} />
+            </Form.Group>
+            <React.Fragment>
+              <Button variant="primary" type="submit" onClick={(e) => {
+                e.preventDefault();
+                updateGlobFilters();
+              }}>{t('record.update2')}</Button> &nbsp;
+              <Button variant="primary" type="submit" onClick={(e) => {
+                e.preventDefault();
+                setRecordAll(!recordAll);
+                setupRecordPattern(e, !recordAll);
+              }}>
+                {recordAll ? t('record.stop') : t('record.start')}
+              </Button> &nbsp;
+              <Form.Text> * {t('record.rule2')}</Form.Text>
+            </React.Fragment>
+            {showGlobTest && <React.Fragment>
+              <p/>
+              <Form.Group className="mb-3">
+                <Form.Label>{t('record.test')}</Form.Label>
+                <Form.Text> * {t('record.test2')} </Form.Text>
+                <Form.Control as="input" type='text' rows={5} />
+              </Form.Group>
+              <Button variant="primary" type="submit">{t('record.test3')}</Button>
+            </React.Fragment>}
           </Form>
         </Accordion.Body>
       </Accordion.Item>

@@ -20,7 +20,7 @@ export default function Logout({onLogout}) {
     }
 
     navigate('/routers-login');
-  }, [navigate, onLogout]);
+  }, [navigate, t, onLogout]);
 
   return <Container>Logout</Container>;
 }

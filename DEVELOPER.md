@@ -891,6 +891,7 @@ Also by platform module:
 * `/terraform/v1/hooks/srs/hls` Hooks: Handle the `on_hls` event.
 * `/terraform/v1/hooks/record/query` Hooks: Query the Record pattern.
 * `/terraform/v1/hooks/record/apply` Hooks: Apply the Record pattern.
+* `/terraform/v1/hooks/record/globs` Update the glob filters for record.
 * `/terraform/v1/hooks/record/remove` Hooks: Remove the Record files.
 * `/terraform/v1/hooks/record/files` Hooks: List the Record files.
 * `/terraform/v1/hooks/record/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.

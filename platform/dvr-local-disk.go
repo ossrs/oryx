@@ -66,12 +66,22 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 
 			if all, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "all").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v all", SRS_RECORD_PATTERNS)
+			} else if globs, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "globs").Result(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v globs", SRS_RECORD_PATTERNS)
 			} else {
+				var globFilters []string
+				if globs != "" {
+					if err := json.Unmarshal([]byte(globs), &globFilters); err != nil {
+						return errors.Wrapf(err, "parse %v", globs)
+					}
+				}
+
 				ohttp.WriteData(ctx, w, r, &struct {
-					All  bool   `json:"all"`
-					Home string `json:"home"`
+					All   bool     `json:"all"`
+					Home  string   `json:"home"`
+					Globs []string `json:"globs"`
 				}{
-					All: all == "true", Home: "/data/record",
+					All: all == "true", Home: "/data/record", Globs: globFilters,
 				})
 			}
 
@@ -108,6 +118,40 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 
 			ohttp.WriteData(ctx, w, r, nil)
 			logger.Tf(ctx, "record apply ok, all=%v, token=%vB", all, len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
+	ep = "/terraform/v1/hooks/record/globs"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var globs []string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token *string   `json:"token"`
+				Globs *[]string `json:"globs"`
+			}{
+				Token: &token, Globs: &globs,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			if b, err := json.Marshal(globs); err != nil {
+				return errors.Wrapf(err, "marshal %v", globs)
+			} else if err := rdb.HSet(ctx, SRS_RECORD_PATTERNS, "globs", string(b)).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v globs %v", SRS_RECORD_PATTERNS, string(b))
+			}
+
+			ohttp.WriteData(ctx, w, r, nil)
+			logger.Tf(ctx, "record update globs ok, glob=%v, token=%vB", globs, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
