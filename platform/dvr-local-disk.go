@@ -520,6 +520,32 @@ func (v *RecordWorker) Start(ctx context.Context) error {
 	buildM3u8Object := func(ctx context.Context, msg *SrsOnHlsObject) error {
 		logger.Tf(ctx, "Record: Got message %v", msg.String())
 
+		// Filter the stream by glob filters.
+		var globFilters []string
+		if globs, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "globs").Result(); err != nil && err != redis.Nil {
+			return errors.Wrapf(err, "hget %v globs", SRS_RECORD_PATTERNS)
+		} else if globs != "" {
+			if err := json.Unmarshal([]byte(globs), &globFilters); err != nil {
+				return errors.Wrapf(err, "parse %v", globs)
+			}
+		}
+
+		var globMatched bool
+		streamURL := fmt.Sprintf("/%v/%v", msg.Msg.App, msg.Msg.Stream)
+		for _, globFilter := range globFilters {
+			if ok, err := path.Match(globFilter, streamURL); err != nil {
+				return errors.Wrapf(err, "match %v", globFilter)
+			} else if ok {
+				logger.Tf(ctx, "match stream %v by glob filter %v in %v", streamURL, globFilter, globFilters)
+				globMatched = true
+			}
+		}
+
+		if !globMatched {
+			logger.Wf(ctx, "ignore stream %v by glob filters %v", streamURL, globFilters)
+			return nil
+		}
+
 		// Load stream local object.
 		var m3u8LocalObj *RecordM3u8Stream
 		var freshObject bool

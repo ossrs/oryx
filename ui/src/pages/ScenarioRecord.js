@@ -70,7 +70,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
     } else {
       alert(`Failed! URL ${targetUrl} is not matched by any glob filters!`);
     }
-  }, [targetUrl, globFilters]);
+  }, [t, targetUrl, globFilters]);
 
   const updateGlobFilters = React.useCallback(() => {
     if (!globFilters) return alert(t('record.globEmpty'));
@@ -82,7 +82,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
       alert(t('record.setupOk'));
       console.log(`Record: Update glob filters ok`);
     }).catch(handleError);
-  }, [handleError, globFilters]);
+  }, [t, handleError, globFilters]);
 
   React.useEffect(() => {
     const refreshRecordFiles = () => {
@@ -227,7 +227,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
             <Form.Group className="mb-3">
               <Form.Label>{t('record.glob')}</Form.Label>
               <Form.Text> * {t('record.glob2')} &nbsp;
-                <a href='#' onClick={(e)=>{e.preventDefault(); setShowGlobTest(!showGlobTest);}}>{t('record.glob3')}</a> &nbsp;
+                <a href='#noid' onClick={(e)=>{e.preventDefault(); setShowGlobTest(!showGlobTest);}}>{t('record.glob3')}</a> &nbsp;
                 {t('record.glob4')} </Form.Text>
               <Form.Control as="textarea" type='text' rows={5} defaultValue={globFilters}
                             placeholder="For example: /live/livestream or /live/* or /*/*"
@@ -252,7 +252,8 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
               <Form.Group className="mb-3">
                 <Form.Label>{t('record.test')}</Form.Label>
                 <Form.Text> * {t('record.test2')} </Form.Text>
-                <Form.Control as="input" type='text' onChange={(e) => setTargetUrl(e.target.value)} />
+                <Form.Control as="input" type='text' placeholder="For example: rtmp://localhost/live/livestream"
+                              onChange={(e) => setTargetUrl(e.target.value)} />
               </Form.Group>
               <Button variant="primary" type="submit" onClick={(e) => {
                 e.preventDefault();
