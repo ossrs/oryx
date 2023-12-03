@@ -73,8 +73,6 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
   }, [t, targetUrl, globFilters]);
 
   const updateGlobFilters = React.useCallback(() => {
-    if (!globFilters) return alert(t('record.globEmpty'));
-
     const token = Token.load();
     axios.post('/terraform/v1/hooks/record/globs', {
       ...token, globs: globFilters.split('\n'),

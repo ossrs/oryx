@@ -1063,6 +1063,7 @@ The following are the update records for the SRS Stack server.
     * Hooks: Support callback on_record_begin and on_record_end. v5.12.9
     * VLive: Fix ffprobe RTSP bug, always use TCP transport. v5.12.10
     * Confirm when user logout. v5.12.11
+    * Record: Support glob filters to match stream. v5.12.11
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2

@@ -69,7 +69,7 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 			} else if globs, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "globs").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v globs", SRS_RECORD_PATTERNS)
 			} else {
-				var globFilters []string
+				globFilters := []string{}
 				if globs != "" {
 					if err := json.Unmarshal([]byte(globs), &globFilters); err != nil {
 						return errors.Wrapf(err, "parse %v", globs)
@@ -144,14 +144,21 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			if b, err := json.Marshal(globs); err != nil {
-				return errors.Wrapf(err, "marshal %v", globs)
+			filteredGlobs := []string{}
+			for _, glob := range globs {
+				if glob != "" {
+					filteredGlobs = append(filteredGlobs, glob)
+				}
+			}
+
+			if b, err := json.Marshal(filteredGlobs); err != nil {
+				return errors.Wrapf(err, "marshal %v", filteredGlobs)
 			} else if err := rdb.HSet(ctx, SRS_RECORD_PATTERNS, "globs", string(b)).Err(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hset %v globs %v", SRS_RECORD_PATTERNS, string(b))
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "record update globs ok, glob=%v, token=%vB", globs, len(token))
+			logger.Tf(ctx, "record update globs ok, glob=%v, token=%vB", filteredGlobs, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -530,20 +537,23 @@ func (v *RecordWorker) Start(ctx context.Context) error {
 			}
 		}
 
-		var globMatched bool
-		streamURL := fmt.Sprintf("/%v/%v", msg.Msg.App, msg.Msg.Stream)
-		for _, globFilter := range globFilters {
-			if ok, err := path.Match(globFilter, streamURL); err != nil {
-				return errors.Wrapf(err, "match %v", globFilter)
-			} else if ok {
-				logger.Tf(ctx, "match stream %v by glob filter %v in %v", streamURL, globFilter, globFilters)
-				globMatched = true
+		// If glob filters are empty, ignore it, and record all streams.
+		if len(globFilters) > 0 {
+			var globMatched bool
+			streamURL := fmt.Sprintf("/%v/%v", msg.Msg.App, msg.Msg.Stream)
+			for _, globFilter := range globFilters {
+				if ok, err := path.Match(globFilter, streamURL); err != nil {
+					return errors.Wrapf(err, "match %v", globFilter)
+				} else if ok {
+					logger.Tf(ctx, "match stream %v by glob filter %v in %v", streamURL, globFilter, globFilters)
+					globMatched = true
+				}
 			}
-		}
 
-		if !globMatched {
-			logger.Wf(ctx, "ignore stream %v by glob filters %v", streamURL, globFilters)
-			return nil
+			if !globMatched {
+				logger.Wf(ctx, "ignore stream %v by glob filters %v", streamURL, globFilters)
+				return nil
+			}
 		}
 
 		// Load stream local object.
