@@ -59,7 +59,7 @@ You have the option to modify the volumes for srs-stack and direct them to diffe
     * `signals` The signals storage directory, save signal files.
     * `upload` The upload storage directory, save upload files.
     * `vlive` The storage directory for virtual live, save video files.
-    * `vod` The storage directory for VoD, save video files.
+    * `transcript` The storage directory for transcription, save transcription files.
     * `nginx-cache` The storage directory for nginx cache, save cache files.
 
 You can use environment variables to modify the settings.

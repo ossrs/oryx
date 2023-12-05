@@ -447,6 +447,7 @@ doctl compute droplet delete srs-stack-test --context market --force
 After submit to [marketplace](https://cloud.digitalocean.com/vendorportal/624145d53da4ad68de259945/10/edit), cleanup the snapshot:
 
 ```bash
+IMAGE=$(doctl compute snapshot list --context market --format ID --no-header) &&
 doctl compute snapshot delete $IMAGE --context market --force
 ```
 
