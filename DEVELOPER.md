@@ -1064,7 +1064,7 @@ The following are the update records for the SRS Stack server.
     * VLive: Fix ffprobe RTSP bug, always use TCP transport. v5.12.10
     * Confirm when user logout. v5.12.11
     * Record: Support glob filters to match stream. v5.12.11
-    * Transcript: Show detail error if exceeded quota. v5.12.12
+    * Transcript: Show detail error if exceeded quota. [v5.12.12](https://github.com/ossrs/srs-stack/releases/tag/v5.12.12)
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2
