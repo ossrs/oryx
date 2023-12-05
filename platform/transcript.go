@@ -175,15 +175,35 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			config = openai.DefaultConfig(transcriptConfig.SecretKey)
 			config.BaseURL = transcriptConfig.BaseURL
 
+			ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+			defer cancel()
+
 			client := openai.NewClientWithConfig(config)
 			model, err := client.GetModel(ctx, "whisper-1")
 			if err != nil {
 				return errors.Wrapf(err, "query model whisper-1")
 			}
 
+			// Start a chat, to check whether the billing is expired.
+			resp, err := client.CreateChatCompletion(
+				ctx, openai.ChatCompletionRequest{
+					Model: openai.GPT3Dot5Turbo,
+					Messages: []openai.ChatCompletionMessage{
+						{
+							Role:    openai.ChatMessageRoleUser,
+							Content: "Hello!",
+						},
+					},
+					MaxTokens: 50,
+				},
+			)
+			if err != nil {
+				return errors.Wrapf(err, "create chat")
+			}
+
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "transcript check ok, config=<%v>, model=<%v>, token=%vB",
-				transcriptConfig, model.ID, len(token))
+			logger.Tf(ctx, "transcript check ok, config=<%v>, model=<%v>, msg=<%v>, token=%vB",
+				transcriptConfig, model.ID, resp.Choices[0].Message.Content, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
