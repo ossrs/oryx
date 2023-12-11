@@ -41,6 +41,7 @@
         "rmFileTip1": "删除文件，会造成",
         "rmFileTip2": "流不可访问，",
         "rmFileTip3": "确认继续删除么？",
+        "endTip": "请确认先停止推流，然后结束录制任务。继续吗？",
         "vlive": "虚拟直播",
         "vfile": "文件转直播",
         "vstream": "拉流转推",
@@ -209,6 +210,7 @@
       },
       "helper": {
         "delete": "删除",
+        "end": "结束",
         "preview": "预览",
         "seconds": "秒",
         "eg": "例如：",
@@ -657,6 +659,7 @@
         "rmFileTip1": "It will cause",
         "rmFileTip2": "stream unavailable. ",
         "rmFileTip3": "Are you sure to continue?",
+        "endTip": "Please ensure the stream is terminated prior to end the recording task. Proceed?",
         "vlive": "VirtualLive",
         "vfile": "FileSource",
         "vstream": "StreamSource",
@@ -825,6 +828,7 @@
       },
       "helper": {
         "delete": "Delete",
+        "end": "End",
         "preview": "Preview",
         "seconds": "s",
         "eg": "For example: ",

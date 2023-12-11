@@ -894,6 +894,7 @@ Also by platform module:
 * `/terraform/v1/hooks/record/apply` Hooks: Apply the Record pattern.
 * `/terraform/v1/hooks/record/globs` Update the glob filters for record.
 * `/terraform/v1/hooks/record/remove` Hooks: Remove the Record files.
+* `/terraform/v1/hooks/record/end` Record: As stream is unpublished, finish the record task quickly.
 * `/terraform/v1/hooks/record/files` Hooks: List the Record files.
 * `/terraform/v1/hooks/record/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.
 * `/terraform/v1/hooks/record/hls/:uuid/index.m3u8` Hooks: Serve HLS m3u8 files.
@@ -1066,6 +1067,7 @@ The following are the update records for the SRS Stack server.
     * Confirm when user logout. v5.12.11
     * Record: Support glob filters to match stream. v5.12.11
     * Transcript: Show detail error if exceeded quota. [v5.12.12](https://github.com/ossrs/srs-stack/releases/tag/v5.12.12)
+    * Record: Support finish record task quickly after stream unpublished. v5.12.13
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2

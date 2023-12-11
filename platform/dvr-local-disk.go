@@ -235,6 +235,45 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 		}
 	})
 
+	ep = "/terraform/v1/hooks/record/end"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token, uuid string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token *string `json:"token"`
+				UUID  *string `json:"uuid"`
+			}{
+				Token: &token, UUID: &uuid,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			if uuid == "" {
+				return errors.New("no uuid")
+			}
+
+			task := recordWorker.QueryTask(uuid)
+			if task == nil {
+				return errors.Errorf("no record task for uuid=%v", uuid)
+			}
+
+			// Make the task to expire, to end it ASAP.
+			task.Expired = true
+
+			ohttp.WriteData(ctx, w, r, nil)
+			logger.Tf(ctx, "record end ok, uuid=%v, token=%vB", uuid, len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
 	ep = "/terraform/v1/hooks/record/files"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
@@ -484,6 +523,18 @@ func (v *RecordWorker) Close() error {
 	return nil
 }
 
+func (v *RecordWorker) QueryTask(uuid string) *RecordM3u8Stream {
+	var target *RecordM3u8Stream
+	v.streams.Range(func(key, value interface{}) bool {
+		if task := value.(*RecordM3u8Stream); task.UUID == uuid {
+			target = task
+			return false
+		}
+		return true
+	})
+	return target
+}
+
 func (v *RecordWorker) Start(ctx context.Context) error {
 	wg := &v.wg
 
@@ -628,6 +679,8 @@ type RecordM3u8Stream struct {
 	Update string `json:"update"`
 	// The done time.
 	Done string `json:"done"`
+	// Whether task is set to expire by user.
+	Expired bool `json:"expired"`
 
 	// The ts files of this m3u8.
 	Messages []*SrsOnHlsObject `json:"msgs"`
@@ -641,8 +694,8 @@ type RecordM3u8Stream struct {
 }
 
 func (v RecordM3u8Stream) String() string {
-	return fmt.Sprintf("url=%v, uuid=%v, done=%v, update=%v, messages=%v",
-		v.M3u8URL, v.UUID, v.Done, v.Update, len(v.Messages),
+	return fmt.Sprintf("url=%v, uuid=%v, done=%v, update=%v, messages=%v, expired=%v",
+		v.M3u8URL, v.UUID, v.Done, v.Update, len(v.Messages), v.Expired,
 	)
 }
 
@@ -737,6 +790,10 @@ func (v *RecordM3u8Stream) removeMessage(msg *SrsOnHlsObject) {
 func (v *RecordM3u8Stream) expired(ctx context.Context) bool {
 	v.lock.Lock()
 	defer v.lock.Unlock()
+
+	if v.Expired {
+		return true
+	}
 
 	update, err := time.Parse(time.RFC3339, v.Update)
 	if err != nil {

@@ -141,7 +141,19 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
       setRefreshNow(!refreshNow);
       console.log(`Record: Remove file ok, file=${JSON.stringify(file)}`);
     }).catch(handleError);
-  }, [refreshNow, handleError]);
+  }, [refreshNow, handleError, setRefreshNow]);
+
+  const endRecord = React.useCallback((file) => {
+    const token = Token.load();
+    axios.post('/terraform/v1/hooks/record/end', {
+      ...token, uuid: file.uuid,
+    }).then(res => {
+      setTimeout(() => {
+        setRefreshNow(!refreshNow);
+      }, 1000);
+      console.log(`Record: End file ok, file=${JSON.stringify(file)}`);
+    }).catch(handleError);
+  }, [refreshNow, handleError, setRefreshNow]);
 
   const copyToClipboard = React.useCallback((e, text) => {
     e.preventDefault();
@@ -293,16 +305,22 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
                       <td>{file.nn}</td>
                       <td><a href={file.location} onClick={(e) => copyToClipboard(e, file.location)} target='_blank' rel='noreferrer'>{t('helper.copy2')}</a></td>
                       <td>
-                        <a href={file.preview} target='_blank' rel='noreferrer'>{t('helper.preview')}</a> &nbsp;
-                        <PopoverConfirm placement='top' trigger={ <a href={`#${file.uuid}`} hidden={file.progress}>{t('helper.delete')}</a> } onClick={() => removeRecord(file)}>
+                        <a href={file.preview} target='_blank' rel='noreferrer'>
+                          {t('helper.preview')}
+                        </a> &nbsp;
+                        <PopoverConfirm placement='top' trigger={ <a href={`#${file.uuid}`} hidden={!file.progress}>{t('helper.end')}</a> } onClick={() => endRecord(file)}>
                           <p>
-                            {t('scenario.rmFileTip1')}
+                            {t('scenario.endTip')}
+                          </p>
+                        </PopoverConfirm> <PopoverConfirm placement='top' trigger={ <a href={`#${file.uuid}`} hidden={file.progress}>{t('helper.delete')}</a> } onClick={() => removeRecord(file)}>
+                          <p>
+                            {t('scenario.rmFileTip1')} &nbsp;
                             <span className='text-danger'><strong>
                               {t('scenario.rmFileTip2')}
                             </strong></span>
                             {t('scenario.rmFileTip3')}
                           </p>
-                        </PopoverConfirm>
+                        </PopoverConfirm> &nbsp;
                       </td>
                     </tr>;
                   })
