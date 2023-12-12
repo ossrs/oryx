@@ -555,6 +555,193 @@ func TestScenario_WithStream_PublishRtmpRecordMp4(t *testing.T) {
 	cancel()
 }
 
+func TestScenario_WithStream_PostProcessCpFile_RecordMp4(t *testing.T) {
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsLongTimeout)*time.Millisecond)
+	defer cancel()
+
+	if *noMediaTest {
+		return
+	}
+
+	var r0, r1, r2, r3, r4, r5 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0, r1, r2, r3, r4, r5); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	var pubSecret string
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+		Publish *string `json:"publish"`
+	}{
+		Publish: &pubSecret,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	// Query the old config.
+	type RecordConfig struct {
+		All  bool   `json:"all"`
+		Home string `json:"home"`
+		// Post processing.
+		ProcessCpDir string `json:"processCpDir"`
+	}
+	type RecordPostProcess struct {
+		PostProcess string `json:"postProcess"`
+		PostCpDir   string `json:"postCpDir"`
+	}
+
+	var backup RecordConfig
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/query", nil, &backup); err != nil {
+		r0 = errors.Wrapf(err, "request record query failed")
+		return
+	}
+	defer func() {
+		logger.Tf(ctx, "restore config %v", backup)
+
+		// The ctx has already been cancelled by test case, which will cause the request failed.
+		ctx := context.Background()
+		NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/apply", backup, nil)
+		NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/post-processing", &RecordPostProcess{
+			PostProcess: "post-cp-file",
+			PostCpDir:   backup.ProcessCpDir,
+		}, nil)
+	}()
+
+	// Change the dir to new dir.
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/post-processing", &RecordPostProcess{
+		PostProcess: "post-cp-file",
+		PostCpDir:   "/tmp",
+	}, nil); err != nil {
+		r0 = errors.Wrapf(err, "request record apply failed")
+		return
+	}
+
+	// Enable the record worker.
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/apply", &struct {
+		All bool `json:"all"`
+	}{true}, nil); err != nil {
+		r0 = errors.Wrapf(err, "request record apply failed")
+		return
+	}
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	// Start FFmpeg to publish stream.
+	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
+	streamURL := fmt.Sprintf("%v/live/%v?secret=%v", *endpointRTMP, streamID, pubSecret)
+	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
+		v.args = []string{
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
+			"-f", "flv", streamURL,
+		}
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r1 = ffmpeg.Run(ctx, cancel)
+	}()
+
+	// Wait for record to save file.
+	select {
+	case <-ctx.Done():
+	case <-time.After(25 * time.Second):
+	}
+
+	// Stop record worker.
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/apply", &struct {
+		All bool `json:"all"`
+	}{false}, nil); err != nil {
+		r0 = errors.Wrapf(err, "request record apply failed")
+		return
+	}
+	logger.Tf(ctx, "stop record worker done")
+
+	// Query the record file.
+	type RecordFile struct {
+		Stream   string  `json:"stream"`
+		UUID     string  `json:"uuid"`
+		Duration float64 `json:"duration"`
+		Progress bool    `json:"progress"`
+	}
+	var recordFile *RecordFile
+	defer func() {
+		if recordFile == nil || recordFile.UUID == "" {
+			return
+		}
+		logger.Tf(ctx, "remove record file %v", recordFile)
+
+		// The ctx has already been cancelled by test case, which will cause the request failed.
+		ctx := context.Background()
+		NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/remove", &struct {
+			UUID string `json:"uuid"`
+		}{recordFile.UUID}, nil)
+	}()
+	buildRecordCpFilePath := func(f *RecordFile) string {
+		return path.Join("/tmp", fmt.Sprintf("%v.mp4", recordFile.UUID))
+	}
+	defer func() {
+		// Remove the cp file at tmp.
+		if recordFile != nil && recordFile.UUID != "" {
+			if _, err := os.Stat(buildRecordCpFilePath(recordFile)); err == nil {
+				os.Remove(buildRecordCpFilePath(recordFile))
+			}
+		}
+	}()
+	defer cancel()
+
+	for i := 0; i < 60; i++ {
+		files := []RecordFile{}
+		if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/files", nil, &files); err != nil {
+			r0 = errors.Wrapf(err, "request record files failed")
+			return
+		}
+
+		for _, file := range files {
+			if file.Stream == streamID {
+				recordFile = &file
+				break
+			}
+		}
+
+		if recordFile == nil || recordFile.Progress {
+			select {
+			case <-ctx.Done():
+				r0 = errors.Wrapf(ctx.Err(), "record file not found")
+				return
+			case <-time.After(1 * time.Second):
+				continue
+			}
+		}
+		break
+	}
+
+	if recordFile == nil {
+		r0 = errors.Errorf("record file not found")
+		return
+	}
+	if recordFile.Progress {
+		r0 = errors.Errorf("record file is progress, %v", recordFile)
+		return
+	}
+	if recordFile.Duration < 10 {
+		r0 = errors.Errorf("record file duration too short, %v", recordFile)
+		return
+	}
+	if _, err := os.Stat(buildRecordCpFilePath(recordFile)); err != nil {
+		r0 = errors.Errorf("record file not found, %v", buildRecordCpFilePath(recordFile))
+		return
+	}
+
+	time.Sleep(3 * time.Second)
+	logger.Tf(ctx, "record ok, file is %v", recordFile)
+	cancel()
+}
+
 func TestScenario_WithStream_Publishing_EndRecordMp4(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsLongTimeout)*time.Millisecond)
 	defer cancel()

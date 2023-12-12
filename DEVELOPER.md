@@ -893,6 +893,7 @@ Also by platform module:
 * `/terraform/v1/hooks/record/query` Hooks: Query the Record pattern.
 * `/terraform/v1/hooks/record/apply` Hooks: Apply the Record pattern.
 * `/terraform/v1/hooks/record/globs` Update the glob filters for record.
+* `/terraform/v1/hooks/record/post-processing` Update the post-processing for record.
 * `/terraform/v1/hooks/record/remove` Hooks: Remove the Record files.
 * `/terraform/v1/hooks/record/end` Record: As stream is unpublished, finish the record task quickly.
 * `/terraform/v1/hooks/record/files` Hooks: List the Record files.
@@ -1068,6 +1069,7 @@ The following are the update records for the SRS Stack server.
     * Record: Support glob filters to match stream. v5.12.11
     * Transcript: Show detail error if exceeded quota. [v5.12.12](https://github.com/ossrs/srs-stack/releases/tag/v5.12.12)
     * Record: Support finish record task quickly after stream unpublished. v5.12.13
+    * Record: Support post-processing to cp file for S3. v5.12.14
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2

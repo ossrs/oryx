@@ -27,6 +27,12 @@ import (
 	"github.com/google/uuid"
 )
 
+type RecordPostProcess string
+
+const (
+	RecordPostProcessCpFile RecordPostProcess = "post-cp-file"
+)
+
 var recordWorker *RecordWorker
 
 type RecordWorker struct {
@@ -68,6 +74,8 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				return errors.Wrapf(err, "hget %v all", SRS_RECORD_PATTERNS)
 			} else if globs, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "globs").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v globs", SRS_RECORD_PATTERNS)
+			} else if processCpDir, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, string(RecordPostProcessCpFile)).Result(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v %v", string(RecordPostProcessCpFile))
 			} else {
 				globFilters := []string{}
 				if globs != "" {
@@ -76,12 +84,20 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 					}
 				}
 
-				ohttp.WriteData(ctx, w, r, &struct {
-					All   bool     `json:"all"`
-					Home  string   `json:"home"`
+				type RecordQueryResult struct {
+					// Whether enable record.
+					All bool `json:"all"`
+					// The home directory of record.
+					Home string `json:"home"`
+					// The glob filters for record.
 					Globs []string `json:"globs"`
-				}{
+					// The post process to copy file to dir for record.
+					ProcessCpDir string `json:"processCpDir"`
+				}
+
+				ohttp.WriteData(ctx, w, r, &RecordQueryResult{
 					All: all == "true", Home: "/data/record", Globs: globFilters,
+					ProcessCpDir: processCpDir,
 				})
 			}
 
@@ -159,6 +175,49 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 
 			ohttp.WriteData(ctx, w, r, nil)
 			logger.Tf(ctx, "record update globs ok, glob=%v, token=%vB", filteredGlobs, len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
+	ep = "/terraform/v1/hooks/record/post-processing"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var postProcess, PostCpDir string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token       *string `json:"token"`
+				PostProcess *string `json:"postProcess"`
+				PostCpDir   *string `json:"postCpDir"`
+			}{
+				Token: &token, PostProcess: &postProcess, PostCpDir: &PostCpDir,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			if RecordPostProcess(postProcess) != RecordPostProcessCpFile {
+				return errors.Errorf("invalid post process %v", postProcess)
+			}
+			if PostCpDir != "" {
+				if _, err := os.Stat(PostCpDir); err != nil {
+					return errors.Wrapf(err, "stat dir %v", PostCpDir)
+				}
+			}
+
+			if err := rdb.HSet(ctx, SRS_RECORD_PATTERNS, string(RecordPostProcessCpFile), PostCpDir).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v %v %v", SRS_RECORD_PATTERNS, RecordPostProcessCpFile, PostCpDir)
+			}
+
+			ohttp.WriteData(ctx, w, r, nil)
+			logger.Tf(ctx, "record update post processing ok, postProcess=%v, postCpDir=%v, token=%vB",
+				postProcess, PostCpDir, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -905,6 +964,11 @@ func (v *RecordM3u8Stream) Run(ctx context.Context) error {
 			return errors.Wrapf(err, "finish m3u8")
 		}
 
+		// Do post processing.
+		if err := v.postProcessing(ctx); err != nil {
+			return errors.Wrapf(err, "post processing")
+		}
+
 		// Now HLS is done
 		logger.Tf(ctx, "Record is done, hls is %v, artifact is %v", v.String(), v.artifact.String())
 		cancel()
@@ -1001,6 +1065,26 @@ func (v *RecordM3u8Stream) finishM3u8(ctx context.Context) error {
 		r2 := os.Remove(file.TsFile.File)
 		logger.Tf(ctx, "drop %v r2=%v", file.String(), r2)
 	}
+
+	return nil
+}
+
+func (v *RecordM3u8Stream) postProcessing(ctx context.Context) error {
+	processCpDir, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, string(RecordPostProcessCpFile)).Result()
+	if err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hget %v %v", string(RecordPostProcessCpFile))
+	}
+
+	if processCpDir == "" {
+		return nil
+	}
+
+	artifactPath := path.Join("record", v.UUID, "index.mp4")
+	targetPath := path.Join(processCpDir, fmt.Sprintf("%v.mp4", v.artifact.UUID))
+	if err = exec.CommandContext(ctx, "cp", "-f", artifactPath, targetPath).Run(); err != nil {
+		return errors.Wrapf(err, "cp %v to %v", artifactPath, targetPath)
+	}
+	logger.Tf(ctx, "record post process, cp %v to %v ok", artifactPath, targetPath)
 
 	return nil
 }

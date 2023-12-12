@@ -19,25 +19,35 @@ import { minimatch } from "minimatch";
 
 export default function ScenarioRecord() {
   const recordStatus = useRecordStatus();
-  const [activeKey, setActiveKey] = React.useState();
+  const [activeKeys, setActiveKeys] = React.useState();
+  const [postProcess, setPostProcess] = React.useState();
+  const [postProcessValue, setPostProcessValue] = React.useState();
 
   // We must init the activeKey, because the defaultActiveKey only apply when init for Accordion.
   // See https://stackoverflow.com/q/61324259/17679565
   React.useEffect(() => {
     if (!recordStatus) return;
 
-    if (recordStatus.all) {
-      setActiveKey('3');
-    } else {
-      setActiveKey('2');
+    if (recordStatus.processCpDir) {
+      setPostProcess('post-cp-file');
+      setPostProcessValue(recordStatus.processCpDir);
     }
-  }, [recordStatus]);
 
-  if (!activeKey) return <></>;
-  return <ScenarioRecordImpl activeKey={activeKey} defaultApplyAll={recordStatus.all} defaultGlobs={recordStatus.globs} recordHome={recordStatus.home} />;
+    if (recordStatus.all) {
+      setActiveKeys(['4']);
+    } else {
+      setActiveKeys(['3']);
+    }
+  }, [recordStatus, setActiveKeys, setPostProcess, setPostProcessValue]);
+
+  if (!activeKeys) return <></>;
+  return <ScenarioRecordImpl activeKeys={activeKeys} defaultApplyAll={recordStatus.all}
+                             defaultGlobs={recordStatus.globs} defaultPostProcess={postProcess}
+                             defaultPostProcessValue={postProcessValue}
+                             recordHome={recordStatus.home}/>;
 }
 
-function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHome}) {
+function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultPostProcess, defaultPostProcessValue, recordHome}) {
   const language = useSrsLanguage();
   const {t} = useTranslation();
   const handleError = useErrorHandler();
@@ -49,6 +59,9 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
   const [showGlobTest, setShowGlobTest] = React.useState(false);
   const [globFilters, setGlobFilters] = React.useState(defaultGlobs ? defaultGlobs.join('\n') : '');
   const [targetUrl, setTargetUrl] = React.useState();
+
+  const [postProcess, setPostProcess] = React.useState(defaultPostProcess);
+  const [postCpDir, setPostCpDir] = React.useState(defaultPostProcessValue || '/media/srs-bucket');
 
   const testGlobFilters = React.useCallback(() => {
     if (!targetUrl) return alert(t('record.urlEmpty'));
@@ -73,6 +86,8 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
   }, [t, targetUrl, globFilters]);
 
   const updateGlobFilters = React.useCallback(() => {
+    if (!globFilters) return alert(t('record.globEmpty'));
+
     const token = Token.load();
     axios.post('/terraform/v1/hooks/record/globs', {
       ...token, globs: globFilters.split('\n'),
@@ -81,6 +96,18 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
       console.log(`Record: Update glob filters ok`);
     }).catch(handleError);
   }, [t, handleError, globFilters]);
+
+  const updatePostProcessing = React.useCallback(() => {
+    if (!postProcess) return alert(t('record.postEmpty'));
+
+    const token = Token.load();
+    axios.post('/terraform/v1/hooks/record/post-processing', {
+      ...token, postProcess: postProcess, postCpDir: postCpDir,
+    }).then(res => {
+      alert(t('record.setupOk'));
+      console.log(`Record: Update post processing ok`);
+    }).catch(handleError);
+  }, [t, handleError, postProcess, postCpDir]);
 
   React.useEffect(() => {
     const refreshRecordFiles = () => {
@@ -166,7 +193,7 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
   }, [t]);
 
   return (
-    <Accordion defaultActiveKey={[activeKey]} alwaysOpen>
+    <Accordion defaultActiveKey={activeKeys} alwaysOpen>
       <React.Fragment>
         {language === 'zh' ?
           <Accordion.Item eventKey="0">
@@ -243,20 +270,10 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
                             placeholder="For example: /live/livestream or /live/* or /*/*"
                             onChange={(e) => setGlobFilters(e.target.value)} />
             </Form.Group>
-            <React.Fragment>
-              <Button variant="primary" type="submit" onClick={(e) => {
-                e.preventDefault();
-                updateGlobFilters();
-              }}>{t('record.update2')}</Button> &nbsp;
-              <Button variant="primary" type="submit" onClick={(e) => {
-                e.preventDefault();
-                setRecordAll(!recordAll);
-                setupRecordPattern(e, !recordAll);
-              }}>
-                {recordAll ? t('record.stop') : t('record.start')}
-              </Button> &nbsp;
-              <Form.Text> * {t('record.rule2')}</Form.Text>
-            </React.Fragment>
+            <Button variant="primary" type="submit" onClick={(e) => {
+              e.preventDefault();
+              updateGlobFilters();
+            }}>{t('record.update2')}</Button>
             {showGlobTest && <React.Fragment>
               <p/>
               <Form.Group className="mb-3">
@@ -270,10 +287,47 @@ function ScenarioRecordImpl({activeKey, defaultApplyAll, defaultGlobs, recordHom
                 testGlobFilters();
               }}>{t('record.test3')}</Button>
             </React.Fragment>}
+            <p/>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('record.post')}</Form.Label>
+              <Form.Text> * {t('record.post2')}</Form.Text>
+              <Form.Select defaultValue={postProcess} onChange={(e) => setPostProcess(e.target.value)}>
+                <option>{t('helper.noSelect')}</option>
+                <option value="post-cp-file">{t('record.postCp')}</option>
+              </Form.Select>
+            </Form.Group>
+            {postProcess === 'post-cp-file' && <Form.Group className="mb-3">
+              <Form.Label>{t('record.postCp2')}</Form.Label>
+              <Form.Text> * {t('record.postCp3')}</Form.Text>
+              <Form.Control as="input" type='text' defaultValue={postCpDir}
+                            placeholder="For example: /media/srs-bucket"
+                            onChange={(e) => setPostCpDir(e.target.value)}/>
+            </Form.Group>}
+            <Button variant="primary" type="submit" onClick={(e) => {
+              e.preventDefault();
+              updatePostProcessing();
+            }}>{t('record.update3')}</Button>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="3">
+        <Accordion.Header>{t('record.enable')}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Button variant="primary" type="submit" onClick={(e) => {
+                e.preventDefault();
+                setRecordAll(!recordAll);
+                setupRecordPattern(e, !recordAll);
+              }}>
+                {recordAll ? t('record.stop') : t('record.start')}
+              </Button> &nbsp;
+              <Form.Text> * {t('record.rule2')}</Form.Text>
+            </Form.Group>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="4">
         <Accordion.Header>{t('record.task')}</Accordion.Header>
         <Accordion.Body>
           {
