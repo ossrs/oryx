@@ -374,7 +374,7 @@ function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultP
                             </strong></span>
                             {t('scenario.rmFileTip3')}
                           </p>
-                        </PopoverConfirm> &nbsp;
+                        </PopoverConfirm>
                       </td>
                     </tr>;
                   })

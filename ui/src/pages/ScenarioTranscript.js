@@ -5,6 +5,7 @@ import {useTranslation} from "react-i18next";
 import {Token} from "../utils";
 import axios from "axios";
 import {useErrorHandler} from "react-error-boundary";
+import PopoverConfirm from "../components/PopoverConfirm";
 
 export default function ScenarioTranscript(props) {
   const handleError = useErrorHandler();
@@ -45,6 +46,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
 
   const [operating, setOperating] = React.useState(false);
   const [checking, setChecking] = React.useState(false);
+  const [refreshNow, setRefreshNow] = React.useState();
   const [transcriptEnabled, setTranscriptEnabled] = React.useState(defaultEnabled);
   const [secretKey, setSecretKey] = React.useState(defaultConf.secretKey);
   const [baseURL, setBaseURL] = React.useState(defaultConf.baseURL || (language === 'zh' ? '' : 'https://api.openai.com/v1'));
@@ -94,13 +96,13 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
 
     const token = Token.load();
     axios.post('/terraform/v1/ai/transcript/apply', {
-      ...token, all: !!enabled, secretKey, baseURL, lang: targetLanguage,
+      ...token, uuid, all: !!enabled, secretKey, baseURL, lang: targetLanguage,
     }).then(res => {
       alert(t('helper.setOk'));
-      console.log(`Transcript: Apply config ok.`);
+      console.log(`Transcript: Apply config ok, uuid=${uuid}.`);
       success && success();
     }).catch(handleError);
-  }, [t, handleError, secretKey, baseURL, targetLanguage]);
+  }, [t, handleError, secretKey, baseURL, targetLanguage, uuid]);
 
   const resetTask = React.useCallback(() => {
     setOperating(true);
@@ -115,6 +117,20 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
       console.log(`Transcript: Reset task ${uuid} ok: ${JSON.stringify(data)}`);
     }).catch(handleError).finally(setOperating);
   }, [t, handleError, uuid, setUuid, setOperating]);
+
+  const clearText = React.useCallback((segment) => {
+    setOperating(true);
+
+    const token = Token.load();
+    axios.post('/terraform/v1/ai/transcript/clear-subtitle', {
+      ...token, uuid, tsid: segment.tsid,
+    }).then(res => {
+      alert(t('helper.setOk'));
+      const data = res.data.data;
+      setRefreshNow(!refreshNow);
+      console.log(`Transcript: Clear subtitle of task ${uuid} segment ${segment.tsid} ok: ${JSON.stringify(data)}`);
+    }).catch(handleError).finally(setOperating);
+  }, [t, handleError, setOperating, uuid, refreshNow, setRefreshNow]);
 
   React.useEffect(() => {
     const refreshLiveQueueTask = () => {
@@ -172,13 +188,19 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
         ...token,
       }).then(res => {
         const queue = res.data.data;
-        queue.segments = queue?.segments?.map(segment => {
+        queue.segments = queue?.segments?.map((segment, index) => {
           return {
             ...segment,
             duration: Number(segment.duration),
             size: Number(segment.size / 1024.0),
             eac: Number(segment.eac),
             asrc: Number(segment.asrc),
+            // Rules:
+            // 1. Always allow to clear the first segment, that is only one segment in the queue.
+            // 2. Prevent the first segment from clearing subtitles, as it may have already been added
+            //    to the overlay queue and not be able to modify it.
+            // 3. If already cleared, the uca(User Clear ASR) is set to true.
+            allowClearSubtitle: (queue.segments.length <= 1 || index !== 0) && !segment.uca,
           };
         });
         setFixQueue(queue);
@@ -189,7 +211,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
     refreshFixQueueTask();
     const timer = setInterval(() => refreshFixQueueTask(), 3 * 1000);
     return () => clearInterval(timer);
-  }, [handleError, setFixQueue]);
+  }, [handleError, setFixQueue, refreshNow]);
 
   React.useEffect(() => {
     const refreshOverlayQueueTask = () => {
@@ -389,6 +411,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
                 <th title={t('transcript.asrc')}>ASRC</th>
                 <th>Size</th>
                 <th>Text</th>
+                <th>{t('transcript.action')}</th>
               </tr>
               </thead>
               <tbody>
@@ -400,7 +423,16 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
                   <td>{`${segment.eac.toFixed(1)}`}ms</td>
                   <td>{`${segment.asrc.toFixed(1)}`}ms</td>
                   <td>{`${segment.size.toFixed(1)}`}KB</td>
-                  <td>{segment.asr}</td>
+                  <td style={{textDecoration: segment.uca ? "line-through" : ''}}>{segment.asr}</td>
+                  <td>
+                    <PopoverConfirm placement='top'
+                                    trigger={ <a href={`#${segment.tsid}`} hidden={!segment.allowClearSubtitle}>{t('transcript.clear')}</a> }
+                                    onClick={() => clearText(segment)}>
+                      <p>
+                        {t('transcript.clear2')}
+                      </p>
+                    </PopoverConfirm>
+                  </td>
                 </tr>;
               })}
               </tbody>
@@ -435,7 +467,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
                   <td>{`${segment.asrc.toFixed(1)}`}ms</td>
                   <td>{`${segment.olc.toFixed(1)}`}ms</td>
                   <td>{`${segment.size.toFixed(1)}`}MB</td>
-                  <td>{segment.asr}</td>
+                  <td style={{textDecoration: segment.uca ? "line-through" : ''}}>{segment.asr}</td>
                 </tr>;
               })}
               </tbody>

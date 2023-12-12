@@ -913,6 +913,7 @@ Also by platform module:
 * `/terraform/v1/ai/transcript/apply` Update the settings of transcript.
 * `/terraform/v1/ai/transcript/query` Query the settings of transcript.
 * `/terraform/v1/ai/transcript/check` Check the OpenAI service of transcript.
+* `/terraform/v1/ai/transcript/clear-subtitle`: Clear the subtitle of segment in fixing queue.
 * `/terraform/v1/ai/transcript/live-queue` Query the live queue of transcript.
 * `/terraform/v1/ai/transcript/asr-queue` Query the asr queue of transcript.
 * `/terraform/v1/ai/transcript/fix-queue` Query the fix queue of transcript.
@@ -1070,6 +1071,7 @@ The following are the update records for the SRS Stack server.
     * Transcript: Show detail error if exceeded quota. [v5.12.12](https://github.com/ossrs/srs-stack/releases/tag/v5.12.12)
     * Record: Support finish record task quickly after stream unpublished. v5.12.13
     * Record: Support post-processing to cp file for S3. v5.12.14
+    * Transcript: Support clear the subtitle of segment in fixing queue. [v5.12.15](https://github.com/ossrs/srs-stack/releases/tag/v5.12.15)
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2

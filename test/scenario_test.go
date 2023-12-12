@@ -1008,13 +1008,14 @@ func TestScenario_WithStream_Unpublished_EndRecordMp4(t *testing.T) {
 			"-f", "flv", streamURL,
 		}
 	})
-	wg.Add(1)
 
 	ffmpegCtx, ffmpegCancel := context.WithCancel(ctx)
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		r1 = ffmpeg.Run(ffmpegCtx, cancel)
 	}()
+	defer ffmpegCancel()
 
 	// Wait for record to save file.
 	select {

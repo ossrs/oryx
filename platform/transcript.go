@@ -111,13 +111,15 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
+			var uuid string
 			var config TranscriptConfig
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token *string `json:"token"`
+				UUID  *string `json:"uuid"`
 				*TranscriptConfig
 			}{
-				Token:            &token,
-				TranscriptConfig: &config,
+				Token: &token,
+				UUID:  &uuid, TranscriptConfig: &config,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -125,6 +127,11 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
+			}
+
+			// Not required yet.
+			if uuid != v.task.UUID {
+				logger.Wf(ctx, "transcript ignore uuid mismatch, query=%v, task=%v", uuid, v.task.UUID)
 			}
 
 			if err := config.Save(ctx); err != nil {
@@ -204,6 +211,48 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			ohttp.WriteData(ctx, w, r, nil)
 			logger.Tf(ctx, "transcript check ok, config=<%v>, model=<%v>, msg=<%v>, token=%vB",
 				transcriptConfig, model.ID, resp.Choices[0].Message.Content, len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
+	ep = "/terraform/v1/ai/transcript/clear-subtitle"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var uuid, tsid string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token *string `json:"token"`
+				UUID  *string `json:"uuid"`
+				TSID  *string `json:"tsid"`
+			}{
+				Token: &token,
+				UUID:  &uuid, TSID: &tsid,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			if uuid != v.task.UUID {
+				return errors.Errorf("invalid uuid %v", uuid)
+			}
+
+			if err := v.task.clearSubtitle(ctx, tsid); err != nil {
+				return errors.Wrapf(err, "clear subtitle task %v and tsid=%v", uuid, tsid)
+			}
+
+			type ClearSubtitleResponse struct {
+				UUID string `json:"uuid"`
+			}
+
+			ohttp.WriteData(ctx, w, r, &ClearSubtitleResponse{uuid})
+			logger.Tf(ctx, "transcript clear subtitle ok, uuid=%v, token=%vB", uuid, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -402,6 +451,8 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 				ASRText string `json:"asr"`
 				// The ASR segments.
 				ASRSegments []AsrSegment `json:"asrs"`
+				// Whether user clear the ASR text.
+				UserClearASR bool `json:"uca"`
 				// The cost in msg to do ASR.
 				ASRCost int32 `json:"asrc"`
 			}
@@ -436,6 +487,8 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 					ASRText: segment.AsrText.Text,
 					// The ASR segments.
 					ASRSegments: asrSegments,
+					// User clear the ASR text.
+					UserClearASR: segment.UserClearASR,
 					// The cost in msg to do ASR.
 					ASRCost: int32(segment.CostASR.Milliseconds()),
 				}}...)
@@ -491,6 +544,8 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 				ASRText string `json:"asr"`
 				// The ASR segments.
 				ASRSegments []AsrSegment `json:"asrs"`
+				// Whether user clear the ASR text.
+				UserClearASR bool `json:"uca"`
 				// The cost in msg to do ASR.
 				ASRCost int32 `json:"asrc"`
 				// The cost for overlay ASR text onto video.
@@ -529,6 +584,8 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 					ASRText: segment.AsrText.Text,
 					// The ASR segments.
 					ASRSegments: asrSegments,
+					// User clear the ASR text.
+					UserClearASR: segment.UserClearASR,
 					// The cost in msg to do ASR.
 					ASRCost: int32(segment.CostASR.Milliseconds()),
 					// The cost for overlay ASR text onto video.
@@ -1025,6 +1082,8 @@ type TranscriptSegment struct {
 	StreamStarttime time.Duration `json:"sst,omitempty"`
 	// The generated SRT file from ASR result.
 	SrtFile string `json:"srt,omitempty"`
+	// Whether user clear the ASR text of this segment.
+	UserClearASR bool `json:"uca,omitempty"`
 
 	// The cost to transcode the TS file to audio file.
 	CostExtractAudio time.Duration `json:"eac,omitempty"`
@@ -1051,6 +1110,7 @@ func (v TranscriptSegment) String() string {
 		sb.WriteString(fmt.Sprintf("asrc=%v, ", v.CostASR))
 	}
 	sb.WriteString(fmt.Sprintf("srt=%v, ", v.SrtFile))
+	sb.WriteString(fmt.Sprintf("uca=%v, ", v.UserClearASR))
 	sb.WriteString(fmt.Sprintf("sst=%v, ", v.StreamStarttime))
 	if v.OverlayFile != nil {
 		sb.WriteString(fmt.Sprintf("overlay=%v, ", v.OverlayFile.String()))
@@ -1130,6 +1190,20 @@ func (v *TranscriptQueue) first() *TranscriptSegment {
 	}
 
 	return v.Segments[0]
+}
+
+func (v *TranscriptQueue) clearSubtitle(tsid string) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
+	for _, segment := range v.Segments {
+		if segment.AudioFile.TsID == tsid {
+			segment.UserClearASR = true
+			return nil
+		}
+	}
+
+	return errors.Errorf("no tsid %v", tsid)
 }
 
 func (v *TranscriptQueue) dequeue(segment *TranscriptSegment) {
@@ -1623,7 +1697,7 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 	}
 
 	// Ignore if not enough segments.
-	if v.FixQueue.count() <= 0 {
+	if v.FixQueue.count() <= 2 {
 		return nil
 	}
 
@@ -1652,14 +1726,17 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 	}
 	overlayFile.File = path.Join("transcript", fmt.Sprintf("%v.ts", overlayFile.TsID))
 
-	// Note that the Alignment=2 means bottom center.
 	args := []string{
 		"-i", segment.TsFile.File,
 	}
-	if stats, err := os.Stat(segment.SrtFile); err == nil && stats.Size() > 0 {
-		args = append(args, []string{
-			"-vf", fmt.Sprintf("subtitles=%v:force_style='Alignment=2,MarginV=20'", segment.SrtFile),
-		}...)
+	// Ignore subtitle if user clear it.
+	if !segment.UserClearASR {
+		if stats, err := os.Stat(segment.SrtFile); err == nil && stats.Size() > 0 {
+			// Note that the Alignment=2 means bottom center.
+			args = append(args, []string{
+				"-vf", fmt.Sprintf("subtitles=%v:force_style='Alignment=2,MarginV=20'", segment.SrtFile),
+			}...)
+		}
 	}
 	args = append(args, []string{
 		"-vcodec", "libx264", "-profile:v", "main", "-preset:v", "medium",
@@ -1729,6 +1806,13 @@ func (v *TranscriptTask) restart(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (v *TranscriptTask) clearSubtitle(ctx context.Context, tsid string) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
+	return v.FixQueue.clearSubtitle(tsid)
 }
 
 func (v *TranscriptTask) reset(ctx context.Context) error {

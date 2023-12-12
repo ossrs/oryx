@@ -388,7 +388,10 @@
         "porg": "预览原始直播流",
         "pol": "预览AI字幕直播流",
         "test": "测试OpenAI服务可用性",
-        "testOk": "OpenAI服务可用"
+        "testOk": "OpenAI服务可用",
+        "action": "操作",
+        "clear": "清空字幕",
+        "clear2": "清空字幕后，会导致该视频片段无字幕，确认继续吗？"
       },
       "record": {
         "setupOk": "设置录制规则成功",
@@ -483,6 +486,9 @@
         "setupOk": "Set record rule ok"
       },
       "transcript": {
+        "clear2": "After clearing the subtitle, the video segment will have no subtitle, continue?",
+        "clear": "Clear Subtitle",
+        "action": "Actions",
         "testOk": "OpenAI Service is OK",
         "test": "Test OpenAI Service",
         "pol": "Preview transcript live stream with subtitle",
