@@ -699,7 +699,7 @@ function ScenarioLiveImpl({copyToClipboard, urls}) {
           </div>
           <ol>
             <li>{t('live.share.fw')} <code>UDP/8000</code>, {t('live.rtc.check')} <a href={t('live.rtc.connectivity')} target='_blank' rel='noreferrer'>{t('helper.link')}</a></li>
-            <li>{t('live.obs.download')} <a href='https://github.com/obsproject/obs-studio/releases/tag/30.0.0-rc2' target='_blank' rel='noreferrer'>{t('helper.link')}</a> (OBS 30+)</li>
+            <li>{t('live.obs.download')} <a href='https://github.com/obsproject/obs-studio/releases' target='_blank' rel='noreferrer'>{t('helper.link')}</a> (OBS 30+)</li>
             <li>
               {t('live.obs.config')}:
               <ul>

@@ -39,8 +39,8 @@ Run all tests:
 
 ```bash
 bash scripts/tools/secret.sh --output test/.env &&
-(cd test && go test -v --endpoint=http://localhost:2022 -init-self-signed-cert=true) &&
-(cd test && go test -v --endpoint=https://localhost:2443 -init-self-signed-cert=false)
+(cd test && go test -timeout=1h -v --endpoint=http://localhost:2022 -init-self-signed-cert=true) &&
+(cd test && go test -timeout=1h -v --endpoint=https://localhost:2443 -init-self-signed-cert=false)
 ```
 
 Run the platform react ui, or run in WebStorm:
@@ -153,14 +153,14 @@ Run test for script:
 rm -f test/srs-stack.test &&
 docker exec -it script make -j -C test &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it script ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+docker exec -it script ./test/srs-stack.test -test.timeout=1h  -test.v -endpoint http://localhost:2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it script ./test/srs-stack.test -test.v -wait-ready -endpoint http://localhost:2022 \
+docker exec -it script ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://localhost:2022 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-docker exec -it script ./test/srs-stack.test -test.v -wait-ready -endpoint https://localhost:2443 \
+docker exec -it script ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://localhost:2443 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
 ```
@@ -249,14 +249,14 @@ Run test for aaPanel:
 rm -f test/srs-stack.test &&
 docker exec -it aapanel make -j -C test &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it aapanel ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+docker exec -it aapanel ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://srs.stack.local:80 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it aapanel ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
+docker exec -it aapanel ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://srs.stack.local:80 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-docker exec -it aapanel ./test/srs-stack.test -test.v -wait-ready -endpoint https://srs.stack.local:443 \
+docker exec -it aapanel ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://srs.stack.local:443 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
 ```
@@ -354,14 +354,14 @@ Run test for BT:
 rm -f test/srs-stack.test &&
 docker exec -it bt make -j -C test &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it bt ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+docker exec -it bt ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://srs.stack.local:80 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it bt ./test/srs-stack.test -test.v -wait-ready -endpoint http://srs.stack.local:80 \
+docker exec -it bt ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://srs.stack.local:80 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-docker exec -it bt ./test/srs-stack.test -test.v -wait-ready -endpoint https://srs.stack.local:443 \
+docker exec -it bt ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://srs.stack.local:443 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
 ```
@@ -424,15 +424,15 @@ Test the droplet instance:
 
 ```bash
 ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh --output test/.env &&
-ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.v -endpoint http://$SRS_DROPLET_EIP:2022 \
+ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://$SRS_DROPLET_EIP:2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
 ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh >test/.env &&
-ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.v -wait-ready -endpoint http://$SRS_DROPLET_EIP:2022 \
+ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://$SRS_DROPLET_EIP:2022 \
     -endpoint-rtmp rtmp://$SRS_DROPLET_EIP -endpoint-http http://$SRS_DROPLET_EIP -endpoint-srt srt://$SRS_DROPLET_EIP:10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 1 &&
-ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.v -wait-ready -endpoint https://$SRS_DROPLET_EIP:2443 \
+ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://$SRS_DROPLET_EIP:2443 \
     -endpoint-rtmp rtmp://$SRS_DROPLET_EIP -endpoint-http https://$SRS_DROPLET_EIP -endpoint-srt srt://$SRS_DROPLET_EIP:10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 1
@@ -518,15 +518,15 @@ Test the CVM instance:
 
 ```bash
 $sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
-$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
 $sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
-$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
     -endpoint-rtmp rtmp://$(cat .tmp/lh-ip2.txt) -endpoint-http http://$(cat .tmp/lh-ip2.txt) -endpoint-srt srt://$(cat .tmp/lh-ip2.txt):10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-ssh ubuntu@$(cat .tmp/lh-ip2.txt) ./test/srs-stack.test -test.v -wait-ready -endpoint https://$(cat .tmp/lh-ip2.txt):2443 \
+ssh ubuntu@$(cat .tmp/lh-ip2.txt) ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://$(cat .tmp/lh-ip2.txt):2443 \
     -endpoint-rtmp rtmp://$(cat .tmp/lh-ip2.txt) -endpoint-http https://$(cat .tmp/lh-ip2.txt) -endpoint-srt srt://$(cat .tmp/lh-ip2.txt):10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3

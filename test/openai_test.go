@@ -470,16 +470,32 @@ func TestOpenAI_WithStream_Transcript_ClearSubtitle(t *testing.T) {
 	}
 
 	// Check the segment again, should be cleared.
+	var target *TranscriptSegment
 	segments := querySegments("/terraform/v1/ai/transcript/fix-queue")
 	for _, s := range segments {
 		if s.TsID == segment.TsID {
-			if !s.UserClearASR {
-				r0 = errors.Errorf("invalid segment %v", s)
+			target = &s
+			break
+		}
+	}
+	// Maybe already pushed in to overlay queue.
+	if target == nil {
+		segments = querySegments("/terraform/v1/ai/transcript/overlay-queue")
+		for _, s := range segments {
+			if s.TsID == segment.TsID {
+				target = &s
+				break
 			}
-			return
 		}
 	}
 
-	r0 = errors.Errorf("invalid segments %v", segments)
+	// Check target segment.
+	if target == nil {
+		r0 = errors.Errorf("invalid segments %v", segments)
+		return
+	}
+	if !target.UserClearASR {
+		r0 = errors.Errorf("invalid segment %v", target)
+	}
 	return
 }

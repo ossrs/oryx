@@ -292,7 +292,7 @@ jobs:
             
             echo "Wait for service ready." &&
             bash secret.sh >./test/.env &&
-            ./test/srs-stack.test -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
+            ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
               -test.run TestSystem_Empty -no-bilibili-test=true &&
 
@@ -301,32 +301,32 @@ jobs:
             
             echo "Test HTTP API with self-signed cert." &&
             bash secret.sh >./test/.env &&
-            ./test/srs-stack.test -test.v -wait-ready -endpoint http://$SRS_DOMAIN.ossrs.io \
+            ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -no-media-test \
               -no-bilibili-test=true &&
             
             echo "Test HTTPS API with self-signed cert." &&
             bash secret.sh >./test/.env &&
-            ./test/srs-stack.test -test.v -wait-ready -endpoint https://$SRS_DOMAIN.ossrs.io \
+            ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -no-media-test \
               -no-bilibili-test=true &&
             
             echo "Request CERT from letsencrypt." &&
             bash secret.sh >./test/.env &&
-            ./test/srs-stack.test -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
+            ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -domain-lets-encrypt=$SRS_DOMAIN.ossrs.io \
               -test.run TestApi_LetsEncryptUpdateCert -no-media-test \
               -no-bilibili-test=true &&
             
             echo "Test HTTPS API with letsencrypt cert." &&
             bash secret.sh >./test/.env &&
-            ./test/srs-stack.test -test.v -wait-ready -endpoint https://$SRS_DOMAIN.ossrs.io \
+            ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -https-insecure-verify \
               -no-media-test -no-bilibili-test=true &&
             
             echo "Run media test with retry" &&
             bash secret.sh >./test/.env &&
-            ./failed-retry.sh 5 ./test/srs-stack.test -test.v -wait-ready -endpoint http://$SRS_DOMAIN.ossrs.io \
+            ./failed-retry.sh 5 ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -test.run WithStream \
               -no-bilibili-test=true
             ret=$?; echo "Test result: $ret"

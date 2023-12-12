@@ -31,6 +31,11 @@ function useTutorialsEn(mediumRef) {
   const ref = React.useRef({tutorials:[]});
 
   const dict = React.useRef({
+    'bb19c2a3bb7a': {
+      author: 'Winlin Yang',
+      link: 'https://blog.ossrs.io/effortlessly-create-a-public-internet-whip-service-for-obs-a-guide-for-sub-second-streaming-bb19c2a3bb7a',
+      title: 'Effortlessly Create a Public Internet WHIP Service for OBS: A Comprehensive Guide to Sub-Second Streaming'
+    },
     '68PIGFDGihU': {
       author: 'Mr Bao',
       link: 'https://youtu.be/68PIGFDGihU',
