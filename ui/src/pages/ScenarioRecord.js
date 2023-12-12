@@ -61,7 +61,7 @@ function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultP
   const [targetUrl, setTargetUrl] = React.useState();
 
   const [postProcess, setPostProcess] = React.useState(defaultPostProcess);
-  const [postCpDir, setPostCpDir] = React.useState(defaultPostProcessValue || '/media/srs-bucket');
+  const [postCpDir, setPostCpDir] = React.useState(defaultPostProcessValue || '/data/srs-s3-bucket');
 
   const testGlobFilters = React.useCallback(() => {
     if (!targetUrl) return alert(t('record.urlEmpty'));
@@ -300,7 +300,7 @@ function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultP
               <Form.Label>{t('record.postCp2')}</Form.Label>
               <Form.Text> * {t('record.postCp3')}</Form.Text>
               <Form.Control as="input" type='text' defaultValue={postCpDir}
-                            placeholder="For example: /media/srs-bucket"
+                            placeholder="For example: /data/srs-s3-bucket"
                             onChange={(e) => setPostCpDir(e.target.value)}/>
             </Form.Group>}
             <Button variant="primary" type="submit" onClick={(e) => {

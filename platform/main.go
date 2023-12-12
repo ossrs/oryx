@@ -387,6 +387,8 @@ func initPlatform(ctx context.Context) error {
 	}
 
 	// Create directories for data, allow user to link it.
+	// Keep in mind that we must not create the containers/data/srs-s3-bucket, as the user should generate
+	// and mount it if they wish to save recordings to cloud storage.
 	for _, dir := range []string{
 		"containers/data/dvr", "containers/data/record", "containers/data/vod",
 		"containers/data/upload", "containers/data/vlive", "containers/data/signals",

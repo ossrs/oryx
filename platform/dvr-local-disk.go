@@ -75,7 +75,7 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 			} else if globs, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "globs").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v globs", SRS_RECORD_PATTERNS)
 			} else if processCpDir, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, string(RecordPostProcessCpFile)).Result(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hget %v %v", string(RecordPostProcessCpFile))
+				return errors.Wrapf(err, "hget %v %v", SRS_RECORD_PATTERNS, string(RecordPostProcessCpFile))
 			} else {
 				globFilters := []string{}
 				if globs != "" {
@@ -1072,7 +1072,7 @@ func (v *RecordM3u8Stream) finishM3u8(ctx context.Context) error {
 func (v *RecordM3u8Stream) postProcessing(ctx context.Context) error {
 	processCpDir, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, string(RecordPostProcessCpFile)).Result()
 	if err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hget %v %v", string(RecordPostProcessCpFile))
+		return errors.Wrapf(err, "hget %v %v", SRS_RECORD_PATTERNS, string(RecordPostProcessCpFile))
 	}
 
 	if processCpDir == "" {
