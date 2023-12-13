@@ -387,13 +387,13 @@ func initPlatform(ctx context.Context) error {
 	}
 
 	// Create directories for data, allow user to link it.
-	// Keep in mind that we must not create the containers/data/srs-s3-bucket, as the user should generate
+	// Keep in mind that the containers/data/srs-s3-bucket maybe mount by user, because user should generate
 	// and mount it if they wish to save recordings to cloud storage.
 	for _, dir := range []string{
 		"containers/data/dvr", "containers/data/record", "containers/data/vod",
 		"containers/data/upload", "containers/data/vlive", "containers/data/signals",
 		"containers/data/lego", "containers/data/.well-known", "containers/data/config",
-		"containers/data/transcript",
+		"containers/data/transcript", "containers/data/srs-s3-bucket",
 	} {
 		if _, err := os.Stat(dir); err != nil && os.IsNotExist(err) {
 			if err = os.MkdirAll(dir, os.ModeDir|os.FileMode(0755)); err != nil {

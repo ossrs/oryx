@@ -614,7 +614,7 @@ func TestScenario_WithStream_PostProcessCpFile_RecordMp4(t *testing.T) {
 	// Change the dir to new dir.
 	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/record/post-processing", &RecordPostProcess{
 		PostProcess: "post-cp-file",
-		PostCpDir:   "/tmp",
+		PostCpDir:   "./containers/data/srs-s3-bucket",
 	}, nil); err != nil {
 		r0 = errors.Wrapf(err, "request record apply failed")
 		return
@@ -681,8 +681,14 @@ func TestScenario_WithStream_PostProcessCpFile_RecordMp4(t *testing.T) {
 			UUID string `json:"uuid"`
 		}{recordFile.UUID}, nil)
 	}()
+	// Try to find the file in relative dir, then find file in absolute path.
 	buildRecordCpFilePath := func(f *RecordFile) string {
-		return path.Join("/tmp", fmt.Sprintf("%v.mp4", recordFile.UUID))
+		filename := fmt.Sprintf("%v.mp4", recordFile.UUID)
+		p := path.Join("../platform/containers/data/srs-s3-bucket", filename)
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+		return path.Join("/data/srs-s3-bucket", filename)
 	}
 	defer func() {
 		// Remove the cp file at tmp.
@@ -812,7 +818,7 @@ func TestScenario_WithStream_Publishing_EndRecordMp4(t *testing.T) {
 	// Wait for record to save file.
 	select {
 	case <-ctx.Done():
-	case <-time.After(15 * time.Second):
+	case <-time.After(20 * time.Second):
 	}
 
 	// Query the recording task.
@@ -897,7 +903,7 @@ func TestScenario_WithStream_Publishing_EndRecordMp4(t *testing.T) {
 	// There should be another record file, after current task is ended.
 	select {
 	case <-ctx.Done():
-	case <-time.After(15 * time.Second):
+	case <-time.After(20 * time.Second):
 	}
 
 	// Stop record worker.
@@ -1020,7 +1026,7 @@ func TestScenario_WithStream_Unpublished_EndRecordMp4(t *testing.T) {
 	// Wait for record to save file.
 	select {
 	case <-ctx.Done():
-	case <-time.After(15 * time.Second):
+	case <-time.After(20 * time.Second):
 	}
 
 	// Query the recording task.
@@ -1112,7 +1118,7 @@ func TestScenario_WithStream_Unpublished_EndRecordMp4(t *testing.T) {
 	// There should never be another record file, after current task is ended.
 	select {
 	case <-ctx.Done():
-	case <-time.After(15 * time.Second):
+	case <-time.After(20 * time.Second):
 	}
 
 	// Stop record worker.
