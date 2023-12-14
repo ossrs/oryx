@@ -755,7 +755,9 @@ function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
     if (isHTTP && inputStream.indexOf('.flv') < 0 && inputStream.indexOf('.m3u8') < 0) return alert('HTTP流必须是 http-flv或hls 格式');
 
     const token = Token.load();
-    axios.post(`/terraform/v1/ffmpeg/vlive/streamUrl?url=${inputStream}`).then(res => {
+    axios.post(`/terraform/v1/ffmpeg/vlive/streamUrl`, {
+      ...token, url: inputStream,
+    }).then(res => {
       console.log(`检查流地址成功，${JSON.stringify(res.data.data)}`);
       const streamObj = res.data.data;
       const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
@@ -796,7 +798,9 @@ function VLiveStreamSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
     if (isHTTP && inputStream.indexOf('.flv') < 0 && inputStream.indexOf('.m3u8') < 0) return alert('The HTTP stream must be http-flv/hls');
 
     const token = Token.load();
-    axios.post(`/terraform/v1/ffmpeg/vlive/streamUrl?url=${inputStream}`).then(res => {
+    axios.post(`/terraform/v1/ffmpeg/vlive/streamUrl`, {
+      ...token, url: inputStream,
+    }).then(res => {
       console.log(`Check stream url ok，${JSON.stringify(res.data.data)}`);
       const streamObj = res.data.data;
       const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
@@ -838,7 +842,9 @@ function VLiveFileSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
     if (!['.mp4', '.flv', '.ts'].includes(fileExtension)) return alert('文件必须是 mp4/flv/ts 格式');
 
     const token = Token.load();
-    axios.post(`/terraform/v1/ffmpeg/vlive/server?file=${inputFile}`).then(res => {
+    axios.post(`/terraform/v1/ffmpeg/vlive/server`, {
+      ...token, file: inputFile,
+    }).then(res => {
       console.log(`检查服务器文件成功，${JSON.stringify(res.data.data)}`);
       const localFileObj = res.data.data;
       const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target, type: "file"}];
@@ -880,7 +886,9 @@ function VLiveFileSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
     if (!['.mp4', '.flv', '.ts'].includes(fileExtension)) return alert('The file must be in mp4/flv/ts format.');
 
     const token = Token.load();
-    axios.post(`/terraform/v1/ffmpeg/vlive/server?file=${inputFile}`).then(res => {
+    axios.post(`/terraform/v1/ffmpeg/vlive/server`, {
+      ...token, file: inputFile,
+    }).then(res => {
       console.log(`Check server file ok，${JSON.stringify(res.data.data)}`);
       const localFileObj = res.data.data;
       const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target, type: "file"}];

@@ -76,7 +76,11 @@ func TestScenario_WithStream_PublishVliveStreamUrl(t *testing.T) {
 		Size   int64  `json:"size"`
 		Type   string `json:"type"`
 	}{}
-	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/streamUrl?url="+streamURL, nil, &res); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/streamUrl", &struct {
+		StreamURL string `json:"url"`
+	}{
+		StreamURL: streamURL,
+	}, &res); err != nil {
 		r0 = errors.Wrapf(err, "request ffmpeg vlive streamUrl failed")
 		return
 	}
@@ -270,7 +274,11 @@ func TestScenario_WithStream_PublishVLivePlayFlv(t *testing.T) {
 		Target string `json:"target"`
 		UUID   string `json:"uuid"`
 	}{}
-	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/server?file="+sourceFile, nil, &res); err != nil {
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/ffmpeg/vlive/server", &struct {
+		StreamFile string `json:"file"`
+	}{
+		StreamFile: sourceFile,
+	}, &res); err != nil {
 		r0 = errors.Wrapf(err, "request ffmpeg vlive server failed")
 		return
 	}
