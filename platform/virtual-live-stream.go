@@ -221,13 +221,29 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			q := r.URL.Query()
-			qUrl := q.Get("url")
+			var token string
+			var qUrl string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token     *string `json:"token"`
+				StreamURL *string `json:"url"`
+			}{
+				Token: &token, StreamURL: &qUrl,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			// Parse URL to object.
 			u, err := url.Parse(qUrl)
 			if err != nil {
 				return errors.Wrapf(err, "parse %v", qUrl)
 			}
-			// check url if valid rtmp or rtsp or http-flv or https-flv or hls live url
+
+			// Check url if valid rtmp or rtsp or http-flv or https-flv or hls live url
 			if u.Scheme != "rtmp" && u.Scheme != "rtsp" && u.Scheme != "http" && u.Scheme != "https" {
 				return errors.Errorf("invalid url scheme %v", u.Scheme)
 			}
@@ -239,6 +255,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					return errors.Errorf("invalid url path suffix %v", u.Path)
 				}
 			}
+
 			targetUUID := uuid.NewString()
 			ohttp.WriteData(ctx, w, r, &struct {
 				// The file name.
@@ -252,6 +269,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				UUID:   targetUUID,
 				Target: qUrl,
 			})
+
 			logger.Tf(ctx, "vLive stream url ok, url=%v, uuid=%v", qUrl, targetUUID)
 			return nil
 		}(); err != nil {
@@ -263,8 +281,22 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			q := r.URL.Query()
-			qFile := filepath.Clean(q.Get("file"))
+			var token string
+			var qFile string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token      *string `json:"token"`
+				StreamFile *string `json:"file"`
+			}{
+				Token: &token, StreamFile: &qFile,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
 			fileAbsPath, err := filepath.Abs(qFile)
 			if err != nil {
 				return errors.Wrapf(err, "abs %v", qFile)
