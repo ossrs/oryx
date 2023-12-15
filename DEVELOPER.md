@@ -1053,6 +1053,8 @@ Please restart service when `.env` changed.
 
 The following are the update records for the SRS Stack server.
 
+* v5.13:
+  * Fix bug for vlive and transcript. v5.13.1 
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
@@ -1073,6 +1075,7 @@ The following are the update records for the SRS Stack server.
     * Record: Support post-processing to cp file for S3. v5.12.14
     * Transcript: Support clear the subtitle of segment in fixing queue. [v5.12.15](https://github.com/ossrs/srs-stack/releases/tag/v5.12.15)
     * VLive: Fix bug for url with query string. v5.12.16
+    * Transcript: Check the base url for OpenAI. v5.12.17
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2

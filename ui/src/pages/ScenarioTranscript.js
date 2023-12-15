@@ -79,6 +79,9 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
     if (!secretKey) return alert(`Invalid secret key ${secretKey}`);
     if (!baseURL) return alert(`Invalid base url ${baseURL}`);
 
+    const urlPattern = new RegExp('^(http|https)://.+(/v1)$');
+    if (!urlPattern.test(baseURL)) return alert(`Invalid BaseUrl ${baseURL}, should be http(s)://your-server/v1`);
+
     setChecking(true);
 
     const token = Token.load();
