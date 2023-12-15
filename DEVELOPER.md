@@ -1073,6 +1073,7 @@ The following are the update records for the SRS Stack server.
     * Record: Support post-processing to cp file for S3. v5.12.14
     * Transcript: Support clear the subtitle of segment in fixing queue. [v5.12.15](https://github.com/ossrs/srs-stack/releases/tag/v5.12.15)
     * VLive: Fix bug for url with query string. v5.12.16
+    * Transcript: Check the base url for OpenAI. v5.12.17
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2
