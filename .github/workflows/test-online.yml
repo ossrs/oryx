@@ -139,7 +139,7 @@ jobs:
           port: 22
           timeout: 600s
           script: |
-            for ((i=0; i<3; i++)); do
+            for ((i=0; i<10; i++)); do
               apt-get update -y &&
               apt-get install -y docker.io nginx unzip net-tools tree &&
               echo "Install OK" && break
