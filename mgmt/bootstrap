@@ -13,14 +13,12 @@ IMAGE=ossrs/srs-stack:5
 MGMT_PORT=2022
 HTTPS_PORT=2443
 RTMP_PORT=1935
-API_PORT=1985
-HTTP_PORT=8080
 RTC_PORT=8000
 SRT_PORT=10080
 NGINX_RELOAD="/etc/init.d/nginx reload"
 
 echo -n "DATA_HOME=${DATA_HOME}, WELL_KNOWN=${WELL_KNOWN}, IMAGE=${IMAGE}, MGMT_PORT=${MGMT_PORT}, RTMP_PORT=${RTMP_PORT}"
-echo -n ", API_PORT=${API_PORT}, HTTP_PORT=${HTTP_PORT}, RTC_PORT=${RTC_PORT}, SRT_PORT=${SRT_PORT}, NGINX_RELOAD=${NGINX_RELOAD}"
+echo -n ", RTC_PORT=${RTC_PORT}, SRT_PORT=${SRT_PORT}, NGINX_RELOAD=${NGINX_RELOAD}"
 echo ", HTTPS_PORT=${HTTPS_PORT}, EXTRA_PARAMS=${EXTRA_PARAMS}"
 
 echo "Force to stop platform container"
@@ -28,8 +26,8 @@ docker rm -f srs-stack 2>/dev/null
 
 echo "Start platform container"
 CMD="docker run -v ${DATA_HOME}:/data -v ${WELL_KNOWN}:/data/.well-known ${EXTRA_PARAMS}
-    -p ${MGMT_PORT}:2022/tcp -p ${HTTPS_PORT}:2443/tcp -p ${RTMP_PORT}:1935/tcp -p ${API_PORT}:1985/tcp -p
-    ${HTTP_PORT}:8080/tcp -p ${RTC_PORT}:8000/udp -p ${SRT_PORT}:10080/udp
+    -p ${MGMT_PORT}:2022/tcp -p ${HTTPS_PORT}:2443/tcp -p ${RTMP_PORT}:1935/tcp
+    -p ${RTC_PORT}:8000/udp -p ${SRT_PORT}:10080/udp
     --log-driver=json-file --log-opt=max-size=1g --log-opt=max-file=3
     --restart no -it --name srs-stack --detach
     ${IMAGE}"

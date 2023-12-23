@@ -427,7 +427,7 @@ ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh --output test/.env &&
 ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://$SRS_DROPLET_EIP:2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
-ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh >test/.env &&
+ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh --output test/.env &&
 ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://$SRS_DROPLET_EIP:2022 \
     -endpoint-rtmp rtmp://$SRS_DROPLET_EIP -endpoint-http http://$SRS_DROPLET_EIP -endpoint-srt srt://$SRS_DROPLET_EIP:10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
@@ -1054,7 +1054,8 @@ Please restart service when `.env` changed.
 The following are the update records for the SRS Stack server.
 
 * v5.13:
-  * Fix bug for vlive and transcript. v5.13.1 
+    * Fix bug for vlive and transcript. v5.13.1
+    * Support AWS Lightsail install script. v5.13.2
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
