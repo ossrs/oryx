@@ -3,7 +3,7 @@
 [![](https://img.shields.io/twitter/follow/srs_server?style=social)](https://twitter.com/srs_server)
 [![](https://badgen.net/discord/members/bQUPDRqy79)](https://discord.gg/bQUPDRqy79)
 [![](https://ossrs.net/wiki/images/wechat-badge4.svg)](https://ossrs.net/lts/zh-cn/contact#discussion)
-[![](https://ossrs.net/wiki/images/do-btn-srs-125x20.svg)](https://cloud.digitalocean.com/droplets/new?appId=133468816&size=s-2vcpu-2gb&region=sgp1&image=ossrs-srs&type=applications)
+[![](https://ossrs.net/wiki/images/do-btn-srs-125x20.svg)](https://marketplace.digitalocean.com/apps/srs)
 [![](https://opencollective.com/srs-server/tiers/badge.svg)](https://opencollective.com/srs-server)
 
 SRS Stack is an all-in-one, out-of-the-box, and open-source video solution for creating online video 
