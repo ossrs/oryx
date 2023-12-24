@@ -39,7 +39,7 @@ function useTutorialsEn(mediumRef) {
     '68PIGFDGihU': {
       author: 'Mr Bao',
       link: 'https://youtu.be/68PIGFDGihU',
-      title: 'Ultimate Unmanned Live Streaming Solution: Easy, Affordable & No PC Required! Perfect for Slow Media, Sleep Music, ASMR, Movie Streaming & More!'
+      title: 'Live Stream: Simple, Budget-Friendly, No PC Needed! Ideal for Calm Media, Sleep Tunes, ASMR, Film Streaming, etc.'
     },
     'nNOBFRshO6Q': {
       author: 'Mr Bao',
@@ -69,7 +69,7 @@ function useTutorialsEn(mediumRef) {
     '2aa792c35b25': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/how-to-record-live-streaming-to-mp4-file-2aa792c35b25',
-      title: 'How to Record Live Streaming to MP4 File'
+      title: 'Effortless Live Stream Recording with SRS Stack: A Step-by-Step Guide to Server-Side Recording and AWS S3 Integration'
     },
     '9748ae754c8c': {
       author: 'Winlin Yang',
@@ -79,7 +79,7 @@ function useTutorialsEn(mediumRef) {
     '38be22beec57': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/maximize-your-live-streaming-reach-a-guide-to-multi-platform-streaming-38be22beec57',
-      title: 'Maximize Your Live Streaming Reach: A Guide to Multi-Platform Streaming'
+      title: 'Maximize Audience Engagement: Effortlessly Restream Live Content Across Multiple Platforms with SRS Stack'
     },
     'e9fe6f314ac6': {
       author: 'Winlin Yang',

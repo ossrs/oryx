@@ -23,7 +23,7 @@ automatic HTTPS, and an easy-to-use HTTP Open API.
 Run srs-stack in one docker, then open http://localhost:2022 in browser:
 
 ```bash
-docker run --rm -it --name srs-stack -v $HOME/data:/data \
+docker run --restart always -d -it --name srs-stack -v $HOME/data:/data \
   -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
   ossrs/srs-stack:5
 ```
@@ -61,6 +61,7 @@ You have the option to modify the volumes for srs-stack and direct them to diffe
     * `vlive` The storage directory for virtual live, save video files.
     * `transcript` The storage directory for transcription, save transcription files.
     * `nginx-cache` The storage directory for nginx cache, save cache files.
+    * `srs-s3-bucket` The mount directory for AWS S3 compatible storage.
 
 You can use environment variables to modify the settings.
 

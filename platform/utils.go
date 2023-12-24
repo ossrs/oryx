@@ -304,7 +304,11 @@ const (
 	SRS_HTTPS           = "SRS_HTTPS"
 	SRS_HTTPS_DOMAIN    = "SRS_HTTPS_DOMAIN"
 	SRS_HOOKS           = "SRS_HOOKS"
+	SRS_SYS_LIMITS      = "SRS_SYS_LIMITS"
 )
+
+// Default limit to 5Mbps.
+const SrsSysLimitsVLive = 5 * 1000
 
 // Tencent cloud consts.
 const (

@@ -27,7 +27,7 @@ function SystemsImpl() {
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'auth';
-    console.log(`?tab=https|hls|auth|beian|callback|platform, current=${tab}, Select the tab to render`);
+    console.log(`?tab=https|hls|auth|beian|limits|callback|platform, current=${tab}, Select the tab to render`);
     setDefaultActiveTab(tab);
   }, [searchParams]);
 
@@ -75,6 +75,9 @@ function SettingsImpl2({defaultActiveTab}) {
           </Tab>
           <Tab eventKey="beian" title={t('settings.tabFooter')}>
             <SettingBeian />
+          </Tab>
+          <Tab eventKey="limits" title={t('settings.tabLimits')}>
+            <SettingLimits />
           </Tab>
           <Tab eventKey="callback" title={t('settings.tabCallback')}>
             <SettingCallback />
@@ -368,6 +371,53 @@ function SettingCallbackImpl({activeKey, defaultEnabled, defaultConf}) {
       </Accordion.Body>
     </Accordion.Item>
   </Accordion>;
+}
+
+function SettingLimits() {
+  const handleError = useErrorHandler();
+  const {t} = useTranslation();
+  const [vLiveBitrate, setVLiveBitrate] = React.useState();
+
+  React.useEffect(() => {
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/limits/query', {
+      ...token,
+    }).then(res => {
+      setVLiveBitrate(res.data.data.vlive);
+      console.log(`Limits: query ${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError, setVLiveBitrate]);
+
+  const updateLimits = React.useCallback((e) => {
+    e.preventDefault();
+
+    const token = Token.load();
+    axios.post('/terraform/v1/mgmt/limits/update', {
+      ...token, vlive: parseInt(vLiveBitrate),
+    }).then(res => {
+      alert(t('helper.setOk'));
+    }).catch(handleError);
+  }, [handleError, vLiveBitrate, t]);
+
+  return (
+    <Accordion defaultActiveKey={["1"]} alwaysOpen>
+      <Accordion.Item eventKey="1">
+        <Accordion.Header>{t('settings.limitsTitle')}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('settings.limitsVLive')}</Form.Label>
+              <Form.Text> * in Kbps</Form.Text>
+              <Form.Control as="input" defaultValue={vLiveBitrate} onChange={(e) => setVLiveBitrate(e.target.value)}/>
+            </Form.Group>
+            <Button variant="primary" type="submit" onClick={(e) => updateLimits(e)}>
+              {t('helper.submit')}
+            </Button>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+    </Accordion>
+  );
 }
 
 function SettingBeian() {

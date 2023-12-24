@@ -17,6 +17,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -557,6 +558,23 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				}{}
 				if err = json.Unmarshal([]byte(stdout), &format); err != nil {
 					return errors.Wrapf(err, "parse format %v", stdout)
+				}
+
+				// Typically, AWS Lightsail and DigitalOcean Droplets provide 1TB of monthly traffic,
+				// permitting a 3Mbps continuous live stream for 7x24 hours. Therefore, it's crucial
+				// to restrict the input bitrate to prevent exceeding the traffic limit.
+				if limits, err := rdb.HGet(ctx, SRS_SYS_LIMITS, "vlive").Int64(); err != nil && err != redis.Nil {
+					return errors.Wrapf(err, "hget %v vlive", SRS_SYS_LIMITS)
+				} else {
+					if limits == 0 {
+						limits = SrsSysLimitsVLive // in Kbps.
+					}
+
+					if bitrate, err := strconv.ParseInt(format.Format.Bitrate, 10, 64); err != nil {
+						return errors.Wrapf(err, "parse bitrate %v", format.Format.Bitrate)
+					} else if bitrate > limits*1000 {
+						return errors.Errorf("bitrate %vKbps is too large, exceed %vKbps", bitrate/1000, limits)
+					}
 				}
 
 				videos := struct {

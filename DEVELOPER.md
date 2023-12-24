@@ -870,6 +870,8 @@ Platform:
 * `/terraform/v1/mgmt/bilibili` Query the video information.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
+* `/terraform/v1/mgmt/limits/query` Query the limits information.
+* `/terraform/v1/mgmt/limits/update` Update the limits information.
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
 * `/terraform/v1/mgmt/hphls/update` HLS delivery in high performance mode.
 * `/terraform/v1/mgmt/hphls/query` Query HLS delivery in high performance mode.
@@ -1056,6 +1058,7 @@ The following are the update records for the SRS Stack server.
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
+    * Limits: Support limit bitrate for VLive stream. v5.13.3
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1

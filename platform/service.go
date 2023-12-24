@@ -234,6 +234,8 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	handleMgmtLogin(ctx, handler)
 	handleMgmtStatus(ctx, handler)
 	handleMgmtBilibili(ctx, handler)
+	handleMgmtLimitsQuery(ctx, handler)
+	handleMgmtLimitsUpdate(ctx, handler)
 	handleMgmtBeianQuery(ctx, handler)
 	handleMgmtSecretQuery(ctx, handler)
 	handleMgmtBeianUpdate(ctx, handler)
@@ -828,6 +830,85 @@ func handleMgmtBilibili(ctx context.Context, handler *http.ServeMux) {
 	})
 }
 
+func handleMgmtLimitsQuery(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/limits/query"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token *string `json:"token"`
+			}{
+				Token: &token,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			vLiveLimits, err := rdb.HGet(ctx, SRS_SYS_LIMITS, "vlive").Int64()
+			if err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v vlive", SRS_SYS_LIMITS)
+			} else if vLiveLimits == 0 {
+				vLiveLimits = SrsSysLimitsVLive
+			}
+
+			ohttp.WriteData(ctx, w, r, &struct {
+				VLive int64 `json:"vlive"`
+			}{
+				VLive: vLiveLimits,
+			})
+
+			logger.Tf(ctx, "limits: query ok")
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+}
+
+func handleMgmtLimitsUpdate(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/limits/update"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var vlive int64
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token *string `json:"token"`
+				VLive *int64  `json:"vlive"`
+			}{
+				Token: &token, VLive: &vlive,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			if vlive <= 0 {
+				return errors.Errorf("invalid vlive %v", vlive)
+			}
+
+			if err := rdb.HSet(ctx, SRS_SYS_LIMITS, "vlive", vlive).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v vlive %v", SRS_SYS_LIMITS, vlive)
+			}
+
+			ohttp.WriteData(ctx, w, r, nil)
+			logger.Tf(ctx, "limits: update ok")
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+}
+
+// Note that this API is not verified by token.
 func handleMgmtBeianQuery(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/beian/query"
 	logger.Tf(ctx, "Handle %v", ep)
