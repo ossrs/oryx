@@ -193,7 +193,7 @@ func prepareTest(ctx context.Context) (err error) {
 	checkApiSecret = flag.Bool("check-api-secret", true, "Whether check the api secret")
 	endpoint = flag.String("endpoint", "http://localhost:2022", "The endpoint for api, can be http or https")
 	endpointRTMP = flag.String("endpoint-rtmp", "rtmp://localhost:1935", "The endpoint for rtmp")
-	endpointHTTP = flag.String("endpoint-http", "http://localhost:8080", "The endpoint for http")
+	endpointHTTP = flag.String("endpoint-http", "http://localhost:2022", "The endpoint for http")
 	endpointSRT = flag.String("endpoint-srt", "srt://localhost:10080", "The endpoint for srt")
 	forceHttps = flag.Bool("force-https", false, "Force to use HTTPS api")
 	waitReady = flag.Bool("wait-ready", false, "Whether wait for the service ready")

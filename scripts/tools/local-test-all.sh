@@ -67,8 +67,7 @@ if [[ $TARGET == all || $TARGET == script ]]; then
 
     echo "Run script dev docker image" &&
     docker rm -f $CONTAINERS 2>/dev/null || echo 'OK' &&
-    docker run -p 2022:2022 -p 1935:1935/tcp -p 1985:1985/tcp \
-        -p 8080:8080/tcp -p 8000:8000/udp -p 10080:10080/udp \
+    docker run -p 2022:2022 -p 1935:1935/tcp -p 8000:8000/udp -p 10080:10080/udp \
         --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
         -d --rm -it -v $(pwd):/g -w /g --name=script srs-script-dev &&
     echo "Waiting for the container to be ready..." && sleep 3 && echo "OK"

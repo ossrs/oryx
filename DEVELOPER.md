@@ -111,8 +111,7 @@ Create a docker container in daemon:
 
 ```bash
 docker rm -f script 2>/dev/null &&
-docker run -p 2022:2022 -p 2443:2443 -p 1935:1935 \
-    -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
+docker run -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
     --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
     -d --rm -it -v $(pwd):/g -w /g --name=script srs-script-dev
@@ -176,8 +175,7 @@ Start a container and mount as plugin:
 ```bash
 docker rm -f bt aapanel 2>/dev/null &&
 AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3) &&
-docker run -p 80:80 -p 443:443 -p 7800:7800 \
-    -p 1935:1935 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
+docker run -p 80:80 -p 443:443 -p 7800:7800 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
     --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
     -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
@@ -277,8 +275,7 @@ Start a container and mount as plugin:
 ```bash
 docker rm -f bt aapanel 2>/dev/null &&
 BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3) &&
-docker run -p 80:80 -p 443:443 -p 7800:7800 \
-    -p 1935:1935 -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp \
+docker run -p 80:80 -p 443:443 -p 7800:7800 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
     --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
     -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
     -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
@@ -818,8 +815,8 @@ Run SRS Stack by docker:
 
 ```bash
 docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935 \
-  -p 8080:8080 -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
-    --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
+  -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
+  --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
   -v $HOME/data:/data srs-stack-env
 ```
 
@@ -1059,6 +1056,7 @@ The following are the update records for the SRS Stack server.
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
     * Limits: Support limit bitrate for VLive stream. v5.13.3
+    * Fix bug: Remove HTTP port for SRS. v5.13.4
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
