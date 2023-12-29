@@ -16,7 +16,7 @@ export default function Contact() {
 
 function ContactCn() {
   return (
-    <Container>
+    <Container fluid>
       <Carousel variant="dark" interval={null}>
         <Carousel.Item>
           <img
@@ -51,7 +51,7 @@ function ContactCn() {
 
 function ContactEn() {
   return (
-    <Container>
+    <Container fluid>
       Welcome to contact us by:
       <ul>
         <li>

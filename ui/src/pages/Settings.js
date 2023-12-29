@@ -62,7 +62,7 @@ function SettingsImpl2({defaultActiveTab}) {
   return (
     <>
       <p></p>
-      <Container>
+      <Container fluid>
         <Tabs defaultActiveKey={activeTab} id="uncontrolled-tab-example" className="mb-3" onSelect={(k) => onSelectTab(k)}>
           <Tab eventKey="auth" title={t('settings.tabAuth')}>
             <SettingAuth />

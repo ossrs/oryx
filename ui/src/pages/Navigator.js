@@ -42,7 +42,7 @@ export default function Navigator({initialized, token, localChanged}) {
 
   return (<>
     <Navbar>
-      <Container className={{color:'#fff'}}>
+      <Container fluid className={{color:'#fff'}}>
         <Navbar.Brand>
           <img
             src={logo}

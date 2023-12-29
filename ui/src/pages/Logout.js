@@ -22,6 +22,6 @@ export default function Logout({onLogout}) {
     navigate('/routers-login');
   }, [navigate, t, onLogout]);
 
-  return <Container>Logout</Container>;
+  return <Container fluid>Logout</Container>;
 }
 

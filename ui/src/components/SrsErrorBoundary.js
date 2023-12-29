@@ -28,7 +28,7 @@ function ErrorFallback({error, resetErrorBoundary}) {
 
   if (!show) return <></>;
   return (
-    <Container>
+    <Container fluid>
       <Alert variant="danger" onClose={() => setShow(false)} dismissible>
         <Alert.Heading>You got an error!</Alert.Heading>
         <ErrorDetail error={error} />

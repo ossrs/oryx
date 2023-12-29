@@ -1061,6 +1061,7 @@ The following are the update records for the SRS Stack server.
     * Limits: Support limit bitrate for VLive stream. v5.13.3
     * Fix bug: Remove HTTP port for SRS. v5.13.4
     * Refine API with Bearer token. v5.13.5
+    * Switch to fluid max width. v5.13.6
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1

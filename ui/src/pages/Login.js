@@ -82,7 +82,7 @@ function LoginImpl({onLogin}) {
 
   return (
     <>
-      <Container>
+      <Container fluid>
         <Form>
           <Form.Group className="mb-3" controlId="formBasicPassword">
             <Form.Label>{t('login.passwordLabel')}</Form.Label>

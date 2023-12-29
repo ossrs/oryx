@@ -176,10 +176,10 @@ function TutorialsToast({tutorials, onClose}) {
   const {t} = useTranslation();
 
   return (<>
-    <Container>
+    <Container fluid>
       <Row>
         {tutorials.map((tutorial, index) => (
-          <Col xs lg={4} key={index}>
+          <Col xs key={index}>
             <Toast onClose={onClose}>
               <Toast.Header>
                 <img src={logo} className="rounded me-2" width={56} alt=''/>

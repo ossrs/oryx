@@ -62,7 +62,7 @@ function SetupImpl({onInit}) {
 
   return (
     <>
-      <Container>
+      <Container fluid>
         <Form>
           <Form.Group className="mb-3" controlId="formBasicPassword">
             <Form.Label>{t('setup.passwordLabel')}</Form.Label>

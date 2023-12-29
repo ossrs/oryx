@@ -50,7 +50,7 @@ function ComponentsImpl() {
 
   return (
     <>
-      <Container>
+      <Container fluid>
         <Row>
           <Col xs lg={3}>
             <Card style={{ width: '18rem', marginTop: '16px' }}>

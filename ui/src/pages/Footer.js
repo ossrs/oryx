@@ -37,7 +37,7 @@ function FooterImpl() {
   }, [handleError]);
 
   return (
-    <Container>
+    <Container fluid>
       <p></p>
       <p className="text-center">
         <a href='https://github.com/ossrs/srs-stack' target='_blank' rel='noreferrer'>

@@ -38,7 +38,7 @@ function App() {
 }
 
 function RootError({error}) {
-  return <Container>{error?.message}</Container>;
+  return <Container fluid>{error?.message}</Container>;
 }
 
 function AppPreImpl() {
@@ -90,7 +90,7 @@ function AppImpl() {
   return (
     <>
       {loading && <>
-        <Container>Loading...</Container>
+        <Container fluid>Loading...</Container>
       </>}
       {!loading && <>
         <BrowserRouter basename={window.PUBLIC_URL}>

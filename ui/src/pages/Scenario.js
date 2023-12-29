@@ -51,7 +51,7 @@ function ScenarioImpl({defaultActiveTab}) {
   return (
     <>
       <p></p>
-      <Container>
+      <Container fluid>
         <Tabs defaultActiveKey={activeTab} id="tab0" className="mb-3" onSelect={(k) => onSelectTab(k)}>
           <Tab eventKey="tutorials" title={t('scenario.tutorials')}>
             {activeTab === 'tutorials' && <ScenarioTutorials/>}
