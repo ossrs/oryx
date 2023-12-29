@@ -41,6 +41,11 @@ function useTutorialsEn(mediumRef) {
       link: 'https://youtu.be/68PIGFDGihU',
       title: 'Live Stream: Simple, Budget-Friendly, No PC Needed! Ideal for Calm Media, Sleep Tunes, ASMR, Film Streaming, etc.'
     },
+    'NBsdqUfKoOk': {
+      author: 'Mr Bao',
+      link: 'https://youtu.be/NBsdqUfKoOk',
+      title: 'AI-Talk allows you to talk with OpenAI GPT.'
+    },
     'nNOBFRshO6Q': {
       author: 'Mr Bao',
       link: 'https://youtu.be/nNOBFRshO6Q',

@@ -855,15 +855,28 @@ The ports allocated:
 
 ## HTTP OpenAPI
 
-Platform:
+API without any authentication:
 
 * `/terraform/v1/mgmt/versions` Public version api.
-* `/terraform/v1/mgmt/init` Whether mgmt initialized.
 * `/terraform/v1/mgmt/check` Check whether system is ok.
-* `/terraform/v1/mgmt/token` System auth with token.
-* `/terraform/v1/mgmt/login` System auth with password.
-* `/terraform/v1/mgmt/status` Query the version of mgmt.
 * `/terraform/v1/mgmt/envs` Query the envs of mgmt.
+* `/terraform/v1/releases` Version management for all components.
+* `/terraform/v1/host/versions` Public version api.
+* `/terraform/v1/hooks/record/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.
+* `/terraform/v1/hooks/record/hls/:uuid/index.m3u8` Hooks: Serve HLS m3u8 files.
+* `/terraform/v1/hooks/record/hls/:dir/:m3u8/:uuid.ts` Hooks: Serve HLS ts files.
+* `/terraform/v1/ai/transcript/hls/overlay/:uuid.m3u8` Generate the preview HLS for transcript stream with overlay text.
+* `/terraform/v1/ai/transcript/hls/original/:uuid.m3u8` Generate the preview HLS for original stream without overlay text.
+
+API without token authentication, but with password authentication:
+
+* `/terraform/v1/mgmt/init` Whether mgmt initialized. Login by password.
+* `/terraform/v1/mgmt/login` System auth with password.
+
+Platform, with token authentication:
+
+* `/terraform/v1/mgmt/token` System auth with token.
+* `/terraform/v1/mgmt/status` Query the version of mgmt.
 * `/terraform/v1/mgmt/bilibili` Query the video information.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
@@ -879,11 +892,6 @@ Platform:
 * `/terraform/v1/mgmt/hooks/apply` Update the HTTP callback.
 * `/terraform/v1/mgmt/hooks/query` Query the HTTP callback.
 * `/terraform/v1/mgmt/hooks/example` Example target for HTTP callback.
-* `/terraform/v1/host/versions` Public version api.
-* `/terraform/v1/releases` Version management for all components.
-
-Also by platform module:
-
 * `/terraform/v1/hooks/srs/verify` Hooks: Verify the stream request URL of SRS.
 * `/terraform/v1/hooks/srs/secret/query` Hooks: Query the secret to generate stream URL.
 * `/terraform/v1/hooks/srs/secret/update` Hooks: Update the secret to generate stream URL.
@@ -896,9 +904,6 @@ Also by platform module:
 * `/terraform/v1/hooks/record/remove` Hooks: Remove the Record files.
 * `/terraform/v1/hooks/record/end` Record: As stream is unpublished, finish the record task quickly.
 * `/terraform/v1/hooks/record/files` Hooks: List the Record files.
-* `/terraform/v1/hooks/record/hls/:uuid.m3u8` Hooks: Generate HLS/m3u8 url to preview or download.
-* `/terraform/v1/hooks/record/hls/:uuid/index.m3u8` Hooks: Serve HLS m3u8 files.
-* `/terraform/v1/hooks/record/hls/:dir/:m3u8/:uuid.ts` Hooks: Serve HLS ts files.
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 * `/terraform/v1/ffmpeg/vlive/secret` Setup the Virtual Live streaming secret.
@@ -917,22 +922,20 @@ Also by platform module:
 * `/terraform/v1/ai/transcript/asr-queue` Query the asr queue of transcript.
 * `/terraform/v1/ai/transcript/fix-queue` Query the fix queue of transcript.
 * `/terraform/v1/ai/transcript/overlay-queue` Query the overlay queue of transcript.
-* `/terraform/v1/ai/transcript/hls/overlay/:uuid.m3u8` Generate the preview HLS for transcript stream with overlay text.
-* `/terraform/v1/ai/transcript/hls/original/:uuid.m3u8` Generate the preview HLS for original stream without overlay text.
 
 Also provided by platform for market:
 
-* `/api/` SRS: HTTP API of SRS media server.
-* `/rtc/` SRS: HTTP API for WebERTC of SRS media server.
-* `/*/*.(flv|m3u8|ts|aac|mp3)` SRS: Media stream for HTTP-FLV, HLS, HTTP-TS, HTTP-AAC, HTTP-MP3.
-* `/.well-known/acme-challenge/` HTTPS verify mount for letsencrypt.
+* `/api/` SRS: HTTP API of SRS media server. With token authentication.
+* `/rtc/` SRS: HTTP API for WebRTC of SRS media server. Without authentication.
+* `/*/*.(flv|m3u8|ts|aac|mp3)` SRS: Media stream for HTTP-FLV, HLS, HTTP-TS, HTTP-AAC, HTTP-MP3. Without authentication.
+* `/.well-known/acme-challenge/` HTTPS verify mount for letsencrypt. Without authentication.
 
 Also provided by platform for static Files:
 
-* `/tools/` A set of H5 tools, like simple player, xgplayer, etc, serve by mgmt.
-* `/console/` The SRS console, serve by mgmt.
-* `/players/` The SRS player, serve by mgmt.
-* `/mgmt/` The ui for mgmt, serve by mgmt.
+* `/tools/` A set of H5 tools, like simple player, xgplayer, etc, serve by mgmt. Without authentication.
+* `/console/` The SRS console, serve by mgmt. Without authentication.
+* `/players/` The SRS player, serve by mgmt. Without authentication.
+* `/mgmt/` The ui for mgmt, serve by mgmt. Without authentication.
 
 **Deprecated** API:
 
@@ -1057,6 +1060,7 @@ The following are the update records for the SRS Stack server.
     * Support AWS Lightsail install script. v5.13.2
     * Limits: Support limit bitrate for VLive stream. v5.13.3
     * Fix bug: Remove HTTP port for SRS. v5.13.4
+    * Refine API with Bearer token. v5.13.5
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
