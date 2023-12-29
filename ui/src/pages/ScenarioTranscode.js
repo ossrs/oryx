@@ -15,9 +15,9 @@ export default function ScenarioTranscode(props) {
   const [activeKey, setActiveKey] = React.useState();
 
   React.useEffect(() => {
-    const token = Token.load();
     axios.post('/terraform/v1/ffmpeg/transcode/query', {
-      ...token,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       const data = res.data.data;
 
@@ -60,9 +60,9 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
 
   React.useEffect(() => {
     const refreshTask = () => {
-      const token = Token.load();
       axios.post('/terraform/v1/ffmpeg/transcode/task', {
-        ...token,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         const task = res.data.data;
 
@@ -105,10 +105,11 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
     if (!server) return alert(`Invalid server ${server}`);
     if (!secret) return alert(`Invalid key ${secret}`);
 
-    const token = Token.load();
     axios.post('/terraform/v1/ffmpeg/transcode/apply', {
-      ...token, all: enabled, vcodec, acodec, vbitrate, abitrate, achannels: achannels, vprofile, vpreset,
+      all: enabled, vcodec, acodec, vbitrate, abitrate, achannels: achannels, vprofile, vpreset,
       server, secret,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('helper.setOk'));
       console.log(`Transcode: Apply patterns ok, all=${enabled}, vbitrate=${vbitrate}, abitrate=${abitrate}, vcodec=${vcodec}, vprofile=${vprofile}, vpreset=${vpreset}, acodec=${acodec}, server=${server}, secret=${secret}`);

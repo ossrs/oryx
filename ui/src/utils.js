@@ -18,6 +18,11 @@ export const Token = {
     const o = JSON.parse(info);
     return {token: o.token};
   },
+  loadBearerHeader: () => {
+    const info = localStorage.getItem(SRS_TERRAFORM_TOKEN);
+    const o = JSON.parse(info || '{}');
+    return o?.bearer ? {'Authorization': `Bearer ${o?.bearer}`} : {};
+  },
   remove: () => {
     localStorage.removeItem(SRS_TERRAFORM_TOKEN);
   },
@@ -50,8 +55,11 @@ export const StreamName = {
 
 export const Tools = {
   mask(data) {
-    const mask = `***${data.token.length}B***`;
-    return JSON.stringify({...data, token: mask});
+    return JSON.stringify({
+      ...data,
+      token: `***${data?.token?.length}B***`,
+      bearer: `***${data?.bearer?.length}B***`,
+    });
   },
 
   // Copy object, with optional extras fields, for example:

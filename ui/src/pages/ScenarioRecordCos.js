@@ -66,9 +66,9 @@ function ScenarioRecordCosImpl({activeKey, defaultApplyAll, enabled}) {
 
   React.useEffect(() => {
     const refreshDvrFiles = () => {
-      const token = Token.load();
       axios.post('/terraform/v1/hooks/dvr/files', {
-        ...token,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         console.log(`DVR: Files ok, ${JSON.stringify(res.data.data)}`);
         setDvrFiles(res.data.data.map(file => {
@@ -109,9 +109,10 @@ function ScenarioRecordCosImpl({activeKey, defaultApplyAll, enabled}) {
 
     if (!enabled) return;
 
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/dvr/apply', {
-      ...token, all: !!dvrAll,
+      all: !!dvrAll,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert('设置录制规则成功');
       console.log(`DVR: Apply patterns ok, all=${dvrAll}`);

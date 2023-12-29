@@ -683,8 +683,11 @@ func handleMgmtLogin(ctx context.Context, handler *http.ServeMux) {
 				Token    string `json:"token"`
 				CreateAt string `json:"createAt"`
 				ExpireAt string `json:"expireAt"`
+				// Allow user to directly use Bearer token.
+				Bearer string `json:"bearer"`
 			}{
 				Token: token, CreateAt: createAt.Format(time.RFC3339), ExpireAt: expireAt.Format(time.RFC3339),
+				Bearer: apiSecret,
 			})
 			logger.Tf(ctx, "login by password ok, create=%v, expire=%v, token=%vB", createAt, expireAt, len(token))
 			return nil

@@ -19,9 +19,10 @@ export default function SetupCamSecret({children}) {
   const updateTencentSecret = React.useCallback((e) => {
     e.preventDefault();
 
-    const token = Token.load();
     axios.post('/terraform/v1/tencent/cam/secret', {
-      ...token, secretId, secretKey,
+      secretId, secretKey,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('tencent.secretOk'));
     }).catch(handleError);

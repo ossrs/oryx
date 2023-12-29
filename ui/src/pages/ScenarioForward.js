@@ -20,9 +20,9 @@ export default function ScenarioForward() {
   const language = useSrsLanguage();
 
   React.useEffect(() => {
-    const token = Token.load();
     axios.post('/terraform/v1/ffmpeg/forward/secret', {
-      ...token,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       const secrets = res.data.data;
       setInit(true);
@@ -85,9 +85,9 @@ function ScenarioForwardImplCn({defaultActiveKey, defaultSecrets}) {
 
   React.useEffect(() => {
     const refreshStreams = () => {
-      const token = Token.load();
       axios.post('/terraform/v1/ffmpeg/forward/streams', {
-        ...token,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         setForwards(res.data.data.map((e, i) => ({
           ...e,
@@ -112,9 +112,10 @@ function ScenarioForwardImplCn({defaultActiveKey, defaultSecrets}) {
     try {
       setSubmiting(true);
 
-      const token = Token.load();
       axios.post('/terraform/v1/ffmpeg/forward/secret', {
-        ...token, action, platform, server, secret, enabled: !!enabled, custom: !!custom, label,
+        action, platform, server, secret, enabled: !!enabled, custom: !!custom, label,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         alert('转播设置成功');
         onSuccess && onSuccess();
@@ -339,9 +340,9 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
 
   React.useEffect(() => {
     const refreshStreams = () => {
-      const token = Token.load();
       axios.post('/terraform/v1/ffmpeg/forward/streams', {
-        ...token,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         setForwards(res.data.data.map((e, i) => ({
           ...e,
@@ -366,9 +367,10 @@ function ScenarioForwardImplEn({defaultActiveKey, defaultSecrets}) {
     try {
       setSubmiting(true);
 
-      const token = Token.load();
       axios.post('/terraform/v1/ffmpeg/forward/secret', {
-        ...token, action, platform, server, secret, enabled: !!enabled, custom: !!custom, label,
+        action, platform, server, secret, enabled: !!enabled, custom: !!custom, label,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         alert('Setup OK');
         onSuccess && onSuccess();

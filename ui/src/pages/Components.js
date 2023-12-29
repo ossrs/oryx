@@ -28,9 +28,9 @@ function ComponentsImpl() {
 
   React.useEffect(() => {
     const refreshMgmtStatus = () => {
-      const token = Token.load();
       axios.post('/terraform/v1/mgmt/status', {
-        ...token,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         const status = res.data.data;
 

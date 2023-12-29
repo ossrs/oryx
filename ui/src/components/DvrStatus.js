@@ -14,9 +14,9 @@ export default function useDvrVodStatus() {
   const [dvrStatus, setDvrStatus] = React.useState();
 
   React.useEffect(() => {
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/vod/query', {
-      ...token,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       console.log(`VodPattern: Query ok, ${JSON.stringify(res.data.data)}`);
       setVodStatus(res.data.data);
@@ -32,9 +32,9 @@ export default function useDvrVodStatus() {
   }, [navigate]);
 
   React.useEffect(() => {
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/dvr/query', {
-      ...token,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       console.log(`DvrPattern: Query ok, ${JSON.stringify(res.data.data)}`);
       setDvrStatus(res.data.data);
@@ -57,9 +57,9 @@ export function useRecordStatus() {
   const [recordStatus, setRecordStatus] = React.useState();
 
   React.useEffect(() => {
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/record/query', {
-      ...token,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       console.log(`RecordPattern: Query ok, ${JSON.stringify(res.data.data)}`);
       setRecordStatus(res.data.data);

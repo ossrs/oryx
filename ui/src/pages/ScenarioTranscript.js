@@ -14,9 +14,9 @@ export default function ScenarioTranscript(props) {
   const [activeKey, setActiveKey] = React.useState();
 
   React.useEffect(() => {
-    const token = Token.load();
     axios.post('/terraform/v1/ai/transcript/query', {
-      ...token,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       const data = res.data.data;
 
@@ -84,9 +84,10 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
 
     setChecking(true);
 
-    const token = Token.load();
     axios.post('/terraform/v1/ai/transcript/check', {
-      ...token, secretKey, baseURL,
+      secretKey, baseURL,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(`${t('helper.testOk')}: ${t('transcript.testOk')}`);
       console.log(`Transcript: Test service ok.`);
@@ -97,9 +98,10 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
     if (!secretKey) return alert(`Invalid secret key ${secretKey}`);
     if (!baseURL) return alert(`Invalid base url ${baseURL}`);
 
-    const token = Token.load();
     axios.post('/terraform/v1/ai/transcript/apply', {
-      ...token, uuid, all: !!enabled, secretKey, baseURL, lang: targetLanguage,
+      uuid, all: !!enabled, secretKey, baseURL, lang: targetLanguage,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('helper.setOk'));
       console.log(`Transcript: Apply config ok, uuid=${uuid}.`);
@@ -110,9 +112,10 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   const resetTask = React.useCallback(() => {
     setOperating(true);
 
-    const token = Token.load();
     axios.post('/terraform/v1/ai/transcript/reset', {
-      ...token, uuid,
+      uuid,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('helper.setOk'));
       const data = res.data.data;
@@ -124,9 +127,10 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   const clearText = React.useCallback((segment) => {
     setOperating(true);
 
-    const token = Token.load();
     axios.post('/terraform/v1/ai/transcript/clear-subtitle', {
-      ...token, uuid, tsid: segment.tsid,
+      uuid, tsid: segment.tsid,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('helper.setOk'));
       const data = res.data.data;
@@ -137,9 +141,9 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
 
   React.useEffect(() => {
     const refreshLiveQueueTask = () => {
-      const token = Token.load();
       axios.post('/terraform/v1/ai/transcript/live-queue', {
-        ...token,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         const queue = res.data.data;
         queue.segments = queue?.segments?.map(segment => {
@@ -161,9 +165,9 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
 
   React.useEffect(() => {
     const refreshAsrQueueTask = () => {
-      const token = Token.load();
       axios.post('/terraform/v1/ai/transcript/asr-queue', {
-        ...token,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         const queue = res.data.data;
         queue.segments = queue?.segments?.map(segment => {
@@ -186,9 +190,9 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
 
   React.useEffect(() => {
     const refreshFixQueueTask = () => {
-      const token = Token.load();
       axios.post('/terraform/v1/ai/transcript/fix-queue', {
-        ...token,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         const queue = res.data.data;
         queue.segments = queue?.segments?.map((segment, index) => {
@@ -218,9 +222,9 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
 
   React.useEffect(() => {
     const refreshOverlayQueueTask = () => {
-      const token = Token.load();
       axios.post('/terraform/v1/ai/transcript/overlay-queue', {
-        ...token,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         const queue = res.data.data;
         queue.segments = queue?.segments?.map(segment => {

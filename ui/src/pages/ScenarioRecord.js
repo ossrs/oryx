@@ -88,9 +88,10 @@ function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultP
   const updateGlobFilters = React.useCallback(() => {
     if (!globFilters) return alert(t('record.globEmpty'));
 
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/record/globs', {
-      ...token, globs: globFilters.split('\n'),
+      globs: globFilters.split('\n'),
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('record.setupOk'));
       console.log(`Record: Update glob filters ok`);
@@ -100,9 +101,10 @@ function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultP
   const updatePostProcessing = React.useCallback(() => {
     if (!postProcess) return alert(t('record.postEmpty'));
 
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/record/post-processing', {
-      ...token, postProcess: postProcess, postCpDir: postCpDir,
+      postProcess: postProcess, postCpDir: postCpDir,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('record.setupOk'));
       console.log(`Record: Update post processing ok`);
@@ -111,9 +113,9 @@ function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultP
 
   React.useEffect(() => {
     const refreshRecordFiles = () => {
-      const token = Token.load();
       axios.post('/terraform/v1/hooks/record/files', {
-        ...token,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         console.log(`Record: Files ok, ${JSON.stringify(res.data.data)}`);
         setRecordFiles(res.data.data.map(file => {
@@ -151,9 +153,10 @@ function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultP
   const setupRecordPattern = React.useCallback((e, recordAll) => {
     e.preventDefault();
 
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/record/apply', {
-      ...token, all: !!recordAll,
+      all: !!recordAll,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('record.setupOk'));
       console.log(`Record: Apply patterns ok, all=${recordAll}`);
@@ -161,9 +164,10 @@ function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultP
   }, [handleError, t]);
 
   const removeRecord = React.useCallback((file) => {
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/record/remove', {
-      ...token, uuid: file.uuid,
+      uuid: file.uuid,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       setRefreshNow(!refreshNow);
       console.log(`Record: Remove file ok, file=${JSON.stringify(file)}`);
@@ -171,9 +175,10 @@ function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultP
   }, [refreshNow, handleError, setRefreshNow]);
 
   const endRecord = React.useCallback((file) => {
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/record/end', {
-      ...token, uuid: file.uuid,
+      uuid: file.uuid,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       setTimeout(() => {
         setRefreshNow(!refreshNow);

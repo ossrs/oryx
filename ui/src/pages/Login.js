@@ -37,11 +37,19 @@ function LoginImpl({onLogin}) {
     if (!token || !token.token) return;
 
     console.log(`Login: Verify, token is ${Tools.mask(token)}`);
+
+    // Both JWT token or Bearer token are OK. Here we use JWT token.
     axios.post('/terraform/v1/mgmt/token', {
       ...token,
     }).then(res => {
-      console.log(`Login: Done, token is ${Tools.mask(token)}`);
-      navigate('/routers-scenario');
+      // Here we use the Bearer token to verify again.
+      axios.post('/terraform/v1/mgmt/token', {
+      }, {
+        headers: Token.loadBearerHeader(),
+      }).then(res => {
+        console.log(`Login: Done, token is ${Tools.mask(token)}`);
+        navigate('/routers-scenario');
+      });
     }).catch(handleError);
   }, [navigate, handleError]);
 

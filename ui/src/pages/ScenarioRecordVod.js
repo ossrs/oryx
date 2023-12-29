@@ -67,9 +67,9 @@ function ScenarioRecordVodImpl({activeKey, defaultApplyAll, enabled}) {
 
   React.useEffect(() => {
     const refreshVodFiles = () => {
-      const token = Token.load();
       axios.post('/terraform/v1/hooks/vod/files', {
-        ...token,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         console.log(`VoD: Files ok, ${JSON.stringify(res.data.data)}`);
         setVodFiles(res.data.data.map(file => {
@@ -112,9 +112,10 @@ function ScenarioRecordVodImpl({activeKey, defaultApplyAll, enabled}) {
 
     if (!enabled) return;
 
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/vod/apply', {
-      ...token, all: !!vodAll,
+      all: !!vodAll,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert('设置VoD规则成功');
       console.log(`VoD: Apply patterns ok, all=${vodAll}`);

@@ -135,9 +135,9 @@ export default function useUrls() {
   }, [t, setRtmpStreamName]);
 
   React.useEffect(() => {
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/srs/secret/query', {
-      ...token,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       const secret = res.data.data;
       setSecret(secret);

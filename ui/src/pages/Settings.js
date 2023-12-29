@@ -97,9 +97,9 @@ function SettingHighPerformanceHLS() {
   const {t} = useTranslation();
 
   React.useEffect(() => {
-    const token = Token.load();
     axios.post('/terraform/v1/mgmt/hphls/query', {
-      ...token,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       setNoHlsCtx(res.data.data.noHlsCtx === true);
       console.log(`Status: Query ok, hlsDelivery=${JSON.stringify(res.data.data)}`);
@@ -109,9 +109,10 @@ function SettingHighPerformanceHLS() {
   const updateHlsDelivery = React.useCallback((e) => {
     e.preventDefault();
 
-    const token = Token.load();
     axios.post('/terraform/v1/mgmt/hphls/update', {
-      ...token, noHlsCtx: noHlsCtx,
+      noHlsCtx: noHlsCtx,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('helper.setOk'));
     }).catch(handleError);
@@ -142,9 +143,9 @@ function SettingOpenApi({copyToClipboard}) {
   const {t} = useTranslation();
 
   React.useEffect(() => {
-    const token = Token.load();
     axios.post('/terraform/v1/mgmt/secret/query', {
-      ...token,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       setAPISecret(res.data.data);
       console.log(`Status: Query ok, apiSecret=${JSON.stringify(res.data.data)}`);
@@ -239,9 +240,9 @@ function SettingCallback() {
   const [activeKey, setActiveKey] = React.useState();
 
   React.useEffect(() => {
-    const token = Token.load();
     axios.post('/terraform/v1/mgmt/hooks/query', {
-      ...token
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       const data = res.data.data;
 
@@ -272,9 +273,9 @@ function SettingCallbackImpl({activeKey, defaultEnabled, defaultConf}) {
 
   React.useEffect(() => {
     const refreshTask = () => {
-      const token = Token.load();
       axios.post('/terraform/v1/mgmt/hooks/query', {
-        ...token,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         const task = res.data.data;
         if (task?.req) task.req = JSON.parse(task.req);
@@ -292,9 +293,10 @@ function SettingCallbackImpl({activeKey, defaultEnabled, defaultConf}) {
   const onUpdateCallback = React.useCallback((e) => {
     e.preventDefault();
 
-    const token = Token.load();
     axios.post('/terraform/v1/mgmt/hooks/apply', {
-      ...token, all: !!allEvents, target, opaque,
+      all: !!allEvents, target, opaque,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('helper.setOk'));
       console.log(`Hooks apply ok, all=${allEvents}, target=${target}, opaque=${opaque}, response=${JSON.stringify(res.data.data)}`);
@@ -379,9 +381,9 @@ function SettingLimits() {
   const [vLiveBitrate, setVLiveBitrate] = React.useState();
 
   React.useEffect(() => {
-    const token = Token.load();
     axios.post('/terraform/v1/mgmt/limits/query', {
-      ...token,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       setVLiveBitrate(res.data.data.vlive);
       console.log(`Limits: query ${JSON.stringify(res.data.data)}`);
@@ -391,9 +393,10 @@ function SettingLimits() {
   const updateLimits = React.useCallback((e) => {
     e.preventDefault();
 
-    const token = Token.load();
     axios.post('/terraform/v1/mgmt/limits/update', {
-      ...token, vlive: parseInt(vLiveBitrate),
+      vlive: parseInt(vLiveBitrate),
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('helper.setOk'));
     }).catch(handleError);
@@ -439,9 +442,10 @@ function SettingBeian() {
   const updateBeian = React.useCallback((e) => {
     e.preventDefault();
 
-    const token = Token.load();
     axios.post('/terraform/v1/mgmt/beian/update', {
-      ...token, beian: 'icp', text: beian,
+      beian: 'icp', text: beian,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('settings.footer'));
     }).catch(handleError);
@@ -451,9 +455,10 @@ function SettingBeian() {
   const updateSiteTitle = React.useCallback((e) => {
     e.preventDefault();
 
-    const token = Token.load();
     axios.post('/terraform/v1/mgmt/beian/update', {
-      ...token, beian: 'title', text: siteTitle,
+      beian: 'title', text: siteTitle,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('settings.header'));
     }).catch(handleError);
@@ -508,9 +513,9 @@ function SettingAuth() {
   }, [searchParams]);
 
   React.useEffect(() => {
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/srs/secret/query', {
-      ...token,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       setSecret(res.data.data.publish);
       console.log(`Status: Query ok, secret=${JSON.stringify(res.data.data)}`);
@@ -525,9 +530,10 @@ function SettingAuth() {
       return;
     }
 
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/srs/secret/update', {
-      ...token, secret,
+      secret,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('settings.secretOk'));
       console.log(`Secret: Update ok`);
@@ -535,9 +541,10 @@ function SettingAuth() {
   }, [handleError, secret, t]);
 
   const updateNoAuth = React.useCallback((e) => {
-    const token = Token.load();
     axios.post('/terraform/v1/hooks/srs/secret/disable', {
-      ...token, pubNoAuth: !!noAuth,
+      pubNoAuth: !!noAuth,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('helper.setOk'));
       console.log(`Disable: Update ok, noAuth=${noAuth}`);
@@ -586,9 +593,9 @@ function SettingHttps() {
   React.useEffect(() => {
     setLoading(true);
 
-    const token = Token.load();
     axios.post('/terraform/v1/mgmt/cert/query', {
-      ...token,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       setConfig(res?.data?.data || {});
       console.log(`SSL: Query ok, provider=${res?.data?.data?.provider}`);
@@ -635,9 +642,10 @@ function SettingHttpsImpl({config}) {
 
     setOperating(true);
 
-    const token = Token.load();
     axios.post('/terraform/v1/mgmt/ssl', {
-      ...token, key, crt,
+      key, crt,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('settings.sslOk'));
       console.log(`SSL: Update ok`);
@@ -670,9 +678,10 @@ function SettingHttpsImpl({config}) {
 
     setOperating(true);
 
-    const token = Token.load();
     axios.post('/terraform/v1/mgmt/letsencrypt', {
-      ...token, domain,
+      domain,
+    }, {
+      headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('settings.sslLetsOk'));
       console.log(`SSL: Let's Encrypt SSL ok`);

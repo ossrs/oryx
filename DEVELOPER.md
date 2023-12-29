@@ -867,6 +867,7 @@ API without any authentication:
 * `/terraform/v1/hooks/record/hls/:dir/:m3u8/:uuid.ts` Hooks: Serve HLS ts files.
 * `/terraform/v1/ai/transcript/hls/overlay/:uuid.m3u8` Generate the preview HLS for transcript stream with overlay text.
 * `/terraform/v1/ai/transcript/hls/original/:uuid.m3u8` Generate the preview HLS for original stream without overlay text.
+* `/terraform/v1/mgmt/beian/query` Query the beian information.
 
 API without token authentication, but with password authentication:
 
@@ -878,7 +879,6 @@ Platform, with token authentication:
 * `/terraform/v1/mgmt/token` System auth with token.
 * `/terraform/v1/mgmt/status` Query the version of mgmt.
 * `/terraform/v1/mgmt/bilibili` Query the video information.
-* `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
 * `/terraform/v1/mgmt/limits/query` Query the limits information.
 * `/terraform/v1/mgmt/limits/update` Update the limits information.

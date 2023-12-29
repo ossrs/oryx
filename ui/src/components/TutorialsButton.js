@@ -134,13 +134,13 @@ function useTutorialsCn(bvidsRef) {
     // Allow cancel up the requests.
     const source = axios.CancelToken.source();
 
-    const token = Token.load();
     bvids.map(tutorial => {
       tutorial.link = `https://www.bilibili.com/video/${tutorial.id}`;
 
       axios.post(`/terraform/v1/mgmt/bilibili`, {
-        ...token, bvid: tutorial.id,
+        bvid: tutorial.id,
       }, {
+        headers: Token.loadBearerHeader(),
         cancelToken: source.token,
       }).then(res => {
         const data = res.data.data;
