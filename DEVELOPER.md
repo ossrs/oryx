@@ -873,6 +873,8 @@ Platform:
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
 * `/terraform/v1/mgmt/hphls/update` HLS delivery in high performance mode.
 * `/terraform/v1/mgmt/hphls/query` Query HLS delivery in high performance mode.
+* `/terraform/v1/mgmt/hlsll/update` Setup HLS low latency mode.
+* `/terraform/v1/mgmt/hlsll/query` Query state of HLS low latency mode.
 * `/terraform/v1/mgmt/ssl` Config the system SSL config.
 * `/terraform/v1/mgmt/auto-self-signed-certificate` Create the self-signed certificate if no cert.
 * `/terraform/v1/mgmt/letsencrypt` Config the let's encrypt SSL.
@@ -1073,7 +1075,8 @@ The following are the update records for the SRS Stack server.
     * Record: Support post-processing to cp file for S3. v5.12.14
     * Transcript: Support clear the subtitle of segment in fixing queue. [v5.12.15](https://github.com/ossrs/srs-stack/releases/tag/v5.12.15)
     * VLive: Fix bug for url with query string. v5.12.16
-    * Transcript: Check the base url for OpenAI. v5.12.17
+    * Transcript: Check the base url for OpenAI. [v5.12.17](https://github.com/ossrs/srs-stack/releases/tag/v5.12.17)
+    * HLS: Support low latency mode about 5s. v5.12.18
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2

@@ -253,6 +253,7 @@ const (
 	SRS_TENCENT_LH = "SRS_TENCENT_LH"
 	// For SRS stream status.
 	SRS_HP_HLS = "SRS_HP_HLS"
+	SRS_LL_HLS = "SRS_LL_HLS"
 	// For tencent cloud products.
 	SRS_TENCENT_CAM = "SRS_TENCENT_CAM"
 	SRS_TENCENT_COS = "SRS_TENCENT_COS"
@@ -460,15 +461,30 @@ func srsGenerateConfig(ctx context.Context) error {
 		"",
 		"hls {",
 		"    enabled on;",
-		"    hls_fragment 10;",
-		"    hls_window 60;",
+	}
+	if hlsLowLatency, err := rdb.HGet(ctx, SRS_LL_HLS, "hlsLowLatency").Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hget %v hls", SRS_LL_HLS)
+	} else {
+		if hlsLowLatency != "true" {
+			hlsConf = append(hlsConf, []string{
+				"    hls_fragment 10;",
+				"    hls_window 60;",
+			}...)
+		} else {
+			hlsConf = append(hlsConf, []string{
+				"    hls_fragment 2;",
+				"    hls_window 12;",
+			}...)
+		}
+	}
+	hlsConf = append(hlsConf, []string{
 		"    hls_aof_ratio 2.1;",
 		"    hls_path ./objs/nginx/html;",
 		"    hls_m3u8_file [app]/[stream].m3u8;",
 		"    hls_ts_file [app]/[stream]-[seq]-[timestamp].ts;",
 		"    hls_wait_keyframe on;",
 		"    hls_dispose 10;",
-	}
+	}...)
 	if noHlsCtx, err := rdb.HGet(ctx, SRS_HP_HLS, "noHlsCtx").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v hls", SRS_HP_HLS)
 	} else if noHlsCtx == "true" {
