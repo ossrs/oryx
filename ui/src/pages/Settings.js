@@ -93,6 +93,7 @@ function SettingsImpl2({defaultActiveTab}) {
 
 function SettingHighPerformanceHLS() {
   const [noHlsCtx, setNoHlsCtx] = React.useState();
+  const [hlsLL, setHlsLL] = React.useState();
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
@@ -118,16 +119,51 @@ function SettingHighPerformanceHLS() {
     }).catch(handleError);
   }, [handleError, noHlsCtx, t]);
 
+  React.useEffect(() => {
+    axios.post('/terraform/v1/mgmt/hlsll/query', {
+    }, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      setHlsLL(res.data.data.hlsLowLatency === true);
+      console.log(`Status: Query ok, hlsLowLatency=${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError, setHlsLL]);
+
+  const updateHlsLL = React.useCallback((e) => {
+    e.preventDefault();
+
+    axios.post('/terraform/v1/mgmt/hlsll/update', {
+      hlsLowLatency: hlsLL,
+    }, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      alert(t('helper.setOk'));
+    }).catch(handleError);
+  }, [handleError, hlsLL, t]);
+
   return (
-    <Accordion defaultActiveKey={["0"]} alwaysOpen>
+    <Accordion defaultActiveKey={['0','1']} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('settings.nginxHlsTitle')}</Accordion.Header>
         <Accordion.Body>
           <Form>
-            <Form.Group className="mb-3" controlId="formDvrAllCheckbox">
+            <Form.Group className="mb-3" controlId="formNginxHlsCheckbox">
               <Form.Check type="checkbox" label={t('settings.nginxHlsTip')} defaultChecked={noHlsCtx} onClick={() => setNoHlsCtx(!noHlsCtx)} />
             </Form.Group>
             <Button variant="primary" type="submit" onClick={(e) => updateHlsDelivery(e)}>
+              {t('helper.submit')}
+            </Button>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="1">
+        <Accordion.Header>{t('settings.hlsLL')}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <Form.Group className="mb-3" controlId="formHlsLLCheckbox">
+              <Form.Check type="checkbox" label={t('settings.hlsLLTip')} defaultChecked={hlsLL} onClick={() => setHlsLL(!hlsLL)} />
+            </Form.Group>
+            <Button variant="primary" type="submit" onClick={(e) => updateHlsLL(e)}>
               {t('helper.submit')}
             </Button>
           </Form>

@@ -241,6 +241,8 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	handleMgmtBeianUpdate(ctx, handler)
 	handleMgmtNginxHlsUpdate(ctx, handler)
 	handleMgmtNginxHlsQuery(ctx, handler)
+	handleMgmtHlsLowLatencyUpdate(ctx, handler)
+	handleMgmtHlsLowLatencyQuery(ctx, handler)
 	handleMgmtAutoSelfSignedCertificate(ctx, handler)
 	handleMgmtSsl(ctx, handler)
 	handleMgmtLetsEncrypt(ctx, handler)
@@ -1071,6 +1073,84 @@ func handleMgmtNginxHlsQuery(ctx context.Context, handler *http.ServeMux) {
 				NoHlsCtx: enabled,
 			})
 			logger.Tf(ctx, "nginx hls query ok, enabled=%v, token=%vB", enabled, len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+}
+
+func handleMgmtHlsLowLatencyUpdate(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/hlsll/update"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var hlsLowLatency bool
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token         *string `json:"token"`
+				HlsLowLatency *bool   `json:"hlsLowLatency"`
+			}{
+				Token: &token, HlsLowLatency: &hlsLowLatency,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			hlsLowLatencyValue := fmt.Sprintf("%v", hlsLowLatency)
+			if err := rdb.HSet(ctx, SRS_LL_HLS, "hlsLowLatency", hlsLowLatencyValue).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v hlsLowLatency %v", SRS_LL_HLS, hlsLowLatencyValue)
+			}
+
+			if err := srsGenerateConfig(ctx); err != nil {
+				return errors.Wrapf(err, "generate SRS config")
+			}
+
+			ohttp.WriteData(ctx, w, r, nil)
+			logger.Tf(ctx, "hls low latency update ok, enabled=%v, token=%vB", hlsLowLatency, len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+}
+
+func handleMgmtHlsLowLatencyQuery(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/hlsll/query"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token *string `json:"token"`
+			}{
+				Token: &token,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			var enabled bool
+			if v, err := rdb.HGet(ctx, SRS_LL_HLS, "hlsLowLatency").Result(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v %v", SRS_LL_HLS, "hlsLowLatency")
+			} else {
+				enabled = v == "true"
+			}
+
+			ohttp.WriteData(ctx, w, r, &struct {
+				HlsLowLatency bool `json:"hlsLowLatency"`
+			}{
+				HlsLowLatency: enabled,
+			})
+			logger.Tf(ctx, "hls low latency query ok, enabled=%v, token=%vB", enabled, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

@@ -13,43 +13,74 @@
   <video id="player" autoplay controls muted></video>
 </body>
 <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
-<script type="text/javascript" src="js/flv-1.5.0.min.js"></script>
-<script type="text/javascript" src="js/hls-0.14.17.min.js"></script>
+<script type="text/javascript" src="js/mpegts-1.7.3.min.js"></script>
+<script type="text/javascript" src="js/hls-1.4.14.min.js"></script>
 <script type="text/javascript">
   $(function(){
     // See https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
     const q = new URLSearchParams(location.search);
 
     const resource = q.get('url');
-    if (!resource) return alert(`没有指定URL`);
+    if (!resource) return alert(`No URL`);
 
-    if (resource.indexOf('.flv') > 0) {
-      if (!flvjs.isSupported()) return alert(`你的浏览器不支持HTTP-FLV`);
+    const video = document.getElementById('player');
+    if (resource.indexOf('.m3u8') > 0) {
+      if (!Hls.isSupported()) {
+        // See https://stackoverflow.com/a/12905122/17679565
+        if (document.createElement('video').canPlayType('application/vnd.apple.mpegURL')) {
+          console.log(`Play by native for ${resource}`);
+          $('#player').prop('src', resource);
+          return;
+        }
+        return alert(`HLS is not supported, url is ${resource}`);
+      }
 
-      const player = flvjs.createPlayer({type: 'flv', url: resource});
-      player.attachMediaElement(document.getElementById('player'));
+      // See https://github.com/video-dev/hls.js/blob/master/docs/API.md#maxlivesyncplaybackrate
+      // See https://github.com/video-dev/hls.js/issues/3077#issuecomment-705152394
+      const player = new Hls({
+        enableWorker: true, // Improve performance and avoid lag/frame drops.
+        lowLatencyMode: true, // Enable Low-Latency HLS part playlist and segment loading.
+        liveSyncDurationCount: 0, // Start from the last segment.
+        liveMaxLatencyDurationCount: 4, // Maximum delay allowed from edge of live.
+        maxBufferLength: 5, // Maximum buffer length in seconds.
+        maxMaxBufferLength: 8, // The max Maximum buffer length in seconds.
+        maxLiveSyncPlaybackRate: 2, // Catch up if the latency is large.
+        liveDurationInfinity: true // Override current Media Source duration to Infinity for a live broadcast.
+      });
+      player.loadSource(resource);
+      player.attachMedia(video);
+      video.play();
+      console.log(`Play by hls.js for ${resource}`);
+      return;
+    }
+
+    // Start play HTTP-FLV.
+    let isFlv = resource.indexOf('.flv') > 0;
+    // Compatible with NGINX-HTTP-FLV module, see https://github.com/winshining/nginx-http-flv-module and the stream
+    // url without .flv, such as:
+    //          http://localhost:8080/live?app=live&stream=livestream
+    isFlv = isFlv || resource && resource.indexOf('http') === 0;
+    if (isFlv) {
+      if (!mpegts.getFeatureList().mseLivePlayback) {
+        return alert(`HTTP-FLV is not supported, url is ${resource}`);
+      }
+
+      // See https://github.com/xqq/mpegts.js/blob/master/src/config.js#L32
+      // See https://github.com/xqq/mpegts.js/blob/master/docs/api.md
+      const player = mpegts.createPlayer({
+        type: 'flv', url: resource,
+        isLive: true, enableStashBuffer: false, liveSync: true
+      });
+      player.attachMediaElement(video);
       player.load();
       player.play();
       console.log(`Play by flv.js for ${resource}`);
       return;
     }
 
-    if (resource.indexOf('.m3u8') > 0) {
-      // See https://stackoverflow.com/a/12905122/17679565
-      if (document.createElement('video').canPlayType('application/vnd.apple.mpegURL')) {
-        console.log(`Play by native for ${resource}`);
-        $('#player').prop('src', resource);
-        return;
-      }
-
-      const player = new Hls();
-      player.loadSource(resource);
-      player.attachMedia(document.getElementById('player'));
-      console.log(`Play by hls.js for ${resource}`);
-      return;
-    }
-
-    alert(`不支持的URL：${resource}`);
+    const msg = `Not supported URL ${resource}`;
+    console.error(msg);
+    alert(msg);
   });
 </script>
 </html>

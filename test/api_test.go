@@ -425,6 +425,96 @@ func TestApi_SetupHpHLSWithHlsCtx(t *testing.T) {
 	}
 }
 
+func TestApi_SetupHlsLowLatencyEnable(t *testing.T) {
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	var r0 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	type Data struct {
+		HlsLowLatency bool `json:"hlsLowLatency"`
+	}
+
+	if true {
+		initData := Data{}
+		if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hlsll/query", nil, &initData); err != nil {
+			r0 = err
+			return
+		}
+		defer func() {
+			if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hlsll/update", &initData, nil); err != nil {
+				logger.Tf(ctx, "restore hlsll config failed %+v", err)
+			}
+		}()
+	}
+
+	hlsLowLatency := Data{HlsLowLatency: true}
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hlsll/update", &hlsLowLatency, nil); err != nil {
+		r0 = err
+		return
+	}
+
+	verifyData := Data{}
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hlsll/query", nil, &verifyData); err != nil {
+		r0 = err
+		return
+	} else if verifyData.HlsLowLatency != true {
+		r0 = errors.Errorf("invalid response %+v", verifyData)
+	}
+}
+
+func TestApi_SetupHlsLowLatencyDisable(t *testing.T) {
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
+	defer cancel()
+
+	var r0 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	type Data struct {
+		HlsLowLatency bool `json:"hlsLowLatency"`
+	}
+
+	if true {
+		initData := Data{}
+		if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hlsll/query", nil, &initData); err != nil {
+			r0 = err
+			return
+		}
+		defer func() {
+			if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hlsll/update", &initData, nil); err != nil {
+				logger.Tf(ctx, "restore hlsll config failed %+v", err)
+			}
+		}()
+	}
+
+	hlsLowLatency := Data{HlsLowLatency: false}
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hlsll/update", &hlsLowLatency, nil); err != nil {
+		r0 = err
+		return
+	}
+
+	verifyData := Data{}
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/hlsll/query", nil, &verifyData); err != nil {
+		r0 = err
+		return
+	} else if verifyData.HlsLowLatency != false {
+		r0 = errors.Errorf("invalid response %+v", verifyData)
+	}
+}
+
 func TestApi_SrsApiNoAuth(t *testing.T) {
 	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsTimeout)*time.Millisecond)
 	defer cancel()
