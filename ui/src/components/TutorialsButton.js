@@ -31,6 +31,11 @@ function useTutorialsEn(mediumRef) {
   const ref = React.useRef({tutorials:[]});
 
   const dict = React.useRef({
+    'b3011e390e38': {
+      author: 'Winlin Yang',
+      link: 'https://blog.ossrs.io/unlock-universal-ultra-low-latency-achieving-5-second-hls-live-streams-for-all-no-special-gear-b3011e390e38',
+      title: 'Unlock Universal Ultra-Low Latency: Achieving 5-Second HLS Live Streams for All, No Special Equipment Needed'
+    },
     'bb19c2a3bb7a': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/effortlessly-create-a-public-internet-whip-service-for-obs-a-guide-for-sub-second-streaming-bb19c2a3bb7a',
@@ -179,7 +184,7 @@ function TutorialsToast({tutorials, onClose}) {
     <Container fluid>
       <Row>
         {tutorials.map((tutorial, index) => (
-          <Col xs key={index}>
+          <Col key={index} sm={3}>
             <Toast onClose={onClose}>
               <Toast.Header>
                 <img src={logo} className="rounded me-2" width={56} alt=''/>
