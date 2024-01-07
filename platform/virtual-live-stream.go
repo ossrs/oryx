@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -239,7 +238,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}
 
 			// Parse URL to object.
-			u, err := url.Parse(qUrl)
+			u, err := RebuildStreamURL(qUrl)
 			if err != nil {
 				return errors.Wrapf(err, "parse %v", qUrl)
 			}
@@ -546,11 +545,16 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				if strings.HasPrefix(file.Target, "rtsp://") {
 					args = append(args, "-rtsp_transport", "tcp")
 				}
-				args = append(args, "-i", file.Target)
+				// Rebuild the stream url, because it may contain special characters.
+				if u, err := RebuildStreamURL(file.Target); err != nil {
+					return errors.Wrapf(err, "rebuild %v", file.Target)
+				} else {
+					args = append(args, "-i", u.String())
+				}
 
 				stdout, err := exec.CommandContext(toCtx, "ffprobe", args...).Output()
 				if err != nil {
-					return errors.Wrapf(err, "probe %v", file.Target)
+					return errors.Wrapf(err, "probe %v with ffprobe %v", file.Target, args)
 				}
 
 				format := struct {
@@ -1097,7 +1101,13 @@ func (v *VLiveTask) doVLive(ctx context.Context, input *VLiveSourceFile) error {
 	if strings.HasPrefix(input.Target, "rtsp://") {
 		args = append(args, "-rtsp_transport", "tcp")
 	}
-	args = append(args, "-i", input.Target, "-c", "copy", "-f", "flv", outputURL)
+	// Rebuild the stream url, because it may contain special characters.
+	if u, err := RebuildStreamURL(input.Target); err != nil {
+		return errors.Wrapf(err, "rebuild %v", input.Target)
+	} else {
+		args = append(args, "-i", u.String())
+	}
+	args = append(args, "-c", "copy", "-f", "flv", outputURL)
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
 	stderr, err := cmd.StderrPipe()
