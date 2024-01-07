@@ -1191,6 +1191,55 @@ func Authenticate(ctx context.Context, apiSecret, token string, header http.Head
 	return nil
 }
 
+// RebuildStreamURL rebuild the stream URL, escape username and password in URL.
+func RebuildStreamURL(rawURL string) (*url.URL, error) {
+	// If parse success, for example, no special chars in username and password, return the URL.
+	// If host not parsed, we also try to rebuild the stream URL then parse it.
+	if r0, err := url.Parse(rawURL); err == nil {
+		hostIsInvalid := r0.Host == ""
+		pathIsInvalid := r0.Path == "" && r0.RequestURI() != "/"
+		if !hostIsInvalid && !pathIsInvalid {
+			return r0, err
+		}
+	}
+
+	// Only compatible with schema://username:password@hostport/path?query#fragment
+	schema, u, _ := strings.Cut(rawURL, "://")
+	u2, pathQueryFragment, _ := strings.Cut(u, "/")
+
+	hostport, u3 := u2, u2
+	if index := strings.LastIndex(u2, "@"); index >= 0 {
+		hostport = u2[index+1:]
+		u3 = u2[:index]
+	}
+
+	username, password, _ := strings.Cut(u3, ":")
+	userInfo := url.UserPassword(username, password)
+
+	var sb strings.Builder
+	// Always has schema.
+	sb.WriteString(schema)
+	sb.WriteString("://")
+	// Escape the user information.
+	if ui := userInfo.String(); ui != "" {
+		sb.WriteString(ui)
+		sb.WriteString("@")
+	}
+	// Raw host port and parameters.
+	sb.WriteString(hostport)
+	if pathQueryFragment != "" {
+		sb.WriteString("/")
+		sb.WriteString(pathQueryFragment)
+	}
+
+	if r0, err := url.Parse(sb.String()); err == nil {
+		return r0, err
+	}
+
+	// Fallback to system URL parser.
+	return url.Parse(rawURL)
+}
+
 // httpAllowCORS allow CORS for HTTP request.
 // Note that we always enable CROS because we enable HTTP cache.
 func httpAllowCORS(w http.ResponseWriter, r *http.Request) {

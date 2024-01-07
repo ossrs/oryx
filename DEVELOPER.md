@@ -1077,6 +1077,7 @@ The following are the update records for the SRS Stack server.
     * VLive: Fix bug for url with query string. v5.12.16
     * Transcript: Check the base url for OpenAI. [v5.12.17](https://github.com/ossrs/srs-stack/releases/tag/v5.12.17)
     * HLS: Support low latency mode about 5s. v5.12.18
+    * RTSP: Rebuild the URL with escaped user info. v5.12.19
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2
