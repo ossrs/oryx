@@ -545,10 +545,14 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					args = append(args, "-rtsp_transport", "tcp")
 				}
 				// Rebuild the stream url, because it may contain special characters.
-				if u, err := RebuildStreamURL(file.Target); err != nil {
-					return errors.Wrapf(err, "rebuild %v", file.Target)
+				if strings.Contains(file.Target, "://") {
+					if u, err := RebuildStreamURL(file.Target); err != nil {
+						return errors.Wrapf(err, "rebuild %v", file.Target)
+					} else {
+						args = append(args, "-i", u.String())
+					}
 				} else {
-					args = append(args, "-i", u.String())
+					args = append(args, "-i", file.Target)
 				}
 
 				stdout, err := exec.CommandContext(toCtx, "ffprobe", args...).Output()
@@ -1084,10 +1088,14 @@ func (v *VLiveTask) doVLive(ctx context.Context, input *VLiveSourceFile) error {
 		args = append(args, "-rtsp_transport", "tcp")
 	}
 	// Rebuild the stream url, because it may contain special characters.
-	if u, err := RebuildStreamURL(input.Target); err != nil {
-		return errors.Wrapf(err, "rebuild %v", input.Target)
+	if strings.Contains(input.Target, "://") {
+		if u, err := RebuildStreamURL(input.Target); err != nil {
+			return errors.Wrapf(err, "rebuild %v", input.Target)
+		} else {
+			args = append(args, "-i", u.String())
+		}
 	} else {
-		args = append(args, "-i", u.String())
+		args = append(args, "-i", input.Target)
 	}
 	args = append(args, "-c", "copy", "-f", "flv", outputURL)
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
