@@ -501,7 +501,7 @@ function SettingBeian() {
   }, [handleError, siteTitle, t]);
 
   return (
-    <Accordion defaultActiveKey={["1"]} alwaysOpen>
+    <Accordion defaultActiveKey={["1", "2"]} alwaysOpen>
       <Accordion.Item eventKey="1">
         <Accordion.Header>{t('settings.footerTitle')}</Accordion.Header>
         <Accordion.Body>

@@ -161,6 +161,20 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		params["beian"] = fmt.Sprintf("%v", r0)
 	}
 
+	// Report about HLS high performance feature.
+	if r0, err := rdb.HGet(ctx, SRS_HP_HLS, "noHlsCtx").Result(); err != nil && err != redis.Nil {
+		return nil, errors.Wrapf(err, "hget %v noHlsCtx", SRS_HP_HLS)
+	} else if r0 == "true" {
+		params["hphls"] = "1"
+	}
+
+	// Report about HLS low latency feature.
+	if r0, err := rdb.HGet(ctx, SRS_LL_HLS, "hlsLowLatency").Result(); err != nil && err != redis.Nil {
+		return nil, errors.Wrapf(err, "hget %v hlsLowLatency", SRS_LL_HLS)
+	} else if r0 == "true" {
+		params["llhls"] = "1"
+	}
+
 	// Report about HTTPS feature.
 	if r0, err := rdb.Get(ctx, SRS_HTTPS).Result(); err != nil && err != redis.Nil {
 		return nil, errors.Wrapf(err, "get %v", SRS_HTTPS)
