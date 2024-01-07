@@ -561,7 +561,7 @@ func refreshLatestVersion(ctx context.Context) error {
 		ctx := logger.WithContext(ctx)
 		for ctx.Err() == nil {
 			versions, err := queryLatestVersion(ctx)
-			if err == nil && versions.Latest != "" {
+			if err == nil && versions != nil && versions.Latest != "" {
 				logger.Tf(ctx, "query version ok, result is %v", versions.String())
 				conf.Versions = *versions
 				versionsCancel()
