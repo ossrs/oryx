@@ -766,6 +766,8 @@ function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
       const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
       axios.post('/terraform/v1/ffmpeg/vlive/source', {
         platform, files,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         console.log(`更新虚拟直播源为流地址成功，${JSON.stringify(res.data.data)}`);
         setVLiveFiles(res.data.data.files);
@@ -810,6 +812,8 @@ function VLiveStreamSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
       const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
       axios.post('/terraform/v1/ffmpeg/vlive/source', {
         platform, files,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         console.log(`Setup the virtual live stream ok，${JSON.stringify(res.data.data)}`);
         setVLiveFiles(res.data.data.files);
@@ -855,6 +859,8 @@ function VLiveFileSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
       const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target, type: "file"}];
       axios.post('/terraform/v1/ffmpeg/vlive/source', {
         platform, files,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         console.log(`更新虚拟直播源为服务器文件成功，${JSON.stringify(res.data.data)}`);
         setVLiveFiles(res.data.data.files);
@@ -900,6 +906,8 @@ function VLiveFileSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
       const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target, type: "file"}];
       axios.post('/terraform/v1/ffmpeg/vlive/source', {
         platform, files,
+      }, {
+        headers: Token.loadBearerHeader(),
       }).then(res => {
         console.log(`Setup the virtual live file ok，${JSON.stringify(res.data.data)}`);
         setVLiveFiles(res.data.data.files);

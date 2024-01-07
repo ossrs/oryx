@@ -1065,6 +1065,7 @@ The following are the update records for the SRS Stack server.
     * Refine API with Bearer token. v5.13.5
     * Switch to fluid max width. v5.13.6
     * HLS: Support low latency mode about 5s. v5.13.7
+    * RTSP: Rebuild the URL with escaped user info. [v5.13.8](https://github.com/ossrs/srs-stack/releases/tag/v5.13.8)
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
@@ -1087,6 +1088,7 @@ The following are the update records for the SRS Stack server.
     * VLive: Fix bug for url with query string. v5.12.16
     * Transcript: Check the base url for OpenAI. [v5.12.17](https://github.com/ossrs/srs-stack/releases/tag/v5.12.17)
     * HLS: Support low latency mode about 5s. v5.12.18
+    * RTSP: Rebuild the URL with escaped user info. [v5.12.19](https://github.com/ossrs/srs-stack/releases/tag/v5.12.19)
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2
