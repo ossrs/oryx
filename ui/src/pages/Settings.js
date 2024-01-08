@@ -116,9 +116,9 @@ function SettingHighPerformanceHLS() {
   }, [handleError, noHlsCtx, t]);
 
   React.useEffect(() => {
+    const token = Token.load();
     axios.post('/terraform/v1/mgmt/hlsll/query', {
-    }, {
-      headers: Token.loadBearerHeader(),
+      ...token
     }).then(res => {
       setHlsLL(res.data.data.hlsLowLatency === true);
       console.log(`Status: Query ok, hlsLowLatency=${JSON.stringify(res.data.data)}`);
@@ -128,10 +128,9 @@ function SettingHighPerformanceHLS() {
   const updateHlsLL = React.useCallback((e) => {
     e.preventDefault();
 
+    const token = Token.load();
     axios.post('/terraform/v1/mgmt/hlsll/update', {
-      hlsLowLatency: hlsLL,
-    }, {
-      headers: Token.loadBearerHeader(),
+      ...token, hlsLowLatency: hlsLL,
     }).then(res => {
       alert(t('helper.setOk'));
     }).catch(handleError);
