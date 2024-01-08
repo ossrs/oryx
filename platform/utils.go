@@ -477,7 +477,7 @@ func srsGenerateConfig(ctx context.Context) error {
 		} else {
 			hlsConf = append(hlsConf, []string{
 				"    hls_fragment 2;",
-				"    hls_window 12;",
+				"    hls_window 16;",
 			}...)
 		}
 	}
@@ -487,7 +487,7 @@ func srsGenerateConfig(ctx context.Context) error {
 		"    hls_m3u8_file [app]/[stream].m3u8;",
 		"    hls_ts_file [app]/[stream]-[seq]-[timestamp].ts;",
 		"    hls_wait_keyframe on;",
-		"    hls_dispose 10;",
+		"    hls_dispose 15;",
 	}...)
 	if noHlsCtx, err := rdb.HGet(ctx, SRS_HP_HLS, "noHlsCtx").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v hls", SRS_HP_HLS)
