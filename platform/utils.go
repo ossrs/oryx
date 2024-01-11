@@ -1200,9 +1200,10 @@ func RebuildStreamURL(rawURL string) (*url.URL, error) {
 	// If parse success, for example, no special chars in username and password, return the URL.
 	// If host not parsed, we also try to rebuild the stream URL then parse it.
 	if r0, err := url.Parse(rawURL); err == nil {
+		isSRT := r0.Scheme == "srt"
 		hostIsInvalid := r0.Host == ""
 		pathIsInvalid := r0.Path == "" && r0.RequestURI() != "/"
-		if !hostIsInvalid && !pathIsInvalid {
+		if isSRT || (!hostIsInvalid && !pathIsInvalid) {
 			return r0, err
 		}
 	}

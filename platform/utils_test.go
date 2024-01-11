@@ -21,6 +21,8 @@ func TestUtils_RebuildStreamURL(t *testing.T) {
 		{url: "rtsp://Cam@Viewer:abc123@?!@121.1.2.3:554", rebuild: "rtsp://Cam%40Viewer:abc123%40%3F%21@121.1.2.3:554"},
 		{url: "rtsp://CamViewer:abc123@?!~#$%^&*()_+-=\\|?@121.1.2.3:554/Streaming/Channels/101", rebuild: "rtsp://CamViewer:abc123%40%3F%21~%23$%25%5E&%2A%28%29_+-=%5C%7C%3F@121.1.2.3:554/Streaming/Channels/101"},
 		{url: "rtsp://CamViewer:abc123@347?1!@121.1.2.3:554/Streaming/Channels/101", rebuild: "rtsp://CamViewer:abc123%40347%3F1%21@121.1.2.3:554/Streaming/Channels/101"},
+		{url: "srt://213.171.194.158:10080", rebuild: "srt://213.171.194.158:10080"},
+		{url: "srt://213.171.194.158:10080?streamid=#!::r=live/primary,latency=20,m=request", rebuild: "srt://213.171.194.158:10080?streamid=#!::r=live/primary,latency=20,m=request"},
 	}
 	for _, urlSample := range urlSamples {
 		if r0, err := RebuildStreamURL(urlSample.url); err != nil {
