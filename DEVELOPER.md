@@ -1067,6 +1067,7 @@ The following are the update records for the SRS Stack server.
     * HLS: Support low latency mode about 5s. v5.13.7
     * RTSP: Rebuild the URL with escaped user info. v5.13.8
     * VLive: Support SRT URL filter. [v5.13.9](https://github.com/ossrs/srs-stack/releases/tag/v5.13.9)
+    * FFmpeg: Monitor and restart FFmpeg if stuck. v5.13.10
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1

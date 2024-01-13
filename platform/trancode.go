@@ -298,7 +298,7 @@ type TranscodeTask struct {
 	// FFmpeg last frame.
 	frame string
 	// The last update time.
-	update string
+	update time.Time
 
 	// The context for current task.
 	cancel context.CancelFunc
@@ -463,7 +463,8 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error {
 	// Create context for current task.
 	parentCtx := ctx
-	ctx, v.cancel = context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	v.cancel = cancel
 
 	// Build input URL.
 	host := "localhost"
@@ -525,18 +526,47 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 		return errors.Wrapf(err, "save task %v", v.String())
 	}
 
-	buf := make([]byte, 4096)
-	for {
-		nn, err := stderr.Read(buf)
-		if err != nil || nn == 0 {
-			break
-		}
+	// Monitor FFmpeg update, restart if not update for a while.
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(3 * time.Second):
+			}
 
-		line := string(buf[:nn])
-		for strings.Contains(line, "= ") {
-			line = strings.ReplaceAll(line, "= ", "=")
+			if v.update.Add(10 * time.Second).Before(time.Now()) {
+				logger.Tf(ctx, "transcode FFmpeg not update for a while, restart it")
+				cancel()
+				return
+			}
 		}
-		v.updateFrame(line)
+	}()
+
+	// Read stderr to update status and output of FFmpeg.
+	pollingCtx, pollingCancel := context.WithCancel(ctx)
+	go func() {
+		defer pollingCancel()
+		buf := make([]byte, 4096)
+		for ctx.Err() == nil {
+			nn, err := stderr.Read(buf)
+			if err != nil || nn == 0 {
+				break
+			}
+
+			line := string(buf[:nn])
+			for strings.Contains(line, "= ") {
+				line = strings.ReplaceAll(line, "= ", "=")
+			}
+			v.updateFrame(line)
+		}
+	}()
+
+	// Process terminated, or user cancel the process.
+	select {
+	case <-parentCtx.Done():
+	case <-ctx.Done():
+	case <-pollingCtx.Done():
 	}
 
 	err = cmd.Wait()
@@ -551,13 +581,13 @@ func (v *TranscodeTask) updateFrame(frame string) {
 	defer v.lock.Unlock()
 
 	v.frame = strings.TrimSpace(frame)
-	v.update = time.Now().Format(time.RFC3339)
+	v.update = time.Now()
 }
 
 func (v *TranscodeTask) queryFrame() (int32, string, string, string, string) {
 	v.lock.Lock()
 	defer v.lock.Unlock()
-	return v.PID, v.inputStreamURL, v.Output, v.frame, v.update
+	return v.PID, v.inputStreamURL, v.Output, v.frame, v.update.Format(time.RFC3339)
 }
 
 func (v *TranscodeTask) saveTask(ctx context.Context) error {
