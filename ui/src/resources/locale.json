@@ -29,7 +29,8 @@
       },
       "scenario": {
         "tutorials": "教程",
-        "live": "推拉直播流",
+        "live": "推拉流",
+        "stream": "直播间",
         "srt": "超清实时直播",
         "forward": "多平台转播",
         "transcode": "直播转码",
@@ -214,6 +215,7 @@
         "nofile": "未选择任何文件"
       },
       "helper": {
+        "manage": "管理",
         "delete": "删除",
         "end": "结束",
         "preview": "预览",
@@ -231,6 +233,7 @@
         "enable": "启用",
         "disable": "禁用",
         "submit": "提交",
+        "create": "创建",
         "setOk": "设置成功",
         "testOk": "测试通过",
         "upload": "上传文件",
@@ -441,11 +444,35 @@
         "test3": "开始测试",
         "globEmpty": "Glob规则不能为空",
         "urlEmpty": "目标流URL不能为空"
+      },
+      "lr": {
+        "create": {
+          "title": "创建直播间",
+          "name": "直播主题",
+          "name2": "请输入直播间主题"
+        },
+        "list": {
+          "title": "直播间列表",
+          "empty": "暂无直播间",
+          "delete": "删除后不可恢复，确认删除直播间吗？"
+        }
       }
     }
   },
   "en": {
     "translation": {
+      "lr": {
+        "list": {
+          "delete": "Deleted rooms cannot be restored. Confirm to delete the room?",
+          "empty": "No Live Rooms",
+          "title": "Live Rooms"
+        },
+        "create": {
+          "name2": "Please input live room title",
+          "name": "Title",
+          "title": "Create Live Room"
+        }
+      },
       "record": {
         "urlEmpty": "Stream URL cannot be empty",
         "globEmpty": "Glob filters cannot be empty",
@@ -674,6 +701,7 @@
       "scenario": {
         "tutorials": "Tutorials",
         "live": "Streaming",
+        "stream": "LiveRoom",
         "srt": "Low Latency",
         "forward": "Forward",
         "transcode": "Transcoding",
@@ -858,6 +886,7 @@
         "nofile": "No file choosen"
       },
       "helper": {
+        "manage": "Manage",
         "delete": "Delete",
         "end": "End",
         "preview": "Preview",
@@ -875,6 +904,7 @@
         "enable": "On",
         "disable": "Off",
         "submit": "Submit",
+        "create": "Create",
         "setOk": "Setup OK",
         "testOk": "Test OK",
         "upload": "Upload File",

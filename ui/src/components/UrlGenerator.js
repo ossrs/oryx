@@ -119,6 +119,9 @@ export default function useUrls() {
   const [transcodeStreamKey, setTranscodeStreamKey] = React.useState();
   const [transcodeFlvPlayer, setTranscodeFlvPlayer] = React.useState();
 
+  // Whether urls are ready.
+  const [ready, setReady] = React.useState(false);
+
   const [loading, setLoading] = React.useState(true);
   const [secret, setSecret] = React.useState();
   const {t} = useTranslation();
@@ -196,9 +199,12 @@ export default function useUrls() {
       setTranscodeStreamKey(urls.transcodeStreamKey);
       setTranscodeFlvPlayer(urls.transcodeFlvPlayer);
     }
-  }, [loading, secret, rtmpStreamName, env])
+
+    setReady(true);
+  }, [loading, secret, rtmpStreamName, env, setReady])
 
   return {
+    ready,
     // For basic stream.
     rtmpServer,
     rtmpStreamName,

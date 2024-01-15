@@ -222,6 +222,10 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 		return errors.Wrapf(err, "handle hooks")
 	}
 
+	if err := handleLiveRoomService(ctx, handler); err != nil {
+		return errors.Wrapf(err, "handle live room")
+	}
+
 	var ep string
 
 	handleHostVersions(ctx, handler)

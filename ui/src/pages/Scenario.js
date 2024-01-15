@@ -6,7 +6,7 @@
 import {useSearchParams} from "react-router-dom";
 import {Container, Tabs, Tab} from "react-bootstrap";
 import React from "react";
-import ScenarioLive from './ScenarioLive';
+import ScenarioLiveStreams from './ScenarioLive';
 import useUrls from "../components/UrlGenerator";
 import ScenarioForward from './ScenarioForward';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
@@ -18,6 +18,7 @@ import ScenarioVLive from "./ScenarioVLive";
 import {ScenarioVxOthers} from "./ScenarioOthers";
 import ScenarioTranscode from "./ScenarioTranscode";
 import ScenarioTranscript from "./ScenarioTranscript";
+import ScenarioLiveRoom from "./ScenarioLiveRoom";
 
 export default function Scenario() {
   const [searchParams] = useSearchParams();
@@ -26,7 +27,7 @@ export default function Scenario() {
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'tutorials';
-    console.log(`?tab=tutorials|live|record|vlive|transcode|transcript|others, current=${tab}, Select the tab to render`);
+    console.log(`?tab=tutorials|live|stream|record|vlive|transcode|transcript|others, current=${tab}, Select the tab to render`);
     setDefaultActiveTab(tab);
   }, [searchParams, language]);
 
@@ -46,7 +47,7 @@ function ScenarioImpl({defaultActiveTab}) {
   const onSelectTab = React.useCallback((k) => {
     setSearchParams({'tab': k});
     setActiveTab(k);
-  }, [setSearchParams]);
+  }, [setSearchParams, setActiveTab]);
 
   return (
     <>
@@ -57,7 +58,10 @@ function ScenarioImpl({defaultActiveTab}) {
             {activeTab === 'tutorials' && <ScenarioTutorials/>}
           </Tab>
           <Tab eventKey="live" title={t('scenario.live')}>
-            {activeTab === 'live' && <ScenarioLive {...{urls}} />}
+            {activeTab === 'live' && <ScenarioLiveStreams {...{urls}} />}
+          </Tab>
+          <Tab eventKey="stream" title={t('scenario.stream')}>
+            {activeTab === 'stream' && <ScenarioLiveRoom/>}
           </Tab>
           <Tab eventKey="forward" title={t('scenario.forward')}>
             {activeTab === 'forward' && <ScenarioForward/>}

@@ -906,6 +906,10 @@ Platform, with token authentication:
 * `/terraform/v1/hooks/record/remove` Hooks: Remove the Record files.
 * `/terraform/v1/hooks/record/end` Record: As stream is unpublished, finish the record task quickly.
 * `/terraform/v1/hooks/record/files` Hooks: List the Record files.
+* `/terraform/v1/live/room/create` Live: Create a new live room.
+* `/terraform/v1/live/room/query` Live: Query a new live room.
+* `/terraform/v1/live/room/remove`: Live: Remove a live room.
+* `/terraform/v1/live/room/list` Live: List all available live rooms.
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 * `/terraform/v1/ffmpeg/vlive/secret` Setup the Virtual Live streaming secret.
@@ -1068,6 +1072,7 @@ The following are the update records for the SRS Stack server.
     * RTSP: Rebuild the URL with escaped user info. v5.13.8
     * VLive: Support SRT URL filter. [v5.13.9](https://github.com/ossrs/srs-stack/releases/tag/v5.13.9)
     * FFmpeg: Monitor and restart FFmpeg if stuck. v5.13.10
+    * LiveRoom: Support live room secret with stream URL. v5.13.11
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1

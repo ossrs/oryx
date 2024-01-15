@@ -96,12 +96,8 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "json unmarshal %v", string(b))
 			}
 
+			verifiedBy := "noVerify"
 			if action == SrsActionOnPublish {
-				publish, err := rdb.HGet(ctx, SRS_AUTH_SECRET, "pubSecret").Result()
-				if err != nil && err != redis.Nil {
-					return errors.Wrapf(err, "hget %v pubSecret", SRS_AUTH_SECRET)
-				}
-
 				// Note that we allow pass secret by params or in stream name, for example, some encoder does not support params
 				// with ?secret=xxx, so it will fail when url is:
 				//      rtmp://ip/live/livestream?secret=xxx
@@ -110,8 +106,33 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				// or simply use secret as stream:
 				//      rtmp://ip/live/xxx
 				// in this situation, the secret is part of stream name.
-				if publish != "" && !strings.Contains(streamObj.Param, publish) && !strings.Contains(streamObj.Stream, publish) {
-					return errors.Errorf("invalid stream=%v, param=%v, action=%v", streamObj.Stream, streamObj.Param, action)
+				isSecretOK := func(publish, stream, param string) bool {
+					return publish == "" || strings.Contains(param, publish) || strings.Contains(stream, publish)
+				}
+
+				// Use live room secret to verify if stream name matches.
+				if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, streamObj.Stream).Result(); (err == nil || err == redis.Nil) && r0 != "" {
+					var room SrsLiveRoom
+					if err = json.Unmarshal([]byte(r0), &room); err != nil {
+						return errors.Wrapf(err, "unmarshal %v %v", streamObj.Stream, r0)
+					}
+
+					if !isSecretOK(room.Secret, streamObj.Stream, streamObj.Param) {
+						return errors.Errorf("invalid live room stream=%v, param=%v, action=%v", streamObj.Stream, streamObj.Param, action)
+					}
+
+					verifiedBy = "LiveRoom"
+				} else {
+					// Use global publish secret to verify
+					publish, err := rdb.HGet(ctx, SRS_AUTH_SECRET, "pubSecret").Result()
+					if err != nil && err != redis.Nil {
+						return errors.Wrapf(err, "hget %v pubSecret", SRS_AUTH_SECRET)
+					}
+					if !isSecretOK(publish, streamObj.Stream, streamObj.Param) {
+						return errors.Errorf("invalid normal stream=%v, param=%v, action=%v", streamObj.Stream, streamObj.Param, action)
+					}
+
+					verifiedBy = "NormalStream"
 				}
 			}
 
@@ -176,7 +197,8 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "srs hooks ok, action=%v, %v, %v", action, streamObj.String(), requestBody)
+			logger.Tf(ctx, "srs hooks ok, action=%v, verifiedBy=%v, %v, %v",
+				action, verifiedBy, streamObj.String(), requestBody)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

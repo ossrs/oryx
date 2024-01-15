@@ -292,6 +292,8 @@ const (
 	SRS_STAT_COUNTER = "SRS_STAT_COUNTER"
 	// For container and images.
 	SRS_CONTAINER_DISABLED = "SRS_CONTAINER_DISABLED"
+	// For live stream and rooms.
+	SRS_LIVE_ROOM = "SRS_LIVE_ROOM"
 	// For system settings.
 	SRS_LOCALE          = "SRS_LOCALE"
 	SRS_SECRET_PUBLISH  = "SRS_SECRET_PUBLISH"

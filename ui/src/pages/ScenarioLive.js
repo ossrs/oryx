@@ -14,7 +14,7 @@ import {useTranslation} from "react-i18next";
 import {useSearchParams} from "react-router-dom";
 import {SrsEnvContext} from "../components/SrsEnvContext";
 
-export default function ScenarioLive({urls}) {
+export default function ScenarioLiveStreams({urls}) {
   const [searchParams] = useSearchParams();
   const {t} = useTranslation();
   const copyToClipboard = React.useCallback((e, text) => {

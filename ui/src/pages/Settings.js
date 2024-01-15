@@ -421,7 +421,7 @@ function SettingLimits() {
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
-      setVLiveBitrate(res.data.data.vlive);
+      if (res.data.data?.vlive) setVLiveBitrate(res.data.data.vlive);
       console.log(`Limits: query ${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
   }, [handleError, setVLiveBitrate]);
