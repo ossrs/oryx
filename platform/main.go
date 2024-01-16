@@ -228,6 +228,13 @@ func doMain(ctx context.Context) error {
 		return errors.Wrapf(err, "start vLive worker")
 	}
 
+	// Create worker for IP camera.
+	cameraWorker = NewCameraWorker()
+	defer cameraWorker.Close()
+	if err := cameraWorker.Start(ctx); err != nil {
+		return errors.Wrapf(err, "start IP camera worker")
+	}
+
 	// Create worker for crontab.
 	crontabWorker = NewCrontabWorker()
 	defer crontabWorker.Close()

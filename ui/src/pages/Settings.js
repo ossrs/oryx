@@ -415,6 +415,7 @@ function SettingLimits() {
   const handleError = useErrorHandler();
   const {t} = useTranslation();
   const [vLiveBitrate, setVLiveBitrate] = React.useState();
+  const [ipCameraBitrate, setIpCameraBitrate] = React.useState();
 
   React.useEffect(() => {
     axios.post('/terraform/v1/mgmt/limits/query', {
@@ -422,21 +423,22 @@ function SettingLimits() {
       headers: Token.loadBearerHeader(),
     }).then(res => {
       if (res.data.data?.vlive) setVLiveBitrate(res.data.data.vlive);
+      if (res.data.data?.camera) setIpCameraBitrate(res.data.data.camera);
       console.log(`Limits: query ${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
-  }, [handleError, setVLiveBitrate]);
+  }, [handleError, setVLiveBitrate, setIpCameraBitrate]);
 
   const updateLimits = React.useCallback((e) => {
     e.preventDefault();
 
     axios.post('/terraform/v1/mgmt/limits/update', {
-      vlive: parseInt(vLiveBitrate),
+      vlive: parseInt(vLiveBitrate), camera: parseInt(ipCameraBitrate),
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
       alert(t('helper.setOk'));
     }).catch(handleError);
-  }, [handleError, vLiveBitrate, t]);
+  }, [handleError, vLiveBitrate, ipCameraBitrate, t]);
 
   return (
     <Accordion defaultActiveKey={["1"]} alwaysOpen>
@@ -448,6 +450,11 @@ function SettingLimits() {
               <Form.Label>{t('settings.limitsVLive')}</Form.Label>
               <Form.Text> * in Kbps</Form.Text>
               <Form.Control as="input" defaultValue={vLiveBitrate} onChange={(e) => setVLiveBitrate(e.target.value)}/>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('settings.limitsCamera')}</Form.Label>
+              <Form.Text> * in Kbps</Form.Text>
+              <Form.Control as="input" defaultValue={ipCameraBitrate} onChange={(e) => setIpCameraBitrate(e.target.value)}/>
             </Form.Group>
             <Button variant="primary" type="submit" onClick={(e) => updateLimits(e)}>
               {t('helper.submit')}

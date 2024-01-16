@@ -1601,7 +1601,7 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 	}
 
 	format := struct {
-		Format VLiveFileFormat `json:"format"`
+		Format FFprobeFormat `json:"format"`
 	}{}
 	if err = json.Unmarshal([]byte(stdout), &format); err != nil {
 		return errors.Wrapf(err, "parse format %v", stdout)

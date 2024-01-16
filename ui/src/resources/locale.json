@@ -44,6 +44,7 @@
         "rmFileTip3": "确认继续删除么？",
         "endTip": "请确认先停止推流，然后结束录制任务。继续吗？",
         "vlive": "虚拟直播",
+        "camera": "摄像头",
         "vfile": "文件转直播",
         "vstream": "拉流转推",
         "others": "其他",
@@ -101,6 +102,7 @@
         "noAuthTips": "禁用推流鉴权",
         "tecentTitle": "腾讯云密钥",
         "limitsVLive": "虚拟直播码率",
+        "limitsCamera": "摄像头直播码率",
         "limitsTitle": "限流设置",
         "footerTitle": "设置页脚(备案信息)",
         "footerIcp": "ICP备案号",
@@ -456,11 +458,21 @@
           "empty": "暂无直播间",
           "delete": "删除后不可恢复，确认删除直播间吗？"
         }
+      },
+      "camera": {
+        "silent": "静音音频流",
+        "silent2": "额外音频流",
+        "silent3": "给无音频的摄像头加音频，才可以推给常见的直播平台"
       }
     }
   },
   "en": {
     "translation": {
+      "camera": {
+        "silent3": "Add audio stream to camera without audio, then can be accepted by common live platforms",
+        "silent2": "Extra Audio Stream",
+        "silent": "Silent Audio Stream"
+      },
       "lr": {
         "list": {
           "delete": "Deleted rooms cannot be restored. Confirm to delete the room?",
@@ -715,6 +727,7 @@
         "rmFileTip3": "Are you sure to continue?",
         "endTip": "Please ensure the stream is terminated prior to end the recording task. Proceed?",
         "vlive": "VirtualLive",
+        "camera": "Camera",
         "vfile": "FileSource",
         "vstream": "StreamSource",
         "others": "Others",
@@ -772,6 +785,7 @@
         "noAuthTips": "Disable Publish Secret",
         "tecentTitle": "Tencent Cloud (Secret)",
         "limitsVLive": "Virtual Live Bitrate",
+        "limitsCamera": "IP Camera Bitrate",
         "limitsTitle": "Set Limits",
         "footerTitle": "Set Footer",
         "footerIcp": "Footer",

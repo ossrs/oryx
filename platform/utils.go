@@ -278,6 +278,9 @@ const (
 	// For virtual live channel/stream.
 	SRS_VLIVE_CONFIG = "SRS_VLIVE_CONFIG"
 	SRS_VLIVE_TASK   = "SRS_VLIVE_TASK"
+	// For IP camera live channel/stream.
+	SRS_CAMERA_CONFIG = "SRS_CAMERA_CONFIG"
+	SRS_CAMERA_TASK   = "SRS_CAMERA_TASK"
 	// For transcoding.
 	SRS_TRANSCODE_CONFIG = "SRS_TRANSCODE_CONFIG"
 	SRS_TRANSCODE_TASK   = "SRS_TRANSCODE_TASK"
@@ -310,8 +313,11 @@ const (
 	SRS_SYS_LIMITS      = "SRS_SYS_LIMITS"
 )
 
-// Default limit to 5Mbps.
+// Default limit to 5Mbps for virtual live streaming.
 const SrsSysLimitsVLive = 5 * 1000
+
+// Default limit to 5Mbps for IP camera streaming.
+const SrsSysLimitsCamera = 5 * 1000
 
 // Tencent cloud consts.
 const (
@@ -319,12 +325,13 @@ const (
 	TENCENT_CLOUD_VOD_ENDPOINT = "vod.tencentcloudapi.com"
 )
 
-// SrsVLiveSourceType defines the source type of vLive.
-type SrsVLiveSourceType string
+// FFprobeSourceType defines the source type of virtual live or camera live,
+// which use ffprobe to retrieve information.
+type FFprobeSourceType string
 
-const SrsVLiveSourceTypeUpload SrsVLiveSourceType = "upload"
-const SrsVLiveSourceTypeFile SrsVLiveSourceType = "file"
-const SrsVLiveSourceTypeStream SrsVLiveSourceType = "stream"
+const FFprobeSourceTypeUpload FFprobeSourceType = "upload"
+const FFprobeSourceTypeFile FFprobeSourceType = "file"
+const FFprobeSourceTypeStream FFprobeSourceType = "stream"
 
 // For vLive upload directory.
 var dirUploadPath = path.Join(".", "upload")
@@ -1292,6 +1299,7 @@ func httpCreateProxy(targetURL string) (*httputil.ReverseProxy, error) {
 	return proxy, nil
 }
 
+// whxpResponseModifier is the response modifier for WHIP or WHEP proxy.
 type whxpResponseModifier struct {
 	w http.ResponseWriter
 }
@@ -1326,4 +1334,115 @@ func (w *whxpResponseModifier) Write(b []byte) (int, error) {
 
 func (w *whxpResponseModifier) WriteHeader(statusCode int) {
 	w.w.WriteHeader(statusCode)
+}
+
+// FFprobeFormat is the format object in ffprobe response.
+type FFprobeFormat struct {
+	// The start time in seconds.
+	Starttime string `json:"start_time"`
+	// The duration in seconds.
+	Duration string `json:"duration"`
+	// The bitrate in bps.
+	Bitrate string `json:"bit_rate"`
+	// The number of streams in file. Note that there might be audio, video, and data stream,
+	// so if the streams is 2, it may indicate audio+video, video+data, or audio+data.
+	Streams int32 `json:"nb_streams"`
+	// The probe score, which indicates the confidence of the format detection.
+	Score int32 `json:"probe_score"`
+	// Whether has video stream.
+	HasVideo bool `json:"has_video"`
+	// Whether has audio stream.
+	HasAudio bool `json:"has_audio"`
+}
+
+func (v *FFprobeFormat) String() string {
+	return fmt.Sprintf("starttime=%v, duration=%v, bitrate=%v, streams=%v, score=%v, video=%v, audio=%v",
+		v.Starttime, v.Duration, v.Bitrate, v.Streams, v.Score, v.HasVideo, v.HasAudio,
+	)
+}
+
+// FFprobeVideo is the video object in ffprobe response.
+type FFprobeVideo struct {
+	// The codec type, should be video.
+	CodecType string `json:"codec_type"`
+	// The codec name, for example, h264, h265, vp6f, vp8, vp9, av1, or avs3.
+	CodecName string `json:"codec_name"`
+	// The codec profile, for example, High, Main, Baseline, or Constrained Baseline.
+	Profile string `json:"profile"`
+	// The width of video.
+	Width int32 `json:"width"`
+	// The height of video.
+	Height int32 `json:"height"`
+	// The pixel format, for example, yuv420p, yuv422p, yuv444p, yuv410p, yuv411p, yuvj420p,
+	PixFormat string `json:"pix_fmt"`
+	// The level of video.
+	Level int32 `json:"level"`
+	// The bitrate in bps.
+	Bitrate string `json:"bit_rate"`
+	// The start time in seconds.
+	Starttime string `json:"start_time"`
+	// The duration in seconds.
+	Duration string `json:"duration"`
+}
+
+func (v *FFprobeVideo) String() string {
+	return fmt.Sprintf("codec=%v, profile=%v, width=%v, height=%v, fmt=%v, level=%v, bitrate=%v",
+		v.CodecName, v.Profile, v.Width, v.Height, v.PixFormat, v.Level, v.Bitrate,
+	)
+}
+
+// FFprobeAudio is the audio object in ffprobe response.
+type FFprobeAudio struct {
+	// The codec type, should be audio.
+	CodecType string `json:"codec_type"`
+	// The codec name, for example, aac, mp3, opus, vorbis, or flac.
+	CodecName string `json:"codec_name"`
+	// The codec profile, for example, AAC LC, AAC HE, AAC HEv2, or AAC LD.
+	Profile string `json:"profile"`
+	// The sample format, for example, fltp, s16p, s32p, s64p, or dbl.
+	SampleFormat string `json:"sample_fmt"`
+	// The sample rate in Hz.
+	SampleRate string `json:"sample_rate"`
+	// The number of channels.
+	Channels int32 `json:"channels"`
+	// The channel layout, for example, mono, stereo, 5.1, or 7.1.
+	ChannelLayout string `json:"channel_layout"`
+	// The bitrate in bps.
+	Bitrate string `json:"bit_rate"`
+	// The start time in seconds.
+	Starttime string `json:"start_time"`
+	// The duration in seconds.
+	Duration string `json:"duration"`
+}
+
+func (v *FFprobeAudio) String() string {
+	return fmt.Sprintf("codec=%v, profile=%v, fmt=%v, rate=%v, channels=%v, layout=%v, bitrate=%v",
+		v.CodecName, v.Profile, v.SampleFormat, v.SampleRate, v.Channels, v.ChannelLayout, v.Bitrate,
+	)
+}
+
+// FFprobeSource is the source of virtual live, can be file or stream object.
+type FFprobeSource struct {
+	// The file name.
+	Name string `json:"name"`
+	// The size in bytes.
+	Size uint64 `json:"size"`
+	// The file UUID.
+	UUID string `json:"uuid"`
+	// The target file name.
+	Target string `json:"target"`
+	// The source type.
+	Type FFprobeSourceType `json:"type"`
+	// The file format by ffprobe.
+	Format *FFprobeFormat `json:"format"`
+	// The video information by ffprobe.
+	Video *FFprobeVideo `json:"video"`
+	// The audio information by ffprobe.
+	Audio *FFprobeAudio `json:"audio"`
+}
+
+func (v *FFprobeSource) String() string {
+	return fmt.Sprintf("name=%v, size=%v, uuid=%v, target=%v, format=(%v), video=(%v), audio=(%v)",
+		v.Name, v.Size, v.UUID, v.Target, v.Format, v.Video, v.Audio,
+	)
 }

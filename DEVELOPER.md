@@ -914,9 +914,14 @@ Platform, with token authentication:
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 * `/terraform/v1/ffmpeg/vlive/secret` Setup the Virtual Live streaming secret.
 * `/terraform/v1/ffmpeg/vlive/streams` Query the Virtual Live streaming streams.
-* `/terraform/v1/ffmpeg/vlive/upload/` Upload Virtual Live source file.
-* `/terraform/v1/ffmpeg/vlive/server/` Use server file as Virtual Live source.
 * `/terraform/v1/ffmpeg/vlive/source` Setup Virtual Live source file.
+* `/terraform/v1/ffmpeg/vlive/upload/` Source: Upload Virtual Live source file.
+* `/terraform/v1/ffmpeg/vlive/server` Source: Use server file as Virtual Live source.
+* `/terraform/v1/ffmpeg/vlive/stream-url` Source: Use stream URL as Virtual Live source.
+* `/terraform/v1/ffmpeg/camera/secret` Setup the IP camera streaming secret.
+* `/terraform/v1/ffmpeg/camera/streams` Query the IP camera streaming streams.
+* `/terraform/v1/ffmpeg/camera/source` Setup IP camera source file.
+* `/terraform/v1/ffmpeg/camera/stream-url` Source: Use stream URL as IP camera source.
 * `/terraform/v1/ffmpeg/transcode/query` Query transcode config.
 * `/terraform/v1/ffmpeg/transcode/apply` Apply transcode config.
 * `/terraform/v1/ffmpeg/transcode/task` Query transcode task.
@@ -1057,6 +1062,18 @@ Deprecated and unused variables:
 
 Please restart service when `.env` changed.
 
+## Coding Guide
+
+For the json field with more than 2 words:
+
+```go
+type CameraConfigure struct {
+	ExtraAudio string `json:"extraAudio"`
+}
+```
+
+Generally we follow this guide except for some legacy code.
+
 ## Changelog
 
 The following are the update records for the SRS Stack server.
@@ -1073,6 +1090,8 @@ The following are the update records for the SRS Stack server.
     * VLive: Support SRT URL filter. [v5.13.9](https://github.com/ossrs/srs-stack/releases/tag/v5.13.9)
     * FFmpeg: Monitor and restart FFmpeg if stuck. v5.13.10
     * LiveRoom: Support live room secret with stream URL. v5.13.11
+    * Camera: Support IP Camera streaming scenario. v5.13.12
+    * Camera: Support silent extra audio stream for video only device. v5.13.13
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1

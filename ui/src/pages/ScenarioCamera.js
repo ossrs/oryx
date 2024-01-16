@@ -4,18 +4,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
 import React from "react";
-import {Accordion, Badge, Button, Col, Form, InputGroup, ListGroup, Row, Table} from "react-bootstrap";
+import {Accordion, Badge, Button, Col, Form, ListGroup, Row, Table} from "react-bootstrap";
 import {Token} from "../utils";
 import axios from "axios";
 import moment from "moment";
 import {useErrorHandler} from "react-error-boundary";
 import {useSrsLanguage} from "../components/LanguageSwitch";
-import FileUploader from "../components/FileUploader";
 import {useTranslation} from "react-i18next";
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
-import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 
-export default function ScenarioVLive() {
+export default function ScenarioCamera() {
   const [init, setInit] = React.useState();
   const [activeKey, setActiveKey] = React.useState();
   const [secrets, setSecrets] = React.useState();
@@ -23,14 +21,14 @@ export default function ScenarioVLive() {
   const language = useSrsLanguage();
 
   React.useEffect(() => {
-    axios.post('/terraform/v1/ffmpeg/vlive/secret', {
+    axios.post('/terraform/v1/ffmpeg/camera/secret', {
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
       const secrets = res.data.data;
       setInit(true);
       setSecrets(secrets || {});
-      console.log(`VLive: Secret query ok ${JSON.stringify(secrets)}`);
+      console.log(`Camera: Secret query ok ${JSON.stringify(secrets)}`);
     }).catch(handleError);
   }, [handleError]);
 
@@ -54,50 +52,47 @@ export default function ScenarioVLive() {
 
   if (!activeKey) return <></>;
   if (language === 'zh') {
-    return <ScenarioVLiveImplCn defaultActiveKey={activeKey} defaultSecrets={secrets}/>;
+    return <ScenarioCameraImplCn defaultActiveKey={activeKey} defaultSecrets={secrets}/>;
   }
-  return <ScenarioVLiveImplEn defaultActiveKey={activeKey} defaultSecrets={secrets}/>;
+  return <ScenarioCameraImplEn defaultActiveKey={activeKey} defaultSecrets={secrets}/>;
 }
 
-function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
+function ScenarioCameraImplCn({defaultActiveKey, defaultSecrets}) {
   const [wxEnabled, setWxEnabled] = React.useState(defaultSecrets?.wx?.enabled);
   const [wxServer, setWxServer] = React.useState(defaultSecrets?.wx?.server);
   const [wxSecret, setWxSecret] = React.useState(defaultSecrets?.wx?.secret);
   const [wxCustom, setWxCustom] = React.useState(defaultSecrets?.wx?.custom);
   const [wxLabel, setWxLabel] = React.useState(defaultSecrets?.wx?.label);
   const [wxFiles, setWxFiles] = React.useState(defaultSecrets?.wx?.files);
+  const [wxExtraAudio, setWxExtraAudio] = React.useState(defaultSecrets?.wx?.extraAudio);
   const [bilibiliEnabled, setBilibiliEnabled] = React.useState(defaultSecrets?.bilibili?.enabled);
   const [bilibiliServer, setBilibiliServer] = React.useState(defaultSecrets?.bilibili?.server);
   const [bilibiliSecret, setBilibiliSecret] = React.useState(defaultSecrets?.bilibili?.secret);
   const [bilibiliCustom, setBilibiliCustom] = React.useState(defaultSecrets?.bilibili?.custom);
   const [bilibiliLabel, setBilibiliLabel] = React.useState(defaultSecrets?.bilibili?.label);
   const [bilibiliFiles, setBilibiliFiles] = React.useState(defaultSecrets?.bilibili?.files);
+  const [bilibiliExtraAudio, setBilibiliExtraAudio] = React.useState(defaultSecrets?.bilibili?.extraAudio);
   const [kuaishouEnabled, setKuaishouEnabled] = React.useState(defaultSecrets?.kuaishou?.enabled);
   const [kuaishouServer, setKuaishouServer] = React.useState(defaultSecrets?.kuaishou?.server);
   const [kuaishouSecret, setKuaishouSecret] = React.useState(defaultSecrets?.kuaishou?.secret);
   const [kuaishouCustom, setKuaishouCustom] = React.useState(defaultSecrets?.kuaishou?.custom);
   const [kuaishouLabel, setKuaishouLabel] = React.useState(defaultSecrets?.kuaishou?.label);
   const [kuaishouFiles, setKuaishouFiles] = React.useState(defaultSecrets?.kuaishou?.files);
-  const [vLives, setVLives] = React.useState();
+  const [kuaishouExtraAudio, setKuaishouExtraAudio] = React.useState(defaultSecrets?.kuaishou?.extraAudio);
+  const [cameras, setCameras] = React.useState();
   const [submiting, setSubmiting] = React.useState();
   const handleError = useErrorHandler();
 
-  const vLiveTutorials = useTutorials({
-    bilibili: React.useRef([
-      {author: '宝哥', id: 'BV1G3411d7Gb'},
-    ])
-  });
-
   React.useEffect(() => {
     const refreshStreams = () => {
-      axios.post('/terraform/v1/ffmpeg/vlive/streams', {
+      axios.post('/terraform/v1/ffmpeg/camera/streams', {
       }, {
         headers: Token.loadBearerHeader(),
       }).then(res => {
-        setVLives(res.data.data.map((e, i) => {
+        setCameras(res.data.data.map((e, i) => {
           const item = {
             ...e,
-            name: {wx: '视频号虚拟直播间', bilibili: 'Bilibili虚拟直播间', kuaishou: '快手虚拟直播间'}[e.platform],
+            name: {wx: '视频号直播间', bilibili: 'Bilibili直播间', kuaishou: '快手直播间'}[e.platform],
             update: e.frame?.update ? moment(e.frame.update) : null,
             i,
           };
@@ -107,7 +102,7 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
           item.sourceObj = sources?.length ? sources[0] : null;
           return item;
         }));
-        console.log(`VLive: Query streams ${JSON.stringify(res.data.data)}`);
+        console.log(`Camera: Query streams ${JSON.stringify(res.data.data)}`);
       }).catch(handleError);
     };
 
@@ -116,21 +111,22 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
     return () => clearInterval(timer);
   }, [handleError]);
 
-  const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, files, onSuccess) => {
+  const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, files, extraAudio, onSuccess) => {
     e.preventDefault();
     if (!files?.length) return alert('请上传视频源');
     if (!server) return alert('请输入推流地址');
-    if (custom && !label) return alert('自定义平台请输入名称，否则不好区分虚拟直播状态');
+    if (custom && !label) return alert('自定义平台请输入名称，否则不好区分直播状态');
 
     try {
       setSubmiting(true);
 
-      axios.post('/terraform/v1/ffmpeg/vlive/secret', {
+      axios.post('/terraform/v1/ffmpeg/camera/secret', {
         action, platform, server, secret, enabled: !!enabled, custom: !!custom, label, files,
+        extraAudio,
       }, {
         headers: Token.loadBearerHeader(),
       }).then(res => {
-        alert('虚拟直播设置成功');
+        alert('直播设置成功');
         onSuccess && onSuccess();
       }).catch(handleError);
     } finally {
@@ -144,7 +140,7 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
         <Accordion.Header>场景介绍</Accordion.Header>
         <Accordion.Body>
           <div>
-            虚拟直播<TutorialsButton prefixLine={true} tutorials={vLiveTutorials} />，是将一个视频文件，用FFmpeg转成直播流，推送到SRS Stack或其他平台。
+            摄像头直播，是将一个摄像头的流，用FFmpeg转成直播流，推送到SRS Stack或其他平台。
             <p></p>
           </div>
           <p>可应用的具体场景包括：</p>
@@ -153,13 +149,13 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
           </ul>
           <p>使用说明：</p>
           <ul>
-            <li>首先上传视频文件</li>
+            <li>首先设置摄像头信息</li>
             <li>然后设置直播流信息</li>
           </ul>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">
-        <Accordion.Header>{wxCustom ? '自定义平台' : '视频号虚拟直播间'} {wxLabel}</Accordion.Header>
+        <Accordion.Header>{wxCustom ? '自定义平台' : '视频号直播间'} {wxLabel}</Accordion.Header>
         <Accordion.Body>
           <Form>
             <Form.Group className="mb-3">
@@ -168,7 +164,8 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
               <Form.Control as="input" defaultValue={wxLabel} onChange={(e) => setWxLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSourceCn platform='wx' vLiveFiles={wxFiles} setVLiveFiles={setWxFiles} />
+              <ChooseVideoSourceCn platform='wx' cameraFiles={wxFiles} setCameraFiles={setWxFiles} />
+              <CameraExtraAudioTrack extraAudio={wxExtraAudio} setExtraAudio={setWxExtraAudio} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>推流地址</Form.Label>
@@ -192,19 +189,19 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
               type="submit"
               disabled={submiting}
               onClick={(e) => {
-                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel, wxFiles, () => {
+                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel, wxFiles, wxExtraAudio, () => {
                   setWxEnabled(!wxEnabled);
                 });
               }}
             >
               {wxEnabled ? '停止直播' : '开始直播'}
             </Button> &nbsp;
-            <Form.Text> * 将文件转直播流</Form.Text>
+            <Form.Text> * 将摄像头转直播流</Form.Text>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="2">
-        <Accordion.Header>{bilibiliCustom ? '自定义平台' : 'Bilibili虚拟直播间'} {bilibiliLabel}</Accordion.Header>
+        <Accordion.Header>{bilibiliCustom ? '自定义平台' : 'Bilibili直播间'} {bilibiliLabel}</Accordion.Header>
         <Accordion.Body>
           <Form>
             <Form.Group className="mb-3">
@@ -213,7 +210,8 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
               <Form.Control as="input" defaultValue={bilibiliLabel} onChange={(e) => setBilibiliLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSourceCn platform='bilibili' vLiveFiles={bilibiliFiles} setVLiveFiles={setBilibiliFiles} />
+              <ChooseVideoSourceCn platform='bilibili' cameraFiles={bilibiliFiles} setCameraFiles={setBilibiliFiles} />
+              <CameraExtraAudioTrack extraAudio={bilibiliExtraAudio} setExtraAudio={setBilibiliExtraAudio} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>推流地址</Form.Label>
@@ -237,19 +235,19 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
               type="submit"
               disabled={submiting}
               onClick={(e) => {
-                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel, bilibiliFiles, () => {
+                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel, bilibiliFiles, bilibiliExtraAudio, () => {
                   setBilibiliEnabled(!bilibiliEnabled);
                 });
               }}
             >
               {bilibiliEnabled ? '停止直播' : '开始直播'}
             </Button> &nbsp;
-            <Form.Text> * 将文件转直播流</Form.Text>
+            <Form.Text> * 将摄像头转直播流</Form.Text>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="3">
-        <Accordion.Header>{kuaishouCustom ? '自定义平台' : '快手虚拟直播间'} {kuaishouLabel}</Accordion.Header>
+        <Accordion.Header>{kuaishouCustom ? '自定义平台' : '快手直播间'} {kuaishouLabel}</Accordion.Header>
         <Accordion.Body>
           <Form>
             <Form.Group className="mb-3">
@@ -258,7 +256,8 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
               <Form.Control as="input" defaultValue={kuaishouLabel} onChange={(e) => setKuaishouLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSourceCn platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} />
+              <ChooseVideoSourceCn platform='kuaishou' cameraFiles={kuaishouFiles} setCameraFiles={setKuaishouFiles} />
+              <CameraExtraAudioTrack extraAudio={kuaishouExtraAudio} setExtraAudio={setKuaishouExtraAudio} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>推流地址</Form.Label>
@@ -282,22 +281,22 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
               type="submit"
               disabled={submiting}
               onClick={(e) => {
-                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel, kuaishouFiles, () => {
+                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel, kuaishouFiles, kuaishouExtraAudio, () => {
                   setKuaishouEnabled(!kuaishouEnabled);
                 });
               }}
             >
               {kuaishouEnabled ? '停止直播' : '开始直播'}
             </Button> &nbsp;
-            <Form.Text> * 将文件转直播流</Form.Text>
+            <Form.Text> * 将摄像头转直播流</Form.Text>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="99">
-        <Accordion.Header>虚拟直播状态</Accordion.Header>
+        <Accordion.Header>摄像头直播状态</Accordion.Header>
         <Accordion.Body>
           {
-            vLives?.length ? (
+            cameras?.length ? (
               <Table striped bordered hover>
                 <thead>
                 <tr>
@@ -306,12 +305,13 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
                   <th>状态</th>
                   <th>更新时间</th>
                   <th>视频源</th>
+                  <th>额外音频</th>
                   <th>日志</th>
                 </tr>
                 </thead>
                 <tbody>
                 {
-                  vLives?.map(file => {
+                  cameras?.map(file => {
                     return <tr key={file.platform} style={{verticalAlign: 'middle'}}>
                       <td>{file.i}</td>
                       <td>{file.custom ? (file.label ? '' : '自定义平台') : file.name} {file.label}</td>
@@ -326,8 +326,9 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
                       </td>
                       <td>
                         {file.sourceObj?.name}<br/>
-                        <VLiveFileFormatInfo file={file.sourceObj}/>
+                        <CameraFileFormatInfo file={file.sourceObj}/>
                       </td>
+                      <td>{file?.extraAudio}</td>
                       <td>{file.frame?.log}</td>
                     </tr>;
                   })
@@ -336,39 +337,42 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
               </Table>
             ) : ''
           }
-          {!vLives?.length ? '没有流。请开启虚拟直播间后，等待大约30秒左右，列表会自动更新' : ''}
+          {!cameras?.length ? '没有流。请开启直播间后，等待大约30秒左右，列表会自动更新' : ''}
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
   );
 }
 
-function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
+function ScenarioCameraImplEn({defaultActiveKey, defaultSecrets}) {
   const [wxEnabled, setWxEnabled] = React.useState(defaultSecrets?.wx?.enabled);
   const [wxServer, setWxServer] = React.useState(defaultSecrets?.wx?.server);
   const [wxSecret, setWxSecret] = React.useState(defaultSecrets?.wx?.secret);
   const [wxCustom, setWxCustom] = React.useState(defaultSecrets?.wx?.custom);
   const [wxLabel, setWxLabel] = React.useState(defaultSecrets?.wx?.label);
   const [wxFiles, setWxFiles] = React.useState(defaultSecrets?.wx?.files);
+  const [wxExtraAudio, setWxExtraAudio] = React.useState(defaultSecrets?.wx?.extraAudio);
   const [bilibiliEnabled, setBilibiliEnabled] = React.useState(defaultSecrets?.bilibili?.enabled);
   const [bilibiliServer, setBilibiliServer] = React.useState(defaultSecrets?.bilibili?.server || 'rtmp://live.twitch.tv/app');
   const [bilibiliSecret, setBilibiliSecret] = React.useState(defaultSecrets?.bilibili?.secret);
   const [bilibiliCustom, setBilibiliCustom] = React.useState(defaultSecrets?.bilibili?.custom);
   const [bilibiliLabel, setBilibiliLabel] = React.useState(defaultSecrets?.bilibili?.label);
   const [bilibiliFiles, setBilibiliFiles] = React.useState(defaultSecrets?.bilibili?.files);
+  const [bilibiliExtraAudio, setBilibiliExtraAudio] = React.useState(defaultSecrets?.bilibili?.extraAudio);
   const [kuaishouEnabled, setKuaishouEnabled] = React.useState(defaultSecrets?.kuaishou?.enabled);
   const [kuaishouServer, setKuaishouServer] = React.useState(defaultSecrets?.kuaishou?.server || 'rtmps://live-api-s.facebook.com:443/rtmp');
   const [kuaishouSecret, setKuaishouSecret] = React.useState(defaultSecrets?.kuaishou?.secret);
   const [kuaishouCustom, setKuaishouCustom] = React.useState(defaultSecrets?.kuaishou?.custom);
   const [kuaishouLabel, setKuaishouLabel] = React.useState(defaultSecrets?.kuaishou?.label);
   const [kuaishouFiles, setKuaishouFiles] = React.useState(defaultSecrets?.kuaishou?.files);
+  const [kuaishouExtraAudio, setKuaishouExtraAudio] = React.useState(defaultSecrets?.kuaishou?.extraAudio);
   const [vLives, setVLives] = React.useState();
   const [submiting, setSubmiting] = React.useState();
   const handleError = useErrorHandler();
 
   React.useEffect(() => {
     const refreshStreams = () => {
-      axios.post('/terraform/v1/ffmpeg/vlive/streams', {
+      axios.post('/terraform/v1/ffmpeg/camera/streams', {
       }, {
         headers: Token.loadBearerHeader(),
       }).then(res => {
@@ -385,7 +389,7 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
           item.sourceObj = sources?.length ? sources[0] : null;
           return item;
         }));
-        console.log(`VLive: Query streams ${JSON.stringify(res.data.data)}`);
+        console.log(`Camera: Query streams ${JSON.stringify(res.data.data)}`);
       }).catch(handleError);
     };
 
@@ -394,7 +398,7 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
     return () => clearInterval(timer);
   }, [handleError]);
 
-  const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, files, onSuccess) => {
+  const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, files, extraAudio, onSuccess) => {
     e.preventDefault();
     if (!files?.length) return alert('Please upload video source');
     if (!server) return alert('Please input stream URL');
@@ -403,12 +407,13 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
     try {
       setSubmiting(true);
 
-      axios.post('/terraform/v1/ffmpeg/vlive/secret', {
+      axios.post('/terraform/v1/ffmpeg/camera/secret', {
         action, platform, server, secret, enabled: !!enabled, custom: !!custom, label, files,
+        extraAudio,
       }, {
         headers: Token.loadBearerHeader(),
       }).then(res => {
-        alert('Virtual live stream setup ok');
+        alert('IP camera stream setup ok');
         onSuccess && onSuccess();
       }).catch(handleError);
     } finally {
@@ -422,7 +427,7 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
         <Accordion.Header>Introduction</Accordion.Header>
         <Accordion.Body>
           <div>
-            Virtual live streaming is the process of converting a video file into a live stream using FFmpeg and pushing it to the SRS Stack or other platforms.
+            IP camera streaming is the process of converting the stream from IP Camera into a live stream using FFmpeg and pushing it to the SRS Stack or other platforms.
             <p></p>
           </div>
           <p>Specific application scenarios include:</p>
@@ -431,7 +436,7 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
           </ul>
           <p>Instructions for use:</p>
           <ul>
-            <li>First, upload the video file</li>
+            <li>First, setup the IP Camera</li>
             <li>Then, set the live stream information</li>
           </ul>
         </Accordion.Body>
@@ -442,11 +447,12 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>Label</Form.Label>
-              <Form.Text> * {wxCustom ? '(Required)' : '(Optional)'} Virtual live stream label</Form.Text>
+              <Form.Text> * {wxCustom ? '(Required)' : '(Optional)'} IP camera stream label</Form.Text>
               <Form.Control as="input" defaultValue={wxLabel} onChange={(e) => setWxLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSourceEn platform='wx' vLiveFiles={wxFiles} setVLiveFiles={setWxFiles} />
+              <ChooseVideoSourceEn platform='wx' cameraFiles={wxFiles} setCameraFiles={setWxFiles} />
+              <CameraExtraAudioTrack extraAudio={wxExtraAudio} setExtraAudio={setWxExtraAudio} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>{wxCustom ? 'Server' : 'Stream URL'}</Form.Label>
@@ -470,12 +476,12 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
               type="submit"
               disabled={submiting}
               onClick={(e) => {
-                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel, wxFiles, () => {
+                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel, wxFiles, wxExtraAudio, () => {
                   setWxEnabled(!wxEnabled);
                 });
               }}
             >
-              {wxEnabled ? 'Stop Virtual Live' : 'Start Virtual Live'}
+              {wxEnabled ? 'Stop Camera Live' : 'Start Camera Live'}
             </Button> &nbsp;
             <Form.Text> * Convert file to live stream</Form.Text>
           </Form>
@@ -487,11 +493,12 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>Label</Form.Label>
-              <Form.Text> * {bilibiliCustom ? '(Required)' : '(Optional)'} Virtual live stream label</Form.Text>
+              <Form.Text> * {bilibiliCustom ? '(Required)' : '(Optional)'} IP camera stream label</Form.Text>
               <Form.Control as="input" defaultValue={bilibiliLabel} onChange={(e) => setBilibiliLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSourceEn platform='bilibili' vLiveFiles={bilibiliFiles} setVLiveFiles={setBilibiliFiles} />
+              <ChooseVideoSourceEn platform='bilibili' cameraFiles={bilibiliFiles} setCameraFiles={setBilibiliFiles} />
+              <CameraExtraAudioTrack extraAudio={bilibiliExtraAudio} setExtraAudio={setBilibiliExtraAudio} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>Server</Form.Label>
@@ -514,12 +521,12 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
               type="submit"
               disabled={submiting}
               onClick={(e) => {
-                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel, bilibiliFiles, () => {
+                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel, bilibiliFiles, bilibiliExtraAudio, () => {
                   setBilibiliEnabled(!bilibiliEnabled);
                 });
               }}
             >
-              {bilibiliEnabled ? 'Stop Virtual Live' : 'Start Virtual Live'}
+              {bilibiliEnabled ? 'Stop Camera Live' : 'Start Camera Live'}
             </Button> &nbsp;
             <Form.Text> * Convert file to live stream</Form.Text>
           </Form>
@@ -531,11 +538,12 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>Label</Form.Label>
-              <Form.Text> * {kuaishouCustom ? '(Required)' : '(Optional)'} Virtual live stream label</Form.Text>
+              <Form.Text> * {kuaishouCustom ? '(Required)' : '(Optional)'} IP camera stream label</Form.Text>
               <Form.Control as="input" defaultValue={kuaishouLabel} onChange={(e) => setKuaishouLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSourceEn platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} />
+              <ChooseVideoSourceEn platform='kuaishou' cameraFiles={kuaishouFiles} setCameraFiles={setKuaishouFiles} />
+              <CameraExtraAudioTrack extraAudio={kuaishouExtraAudio} setExtraAudio={setKuaishouExtraAudio} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>Server</Form.Label>
@@ -558,19 +566,19 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
               type="submit"
               disabled={submiting}
               onClick={(e) => {
-                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel, kuaishouFiles, () => {
+                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel, kuaishouFiles, kuaishouExtraAudio, () => {
                   setKuaishouEnabled(!kuaishouEnabled);
                 });
               }}
             >
-              {kuaishouEnabled ? 'Stop Virtual Live' : 'Start Virtual Live'}
+              {kuaishouEnabled ? 'Stop Camera Live' : 'Start Camera Live'}
             </Button> &nbsp;
             <Form.Text> * Convert file to live stream</Form.Text>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="99">
-        <Accordion.Header>Virtual Live Status</Accordion.Header>
+        <Accordion.Header>Camera Live Status</Accordion.Header>
         <Accordion.Body>
           {
             vLives?.length ? (
@@ -582,6 +590,7 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
                   <th>Status</th>
                   <th>Update</th>
                   <th>Source Stream</th>
+                  <th>Extra Audio</th>
                   <th>Logging</th>
                 </tr>
                 </thead>
@@ -602,8 +611,9 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
                       </td>
                       <td>
                         {file.sourceObj?.name}<br/>
-                        <VLiveFileFormatInfo file={file.sourceObj}/>
+                        <CameraFileFormatInfo file={file.sourceObj}/>
                       </td>
+                      <td>{file?.extraAudio}</td>
                       <td>{file.frame?.log}</td>
                     </tr>;
                   })
@@ -619,7 +629,7 @@ function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
   );
 }
 
-function VLiveFileList({files, onChangeFiles}) {
+function CameraFileList({files, onChangeFiles}) {
   const {t} = useTranslation();
   return (
     <Row>
@@ -628,9 +638,9 @@ function VLiveFileList({files, onChangeFiles}) {
           {files.map((f, index) => {
             return <ListGroup.Item key={index}>
               {f.name} &nbsp;
-              <VLiveFileFormatInfo file={f}/> &nbsp;
-              <VLiveFileVideoInfo file={f}/> &nbsp;
-              <VLiveFileAudioInfo file={f}/>
+              <CameraFileFormatInfo file={f}/> &nbsp;
+              <CameraFileVideoInfo file={f}/> &nbsp;
+              <CameraFileAudioInfo file={f}/>
             </ListGroup.Item>;
           })}
         </ListGroup>
@@ -642,113 +652,48 @@ function VLiveFileList({files, onChangeFiles}) {
   );
 }
 
-function ChooseVideoSourceCn({platform, vLiveFiles, setVLiveFiles}) {
-  const [checkType, setCheckType] = React.useState('upload');
-  React.useEffect(() => {
-    if (vLiveFiles?.length) {
-      const type = vLiveFiles[0].type;
-      if (type === 'upload' || type === 'file' || type === 'stream') {
-        setCheckType(type);
-      }
-    }
-  }, [vLiveFiles]);
+function CameraExtraAudioTrack({extraAudio, setExtraAudio}) {
+  const {t} = useTranslation();
+
+  return <>
+    <Form.Group className="mb-3">
+      <Form.Label>{t('camera.silent2')}</Form.Label>
+      <Form.Text> * {t('camera.silent3')}</Form.Text>
+      <Form.Select defaultValue={extraAudio} onChange={(e) => setExtraAudio(e.target.value)}>
+        <option value="">--{t('helper.noSelect')}--</option>
+        <option value="silent">{t('camera.silent')}</option>
+      </Form.Select>
+    </Form.Group>
+  </>;
+}
+
+function ChooseVideoSourceCn({platform, cameraFiles, setCameraFiles}) {
   return (<>
     <Form.Group className="mb-3">
       <Form.Label>视频源</Form.Label>
-      <Form.Text> * 虚拟直播就是将视频源(文件/流)转换成直播流</Form.Text>
-      <Form.Check type="radio" label="上传本地文件" id={'upload-' + platform} checked={checkType === 'upload'}
-        name={'chooseSource-' + platform} onChange={e => setCheckType('upload')}
-      />
-      {checkType === 'upload' && 
+      <Form.Text> * 流地址支持 rtmp, http, https, 或 rtsp 等格式</Form.Text>
       <SrsErrorBoundary>
-        <VLiveFileUploaderCn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles} />
+        <CameraStreamSelectorCn platform={platform} cameraFiles={cameraFiles} setCameraFiles={setCameraFiles}/>
       </SrsErrorBoundary>
-      }
-    </Form.Group>
-    <Form.Group className="mb-3">
-      <InputGroup>
-        <Form.Check type="radio" label="指定服务器文件" id={'server-' + platform} checked={checkType === 'file'}
-                    name={'chooseSource' + platform} onChange={e => setCheckType('file')}
-        /> &nbsp;
-        <Form.Text> * 文件必须在 /data 目录下面</Form.Text>
-      </InputGroup>
-      {checkType === 'file' &&
-      <SrsErrorBoundary>
-        <VLiveFileSelectorCn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
-      </SrsErrorBoundary>
-      }
-    </Form.Group>
-    <Form.Group className="mb-3">
-      <InputGroup>
-        <Form.Check type="radio" label="拉流转推" id={'stream-' + platform} checked={checkType === 'stream'}
-                    name={'chooseSource' + platform} onChange={e => setCheckType('stream')}
-        /> &nbsp;
-        <Form.Text> * 流地址支持 rtmp, http, https, 或 rtsp 等格式</Form.Text>
-      </InputGroup>
-      {checkType === 'stream' &&
-      <SrsErrorBoundary>
-        <VLiveStreamSelectorCn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
-      </SrsErrorBoundary>
-      }
     </Form.Group>
   </>);
 }
 
-function ChooseVideoSourceEn({platform, vLiveFiles, setVLiveFiles}) {
-  const [checkType, setCheckType] = React.useState('upload');
-  React.useEffect(() => {
-    if (vLiveFiles?.length) {
-      const type = vLiveFiles[0].type;
-      if (type === 'upload' || type === 'file' || type === 'stream') {
-        setCheckType(type);
-      }
-    }
-  }, [vLiveFiles]);
+function ChooseVideoSourceEn({platform, cameraFiles, setCameraFiles}) {
   return (<>
     <Form.Group className="mb-3">
       <Form.Label>Live Stream Source</Form.Label>
-      <Form.Text> * Virtual live streaming is the process of converting a video source (file) into a live stream.</Form.Text>
-      <Form.Check type="radio" label="Upload local file" id={'upload-' + platform} checked={checkType === 'upload'}
-                  name={'chooseSource-' + platform} onChange={e => setCheckType('upload')}
-      />
-      {checkType === 'upload' &&
-        <SrsErrorBoundary>
-          <VLiveFileUploaderEn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles} />
-        </SrsErrorBoundary>
-      }
-    </Form.Group>
-    <Form.Group className="mb-3">
-      <InputGroup>
-        <Form.Check type="radio" label="Use server file" id={'server-' + platform} checked={checkType === 'file'}
-                    name={'chooseSource' + platform} onChange={e => setCheckType('file')}
-        /> &nbsp;
-        <Form.Text> * The file must be in the /data directory.</Form.Text>
-      </InputGroup>
-      {checkType === 'file' &&
-        <SrsErrorBoundary>
-          <VLiveFileSelectorEn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
-        </SrsErrorBoundary>
-      }
-    </Form.Group>
-    <Form.Group className="mb-3">
-      <InputGroup>
-        <Form.Check type="radio" label="Forward stream" id={'stream-' + platform} checked={checkType === 'stream'}
-                    name={'chooseSource' + platform} onChange={e => setCheckType('stream')}
-        /> &nbsp;
-        <Form.Text> * The stream URL should start with rtmp, http, https, or rtsp.</Form.Text>
-      </InputGroup>
-      {checkType === 'stream' &&
-        <SrsErrorBoundary>
-          <VLiveStreamSelectorEn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
-        </SrsErrorBoundary>
-      }
+      <Form.Text> * The stream URL should start with rtmp, http, https, or rtsp.</Form.Text>
+      <SrsErrorBoundary>
+        <CameraStreamSelectorEn platform={platform} cameraFiles={cameraFiles} setCameraFiles={setCameraFiles}/>
+      </SrsErrorBoundary>
     </Form.Group>
   </>);
 }
 
-function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
+function CameraStreamSelectorCn({platform, cameraFiles, setCameraFiles}) {
   const handleError = useErrorHandler();
-  const [inputStream, setInputStream] = React.useState(vLiveFiles?.length ? vLiveFiles[0].target :'');
+  const [inputStream, setInputStream] = React.useState(cameraFiles?.length ? cameraFiles[0].target : '');
   const [submiting, setSubmiting] = React.useState();
 
   const checkStreamUrl = React.useCallback(async () => {
@@ -760,7 +705,7 @@ function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
     setSubmiting(true);
     try {
       const res = await new Promise((resolve, reject) => {
-        axios.post(`/terraform/v1/ffmpeg/vlive/stream-url`, {
+        axios.post(`/terraform/v1/ffmpeg/camera/stream-url`, {
           url: inputStream,
         }, {
           headers: Token.loadBearerHeader(),
@@ -773,13 +718,13 @@ function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
         console.log(`检查流地址成功，${JSON.stringify(res.data.data)}`);
         const streamObj = res.data.data;
         const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
-        axios.post('/terraform/v1/ffmpeg/vlive/source', {
+        axios.post('/terraform/v1/ffmpeg/camera/source', {
           platform, files,
         }, {
           headers: Token.loadBearerHeader(),
         }).then(res => {
           console.log(`更新虚拟直播源为流地址成功，${JSON.stringify(res.data.data)}`);
-          setVLiveFiles(res.data.data.files);
+          setCameraFiles(res.data.data.files);
           resolve();
         }).catch(reject);
       });
@@ -788,11 +733,11 @@ function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
     } finally {
       setSubmiting(false);
     }
-  }, [inputStream, handleError, platform, setVLiveFiles, setSubmiting]);
+  }, [inputStream, handleError, platform, setCameraFiles, setSubmiting]);
 
   return (<>
     <Form.Control as="div">
-      {!vLiveFiles?.length && <>
+      {!cameraFiles?.length && <>
         <Row>
           <Col>
             <Form.Control type="text" defaultValue={inputStream} placeholder="请输入流地址" onChange={e => setInputStream(e.target.value)} />
@@ -802,14 +747,14 @@ function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
           </Col>
         </Row></>
       }
-      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
+      {cameraFiles?.length && <CameraFileList files={cameraFiles} onChangeFiles={(e) => setCameraFiles(null)}/>}
     </Form.Control>
   </>);
 }
 
-function VLiveStreamSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
+function CameraStreamSelectorEn({platform, cameraFiles, setCameraFiles}) {
   const handleError = useErrorHandler();
-  const [inputStream, setInputStream] = React.useState(vLiveFiles?.length ? vLiveFiles[0].target : '');
+  const [inputStream, setInputStream] = React.useState(cameraFiles?.length ? cameraFiles[0].target : '');
   const [submiting, setSubmiting] = React.useState();
 
   const checkStreamUrl = React.useCallback(async () => {
@@ -821,7 +766,7 @@ function VLiveStreamSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
     setSubmiting(true);
     try {
       const res = await new Promise((resolve, reject) => {
-        axios.post(`/terraform/v1/ffmpeg/vlive/stream-url`, {
+        axios.post(`/terraform/v1/ffmpeg/camera/stream-url`, {
           url: inputStream,
         }, {
           headers: Token.loadBearerHeader(),
@@ -834,13 +779,13 @@ function VLiveStreamSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
         console.log(`Check stream url ok，${JSON.stringify(res.data.data)}`);
         const streamObj = res.data.data;
         const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
-        axios.post('/terraform/v1/ffmpeg/vlive/source', {
+        axios.post('/terraform/v1/ffmpeg/camera/source', {
           platform, files,
         }, {
           headers: Token.loadBearerHeader(),
         }).then(res => {
           console.log(`Setup the virtual live stream ok，${JSON.stringify(res.data.data)}`);
-          setVLiveFiles(res.data.data.files);
+          setCameraFiles(res.data.data.files);
           resolve();
         }).catch(reject);
       });
@@ -849,11 +794,11 @@ function VLiveStreamSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
     } finally {
       setSubmiting(false);
     }
-  }, [inputStream, handleError, platform, setVLiveFiles, setSubmiting]);
+  }, [inputStream, handleError, platform, setCameraFiles, setSubmiting]);
 
   return (<>
     <Form.Control as="div">
-      {!vLiveFiles?.length && <>
+      {!cameraFiles?.length && <>
         <Row>
           <Col>
             <Form.Control type="text" defaultValue={inputStream} placeholder="please input stream URL" onChange={e => setInputStream(e.target.value)} />
@@ -863,184 +808,38 @@ function VLiveStreamSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
           </Col>
         </Row></>
       }
-      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
+      {cameraFiles?.length && <CameraFileList files={cameraFiles} onChangeFiles={(e) => setCameraFiles(null)}/>}
     </Form.Control>
   </>)
 }
 
-function VLiveFileSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
-  const handleError = useErrorHandler();
-  // TODO: FIXME: As the file path is changed after used, so we can not use te target.
-  const [inputFile, setInputFile] = React.useState('');
-
-  const CheckLocalFile = React.useCallback(() => {
-    if (!inputFile) return alert('请输入文件路径');
-    if (!inputFile.startsWith('/data') && !inputFile.startsWith('upload/') && !inputFile.startsWith('./upload/')) return alert('文件必须在 /data 目录下');
-
-    const fileExtension = inputFile.slice(inputFile.lastIndexOf('.'));
-    if (!['.mp4', '.flv', '.ts'].includes(fileExtension)) return alert('文件必须是 mp4/flv/ts 格式');
-
-    axios.post(`/terraform/v1/ffmpeg/vlive/server`, {
-      file: inputFile,
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      console.log(`检查服务器文件成功，${JSON.stringify(res.data.data)}`);
-      const localFileObj = res.data.data;
-      const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target, type: "file"}];
-      axios.post('/terraform/v1/ffmpeg/vlive/source', {
-        platform, files,
-      }, {
-        headers: Token.loadBearerHeader(),
-      }).then(res => {
-        console.log(`更新虚拟直播源为服务器文件成功，${JSON.stringify(res.data.data)}`);
-        setVLiveFiles(res.data.data.files);
-      }).catch(handleError);
-    }).catch(handleError);
-  }, [inputFile, handleError, platform, setVLiveFiles]);
-
-  return (<>
-    <Form.Control as="div">
-      {!vLiveFiles?.length && <>
-        <Row>
-          <Col>
-            <Form.Control type="text" defaultValue={inputFile} placeholder="请输入文件路径" onChange={e => setInputFile(e.target.value)} />
-          </Col>
-          <Col xs="auto">
-            <Button variant="primary" onClick={CheckLocalFile}>确认</Button>
-          </Col>
-        </Row></>
-      }
-      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
-    </Form.Control>
-  </>);
-}
-
-function VLiveFileSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
-  const handleError = useErrorHandler();
-  // TODO: FIXME: As the file path is changed after used, so we can not use te target.
-  const [inputFile, setInputFile] = React.useState('');
-
-  const CheckLocalFile = React.useCallback(() => {
-    if (!inputFile) return alert('Please input file path');
-    if (!inputFile.startsWith('/data') && !inputFile.startsWith('upload/') && !inputFile.startsWith('./upload/')) return alert('The file must be in the /data directory.');
-
-    const fileExtension = inputFile.slice(inputFile.lastIndexOf('.'));
-    if (!['.mp4', '.flv', '.ts'].includes(fileExtension)) return alert('The file must be in mp4/flv/ts format.');
-
-    axios.post(`/terraform/v1/ffmpeg/vlive/server`, {
-      file: inputFile,
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      console.log(`Check server file ok，${JSON.stringify(res.data.data)}`);
-      const localFileObj = res.data.data;
-      const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target, type: "file"}];
-      axios.post('/terraform/v1/ffmpeg/vlive/source', {
-        platform, files,
-      }, {
-        headers: Token.loadBearerHeader(),
-      }).then(res => {
-        console.log(`Setup the virtual live file ok，${JSON.stringify(res.data.data)}`);
-        setVLiveFiles(res.data.data.files);
-      }).catch(handleError);
-    }).catch(handleError);
-  }, [inputFile, handleError, platform, setVLiveFiles]);
-
-  return (<>
-    <Form.Control as="div">
-      {!vLiveFiles?.length && <>
-        <Row>
-          <Col>
-            <Form.Control type="text" defaultValue={inputFile} placeholder="Please input file path" onChange={e => setInputFile(e.target.value)} />
-          </Col>
-          <Col xs="auto">
-            <Button variant="primary" onClick={CheckLocalFile}>Submit</Button>
-          </Col>
-        </Row></>
-      }
-      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
-    </Form.Control>
-  </>);
-}
-
-function VLiveFileUploaderCn({platform, vLiveFiles, setVLiveFiles}) {
-  const handleError = useErrorHandler();
-  const updateSources = React.useCallback((platform, files, setFiles) => {
-    if (!files?.length) return alert('无上传文件');
-
-    axios.post('/terraform/v1/ffmpeg/vlive/source', {
-      platform, files: files.map(f => {
-        return {name: f.name, size: f.size, uuid: f.uuid, target: f.target, type: "upload"};
-      }),
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      console.log(`虚拟直播文件源设置成功, ${JSON.stringify(res.data.data)}`);
-      setFiles(res.data.data.files);
-    }).catch(handleError);
-  }, [handleError]);
-
-  return (<>
-    <Form.Control as='div'>
-      {!vLiveFiles?.length && <FileUploader onFilesUploaded={(files) => updateSources(platform, files, setVLiveFiles)}/>}
-      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
-    </Form.Control>
-  </>);
-}
-
-function VLiveFileUploaderEn({platform, vLiveFiles, setVLiveFiles}) {
-  const handleError = useErrorHandler();
-  const updateSources = React.useCallback((platform, files, setFiles) => {
-    if (!files?.length) return alert('No file selected');
-
-    axios.post('/terraform/v1/ffmpeg/vlive/source', {
-      platform, files: files.map(f => {
-        return {name: f.name, size: f.size, uuid: f.uuid, target: f.target, type: "upload"};
-      }),
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      console.log(`Set file source ok, ${JSON.stringify(res.data.data)}`);
-      setFiles(res.data.data.files);
-    }).catch(handleError);
-  }, [handleError]);
-
-  return (<>
-    <Form.Control as='div'>
-      {!vLiveFiles?.length && <FileUploader onFilesUploaded={(files) => updateSources(platform, files, setVLiveFiles)}/>}
-      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
-    </Form.Control>
-  </>);
-}
-
-function VLiveFileFormatInfo({file}) {
+function CameraFileFormatInfo({file}) {
   const f = file;
   if (!f?.format) return <></>;
   return <>
-    {f?.type !== 'stream' && 
+    {f?.type !== 'stream' &&
       <>
-      File &nbsp;
-      {Number(f?.size/1024/1024).toFixed(1)}MB &nbsp;
-      {Number(f?.format?.duration).toFixed(0)}s &nbsp;
+        File &nbsp;
+        {Number(f?.size/1024/1024).toFixed(1)}MB &nbsp;
+        {Number(f?.format?.duration).toFixed(0)}s &nbsp;
       </>
     }
     {f?.type === 'stream' &&
       <>
-      Stream &nbsp;
+        Stream &nbsp;
       </>
     }
     {Number(f?.format?.bit_rate/1000).toFixed(1)}Kbps
   </>;
 }
 
-function VLiveFileVideoInfo({file}) {
+function CameraFileVideoInfo({file}) {
   const f = file;
   if (!f?.video) return <>NoVideo</>;
   return <>Video({f?.video?.codec_name} {f?.video?.profile} {f?.video?.width}x{f?.video?.height})</>;
 }
 
-function VLiveFileAudioInfo({file}) {
+function CameraFileAudioInfo({file}) {
   const f = file;
   if (!f?.audio) return <>NoAudio</>;
   return <>Audio({f?.audio?.codec_name} {f?.audio?.sample_rate}HZ {f?.audio?.channels}CH)</>;

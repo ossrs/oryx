@@ -108,11 +108,11 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 			var obj VLiveConfigure
 			if err = json.Unmarshal([]byte(v), &obj); err == nil {
 				for _, vFile := range obj.Files {
-					if vFile.Type == SrsVLiveSourceTypeFile {
+					if vFile.Type == FFprobeSourceTypeFile {
 						params["vft0"] = "1"
-					} else if vFile.Type == SrsVLiveSourceTypeUpload {
+					} else if vFile.Type == FFprobeSourceTypeUpload {
 						params["vft1"] = "1"
-					} else if vFile.Type == SrsVLiveSourceTypeStream {
+					} else if vFile.Type == FFprobeSourceTypeStream {
 						params["vft2"] = "1"
 					}
 				}

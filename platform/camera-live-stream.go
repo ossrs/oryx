@@ -9,12 +9,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -31,40 +29,40 @@ import (
 	"github.com/google/uuid"
 )
 
-var vLiveWorker *VLiveWorker
+var cameraWorker *CameraWorker
 
-type VLiveWorker struct {
+type CameraWorker struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	// The tasks we have started to vLive streams,, key is platform in string, value is *VLiveTask.
+	// The tasks we have started to IP camera streams,, key is platform in string, value is *CameraTask.
 	tasks sync.Map
 }
 
-func NewVLiveWorker() *VLiveWorker {
-	return &VLiveWorker{}
+func NewCameraWorker() *CameraWorker {
+	return &CameraWorker{}
 }
 
-func (v *VLiveWorker) GetTask(platform string) *VLiveTask {
+func (v *CameraWorker) GetTask(platform string) *CameraTask {
 	if task, loaded := v.tasks.Load(platform); loaded {
-		return task.(*VLiveTask)
+		return task.(*CameraTask)
 	}
 	return nil
 }
 
-func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
-	ep := "/terraform/v1/ffmpeg/vlive/secret"
+func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
+	ep := "/terraform/v1/ffmpeg/camera/secret"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token, action string
-			var userConf VLiveConfigure
+			var userConf CameraConfigure
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token  *string `json:"token"`
 				Action *string `json:"action"`
-				*VLiveConfigure
+				*CameraConfigure
 			}{
-				Token: &token, Action: &action, VLiveConfigure: &userConf,
+				Token: &token, Action: &action, CameraConfigure: &userConf,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -94,15 +92,15 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				if userConf.Server == "" && userConf.Secret == "" {
 					return errors.New("no secret")
 				}
-				if len(userConf.Files) == 0 {
+				if len(userConf.Streams) == 0 {
 					return errors.New("no files")
 				}
 			}
 
 			if action == "update" {
-				var targetConf VLiveConfigure
-				if config, err := rdb.HGet(ctx, SRS_VLIVE_CONFIG, userConf.Platform).Result(); err != nil && err != redis.Nil {
-					return errors.Wrapf(err, "hget %v %v", SRS_VLIVE_CONFIG, userConf.Platform)
+				var targetConf CameraConfigure
+				if config, err := rdb.HGet(ctx, SRS_CAMERA_CONFIG, userConf.Platform).Result(); err != nil && err != redis.Nil {
+					return errors.Wrapf(err, "hget %v %v", SRS_CAMERA_CONFIG, userConf.Platform)
 				} else {
 					if config != "" {
 						if err = json.Unmarshal([]byte(config), &targetConf); err != nil {
@@ -113,28 +111,28 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 						return errors.Wrapf(err, "update %v with %v", targetConf.String(), userConf.String())
 					} else if newB, err := json.Marshal(&targetConf); err != nil {
 						return errors.Wrapf(err, "marshal %v", targetConf.String())
-					} else if err = rdb.HSet(ctx, SRS_VLIVE_CONFIG, userConf.Platform, string(newB)).Err(); err != nil && err != redis.Nil {
-						return errors.Wrapf(err, "hset %v %v %v", SRS_VLIVE_CONFIG, userConf.Platform, string(newB))
+					} else if err = rdb.HSet(ctx, SRS_CAMERA_CONFIG, userConf.Platform, string(newB)).Err(); err != nil && err != redis.Nil {
+						return errors.Wrapf(err, "hset %v %v %v", SRS_CAMERA_CONFIG, userConf.Platform, string(newB))
 					}
 				}
 
-				// Restart the vLive if exists.
-				if task := vLiveWorker.GetTask(userConf.Platform); task != nil {
+				// Restart the IP camera if exists.
+				if task := cameraWorker.GetTask(userConf.Platform); task != nil {
 					if err := task.Restart(ctx); err != nil {
 						return errors.Wrapf(err, "restart task %v", userConf.String())
 					}
 				}
 
 				ohttp.WriteData(ctx, w, r, nil)
-				logger.Tf(ctx, "vLive: Update secret ok, token=%vB", len(token))
+				logger.Tf(ctx, "Camera: update secret ok, token=%vB", len(token))
 				return nil
 			} else {
-				confObjs := make(map[string]*VLiveConfigure)
-				if configs, err := rdb.HGetAll(ctx, SRS_VLIVE_CONFIG).Result(); err != nil && err != redis.Nil {
-					return errors.Wrapf(err, "hgetall %v", SRS_VLIVE_CONFIG)
+				confObjs := make(map[string]*CameraConfigure)
+				if configs, err := rdb.HGetAll(ctx, SRS_CAMERA_CONFIG).Result(); err != nil && err != redis.Nil {
+					return errors.Wrapf(err, "hgetall %v", SRS_CAMERA_CONFIG)
 				} else {
 					for k, v := range configs {
-						var obj VLiveConfigure
+						var obj CameraConfigure
 						if err = json.Unmarshal([]byte(v), &obj); err != nil {
 							return errors.Wrapf(err, "unmarshal %v %v", k, v)
 						}
@@ -143,7 +141,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				}
 
 				ohttp.WriteData(ctx, w, r, confObjs)
-				logger.Tf(ctx, "vLive: Query configures ok, token=%vB", len(token))
+				logger.Tf(ctx, "Camera: query configures ok, token=%vB", len(token))
 				return nil
 			}
 		}(); err != nil {
@@ -151,7 +149,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 		}
 	})
 
-	ep = "/terraform/v1/ffmpeg/vlive/streams"
+	ep = "/terraform/v1/ffmpeg/camera/streams"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -170,27 +168,28 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}
 
 			res := make([]map[string]interface{}, 0)
-			if configs, err := rdb.HGetAll(ctx, SRS_VLIVE_CONFIG).Result(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hgetall %v", SRS_VLIVE_CONFIG)
+			if configs, err := rdb.HGetAll(ctx, SRS_CAMERA_CONFIG).Result(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hgetall %v", SRS_CAMERA_CONFIG)
 			} else if len(configs) > 0 {
 				for k, v := range configs {
-					var config VLiveConfigure
+					var config CameraConfigure
 					if err = json.Unmarshal([]byte(v), &config); err != nil {
 						return errors.Wrapf(err, "unmarshal %v %v", k, v)
 					}
 
 					var pid int32
 					var inputUUID, frame, update string
-					if task := vLiveWorker.GetTask(config.Platform); task != nil {
+					if task := cameraWorker.GetTask(config.Platform); task != nil {
 						pid, inputUUID, frame, update = task.queryFrame()
 					}
 
 					elem := map[string]interface{}{
-						"platform": config.Platform,
-						"enabled":  config.Enabled,
-						"custom":   config.Customed,
-						"label":    config.Label,
-						"files":    config.Files,
+						"platform":   config.Platform,
+						"enabled":    config.Enabled,
+						"custom":     config.Customed,
+						"label":      config.Label,
+						"files":      config.Streams,
+						"extraAudio": config.ExtraAudio,
 					}
 
 					if pid > 0 {
@@ -210,14 +209,16 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			})
 
 			ohttp.WriteData(ctx, w, r, res)
-			logger.Tf(ctx, "vLive: Query vLive streams ok, token=%vB", len(token))
+			logger.Tf(ctx, "Camera: Query streams ok, token=%vB", len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
 
-	streamUrlHandler := func(w http.ResponseWriter, r *http.Request) {
+	ep = "/terraform/v1/ffmpeg/camera/stream-url"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
 			var qUrl string
@@ -268,199 +269,18 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				Target: qUrl,
 			})
 
-			logger.Tf(ctx, "vLive: Update stream url ok, url=%v, uuid=%v", qUrl, targetUUID)
-			return nil
-		}(); err != nil {
-			ohttp.WriteError(ctx, w, r, err)
-		}
-	}
-
-	ep = "/terraform/v1/ffmpeg/vlive/streamUrl"
-	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, streamUrlHandler)
-
-	ep = "/terraform/v1/ffmpeg/vlive/stream-url"
-	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, streamUrlHandler)
-
-	ep = "/terraform/v1/ffmpeg/vlive/server"
-	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
-		if err := func() error {
-			var token string
-			var qFile string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token      *string `json:"token"`
-				StreamFile *string `json:"file"`
-			}{
-				Token: &token, StreamFile: &qFile,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
-			fileAbsPath, err := filepath.Abs(qFile)
-			if err != nil {
-				return errors.Wrapf(err, "abs %v", qFile)
-			}
-
-			if !strings.HasPrefix(fileAbsPath, serverDataDirectory) && !strings.HasPrefix(qFile, dirUploadPath) {
-				return errors.Errorf("invalid file %v, should in %v", fileAbsPath, serverDataDirectory)
-			}
-
-			var validExtension bool
-			for _, ext := range serverAllowVideoFiles {
-				if strings.HasSuffix(fileAbsPath, ext) {
-					validExtension = true
-					break
-				}
-			}
-			if !validExtension {
-				return errors.Errorf("invalid file extension %v, should be %v", fileAbsPath, serverAllowVideoFiles)
-			}
-
-			info, err := os.Stat(fileAbsPath)
-			if err != nil {
-				return errors.Wrapf(err, "stat %v", fileAbsPath)
-			}
-
-			targetUUID := uuid.NewString()
-			targetFileName := path.Join(dirUploadPath, fmt.Sprintf("%v%v", targetUUID, path.Ext(info.Name())))
-
-			targetFile, err := os.OpenFile(targetFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-			if err != nil {
-				return errors.Wrapf(err, "open file %v", targetFileName)
-			}
-			defer targetFile.Close()
-
-			sourceFile, err := os.Open(fileAbsPath)
-			if err != nil {
-				return errors.Wrapf(err, "open file %v", fileAbsPath)
-			}
-			defer sourceFile.Close()
-
-			if _, err = io.Copy(targetFile, sourceFile); err != nil {
-				return errors.Wrapf(err, "copy %v to %v", fileAbsPath, targetFileName)
-			}
-
-			ohttp.WriteData(ctx, w, r, &struct {
-				Name   string `json:"name"`
-				UUID   string `json:"uuid"`
-				Target string `json:"target"`
-				Size   int    `json:"size"`
-			}{
-				Name:   info.Name(),
-				UUID:   targetUUID,
-				Target: targetFileName,
-				Size:   int(info.Size()),
-			})
-			logger.Tf(ctx, "vLive: Got vlive local file target=%v, size=%v", targetFileName, info.Size())
+			logger.Tf(ctx, "Camera: Update stream url ok, url=%v, uuid=%v", qUrl, targetUUID)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
 
-	ep = "/terraform/v1/ffmpeg/vlive/upload/"
-	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
-		if err := func(ctx context.Context) error {
-			filename := r.URL.Path[len("/terraform/v1/ffmpeg/vlive/upload/"):]
-
-			targetUUID := uuid.NewString()
-			targetFileName := path.Join(dirUploadPath, fmt.Sprintf("%v%v", targetUUID, path.Ext(filename)))
-			logger.Tf(ctx, "vLive: Create %v for %v", targetFileName, filename)
-
-			var uploadDone bool
-			created := time.Now()
-			defer func() {
-				// If upload is not done, remove the target file
-				if !uploadDone {
-					os.Remove(targetFileName)
-					logger.Wf(ctx, "remove %v, done=%v, created=%v", targetFileName, uploadDone, created)
-				}
-			}()
-			go func() {
-				// If the temporary file still exists for a long time, remove it
-				duration := 2 * time.Hour
-				if os.Getenv("NODE_ENV") == "development" {
-					duration = time.Duration(30) * time.Second
-				}
-				time.Sleep(duration)
-
-				if _, err := os.Stat(targetFileName); err == nil {
-					os.Remove(targetFileName)
-					logger.Wf(ctx, "remove %v, done=%v, created=%v, duration=%v, elapsed=%v",
-						targetFileName, uploadDone, created, duration, time.Now().Sub(created))
-				}
-			}()
-
-			targetFile, err := os.OpenFile(targetFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-			if err != nil {
-				return errors.Wrapf(err, "open file %v", targetFileName)
-			}
-			defer targetFile.Close()
-
-			// See https://github.com/rfielding/uploader/blob/master/uploader.go#L170
-			mr, err := r.MultipartReader()
-			if err != nil {
-				return errors.Wrapf(err, "multi reader")
-			}
-
-			starttime := time.Now()
-			var written int64
-			for {
-				part, err := mr.NextPart()
-				if err != nil {
-					if err == io.EOF {
-						break
-					}
-					return errors.Wrapf(err, "next part")
-				}
-
-				if filename != part.FileName() {
-					return errors.Errorf("filename=%v mismatch %v", part.FileName(), filename)
-				}
-				logger.Tf(ctx, "vLive: Start part for %v", targetFileName)
-
-				partStarttime := time.Now()
-				if nn, err := io.Copy(targetFile, part); err != nil {
-					return errors.Wrapf(err, "copy %v to %v", targetFile, filename)
-				} else {
-					written += nn
-					logger.Tf(ctx, "vLive: Finish part for %v, nn=%v, writen=%v, cost=%v",
-						targetFileName, nn, written, time.Now().Sub(partStarttime),
-					)
-				}
-			}
-
-			// After write file success, set the upload done to keep the file.
-			uploadDone = true
-
-			ohttp.WriteData(ctx, w, r, &struct {
-				// The file UUID.
-				UUID string `json:"uuid"`
-				// The target file name.
-				Target string `json:"target"`
-			}{
-				UUID: targetUUID, Target: targetFileName,
-			})
-			logger.Tf(ctx, "vLive: Got vlive target=%v, size=%v, done=%v, cost=%v", targetFileName, written, uploadDone, time.Now().Sub(starttime))
-			return nil
-		}(logger.WithContext(ctx)); err != nil {
-			ohttp.WriteError(ctx, w, r, err)
-		}
-	})
-
-	ep = "/terraform/v1/ffmpeg/vlive/source"
+	ep = "/terraform/v1/ffmpeg/camera/source"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			type VLiveTempFile struct {
+			type CameraTempFile struct {
 				// The file name.
 				Name string `json:"name"`
 				// The file size in bytes.
@@ -474,13 +294,13 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}
 
 			var token, platform string
-			var files []*VLiveTempFile
+			var streams []*CameraTempFile
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string           `json:"token"`
-				Platform *string           `json:"platform"`
-				Files    *[]*VLiveTempFile `json:"files"`
+				Token    *string            `json:"token"`
+				Platform *string            `json:"platform"`
+				Streams  *[]*CameraTempFile `json:"files"`
 			}{
-				Token: &token, Platform: &platform, Files: &files,
+				Token: &token, Platform: &platform, Streams: &streams,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -490,38 +310,17 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			if len(files) == 0 {
+			if len(streams) == 0 {
 				return errors.New("no files")
 			}
 
-			// Always cleanup the files in upload.
-			var tempFiles []string
-			for _, f := range files {
-				if f.Type != FFprobeSourceTypeStream {
-					tempFiles = append(tempFiles, f.Target)
-				}
-			}
-			defer func() {
-				for _, tempFile := range tempFiles {
-					if _, err := os.Stat(tempFile); err == nil {
-						os.Remove(tempFile)
-						logger.Tf(ctx, "vLive: Cleanup %v", tempFile)
-					}
-				}
-			}()
-
 			// Check files.
-			for _, f := range files {
-				if f.Target == "" {
+			for _, stream := range streams {
+				if stream.Target == "" {
 					return errors.New("no target")
 				}
-				if f.Type != FFprobeSourceTypeStream {
-					if _, err := os.Stat(f.Target); err != nil {
-						return errors.Wrapf(err, "no file %v", f.Target)
-					}
-					if !strings.HasPrefix(f.Target, dirUploadPath) {
-						return errors.Errorf("invalid target %v", f.Target)
-					}
+				if stream.Type != FFprobeSourceTypeStream {
+					return errors.Errorf("invalid target %v type %v", stream.Target, stream.Type)
 				}
 			}
 
@@ -535,10 +334,10 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}
 
 			// Parsed source files.
-			var parsedFiles []*FFprobeSource
+			var parsedStreams []*FFprobeSource
 
-			// Parse file information and move file from dirUploadPath to dirVLivePath.
-			for _, file := range files {
+			// Parse file information and move file from camera stream URL.
+			for _, stream := range streams {
 				// Probe file information.
 				toCtx, toCancelFunc := context.WithTimeout(ctx, 15*time.Second)
 				defer toCancelFunc()
@@ -548,23 +347,23 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					"-show_format", "-show_streams",
 				}
 				// For RTSP stream source, always use TCP transport.
-				if strings.HasPrefix(file.Target, "rtsp://") {
+				if strings.HasPrefix(stream.Target, "rtsp://") {
 					args = append(args, "-rtsp_transport", "tcp")
 				}
 				// Rebuild the stream url, because it may contain special characters.
-				if strings.Contains(file.Target, "://") {
-					if u, err := RebuildStreamURL(file.Target); err != nil {
-						return errors.Wrapf(err, "rebuild %v", file.Target)
+				if strings.Contains(stream.Target, "://") {
+					if u, err := RebuildStreamURL(stream.Target); err != nil {
+						return errors.Wrapf(err, "rebuild %v", stream.Target)
 					} else {
 						args = append(args, "-i", u.String())
 					}
 				} else {
-					args = append(args, "-i", file.Target)
+					args = append(args, "-i", stream.Target)
 				}
 
 				stdout, err := exec.CommandContext(toCtx, "ffprobe", args...).Output()
 				if err != nil {
-					return errors.Wrapf(err, "probe %v with ffprobe %v", file.Target, args)
+					return errors.Wrapf(err, "probe %v with ffprobe %v", stream.Target, args)
 				}
 
 				format := struct {
@@ -578,11 +377,11 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				// permitting a 3Mbps continuous live stream for 7x24 hours. Therefore, it's crucial
 				// to restrict the input bitrate to prevent exceeding the traffic limit.
 				if format.Format.Bitrate != "" {
-					if limits, err := rdb.HGet(ctx, SRS_SYS_LIMITS, "vlive").Int64(); err != nil && err != redis.Nil {
-						return errors.Wrapf(err, "hget %v vlive", SRS_SYS_LIMITS)
+					if limits, err := rdb.HGet(ctx, SRS_SYS_LIMITS, "camera").Int64(); err != nil && err != redis.Nil {
+						return errors.Wrapf(err, "hget %v camera", SRS_SYS_LIMITS)
 					} else {
 						if limits == 0 {
-							limits = SrsSysLimitsVLive // in Kbps.
+							limits = SrsSysLimitsCamera // in Kbps.
 						}
 
 						if bitrate, err := strconv.ParseInt(format.Format.Bitrate, 10, 64); err != nil {
@@ -623,51 +422,37 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					}
 				}
 
-				parsedFile := &FFprobeSource{
-					Name: file.Name, Size: uint64(file.Size), UUID: file.UUID,
-					Target: file.Target,
-					Type:   file.Type,
+				parsedStream := &FFprobeSource{
+					Name: stream.Name, Size: uint64(stream.Size), UUID: stream.UUID,
+					Target: stream.Target,
+					Type:   stream.Type,
 					Format: &format.Format, Video: matchVideo, Audio: matchAudio,
 				}
-				if file.Type != FFprobeSourceTypeStream {
-					parsedFile.Target = path.Join(dirVLivePath, fmt.Sprintf("%v%v", file.UUID, path.Ext(file.Target)))
-					if err = os.Rename(file.Target, parsedFile.Target); err != nil {
-						return errors.Wrapf(err, "rename %v to %v", file.Target, parsedFile.Target)
-					}
-				}
 
-				parsedFiles = append(parsedFiles, parsedFile)
-				logger.Tf(ctx, "vLive: Process file %v", parsedFile.String())
+				parsedStreams = append(parsedStreams, parsedStream)
+				logger.Tf(ctx, "Camera: process stream %v", parsedStream.String())
 			}
 
 			// Update redis object.
-			confObj := VLiveConfigure{Platform: platform}
-			if conf, err := rdb.HGet(ctx, SRS_VLIVE_CONFIG, platform).Result(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hget %v %v", SRS_VLIVE_CONFIG, platform)
+			confObj := CameraConfigure{Platform: platform}
+			if conf, err := rdb.HGet(ctx, SRS_CAMERA_CONFIG, platform).Result(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v %v", SRS_CAMERA_CONFIG, platform)
 			} else if conf != "" {
 				if err = json.Unmarshal([]byte(conf), &confObj); err != nil {
 					return errors.Wrapf(err, "parse %v", conf)
 				}
 			}
 
-			// Remove old files.
-			for _, f := range confObj.Files {
-				if f.Type != FFprobeSourceTypeStream {
-					if _, err := os.Stat(f.Target); err == nil {
-						os.Remove(f.Target)
-					}
-				}
-			}
-			confObj.Files = parsedFiles
+			confObj.Streams = parsedStreams
 
 			if b, err := json.Marshal(&confObj); err != nil {
 				return errors.Wrapf(err, "marshal %v", confObj.String())
-			} else if err = rdb.HSet(ctx, SRS_VLIVE_CONFIG, platform, string(b)).Err(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hset %v %v %v", SRS_VLIVE_CONFIG, platform, string(b))
+			} else if err = rdb.HSet(ctx, SRS_CAMERA_CONFIG, platform, string(b)).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v %v %v", SRS_CAMERA_CONFIG, platform, string(b))
 			}
 
-			// Restart the vLive if exists.
-			if task := vLiveWorker.GetTask(platform); task != nil {
+			// Restart the IP camera if exists.
+			if task := cameraWorker.GetTask(platform); task != nil {
 				if err := task.Restart(ctx); err != nil {
 					return errors.Wrapf(err, "restart task %v", platform)
 				}
@@ -677,9 +462,9 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				Platform string           `json:"platform"`
 				Files    []*FFprobeSource `json:"files"`
 			}{
-				Platform: platform, Files: parsedFiles,
+				Platform: platform, Files: parsedStreams,
 			})
-			logger.Tf(ctx, "vLive: Update vLive ok, token=%vB", len(token))
+			logger.Tf(ctx, "Camera:: Update ok, token=%vB", len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -689,7 +474,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 	return nil
 }
 
-func (v *VLiveWorker) Close() error {
+func (v *CameraWorker) Close() error {
 	if v.cancel != nil {
 		v.cancel()
 	}
@@ -697,23 +482,23 @@ func (v *VLiveWorker) Close() error {
 	return nil
 }
 
-func (v *VLiveWorker) Start(ctx context.Context) error {
+func (v *CameraWorker) Start(ctx context.Context) error {
 	wg := &v.wg
 
 	ctx, cancel := context.WithCancel(ctx)
 	v.cancel = cancel
 
 	ctx = logger.WithContext(ctx)
-	logger.Tf(ctx, "vLive: Start a worker")
+	logger.Tf(ctx, "Camera: start a worker")
 
 	// Load tasks from redis and force to kill all.
-	if objs, err := rdb.HGetAll(ctx, SRS_VLIVE_TASK).Result(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hgetall %v", SRS_VLIVE_TASK)
+	if objs, err := rdb.HGetAll(ctx, SRS_CAMERA_TASK).Result(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hgetall %v", SRS_CAMERA_TASK)
 	} else if len(objs) > 0 {
 		for uuid, obj := range objs {
-			logger.Tf(ctx, "vLive: Load task %v object %v", uuid, obj)
+			logger.Tf(ctx, "Load task %v object %v", uuid, obj)
 
-			var task VLiveTask
+			var task CameraTask
 			if err = json.Unmarshal([]byte(obj), &task); err != nil {
 				return errors.Wrapf(err, "unmarshal %v %v", uuid, obj)
 			}
@@ -723,29 +508,29 @@ func (v *VLiveWorker) Start(ctx context.Context) error {
 			}
 		}
 
-		if err = rdb.Del(ctx, SRS_VLIVE_TASK).Err(); err != nil && err != redis.Nil {
-			return errors.Wrapf(err, "del %v", SRS_VLIVE_TASK)
+		if err = rdb.Del(ctx, SRS_CAMERA_TASK).Err(); err != nil && err != redis.Nil {
+			return errors.Wrapf(err, "del %v", SRS_CAMERA_TASK)
 		}
 	}
 
 	// Load all configurations from redis.
 	loadTasks := func() error {
-		configItems, err := rdb.HGetAll(ctx, SRS_VLIVE_CONFIG).Result()
+		configItems, err := rdb.HGetAll(ctx, SRS_CAMERA_CONFIG).Result()
 		if err != nil && err != redis.Nil {
-			return errors.Wrapf(err, "hgetall %v", SRS_VLIVE_CONFIG)
+			return errors.Wrapf(err, "hgetall %v", SRS_CAMERA_CONFIG)
 		}
 		if len(configItems) == 0 {
 			return nil
 		}
 
 		for platform, configItem := range configItems {
-			var config VLiveConfigure
+			var config CameraConfigure
 			if err = json.Unmarshal([]byte(configItem), &config); err != nil {
 				return errors.Wrapf(err, "unmarshal %v %v", platform, configItem)
 			}
 
-			var task *VLiveTask
-			if tv, loaded := v.tasks.LoadOrStore(config.Platform, &VLiveTask{
+			var task *CameraTask
+			if tv, loaded := v.tasks.LoadOrStore(config.Platform, &CameraTask{
 				UUID:     uuid.NewString(),
 				Platform: config.Platform,
 				config:   &config,
@@ -753,8 +538,8 @@ func (v *VLiveWorker) Start(ctx context.Context) error {
 				// Ignore if exists.
 				continue
 			} else {
-				task = tv.(*VLiveTask)
-				logger.Tf(ctx, "vLive: Create platform=%v task is %v", platform, task.String())
+				task = tv.(*CameraTask)
+				logger.Tf(ctx, "Camera: create platform=%v task is %v", platform, task.String())
 			}
 
 			// Initialize object.
@@ -787,7 +572,7 @@ func (v *VLiveWorker) Start(ctx context.Context) error {
 		case <-ctx.Done():
 		case <-time.After(3 * time.Second):
 		}
-		logger.Tf(ctx, "vLive: Start to run tasks")
+		logger.Tf(ctx, "Camera: Start to run tasks")
 
 		for ctx.Err() == nil {
 			duration := 3 * time.Second
@@ -806,8 +591,8 @@ func (v *VLiveWorker) Start(ctx context.Context) error {
 	return nil
 }
 
-// VLiveConfigure is the configure for vLive.
-type VLiveConfigure struct {
+// CameraConfigure is the configure for IP camera.
+type CameraConfigure struct {
 	// The platform name, for example, wx
 	Platform string `json:"platform"`
 	// The RTMP server url, for example, rtmp://localhost/live
@@ -820,18 +605,20 @@ type VLiveConfigure struct {
 	Customed bool `json:"custom"`
 	// The label for this configure.
 	Label string `json:"label"`
+	// The extra audio stream strategy.
+	ExtraAudio string `json:"extraAudio"`
 
-	// The input files for vLive.
-	Files []*FFprobeSource `json:"files"`
+	// The input files for IP camera.
+	Streams []*FFprobeSource `json:"files"`
 }
 
-func (v VLiveConfigure) String() string {
-	return fmt.Sprintf("platform=%v, server=%v, secret=%v, enabled=%v, customed=%v, label=%v, files=%v",
-		v.Platform, v.Server, v.Secret, v.Enabled, v.Customed, v.Label, v.Files,
+func (v CameraConfigure) String() string {
+	return fmt.Sprintf("platform=%v, server=%v, secret=%v, enabled=%v, customed=%v, label=%v, files=%v, extraAudio=%v",
+		v.Platform, v.Server, v.Secret, v.Enabled, v.Customed, v.Label, v.Streams, v.ExtraAudio,
 	)
 }
 
-func (v *VLiveConfigure) Update(u *VLiveConfigure) error {
+func (v *CameraConfigure) Update(u *CameraConfigure) error {
 	if u.Platform != "" {
 		v.Platform = u.Platform
 	}
@@ -846,12 +633,13 @@ func (v *VLiveConfigure) Update(u *VLiveConfigure) error {
 	}
 	v.Enabled = u.Enabled
 	v.Customed = u.Customed
-	v.Files = append([]*FFprobeSource{}, u.Files...)
+	v.Streams = append([]*FFprobeSource{}, u.Streams...)
+	v.ExtraAudio = u.ExtraAudio
 	return nil
 }
 
-// VLiveTask is a task for FFmpeg to vLive stream, with a configure.
-type VLiveTask struct {
+// CameraTask is a task for FFmpeg to IP camera stream, with a configure.
+type CameraTask struct {
 	// The ID for task.
 	UUID string `json:"uuid"`
 	// The platform for task.
@@ -874,35 +662,35 @@ type VLiveTask struct {
 	// The context for current task.
 	cancel context.CancelFunc
 
-	// The configure for vLive task.
-	config *VLiveConfigure
-	// The vLive worker.
-	vLiveWorker *VLiveWorker
+	// The configure for IP camera task.
+	config *CameraConfigure
+	// The IP camera worker.
+	cameraWorker *CameraWorker
 
 	// To protect the fields.
 	lock sync.Mutex
 }
 
-func (v *VLiveTask) String() string {
+func (v *CameraTask) String() string {
 	return fmt.Sprintf("uuid=%v, platform=%v, input=%v, output=%v, pid=%v, frame=%vB, config is %v",
 		v.UUID, v.Platform, v.Input, v.Output, v.PID, len(v.frame), v.config.String(),
 	)
 }
 
-func (v *VLiveTask) saveTask(ctx context.Context) error {
+func (v *CameraTask) saveTask(ctx context.Context) error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
 	if b, err := json.Marshal(v); err != nil {
 		return errors.Wrapf(err, "marshal %v", v.String())
-	} else if err = rdb.HSet(ctx, SRS_VLIVE_TASK, v.UUID, string(b)).Err(); err != nil && err != redis.Nil {
-		return errors.Wrapf(err, "hset %v %v %v", SRS_VLIVE_TASK, v.UUID, string(b))
+	} else if err = rdb.HSet(ctx, SRS_CAMERA_TASK, v.UUID, string(b)).Err(); err != nil && err != redis.Nil {
+		return errors.Wrapf(err, "hset %v %v %v", SRS_CAMERA_TASK, v.UUID, string(b))
 	}
 
 	return nil
 }
 
-func (v *VLiveTask) cleanup(ctx context.Context) error {
+func (v *CameraTask) cleanup(ctx context.Context) error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
@@ -919,7 +707,7 @@ func (v *VLiveTask) cleanup(ctx context.Context) error {
 	return nil
 }
 
-func (v *VLiveTask) Restart(ctx context.Context) error {
+func (v *CameraTask) Restart(ctx context.Context) error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
@@ -928,8 +716,8 @@ func (v *VLiveTask) Restart(ctx context.Context) error {
 	}
 
 	// Reload config from redis.
-	if b, err := rdb.HGet(ctx, SRS_VLIVE_CONFIG, v.Platform).Result(); err != nil {
-		return errors.Wrapf(err, "hget %v %v", SRS_VLIVE_CONFIG, v.Platform)
+	if b, err := rdb.HGet(ctx, SRS_CAMERA_CONFIG, v.Platform).Result(); err != nil {
+		return errors.Wrapf(err, "hget %v %v", SRS_CAMERA_CONFIG, v.Platform)
 	} else if err = json.Unmarshal([]byte(b), v.config); err != nil {
 		return errors.Wrapf(err, "unmarshal %v", b)
 	}
@@ -937,7 +725,7 @@ func (v *VLiveTask) Restart(ctx context.Context) error {
 	return nil
 }
 
-func (v *VLiveTask) updateFrame(frame string) {
+func (v *CameraTask) updateFrame(frame string) {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
@@ -945,15 +733,15 @@ func (v *VLiveTask) updateFrame(frame string) {
 	v.update = time.Now()
 }
 
-func (v *VLiveTask) queryFrame() (int32, string, string, string) {
+func (v *CameraTask) queryFrame() (int32, string, string, string) {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 	return v.PID, v.inputUUID, v.frame, v.update.Format(time.RFC3339)
 }
 
-func (v *VLiveTask) Initialize(ctx context.Context, w *VLiveWorker) error {
-	v.vLiveWorker = w
-	logger.Tf(ctx, "vLive: Initialize uuid=%v, platform=%v", v.UUID, v.Platform)
+func (v *CameraTask) Initialize(ctx context.Context, w *CameraWorker) error {
+	v.cameraWorker = w
+	logger.Tf(ctx, "Camera: Initialize uuid=%v, platform=%v", v.UUID, v.Platform)
 
 	if err := v.saveTask(ctx); err != nil {
 		return errors.Wrapf(err, "save task")
@@ -962,20 +750,20 @@ func (v *VLiveTask) Initialize(ctx context.Context, w *VLiveWorker) error {
 	return nil
 }
 
-func (v *VLiveTask) Run(ctx context.Context) error {
+func (v *CameraTask) Run(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
-	logger.Tf(ctx, "vLive: Run task %v", v.String())
+	logger.Tf(ctx, "Camera: Run task %v", v.String())
 
 	selectInputFile := func() *FFprobeSource {
 		v.lock.Lock()
 		defer v.lock.Unlock()
 
-		if len(v.config.Files) == 0 {
+		if len(v.config.Streams) == 0 {
 			return nil
 		}
 
-		file := v.config.Files[0]
-		logger.Tf(ctx, "vLive: Use file=%v as input for platform=%v", file.UUID, v.Platform)
+		file := v.config.Streams[0]
+		logger.Tf(ctx, "Camera: Use file=%v as input for platform=%v", file.UUID, v.Platform)
 		return file
 	}
 
@@ -991,9 +779,9 @@ func (v *VLiveTask) Run(ctx context.Context) error {
 			return nil
 		}
 
-		// Start vLive task.
-		if err := v.doVirtualLiveStream(ctx, input); err != nil {
-			return errors.Wrapf(err, "do vLive")
+		// Start IP camera task.
+		if err := v.doCameraStreaming(ctx, input); err != nil {
+			return errors.Wrapf(err, "do IP camera")
 		}
 
 		return nil
@@ -1019,7 +807,7 @@ func (v *VLiveTask) Run(ctx context.Context) error {
 	return nil
 }
 
-func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSource) error {
+func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource) error {
 	// Create context for current task.
 	parentCtx := ctx
 	ctx, cancel := context.WithCancel(ctx)
@@ -1057,7 +845,13 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 	} else {
 		args = append(args, "-i", input.Target)
 	}
-	args = append(args, "-c", "copy", "-f", "flv", outputURL)
+	// Whether insert extra audio stream.
+	if v.config.ExtraAudio == "silent" {
+		args = append(args, "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100", "-c:a", "aac", "-c:v", "copy")
+	} else {
+		args = append(args, "-c", "copy")
+	}
+	args = append(args, "-f", "flv", outputURL)
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
 	stderr, err := cmd.StderrPipe()
@@ -1084,7 +878,7 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 		v.cleanup(parentCtx)
 		v.saveTask(parentCtx)
 	}()
-	logger.Tf(ctx, "vLive: Start, platform=%v, input=%v, pid=%v", v.Platform, input.Target, v.PID)
+	logger.Tf(ctx, "Camera: Start, platform=%v, input=%v, pid=%v", v.Platform, input.Target, v.PID)
 
 	if err := v.saveTask(ctx); err != nil {
 		return errors.Wrapf(err, "save task %v", v.String())
@@ -1100,7 +894,7 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 			}
 
 			if v.update.Add(10 * time.Second).Before(time.Now()) {
-				logger.Tf(ctx, "vLive: FFmpeg not update for a while, restart it")
+				logger.Tf(ctx, "Camera: FFmpeg not update for a while, restart it")
 				cancel()
 				return
 			}
@@ -1135,7 +929,7 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 	}
 
 	err = cmd.Wait()
-	logger.Tf(ctx, "vLive: Cycle done, platform=%v, input=%v, pid=%v, err=%v",
+	logger.Tf(ctx, "Camera: Cycle done, platform=%v, input=%v, pid=%v, err=%v",
 		v.Platform, input.Target, v.PID, err,
 	)
 

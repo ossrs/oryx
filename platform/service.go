@@ -218,6 +218,10 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 		return errors.Wrapf(err, "handle vLive")
 	}
 
+	if err := cameraWorker.Handle(ctx, handler); err != nil {
+		return errors.Wrapf(err, "handle IP camera")
+	}
+
 	if err := handleHooksService(ctx, handler); err != nil {
 		return errors.Wrapf(err, "handle hooks")
 	}
@@ -865,10 +869,20 @@ func handleMgmtLimitsQuery(ctx context.Context, handler *http.ServeMux) {
 				vLiveLimits = SrsSysLimitsVLive
 			}
 
+			ipCameraLimits, err := rdb.HGet(ctx, SRS_SYS_LIMITS, "camera").Int64()
+			if err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v camera", SRS_SYS_LIMITS)
+			} else if ipCameraLimits == 0 {
+				ipCameraLimits = SrsSysLimitsCamera
+			}
+
 			ohttp.WriteData(ctx, w, r, &struct {
+				// The limits for virtual live streaming.
 				VLive int64 `json:"vlive"`
+				// The limits for IP camera streaming.
+				IPCamera int64 `json:"camera"`
 			}{
-				VLive: vLiveLimits,
+				VLive: vLiveLimits, IPCamera: ipCameraLimits,
 			})
 
 			logger.Tf(ctx, "limits: query ok")
@@ -885,12 +899,13 @@ func handleMgmtLimitsUpdate(ctx context.Context, handler *http.ServeMux) {
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
-			var vlive int64
+			var vlive, camera int64
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-				VLive *int64  `json:"vlive"`
+				Token    *string `json:"token"`
+				VLive    *int64  `json:"vlive"`
+				IPCamera *int64  `json:"camera"`
 			}{
-				Token: &token, VLive: &vlive,
+				Token: &token, VLive: &vlive, IPCamera: &camera,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -903,13 +918,19 @@ func handleMgmtLimitsUpdate(ctx context.Context, handler *http.ServeMux) {
 			if vlive <= 0 {
 				return errors.Errorf("invalid vlive %v", vlive)
 			}
+			if camera <= 0 {
+				return errors.Errorf("invalid vlive %v", vlive)
+			}
 
 			if err := rdb.HSet(ctx, SRS_SYS_LIMITS, "vlive", vlive).Err(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hset %v vlive %v", SRS_SYS_LIMITS, vlive)
 			}
+			if err := rdb.HSet(ctx, SRS_SYS_LIMITS, "camera", camera).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v camera %v", SRS_SYS_LIMITS, camera)
+			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "limits: update ok")
+			logger.Tf(ctx, "limits: Update ok, vlive=%v, camera=%v", vlive, camera)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
