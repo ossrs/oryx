@@ -847,7 +847,12 @@ func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource
 	}
 	// Whether insert extra audio stream.
 	if v.config.ExtraAudio == "silent" {
-		args = append(args, "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100", "-c:a", "aac", "-c:v", "copy")
+		args = append(args,
+			"-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100", // Silent audio stream.
+			"-map", "0:v", "-map", "1:a", // Ignore the original audio stream.
+			"-c:a", "aac", "-ac", "2", "-ar", "44100", "-b:a", "20k", // Encode audio stream.
+			"-c:v", "copy", // Copy video stream.
+		)
 	} else {
 		args = append(args, "-c", "copy")
 	}

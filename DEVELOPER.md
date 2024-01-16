@@ -1092,6 +1092,7 @@ The following are the update records for the SRS Stack server.
     * LiveRoom: Support live room secret with stream URL. v5.13.11
     * Camera: Support IP Camera streaming scenario. v5.13.12
     * Camera: Support silent extra audio stream for video only device. v5.13.13
+    * Camera: Support replace audio if enabled extra audio. v5.13.13
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
