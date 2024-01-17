@@ -93,9 +93,9 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
           const item = {
             ...e,
             name: {
-              wx: t('vle.wx.title'),
-              bilibili: t('vle.bl.title'),
-              kuaishou: t('vle.ks.title')
+              wx: t('plat.wx.title'),
+              bilibili: t('plat.bl.title'),
+              kuaishou: t('plat.ks.title')
             }[e.platform],
             update: e.frame?.update ? moment(e.frame.update) : null,
             i,
@@ -118,8 +118,8 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
   const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, files, extraAudio, onSuccess) => {
     e.preventDefault();
     if (!files?.length) return alert(t('camera.source'));
-    if (!server) return alert(t('vle.com.addr'));
-    if (custom && !label) return alert(t('vle.com.label'));
+    if (!server) return alert(t('plat.com.addr'));
+    if (custom && !label) return alert(t('plat.com.label'));
 
     try {
       setSubmiting(true);
@@ -130,7 +130,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
       }, {
         headers: Token.loadBearerHeader(),
       }).then(res => {
-        alert(t('vle.com.ok'));
+        alert(t('plat.com.ok'));
         onSuccess && onSuccess();
       }).catch(handleError);
     } finally {
@@ -180,12 +180,12 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
           </Accordion.Item>}
       </React.Fragment>
       <Accordion.Item eventKey="1">
-        <Accordion.Header>{wxCustom ? t('vle.com.custom') : t('vle.wx.title')} {wxLabel}</Accordion.Header>
+        <Accordion.Header>{wxCustom ? t('plat.com.custom') : t('plat.wx.title')} {wxLabel}</Accordion.Header>
         <Accordion.Body>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>{t('vle.com.name')}</Form.Label>
-              <Form.Text> * {wxCustom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('vle.com.name2')}</Form.Text>
+              <Form.Label>{t('plat.com.name')}</Form.Label>
+              <Form.Text> * {wxCustom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('plat.com.name2')}</Form.Text>
               <Form.Control as="input" defaultValue={wxLabel} onChange={(e) => setWxLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
@@ -193,19 +193,19 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
               <CameraExtraAudioTrack extraAudio={wxExtraAudio} setExtraAudio={setWxExtraAudio} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
-              <Form.Label>{wxCustom ? t('vle.com.server') : t('vle.com.server2')}</Form.Label>
-              {!wxCustom && <Form.Text> * {t('vle.com.server3')} <a href={t('vle.wx.link')} target='_blank' rel='noreferrer'>{t('vle.wx.link2')}</a>, {t('vle.com.server4')}</Form.Text>}
+              <Form.Label>{wxCustom ? t('plat.com.server') : t('plat.com.server2')}</Form.Label>
+              {!wxCustom && <Form.Text> * {t('plat.com.server3')} <a href={t('plat.wx.link')} target='_blank' rel='noreferrer'>{t('plat.wx.link2')}</a>, {t('plat.com.server4')}</Form.Text>}
               <Form.Control as="input" defaultValue={wxServer} onChange={(e) => setWxServer(e.target.value)}/>
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>{t('vle.com.key')}</Form.Label>
-              {!wxCustom && <Form.Text> * {t('vle.com.server3')} <a href={t('vle.wx.link')} target='_blank' rel='noreferrer'>{t('vle.wx.link2')}</a>, {t('vle.com.key2')}</Form.Text>}
+              <Form.Label>{t('plat.com.key')}</Form.Label>
+              {!wxCustom && <Form.Text> * {t('plat.com.server3')} <a href={t('plat.wx.link')} target='_blank' rel='noreferrer'>{t('plat.wx.link2')}</a>, {t('plat.com.key2')}</Form.Text>}
               <Form.Control as="input" defaultValue={wxSecret} onChange={(e) => setWxSecret(e.target.value)}/>
             </Form.Group>
             <Row>
               <Col xs='auto'>
                 <Form.Group className="mb-3" controlId="formWxCustomCheckbox">
-                  <Form.Check type="checkbox" label={t('vle.com.custom')} defaultChecked={wxCustom} onClick={() => setWxCustom(!wxCustom)} />
+                  <Form.Check type="checkbox" label={t('plat.com.custom')} defaultChecked={wxCustom} onClick={() => setWxCustom(!wxCustom)} />
                 </Form.Group>
               </Col>
             </Row>
@@ -219,19 +219,19 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
                 });
               }}
             >
-              {wxEnabled ? t('vle.com.stop') : t('vle.com.start')}
+              {wxEnabled ? t('plat.com.stop') : t('plat.com.start')}
             </Button> &nbsp;
             <Form.Text> * {t('camera.tip')}</Form.Text>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="2">
-        <Accordion.Header>{bilibiliCustom ? t('vle.com.custom') : t('vle.bl.title')} {bilibiliLabel}</Accordion.Header>
+        <Accordion.Header>{bilibiliCustom ? t('plat.com.custom') : t('plat.bl.title')} {bilibiliLabel}</Accordion.Header>
         <Accordion.Body>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>{t('vle.com.name')}</Form.Label>
-              <Form.Text> * {bilibiliCustom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('vle.com.name2')}</Form.Text>
+              <Form.Label>{t('plat.com.name')}</Form.Label>
+              <Form.Text> * {bilibiliCustom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('plat.com.name2')}</Form.Text>
               <Form.Control as="input" defaultValue={bilibiliLabel} onChange={(e) => setBilibiliLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
@@ -239,19 +239,19 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
               <CameraExtraAudioTrack extraAudio={bilibiliExtraAudio} setExtraAudio={setBilibiliExtraAudio} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
-              <Form.Label>{bilibiliCustom ? t('vle.com.server') : t('vle.com.server2')}</Form.Label>
-              {!bilibiliCustom && <Form.Text> * {t('vle.com.server3')} <a href={t('vle.bl.link')} target='_blank' rel='noreferrer'>{t('vle.bl.link2')}</a>, {t('vle.com.server4')}</Form.Text>}
+              <Form.Label>{bilibiliCustom ? t('plat.com.server') : t('plat.com.server2')}</Form.Label>
+              {!bilibiliCustom && <Form.Text> * {t('plat.com.server3')} <a href={t('plat.bl.link')} target='_blank' rel='noreferrer'>{t('plat.bl.link2')}</a>, {t('plat.com.server4')}</Form.Text>}
               <Form.Control as="input" defaultValue={bilibiliServer} onChange={(e) => setBilibiliServer(e.target.value)}/>
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>{t('vle.com.key')}</Form.Label>
-              {!bilibiliCustom && <Form.Text> * {t('vle.com.server3')} <a href={t('vle.bl.link')} target='_blank' rel='noreferrer'>{t('vle.bl.link2')}</a>, {t('vle.com.key2')}</Form.Text>}
+              <Form.Label>{t('plat.com.key')}</Form.Label>
+              {!bilibiliCustom && <Form.Text> * {t('plat.com.server3')} <a href={t('plat.bl.link')} target='_blank' rel='noreferrer'>{t('plat.bl.link2')}</a>, {t('plat.com.key2')}</Form.Text>}
               <Form.Control as="input" defaultValue={bilibiliSecret} onChange={(e) => setBilibiliSecret(e.target.value)}/>
             </Form.Group>
             <Row>
               <Col xs='auto'>
                 <Form.Group className="mb-3" controlId="formBilibiliCustomCheckbox">
-                  <Form.Check type="checkbox" label={t('vle.com.custom')} defaultChecked={bilibiliCustom} onClick={() => setBilibiliCustom(!bilibiliCustom)} />
+                  <Form.Check type="checkbox" label={t('plat.com.custom')} defaultChecked={bilibiliCustom} onClick={() => setBilibiliCustom(!bilibiliCustom)} />
                 </Form.Group>
               </Col>
             </Row>
@@ -265,19 +265,19 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
                 });
               }}
             >
-              {bilibiliEnabled ? t('vle.com.stop') : t('vle.com.start')}
+              {bilibiliEnabled ? t('plat.com.stop') : t('plat.com.start')}
             </Button> &nbsp;
             <Form.Text> * {t('camera.tip')}</Form.Text>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="3">
-        <Accordion.Header>{kuaishouCustom ? t('vle.com.custom') : t('vle.ks.title')} {kuaishouLabel}</Accordion.Header>
+        <Accordion.Header>{kuaishouCustom ? t('plat.com.custom') : t('plat.ks.title')} {kuaishouLabel}</Accordion.Header>
         <Accordion.Body>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>{t('vle.com.name')}</Form.Label>
-              <Form.Text> * {kuaishouCustom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('vle.com.name2')}</Form.Text>
+              <Form.Label>{t('plat.com.name')}</Form.Label>
+              <Form.Text> * {kuaishouCustom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('plat.com.name2')}</Form.Text>
               <Form.Control as="input" defaultValue={kuaishouLabel} onChange={(e) => setKuaishouLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
@@ -285,19 +285,19 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
               <CameraExtraAudioTrack extraAudio={kuaishouExtraAudio} setExtraAudio={setKuaishouExtraAudio} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
-              <Form.Label>{kuaishouCustom ? t('vle.com.server') : t('vle.com.server2')}</Form.Label>
-              {!kuaishouCustom && <Form.Text> * {t('vle.com.server3')} <a href={t('vle.ks.link')} target='_blank' rel='noreferrer'>{t('vle.ks.link2')}</a>, {t('vle.com.server4')}</Form.Text>}
+              <Form.Label>{kuaishouCustom ? t('plat.com.server') : t('plat.com.server2')}</Form.Label>
+              {!kuaishouCustom && <Form.Text> * {t('plat.com.server3')} <a href={t('plat.ks.link')} target='_blank' rel='noreferrer'>{t('plat.ks.link2')}</a>, {t('plat.com.server4')}</Form.Text>}
               <Form.Control as="input" defaultValue={kuaishouServer} onChange={(e) => setKuaishouServer(e.target.value)}/>
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>{t('vle.com.key')}</Form.Label>
-              {!kuaishouCustom && <Form.Text> * {t('vle.com.server3')} <a href={t('vle.ks.link')} target='_blank' rel='noreferrer'>{t('vle.ks.link2')}</a>, {t('vle.com.key2')}</Form.Text>}
+              <Form.Label>{t('plat.com.key')}</Form.Label>
+              {!kuaishouCustom && <Form.Text> * {t('plat.com.server3')} <a href={t('plat.ks.link')} target='_blank' rel='noreferrer'>{t('plat.ks.link2')}</a>, {t('plat.com.key2')}</Form.Text>}
               <Form.Control as="input" defaultValue={kuaishouSecret} onChange={(e) => setKuaishouSecret(e.target.value)}/>
             </Form.Group>
             <Row>
               <Col xs='auto'>
                 <Form.Group className="mb-3" controlId="formKuaishouCustomCheckbox">
-                  <Form.Check type="checkbox" label={t('vle.com.custom')} defaultChecked={kuaishouCustom} onClick={() => setKuaishouCustom(!kuaishouCustom)} />
+                  <Form.Check type="checkbox" label={t('plat.com.custom')} defaultChecked={kuaishouCustom} onClick={() => setKuaishouCustom(!kuaishouCustom)} />
                 </Form.Group>
               </Col>
             </Row>
@@ -311,14 +311,14 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
                 });
               }}
             >
-              {kuaishouEnabled ? t('vle.com.stop') : t('vle.com.start')}
+              {kuaishouEnabled ? t('plat.com.stop') : t('plat.com.start')}
             </Button> &nbsp;
             <Form.Text> * {t('camera.tip')}</Form.Text>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="99">
-        <Accordion.Header>{t('vle.com.status')}</Accordion.Header>
+        <Accordion.Header>{t('plat.com.status')}</Accordion.Header>
         <Accordion.Body>
           {
             cameras?.length ? (
@@ -326,12 +326,12 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
                 <thead>
                 <tr>
                   <th>#</th>
-                  <th>{t('vle.com.platform')}</th>
-                  <th>{t('vle.com.status2')}</th>
-                  <th>{t('vle.com.update')}</th>
-                  <th>{t('vle.com.source')}</th>
+                  <th>{t('plat.com.platform')}</th>
+                  <th>{t('plat.com.status2')}</th>
+                  <th>{t('plat.com.update')}</th>
+                  <th>{t('plat.com.source')}</th>
                   <th>{t('camera.extra')}</th>
-                  <th>{t('vle.com.log')}</th>
+                  <th>{t('plat.com.log')}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -339,10 +339,10 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
                   cameras?.map(file => {
                     return <tr key={file.platform} style={{verticalAlign: 'middle'}}>
                       <td>{file.i}</td>
-                      <td>{file.custom ? (file.label ? '' : t('vle.com.custom')) : file.name} {file.label}</td>
+                      <td>{file.custom ? (file.label ? '' : t('plat.com.custom')) : file.name} {file.label}</td>
                       <td>
                         <Badge bg={file.enabled ? (file.frame ? 'success' : 'primary') : 'secondary'}>
-                          {file.enabled ? (file.frame ? t('vle.com.s0') : t('vle.com.s1')) : t('vle.com.s2')}
+                          {file.enabled ? (file.frame ? t('plat.com.s0') : t('plat.com.s1')) : t('plat.com.s2')}
                         </Badge>
                       </td>
                       <td>
@@ -362,7 +362,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
               </Table>
             ) : ''
           }
-          {!cameras?.length ? t('vle.com.s3') : ''}
+          {!cameras?.length ? t('camera.s3') : ''}
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
@@ -412,8 +412,8 @@ function ChooseVideoSource({platform, cameraFiles, setCameraFiles}) {
 
   return (<>
     <Form.Group className="mb-3">
-      <Form.Label>{t('vle.tool.source')}</Form.Label>
-      <Form.Text> * {t('vle.tool.stream2')}</Form.Text>
+      <Form.Label>{t('plat.tool.source')}</Form.Label>
+      <Form.Text> * {t('plat.tool.stream2')}</Form.Text>
       <SrsErrorBoundary>
         <CameraStreamSelector platform={platform} cameraFiles={cameraFiles} setCameraFiles={setCameraFiles}/>
       </SrsErrorBoundary>
@@ -428,10 +428,10 @@ function CameraStreamSelector({platform, cameraFiles, setCameraFiles}) {
   const [submiting, setSubmiting] = React.useState();
 
   const checkStreamUrl = React.useCallback(async () => {
-    if (!inputStream) return alert(t('vle.tool.stream3'));
+    if (!inputStream) return alert(t('plat.tool.stream3'));
     const isHTTP = inputStream.startsWith('http://') || inputStream.startsWith('https://');
-    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !isHTTP) return alert(t('vle.tool.stream2'));
-    if (isHTTP && inputStream.indexOf('.flv') < 0 && inputStream.indexOf('.m3u8') < 0) return alert(t('vle.tool.stream4'));
+    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !isHTTP) return alert(t('plat.tool.stream2'));
+    if (isHTTP && inputStream.indexOf('.flv') < 0 && inputStream.indexOf('.m3u8') < 0) return alert(t('plat.tool.stream4'));
 
     setSubmiting(true);
     try {
@@ -446,7 +446,7 @@ function CameraStreamSelector({platform, cameraFiles, setCameraFiles}) {
       });
 
       await new Promise((resolve, reject) => {
-        console.log(`${t('vle.tool.stream5')}，${JSON.stringify(res.data.data)}`);
+        console.log(`${t('plat.tool.stream5')}，${JSON.stringify(res.data.data)}`);
         const streamObj = res.data.data;
         const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
         axios.post('/terraform/v1/ffmpeg/camera/source', {
@@ -454,7 +454,7 @@ function CameraStreamSelector({platform, cameraFiles, setCameraFiles}) {
         }, {
           headers: Token.loadBearerHeader(),
         }).then(res => {
-          console.log(`${t('vle.tool.stream6')}，${JSON.stringify(res.data.data)}`);
+          console.log(`${t('plat.tool.stream6')}，${JSON.stringify(res.data.data)}`);
           setCameraFiles(res.data.data.files);
           resolve();
         }).catch(reject);
@@ -471,7 +471,7 @@ function CameraStreamSelector({platform, cameraFiles, setCameraFiles}) {
       {!cameraFiles?.length && <>
         <Row>
           <Col>
-            <Form.Control type="text" defaultValue={inputStream} placeholder={t('vle.tool.stream3')} onChange={e => setInputStream(e.target.value)} />
+            <Form.Control type="text" defaultValue={inputStream} placeholder={t('plat.tool.stream3')} onChange={e => setInputStream(e.target.value)} />
           </Col>
           <Col xs="auto">
             <Button variant="primary" disabled={submiting} onClick={checkStreamUrl}>{t('helper.submit')}</Button>

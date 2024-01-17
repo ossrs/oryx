@@ -461,15 +461,7 @@
           "delete": "删除后不可恢复，确认删除直播间吗？"
         }
       },
-      "camera": {
-        "silent": "静音音频流",
-        "silent2": "额外音频流",
-        "silent3": "给无音频的摄像头加音频，才可以推给常见的直播平台",
-        "source": "请输入流地址",
-        "tip": "将摄像头转直播流",
-        "extra": "额外音频"
-      },
-      "vle": {
+      "plat": {
         "com": {
           "video": "请上传视频源",
           "addr": "请输入推流地址",
@@ -486,7 +478,6 @@
           "key2": "然后获取推流密钥",
           "start": "开始直播",
           "stop": "停止直播",
-          "tip": "将文件转直播流",
           "status": "直播状态",
           "platform": "平台",
           "status2": "状态",
@@ -495,8 +486,7 @@
           "log": "日志",
           "s0": "直播中",
           "s1": "等待中",
-          "s2": "未开启",
-          "s3": "没有流。请开启直播间后，等待大约30秒左右，列表会自动更新"
+          "s2": "未开启"
         },
         "wx": {
           "title": "视频号直播间",
@@ -515,7 +505,6 @@
         },
         "tool": {
           "source": "视频源",
-          "source2": "该直播就是将视频源(文件/流)转换成直播流",
           "upload": "上传本地文件",
           "upload2": "无上传文件",
           "upload3": "直播文件源设置成功",
@@ -533,12 +522,48 @@
           "stream5": "检查流地址成功",
           "stream6": "更新直播源为流地址成功"
         }
+      },
+      "camera": {
+        "silent": "静音音频流",
+        "silent2": "额外音频流",
+        "silent3": "给无音频的摄像头加音频，才可以推给常见的直播平台",
+        "source": "请输入流地址",
+        "tip": "将摄像头转直播流",
+        "extra": "额外音频",
+        "s3": "没有流。请开启直播间后，等待大约30秒左右，列表会自动更新"
+      },
+      "forward": {
+        "tip": "若有多个流，随机选择一个",
+        "s3": "没有流。请开启转播并推流后，等待大约30秒左右，转播列表会自动更新"
+      },
+      "vle": {
+        "tip": "将文件转直播流",
+        "source2": "该直播就是将视频源(文件/流)转换成直播流",
+        "s3": "没有流。请开启直播间后，等待大约30秒左右，列表会自动更新"
       }
     }
   },
   "en": {
     "translation": {
       "vle": {
+        "s3": "There is no stream. Please start the live event and wait for about 30 seconds, the list will update automatically.",
+        "tip": "Convert file to live stream",
+        "source2": "Virtual live streaming is the process of converting a video source (file) into a live stream."
+      },
+      "forward": {
+        "s3": "No stream. Please turn on the broadcast and push the stream, then wait for about 30 seconds, and the broadcast list will automatically update.",
+        "tip": "If there are multiple streams, randomly select one."
+      },
+      "camera": {
+        "s3": "There is no stream. Please start the live event and wait for about 30 seconds, the list will update automatically.",
+        "extra": "Extra Audio",
+        "tip": "Convert file to live stream",
+        "source": "Please input camera stream URL",
+        "silent3": "Add audio stream to camera without audio, then can be accepted by common live platforms",
+        "silent2": "Extra Audio Stream",
+        "silent": "Silent Audio Stream"
+      },
+      "plat": {
         "tool": {
           "stream6": "Setup the live event ok",
           "stream5": "Check stream url ok",
@@ -556,7 +581,6 @@
           "upload3": "Set file source ok",
           "upload2": "No file selected",
           "upload": "Upload local file",
-          "source2": "Virtual live streaming is the process of converting a video source (file) into a live stream.",
           "source": "Live Stream Source"
         },
         "ks": {
@@ -575,7 +599,6 @@
           "title": "YouTube"
         },
         "com": {
-          "s3": "There is no stream. Please start the live event and wait for about 30 seconds, the list will update automatically.",
           "s0": "Streaming",
           "s1": "Waiting",
           "s2": "Inactive",
@@ -585,7 +608,6 @@
           "status2": "Status",
           "platform": "Platform",
           "status": "Live Status",
-          "tip": "Convert file to live stream",
           "stop": "Stop Live",
           "start": "Start Live",
           "key2": "then copy the Stream Key",
@@ -602,14 +624,6 @@
           "addr": "Please input stream URL",
           "video": "Please upload video source"
         }
-      },
-      "camera": {
-        "extra": "Extra Audio",
-        "tip": "Convert file to live stream",
-        "source": "Please input camera stream URL",
-        "silent3": "Add audio stream to camera without audio, then can be accepted by common live platforms",
-        "silent2": "Extra Audio Stream",
-        "silent": "Silent Audio Stream"
       },
       "lr": {
         "list": {
