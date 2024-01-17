@@ -20,7 +20,6 @@ export default function ScenarioVLive() {
   const [activeKey, setActiveKey] = React.useState();
   const [secrets, setSecrets] = React.useState();
   const handleError = useErrorHandler();
-  const language = useSrsLanguage();
 
   React.useEffect(() => {
     axios.post('/terraform/v1/ffmpeg/vlive/secret', {
@@ -53,13 +52,14 @@ export default function ScenarioVLive() {
   }, [init, secrets]);
 
   if (!activeKey) return <></>;
-  if (language === 'zh') {
-    return <ScenarioVLiveImplCn defaultActiveKey={activeKey} defaultSecrets={secrets}/>;
-  }
-  return <ScenarioVLiveImplEn defaultActiveKey={activeKey} defaultSecrets={secrets}/>;
+  return <ScenarioVLiveImpl defaultActiveKey={activeKey} defaultSecrets={secrets}/>;
 }
 
-function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
+function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
+  const language = useSrsLanguage();
+  const {t} = useTranslation();
+  const handleError = useErrorHandler();
+
   const [wxEnabled, setWxEnabled] = React.useState(defaultSecrets?.wx?.enabled);
   const [wxServer, setWxServer] = React.useState(defaultSecrets?.wx?.server);
   const [wxSecret, setWxSecret] = React.useState(defaultSecrets?.wx?.secret);
@@ -80,13 +80,6 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
   const [kuaishouFiles, setKuaishouFiles] = React.useState(defaultSecrets?.kuaishou?.files);
   const [vLives, setVLives] = React.useState();
   const [submiting, setSubmiting] = React.useState();
-  const handleError = useErrorHandler();
-
-  const vLiveTutorials = useTutorials({
-    bilibili: React.useRef([
-      {author: '宝哥', id: 'BV1G3411d7Gb'},
-    ])
-  });
 
   React.useEffect(() => {
     const refreshStreams = () => {
@@ -97,7 +90,11 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
         setVLives(res.data.data.map((e, i) => {
           const item = {
             ...e,
-            name: {wx: '视频号虚拟直播间', bilibili: 'Bilibili虚拟直播间', kuaishou: '快手虚拟直播间'}[e.platform],
+            name: {
+              wx: t('vle.wx.title'),
+              bilibili: t('vle.bl.title'),
+              kuaishou: t('vle.ks.title')
+            }[e.platform],
             update: e.frame?.update ? moment(e.frame.update) : null,
             i,
           };
@@ -118,9 +115,9 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
 
   const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, files, onSuccess) => {
     e.preventDefault();
-    if (!files?.length) return alert('请上传视频源');
-    if (!server) return alert('请输入推流地址');
-    if (custom && !label) return alert('自定义平台请输入名称，否则不好区分虚拟直播状态');
+    if (!files?.length) return alert(t('vle.com.video'));
+    if (!server) return alert(t('vle.com.addr'));
+    if (custom && !label) return alert(t('vle.com.label'));
 
     try {
       setSubmiting(true);
@@ -130,7 +127,7 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
       }, {
         headers: Token.loadBearerHeader(),
       }).then(res => {
-        alert('虚拟直播设置成功');
+        alert(t('vle.com.ok'));
         onSuccess && onSuccess();
       }).catch(handleError);
     } finally {
@@ -140,50 +137,71 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
 
   return (
     <Accordion defaultActiveKey={defaultActiveKey}>
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>场景介绍</Accordion.Header>
-        <Accordion.Body>
-          <div>
-            虚拟直播<TutorialsButton prefixLine={true} tutorials={vLiveTutorials} />，是将一个视频文件，用FFmpeg转成直播流，推送到SRS Stack或其他平台。
-            <p></p>
-          </div>
-          <p>可应用的具体场景包括：</p>
-          <ul>
-            <li>无人直播间，7x24小时获得直播收益</li>
-          </ul>
-          <p>使用说明：</p>
-          <ul>
-            <li>首先上传视频文件</li>
-            <li>然后设置直播流信息</li>
-          </ul>
-        </Accordion.Body>
-      </Accordion.Item>
+      <React.Fragment>
+        {language === 'zh' ?
+        <Accordion.Item eventKey="0">
+          <Accordion.Header>场景介绍</Accordion.Header>
+          <Accordion.Body>
+            <div>
+              虚拟直播，是将一个视频文件，用FFmpeg转成直播流，推送到SRS Stack或其他平台。
+              <p></p>
+            </div>
+            <p>可应用的具体场景包括：</p>
+            <ul>
+              <li>无人直播间，7x24小时获得直播收益</li>
+            </ul>
+            <p>使用说明：</p>
+            <ul>
+              <li>首先上传视频文件</li>
+              <li>然后设置直播流信息</li>
+            </ul>
+          </Accordion.Body>
+        </Accordion.Item> :
+        <Accordion.Item eventKey="0">
+          <Accordion.Header>Introduction</Accordion.Header>
+          <Accordion.Body>
+            <div>
+              Virtual live streaming is the process of converting a video file into a live stream using FFmpeg and pushing it to the SRS Stack or other platforms.
+              <p></p>
+            </div>
+            <p>Specific application scenarios include:</p>
+            <ul>
+              <li>Unmanned live streaming rooms, 7x24 hours of live streaming revenue</li>
+            </ul>
+            <p>Instructions for use:</p>
+            <ul>
+              <li>First, upload the video file</li>
+              <li>Then, set the live stream information</li>
+            </ul>
+          </Accordion.Body>
+        </Accordion.Item>}
+      </React.Fragment>
       <Accordion.Item eventKey="1">
-        <Accordion.Header>{wxCustom ? '自定义平台' : '视频号虚拟直播间'} {wxLabel}</Accordion.Header>
+        <Accordion.Header>{wxCustom ? t('vle.com.custom') : t('vle.wx.title')} {wxLabel}</Accordion.Header>
         <Accordion.Body>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>名称</Form.Label>
-              <Form.Text> * {wxCustom ? '(必选)' : '(可选)'} 起一个好记的名字</Form.Text>
+              <Form.Label>{t('vle.com.name')}</Form.Label>
+              <Form.Text> * {wxCustom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('vle.com.name2')}</Form.Text>
               <Form.Control as="input" defaultValue={wxLabel} onChange={(e) => setWxLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSourceCn platform='wx' vLiveFiles={wxFiles} setVLiveFiles={setWxFiles} />
+              <ChooseVideoSource platform='wx' vLiveFiles={wxFiles} setVLiveFiles={setWxFiles} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
-              <Form.Label>推流地址</Form.Label>
-              {!wxCustom && <Form.Text> * 请先<a href='https://channels.weixin.qq.com/platform/live/liveBuild' target='_blank' rel='noreferrer'>创建直播</a>，然后获取推流地址</Form.Text>}
+              <Form.Label>{wxCustom ? t('vle.com.server') : t('vle.com.server2')}</Form.Label>
+              {!wxCustom && <Form.Text> * {t('vle.com.server3')} <a href={t('vle.wx.link')} target='_blank' rel='noreferrer'>{t('vle.wx.link2')}</a>, {t('vle.com.server4')}</Form.Text>}
               <Form.Control as="input" defaultValue={wxServer} onChange={(e) => setWxServer(e.target.value)}/>
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>推流密钥</Form.Label>
-              {!wxCustom && <Form.Text> * 请先<a href='https://channels.weixin.qq.com/platform/live/liveBuild' target='_blank' rel='noreferrer'>创建直播</a>，然后获取推流密钥</Form.Text>}
+              <Form.Label>{t('vle.com.key')}</Form.Label>
+              {!wxCustom && <Form.Text> * {t('vle.com.server3')} <a href={t('vle.wx.link')} target='_blank' rel='noreferrer'>{t('vle.wx.link2')}</a>, {t('vle.com.key2')}</Form.Text>}
               <Form.Control as="input" defaultValue={wxSecret} onChange={(e) => setWxSecret(e.target.value)}/>
             </Form.Group>
             <Row>
               <Col xs='auto'>
                 <Form.Group className="mb-3" controlId="formWxCustomCheckbox">
-                  <Form.Check type="checkbox" label="自定义平台" defaultChecked={wxCustom} onClick={() => setWxCustom(!wxCustom)} />
+                  <Form.Check type="checkbox" label={t('vle.com.custom')} defaultChecked={wxCustom} onClick={() => setWxCustom(!wxCustom)} />
                 </Form.Group>
               </Col>
             </Row>
@@ -197,38 +215,38 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
                 });
               }}
             >
-              {wxEnabled ? '停止直播' : '开始直播'}
+              {wxEnabled ? t('vle.com.stop') : t('vle.com.start')}
             </Button> &nbsp;
-            <Form.Text> * 将文件转直播流</Form.Text>
+            <Form.Text> * {t('vle.com.tip')}</Form.Text>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="2">
-        <Accordion.Header>{bilibiliCustom ? '自定义平台' : 'Bilibili虚拟直播间'} {bilibiliLabel}</Accordion.Header>
+        <Accordion.Header>{bilibiliCustom ? t('vle.com.custom') : t('vle.bl.title')} {bilibiliLabel}</Accordion.Header>
         <Accordion.Body>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>名称</Form.Label>
-              <Form.Text> * {bilibiliCustom ? '(必选)' : '(可选)'} 起一个好记的名字</Form.Text>
+              <Form.Label>{t('vle.com.name')}</Form.Label>
+              <Form.Text> * {bilibiliCustom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('vle.com.name2')}</Form.Text>
               <Form.Control as="input" defaultValue={bilibiliLabel} onChange={(e) => setBilibiliLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSourceCn platform='bilibili' vLiveFiles={bilibiliFiles} setVLiveFiles={setBilibiliFiles} />
+              <ChooseVideoSource platform='bilibili' vLiveFiles={bilibiliFiles} setVLiveFiles={setBilibiliFiles} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
-              <Form.Label>推流地址</Form.Label>
-              {!bilibiliCustom && <Form.Text> * 请先<a href='https://link.bilibili.com/p/center/index#/my-room/start-live' target='_blank' rel='noreferrer'>开始直播</a>，然后获取推流地址</Form.Text>}
+              <Form.Label>{bilibiliCustom ? t('vle.com.server') : t('vle.com.server2')}</Form.Label>
+              {!bilibiliCustom && <Form.Text> * {t('vle.com.server3')} <a href={t('vle.bl.link')} target='_blank' rel='noreferrer'>{t('vle.bl.link2')}</a>, {t('vle.com.server4')}</Form.Text>}
               <Form.Control as="input" defaultValue={bilibiliServer} onChange={(e) => setBilibiliServer(e.target.value)}/>
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>推流密钥</Form.Label>
-              {!bilibiliCustom && <Form.Text> * 请先<a href='https://link.bilibili.com/p/center/index#/my-room/start-live' target='_blank' rel='noreferrer'>开始直播</a>，然后获取推流密钥</Form.Text>}
+              <Form.Label>{t('vle.com.key')}</Form.Label>
+              {!bilibiliCustom && <Form.Text> * {t('vle.com.server3')} <a href={t('vle.bl.link')} target='_blank' rel='noreferrer'>{t('vle.bl.link2')}</a>, {t('vle.com.key2')}</Form.Text>}
               <Form.Control as="input" defaultValue={bilibiliSecret} onChange={(e) => setBilibiliSecret(e.target.value)}/>
             </Form.Group>
             <Row>
               <Col xs='auto'>
                 <Form.Group className="mb-3" controlId="formBilibiliCustomCheckbox">
-                  <Form.Check type="checkbox" label="自定义平台" defaultChecked={bilibiliCustom} onClick={() => setBilibiliCustom(!bilibiliCustom)} />
+                  <Form.Check type="checkbox" label={t('vle.com.custom')} defaultChecked={bilibiliCustom} onClick={() => setBilibiliCustom(!bilibiliCustom)} />
                 </Form.Group>
               </Col>
             </Row>
@@ -242,38 +260,38 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
                 });
               }}
             >
-              {bilibiliEnabled ? '停止直播' : '开始直播'}
+              {bilibiliEnabled ? t('vle.com.stop') : t('vle.com.start')}
             </Button> &nbsp;
-            <Form.Text> * 将文件转直播流</Form.Text>
+            <Form.Text> * {t('vle.com.tip')}</Form.Text>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="3">
-        <Accordion.Header>{kuaishouCustom ? '自定义平台' : '快手虚拟直播间'} {kuaishouLabel}</Accordion.Header>
+        <Accordion.Header>{kuaishouCustom ? t('vle.com.custom') : t('vle.ks.title')} {kuaishouLabel}</Accordion.Header>
         <Accordion.Body>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>名称</Form.Label>
-              <Form.Text> * {kuaishouCustom ? '(必选)' : '(可选)'} 起一个好记的名字</Form.Text>
+              <Form.Label>{t('vle.com.name')}</Form.Label>
+              <Form.Text> * {kuaishouCustom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('vle.com.name2')}</Form.Text>
               <Form.Control as="input" defaultValue={kuaishouLabel} onChange={(e) => setKuaishouLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSourceCn platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} />
+              <ChooseVideoSource platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
-              <Form.Label>推流地址</Form.Label>
-              {!kuaishouCustom && <Form.Text> * 请先<a href='https://studio.kuaishou.com/live/list' target='_blank' rel='noreferrer'>创建直播</a>，进入直播详情页，然后获取推流地址</Form.Text>}
+              <Form.Label>{kuaishouCustom ? t('vle.com.server') : t('vle.com.server2')}</Form.Label>
+              {!kuaishouCustom && <Form.Text> * {t('vle.com.server3')} <a href={t('vle.ks.link')} target='_blank' rel='noreferrer'>{t('vle.ks.link2')}</a>, {t('vle.com.server4')}</Form.Text>}
               <Form.Control as="input" defaultValue={kuaishouServer} onChange={(e) => setKuaishouServer(e.target.value)}/>
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>推流密钥</Form.Label>
-              {!kuaishouCustom && <Form.Text> * 请先<a href='https://studio.kuaishou.com/live/list' target='_blank' rel='noreferrer'>创建直播</a>，进入直播详情页，然后获取推流密钥</Form.Text>}
+              <Form.Label>{t('vle.com.key')}</Form.Label>
+              {!kuaishouCustom && <Form.Text> * {t('vle.com.server3')} <a href={t('vle.ks.link')} target='_blank' rel='noreferrer'>{t('vle.ks.link2')}</a>, {t('vle.com.key2')}</Form.Text>}
               <Form.Control as="input" defaultValue={kuaishouSecret} onChange={(e) => setKuaishouSecret(e.target.value)}/>
             </Form.Group>
             <Row>
               <Col xs='auto'>
                 <Form.Group className="mb-3" controlId="formKuaishouCustomCheckbox">
-                  <Form.Check type="checkbox" label="自定义平台" defaultChecked={kuaishouCustom} onClick={() => setKuaishouCustom(!kuaishouCustom)} />
+                  <Form.Check type="checkbox" label={t('vle.com.custom')} defaultChecked={kuaishouCustom} onClick={() => setKuaishouCustom(!kuaishouCustom)} />
                 </Form.Group>
               </Col>
             </Row>
@@ -287,14 +305,14 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
                 });
               }}
             >
-              {kuaishouEnabled ? '停止直播' : '开始直播'}
+              {kuaishouEnabled ? t('vle.com.stop') : t('vle.com.start')}
             </Button> &nbsp;
-            <Form.Text> * 将文件转直播流</Form.Text>
+            <Form.Text> * {t('vle.com.tip')}</Form.Text>
           </Form>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="99">
-        <Accordion.Header>虚拟直播状态</Accordion.Header>
+        <Accordion.Header>{t('vle.com.status')}</Accordion.Header>
         <Accordion.Body>
           {
             vLives?.length ? (
@@ -302,11 +320,11 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
                 <thead>
                 <tr>
                   <th>#</th>
-                  <th>平台</th>
-                  <th>状态</th>
-                  <th>更新时间</th>
-                  <th>视频源</th>
-                  <th>日志</th>
+                  <th>{t('vle.com.platform')}</th>
+                  <th>{t('vle.com.status2')}</th>
+                  <th>{t('vle.com.update')}</th>
+                  <th>{t('vle.com.source')}</th>
+                  <th>{t('vle.com.log')}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -314,10 +332,10 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
                   vLives?.map(file => {
                     return <tr key={file.platform} style={{verticalAlign: 'middle'}}>
                       <td>{file.i}</td>
-                      <td>{file.custom ? (file.label ? '' : '自定义平台') : file.name} {file.label}</td>
+                      <td>{file.custom ? (file.label ? '' : t('vle.com.custom')) : file.name} {file.label}</td>
                       <td>
                         <Badge bg={file.enabled ? (file.frame ? 'success' : 'primary') : 'secondary'}>
-                          {file.enabled ? (file.frame ? '直播中' : '等待中') : '未开启'}
+                          {file.enabled ? (file.frame ? t('vle.com.s0') : t('vle.com.s1')) : t('vle.com.s2')}
                         </Badge>
                       </td>
                       <td>
@@ -336,283 +354,7 @@ function ScenarioVLiveImplCn({defaultActiveKey, defaultSecrets}) {
               </Table>
             ) : ''
           }
-          {!vLives?.length ? '没有流。请开启虚拟直播间后，等待大约30秒左右，列表会自动更新' : ''}
-        </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
-  );
-}
-
-function ScenarioVLiveImplEn({defaultActiveKey, defaultSecrets}) {
-  const [wxEnabled, setWxEnabled] = React.useState(defaultSecrets?.wx?.enabled);
-  const [wxServer, setWxServer] = React.useState(defaultSecrets?.wx?.server);
-  const [wxSecret, setWxSecret] = React.useState(defaultSecrets?.wx?.secret);
-  const [wxCustom, setWxCustom] = React.useState(defaultSecrets?.wx?.custom);
-  const [wxLabel, setWxLabel] = React.useState(defaultSecrets?.wx?.label);
-  const [wxFiles, setWxFiles] = React.useState(defaultSecrets?.wx?.files);
-  const [bilibiliEnabled, setBilibiliEnabled] = React.useState(defaultSecrets?.bilibili?.enabled);
-  const [bilibiliServer, setBilibiliServer] = React.useState(defaultSecrets?.bilibili?.server || 'rtmp://live.twitch.tv/app');
-  const [bilibiliSecret, setBilibiliSecret] = React.useState(defaultSecrets?.bilibili?.secret);
-  const [bilibiliCustom, setBilibiliCustom] = React.useState(defaultSecrets?.bilibili?.custom);
-  const [bilibiliLabel, setBilibiliLabel] = React.useState(defaultSecrets?.bilibili?.label);
-  const [bilibiliFiles, setBilibiliFiles] = React.useState(defaultSecrets?.bilibili?.files);
-  const [kuaishouEnabled, setKuaishouEnabled] = React.useState(defaultSecrets?.kuaishou?.enabled);
-  const [kuaishouServer, setKuaishouServer] = React.useState(defaultSecrets?.kuaishou?.server || 'rtmps://live-api-s.facebook.com:443/rtmp');
-  const [kuaishouSecret, setKuaishouSecret] = React.useState(defaultSecrets?.kuaishou?.secret);
-  const [kuaishouCustom, setKuaishouCustom] = React.useState(defaultSecrets?.kuaishou?.custom);
-  const [kuaishouLabel, setKuaishouLabel] = React.useState(defaultSecrets?.kuaishou?.label);
-  const [kuaishouFiles, setKuaishouFiles] = React.useState(defaultSecrets?.kuaishou?.files);
-  const [vLives, setVLives] = React.useState();
-  const [submiting, setSubmiting] = React.useState();
-  const handleError = useErrorHandler();
-
-  React.useEffect(() => {
-    const refreshStreams = () => {
-      axios.post('/terraform/v1/ffmpeg/vlive/streams', {
-      }, {
-        headers: Token.loadBearerHeader(),
-      }).then(res => {
-        setVLives(res.data.data.map((e, i) => {
-          const item = {
-            ...e,
-            name: {wx: 'YouTube', bilibili: 'Twitch', kuaishou: 'Facebook'}[e.platform],
-            update: e.frame?.update ? moment(e.frame.update) : null,
-            i,
-          };
-
-          // Find file source object by uuid(item.source).
-          const sources = item.files?.filter(e => e?.uuid === item?.source);
-          item.sourceObj = sources?.length ? sources[0] : null;
-          return item;
-        }));
-        console.log(`VLive: Query streams ${JSON.stringify(res.data.data)}`);
-      }).catch(handleError);
-    };
-
-    refreshStreams();
-    const timer = setInterval(() => refreshStreams(), 10 * 1000);
-    return () => clearInterval(timer);
-  }, [handleError]);
-
-  const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, files, onSuccess) => {
-    e.preventDefault();
-    if (!files?.length) return alert('Please upload video source');
-    if (!server) return alert('Please input stream URL');
-    if (custom && !label) return alert('For custom platform, please input label to identify the stream');
-
-    try {
-      setSubmiting(true);
-
-      axios.post('/terraform/v1/ffmpeg/vlive/secret', {
-        action, platform, server, secret, enabled: !!enabled, custom: !!custom, label, files,
-      }, {
-        headers: Token.loadBearerHeader(),
-      }).then(res => {
-        alert('Virtual live stream setup ok');
-        onSuccess && onSuccess();
-      }).catch(handleError);
-    } finally {
-      new Promise(resolve => setTimeout(resolve, 3000)).then(() => setSubmiting(false));
-    }
-  }, [handleError, setSubmiting]);
-
-  return (
-    <Accordion defaultActiveKey={[defaultActiveKey]} alwaysOpen>
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>Introduction</Accordion.Header>
-        <Accordion.Body>
-          <div>
-            Virtual live streaming is the process of converting a video file into a live stream using FFmpeg and pushing it to the SRS Stack or other platforms.
-            <p></p>
-          </div>
-          <p>Specific application scenarios include:</p>
-          <ul>
-            <li>Unmanned live streaming rooms, 7x24 hours of live streaming revenue</li>
-          </ul>
-          <p>Instructions for use:</p>
-          <ul>
-            <li>First, upload the video file</li>
-            <li>Then, set the live stream information</li>
-          </ul>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="1">
-        <Accordion.Header>{wxCustom ? 'Custom' : 'YouTube'} {wxLabel}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Label</Form.Label>
-              <Form.Text> * {wxCustom ? '(Required)' : '(Optional)'} Virtual live stream label</Form.Text>
-              <Form.Control as="input" defaultValue={wxLabel} onChange={(e) => setWxLabel(e.target.value)}/>
-            </Form.Group>
-            <SrsErrorBoundary>
-              <ChooseVideoSourceEn platform='wx' vLiveFiles={wxFiles} setVLiveFiles={setWxFiles} />
-            </SrsErrorBoundary>
-            <Form.Group className="mb-3">
-              <Form.Label>{wxCustom ? 'Server' : 'Stream URL'}</Form.Label>
-              {!wxCustom && <Form.Text> * Please click <a href='https://studio.youtube.com/channel/UC/livestreaming' target='_blank' rel='noreferrer'>Go live</a>, then copy the Stream URL</Form.Text>}
-              <Form.Control as="input" defaultValue={wxServer} onChange={(e) => setWxServer(e.target.value)}/>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Stream Key</Form.Label>
-              {!wxCustom && <Form.Text> * Please click <a href='https://studio.youtube.com/channel/UC/livestreaming' target='_blank' rel='noreferrer'>Go live</a>, then copy the Stream Key</Form.Text>}
-              <Form.Control as="input" defaultValue={wxSecret} onChange={(e) => setWxSecret(e.target.value)}/>
-            </Form.Group>
-            <Row>
-              <Col xs='auto'>
-                <Form.Group className="mb-3" controlId="formWxCustomCheckbox">
-                  <Form.Check type="checkbox" label="Custom" defaultChecked={wxCustom} onClick={() => setWxCustom(!wxCustom)} />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={submiting}
-              onClick={(e) => {
-                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel, wxFiles, () => {
-                  setWxEnabled(!wxEnabled);
-                });
-              }}
-            >
-              {wxEnabled ? 'Stop Virtual Live' : 'Start Virtual Live'}
-            </Button> &nbsp;
-            <Form.Text> * Convert file to live stream</Form.Text>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="2">
-        <Accordion.Header>{bilibiliCustom ? 'Custom' : 'Twitch'} {bilibiliLabel}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Label</Form.Label>
-              <Form.Text> * {bilibiliCustom ? '(Required)' : '(Optional)'} Virtual live stream label</Form.Text>
-              <Form.Control as="input" defaultValue={bilibiliLabel} onChange={(e) => setBilibiliLabel(e.target.value)}/>
-            </Form.Group>
-            <SrsErrorBoundary>
-              <ChooseVideoSourceEn platform='bilibili' vLiveFiles={bilibiliFiles} setVLiveFiles={setBilibiliFiles} />
-            </SrsErrorBoundary>
-            <Form.Group className="mb-3">
-              <Form.Label>Server</Form.Label>
-              <Form.Control as="input" defaultValue={bilibiliServer} onChange={(e) => setBilibiliServer(e.target.value)}/>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Stream Key</Form.Label>
-              {!bilibiliCustom && <Form.Text> * Please click <a href='https://www.twitch.tv/dashboard/settings' target='_blank' rel='noreferrer'>Dashboard</a>, then click Settings Stream and Copy the stream key</Form.Text>}
-              <Form.Control as="input" defaultValue={bilibiliSecret} onChange={(e) => setBilibiliSecret(e.target.value)}/>
-            </Form.Group>
-            <Row>
-              <Col xs='auto'>
-                <Form.Group className="mb-3" controlId="formBilibiliCustomCheckbox">
-                  <Form.Check type="checkbox" label="Custom" defaultChecked={bilibiliCustom} onClick={() => setBilibiliCustom(!bilibiliCustom)} />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={submiting}
-              onClick={(e) => {
-                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel, bilibiliFiles, () => {
-                  setBilibiliEnabled(!bilibiliEnabled);
-                });
-              }}
-            >
-              {bilibiliEnabled ? 'Stop Virtual Live' : 'Start Virtual Live'}
-            </Button> &nbsp;
-            <Form.Text> * Convert file to live stream</Form.Text>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="3">
-        <Accordion.Header>{kuaishouCustom ? 'Custom' : 'Facebook'} {kuaishouLabel}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Label</Form.Label>
-              <Form.Text> * {kuaishouCustom ? '(Required)' : '(Optional)'} Virtual live stream label</Form.Text>
-              <Form.Control as="input" defaultValue={kuaishouLabel} onChange={(e) => setKuaishouLabel(e.target.value)}/>
-            </Form.Group>
-            <SrsErrorBoundary>
-              <ChooseVideoSourceEn platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} />
-            </SrsErrorBoundary>
-            <Form.Group className="mb-3">
-              <Form.Label>Server</Form.Label>
-              <Form.Control as="input" defaultValue={kuaishouServer} onChange={(e) => setKuaishouServer(e.target.value)}/>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Stream Key</Form.Label>
-              {!kuaishouCustom && <Form.Text> * Please click <a href='https://www.facebook.com/live/producer?ref=OBS' target='_blank' rel='noreferrer'>Live Producer</a>, then click Go live then select Streaming software, copy the Stream key</Form.Text>}
-              <Form.Control as="input" defaultValue={kuaishouSecret} onChange={(e) => setKuaishouSecret(e.target.value)}/>
-            </Form.Group>
-            <Row>
-              <Col xs='auto'>
-                <Form.Group className="mb-3" controlId="formKuaishouCustomCheckbox">
-                  <Form.Check type="checkbox" label="Custom" defaultChecked={kuaishouCustom} onClick={() => setKuaishouCustom(!kuaishouCustom)} />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={submiting}
-              onClick={(e) => {
-                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel, kuaishouFiles, () => {
-                  setKuaishouEnabled(!kuaishouEnabled);
-                });
-              }}
-            >
-              {kuaishouEnabled ? 'Stop Virtual Live' : 'Start Virtual Live'}
-            </Button> &nbsp;
-            <Form.Text> * Convert file to live stream</Form.Text>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="99">
-        <Accordion.Header>Virtual Live Status</Accordion.Header>
-        <Accordion.Body>
-          {
-            vLives?.length ? (
-              <Table striped bordered hover>
-                <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Platform</th>
-                  <th>Status</th>
-                  <th>Update</th>
-                  <th>Source Stream</th>
-                  <th>Logging</th>
-                </tr>
-                </thead>
-                <tbody>
-                {
-                  vLives?.map(file => {
-                    return <tr key={file.platform} style={{verticalAlign: 'middle'}}>
-                      <td>{file.i}</td>
-                      <td>{file.custom ? (file.label ? '' : 'Custom') : file.name} {file.label}</td>
-                      <td>
-                        <Badge bg={file.enabled ? (file.frame ? 'success' : 'primary') : 'secondary'}>
-                          {file.enabled ? (file.frame ? 'Streaming' : 'Waiting') : 'Inactive'}
-                        </Badge>
-                      </td>
-                      <td>
-                        {file.update && file.update?.format('YYYY-MM-DD')}<br/>
-                        {file.update && file.update?.format('HH:mm:ss')}
-                      </td>
-                      <td>
-                        {file.sourceObj?.name}<br/>
-                        <VLiveFileFormatInfo file={file.sourceObj}/>
-                      </td>
-                      <td>{file.frame?.log}</td>
-                    </tr>;
-                  })
-                }
-                </tbody>
-              </Table>
-            ) : ''
-          }
-          {!vLives?.length ? 'There is no stream. Please start the virtual live room and wait for about 30 seconds, the list will update automatically.' : ''}
+          {!vLives?.length ? t('vle.com.s3') : ''}
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
@@ -642,7 +384,9 @@ function VLiveFileList({files, onChangeFiles}) {
   );
 }
 
-function ChooseVideoSourceCn({platform, vLiveFiles, setVLiveFiles}) {
+function ChooseVideoSource({platform, vLiveFiles, setVLiveFiles}) {
+  const {t} = useTranslation();
+
   const [checkType, setCheckType] = React.useState('upload');
   React.useEffect(() => {
     if (vLiveFiles?.length) {
@@ -654,108 +398,57 @@ function ChooseVideoSourceCn({platform, vLiveFiles, setVLiveFiles}) {
   }, [vLiveFiles]);
   return (<>
     <Form.Group className="mb-3">
-      <Form.Label>视频源</Form.Label>
-      <Form.Text> * 虚拟直播就是将视频源(文件/流)转换成直播流</Form.Text>
-      <Form.Check type="radio" label="上传本地文件" id={'upload-' + platform} checked={checkType === 'upload'}
+      <Form.Label>{t('vle.tool.source')}</Form.Label>
+      <Form.Text> * {t('vle.tool.source2')}</Form.Text>
+      <Form.Check type="radio" label={t('vle.tool.upload')} id={'upload-' + platform} checked={checkType === 'upload'}
         name={'chooseSource-' + platform} onChange={e => setCheckType('upload')}
       />
       {checkType === 'upload' && 
       <SrsErrorBoundary>
-        <VLiveFileUploaderCn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles} />
+        <VLiveFileUploader platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles} />
       </SrsErrorBoundary>
       }
     </Form.Group>
     <Form.Group className="mb-3">
       <InputGroup>
-        <Form.Check type="radio" label="指定服务器文件" id={'server-' + platform} checked={checkType === 'file'}
+        <Form.Check type="radio" label={t('vle.tool.file')} id={'server-' + platform} checked={checkType === 'file'}
                     name={'chooseSource' + platform} onChange={e => setCheckType('file')}
         /> &nbsp;
-        <Form.Text> * 文件必须在 /data 目录下面</Form.Text>
+        <Form.Text> * {t('vle.tool.file2')}</Form.Text>
       </InputGroup>
       {checkType === 'file' &&
       <SrsErrorBoundary>
-        <VLiveFileSelectorCn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
+        <VLiveFileSelector platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
       </SrsErrorBoundary>
       }
     </Form.Group>
     <Form.Group className="mb-3">
       <InputGroup>
-        <Form.Check type="radio" label="拉流转推" id={'stream-' + platform} checked={checkType === 'stream'}
+        <Form.Check type="radio" label={t('vle.tool.stream')} id={'stream-' + platform} checked={checkType === 'stream'}
                     name={'chooseSource' + platform} onChange={e => setCheckType('stream')}
         /> &nbsp;
-        <Form.Text> * 流地址支持 rtmp, http, https, 或 rtsp 等格式</Form.Text>
+        <Form.Text> * {t('vle.tool.stream2')}</Form.Text>
       </InputGroup>
       {checkType === 'stream' &&
       <SrsErrorBoundary>
-        <VLiveStreamSelectorCn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
+        <VLiveStreamSelector platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
       </SrsErrorBoundary>
       }
     </Form.Group>
   </>);
 }
 
-function ChooseVideoSourceEn({platform, vLiveFiles, setVLiveFiles}) {
-  const [checkType, setCheckType] = React.useState('upload');
-  React.useEffect(() => {
-    if (vLiveFiles?.length) {
-      const type = vLiveFiles[0].type;
-      if (type === 'upload' || type === 'file' || type === 'stream') {
-        setCheckType(type);
-      }
-    }
-  }, [vLiveFiles]);
-  return (<>
-    <Form.Group className="mb-3">
-      <Form.Label>Live Stream Source</Form.Label>
-      <Form.Text> * Virtual live streaming is the process of converting a video source (file) into a live stream.</Form.Text>
-      <Form.Check type="radio" label="Upload local file" id={'upload-' + platform} checked={checkType === 'upload'}
-                  name={'chooseSource-' + platform} onChange={e => setCheckType('upload')}
-      />
-      {checkType === 'upload' &&
-        <SrsErrorBoundary>
-          <VLiveFileUploaderEn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles} />
-        </SrsErrorBoundary>
-      }
-    </Form.Group>
-    <Form.Group className="mb-3">
-      <InputGroup>
-        <Form.Check type="radio" label="Use server file" id={'server-' + platform} checked={checkType === 'file'}
-                    name={'chooseSource' + platform} onChange={e => setCheckType('file')}
-        /> &nbsp;
-        <Form.Text> * The file must be in the /data directory.</Form.Text>
-      </InputGroup>
-      {checkType === 'file' &&
-        <SrsErrorBoundary>
-          <VLiveFileSelectorEn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
-        </SrsErrorBoundary>
-      }
-    </Form.Group>
-    <Form.Group className="mb-3">
-      <InputGroup>
-        <Form.Check type="radio" label="Forward stream" id={'stream-' + platform} checked={checkType === 'stream'}
-                    name={'chooseSource' + platform} onChange={e => setCheckType('stream')}
-        /> &nbsp;
-        <Form.Text> * The stream URL should start with rtmp, http, https, or rtsp.</Form.Text>
-      </InputGroup>
-      {checkType === 'stream' &&
-        <SrsErrorBoundary>
-          <VLiveStreamSelectorEn platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
-        </SrsErrorBoundary>
-      }
-    </Form.Group>
-  </>);
-}
-
-function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
+function VLiveStreamSelector({platform, vLiveFiles, setVLiveFiles}) {
+  const {t} = useTranslation();
   const handleError = useErrorHandler();
   const [inputStream, setInputStream] = React.useState(vLiveFiles?.length ? vLiveFiles[0].target :'');
   const [submiting, setSubmiting] = React.useState();
 
   const checkStreamUrl = React.useCallback(async () => {
-    if (!inputStream) return alert('请输入流地址');
+    if (!inputStream) return alert(t('vle.tool.stream3'));
     const isHTTP = inputStream.startsWith('http://') || inputStream.startsWith('https://');
-    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !isHTTP) return alert('流地址必须是 rtmp/http/https/rtsp 格式');
-    if (isHTTP && inputStream.indexOf('.flv') < 0 && inputStream.indexOf('.m3u8') < 0) return alert('HTTP流必须是 http-flv或hls 格式');
+    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !isHTTP) return alert(t('vle.tool.stream2'));
+    if (isHTTP && inputStream.indexOf('.flv') < 0 && inputStream.indexOf('.m3u8') < 0) return alert(t('vle.tool.stream4'));
 
     setSubmiting(true);
     try {
@@ -770,7 +463,7 @@ function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
       });
 
       await new Promise((resolve, reject) => {
-        console.log(`检查流地址成功，${JSON.stringify(res.data.data)}`);
+        console.log(`${t('vle.tool.stream5')}，${JSON.stringify(res.data.data)}`);
         const streamObj = res.data.data;
         const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
         axios.post('/terraform/v1/ffmpeg/vlive/source', {
@@ -778,7 +471,7 @@ function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
         }, {
           headers: Token.loadBearerHeader(),
         }).then(res => {
-          console.log(`更新虚拟直播源为流地址成功，${JSON.stringify(res.data.data)}`);
+          console.log(`${t('vle.tool.stream6')}，${JSON.stringify(res.data.data)}`);
           setVLiveFiles(res.data.data.files);
           resolve();
         }).catch(reject);
@@ -795,10 +488,10 @@ function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
       {!vLiveFiles?.length && <>
         <Row>
           <Col>
-            <Form.Control type="text" defaultValue={inputStream} placeholder="请输入流地址" onChange={e => setInputStream(e.target.value)} />
+            <Form.Control type="text" defaultValue={inputStream} placeholder={t('vle.tool.stream3')} onChange={e => setInputStream(e.target.value)} />
           </Col>
           <Col xs="auto">
-            <Button variant="primary" disabled={submiting} onClick={checkStreamUrl}>确认</Button>
+            <Button variant="primary" disabled={submiting} onClick={checkStreamUrl}>{t('helper.submit')}</Button>
           </Col>
         </Row></>
       }
@@ -807,85 +500,25 @@ function VLiveStreamSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
   </>);
 }
 
-function VLiveStreamSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
-  const handleError = useErrorHandler();
-  const [inputStream, setInputStream] = React.useState(vLiveFiles?.length ? vLiveFiles[0].target : '');
-  const [submiting, setSubmiting] = React.useState();
-
-  const checkStreamUrl = React.useCallback(async () => {
-    if (!inputStream) return alert('Please input stream URL');
-    const isHTTP = inputStream.startsWith('http://') || inputStream.startsWith('https://');
-    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !isHTTP) return alert('The stream must be rtmp/http/https/rtsp');
-    if (isHTTP && inputStream.indexOf('.flv') < 0 && inputStream.indexOf('.m3u8') < 0) return alert('The HTTP stream must be http-flv/hls');
-
-    setSubmiting(true);
-    try {
-      const res = await new Promise((resolve, reject) => {
-        axios.post(`/terraform/v1/ffmpeg/vlive/stream-url`, {
-          url: inputStream,
-        }, {
-          headers: Token.loadBearerHeader(),
-        }).then(res => {
-          resolve(res);
-        }).catch(reject);
-      });
-
-      await new Promise((resolve, reject) => {
-        console.log(`Check stream url ok，${JSON.stringify(res.data.data)}`);
-        const streamObj = res.data.data;
-        const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
-        axios.post('/terraform/v1/ffmpeg/vlive/source', {
-          platform, files,
-        }, {
-          headers: Token.loadBearerHeader(),
-        }).then(res => {
-          console.log(`Setup the virtual live stream ok，${JSON.stringify(res.data.data)}`);
-          setVLiveFiles(res.data.data.files);
-          resolve();
-        }).catch(reject);
-      });
-    } catch (e) {
-      handleError(e);
-    } finally {
-      setSubmiting(false);
-    }
-  }, [inputStream, handleError, platform, setVLiveFiles, setSubmiting]);
-
-  return (<>
-    <Form.Control as="div">
-      {!vLiveFiles?.length && <>
-        <Row>
-          <Col>
-            <Form.Control type="text" defaultValue={inputStream} placeholder="please input stream URL" onChange={e => setInputStream(e.target.value)} />
-          </Col>
-          <Col xs="auto">
-            <Button variant="primary" disabled={submiting} onClick={checkStreamUrl}>Submit</Button>
-          </Col>
-        </Row></>
-      }
-      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
-    </Form.Control>
-  </>)
-}
-
-function VLiveFileSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
+function VLiveFileSelector({platform, vLiveFiles, setVLiveFiles}) {
+  const {t} = useTranslation();
   const handleError = useErrorHandler();
   // TODO: FIXME: As the file path is changed after used, so we can not use te target.
   const [inputFile, setInputFile] = React.useState('');
 
   const CheckLocalFile = React.useCallback(() => {
-    if (!inputFile) return alert('请输入文件路径');
-    if (!inputFile.startsWith('/data') && !inputFile.startsWith('upload/') && !inputFile.startsWith('./upload/')) return alert('文件必须在 /data 目录下');
+    if (!inputFile) return alert(t('vle.tool.file3'));
+    if (!inputFile.startsWith('/data') && !inputFile.startsWith('upload/') && !inputFile.startsWith('./upload/')) return alert(t('vle.tool.file2'));
 
     const fileExtension = inputFile.slice(inputFile.lastIndexOf('.'));
-    if (!['.mp4', '.flv', '.ts'].includes(fileExtension)) return alert('文件必须是 mp4/flv/ts 格式');
+    if (!['.mp4', '.flv', '.ts'].includes(fileExtension)) return alert(t('vle.tool.file4'));
 
     axios.post(`/terraform/v1/ffmpeg/vlive/server`, {
       file: inputFile,
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
-      console.log(`检查服务器文件成功，${JSON.stringify(res.data.data)}`);
+      console.log(`${t('vle.tool.file5')}，${JSON.stringify(res.data.data)}`);
       const localFileObj = res.data.data;
       const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target, type: "file"}];
       axios.post('/terraform/v1/ffmpeg/vlive/source', {
@@ -893,7 +526,7 @@ function VLiveFileSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
       }, {
         headers: Token.loadBearerHeader(),
       }).then(res => {
-        console.log(`更新虚拟直播源为服务器文件成功，${JSON.stringify(res.data.data)}`);
+        console.log(`${t('vle.tool.file6')}，${JSON.stringify(res.data.data)}`);
         setVLiveFiles(res.data.data.files);
       }).catch(handleError);
     }).catch(handleError);
@@ -904,10 +537,10 @@ function VLiveFileSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
       {!vLiveFiles?.length && <>
         <Row>
           <Col>
-            <Form.Control type="text" defaultValue={inputFile} placeholder="请输入文件路径" onChange={e => setInputFile(e.target.value)} />
+            <Form.Control type="text" defaultValue={inputFile} placeholder={t('vle.tool.file7')} onChange={e => setInputFile(e.target.value)} />
           </Col>
           <Col xs="auto">
-            <Button variant="primary" onClick={CheckLocalFile}>确认</Button>
+            <Button variant="primary" onClick={CheckLocalFile}>{t('helper.submit')}</Button>
           </Col>
         </Row></>
       }
@@ -916,58 +549,11 @@ function VLiveFileSelectorCn({platform, vLiveFiles, setVLiveFiles}) {
   </>);
 }
 
-function VLiveFileSelectorEn({platform, vLiveFiles, setVLiveFiles}) {
-  const handleError = useErrorHandler();
-  // TODO: FIXME: As the file path is changed after used, so we can not use te target.
-  const [inputFile, setInputFile] = React.useState('');
-
-  const CheckLocalFile = React.useCallback(() => {
-    if (!inputFile) return alert('Please input file path');
-    if (!inputFile.startsWith('/data') && !inputFile.startsWith('upload/') && !inputFile.startsWith('./upload/')) return alert('The file must be in the /data directory.');
-
-    const fileExtension = inputFile.slice(inputFile.lastIndexOf('.'));
-    if (!['.mp4', '.flv', '.ts'].includes(fileExtension)) return alert('The file must be in mp4/flv/ts format.');
-
-    axios.post(`/terraform/v1/ffmpeg/vlive/server`, {
-      file: inputFile,
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      console.log(`Check server file ok，${JSON.stringify(res.data.data)}`);
-      const localFileObj = res.data.data;
-      const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target, type: "file"}];
-      axios.post('/terraform/v1/ffmpeg/vlive/source', {
-        platform, files,
-      }, {
-        headers: Token.loadBearerHeader(),
-      }).then(res => {
-        console.log(`Setup the virtual live file ok，${JSON.stringify(res.data.data)}`);
-        setVLiveFiles(res.data.data.files);
-      }).catch(handleError);
-    }).catch(handleError);
-  }, [inputFile, handleError, platform, setVLiveFiles]);
-
-  return (<>
-    <Form.Control as="div">
-      {!vLiveFiles?.length && <>
-        <Row>
-          <Col>
-            <Form.Control type="text" defaultValue={inputFile} placeholder="Please input file path" onChange={e => setInputFile(e.target.value)} />
-          </Col>
-          <Col xs="auto">
-            <Button variant="primary" onClick={CheckLocalFile}>Submit</Button>
-          </Col>
-        </Row></>
-      }
-      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
-    </Form.Control>
-  </>);
-}
-
-function VLiveFileUploaderCn({platform, vLiveFiles, setVLiveFiles}) {
+function VLiveFileUploader({platform, vLiveFiles, setVLiveFiles}) {
+  const {t} = useTranslation();
   const handleError = useErrorHandler();
   const updateSources = React.useCallback((platform, files, setFiles) => {
-    if (!files?.length) return alert('无上传文件');
+    if (!files?.length) return alert(t('vle.tool.upload2'));
 
     axios.post('/terraform/v1/ffmpeg/vlive/source', {
       platform, files: files.map(f => {
@@ -976,32 +562,7 @@ function VLiveFileUploaderCn({platform, vLiveFiles, setVLiveFiles}) {
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
-      console.log(`虚拟直播文件源设置成功, ${JSON.stringify(res.data.data)}`);
-      setFiles(res.data.data.files);
-    }).catch(handleError);
-  }, [handleError]);
-
-  return (<>
-    <Form.Control as='div'>
-      {!vLiveFiles?.length && <FileUploader onFilesUploaded={(files) => updateSources(platform, files, setVLiveFiles)}/>}
-      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
-    </Form.Control>
-  </>);
-}
-
-function VLiveFileUploaderEn({platform, vLiveFiles, setVLiveFiles}) {
-  const handleError = useErrorHandler();
-  const updateSources = React.useCallback((platform, files, setFiles) => {
-    if (!files?.length) return alert('No file selected');
-
-    axios.post('/terraform/v1/ffmpeg/vlive/source', {
-      platform, files: files.map(f => {
-        return {name: f.name, size: f.size, uuid: f.uuid, target: f.target, type: "upload"};
-      }),
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      console.log(`Set file source ok, ${JSON.stringify(res.data.data)}`);
+      console.log(`${t('vle.tool.upload3')}, ${JSON.stringify(res.data.data)}`);
       setFiles(res.data.data.files);
     }).catch(handleError);
   }, [handleError]);

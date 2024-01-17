@@ -246,7 +246,9 @@
         "copy": "拷贝",
         "copy2": "复制",
         "see": "请参考",
-        "doc": "https://ossrs.net/lts/zh-cn/faq-srs-stack"
+        "doc": "https://ossrs.net/lts/zh-cn/faq-srs-stack",
+        "required": "必选",
+        "optional": "可选"
       },
       "transcode": {
         "config": {
@@ -463,11 +465,141 @@
         "silent": "静音音频流",
         "silent2": "额外音频流",
         "silent3": "给无音频的摄像头加音频，才可以推给常见的直播平台"
+      },
+      "vle": {
+        "com": {
+          "video": "请上传视频源",
+          "addr": "请输入推流地址",
+          "label": "自定义平台请输入名称，否则不好区分虚拟直播状态",
+          "ok": "虚拟直播设置成功",
+          "custom": "自定义平台",
+          "name": "名称",
+          "name2": "起一个好记的名字",
+          "server": "服务器",
+          "server2": "推流地址",
+          "server3": "请先",
+          "server4": "然后获取推流地址",
+          "key": "推流密钥",
+          "key2": "然后获取推流密钥",
+          "start": "开始直播",
+          "stop": "停止直播",
+          "tip": "将文件转直播流",
+          "status": "虚拟直播状态",
+          "platform": "平台",
+          "status2": "状态",
+          "update": "更新时间",
+          "source": "视频源",
+          "log": "日志",
+          "s0": "直播中",
+          "s1": "等待中",
+          "s2": "未开启",
+          "s3": "没有流。请开启虚拟直播间后，等待大约30秒左右，列表会自动更新"
+        },
+        "wx": {
+          "title": "视频号虚拟直播间",
+          "link": "https://channels.weixin.qq.com/platform/live/liveBuild",
+          "link2": "创建直播"
+        },
+        "bl": {
+          "title": "Bilibili虚拟直播间",
+          "link": "https://link.bilibili.com/p/center/index#/my-room/start-live",
+          "link2": "创建直播"
+        },
+        "ks": {
+          "title": "快手虚拟直播间",
+          "link": "https://studio.kuaishou.com/live/list",
+          "link2": "创建直播"
+        },
+        "tool": {
+          "source": "视频源",
+          "source2": "虚拟直播就是将视频源(文件/流)转换成直播流",
+          "upload": "上传本地文件",
+          "upload2": "无上传文件",
+          "upload3": "虚拟直播文件源设置成功",
+          "file": "指定服务器文件",
+          "file2": "文件必须在 /data 目录下面",
+          "file3": "请输入文件路径",
+          "file4": "文件必须是 mp4/flv/ts 格式",
+          "file5": "检查服务器文件成功",
+          "file6": "更新虚拟直播源为服务器文件成功",
+          "file7": "请输入文件路径",
+          "stream": "拉流转推",
+          "stream2": "流地址支持 rtmp, http, https, 或 rtsp 等格式",
+          "stream3": "请输入流地址",
+          "stream4": "HTTP流必须是 http-flv或hls 格式",
+          "stream5": "检查流地址成功",
+          "stream6": "更新虚拟直播源为流地址成功"
+        }
       }
     }
   },
   "en": {
     "translation": {
+      "vle": {
+        "tool": {
+          "stream6": "Setup the virtual live stream ok",
+          "stream5": "Check stream url ok",
+          "stream4": "The HTTP stream must be http-flv/hls",
+          "stream3": "Please input stream URL",
+          "stream2": "The stream URL should start with rtmp, http, https, or rtsp.",
+          "stream": "Forward stream",
+          "file7": "Please input file path",
+          "file6": "Setup the virtual live file ok",
+          "file5": "Check server file ok",
+          "file4": "The file must be in mp4/flv/ts format.",
+          "file3": "Please input file path",
+          "file2": "The file must be in the /data directory.",
+          "file": "Use server file",
+          "upload3": "Set file source ok",
+          "upload2": "No file selected",
+          "upload": "Upload local file",
+          "source2": "Virtual live streaming is the process of converting a video source (file) into a live stream.",
+          "source": "Live Stream Source"
+        },
+        "ks": {
+          "link2": "Live Producer",
+          "link": "https://www.facebook.com/live/producer?ref=OBS",
+          "title": "Facebook"
+        },
+        "bl": {
+          "link2": "Dashboard",
+          "link": "https://www.twitch.tv/dashboard/settings",
+          "title": "Twitch"
+        },
+        "wx": {
+          "link2": "Go live",
+          "link": "https://studio.youtube.com/channel/UC/livestreaming",
+          "title": "YouTube"
+        },
+        "com": {
+          "s3": "There is no stream. Please start the virtual live room and wait for about 30 seconds, the list will update automatically.",
+          "s0": "Streaming",
+          "s1": "Waiting",
+          "s2": "Inactive",
+          "log": "Logging",
+          "source": "Source Stream",
+          "update": "Update",
+          "status2": "Status",
+          "platform": "Platform",
+          "status": "Virtual Live Status",
+          "tip": "Convert file to live stream",
+          "stop": "Stop Virtual Live",
+          "start": "Start Virtual Live",
+          "key2": "then copy the Stream Key",
+          "key": "Stream Key",
+          "server4": "then copy the Stream URL",
+          "server3": "Please click",
+          "server2": "Stream URL",
+          "server": "Server",
+          "name2": "Virtual live event label",
+          "name": "Label",
+          "custom": "Custom",
+          "ok": "Virtual live event setup ok",
+          "label": "For custom platform, please input label to identify the stream",
+          "addr": "Please input stream URL",
+          "video": "Please upload video source"
+        }
+      },
       "camera": {
         "silent3": "Add audio stream to camera without audio, then can be accepted by common live platforms",
         "silent2": "Extra Audio Stream",
@@ -929,7 +1061,9 @@
         "copy": "Copy",
         "copy2": "Copy",
         "see": "Please see",
-        "doc": "https://ossrs.io/lts/en-us/faq-srs-stack"
+        "doc": "https://ossrs.io/lts/en-us/faq-srs-stack",
+        "required": "Required",
+        "optional": "Optional"
       }
     }
   }

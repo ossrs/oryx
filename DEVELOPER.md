@@ -1093,6 +1093,7 @@ The following are the update records for the SRS Stack server.
     * Camera: Support IP Camera streaming scenario. v5.13.12
     * Camera: Support silent extra audio stream for video only device. v5.13.13
     * Camera: Support replace audio if enabled extra audio. v5.13.13
+    * VLive/Camera: Extract multilingual text. v5.13.14
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
