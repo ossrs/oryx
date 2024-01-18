@@ -5,7 +5,7 @@
 //
 import React from "react";
 import {useSrsLanguage} from "../components/LanguageSwitch";
-import {Accordion, Alert, Button, Card, Form, Nav, Table} from "react-bootstrap";
+import {Accordion, Alert, Button, Card, Col, Form, Nav, Row, Spinner, Table} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import axios from "axios";
 import {Clipboard, Token} from "../utils";
@@ -156,7 +156,12 @@ function ScenarioLiveRoomList({setRoomId}) {
             {rooms?.map((room, index) => {
               return <tr key={room.uuid}>
                 <td>{index}</td>
-                <td>{room.uuid}</td>
+                <td>
+                  <a href="#!" onClick={(e) => {
+                    e.preventDefault();
+                    manageRoom(room);
+                  }}>{room.uuid}</a>
+                </td>
                 <td>{room.title}</td>
                 <td>{room.created_at}</td>
                 <td>
@@ -436,11 +441,16 @@ function LiveRoomAssistantWorker({room}) {
   const handleError = useErrorHandler();
   const isMobile = useIsMobile();
 
+  // The timeout in milliseconds.
+  const timeoutForMicrophoneTestToRun = 50;
+  const timeoutWaitForMicrophoneToClose = 600;
+  const timeoutWaitForLastVoice = 700;
+  const durationRequiredUserInput = 600;
+
   // The player ref, to access the audio player.
   const playerRef = React.useRef(null);
   const [robotReady, setRobotReady] = React.useState(false);
   const [processing, setProcessing] = React.useState(false);
-  const [talking, setTalking] = React.useState(false);
   const [micWorking, setMicWorking] = React.useState(false);
 
   // The uuid and robot in stage, which is unchanged after stage started.
@@ -449,17 +459,80 @@ function LiveRoomAssistantWorker({room}) {
 
   const [booting, setBooting] = React.useState(true);
   const [errorLogs, setErrorLogs] = React.useState([]);
+  const [traceCount, setTraceCount] = React.useState(0);
+  const [traceLogs, setTraceLogs] = React.useState([]);
+  const [tipLogs, setTipLogs] = React.useState([]);
 
-  // The timeout in milliseconds.
-  const timeoutForMicrophoneTestToRun = 50;
-  const timeoutWaitForMicrophoneToClose = 600;
-  const timeoutWaitForLastVoice = 700;
-  const durationRequiredUserInput = 600;
+  // The refs, about the logs and audio chunks model.
+  const ref = React.useRef({
+    count: 0,
+    isRecording: false,
+    recordStarttime: null,
+    stopHandler: null,
+    mediaStream: null,
+    mediaRecorder: null,
+    audioChunks: [],
+    errorLogs: [],
+    traceLogs: [],
+    tipsLogs: [],
+    traceCount: 0
+  });
 
   const errorLog = React.useCallback((msg) => {
     const rid = `id-${Math.random().toString(16).slice(-4)}${new Date().getTime().toString(16).slice(-4)}`;
-    setErrorLogs([...errorLogs, {id: rid, msg}]);
-  }, [errorLogs, setErrorLogs]);
+    ref.current.errorLogs = [...ref.current.errorLogs, {id: rid, msg}];
+    setErrorLogs(ref.current.errorLogs);
+  }, [setErrorLogs, ref]);
+
+  const traceLog = React.useCallback((role, msg, variant) => {
+    setTraceCount(++ref.current.traceCount);
+
+    // Merge to last log with the same role.
+    if (ref.current.traceLogs.length > 0) {
+      const last = ref.current.traceLogs[ref.current.traceLogs.length - 1];
+      if (last.role === role) {
+        last.msg = `${last.msg} ${msg}`;
+        setTraceLogs([...ref.current.traceLogs]);
+        return;
+      }
+    }
+
+    const rid = `id-${Math.random().toString(16).slice(-4)}${new Date().getTime().toString(16).slice(-4)}`;
+    ref.current.traceLogs = [...ref.current.traceLogs, {id: rid, role, msg, variant}];
+    setTraceLogs(ref.current.traceLogs);
+  }, [setTraceLogs, ref, setTraceCount]);
+
+  const tipLog = React.useCallback((title, msg) => {
+    const rid = `id-${Math.random().toString(16).slice(-4)}${new Date().getTime().toString(16).slice(-4)}`;
+    ref.current.tipsLogs = [...ref.current.tipsLogs, {id: rid, title, msg, created: new Date()}];
+    setTipLogs(ref.current.tipsLogs);
+  }, [setTipLogs, ref]);
+
+  const removeTipLog = React.useCallback((log) => {
+    const index = ref.current.tipsLogs.findIndex((l) => l.id === log.id);
+    ref.current.tipsLogs.splice(index, 1);
+    setTipLogs([...ref.current.tipsLogs]);
+  }, [setTipLogs, ref]);
+
+  const removeErrorLog = React.useCallback((log) => {
+    const index = ref.current.errorLogs.findIndex((l) => l.id === log.id);
+    ref.current.errorLogs.splice(index, 1);
+    setErrorLogs([...ref.current.errorLogs]);
+  }, [setErrorLogs, ref]);
+
+  // Scroll the log panel.
+  const logPanelRef = React.useRef(null);
+  const endPanelRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!logPanelRef?.current) return;
+    console.log(`Logs scroll to end, height=${logPanelRef.current.scrollHeight}, logs=${traceLogs.length}, count=${traceCount}`);
+    logPanelRef.current.scrollTo(0, logPanelRef.current.scrollHeight);
+  }, [traceLogs, logPanelRef, traceCount]);
+  React.useEffect(() => {
+    if (!robotReady || !endPanelRef?.current) return;
+    console.log(`Logs setup to end, height=${endPanelRef.current.scrollHeight}, tips=${tipLogs.length}`);
+    endPanelRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [robotReady, endPanelRef, tipLogs]);
 
   // The application is started now.
   React.useEffect(() => {
@@ -536,16 +609,11 @@ function LiveRoomAssistantWorker({room}) {
     playerRef.current.play().catch(error => errorLog(`${t('lr.room.speaker')}: ${error}`));
   }, [t, errorLog, stageUUID, setRobotReady, stageRobot]);
 
-  // The refs, about the logs and audio chunks model.
-  const ref = React.useRef({
-    count: 0,
-    isRecording: false,
-    recordStarttime: null,
-    stopHandler: null,
-    mediaStream: null,
-    mediaRecorder: null,
-    audioChunks: [],
-  });
+  // For test only, append some logs.
+  const appendTestLogs = React.useCallback((logs) => {
+    traceLog('You', 'Hello', 'primary');
+    traceLog('Bot', `World ${new Date()}`, 'success');
+  }, [traceLog]);
 
   // When robot is ready, open the microphone ASAP to accept user input.
   React.useEffect(() => {
@@ -561,6 +629,22 @@ function LiveRoomAssistantWorker({room}) {
     }).catch(error => errorLog(`${t('lr.room.mic')}: ${error}`));
   }, [errorLog, t, robotReady, ref]);
 
+  // When robot is ready, show tip logs, and cleanup timeout tips.
+  React.useEffect(() => {
+    if (!robotReady) return;
+    tipLog('Usage', isMobile ? t('lr.room.usage') : t('lr.room.usage2'));
+
+    const timer = setInterval(() => {
+      const tipsLogs = [...ref.current.tipsLogs];
+      tipsLogs.forEach((log) => {
+        if (new Date() - log.created > 10 * 1000) {
+          removeTipLog(log);
+        }
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [t, robotReady, tipLog, isMobile, ref, removeTipLog]);
+
   // User start a conversation, by recording input.
   const startRecording = React.useCallback(async () => {
     if (!robotReady) return;
@@ -572,7 +656,6 @@ function LiveRoomAssistantWorker({room}) {
     ref.current.isRecording = true;
     ref.current.count += 1;
 
-    setTalking(true);
     console.log("=============");
 
     // The stream is already opened when robot ready, or all answers are played.
@@ -593,7 +676,7 @@ function LiveRoomAssistantWorker({room}) {
 
     ref.current.mediaRecorder.start();
     console.log(`Event: Recording started`);
-  }, [robotReady, ref, setMicWorking, setTalking]);
+  }, [robotReady, ref, setMicWorking]);
 
   // User click stop button, we delay some time to allow cancel the stopping event.
   const stopRecording = React.useCallback(async () => {
@@ -625,7 +708,7 @@ function LiveRoomAssistantWorker({room}) {
           headers: Token.loadBearerHeader(),
         }).then(res => {
           console.log(`ASR: Upload success: ${res.data.data.rid} ${res.data.data.asr}`);
-          console.warn(`You: ${res.data.data.asr}`);
+          traceLog('You', res.data.data.asr, 'primary');
           resolve(res.data.data.rid);
         }).catch((error) => reject(error));
       });
@@ -643,7 +726,7 @@ function LiveRoomAssistantWorker({room}) {
             }).then(res => {
               if (res.data?.data?.asid) {
                 console.log(`TTS: Audio ready: ${res.data.data.asid} ${res.data.data.tts}`);
-                console.warn(`Bot: ${res.data.data.tts}`);
+                traceLog('Bot', res.data.data.tts, 'success');
               }
               resolve(res.data.data);
             }).catch(error => reject(error));
@@ -719,7 +802,6 @@ function LiveRoomAssistantWorker({room}) {
           ref.current.mediaRecorder.stop();
         });
 
-        setTalking(false);
         setMicWorking(false);
         setProcessing(true);
         console.log(`Event: Recoder stopped, chunks=${ref.current.audioChunks.length}`);
@@ -761,7 +843,7 @@ function LiveRoomAssistantWorker({room}) {
     ref.current.stopHandler = setTimeout(() => {
       stopRecordingImpl();
     }, timeoutWaitForLastVoice);
-  }, [playerRef, stageUUID, stageRobot, robotReady, ref, setProcessing, setTalking, setMicWorking]);
+  }, [playerRef, stageUUID, stageRobot, robotReady, ref, setProcessing, setMicWorking, traceLog]);
 
   // Setup the keyboard event, for PC browser.
   React.useEffect(() => {
@@ -794,8 +876,16 @@ function LiveRoomAssistantWorker({room}) {
     <div>
       {errorLogs.map((log) => {
         return (
-          <Alert key={log.id} onClose={() => setErrorLogs(errorLogs.filter((l) => l.id !== log.id))} variant='danger' dismissible>
+          <Alert key={log.id} onClose={() => removeErrorLog(log)} variant='danger' dismissible>
             <Alert.Heading>Error!</Alert.Heading>
+            <p>{log.msg}</p>
+          </Alert>
+        );
+      })}
+      {tipLogs.map((log) => {
+        return (
+          <Alert key={log.id} onClose={() => removeTipLog(log)} variant='success' dismissible>
+            <Alert.Heading>{log.title}</Alert.Heading>
             <p>{log.msg}</p>
           </Alert>
         );
@@ -803,20 +893,67 @@ function LiveRoomAssistantWorker({room}) {
       <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
       {booting ? <>Booting ...</> : ''}
       {stageUUID && !robotReady ? <Button variant="primary" type="submit" onClick={startChatting}>{t('lr.room.talk')}</Button> : ''}
-      {robotReady ?
-        <div className="ai-talk-container" onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing}>
-          {!processing ?
-            <div>
-              <div className='ai-talk-usage-tips'>
-                {!talking ?
-                  <span>{isMobile ? t('lr.room.usage') : t('lr.room.usage2')}</span> :
-                  <span>&nbsp;</span>}
+      {stageUUID && robotReady ? <Button variant="primary" type="submit" onClick={appendTestLogs} hidden={true}>Test Logs</Button> : ''}
+      {robotReady && !isMobile ?
+        <Row>
+          <Col>
+            <div className='ai-talk-container-pc' onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing}>
+              {!processing ?
+                <div>
+                  <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
+                    <div className='ai-talk-mc'></div>
+                  </div>
+                </div> :
+                <div>
+                  <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
+                </div>}
+            </div>
+          </Col>
+          <Col>
+            <div className='ai-talk-trace-logs-pc' ref={logPanelRef}>
+              <p></p>
+              <div>
+                {traceLogs.map((log) => {
+                  return (
+                    <Alert key={log.id} variant={log.variant}>
+                      {log.role}: {log.msg}
+                    </Alert>
+                  );
+                })}
               </div>
-              <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
-                <div className='ai-talk-mc'></div>
+            </div>
+            <div ref={endPanelRef}></div>
+          </Col>
+        </Row> : ''}
+      {robotReady && isMobile ?
+        <Row>
+          <Col>
+            <div className='ai-talk-trace-logs-mobile' ref={logPanelRef}>
+              <p></p>
+              <div>
+                {traceLogs.map((log) => {
+                  return (
+                    <Alert key={log.id} variant={log.variant}>
+                      {log.role}: {log.msg}
+                    </Alert>
+                  );
+                })}
               </div>
-            </div> : ''}
-        </div> : ''}
+            </div>
+            <div className="ai-talk-container-mobile" onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing}>
+              {!processing ?
+                <div>
+                  <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
+                    <div className='ai-talk-mc'></div>
+                  </div>
+                </div> :
+                <div>
+                  <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
+                </div>}
+            </div>
+            <div ref={endPanelRef}></div>
+          </Col>
+        </Row> : ''}
     </div>
   );
 }

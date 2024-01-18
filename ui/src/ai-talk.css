@@ -3,7 +3,8 @@
   position:relative;
   margin: 5% auto;
   border-radius:50%;
-  width:10em; height:10em;
+  width:10em;
+  height:10em;
 }
 
 .ai-talk-gn-normal:before, .ai-talk-gn-normal:after, .ai-talk-gn-active:before, .ai-talk-gn-active:after, .ai-talk-mc:before, .ai-talk-mc:after{
@@ -47,13 +48,11 @@
   width:20%; height:25%;
 }
 
-.ai-talk-usage-tips {
-  text-align: center;
+.ai-talk-trace-logs-pc, .ai-talk-trace-logs-mobile {
+  overflow: scroll;
 }
 
-.ai-talk-container {
-  min-height: 40vh;
-  min-width: 80vw;
+.ai-talk-container-pc, .ai-talk-container-mobile {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -62,6 +61,41 @@
   color: white;
   user-select:none;
   border-radius: 3%;
+}
+
+.ai-talk-container-pc {
+  min-height: 55vh;
+  max-height: 55vh;
+  min-width: 40vw;
+}
+
+.ai-talk-trace-logs-pc, .ai-talk-trace-logs-mobile {
+  margin-bottom: 0px;
+}
+
+.ai-talk-trace-logs-pc {
+  min-height: 57vh;
+  max-height: 57vh;
+  min-width: 40vw;
+}
+
+.ai-talk-container-mobile {
+  min-height: 30vh;
+  max-height: 30vh;
+}
+
+.ai-talk-trace-logs-mobile {
+  min-height: 55vh;
+  max-height: 55vh;
+}
+
+.ai-talk-spinner {
+  width: 10vh;
+  height: 10vh;
+}
+
+.ai-talk-container-pc, .ai-talk-container-mobile {
+  background-color: #555555;
 }
 
 .ai-talk-gn-normal {
@@ -74,8 +108,4 @@
 
 .ai-talk-mc:before {
   border: 0.5em solid #fff;
-}
-
-.ai-talk-container {
-  background-color: #555555;
 }
