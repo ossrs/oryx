@@ -6,6 +6,7 @@ import {Token} from "../utils";
 import axios from "axios";
 import {useErrorHandler} from "react-error-boundary";
 import PopoverConfirm from "../components/PopoverConfirm";
+import {OpenAIWhisperSettings} from "../components/OpenAISettings";
 
 export default function ScenarioTranscript(props) {
   const handleError = useErrorHandler();
@@ -45,7 +46,6 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   const handleError = useErrorHandler();
 
   const [operating, setOperating] = React.useState(false);
-  const [checking, setChecking] = React.useState(false);
   const [refreshNow, setRefreshNow] = React.useState();
   const [transcriptEnabled, setTranscriptEnabled] = React.useState(defaultEnabled);
   const [secretKey, setSecretKey] = React.useState(defaultConf.secretKey);
@@ -74,25 +74,6 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
     setOriginalHlsUrl(`${l.protocol}//${l.host}/terraform/v1/ai/transcript/hls/original/${uuid}.m3u8`);
     setOriginalHlsPreview(`/players/srs_player.html?schema=${schema}&port=${httpPort}&autostart=true&app=terraform/v1/ai/transcript/hls/original&stream=${uuid}.m3u8`);
   }, [uuid, setOverlayHlsUrl, setOverlayHlsPreview, setOriginalHlsUrl, setOriginalHlsPreview]);
-
-  const testConnection = React.useCallback(() => {
-    if (!secretKey) return alert(`Invalid secret key ${secretKey}`);
-    if (!baseURL) return alert(`Invalid base url ${baseURL}`);
-
-    const urlPattern = new RegExp('^(http|https)://.+(/v1)$');
-    if (!urlPattern.test(baseURL)) return alert(`Invalid BaseUrl ${baseURL}, should be http(s)://your-server/v1`);
-
-    setChecking(true);
-
-    axios.post('/terraform/v1/ai/transcript/check', {
-      secretKey, baseURL,
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      alert(`${t('helper.testOk')}: ${t('transcript.testOk')}`);
-      console.log(`Transcript: Test service ok.`);
-    }).catch(handleError).finally(setChecking);
-  }, [t, handleError, secretKey, baseURL, setChecking]);
 
   const updateAiService = React.useCallback((enabled, success) => {
     if (!secretKey) return alert(`Invalid secret key ${secretKey}`);
@@ -299,33 +280,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
         <Accordion.Header>{t('transcript.service')}</Accordion.Header>
         <Accordion.Body>
           <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('transcript.key')}</Form.Label>
-              <Form.Text> * {t('transcript.key2')}, <a href='https://platform.openai.com/api-keys' target='_blank' rel='noreferrer'>{t('helper.link')}</a></Form.Text>
-              <Form.Control as="input" type='password' defaultValue={secretKey} onChange={(e) => setSecretKey(e.target.value)} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('transcript.base')}</Form.Label>
-              <Form.Text> * {t('transcript.base2')}. {t('helper.eg')} <code>https://api.openai.com/v1</code></Form.Text>
-              <Form.Control as="input" defaultValue={baseURL} onChange={(e) => setBaseURL(e.target.value)} />
-            </Form.Group>
-            <p>
-              <Button ariant="primary" type="submit" disabled={checking} onClick={(e) => {
-                e.preventDefault();
-                testConnection();
-              }}>
-                {t('transcript.test')}
-              </Button> &nbsp;
-              {checking && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />}
-            </p>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('transcript.lang')}</Form.Label>
-              <Form.Text> * {t('transcript.lang2')}. &nbsp;
-                {t('helper.eg')} <code>en, zh, fr, de, ja, ru </code>, ... &nbsp;
-                {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank' rel='noreferrer'>ISO-639-1</a>.
-              </Form.Text>
-              <Form.Control as="input" defaultValue={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)} />
-            </Form.Group>
+            <OpenAIWhisperSettings {...{baseURL, setBaseURL, secretKey, setSecretKey, targetLanguage, setTargetLanguage}} />
             <Button ariant="primary" type="submit" onClick={(e) => {
               e.preventDefault();
               updateAiService(!transcriptEnabled, () => {

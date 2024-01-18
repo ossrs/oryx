@@ -31,7 +31,7 @@ export default function ScenarioLiveRoom() {
   return <ScenarioLiveRoomImpl {...{setRoomId}} />;
 }
 
-export function ScenarioLiveRoomImpl({setRoomId}) {
+function ScenarioLiveRoomImpl({setRoomId}) {
   const language = useSrsLanguage();
   const {t} = useTranslation();
   const handleError = useErrorHandler();
@@ -180,9 +180,10 @@ export function ScenarioLiveRoomImpl({setRoomId}) {
 }
 
 function ScenarioLiveRoomManager({roomId, setRoomId}) {
+  const {t} = useTranslation();
   const handleError = useErrorHandler();
   const env = React.useContext(SrsEnvContext)[0];
-  const {t} = useTranslation();
+
   const [room, setRoom] = React.useState({});
   const [urls, setUrls] = React.useState({});
   const [streamType, setStreamType] = React.useState('rtmp');
@@ -204,7 +205,7 @@ function ScenarioLiveRoomManager({roomId, setRoomId}) {
       headers: Token.loadBearerHeader(),
     }).then(res => {
       setRoom(res.data.data);
-      console.log(`Status: Query ok, uuid=${roomId}, data=${JSON.stringify(res.data.data)}`);
+      console.log(`Room: Query ok, uuid=${roomId}, data=${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
   }, [handleError, setRoom, roomId]);
 
@@ -292,7 +293,6 @@ function ScenarioLiveRoomManager({roomId, setRoomId}) {
       <Accordion.Item eventKey="2">
         <Accordion.Header>{t('lr.room.ai')}</Accordion.Header>
         <Accordion.Body>
-          On the way...
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
