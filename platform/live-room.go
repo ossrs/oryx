@@ -98,16 +98,13 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, rid string
-			var assistant bool
+			var token string
+			var room SrsLiveRoom
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token *string `json:"token"`
-				// The UUID of room.
-				RoomUUID *string `json:"uuid"`
-				// Whether enable the AI assistant.
-				Assistant *bool `json:"assistant"`
+				*SrsLiveRoom
 			}{
-				Token: &token, RoomUUID: &rid, Assistant: &assistant,
+				Token: &token, SrsLiveRoom: &room,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -117,23 +114,10 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			var room SrsLiveRoom
-			if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, rid).Result(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hget %v %v", SRS_LIVE_ROOM, rid)
-			} else if r0 == "" {
-				return errors.Errorf("live room %v not exists", rid)
-			} else if err = json.Unmarshal([]byte(r0), &room); err != nil {
-				return errors.Wrapf(err, "unmarshal %v %v", rid, r0)
-			}
-
-			if room.Assistant != assistant {
-				room.Assistant = assistant
-
-				if b, err := json.Marshal(room); err != nil {
-					return errors.Wrapf(err, "marshal room")
-				} else if err := rdb.HSet(ctx, SRS_LIVE_ROOM, room.UUID, string(b)).Err(); err != nil {
-					return errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
-				}
+			if b, err := json.Marshal(room); err != nil {
+				return errors.Wrapf(err, "marshal room")
+			} else if err := rdb.HSet(ctx, SRS_LIVE_ROOM, room.UUID, string(b)).Err(); err != nil {
+				return errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
 			}
 
 			// Limit the changing rate for AI Assistant.
@@ -143,7 +127,7 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			ohttp.WriteData(ctx, w, r, &room)
-			logger.Tf(ctx, "srs live room update ok, uuid=%v, assistant=%v, room=%v", rid, assistant, room.String())
+			logger.Tf(ctx, "srs live room update ok, room=%v", room.String())
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -241,13 +225,41 @@ type SrsLiveRoom struct {
 	// Live room secret.
 	Secret string `json:"secret"`
 
-	// Whether enable the AI assistant.
-	Assistant bool `json:"assistant"`
+	// The AI assistant settings.
+	SrsAssistant
 
 	// Create time.
 	CreatedAt string `json:"created_at"`
 }
 
 func (v *SrsLiveRoom) String() string {
-	return fmt.Sprintf("uuid=%v, title=%v, secret=%v, assistant=%v", v.UUID, v.Title, v.Secret, v.Assistant)
+	return fmt.Sprintf("uuid=%v, title=%v, secret=%v, assistant=<%v>", v.UUID, v.Title, v.Secret, v.SrsAssistant.String())
+}
+
+type SrsAssistant struct {
+	// Whether enable the AI assistant.
+	Assistant bool `json:"assistant"`
+	// The AI name.
+	AIName string `json:"aiName"`
+	// The AI provider.
+	AIProvider string `json:"aiProvider"`
+	// The AI secret key.
+	AISecretKey string `json:"aiSecretKey"`
+	// The AI base URL.
+	AIBaseURL string `json:"aiBaseURL"`
+	// The AI asr language.
+	AIASRLanguage string `json:"aiAsrLanguage"`
+	// The AI model name.
+	AIChatModel string `json:"aiChatModel"`
+	// The AI chat system prompt.
+	AIChatPrompt string `json:"aiChatPrompt"`
+	// The AI chat max window.
+	AIChatMaxWindow int `json:"aiChatMaxWindow"`
+	// The AI chat max words.
+	AIChatMaxWords int `json:"aiChatMaxWords"`
+}
+
+func (v *SrsAssistant) String() string {
+	return fmt.Sprintf("assistant=%v, aiName=%v, aiProvider=%v, aiSecretKey=%v, aiBaseURL=%v, aiAsrLanguage=%v, aiChatModel=%v, aiChatPrompt=%v, aiChatMaxWindow=%v, aiChatMaxWords=%v",
+		v.Assistant, v.AIName, v.AIProvider, len(v.AISecretKey), v.AIBaseURL, v.AIASRLanguage, v.AIChatModel, v.AIChatPrompt, v.AIChatMaxWindow, v.AIChatMaxWords)
 }

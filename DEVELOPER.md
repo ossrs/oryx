@@ -868,6 +868,8 @@ API without any authentication:
 * `/terraform/v1/ai/transcript/hls/overlay/:uuid.m3u8` Generate the preview HLS for transcript stream with overlay text.
 * `/terraform/v1/ai/transcript/hls/original/:uuid.m3u8` Generate the preview HLS for original stream without overlay text.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
+* `/terraform/v1/ai-talk/stage/examples/` AI-Talk: Play the example audios.
+* `/terraform/v1/ai-talk/stage/tts` AI-Talk: Play the TTS audios.
 
 API without token authentication, but with password authentication:
 
@@ -911,6 +913,7 @@ Platform, with token authentication:
 * `/terraform/v1/live/room/update` Live: Update a live room.
 * `/terraform/v1/live/room/remove`: Live: Remove a live room.
 * `/terraform/v1/live/room/list` Live: List all available live rooms.
+* `/terraform/v1/ai-talk/stage/start` AI-Talk: Start a new stage.
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 * `/terraform/v1/ffmpeg/vlive/secret` Setup the Virtual Live streaming secret.
@@ -1095,6 +1098,7 @@ The following are the update records for the SRS Stack server.
     * Camera: Support silent extra audio stream for video only device. v5.13.13
     * Camera: Support replace audio if enabled extra audio. v5.13.13
     * VLive/Camera/Forward: Extract multilingual text. v5.13.14
+    * Room: Support AI-Talk assistant for live room. v5.13.15
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1

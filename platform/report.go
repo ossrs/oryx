@@ -161,6 +161,27 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		params["beian"] = fmt.Sprintf("%v", r0)
 	}
 
+	// Report about live room feature.
+	if r0, err := rdb.HLen(ctx, SRS_LIVE_ROOM).Result(); err != nil && err != redis.Nil {
+		return nil, errors.Wrapf(err, "hlen %v", SRS_LIVE_ROOM)
+	} else if r0 > 0 {
+		params["lr"] = fmt.Sprintf("%v", r0)
+	}
+	if rooms, err := rdb.HGetAll(ctx, SRS_LIVE_ROOM).Result(); err == nil {
+		var count int
+		for _, v := range rooms {
+			var obj SrsLiveRoom
+			if err = json.Unmarshal([]byte(v), &obj); err == nil {
+				if obj.Assistant {
+					count++
+				}
+			}
+		}
+		if count > 0 {
+			params["lra"] = fmt.Sprintf("%v", count)
+		}
+	}
+
 	// Report about HLS high performance feature.
 	if r0, err := rdb.HGet(ctx, SRS_HP_HLS, "noHlsCtx").Result(); err != nil && err != redis.Nil {
 		return nil, errors.Wrapf(err, "hget %v noHlsCtx", SRS_HP_HLS)

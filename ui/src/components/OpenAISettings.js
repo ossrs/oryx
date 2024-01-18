@@ -42,7 +42,7 @@ export function OpenAIWhisperSettings({baseURL, setBaseURL, secretKey, setSecret
         <Form.Text> * {t('transcript.base2')}. {t('helper.eg')} <code>https://api.openai.com/v1</code></Form.Text>
         <Form.Control as="input" defaultValue={baseURL} onChange={(e) => setBaseURL(e.target.value)} />
       </Form.Group>
-      <p>
+      <div>
         <Button ariant="primary" type="submit" disabled={checking} onClick={(e) => {
           e.preventDefault();
           testConnection();
@@ -50,7 +50,8 @@ export function OpenAIWhisperSettings({baseURL, setBaseURL, secretKey, setSecret
           {t('transcript.test')}
         </Button> &nbsp;
         {checking && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />}
-      </p>
+      </div>
+      <p></p>
       <Form.Group className="mb-3">
         <Form.Label>{t('transcript.lang')}</Form.Label>
         <Form.Text> * {t('transcript.lang2')}. &nbsp;

@@ -1,0 +1,81 @@
+
+.ai-talk-gn-normal, .ai-talk-gn-active{
+  position:relative;
+  margin: 5% auto;
+  border-radius:50%;
+  width:10em; height:10em;
+}
+
+.ai-talk-gn-normal:before, .ai-talk-gn-normal:after, .ai-talk-gn-active:before, .ai-talk-gn-active:after, .ai-talk-mc:before, .ai-talk-mc:after{
+  content:'';
+  position:absolute;
+  background-color: #fff;
+}
+
+.ai-talk-gn-normal:after, .ai-talk-gn-active:after{
+  top:30%; left:43%;
+  height:15%; width:14%;
+  border-top-left-radius:50%;
+  border-top-right-radius:50%;
+}
+
+.ai-talk-gn-normal:before, .ai-talk-gn-active:before{
+  top:40%; left:43%;
+  height:15%; width:14%;
+  border-bottom-left-radius:50%;
+  border-bottom-right-radius:50%;
+}
+
+.ai-talk-mc{
+  position:absolute;
+  top:50%; left:37%;
+  height:24%;
+  width:26.5%;
+  overflow:hidden;
+}
+
+.ai-talk-mc:before{
+  bottom:50%;
+  width:100%; height:100%;
+  box-sizing:border-box;
+  border-radius:50%;
+  background:none;
+}
+
+.ai-talk-mc:after{
+  top:50%; left:40%;
+  width:20%; height:25%;
+}
+
+.ai-talk-usage-tips {
+  text-align: center;
+}
+
+.ai-talk-container {
+  min-height: 40vh;
+  min-width: 80vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  user-select:none;
+  border-radius: 3%;
+}
+
+.ai-talk-gn-normal {
+  background-color: #787878;
+}
+
+.ai-talk-gn-active {
+  background-color: #60B460;
+}
+
+.ai-talk-mc:before {
+  border: 0.5em solid #fff;
+}
+
+.ai-talk-container {
+  background-color: #555555;
+}

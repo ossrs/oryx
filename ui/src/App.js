@@ -5,7 +5,8 @@
 //
 import React from 'react';
 import axios from "axios";
-import './App.css'
+import './App.css';
+import './ai-talk.css';
 import {Container} from "react-bootstrap";
 import {BrowserRouter, Routes, Route, useParams, Outlet, useNavigate, useLocation} from "react-router-dom";
 import Footer from './pages/Footer';

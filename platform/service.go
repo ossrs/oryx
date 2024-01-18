@@ -230,6 +230,10 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 		return errors.Wrapf(err, "handle live room")
 	}
 
+	if err := handleAITalkService(ctx, handler); err != nil {
+		return errors.Wrapf(err, "handle AI talk")
+	}
+
 	var ep string
 
 	handleHostVersions(ctx, handler)
