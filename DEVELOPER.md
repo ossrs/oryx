@@ -908,6 +908,7 @@ Platform, with token authentication:
 * `/terraform/v1/hooks/record/files` Hooks: List the Record files.
 * `/terraform/v1/live/room/create` Live: Create a new live room.
 * `/terraform/v1/live/room/query` Live: Query a new live room.
+* `/terraform/v1/live/room/update` Live: Update a live room.
 * `/terraform/v1/live/room/remove`: Live: Remove a live room.
 * `/terraform/v1/live/room/list` Live: List all available live rooms.
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.

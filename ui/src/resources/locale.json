@@ -463,7 +463,8 @@
         "room": {
           "nav": "导航",
           "stream": "直播流",
-          "ai": "AI助手"
+          "ai": "AI助手",
+          "enable": "启用AI助手"
         }
       },
       "plat": {
@@ -632,6 +633,7 @@
       },
       "lr": {
         "room": {
+          "enable": "Enable AI Assistant",
           "ai": "AI Assistant",
           "stream": "Live Stream",
           "nav": "Navigation"

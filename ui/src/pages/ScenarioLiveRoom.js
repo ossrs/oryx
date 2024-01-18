@@ -182,9 +182,66 @@ function ScenarioLiveRoomImpl({setRoomId}) {
 function ScenarioLiveRoomManager({roomId, setRoomId}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
+
+  const [requesting, setRequesting] = React.useState(false);
+  const [room, setRoom] = React.useState();
+
+  React.useEffect(() => {
+    axios.post('/terraform/v1/live/room/query', {
+      uuid: roomId,
+    }, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      setRoom(res.data.data);
+      console.log(`Room: Query ok, uuid=${roomId}, data=${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError, roomId, setRoom]);
+
+  const enableAssitant = React.useCallback(() => {
+    setRequesting(true);
+    try {
+      axios.post('/terraform/v1/live/room/update', {
+        uuid: roomId, assistant: true,
+      }, {
+        headers: Token.loadBearerHeader(),
+      }).then(res => {
+        setRoom(res.data.data);
+        console.log(`Room: Update ok, uuid=${roomId}, data=${JSON.stringify(res.data.data)}`);
+      }).catch(handleError);
+    } finally {
+      setRequesting(false);
+    }
+  }, [handleError, setRequesting, roomId, setRoom]);
+
+  return <>
+    <Accordion defaultActiveKey={['0', '1', '2', '3']}>
+      <Accordion.Item eventKey="0">
+        <Accordion.Header>{t('lr.room.nav')}</Accordion.Header>
+        <Accordion.Body>
+          <Button variant="link" onClick={() => setRoomId(null)}>Back to Rooms</Button>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="1">
+        <Accordion.Header>{t('lr.room.stream')}</Accordion.Header>
+        <Accordion.Body>
+          {room ? <LiveRoomStreamer {...{room}}/> : ''}
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="2">
+        <Accordion.Header>{t('lr.room.ai')}</Accordion.Header>
+        <Accordion.Body>
+          {room && !room.assistant ? <Button variant="primary" type="button" disabled={requesting} onClick={enableAssitant}>{t('lr.room.enable')}</Button> : ''}
+          {room && room.assistant ? <LiveRoomAssistant {...{room}}/> : ''}
+        </Accordion.Body>
+      </Accordion.Item>
+    </Accordion>
+  </>;
+}
+
+function LiveRoomStreamer({room}) {
+  const {t} = useTranslation();
   const env = React.useContext(SrsEnvContext)[0];
 
-  const [room, setRoom] = React.useState({});
   const [urls, setUrls] = React.useState({});
   const [streamType, setStreamType] = React.useState('rtmp');
 
@@ -198,103 +255,78 @@ function ScenarioLiveRoomManager({roomId, setRoomId}) {
     });
   }, [t]);
 
-  React.useEffect(() => {
-    axios.post('/terraform/v1/live/room/query', {
-      uuid: roomId,
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      setRoom(res.data.data);
-      console.log(`Room: Query ok, uuid=${roomId}, data=${JSON.stringify(res.data.data)}`);
-    }).catch(handleError);
-  }, [handleError, setRoom, roomId]);
-
-  React.useEffect(() => {
-    if (!room?.secret) return;
-    const urls = buildUrls(`live/${roomId}`, {publish: room.secret}, env);
-    setUrls(urls);
-  }, [room, env, setUrls, roomId]);
-
-  const onChangeStreamType = React.useCallback((e, t) => {
+  const changeStreamType = React.useCallback((e, t) => {
     e.preventDefault();
     setStreamType(t);
   }, [setStreamType]);
+
+  React.useEffect(() => {
+    if (!room?.secret) return;
+    const urls = buildUrls(`live/${room.uuid}`, {publish: room.secret}, env);
+    setUrls(urls);
+  }, [room, env, setUrls]);
 
   const {
     rtmpServer, rtmpStreamKey, hlsPlayer, m3u8Url, srtPublishUrl,
   } = urls;
 
-  return <>
-    <Accordion defaultActiveKey={['0', '1', '2', '3']}>
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>{t('lr.room.nav')}</Accordion.Header>
-        <Accordion.Body>
-          <Button variant="link" onClick={() => setRoomId(null)}>Back to Rooms</Button>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="1">
-        <Accordion.Header>{t('lr.room.stream')}</Accordion.Header>
-        <Accordion.Body>
-          <Card>
-            <Card.Header>
-              <Nav variant="tabs" defaultActiveKey="#rtmp">
-                <Nav.Item>
-                  <Nav.Link href="#rtmp" onClick={(e) => onChangeStreamType(e, 'rtmp')}>{t('live.obs.title')}</Nav.Link>
-                </Nav.Item>
-                <Nav.Item>
-                  <Nav.Link href="#srt" onClick={(e) => onChangeStreamType(e, 'srt')}>{t('live.srt.title')}</Nav.Link>
-                </Nav.Item>
-              </Nav>
-            </Card.Header>
-            {streamType === 'rtmp' ? <Card.Body>
-              <div>
-                {t('live.obs.server')} <code>{rtmpServer}</code> &nbsp;
-                <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
-                  <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtmpServer)} />
-                </div>
-              </div>
-              <div>
-                {t('live.obs.key')} <code>{rtmpStreamKey}</code> &nbsp;
-                <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
-                  <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtmpStreamKey)} />
-                </div>
-              </div>
-              <div>
-                {t('live.share.hls')}&nbsp;
-                <a href={hlsPlayer} target='_blank' rel='noreferrer'>{t('live.share.simple')}</a>,&nbsp;
-                <code>{m3u8Url}</code> &nbsp;
-                <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
-                  <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
-                </div>
-              </div>
-            </Card.Body> :
-            <Card.Body>
-              <div>
-                {t('live.obs.server')} <code>{srtPublishUrl}</code> &nbsp;
-                <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
-                  <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPublishUrl)} />
-                </div>
-              </div>
-              <div>
-                {t('live.obs.key')} <code>{t('live.obs.nokey')}</code>
-              </div>
-              <div>
-                {t('live.share.hls')}&nbsp;
-                <a href={hlsPlayer} target='_blank' rel='noreferrer'>{t('live.share.simple')}</a>,&nbsp;
-                <code>{m3u8Url}</code> &nbsp;
-                <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
-                  <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
-                </div>
-              </div>
-            </Card.Body>}
-          </Card>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="2">
-        <Accordion.Header>{t('lr.room.ai')}</Accordion.Header>
-        <Accordion.Body>
-        </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
-  </>;
+  return (
+    <Card>
+      <Card.Header>
+        <Nav variant="tabs" defaultActiveKey="#rtmp">
+          <Nav.Item>
+            <Nav.Link href="#rtmp" onClick={(e) => changeStreamType(e, 'rtmp')}>{t('live.obs.title')}</Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link href="#srt" onClick={(e) => changeStreamType(e, 'srt')}>{t('live.srt.title')}</Nav.Link>
+          </Nav.Item>
+        </Nav>
+      </Card.Header>
+      {streamType === 'rtmp' ? <Card.Body>
+          <div>
+            {t('live.obs.server')} <code>{rtmpServer}</code> &nbsp;
+            <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
+              <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtmpServer)} />
+            </div>
+          </div>
+          <div>
+            {t('live.obs.key')} <code>{rtmpStreamKey}</code> &nbsp;
+            <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
+              <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, rtmpStreamKey)} />
+            </div>
+          </div>
+          <div>
+            {t('live.share.hls')}&nbsp;
+            <a href={hlsPlayer} target='_blank' rel='noreferrer'>{t('live.share.simple')}</a>,&nbsp;
+            <code>{m3u8Url}</code> &nbsp;
+            <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
+              <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+            </div>
+          </div>
+        </Card.Body> :
+        <Card.Body>
+          <div>
+            {t('live.obs.server')} <code>{srtPublishUrl}</code> &nbsp;
+            <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
+              <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, srtPublishUrl)} />
+            </div>
+          </div>
+          <div>
+            {t('live.obs.key')} <code>{t('live.obs.nokey')}</code>
+          </div>
+          <div>
+            {t('live.share.hls')}&nbsp;
+            <a href={hlsPlayer} target='_blank' rel='noreferrer'>{t('live.share.simple')}</a>,&nbsp;
+            <code>{m3u8Url}</code> &nbsp;
+            <div role='button' style={{display: 'inline-block'}} title={t('helper.copy')}>
+              <Icon.Clipboard size={20} onClick={(e) => copyToClipboard(e, m3u8Url)} />
+            </div>
+          </div>
+        </Card.Body>}
+    </Card>
+  );
+}
+
+function LiveRoomAssistant({room}) {
+  return <>{room.title}</>;
 }
