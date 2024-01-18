@@ -1089,7 +1089,7 @@ The following are the update records for the SRS Stack server.
     * RTSP: Rebuild the URL with escaped user info. v5.13.8
     * VLive: Support SRT URL filter. [v5.13.9](https://github.com/ossrs/srs-stack/releases/tag/v5.13.9)
     * FFmpeg: Monitor and restart FFmpeg if stuck. v5.13.10
-    * LiveRoom: Support live room secret with stream URL. v5.13.11
+    * Room: Support live room secret with stream URL. v5.13.11
     * Camera: Support IP Camera streaming scenario. v5.13.12
     * Camera: Support silent extra audio stream for video only device. v5.13.13
     * Camera: Support replace audio if enabled extra audio. v5.13.13

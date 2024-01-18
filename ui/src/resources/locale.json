@@ -462,6 +462,7 @@
         },
         "room": {
           "nav": "导航",
+          "stream": "直播流",
           "ai": "AI助手"
         }
       },
@@ -632,6 +633,7 @@
       "lr": {
         "room": {
           "ai": "AI Assistant",
+          "stream": "Live Stream",
           "nav": "Navigation"
         },
         "list": {
