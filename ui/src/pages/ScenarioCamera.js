@@ -155,7 +155,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
               </ul>
               <p>使用说明：</p>
               <ul>
-                <li>首先设置摄像头信息</li>
+                <li>首先设置摄像头拉流信息</li>
                 <li>然后设置直播流信息</li>
               </ul>
             </Accordion.Body>
@@ -164,7 +164,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
             <Accordion.Header>Introduction</Accordion.Header>
             <Accordion.Body>
               <div>
-                IP camera streaming is the process of converting the stream from IP Camera into a live stream using FFmpeg and pushing it to the SRS Stack or other platforms.
+                Camera streaming is the process of converting the stream from RTSP/IP Camera into a live stream using FFmpeg and pushing it to the SRS Stack or other platforms.
                 <p></p>
               </div>
               <p>Specific application scenarios include:</p>
@@ -173,7 +173,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
               </ul>
               <p>Instructions for use:</p>
               <ul>
-                <li>First, setup the IP Camera</li>
+                <li>First, setup the Camera URL to pull stream from</li>
                 <li>Then, set the live stream information</li>
               </ul>
             </Accordion.Body>

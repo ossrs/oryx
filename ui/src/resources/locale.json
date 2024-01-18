@@ -459,6 +459,10 @@
           "title": "直播间列表",
           "empty": "暂无直播间",
           "delete": "删除后不可恢复，确认删除直播间吗？"
+        },
+        "room": {
+          "nav": "导航",
+          "ai": "AI助手"
         }
       },
       "plat": {
@@ -626,6 +630,10 @@
         }
       },
       "lr": {
+        "room": {
+          "ai": "AI Assistant",
+          "nav": "Navigation"
+        },
         "list": {
           "delete": "Deleted rooms cannot be restored. Confirm to delete the room?",
           "empty": "No Live Rooms",
@@ -936,8 +944,8 @@
         "noAuthTitle": "Disable Stream Secret",
         "noAuthTips": "Disable Publish Secret",
         "tecentTitle": "Tencent Cloud (Secret)",
-        "limitsVLive": "Virtual Live Bitrate",
-        "limitsCamera": "IP Camera Bitrate",
+        "limitsVLive": "Virtual Live Event Bitrate",
+        "limitsCamera": "Camera Streaming Bitrate",
         "limitsTitle": "Set Limits",
         "footerTitle": "Set Footer",
         "footerIcp": "Footer",
