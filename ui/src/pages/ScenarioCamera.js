@@ -18,7 +18,6 @@ export default function ScenarioCamera() {
   const [activeKey, setActiveKey] = React.useState();
   const [secrets, setSecrets] = React.useState();
   const handleError = useErrorHandler();
-  const language = useSrsLanguage();
 
   React.useEffect(() => {
     axios.post('/terraform/v1/ffmpeg/camera/secret', {
@@ -113,7 +112,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
     refreshStreams();
     const timer = setInterval(() => refreshStreams(), 10 * 1000);
     return () => clearInterval(timer);
-  }, [handleError]);
+  }, [t, handleError]);
 
   const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, files, extraAudio, onSuccess) => {
     e.preventDefault();
@@ -136,7 +135,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
     } finally {
       new Promise(resolve => setTimeout(resolve, 3000)).then(() => setSubmiting(false));
     }
-  }, [handleError, setSubmiting]);
+  }, [t, handleError, setSubmiting]);
 
   return (
     <Accordion defaultActiveKey={defaultActiveKey}>
@@ -464,7 +463,7 @@ function CameraStreamSelector({platform, cameraFiles, setCameraFiles}) {
     } finally {
       setSubmiting(false);
     }
-  }, [inputStream, handleError, platform, setCameraFiles, setSubmiting]);
+  }, [t, inputStream, handleError, platform, setCameraFiles, setSubmiting]);
 
   return (<>
     <Form.Control as="div">
@@ -481,67 +480,6 @@ function CameraStreamSelector({platform, cameraFiles, setCameraFiles}) {
       {cameraFiles?.length && <CameraFileList files={cameraFiles} onChangeFiles={(e) => setCameraFiles(null)}/>}
     </Form.Control>
   </>);
-}
-
-function CameraStreamSelectorEn({platform, cameraFiles, setCameraFiles}) {
-  const handleError = useErrorHandler();
-  const [inputStream, setInputStream] = React.useState(cameraFiles?.length ? cameraFiles[0].target : '');
-  const [submiting, setSubmiting] = React.useState();
-
-  const checkStreamUrl = React.useCallback(async () => {
-    if (!inputStream) return alert('Please input stream URL');
-    const isHTTP = inputStream.startsWith('http://') || inputStream.startsWith('https://');
-    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !isHTTP) return alert('The stream must be rtmp/http/https/rtsp');
-    if (isHTTP && inputStream.indexOf('.flv') < 0 && inputStream.indexOf('.m3u8') < 0) return alert('The HTTP stream must be http-flv/hls');
-
-    setSubmiting(true);
-    try {
-      const res = await new Promise((resolve, reject) => {
-        axios.post(`/terraform/v1/ffmpeg/camera/stream-url`, {
-          url: inputStream,
-        }, {
-          headers: Token.loadBearerHeader(),
-        }).then(res => {
-          resolve(res);
-        }).catch(reject);
-      });
-
-      await new Promise((resolve, reject) => {
-        console.log(`Check stream url ok，${JSON.stringify(res.data.data)}`);
-        const streamObj = res.data.data;
-        const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
-        axios.post('/terraform/v1/ffmpeg/camera/source', {
-          platform, files,
-        }, {
-          headers: Token.loadBearerHeader(),
-        }).then(res => {
-          console.log(`Setup the virtual live stream ok，${JSON.stringify(res.data.data)}`);
-          setCameraFiles(res.data.data.files);
-          resolve();
-        }).catch(reject);
-      });
-    } catch (e) {
-      handleError(e);
-    } finally {
-      setSubmiting(false);
-    }
-  }, [inputStream, handleError, platform, setCameraFiles, setSubmiting]);
-
-  return (<>
-    <Form.Control as="div">
-      {!cameraFiles?.length && <>
-        <Row>
-          <Col>
-            <Form.Control type="text" defaultValue={inputStream} placeholder="please input stream URL" onChange={e => setInputStream(e.target.value)} />
-          </Col>
-          <Col xs="auto">
-            <Button variant="primary" disabled={submiting} onClick={checkStreamUrl}>Submit</Button>
-          </Col>
-        </Row></>
-      }
-      {cameraFiles?.length && <CameraFileList files={cameraFiles} onChangeFiles={(e) => setCameraFiles(null)}/>}
-    </Form.Control>
-  </>)
 }
 
 function CameraFileFormatInfo({file}) {

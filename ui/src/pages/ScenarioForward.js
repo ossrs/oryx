@@ -8,7 +8,6 @@ import React from "react";
 import {Token} from "../utils";
 import axios from "axios";
 import moment from "moment";
-import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import {useErrorHandler} from "react-error-boundary";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 import {useTranslation} from "react-i18next";
@@ -18,7 +17,6 @@ export default function ScenarioForward() {
   const [activeKey, setActiveKey] = React.useState();
   const [secrets, setSecrets] = React.useState();
   const handleError = useErrorHandler();
-  const language = useSrsLanguage();
 
   React.useEffect(() => {
     axios.post('/terraform/v1/ffmpeg/forward/secret', {
@@ -100,7 +98,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
     refreshStreams();
     const timer = setInterval(() => refreshStreams(), 10 * 1000);
     return () => clearInterval(timer);
-  }, [handleError, setForwards]);
+  }, [t, handleError, setForwards]);
 
   const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, onSuccess) => {
     e.preventDefault();
@@ -121,7 +119,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
     } finally {
       new Promise(resolve => setTimeout(resolve, 3000)).then(() => setSubmiting(false));
     }
-  }, [handleError, setSubmiting]);
+  }, [t, handleError, setSubmiting]);
 
   return (
     <Accordion defaultActiveKey={[defaultActiveKey]} alwaysOpen>

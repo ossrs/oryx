@@ -5,7 +5,7 @@
 //
 import React from "react";
 import {useSrsLanguage} from "../components/LanguageSwitch";
-import {Accordion, Button, Card, Form, Nav, Tab, Table, Tabs} from "react-bootstrap";
+import {Accordion, Button, Card, Form, Nav, Table} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import axios from "axios";
 import {Clipboard, Token} from "../utils";
@@ -292,6 +292,7 @@ function ScenarioLiveRoomManager({roomId, setRoomId}) {
       <Accordion.Item eventKey="2">
         <Accordion.Header>{t('lr.room.ai')}</Accordion.Header>
         <Accordion.Body>
+          On the way...
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>

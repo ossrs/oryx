@@ -13,7 +13,6 @@ import {useSrsLanguage} from "../components/LanguageSwitch";
 import FileUploader from "../components/FileUploader";
 import {useTranslation} from "react-i18next";
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
-import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 
 export default function ScenarioVLive() {
   const [init, setInit] = React.useState();
@@ -111,7 +110,7 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
     refreshStreams();
     const timer = setInterval(() => refreshStreams(), 10 * 1000);
     return () => clearInterval(timer);
-  }, [handleError]);
+  }, [t, handleError]);
 
   const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, files, onSuccess) => {
     e.preventDefault();
@@ -133,7 +132,7 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
     } finally {
       new Promise(resolve => setTimeout(resolve, 3000)).then(() => setSubmiting(false));
     }
-  }, [handleError, setSubmiting]);
+  }, [t, handleError, setSubmiting]);
 
   return (
     <Accordion defaultActiveKey={defaultActiveKey}>
@@ -481,7 +480,7 @@ function VLiveStreamSelector({platform, vLiveFiles, setVLiveFiles}) {
     } finally {
       setSubmiting(false);
     }
-  }, [inputStream, handleError, platform, setVLiveFiles, setSubmiting]);
+  }, [t, inputStream, handleError, platform, setVLiveFiles, setSubmiting]);
 
   return (<>
     <Form.Control as="div">
@@ -530,7 +529,7 @@ function VLiveFileSelector({platform, vLiveFiles, setVLiveFiles}) {
         setVLiveFiles(res.data.data.files);
       }).catch(handleError);
     }).catch(handleError);
-  }, [inputFile, handleError, platform, setVLiveFiles]);
+  }, [t, inputFile, handleError, platform, setVLiveFiles]);
 
   return (<>
     <Form.Control as="div">
@@ -565,7 +564,7 @@ function VLiveFileUploader({platform, vLiveFiles, setVLiveFiles}) {
       console.log(`${t('plat.tool.upload3')}, ${JSON.stringify(res.data.data)}`);
       setFiles(res.data.data.files);
     }).catch(handleError);
-  }, [handleError]);
+  }, [t, handleError]);
 
   return (<>
     <Form.Control as='div'>
