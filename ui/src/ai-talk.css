@@ -48,11 +48,11 @@
   width:20%; height:25%;
 }
 
-.ai-talk-trace-logs-pc, .ai-talk-trace-logs-mobile {
+.ai-talk-trace-logs-pc, .ai-talk-trace-logs-mobile{
   overflow: scroll;
 }
 
-.ai-talk-container-pc, .ai-talk-container-mobile {
+.ai-talk-container-pc, .ai-talk-container-mobile{
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -63,30 +63,42 @@
   border-radius: 3%;
 }
 
-.ai-talk-container-pc {
-  min-height: 55vh;
-  max-height: 55vh;
-  min-width: 40vw;
+.ai-talk-settings-btn, .ai-talk-settings-menu{
+  display: inline-block;
+  float: right;
 }
 
-.ai-talk-trace-logs-pc, .ai-talk-trace-logs-mobile {
+.ai-talk-settings-menu{
+  margin-right: 130px;
+  margin-top: 25px;
+}
+
+.ai-talk-container-pc{
+  min-height: 58.5vh;
+  max-height: 58.5vh;
+  min-width: 30vw;
+}
+
+.ai-talk-trace-logs-pc, .ai-talk-trace-logs-mobile{
   margin-bottom: 0px;
 }
 
-.ai-talk-trace-logs-pc {
-  min-height: 57vh;
-  max-height: 57vh;
-  min-width: 40vw;
+.ai-talk-trace-logs-pc{
+  min-height: 51vh;
+  max-height: 51vh;
+  min-width: 55vw;
 }
 
-.ai-talk-container-mobile {
+.ai-talk-container-mobile{
+  margin-top: 5px;
   min-height: 30vh;
   max-height: 30vh;
+  min-width: 30vw;
 }
 
-.ai-talk-trace-logs-mobile {
-  min-height: 55vh;
-  max-height: 55vh;
+.ai-talk-trace-logs-mobile{
+  min-height: 50vh;
+  max-height: 50vh;
 }
 
 .ai-talk-spinner {
@@ -94,18 +106,18 @@
   height: 10vh;
 }
 
-.ai-talk-container-pc, .ai-talk-container-mobile {
+.ai-talk-container-pc, .ai-talk-container-mobile{
   background-color: #555555;
 }
 
-.ai-talk-gn-normal {
+.ai-talk-gn-normal{
   background-color: #787878;
 }
 
-.ai-talk-gn-active {
+.ai-talk-gn-active{
   background-color: #60B460;
 }
 
-.ai-talk-mc:before {
+.ai-talk-mc:before{
   border: 0.5em solid #fff;
 }

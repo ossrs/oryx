@@ -5,7 +5,7 @@
 //
 import React from "react";
 import {useSrsLanguage} from "../components/LanguageSwitch";
-import {Accordion, Alert, Button, Card, Col, Form, Nav, Row, Spinner, Table} from "react-bootstrap";
+import {Accordion, Alert, Button, Card, Col, Dropdown, Form, Nav, Row, Spinner, Table} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import axios from "axios";
 import {Clipboard, Token} from "../utils";
@@ -220,10 +220,9 @@ function ScenarioLiveRoomManager({roomId, setRoomId}) {
     }
   }, [t, handleError, setRequesting, setRoom]);
 
-  // TODO: FIXME: Change to ['0', '1', '2', '3']
-  const defaultActiveKey = ['3'];
+  if (!room) return <Spinner animation="border" variant="primary" />;
   return <>
-    <Accordion defaultActiveKey={defaultActiveKey} alwaysOpen>
+    <Accordion defaultActiveKey={room.assistant ? ['3'] : ['0', '1', '2', '3']} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('lr.room.nav')}</Accordion.Header>
         <Accordion.Body>
@@ -491,7 +490,7 @@ function LiveRoomAssistantWorker({room}) {
     if (ref.current.traceLogs.length > 0) {
       const last = ref.current.traceLogs[ref.current.traceLogs.length - 1];
       if (last.role === role) {
-        last.msg = `${last.msg} ${msg}`;
+        last.msg = `${last.msg}${msg}`;
         setTraceLogs([...ref.current.traceLogs]);
         return;
       }
@@ -521,13 +520,7 @@ function LiveRoomAssistantWorker({room}) {
   }, [setErrorLogs, ref]);
 
   // Scroll the log panel.
-  const logPanelRef = React.useRef(null);
   const endPanelRef = React.useRef(null);
-  React.useEffect(() => {
-    if (!logPanelRef?.current) return;
-    console.log(`Logs scroll to end, height=${logPanelRef.current.scrollHeight}, logs=${traceLogs.length}, count=${traceCount}`);
-    logPanelRef.current.scrollTo(0, logPanelRef.current.scrollHeight);
-  }, [traceLogs, logPanelRef, traceCount]);
   React.useEffect(() => {
     if (!robotReady || !endPanelRef?.current) return;
     console.log(`Logs setup to end, height=${endPanelRef.current.scrollHeight}, tips=${tipLogs.length}`);
@@ -608,12 +601,6 @@ function LiveRoomAssistantWorker({room}) {
     playerRef.current.src = `/terraform/v1/ai-talk/stage/examples/${stageRobot.voice}?sid=${stageUUID}`;
     playerRef.current.play().catch(error => errorLog(`${t('lr.room.speaker')}: ${error}`));
   }, [t, errorLog, stageUUID, setRobotReady, stageRobot]);
-
-  // For test only, append some logs.
-  const appendTestLogs = React.useCallback((logs) => {
-    traceLog('You', 'Hello', 'primary');
-    traceLog('Bot', `World ${new Date()}`, 'success');
-  }, [traceLog]);
 
   // When robot is ready, open the microphone ASAP to accept user input.
   React.useEffect(() => {
@@ -874,6 +861,118 @@ function LiveRoomAssistantWorker({room}) {
   }
   return (
     <div>
+      <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
+      {booting ? <>Booting ...</> : ''}
+      {stageUUID && !robotReady ? <Button variant="primary" type="submit" onClick={startChatting}>{t('lr.room.talk')}</Button> : ''}
+      {robotReady && !isMobile ?
+        <Row>
+          <Col>
+            <AITalkMicrophone {...{processing, micWorking, startRecording, stopRecording}} />
+          </Col>
+          <Col>
+            <AITalkTraceLogPanel {...{traceLogs, traceCount}}>
+              <AITalkErrorLogPanel {...{errorLogs, removeErrorLog}} />
+              <AITalkTipLogPanel {...{tipLogs, removeTipLog}} />
+            </AITalkTraceLogPanel>
+          </Col>
+        </Row> : ''}
+      {robotReady && isMobile ?
+        <div>
+          <AITalkTraceLogPanelSimple {...{traceLogs, traceCount}} />
+          <AITalkErrorLogPanel {...{errorLogs, removeErrorLog}} />
+          <AITalkTipLogPanel {...{tipLogs, removeTipLog}} />
+          <AITalkMicrophone {...{processing, micWorking, startRecording, stopRecording}} />
+        </div> : ''}
+      <div ref={endPanelRef}></div>
+    </div>
+  );
+}
+
+function AITalkMicrophone({processing, micWorking, startRecording, stopRecording}) {
+  const isMobile = useIsMobile();
+  return (
+    <div className={isMobile ? 'ai-talk-container-mobile' : 'ai-talk-container-pc'}
+         onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing}>
+      {!processing ?
+        <div>
+          <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
+            <div className='ai-talk-mc'></div>
+          </div>
+        </div> :
+        <div>
+          <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
+        </div>}
+    </div>
+  );
+}
+
+function AITalkTraceLogPanel({traceLogs, traceCount, children}) {
+  const [showSettings, setShowSettings] = React.useState(false);
+
+  // Scroll the log panel.
+  const logPanelRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!logPanelRef?.current) return;
+    console.log(`Logs scroll to end, height=${logPanelRef.current.scrollHeight}, logs=${traceLogs.length}, count=${traceCount}`);
+    logPanelRef.current.scrollTo(0, logPanelRef.current.scrollHeight);
+  }, [traceLogs, logPanelRef, traceCount]);
+
+  return (
+    <div>
+      <Card>
+        <Card.Header>
+          AI Talk
+          <div role='button' className='ai-talk-settings-btn'>
+            <Icon.Gear size={20} onClick={(e) => setShowSettings(!showSettings)} />
+          </div>
+          <div className='ai-talk-settings-menu'>
+            <Dropdown.Menu show={showSettings}>
+              <Dropdown.Item href="#!" onClick={() => alert('ok')}>Popout Chat</Dropdown.Item>
+            </Dropdown.Menu>
+          </div>
+        </Card.Header>
+        <Card.Body>
+          <div className='ai-talk-trace-logs-pc' ref={logPanelRef}>
+            {children}
+            {traceLogs.map((log) => {
+              return (
+                <Alert key={log.id} variant={log.variant}>
+                  {log.role}: {log.msg}
+                </Alert>
+              );
+            })}
+          </div>
+        </Card.Body>
+      </Card>
+    </div>
+  );
+}
+
+function AITalkTraceLogPanelSimple({traceLogs, traceCount}) {
+  // Scroll the log panel.
+  const logPanelRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!logPanelRef?.current) return;
+    console.log(`Logs scroll to end, height=${logPanelRef.current.scrollHeight}, logs=${traceLogs.length}, count=${traceCount}`);
+    logPanelRef.current.scrollTo(0, logPanelRef.current.scrollHeight);
+  }, [traceLogs, logPanelRef, traceCount]);
+
+  return (
+    <div className='ai-talk-trace-logs-mobile' ref={logPanelRef}>
+      {traceLogs.map((log) => {
+        return (
+          <Alert key={log.id} variant={log.variant}>
+            {log.role}: {log.msg}
+          </Alert>
+        );
+      })}
+    </div>
+  );
+}
+
+function AITalkErrorLogPanel({errorLogs, removeErrorLog}) {
+  return (
+    <React.Fragment>
       {errorLogs.map((log) => {
         return (
           <Alert key={log.id} onClose={() => removeErrorLog(log)} variant='danger' dismissible>
@@ -882,6 +981,13 @@ function LiveRoomAssistantWorker({room}) {
           </Alert>
         );
       })}
+    </React.Fragment>
+  );
+}
+
+function AITalkTipLogPanel({tipLogs, removeTipLog}) {
+  return (
+    <React.Fragment>
       {tipLogs.map((log) => {
         return (
           <Alert key={log.id} onClose={() => removeTipLog(log)} variant='success' dismissible>
@@ -890,70 +996,6 @@ function LiveRoomAssistantWorker({room}) {
           </Alert>
         );
       })}
-      <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
-      {booting ? <>Booting ...</> : ''}
-      {stageUUID && !robotReady ? <Button variant="primary" type="submit" onClick={startChatting}>{t('lr.room.talk')}</Button> : ''}
-      {stageUUID && robotReady ? <Button variant="primary" type="submit" onClick={appendTestLogs} hidden={true}>Test Logs</Button> : ''}
-      {robotReady && !isMobile ?
-        <Row>
-          <Col>
-            <div className='ai-talk-container-pc' onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing}>
-              {!processing ?
-                <div>
-                  <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
-                    <div className='ai-talk-mc'></div>
-                  </div>
-                </div> :
-                <div>
-                  <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
-                </div>}
-            </div>
-          </Col>
-          <Col>
-            <div className='ai-talk-trace-logs-pc' ref={logPanelRef}>
-              <p></p>
-              <div>
-                {traceLogs.map((log) => {
-                  return (
-                    <Alert key={log.id} variant={log.variant}>
-                      {log.role}: {log.msg}
-                    </Alert>
-                  );
-                })}
-              </div>
-            </div>
-            <div ref={endPanelRef}></div>
-          </Col>
-        </Row> : ''}
-      {robotReady && isMobile ?
-        <Row>
-          <Col>
-            <div className='ai-talk-trace-logs-mobile' ref={logPanelRef}>
-              <p></p>
-              <div>
-                {traceLogs.map((log) => {
-                  return (
-                    <Alert key={log.id} variant={log.variant}>
-                      {log.role}: {log.msg}
-                    </Alert>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="ai-talk-container-mobile" onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing}>
-              {!processing ?
-                <div>
-                  <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
-                    <div className='ai-talk-mc'></div>
-                  </div>
-                </div> :
-                <div>
-                  <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
-                </div>}
-            </div>
-            <div ref={endPanelRef}></div>
-          </Col>
-        </Row> : ''}
-    </div>
+    </React.Fragment>
   );
 }
