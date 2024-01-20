@@ -226,16 +226,17 @@ type SrsLiveRoom struct {
 	Title string `json:"title"`
 	// Live room secret.
 	Secret string `json:"secret"`
-
 	// The AI assistant settings.
 	SrsAssistant
-
+	// The current AI assistant stage, might change to others.
+	StageUUID string `json:"stage_uuid"`
 	// Create time.
 	CreatedAt string `json:"created_at"`
 }
 
 func (v *SrsLiveRoom) String() string {
-	return fmt.Sprintf("uuid=%v, title=%v, secret=%v, assistant=<%v>", v.UUID, v.Title, v.Secret, v.SrsAssistant.String())
+	return fmt.Sprintf("uuid=%v, title=%v, secret=%v, stage=%v, assistant=<%v>",
+		v.UUID, v.Title, v.Secret, v.StageUUID, v.SrsAssistant.String())
 }
 
 type SrsAssistant struct {

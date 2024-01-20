@@ -48,7 +48,7 @@
   width:20%; height:25%;
 }
 
-.ai-talk-trace-logs-pc, .ai-talk-trace-logs-mobile{
+.ai-talk-trace-logs-pc, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-popout{
   overflow: scroll;
 }
 
@@ -79,7 +79,7 @@
   min-width: 30vw;
 }
 
-.ai-talk-trace-logs-pc, .ai-talk-trace-logs-mobile{
+.ai-talk-trace-logs-pc, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-popout{
   margin-bottom: 0px;
 }
 
@@ -99,6 +99,12 @@
 .ai-talk-trace-logs-mobile{
   min-height: 50vh;
   max-height: 50vh;
+}
+
+.ai-talk-trace-logs-popout {
+  min-height: 96vh;
+  max-height: 96vh;
+  min-width: 90vw;
 }
 
 .ai-talk-spinner {

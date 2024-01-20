@@ -870,7 +870,10 @@ API without any authentication:
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/ai-talk/stage/examples/:file.aac` AI-Talk: Play the example audios.
 * `/terraform/v1/ai-talk/stage/tts` AI-Talk: Play the TTS audios.
-* `/terraform/v1/ai-talk/popout`
+* `/terraform/v1/ai-talk/popout/start` AI-Talk: Start a popout with stage.
+* `/terraform/v1/ai-talk/popout/query` AI-Talk: Query the popout audio responses.
+* `/terraform/v1/ai-talk/popout/tts` AI-Talk: Play the TTS audios.
+* `/terraform/v1/ai-talk/popout/remove` AI-Talk: Remove the popout audio responses.
 
 API without token authentication, but with password authentication:
 

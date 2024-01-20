@@ -16,6 +16,8 @@ import {SrsEnvContext} from "../components/SrsEnvContext";
 import * as Icon from "react-bootstrap-icons";
 import PopoverConfirm from "../components/PopoverConfirm";
 import {OpenAIWhisperSettings} from "../components/OpenAISettings";
+import useIsMobile from "../components/IsMobile";
+import {AITalkErrorLogPanel, AITalkTipLogPanel} from "../components/AITalk";
 
 export default function ScenarioLiveRoom() {
   const [searchParams] = useSearchParams();
@@ -389,7 +391,7 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
       </Form.Group>
       <Form.Group className="mb-3">
         <Form.Label>{t('lr.room.prmpt')}</Form.Label>
-        <Form.Text> * {t('lr.room.prmpt2')}</Form.Text>
+        <Form.Text> * {t('lr.room.prompt2')}</Form.Text>
         <Form.Control as="textarea" type='text' rows={3}  defaultValue={aiChatPrompt} onChange={(e) => setAiChatPrompt(e.target.value)} />
       </Form.Group>
       <Form.Group className="mb-3">
@@ -416,23 +418,6 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
       </Button>
     </Form>
   );
-}
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState(false);
-
-  function handleWindowSizeChange() {
-    setIsMobile(window.innerWidth <= 768);
-  }
-  React.useEffect(() => {
-    handleWindowSizeChange();
-    window.addEventListener('resize', handleWindowSizeChange);
-    return () => {
-      window.removeEventListener('resize', handleWindowSizeChange);
-    }
-  }, [setIsMobile]);
-
-  return isMobile;
 }
 
 function LiveRoomAssistantWorker({room}) {
@@ -600,7 +585,7 @@ function LiveRoomAssistantWorker({room}) {
 
     playerRef.current.src = `/terraform/v1/ai-talk/stage/examples/${stageRobot.voice}?sid=${stageUUID}`;
     playerRef.current.play().catch(error => errorLog(`${t('lr.room.speaker')}: ${error}`));
-  }, [t, errorLog, stageUUID, setRobotReady, stageRobot]);
+  }, [t, errorLog, stageUUID, stageRobot, setRobotReady]);
 
   // When robot is ready, open the microphone ASAP to accept user input.
   React.useEffect(() => {
@@ -870,7 +855,7 @@ function LiveRoomAssistantWorker({room}) {
             <AITalkMicrophone {...{processing, micWorking, startRecording, stopRecording}} />
           </Col>
           <Col>
-            <AITalkTraceLogPanel {...{traceLogs, traceCount, room, stageUUID}}>
+            <AITalkTraceLogPanel {...{traceLogs, traceCount, room}}>
               <AITalkErrorLogPanel {...{errorLogs, removeErrorLog}} />
               <AITalkTipLogPanel {...{tipLogs, removeTipLog}} />
             </AITalkTraceLogPanel>
@@ -884,6 +869,28 @@ function LiveRoomAssistantWorker({room}) {
           <AITalkMicrophone {...{processing, micWorking, startRecording, stopRecording}} />
         </div> : ''}
       <div ref={endPanelRef}></div>
+    </div>
+  );
+}
+
+export function AITalkTraceLogPanelSimple({traceLogs, traceCount}) {
+  // Scroll the log panel.
+  const logPanelRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!logPanelRef?.current) return;
+    console.log(`Logs scroll to end, height=${logPanelRef.current.scrollHeight}, logs=${traceLogs.length}, count=${traceCount}`);
+    logPanelRef.current.scrollTo(0, logPanelRef.current.scrollHeight);
+  }, [traceLogs, logPanelRef, traceCount]);
+
+  return (
+    <div className='ai-talk-trace-logs-mobile' ref={logPanelRef}>
+      {traceLogs.map((log) => {
+        return (
+          <Alert key={log.id} variant={log.variant}>
+            {log.role}: {log.msg}
+          </Alert>
+        );
+      })}
     </div>
   );
 }
@@ -906,7 +913,8 @@ function AITalkMicrophone({processing, micWorking, startRecording, stopRecording
   );
 }
 
-function AITalkTraceLogPanel({traceLogs, traceCount, children, room, stageUUID}) {
+function AITalkTraceLogPanel({traceLogs, traceCount, children, room}) {
+  const {t} = useTranslation();
   const [showSettings, setShowSettings] = React.useState(false);
   const [popoutUrl, setPopoutUrl] = React.useState(null);
 
@@ -919,11 +927,11 @@ function AITalkTraceLogPanel({traceLogs, traceCount, children, room, stageUUID})
   }, [traceLogs, logPanelRef, traceCount]);
 
   React.useEffect(() => {
-    if (!room || !stageUUID) return;
-    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&room=${room.uuid}&stage=${stageUUID}`;
+    if (!room) return;
+    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&room=${room.uuid}`;
     setPopoutUrl(url);
     console.log(`Generated popout URL: ${url}`);
-  }, [room, stageUUID, setPopoutUrl]);
+  }, [room, setPopoutUrl]);
 
   const openPopoutChat = React.useCallback((e) => {
     e.preventDefault();
@@ -936,7 +944,7 @@ function AITalkTraceLogPanel({traceLogs, traceCount, children, room, stageUUID})
     <div>
       <Card>
         <Card.Header>
-          AI Talk
+          {t('lr.room.ait')}
           <div role='button' className='ai-talk-settings-btn'>
             <Icon.Gear size={20} onClick={(e) => setShowSettings(!showSettings)} />
           </div>
@@ -960,57 +968,5 @@ function AITalkTraceLogPanel({traceLogs, traceCount, children, room, stageUUID})
         </Card.Body>
       </Card>
     </div>
-  );
-}
-
-function AITalkTraceLogPanelSimple({traceLogs, traceCount}) {
-  // Scroll the log panel.
-  const logPanelRef = React.useRef(null);
-  React.useEffect(() => {
-    if (!logPanelRef?.current) return;
-    console.log(`Logs scroll to end, height=${logPanelRef.current.scrollHeight}, logs=${traceLogs.length}, count=${traceCount}`);
-    logPanelRef.current.scrollTo(0, logPanelRef.current.scrollHeight);
-  }, [traceLogs, logPanelRef, traceCount]);
-
-  return (
-    <div className='ai-talk-trace-logs-mobile' ref={logPanelRef}>
-      {traceLogs.map((log) => {
-        return (
-          <Alert key={log.id} variant={log.variant}>
-            {log.role}: {log.msg}
-          </Alert>
-        );
-      })}
-    </div>
-  );
-}
-
-function AITalkErrorLogPanel({errorLogs, removeErrorLog}) {
-  return (
-    <React.Fragment>
-      {errorLogs.map((log) => {
-        return (
-          <Alert key={log.id} onClose={() => removeErrorLog(log)} variant='danger' dismissible>
-            <Alert.Heading>Error!</Alert.Heading>
-            <p>{log.msg}</p>
-          </Alert>
-        );
-      })}
-    </React.Fragment>
-  );
-}
-
-function AITalkTipLogPanel({tipLogs, removeTipLog}) {
-  return (
-    <React.Fragment>
-      {tipLogs.map((log) => {
-        return (
-          <Alert key={log.id} onClose={() => removeTipLog(log)} variant='success' dismissible>
-            <Alert.Heading>{log.title}</Alert.Heading>
-            <p>{log.msg}</p>
-          </Alert>
-        );
-      })}
-    </React.Fragment>
   );
 }

@@ -473,6 +473,8 @@
           "provider2": "请选择AI服务商",
           "model": "AI模型",
           "model2": "请输入AI模型名称，比如: gpt-3.5-turbo-1106, gpt-4-1106-preview",
+          "prompt": "提示词",
+          "prompt2": "这个助手做什么用的？应该具备什么行为？应该避免什么行为？",
           "window": "AI上下文消息",
           "window2": "设置AI上下文消息的最大数目，越大体验越好但成本越高",
           "words": "AI响应长度",
@@ -484,7 +486,9 @@
           "talk": "开始聊天",
           "speaker": "扬声器播放音频失败",
           "usage": "按住说话，松开结束，和微信语音一样",
-          "usage2": "按住空格键或者R键说话，松开结束"
+          "usage2": "按住空格键或者R键说话，松开结束",
+          "popout": "新的消息将展示在这里，请等待",
+          "ait": "直播间AI助手"
         }
       },
       "plat": {
@@ -653,6 +657,8 @@
       },
       "lr": {
         "room": {
+          "ait": "AI Assistant for Streamer",
+          "popout": "New messages will be displayed here, please wait",
           "usage2": "Press the R key or SPACE to talk",
           "usage": "Press and hold to talk, release to end",
           "speaker": "Failed to play audio",
@@ -665,6 +671,8 @@
           "words": "AI Response Words",
           "window2": "Setup the max number of AI context messages, the more the better experience but the higher the cost",
           "window": "AI Context Window",
+          "prompt": "Instructions",
+          "prompt2": "What does this assistant do? How does it behave? What should it avoid being?",
           "model2": "Please input AI model name, e.g. gpt-3.5-turbo-1106, gpt-4-1106-preview",
           "model": "AI Model Name",
           "provider2": "Please select AI service provider",

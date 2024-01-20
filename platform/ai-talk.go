@@ -390,6 +390,158 @@ func (v Robot) String() string {
 	return sb.String()
 }
 
+// The StageMessage is a message from user or AI.
+type StageMessage struct {
+	// The message UUID.
+	MessageUUID string `json:"mid"`
+	// The request UUID.
+	RequestUUID string `json:"rid"`
+	// The message role, text or audio.
+	Role string `json:"role"`
+
+	// For role text.
+	// The message content.
+	Message string `json:"msg"`
+
+	// For role audio.
+	// The audio segment uuid.
+	SegmentUUID string `json:"asid"`
+	// The audio tts file for audio message.
+	audioFile string
+
+	// Whether flushed to client.
+	flushed bool
+}
+
+func (v *StageMessage) Close() error {
+	if v.audioFile != "" {
+		if _, err := os.Stat(v.audioFile); err == nil {
+			_ = os.Remove(v.audioFile)
+		}
+	}
+	return nil
+}
+
+// The StagePopout is a popout from a stage.
+type StagePopout struct {
+	// StagePopout UUID.
+	spid string
+	// The logging context, to write all logs in one context for a sage.
+	loggingCtx context.Context
+	// The messages from user ASR and AI responses.
+	messages []*StageMessage
+
+	// The owner room, never changes.
+	room *SrsLiveRoom
+	// The owner stage, never changes.
+	stage *Stage
+}
+
+func NewStagePopout(opts ...func(*StagePopout)) *StagePopout {
+	v := &StagePopout{
+		// Create new UUID.
+		spid: uuid.NewString(),
+	}
+
+	for _, opt := range opts {
+		opt(v)
+	}
+	return v
+}
+
+func (v *StagePopout) Close() error {
+	for _, message := range v.messages {
+		_ = message.Close()
+	}
+	return nil
+}
+
+func (v *StagePopout) addUserTextMessage(rid, msg string) {
+	v.messages = append(v.messages, &StageMessage{
+		MessageUUID: uuid.NewString(), RequestUUID: rid, Role: "user", Message: msg,
+	})
+}
+
+func (v *StagePopout) addRobotAudioMessage(ctx context.Context, rid, msg, segmentUUID, ttsFile string) error {
+	// Build a new copy file of ttsFile.
+	ttsExt := path.Ext(ttsFile)
+	copyFile := fmt.Sprintf("%v-copy-%v%v", ttsFile[:len(ttsFile)-len(ttsExt)], v.spid, ttsExt)
+
+	// Copy the ttsFile to copyFile.
+	if err := func() error {
+		src, err := os.Open(ttsFile)
+		if err != nil {
+			return errors.Errorf("open %v for reading", ttsFile)
+		}
+		defer src.Close()
+
+		dst, err := os.OpenFile(copyFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+		if err != nil {
+			return errors.Errorf("open %v for writing", copyFile)
+		}
+		defer dst.Close()
+
+		if _, err = io.Copy(dst, src); err != nil {
+			return errors.Errorf("copy file content")
+		}
+
+		logger.Tf(ctx, "AITalk: Copy %v to %v ok, room=%v, sid=%v, spid=%v",
+			ttsFile, copyFile, v.room.UUID, v.stage.sid, v.spid)
+		return nil
+	}(); err != nil {
+		// TODO: FIXME: Cleanup message if error.
+		return errors.Wrapf(err, "copy %v to %v", ttsFile, copyFile)
+	}
+
+	message := &StageMessage{
+		MessageUUID: uuid.NewString(), RequestUUID: rid, SegmentUUID: segmentUUID,
+		Role: "robot", Message: msg, audioFile: copyFile,
+	}
+
+	// Always close message if timeout.
+	go func() {
+		select {
+		case <-ctx.Done():
+		case <-time.After(30 * time.Second):
+			message.Close()
+		}
+	}()
+
+	v.messages = append(v.messages, message)
+
+	return nil
+}
+
+func (v *StagePopout) flushMessages() []*StageMessage {
+	messages := []*StageMessage{}
+	for _, message := range v.messages {
+		if !message.flushed {
+			messages = append(messages, message)
+			message.flushed = true
+		}
+	}
+	return messages
+}
+
+func (v *StagePopout) queryAudioFile(asid string) string {
+	for _, message := range v.messages {
+		if message.SegmentUUID == asid {
+			return message.audioFile
+		}
+	}
+	return ""
+}
+
+func (v *StagePopout) removeMessage(asid string) error {
+	for i, message := range v.messages {
+		if message.SegmentUUID == asid {
+			v.messages = append(v.messages[:i], v.messages[i+1:]...)
+			return message.Close()
+		}
+	}
+	return nil
+}
+
 // The Stage is a stage of conversation, when user click start with a scenario,
 // we will create a stage object.
 type Stage struct {
@@ -433,6 +585,10 @@ type Stage struct {
 	robot *Robot
 	// The AI configuration.
 	aiConfig openai.ClientConfig
+	// The room it belongs to.
+	room *SrsLiveRoom
+	// All the popouts binding to this stage.
+	popouts []*StagePopout
 }
 
 func NewStage(opts ...func(*Stage)) *Stage {
@@ -452,13 +608,13 @@ func NewStage(opts ...func(*Stage)) *Stage {
 }
 
 func (v *Stage) Close() error {
+	for _, popout := range v.popouts {
+		popout.Close()
+	}
 	return v.ttsWorker.Close()
 }
 
 func (v *Stage) Expired() bool {
-	if os.Getenv("NODE_ENV") == "development" {
-		return time.Since(v.update) > 120*time.Second
-	}
 	return time.Since(v.update) > 600*time.Second
 }
 
@@ -506,6 +662,19 @@ func (v *Stage) download() float64 {
 		return float64(v.lastDownloadAudio.Sub(v.lastRequestTTS)) / float64(time.Second)
 	}
 	return 0
+}
+
+func (v *Stage) addPopout(popout *StagePopout) {
+	v.popouts = append(v.popouts, popout)
+}
+
+func (v *Stage) queryPopout(spid string) *StagePopout {
+	for _, popout := range v.popouts {
+		if popout.spid == spid {
+			return popout
+		}
+	}
+	return nil
 }
 
 // The AnswerSegment is a segment of answer, which is a sentence.
@@ -743,6 +912,13 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, segment *An
 			logger.Tf(ctx, "File saved to %v, %v", segment.ttsFile, segment.text)
 		}
 
+		// Notify all popouts the segment is ready.
+		for _, popout := range stage.popouts {
+			if err := popout.addRobotAudioMessage(ctx, segment.rid, segment.text, segment.asid, segment.ttsFile); err != nil {
+				segment.err = errors.Wrapf(err, "copy to popout")
+			}
+		}
+
 		// Start a goroutine to remove the sentence.
 		v.wg.Add(1)
 		go func() {
@@ -817,7 +993,17 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				// Initialize the AI services.
 				stage.aiConfig = openai.DefaultConfig(room.AISecretKey)
 				stage.aiConfig.BaseURL = room.AIBaseURL
+
+				// Bind stage to room.
+				room.StageUUID = stage.sid
+				stage.room = &room
 			})
+
+			if b, err := json.Marshal(room); err != nil {
+				return errors.Wrapf(err, "marshal room")
+			} else if err := rdb.HSet(ctx, SRS_LIVE_ROOM, room.UUID, string(b)).Err(); err != nil {
+				return errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
+			}
 
 			talkServer.AddStage(stage)
 			logger.Tf(ctx, "Stage: Create new stage sid=%v, all=%v", stage.sid, talkServer.CountStage())
@@ -1001,6 +1187,11 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 			if err := chatService.RequestChat(ctx, rid, stage, robot); err != nil {
 				return errors.Wrapf(err, "chat")
+			}
+
+			// Notify all popouts about the ASR text.
+			for _, popout := range stage.popouts {
+				popout.addUserTextMessage(rid, asrText)
 			}
 
 			// Response the request UUID and pulling the response.
@@ -1245,6 +1436,238 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			w.Header().Set("Content-Type", contentType)
 			http.ServeFile(w, r, path.Join(workDir, filename))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
+	ep = "/terraform/v1/ai-talk/popout/start"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var rid string
+			if err := ParseBody(ctx, r.Body, &struct {
+				RoomUUID *string `json:"room"`
+			}{
+				RoomUUID: &rid,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			if rid == "" {
+				return errors.Errorf("empty rid")
+			}
+
+			var room SrsLiveRoom
+			if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, rid).Result(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v %v", SRS_LIVE_ROOM, rid)
+			} else if r0 == "" {
+				return errors.Errorf("live room %v not exists", rid)
+			} else if err = json.Unmarshal([]byte(r0), &room); err != nil {
+				return errors.Wrapf(err, "unmarshal %v %v", rid, r0)
+			}
+
+			// Use the latest stage as popout's source stage, note that it may change.
+			stage := talkServer.QueryStage(room.StageUUID)
+			if stage == nil {
+				return errors.Errorf("no stage in room %v", rid)
+			}
+
+			// TODO: FIXME: Cleanup popouts for a room.
+			ctx = logger.WithContext(ctx)
+			popout := NewStagePopout(func(popout *StagePopout) {
+				popout.loggingCtx = ctx
+				popout.room = &room
+
+				// Bind the popout to the stage.
+				popout.stage = stage
+				stage.addPopout(popout)
+			})
+
+			// Keep alive the stage.
+			stage.KeepAlive()
+			stage.lastSentence = time.Now()
+
+			type StageRobotResult struct {
+				UUID  string `json:"uuid"`
+				Label string `json:"label"`
+				Voice string `json:"voice"`
+			}
+			type StageResult struct {
+				StageID       string           `json:"sid"`
+				StagePopoutID string           `json:"spid"`
+				Robot         StageRobotResult `json:"robot"`
+			}
+			r0 := &StageResult{
+				StageID:       stage.sid,
+				StagePopoutID: popout.spid,
+				Robot: StageRobotResult{
+					UUID:  stage.robot.uuid,
+					Label: stage.robot.label,
+					Voice: stage.robot.voice,
+				},
+			}
+
+			ohttp.WriteData(ctx, w, r, &r0)
+			logger.Tf(ctx, "Stage: create popout ok, room=%v, sid=%v, spid=%v",
+				room.UUID, stage.sid, popout.spid)
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
+	ep = "/terraform/v1/ai-talk/popout/query"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var sid, spid string
+			if err := ParseBody(ctx, r.Body, &struct {
+				StageUUID     *string `json:"sid"`
+				StagePopoutID *string `json:"spid"`
+			}{
+				StageUUID: &sid, StagePopoutID: &spid,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			if sid == "" {
+				return errors.Errorf("empty sid")
+			}
+			if spid == "" {
+				return errors.Errorf("empty spid")
+			}
+
+			stage := talkServer.QueryStage(sid)
+			if stage == nil {
+				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			// Keep alive the stage.
+			stage.KeepAlive()
+			// Switch to the context of stage.
+			ctx = stage.loggingCtx
+			logger.Tf(ctx, "Stage: Query sid=%v, rid=%v", sid, stage.room.UUID)
+
+			popout := stage.queryPopout(spid)
+			if popout == nil {
+				return errors.Errorf("invalid spid %v of sid %v", spid, sid)
+			}
+
+			ohttp.WriteData(ctx, w, r, &struct {
+				Messages []*StageMessage `json:"msgs"`
+			}{
+				Messages: popout.flushMessages(),
+			})
+			logger.Tf(ctx, "srs ai-talk query popout stage ok")
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
+	ep = "/terraform/v1/ai-talk/popout/tts"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			q := r.URL.Query()
+
+			sid := q.Get("sid")
+			if sid == "" {
+				return errors.Errorf("empty sid")
+			}
+
+			spid := q.Get("spid")
+			if spid == "" {
+				return errors.Errorf("empty spid")
+			}
+
+			asid := q.Get("asid")
+			if asid == "" {
+				return errors.Errorf("empty asid")
+			}
+
+			stage := talkServer.QueryStage(sid)
+			if stage == nil {
+				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			// Keep alive the stage.
+			stage.KeepAlive()
+			// Switch to the context of stage.
+			ctx = stage.loggingCtx
+			logger.Tf(ctx, "Stage: Download sid=%v, spid=%v, asid=%v", sid, spid, asid)
+
+			popout := stage.queryPopout(spid)
+			if popout == nil {
+				return errors.Errorf("invalid spid %v of sid %v", spid, sid)
+			}
+
+			audioFile := popout.queryAudioFile(asid)
+
+			// Read the ttsFile and response it as opus audio.
+			if strings.HasSuffix(audioFile, ".wav") {
+				w.Header().Set("Content-Type", "audio/wav")
+			} else {
+				w.Header().Set("Content-Type", "audio/aac")
+			}
+			http.ServeFile(w, r, audioFile)
+
+			logger.Tf(ctx, "srs ai-talk play tts popout stage ok")
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
+	ep = "/terraform/v1/ai-talk/popout/remove"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var sid, spid, asid string
+			if err := ParseBody(ctx, r.Body, &struct {
+				StageUUID        *string `json:"sid"`
+				StagePopoutID    *string `json:"spid"`
+				AudioSegmentUUID *string `json:"asid"`
+			}{
+				StageUUID: &sid, StagePopoutID: &spid, AudioSegmentUUID: &asid,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			if sid == "" {
+				return errors.Errorf("empty sid")
+			}
+			if spid == "" {
+				return errors.Errorf("empty spid")
+			}
+			if asid == "" {
+				return errors.Errorf("empty asid")
+			}
+
+			stage := talkServer.QueryStage(sid)
+			if stage == nil {
+				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			// Keep alive the stage.
+			stage.KeepAlive()
+			// Switch to the context of stage.
+			ctx = stage.loggingCtx
+			logger.Tf(ctx, "Stage: Query sid=%v, rid=%v", sid, stage.room.UUID)
+
+			popout := stage.queryPopout(spid)
+			if popout == nil {
+				return errors.Errorf("invalid spid %v of sid %v", spid, sid)
+			}
+
+			if err := popout.removeMessage(asid); err != nil {
+				return errors.Wrapf(err, "remove message asid=%v of sid=%v, spid=%v", asid, sid, spid)
+			}
+
+			ohttp.WriteData(ctx, w, r, nil)
+			logger.Tf(ctx, "srs ai-talk remove popout stage file ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
