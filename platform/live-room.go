@@ -4,15 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-redis/redis/v8"
-	"github.com/google/uuid"
-	"github.com/ossrs/go-oryx-lib/errors"
-	ohttp "github.com/ossrs/go-oryx-lib/http"
-	"github.com/ossrs/go-oryx-lib/logger"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/ossrs/go-oryx-lib/errors"
+	ohttp "github.com/ossrs/go-oryx-lib/http"
+	"github.com/ossrs/go-oryx-lib/logger"
+	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
+	"github.com/go-redis/redis/v8"
 )
 
 func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
