@@ -8,7 +8,16 @@ import axios from "axios";
 import './App.css';
 import './ai-talk.css';
 import {Container} from "react-bootstrap";
-import {BrowserRouter, Routes, Route, useParams, Outlet, useNavigate, useLocation} from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useParams,
+  Outlet,
+  useNavigate,
+  useLocation,
+  useSearchParams
+} from "react-router-dom";
 import Footer from './pages/Footer';
 import Login from './pages/Login';
 import Logout from './pages/Logout';
@@ -23,6 +32,7 @@ import {ErrorBoundary, useErrorHandler} from 'react-error-boundary';
 import {SrsErrorBoundary} from "./components/SrsErrorBoundary";
 import resources from "./resources/locale.json";
 import {SrsEnvContext} from "./components/SrsEnvContext";
+import Popouts from "./pages/Popouts";
 
 function App() {
   const [env, setEnv] = React.useState(null);
@@ -62,31 +72,18 @@ function AppPreImpl() {
 
 function AppImpl() {
   const [loading, setLoading] = React.useState(true);
-  const [initialized, setInitialized] = React.useState();
-  const [tokenUpdated, setTokenUpdated] = React.useState();
-  const [token, setToken] = React.useState();
+  // Possible value is 1: yes, -1: no, 0: undefined.
+  const [initialized, setInitialized] = React.useState(0);
   const handleError = useErrorHandler();
-
-  React.useEffect(() => {
-    axios.get('/terraform/v1/mgmt/init').then(res => {
-      setInitialized(res.data.data.init);
-    }).catch(handleError).finally(setLoading);
-  }, [handleError]);
 
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/check').then(res => {
       console.log(`Check ok, ${JSON.stringify(res.data)}`);
-    }).catch(handleError);
+      axios.get('/terraform/v1/mgmt/init').then(res => {
+        setInitialized(res.data.data.init ? 1 : -1);
+      }).catch(handleError);
+    }).catch(handleError).finally(setLoading);
   }, [handleError]);
-
-  React.useEffect(() => {
-    setToken(Token.load());
-  }, [tokenUpdated]);
-
-  const onInit = React.useCallback((token) => {
-    setInitialized(true);
-    setTokenUpdated(true);
-  }, []);
 
   return (
     <>
@@ -95,18 +92,53 @@ function AppImpl() {
       </>}
       {!loading && <>
         <BrowserRouter basename={window.PUBLIC_URL}>
-          <Navigator {...{initialized, token}} />
-          <Routes>
+          <AppRoute {...{initialized, setInitialized}} />
+        </BrowserRouter>
+      </>}
+    </>
+  );
+}
+
+function AppRoute({initialized, setInitialized}) {
+  const [tokenUpdated, setTokenUpdated] = React.useState();
+  const [token, setToken] = React.useState();
+  const [searchParams] = useSearchParams();
+  // Possible value is 1: yes, -1: no, 0: undefined.
+  const [isPopout, setIsPopout] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!searchParams) return;
+    setIsPopout(searchParams.get('popout') === '1' ? 1 : -1);
+  }, [searchParams]);
+
+  React.useEffect(() => {
+    setToken(Token.load());
+  }, [tokenUpdated]);
+
+  const onInit = React.useCallback((token) => {
+    setInitialized(true);
+    setTokenUpdated(true);
+  }, [setInitialized, setTokenUpdated]);
+
+  return (
+    <>
+      {isPopout === -1 && <Navigator {...{initialized, token}} />}
+      <Routes>
+        {initialized === 0 ?
+          <React.Fragment>
+            <Route path="*" element={<React.Fragment/>}/>
+          </React.Fragment> :
+          <React.Fragment>
             <Route path="/" element={<AppRoot/>}/>
             <Route path=':locale' element={<AppLocale/>}>
-              {!initialized && <>
+              {initialized === -1 && <>
                 <Route path="*" element={<Setup onInit={onInit}/>}/>
                 <Route path="routers-setup" element={<Setup onInit={onInit}/>}/>
               </>}
-              {initialized && !token && <>
+              {initialized === 1 && !token && <>
                 <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
               </>}
-              {initialized && token && <>
+              {initialized === 1 && token && <>
                 <Route path="*" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
                 <Route path="routers-login" element={<Login onLogin={() => setTokenUpdated(!tokenUpdated)}/>}/>
                 <Route path="routers-scenario" element={<Scenario/>}/>
@@ -115,11 +147,11 @@ function AppImpl() {
                 <Route path="routers-components" element={<Components/>}/>
                 <Route path="routers-logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)}/>}/>
               </>}
+              {initialized === 1 && <Route path="routers-popout" element={<Popouts/>}/>}
             </Route>
-          </Routes>
-          <Footer/>
-        </BrowserRouter>
-      </>}
+          </React.Fragment>}
+      </Routes>
+      {isPopout === -1 && <Footer/> }
     </>
   );
 }

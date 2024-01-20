@@ -24,7 +24,7 @@ export default function Setup({onInit}) {
 
 function SetupImpl({onInit}) {
   const [password, setPassword] = React.useState();
-  const [initializing, setInitializeing] = React.useState();
+  const [initializing, setInitializing] = React.useState();
   const [enabled, setEnabled] = React.useState(false);
   const navigate = useNavigate();
   const handleError = useErrorHandler();
@@ -40,7 +40,7 @@ function SetupImpl({onInit}) {
     e.preventDefault();
 
     if (initializing) return;
-    setInitializeing(true);
+    setInitializing(true);
 
     axios.post('/terraform/v1/mgmt/init', {
       password,

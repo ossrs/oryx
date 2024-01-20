@@ -8,7 +8,7 @@ import {useSrsLanguage} from "../components/LanguageSwitch";
 import {Accordion, Alert, Button, Card, Col, Dropdown, Form, Nav, Row, Spinner, Table} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import axios from "axios";
-import {Clipboard, Token} from "../utils";
+import {Clipboard, Locale, Token} from "../utils";
 import {useErrorHandler} from "react-error-boundary";
 import {useSearchParams} from "react-router-dom";
 import {buildUrls} from "../components/UrlGenerator";
@@ -870,7 +870,7 @@ function LiveRoomAssistantWorker({room}) {
             <AITalkMicrophone {...{processing, micWorking, startRecording, stopRecording}} />
           </Col>
           <Col>
-            <AITalkTraceLogPanel {...{traceLogs, traceCount}}>
+            <AITalkTraceLogPanel {...{traceLogs, traceCount, room, stageUUID}}>
               <AITalkErrorLogPanel {...{errorLogs, removeErrorLog}} />
               <AITalkTipLogPanel {...{tipLogs, removeTipLog}} />
             </AITalkTraceLogPanel>
@@ -906,8 +906,9 @@ function AITalkMicrophone({processing, micWorking, startRecording, stopRecording
   );
 }
 
-function AITalkTraceLogPanel({traceLogs, traceCount, children}) {
+function AITalkTraceLogPanel({traceLogs, traceCount, children, room, stageUUID}) {
   const [showSettings, setShowSettings] = React.useState(false);
+  const [popoutUrl, setPopoutUrl] = React.useState(null);
 
   // Scroll the log panel.
   const logPanelRef = React.useRef(null);
@@ -916,6 +917,20 @@ function AITalkTraceLogPanel({traceLogs, traceCount, children}) {
     console.log(`Logs scroll to end, height=${logPanelRef.current.scrollHeight}, logs=${traceLogs.length}, count=${traceCount}`);
     logPanelRef.current.scrollTo(0, logPanelRef.current.scrollHeight);
   }, [traceLogs, logPanelRef, traceCount]);
+
+  React.useEffect(() => {
+    if (!room || !stageUUID) return;
+    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&room=${room.uuid}&stage=${stageUUID}`;
+    setPopoutUrl(url);
+    console.log(`Generated popout URL: ${url}`);
+  }, [room, stageUUID, setPopoutUrl]);
+
+  const openPopoutChat = React.useCallback((e) => {
+    e.preventDefault();
+    if (!popoutUrl) return;
+    setShowSettings(false);
+    window.open(popoutUrl, '_blank', 'noopener,noreferrer,width=1024,height=768');
+  }, [popoutUrl, setShowSettings]);
 
   return (
     <div>
@@ -927,7 +942,7 @@ function AITalkTraceLogPanel({traceLogs, traceCount, children}) {
           </div>
           <div className='ai-talk-settings-menu'>
             <Dropdown.Menu show={showSettings}>
-              <Dropdown.Item href="#!" onClick={() => alert('ok')}>Popout Chat</Dropdown.Item>
+              <Dropdown.Item href="#!" onClick={openPopoutChat}>Popout Chat</Dropdown.Item>
             </Dropdown.Menu>
           </div>
         </Card.Header>
