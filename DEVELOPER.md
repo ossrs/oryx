@@ -869,11 +869,7 @@ API without any authentication:
 * `/terraform/v1/ai/transcript/hls/original/:uuid.m3u8` Generate the preview HLS for original stream without overlay text.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/ai-talk/stage/examples/:file.aac` AI-Talk: Play the example audios.
-* `/terraform/v1/ai-talk/stage/tts` AI-Talk: Play the TTS audios.
-* `/terraform/v1/ai-talk/popout/start` AI-Talk: Start a popout with stage.
-* `/terraform/v1/ai-talk/popout/query` AI-Talk: Query the popout audio responses.
-* `/terraform/v1/ai-talk/popout/tts` AI-Talk: Play the TTS audios.
-* `/terraform/v1/ai-talk/popout/remove` AI-Talk: Remove the popout audio responses.
+* `/terraform/v1/ai-talk/subscribe/tts` AI-Talk: Play the TTS audios.
 
 API without token authentication, but with password authentication:
 
@@ -921,6 +917,9 @@ Platform, with token authentication:
 * `/terraform/v1/ai-talk/stage/upload` AI-Talk: Upload a user input audio file.
 * `/terraform/v1/ai-talk/stage/query` AI-Talk: Query the response of input.
 * `/terraform/v1/ai-talk/stage/remove` AI-Talk: Remove the audio response file.
+* `/terraform/v1/ai-talk/subscribe/start` AI-Talk: Start a popout with stage.
+* `/terraform/v1/ai-talk/subscribe/query` AI-Talk: Query the popout audio responses.
+* `/terraform/v1/ai-talk/subscribe/remove` AI-Talk: Remove the popout audio responses.
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 * `/terraform/v1/ffmpeg/vlive/secret` Setup the Virtual Live streaming secret.
@@ -1105,8 +1104,9 @@ The following are the update records for the SRS Stack server.
     * Camera: Support silent extra audio stream for video only device. v5.13.13
     * Camera: Support replace audio if enabled extra audio. v5.13.13
     * VLive/Camera/Forward: Extract multilingual text. v5.13.14
-    * Room: Support AI-Talk assistant for live room. v5.13.15
-    * Room: Support AI-Talk popout window. v5.13.16
+    * Room: AI-Talk support assistant for live room. v5.13.15
+    * Room: AI-Talk support popout window. v5.13.16
+    * Room: AI-Talk support popout assistant. v5.13.17
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1

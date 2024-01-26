@@ -41,8 +41,10 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				UUID: uuid.NewString(),
 				// The title of live room.
 				Title: title,
+				// The stream name of room.
+				StreamName: strings.ToLower(strings.ReplaceAll(uuid.NewString(), "-", ""))[:12],
 				// The secret of live room.
-				Secret: strings.ReplaceAll(uuid.NewString(), "-", ""),
+				Secret: strings.ToUpper(strings.ReplaceAll(uuid.NewString(), "-", ""))[:16],
 				// Create time.
 				CreatedAt: time.Now().Format(time.RFC3339),
 			}
@@ -224,6 +226,8 @@ type SrsLiveRoom struct {
 	UUID string `json:"uuid"`
 	// Live room title.
 	Title string `json:"title"`
+	// The stream name, should never use roomUUID because it's secret.
+	StreamName string `json:"stream"`
 	// Live room secret.
 	Secret string `json:"secret"`
 	// The AI assistant settings.
@@ -235,8 +239,8 @@ type SrsLiveRoom struct {
 }
 
 func (v *SrsLiveRoom) String() string {
-	return fmt.Sprintf("uuid=%v, title=%v, secret=%v, stage=%v, assistant=<%v>",
-		v.UUID, v.Title, v.Secret, v.StageUUID, v.SrsAssistant.String())
+	return fmt.Sprintf("uuid=%v, title=%v, stream=%v, secret=%v, stage=%v, assistant=<%v>",
+		v.UUID, v.Title, v.StreamName, v.Secret, v.StageUUID, v.SrsAssistant.String())
 }
 
 type SrsAssistant struct {

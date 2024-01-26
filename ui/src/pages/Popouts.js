@@ -11,24 +11,37 @@ import {Alert, Button} from "react-bootstrap";
 import Container from "react-bootstrap/Container";
 import axios from "axios";
 import {Token} from "../utils";
-import {AITalkErrorLogPanel, AITalkTipLogPanel} from "../components/AITalk";
+import {AITalkErrorLogPanel, AITalkTipLogPanel, AITalkAssistantPanel} from "../components/AITalk";
 
 export default function Popouts() {
   const [searchParams] = useSearchParams();
 
   React.useEffect(() => {
     const app = searchParams.get('app');
+    const token = searchParams.get('token');
     const popout = searchParams.get('popout');
     const room = searchParams.get('room');
+    const assistant = searchParams.get('assistant');
     console.log(`?app=ai-talk, current=${app}, The popout application`);
+    console.log(`?token=bearer, current=${token?.token}B, The bearer authentication token`);
     console.log(`?popout=1, current=${popout}, Whether enable popout mode.`);
     if (app === 'ai-talk') {
       console.log(`?room=room-uuid, current=${room}, The room uuid for ai-talk.`);
+      console.log(`?assistant=0, current=${assistant}, Whether popout the assistant, allow user to talk.`);
     }
+
+    if (!token) {
+      throw new Error(`no token`);
+    }
+    Token.updateBearer(token);
+    console.log(`update bearer token ${token.length}B ok.`);
   }, [searchParams]);
 
   const app = searchParams.get('app');
   if (app === 'ai-talk') {
+    if (searchParams.get('assistant') === '1') {
+      return <AITalkAssistantPanel {...{roomUUID: searchParams.get('room')}}/>;
+    }
     return <PopoutAITalk {...{roomUUID: searchParams.get('room')}}/>;
   } else {
     return <>Invalid app {app}</>;
@@ -127,7 +140,7 @@ function PopoutAITalk({roomUUID}) {
     if (!roomUUID) return;
 
     console.log(`Start: Create a new stage`);
-    axios.post('/terraform/v1/ai-talk/popout/start', {
+    axios.post('/terraform/v1/ai-talk/subscribe/start', {
       room: roomUUID,
     }, {
       headers: Token.loadBearerHeader(),
@@ -137,7 +150,7 @@ function PopoutAITalk({roomUUID}) {
       setStagePopoutUUID(res.data.data.spid);
       setStageRobot(res.data.data.robot);
     }).catch(handleError);
-  }, [handleError, roomUUID, setStagePopoutUUID, setStageRobot]);
+  }, [handleError, roomUUID, setStagePopoutUUID, setStageRobot, setStageUUID]);
 
   // Try to start the robot automatically, for OBS.
   React.useEffect(() => {
@@ -198,79 +211,80 @@ function PopoutAITalk({roomUUID}) {
   const refRequest = React.useRef({
     requesting: false,
   });
-  // The popouts request worker.
-  const requestPopouts = React.useCallback(async () => {
-    if (!robotReady || !stageUUID || !stagePopoutUUID) return;
-    if (refRequest.current.requesting) return;
-    refRequest.current.requesting = true;
-
-    try {
-      const msgs = await new Promise((resolve, reject) => {
-        axios.post('/terraform/v1/ai-talk/popout/query', {
-          sid: stageUUID, spid: stagePopoutUUID,
-        }, {
-          headers: Token.loadBearerHeader(),
-        }).then(res => {
-          const ts = new Date().toISOString().split('T')[1].split('Z')[0];
-          console.log(`Start: Query popout success at ${ts}: ${JSON.stringify(res.data.data)}`);
-          resolve(res.data.data.msgs);
-        }).catch(handleError);
-      });
-
-      if (!msgs?.length) return;
-      for (let i = 0; i < msgs.length; i++) {
-        const msg = msgs[i];
-        if (msg.role === 'user') {
-          traceLog('You', msg.msg, 'primary');
-          return;
-        }
-
-        const audioSegmentUUID = msg.asid;
-        traceLog('Bot', msg.msg, 'success');
-
-        // Play the AI generated audio.
-        await new Promise(resolve => {
-          const url = `/terraform/v1/ai-talk/popout/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}`;
-          console.log(`TTS: Playing ${url}`);
-
-          const listener = () => {
-            playerRef.current.removeEventListener('ended', listener);
-            console.log(`TTS: Played ${url} done.`);
-            resolve();
-          };
-          playerRef.current.addEventListener('ended', listener);
-
-          playerRef.current.src = url;
-          playerRef.current.play().catch(error => {
-            console.log(`TTS: Play ${url} failed: ${error}`);
-            resolve();
-          });
-        });
-
-        // Remove the AI generated audio.
-        await new Promise((resolve, reject) => {
-          axios.post('/terraform/v1/ai-talk/popout/remove', {
-            sid: stageUUID, spid: stagePopoutUUID, asid: audioSegmentUUID,
-          }, {
-            headers: Token.loadBearerHeader(),
-          }).then(res => {
-            console.log(`TTS: Audio removed: ${audioSegmentUUID}`);
-            resolve();
-          }).catch(error => reject(error));
-        });
-      }
-    } finally {
-      refRequest.current.requesting = false;
-    }
-  }, [handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, robotReady]);
   // Try to request popouts util end.
   React.useEffect(() => {
     if (!robotReady) return;
+
+    const requestPopouts = async () => {
+      if (!robotReady || !stageUUID || !stagePopoutUUID) return;
+      if (refRequest.current.requesting) return;
+      refRequest.current.requesting = true;
+
+      try {
+        const msgs = await new Promise((resolve, reject) => {
+          axios.post('/terraform/v1/ai-talk/subscribe/query', {
+            sid: stageUUID, spid: stagePopoutUUID,
+          }, {
+            headers: Token.loadBearerHeader(),
+          }).then(res => {
+            const ts = new Date().toISOString().split('T')[1].split('Z')[0];
+            console.log(`Start: Query popout success at ${ts}: ${JSON.stringify(res.data.data)}`);
+            resolve(res.data.data.msgs);
+          }).catch(handleError);
+        });
+
+        if (!msgs?.length) return;
+        for (let i = 0; i < msgs.length; i++) {
+          const msg = msgs[i];
+          if (msg.role === 'user') {
+            traceLog('You', msg.msg, 'primary');
+            return;
+          }
+
+          const audioSegmentUUID = msg.asid;
+          traceLog('Bot', msg.msg, 'success');
+
+          // Play the AI generated audio.
+          await new Promise(resolve => {
+            const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}`;
+            console.log(`TTS: Playing ${url}`);
+
+            const listener = () => {
+              playerRef.current.removeEventListener('ended', listener);
+              console.log(`TTS: Played ${url} done.`);
+              resolve();
+            };
+            playerRef.current.addEventListener('ended', listener);
+
+            playerRef.current.src = url;
+            playerRef.current.play().catch(error => {
+              console.log(`TTS: Play ${url} failed: ${error}`);
+              resolve();
+            });
+          });
+
+          // Remove the AI generated audio.
+          await new Promise((resolve, reject) => {
+            axios.post('/terraform/v1/ai-talk/subscribe/remove', {
+              sid: stageUUID, spid: stagePopoutUUID, asid: audioSegmentUUID,
+            }, {
+              headers: Token.loadBearerHeader(),
+            }).then(res => {
+              console.log(`TTS: Audio removed: ${audioSegmentUUID}`);
+              resolve();
+            }).catch(error => reject(error));
+          });
+        }
+      } finally {
+        refRequest.current.requesting = false;
+      }
+    };
+
     const timer = setInterval(async () => {
       requestPopouts().catch(handleError);
     }, 1000);
     return () => clearInterval(timer);
-  }, [robotReady, requestPopouts, handleError]);
+  }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest]);
 
   return (
     <Container fluid>

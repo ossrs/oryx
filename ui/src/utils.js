@@ -18,6 +18,17 @@ export const Token = {
     const o = JSON.parse(info);
     return {token: o.token};
   },
+  updateBearer: (bearer) => {
+    const info = localStorage.getItem(SRS_TERRAFORM_TOKEN);
+    const o = JSON.parse(info || '{}');
+    o.bearer = bearer;
+    localStorage.setItem(SRS_TERRAFORM_TOKEN, JSON.stringify(o));
+  },
+  loadBearer: () => {
+    const info = localStorage.getItem(SRS_TERRAFORM_TOKEN);
+    const o = JSON.parse(info || '{}');
+    return {token: o.bearer};
+  },
   loadBearerHeader: () => {
     const info = localStorage.getItem(SRS_TERRAFORM_TOKEN);
     const o = JSON.parse(info || '{}');

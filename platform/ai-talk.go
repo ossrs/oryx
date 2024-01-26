@@ -248,6 +248,7 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 
 		filteredStencese := strings.ReplaceAll(dc, "\n\n", "\n")
 		filteredStencese = strings.ReplaceAll(filteredStencese, "\n", " ")
+		logger.Tf(ctx, "AI response: text=%v", dc)
 
 		return finished, filteredStencese, nil
 	}
@@ -272,7 +273,6 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 			strings.ContainsRune(sentence, '，') {
 			newSentence = true
 		}
-		//logger.Tf(ctx, "AI response: text=%v, new=%v", dc, newSentence)
 
 		isEnglish := func(s string) bool {
 			for _, r := range s {
@@ -311,6 +311,7 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 		return newSentence
 	}
 
+	var previous *AnswerSegment
 	commitAISentence := func(sentence string, firstSentense bool) {
 		if firstSentense {
 			if robot.prefix != "" {
@@ -321,11 +322,13 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 			}
 		}
 
-		stage.ttsWorker.SubmitSegment(ctx, stage, NewAnswerSegment(func(segment *AnswerSegment) {
+		current := NewAnswerSegment(func(segment *AnswerSegment) {
 			segment.rid = rid
 			segment.text = sentence
 			segment.first = firstSentense
-		}))
+		})
+		stage.ttsWorker.SubmitSegment(ctx, stage, current, previous)
+		previous = current
 		return
 	}
 
@@ -852,6 +855,7 @@ func (v *TTSWorker) QuerySegment(rid, asid string) *AnswerSegment {
 	return nil
 }
 
+// TODO: FIMXE: Remove it.
 func (v *TTSWorker) QueryAnyReadySegment(ctx context.Context, stage *Stage, rid string) *AnswerSegment {
 	for ctx.Err() == nil {
 		select {
@@ -919,7 +923,7 @@ func (v *TTSWorker) RemoveSegment(asid string) {
 	}
 }
 
-func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, segment *AnswerSegment) {
+func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, segment, previous *AnswerSegment) {
 	// Append the sentence to queue.
 	func() {
 		v.lock.Lock()
@@ -957,6 +961,15 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, segment *An
 				stage.lastRequestTTS = time.Now()
 			}
 			logger.Tf(ctx, "File saved to %v, %v", segment.ttsFile, segment.text)
+		}
+
+		// Because we submit all TTS tasks to OpenAI simultaneously, to keep the answer segments in the
+		// same order to subscribers, so we need to wait for previous tasks to finish.
+		for ctx.Err() == nil && previous != nil && !previous.ready {
+			select {
+			case <-ctx.Done():
+			case <-time.After(300 * time.Millisecond):
+			}
 		}
 
 		// Notify all popouts the segment is ready.
@@ -1023,54 +1036,60 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "unmarshal %v %v", rid, r0)
 			}
 
-			ctx = logger.WithContext(ctx)
-			stage := NewStage(func(stage *Stage) {
-				stage.loggingCtx = ctx
+			// Allow to reuse exists stage.
+			stage := talkServer.QueryStage(room.StageUUID)
+			if stage != nil {
+				logger.Tf(ctx, "Stage: Reuse stage sid=%v, all=%v", stage.sid, talkServer.CountStage())
+			} else {
+				ctx = logger.WithContext(ctx)
+				stage = NewStage(func(stage *Stage) {
+					stage.loggingCtx = ctx
 
-				// Create robot for the stage, which attach to a special room.
-				stage.robot = &Robot{
-					uuid: uuid.NewString(), label: "Default", voice: "hello-english.aac",
-					prompt: room.AIChatPrompt, asrLanguage: room.AIASRLanguage, replyLimit: room.AIChatMaxWords,
-					chatModel: room.AIChatModel, chatWindow: room.AIChatMaxWindow,
+					// Create robot for the stage, which attach to a special room.
+					stage.robot = &Robot{
+						uuid: uuid.NewString(), label: "Default", voice: "hello-english.aac",
+						prompt: room.AIChatPrompt, asrLanguage: room.AIASRLanguage, replyLimit: room.AIChatMaxWords,
+						chatModel: room.AIChatModel, chatWindow: room.AIChatMaxWindow,
+					}
+					if room.AIASRLanguage == "zh" {
+						stage.robot.voice = "hello-chinese.aac"
+					}
+
+					// Initialize the AI services.
+					stage.aiConfig = openai.DefaultConfig(room.AISecretKey)
+					stage.aiConfig.BaseURL = room.AIBaseURL
+
+					// Bind stage to room.
+					room.StageUUID = stage.sid
+					stage.room = &room
+				})
+
+				if b, err := json.Marshal(room); err != nil {
+					return errors.Wrapf(err, "marshal room")
+				} else if err := rdb.HSet(ctx, SRS_LIVE_ROOM, room.UUID, string(b)).Err(); err != nil {
+					return errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
 				}
-				if room.AIASRLanguage == "zh" {
-					stage.robot.voice = "hello-chinese.aac"
-				}
 
-				// Initialize the AI services.
-				stage.aiConfig = openai.DefaultConfig(room.AISecretKey)
-				stage.aiConfig.BaseURL = room.AIBaseURL
+				talkServer.AddStage(stage)
+				logger.Tf(ctx, "Stage: Create new stage sid=%v, all=%v", stage.sid, talkServer.CountStage())
 
-				// Bind stage to room.
-				room.StageUUID = stage.sid
-				stage.room = &room
-			})
+				go func() {
+					defer stage.Close()
 
-			if b, err := json.Marshal(room); err != nil {
-				return errors.Wrapf(err, "marshal room")
-			} else if err := rdb.HSet(ctx, SRS_LIVE_ROOM, room.UUID, string(b)).Err(); err != nil {
-				return errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
-			}
-
-			talkServer.AddStage(stage)
-			logger.Tf(ctx, "Stage: Create new stage sid=%v, all=%v", stage.sid, talkServer.CountStage())
-
-			go func() {
-				defer stage.Close()
-
-				for ctx.Err() == nil {
-					select {
-					case <-ctx.Done():
-					case <-time.After(3 * time.Second):
-						if stage.Expired() {
-							logger.Tf(ctx, "Stage: Remove %v for expired, update=%v",
-								stage.sid, stage.update.Format(time.RFC3339))
-							talkServer.RemoveStage(stage)
-							return
+					for ctx.Err() == nil {
+						select {
+						case <-ctx.Done():
+						case <-time.After(3 * time.Second):
+							if stage.Expired() {
+								logger.Tf(ctx, "Stage: Remove %v for expired, update=%v",
+									stage.sid, stage.update.Format(time.RFC3339))
+								talkServer.RemoveStage(stage)
+								return
+							}
 						}
 					}
-				}
-			}()
+				}()
+			}
 
 			type StageRobotResult struct {
 				UUID  string `json:"uuid"`
@@ -1225,7 +1244,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage.ttsWorker.SubmitSegment(ctx, stage, NewAnswerSegment(func(segment *AnswerSegment) {
 				segment.rid = rid
 				segment.dummy = true
-			}))
+			}), nil)
 
 			// Do chat, get the response in stream.
 			chatService := &openaiChatService{
@@ -1329,76 +1348,6 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		}
 	})
 
-	ep = "/terraform/v1/ai-talk/stage/tts"
-	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
-		if err := func() error {
-			q := r.URL.Query()
-
-			sid := q.Get("sid")
-			if sid == "" {
-				return errors.Errorf("empty sid")
-			}
-
-			// The rid is the request id, which identify this request, generally a question.
-			rid := q.Get("rid")
-			if rid == "" {
-				return errors.Errorf("empty rid")
-			}
-
-			asid := q.Get("asid")
-			if asid == "" {
-				return errors.Errorf("empty asid")
-			}
-
-			stage := talkServer.QueryStage(sid)
-			if stage == nil {
-				return errors.Errorf("invalid sid %v", sid)
-			}
-
-			// Keep alive the stage.
-			stage.KeepAlive()
-			// Switch to the context of stage.
-			ctx = stage.loggingCtx
-			logger.Tf(ctx, "Stage: Download sid=%v, rid=%v, asid=%v", sid, rid, asid)
-
-			// Get the segment and response it.
-			segment := stage.ttsWorker.QuerySegment(rid, asid)
-			if segment == nil {
-				return errors.Errorf("no segment for %v %v", rid, asid)
-			}
-			logger.Tf(ctx, "Query segment %v %v, dummy=%v, segment=%v, err=%v",
-				rid, asid, segment.dummy, segment.text, segment.err)
-
-			if !segment.logged && segment.first {
-				stage.lastDownloadAudio = time.Now()
-				speech := float64(stage.lastAsrDuration) / float64(time.Second)
-				logger.Tf(ctx, "Report elapsed total=%.1fs, steps=[upload=%.1fs,exta=%.1fs,asr=%.1fs,chat=%.1fs,tts=%.1fs,download=%.1fs], ask=%v, speech=%.1fs, answer=%v",
-					stage.total(), stage.upload(), stage.exta(), stage.asr(), stage.chat(), stage.tts(), stage.download(),
-					stage.lastRequestAsrText, speech, stage.lastRobotFirstText)
-			}
-
-			// Important trace log. Note that browser may request multiple times, so we only log for the first
-			// request to reduce logs.
-			if !segment.logged {
-				segment.logged = true
-				logger.Tf(ctx, "Bot: %v", segment.text)
-			}
-
-			// Read the ttsFile and response it as opus audio.
-			if strings.HasSuffix(segment.ttsFile, ".wav") {
-				w.Header().Set("Content-Type", "audio/wav")
-			} else {
-				w.Header().Set("Content-Type", "audio/aac")
-			}
-			http.ServeFile(w, r, segment.ttsFile)
-
-			return nil
-		}(); err != nil {
-			ohttp.WriteError(ctx, w, r, err)
-		}
-	})
-
 	ep = "/terraform/v1/ai-talk/stage/remove"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
@@ -1492,17 +1441,24 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		}
 	})
 
-	ep = "/terraform/v1/ai-talk/popout/start"
+	ep = "/terraform/v1/ai-talk/subscribe/start"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
+			var token string
 			var rid string
 			if err := ParseBody(ctx, r.Body, &struct {
+				Token    *string `json:"token"`
 				RoomUUID *string `json:"room"`
 			}{
-				RoomUUID: &rid,
+				Token: &token, RoomUUID: &rid,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
 			}
 
 			if rid == "" {
@@ -1567,18 +1523,25 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		}
 	})
 
-	ep = "/terraform/v1/ai-talk/popout/query"
+	ep = "/terraform/v1/ai-talk/subscribe/query"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
+			var token string
 			var sid, spid string
 			if err := ParseBody(ctx, r.Body, &struct {
+				Token         *string `json:"token"`
 				StageUUID     *string `json:"sid"`
 				StagePopoutID *string `json:"spid"`
 			}{
-				StageUUID: &sid, StagePopoutID: &spid,
+				Token: &token, StageUUID: &sid, StagePopoutID: &spid,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
 			}
 
 			if sid == "" {
@@ -1616,7 +1579,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		}
 	})
 
-	ep = "/terraform/v1/ai-talk/popout/tts"
+	ep = "/terraform/v1/ai-talk/subscribe/tts"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
@@ -1670,19 +1633,26 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		}
 	})
 
-	ep = "/terraform/v1/ai-talk/popout/remove"
+	ep = "/terraform/v1/ai-talk/subscribe/remove"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
+			var token string
 			var sid, spid, asid string
 			if err := ParseBody(ctx, r.Body, &struct {
+				Token            *string `json:"token"`
 				StageUUID        *string `json:"sid"`
 				StagePopoutID    *string `json:"spid"`
 				AudioSegmentUUID *string `json:"asid"`
 			}{
-				StageUUID: &sid, StagePopoutID: &spid, AudioSegmentUUID: &asid,
+				Token: &token, StageUUID: &sid, StagePopoutID: &spid, AudioSegmentUUID: &asid,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
 			}
 
 			if sid == "" {
