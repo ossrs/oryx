@@ -963,9 +963,18 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, segment, pr
 			logger.Tf(ctx, "File saved to %v, %v", segment.ttsFile, segment.text)
 		}
 
+		// TODO: FIXME: Keep the same order.
 		// Because we submit all TTS tasks to OpenAI simultaneously, to keep the answer segments in the
 		// same order to subscribers, so we need to wait for previous tasks to finish.
-		for ctx.Err() == nil && previous != nil && !previous.ready {
+		if previous != nil && !previous.ready {
+			for ctx.Err() == nil && previous != nil && !previous.ready {
+				select {
+				case <-ctx.Done():
+				case <-time.After(300 * time.Millisecond):
+				}
+			}
+
+			// Maybe previous segment is pushing to queue, so wait for a while.
 			select {
 			case <-ctx.Done():
 			case <-time.After(300 * time.Millisecond):
@@ -1435,6 +1444,98 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			w.Header().Set("Content-Type", contentType)
 			http.ServeFile(w, r, path.Join(workDir, filename))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
+	ep = "/terraform/v1/ai-talk/popout/token"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var rid string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token    *string `json:"token"`
+				RoomUUID *string `json:"room"`
+			}{
+				Token: &token, RoomUUID: &rid,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			var room SrsLiveRoom
+			if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, rid).Result(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v %v", SRS_LIVE_ROOM, rid)
+			} else if r0 == "" {
+				return errors.Errorf("live room %v not exists", rid)
+			} else if err = json.Unmarshal([]byte(r0), &room); err != nil {
+				return errors.Wrapf(err, "unmarshal %v %v", rid, r0)
+			}
+
+			if room.PopoutToken == "" {
+				room.PopoutToken = uuid.NewString()
+
+				if b, err := json.Marshal(room); err != nil {
+					return errors.Wrapf(err, "marshal room")
+				} else if err := rdb.HSet(ctx, SRS_LIVE_ROOM, room.UUID, string(b)).Err(); err != nil {
+					return errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
+				}
+			}
+
+			ohttp.WriteData(ctx, w, r, &struct {
+				Token string `json:"token"`
+			}{
+				Token: room.PopoutToken,
+			})
+			logger.Tf(ctx, "srs ai-talk create popout token ok")
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
+	ep = "/terraform/v1/ai-talk/popout/verify"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var rid string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token    *string `json:"token"`
+				RoomUUID *string `json:"room"`
+			}{
+				Token: &token, RoomUUID: &rid,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			var room SrsLiveRoom
+			if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, rid).Result(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v %v", SRS_LIVE_ROOM, rid)
+			} else if r0 == "" {
+				return errors.Errorf("live room %v not exists", rid)
+			} else if err = json.Unmarshal([]byte(r0), &room); err != nil {
+				return errors.Wrapf(err, "unmarshal %v %v", rid, r0)
+			}
+
+			if room.PopoutToken != token {
+				return errors.Errorf("invalid token")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			ohttp.WriteData(ctx, w, r, &struct {
+				Token string `json:"token"`
+			}{
+				Token: apiSecret,
+			})
+			logger.Tf(ctx, "srs ai-talk verify popout token ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

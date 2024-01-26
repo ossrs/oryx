@@ -7,7 +7,7 @@ import axios from "axios";
 import {Locale, Token} from "../utils";
 import * as Icon from "react-bootstrap-icons";
 
-export function AITalkAssistantPanel({roomUUID}) {
+export function AITalkAssistantPanel({roomUUID, fullscreen}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
   const isMobile = useIsMobile();
@@ -551,13 +551,12 @@ export function AITalkAssistantPanel({roomUUID}) {
     return () => clearInterval(timer);
   }, [refRequest]);
 
+  if (booting) {
+    return <><Spinner animation="border" variant="primary" size='sm'></Spinner> Booting...</>;
+  }
   return (
     <div>
       <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
-      {booting ? <>
-        <Spinner animation="border" variant="primary" size='sm'></Spinner>&nbsp;
-        Booting ...
-      </> : ''}
       {stageUUID && !robotReady ?
         <Button disabled={requesting} variant="primary" type="submit" onClick={startChatting}>
           {t('lr.room.talk')}
@@ -568,15 +567,15 @@ export function AITalkAssistantPanel({roomUUID}) {
             <AITalkMicrophone {...{processing, micWorking, startRecording, stopRecording}} />
           </Col>
           <Col>
-            <AITalkTraceLogPanel {...{traceLogs, traceCount, roomUUID}}>
+            <AITalkTraceLogPanelComplex {...{traceLogs, traceCount, roomUUID, fullscreen}}>
               <AITalkErrorLogPanel {...{errorLogs, removeErrorLog}} />
               <AITalkTipLogPanel {...{tipLogs, removeTipLog}} />
-            </AITalkTraceLogPanel>
+            </AITalkTraceLogPanelComplex>
           </Col>
         </Row> : ''}
       {robotReady && isMobile ?
         <div>
-          <AITalkTraceLogPanelSimple {...{traceLogs, traceCount}} />
+          <AITalkTraceLogPanelSimple {...{traceLogs, traceCount, fullscreen}} />
           <AITalkErrorLogPanel {...{errorLogs, removeErrorLog}} />
           <AITalkTipLogPanel {...{tipLogs, removeTipLog}} />
           <AITalkMicrophone {...{processing, micWorking, startRecording, stopRecording}} />
@@ -586,7 +585,7 @@ export function AITalkAssistantPanel({roomUUID}) {
   );
 }
 
-function AITalkTraceLogPanelSimple({traceLogs, traceCount}) {
+function AITalkTraceLogPanelSimple({traceLogs, traceCount, fullscreen}) {
   // Scroll the log panel.
   const logPanelRef = React.useRef(null);
   React.useEffect(() => {
@@ -596,7 +595,7 @@ function AITalkTraceLogPanelSimple({traceLogs, traceCount}) {
   }, [traceLogs, logPanelRef, traceCount]);
 
   return (
-    <div className='ai-talk-trace-logs-mobile' ref={logPanelRef}>
+    <div className={fullscreen ? 'ai-talk-trace-logs-mobilefs' : 'ai-talk-trace-logs-mobile'} ref={logPanelRef}>
       {traceLogs.map((log) => {
         return (
           <Alert key={log.id} variant={log.variant}>
@@ -626,8 +625,9 @@ function AITalkMicrophone({processing, micWorking, startRecording, stopRecording
   );
 }
 
-function AITalkTraceLogPanel({traceLogs, traceCount, children, roomUUID}) {
+function AITalkTraceLogPanelComplex({traceLogs, traceCount, children, roomUUID, fullscreen}) {
   const {t} = useTranslation();
+  const handleError = useErrorHandler();
   const [showSettings, setShowSettings] = React.useState(false);
   const [popoutUrl, setPopoutUrl] = React.useState(null);
 
@@ -641,28 +641,35 @@ function AITalkTraceLogPanel({traceLogs, traceCount, children, roomUUID}) {
 
   React.useEffect(() => {
     if (!roomUUID) return;
-    const r0s = [];
-    for (let i = 0; i < 16; i++) r0s.push(Math.random().toString(16).slice(-8));
-    const created = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
-    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&room=${roomUUID}&created=${created}&random=${r0s.join('-')}`;
-    setPopoutUrl(url);
-    console.log(`Generated popout URL: ${url}`);
-  }, [roomUUID, setPopoutUrl]);
+
+    axios.post('/terraform/v1/ai-talk/popout/token', {
+      room: roomUUID,
+    }, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      const {token} = res.data.data;
+      console.log(`Create temp token ok, data=${JSON.stringify(res.data.data)}`);
+
+      const r0 = Math.random().toString(16).slice(-8);
+      const created = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
+      const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&room=${roomUUID}&created=${created}&random=${r0}&token=${token}`;
+      setPopoutUrl(url);
+      console.log(`Generated popout URL: ${url}`);
+    }).catch(handleError);
+  }, [roomUUID, setPopoutUrl, handleError]);
 
   const openPopoutChat = React.useCallback((e) => {
     e.preventDefault();
     if (!popoutUrl) return;
     setShowSettings(false);
-    const auth = Token.loadBearer();
-    window.open(`${popoutUrl}&assistant=0&token=${auth.token}`, '_blank', 'noopener,noreferrer,width=1024,height=768');
+    window.open(`${popoutUrl}&assistant=0`, '_blank', 'noopener,noreferrer,width=1024,height=768');
   }, [popoutUrl, setShowSettings]);
 
   const openPopoutAssistant = React.useCallback((e) => {
     e.preventDefault();
     if (!popoutUrl) return;
     setShowSettings(false);
-    const auth = Token.loadBearer();
-    window.open(`${popoutUrl}&assistant=1&token=${auth.token}`, '_blank', 'noopener,noreferrer,width=1024,height=768');
+    window.open(`${popoutUrl}&assistant=1`, '_blank', 'noopener,noreferrer,width=1024,height=768');
   }, [popoutUrl, setShowSettings]);
 
   return (
@@ -681,7 +688,7 @@ function AITalkTraceLogPanel({traceLogs, traceCount, children, roomUUID}) {
           </div>
         </Card.Header>
         <Card.Body>
-          <div className='ai-talk-trace-logs-pc' ref={logPanelRef}>
+          <div className={fullscreen ? 'ai-talk-trace-logs-pcfs' : 'ai-talk-trace-logs-pc'} ref={logPanelRef}>
             {children}
             {traceLogs.map((log) => {
               return (

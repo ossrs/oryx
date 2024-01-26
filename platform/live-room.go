@@ -234,13 +234,15 @@ type SrsLiveRoom struct {
 	SrsAssistant
 	// The current AI assistant stage, might change to others.
 	StageUUID string `json:"stage_uuid"`
+	// The temporary authentication token, for each room.
+	PopoutToken string `json:"ptoken"`
 	// Create time.
 	CreatedAt string `json:"created_at"`
 }
 
 func (v *SrsLiveRoom) String() string {
-	return fmt.Sprintf("uuid=%v, title=%v, stream=%v, secret=%v, stage=%v, assistant=<%v>",
-		v.UUID, v.Title, v.StreamName, v.Secret, v.StageUUID, v.SrsAssistant.String())
+	return fmt.Sprintf("uuid=%v, title=%v, stream=%v, secret=%vB, ptoken=%vB, stage=%v, assistant=<%v>",
+		v.UUID, v.Title, v.StreamName, len(v.Secret), len(v.PopoutToken), v.StageUUID, v.SrsAssistant.String())
 }
 
 type SrsAssistant struct {

@@ -7,14 +7,16 @@ import React from 'react';
 import {useSearchParams} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {useErrorHandler} from "react-error-boundary";
-import {Alert, Button} from "react-bootstrap";
+import {Alert, Button, Spinner} from "react-bootstrap";
 import Container from "react-bootstrap/Container";
 import axios from "axios";
-import {Token} from "../utils";
+import {Locale, Token} from "../utils";
 import {AITalkErrorLogPanel, AITalkTipLogPanel, AITalkAssistantPanel} from "../components/AITalk";
 
 export default function Popouts() {
+  const handleError = useErrorHandler();
   const [searchParams] = useSearchParams();
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     const app = searchParams.get('app');
@@ -23,29 +25,53 @@ export default function Popouts() {
     const room = searchParams.get('room');
     const assistant = searchParams.get('assistant');
     console.log(`?app=ai-talk, current=${app}, The popout application`);
-    console.log(`?token=bearer, current=${token?.token}B, The bearer authentication token`);
+    console.log(`?token=bearer, current=${token?.token}B, The popout token for each room`);
     console.log(`?popout=1, current=${popout}, Whether enable popout mode.`);
     if (app === 'ai-talk') {
       console.log(`?room=room-uuid, current=${room}, The room uuid for ai-talk.`);
       console.log(`?assistant=0, current=${assistant}, Whether popout the assistant, allow user to talk.`);
     }
 
-    if (!token) {
-      throw new Error(`no token`);
-    }
-    Token.updateBearer(token);
-    console.log(`update bearer token ${token.length}B ok.`);
-  }, [searchParams]);
+    if (!app) throw new Error(`no app`);
+    if (!token) throw new Error(`no popout token`);
+    if (app === 'ai-talk' && !room) throw new Error(`no room id`);
 
+    axios.post('/terraform/v1/ai-talk/popout/verify', {
+      room: searchParams.get('room'), token: searchParams.get('token'),
+    }, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      const {token} = res.data.data;
+      Token.updateBearer(token);
+      setLoading(false);
+      console.log(`Verify temporary token ok, data=${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError, searchParams, setLoading]);
+
+  if (loading) {
+    return <>
+      <Spinner animation="border" variant="primary" size='sm'></Spinner>&nbsp;
+      Loading...
+    </>;
+  }
   const app = searchParams.get('app');
   if (app === 'ai-talk') {
     if (searchParams.get('assistant') === '1') {
-      return <AITalkAssistantPanel {...{roomUUID: searchParams.get('room')}}/>;
+      return <PopoutAIAssistant {...{roomUUID: searchParams.get('room')}}/>;
     }
     return <PopoutAITalk {...{roomUUID: searchParams.get('room')}}/>;
   } else {
     return <>Invalid app {app}</>;
   }
+}
+
+function PopoutAIAssistant({roomUUID}) {
+  return (
+    <Container fluid>
+      <p></p>
+      <AITalkAssistantPanel {...{roomUUID, fullscreen: true}}/>
+    </Container>
+  );
 }
 
 function PopoutAITalk({roomUUID}) {
@@ -64,7 +90,7 @@ function PopoutAITalk({roomUUID}) {
   const [stagePopoutUUID, setStagePopoutUUID] = React.useState(null);
 
   // Possible value is 1: yes, -1: no, 0: undefined.
-  const [needUserStart, setNeedUserStart] = React.useState(0);
+  const [obsAutostart, setObsAutostart] = React.useState(0);
   const [errorLogs, setErrorLogs] = React.useState([]);
   const [traceCount, setTraceCount] = React.useState(0);
   const [traceLogs, setTraceLogs] = React.useState([]);
@@ -159,7 +185,7 @@ function PopoutAITalk({roomUUID}) {
     const listener = () => {
       playerRef.current.removeEventListener('ended', listener);
 
-      setNeedUserStart(1);
+      setObsAutostart(1);
       setRobotReady(true);
       console.log(`Stage started, AI is ready, sid=${stageUUID}`);
     };
@@ -167,9 +193,9 @@ function PopoutAITalk({roomUUID}) {
 
     playerRef.current.src = `/terraform/v1/ai-talk/stage/examples/${stageRobot.voice}?sid=${stageUUID}`;
     playerRef.current.play().catch((error) => {
-      setNeedUserStart(-1);
+      setObsAutostart(-1);
     });
-  }, [t, errorLog, stageUUID, stageRobot, setNeedUserStart]);
+  }, [t, errorLog, stageUUID, stageRobot, setObsAutostart]);
 
   // Requires user to start the robot manually, for Chrome.
   const startChatting = React.useCallback(() => {
@@ -290,7 +316,7 @@ function PopoutAITalk({roomUUID}) {
     <Container fluid>
       <p></p>
       <div>
-        {needUserStart === -1 ?
+        {obsAutostart === -1 ?
           <Button disabled={requesting} variant="primary" type="submit" onClick={startChatting}>
             {t('lr.room.talk')}
           </Button> : ''}

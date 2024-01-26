@@ -48,7 +48,7 @@
   width:20%; height:25%;
 }
 
-.ai-talk-trace-logs-pc, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-popout{
+.ai-talk-trace-logs-pc, .ai-talk-trace-logs-pcfs, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-mobilefs, .ai-talk-trace-logs-popout{
   overflow: scroll;
 }
 
@@ -79,13 +79,19 @@
   min-width: 30vw;
 }
 
-.ai-talk-trace-logs-pc, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-popout{
+.ai-talk-trace-logs-pc, .ai-talk-trace-logs-pcfs, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-mobilefs, .ai-talk-trace-logs-popout{
   margin-bottom: 0px;
 }
 
 .ai-talk-trace-logs-pc{
   min-height: 51vh;
   max-height: 51vh;
+  min-width: 55vw;
+}
+
+.ai-talk-trace-logs-pcfs {
+  min-height: 89vh;
+  max-height: 89vh;
   min-width: 55vw;
 }
 
@@ -99,6 +105,11 @@
 .ai-talk-trace-logs-mobile{
   min-height: 50vh;
   max-height: 50vh;
+}
+
+.ai-talk-trace-logs-mobilefs {
+  min-height: 65vh;
+  max-height: 65vh;
 }
 
 .ai-talk-trace-logs-popout {
