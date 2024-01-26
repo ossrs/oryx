@@ -14,7 +14,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
 
   // The timeout in milliseconds.
   const timeoutForMicrophoneTestToRun = 50;
-  const timeoutWaitForMicrophoneToClose = 1700;
+  const timeoutWaitForMicrophoneToClose = 900;
   const timeoutWaitForLastVoice = 700;
   const durationRequiredUserInput = 600;
 
@@ -298,53 +298,26 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       });
 
       // Get the AI generated audio from the server.
+      console.log(`TTS: Requesting ${requestUUID} response audios, rid=${requestUUID}`);
       while (true) {
-        console.log(`TTS: Requesting ${requestUUID} response audios, rid=${requestUUID}`);
-        let audioSegmentUUID = null;
-        while (!audioSegmentUUID) {
-          const resp = await new Promise((resolve, reject) => {
-            axios.post('/terraform/v1/ai-talk/stage/query', {
-              sid: stageUUID, rid: requestUUID,
-            }, {
-              headers: Token.loadBearerHeader(),
-            }).then(res => {
-              if (res.data?.data?.asid) {
-                console.log(`TTS: Audio ready: ${res.data.data.asid} ${res.data.data.tts}`);
-              }
-              resolve(res.data.data);
-            }).catch(error => reject(error));
-          });
-
-          if (!resp.asid) {
-            break;
-          }
-
-          if (resp.processing) {
-            await new Promise((resolve) => setTimeout(resolve, 300));
-            continue;
-          }
-
-          audioSegmentUUID = resp.asid;
-        }
-
-        // All audios are played.
-        if (!audioSegmentUUID) {
-          console.log(`TTS: All audios are played, rid=${requestUUID}`);
-          console.log("=============");
-          break;
-        }
-
-        // Remove the AI generated audio.
-        await new Promise((resolve, reject) => {
-          axios.post('/terraform/v1/ai-talk/stage/remove', {
-            sid: stageUUID, rid: requestUUID, asid: audioSegmentUUID,
+        const resp = await new Promise((resolve, reject) => {
+          axios.post('/terraform/v1/ai-talk/stage/query', {
+            sid: stageUUID, rid: requestUUID,
           }, {
             headers: Token.loadBearerHeader(),
           }).then(res => {
-            console.log(`TTS: Audio removed: ${audioSegmentUUID}`);
-            resolve();
+            if (res.data?.data?.finished) {
+            }
+            resolve(res.data.data);
           }).catch(error => reject(error));
         });
+
+        if (resp.finished) {
+          console.log(`TTS: Conversation finished.`);
+          break;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     };
 

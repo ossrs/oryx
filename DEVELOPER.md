@@ -916,7 +916,6 @@ Platform, with token authentication:
 * `/terraform/v1/ai-talk/stage/start` AI-Talk: Start a new stage.
 * `/terraform/v1/ai-talk/stage/upload` AI-Talk: Upload a user input audio file.
 * `/terraform/v1/ai-talk/stage/query` AI-Talk: Query the response of input.
-* `/terraform/v1/ai-talk/stage/remove` AI-Talk: Remove the audio response file.
 * `/terraform/v1/ai-talk/popout/token` AI-Talk: Generate a temporary token for popout.
 * `/terraform/v1/ai-talk/popout/verify` AI-Talk: Verify the temporary token for popout.
 * `/terraform/v1/ai-talk/subscribe/start` AI-Talk: Start a popout with stage.
