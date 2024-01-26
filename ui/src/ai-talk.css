@@ -102,7 +102,7 @@
 }
 
 .ai-talk-trace-logs-popout {
-  min-height: 96vh;
+  min-height: 50vh;
   max-height: 96vh;
   min-width: 90vw;
 }

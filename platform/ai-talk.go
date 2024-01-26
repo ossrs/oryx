@@ -46,10 +46,16 @@ type TTSService interface {
 
 type openaiASRService struct {
 	conf openai.ClientConfig
+	// The callback before start ASR request.
+	onBeforeRequest func()
 }
 
-func NewOpenAIASRService(conf openai.ClientConfig) ASRService {
-	return &openaiASRService{conf: conf}
+func NewOpenAIASRService(conf openai.ClientConfig, opts ...func(service *openaiASRService)) ASRService {
+	v := &openaiASRService{conf: conf}
+	for _, opt := range opts {
+		opt(v)
+	}
+	return v
 }
 
 func (v *openaiASRService) RequestASR(ctx context.Context, inputFile, language, prompt string) (*ASRResult, error) {
@@ -73,6 +79,10 @@ func (v *openaiASRService) RequestASR(ctx context.Context, inputFile, language, 
 	duration, _, err := ffprobeAudio(ctx, outputFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "ffprobe")
+	}
+
+	if v.onBeforeRequest != nil {
+		v.onBeforeRequest()
 	}
 
 	// Request ASR.
@@ -220,43 +230,49 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 		stage.generating = false
 	}()
 
-	var sentence string
-	var finished bool
-	firstSentense := true
-	for !finished && ctx.Err() == nil {
-		response, err := gptChatStream.Recv()
-		finished = errors_std.Is(err, io.EOF)
+	filterAIResponse := func(response *openai.ChatCompletionStreamResponse, err error) (bool, string, error) {
+		finished := errors_std.Is(err, io.EOF)
 		if err != nil && !finished {
-			return errors.Wrapf(err, "recv chat")
+			return finished, "", errors.Wrapf(err, "recv chat")
 		}
 
+		if len(response.Choices) == 0 {
+			return finished, "", nil
+		}
+
+		choice := response.Choices[0]
+		dc := choice.Delta.Content
+		if dc == "" {
+			return finished, "", nil
+		}
+
+		filteredStencese := strings.ReplaceAll(dc, "\n\n", "\n")
+		filteredStencese = strings.ReplaceAll(filteredStencese, "\n", " ")
+
+		return finished, filteredStencese, nil
+	}
+
+	gotNewSentence := func(sentence string, firstSentense bool) bool {
 		newSentence := false
-		if len(response.Choices) > 0 {
-			choice := response.Choices[0]
-			if dc := choice.Delta.Content; dc != "" {
-				filteredStencese := strings.ReplaceAll(dc, "\n\n", "\n")
-				filteredStencese = strings.ReplaceAll(filteredStencese, "\n", " ")
-				sentence += filteredStencese
 
-				// Any ASCII character to split sentence.
-				if strings.ContainsAny(dc, ",.?!\n") {
-					newSentence = true
-				}
-
-				// Any Chinese character to split sentence.
-				if strings.ContainsRune(dc, '。') ||
-					strings.ContainsRune(dc, '？') ||
-					strings.ContainsRune(dc, '！') ||
-					strings.ContainsRune(dc, '，') {
-					newSentence = true
-				}
-				//logger.Tf(ctx, "AI response: text=%v, new=%v", dc, newSentence)
-			}
-		}
-
+		// Ignore empty.
 		if sentence == "" {
-			continue
+			return newSentence
 		}
+
+		// Any ASCII character to split sentence.
+		if strings.ContainsAny(sentence, ",.?!\n") {
+			newSentence = true
+		}
+
+		// Any Chinese character to split sentence.
+		if strings.ContainsRune(sentence, '。') ||
+			strings.ContainsRune(sentence, '？') ||
+			strings.ContainsRune(sentence, '！') ||
+			strings.ContainsRune(sentence, '，') {
+			newSentence = true
+		}
+		//logger.Tf(ctx, "AI response: text=%v, new=%v", dc, newSentence)
 
 		isEnglish := func(s string) bool {
 			for _, r := range s {
@@ -292,30 +308,52 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 			}
 		}
 
-		if finished || newSentence {
-			stage.previousAssitant += sentence + " "
-			// We utilize user ASR and AI responses as prompts for the subsequent ASR, given that this is
-			// a chat-based scenario where the user converses with the AI, and the following audio should pertain to both user and AI text.
-			stage.previousAsrText += " " + sentence
+		return newSentence
+	}
 
-			isFirstSentence := firstSentense
-			if firstSentense {
-				firstSentense = false
-				if robot.prefix != "" {
-					sentence = fmt.Sprintf("%v %v", robot.prefix, sentence)
-				}
-				if v.onFirstResponse != nil {
-					v.onFirstResponse(ctx, sentence)
-				}
+	commitAISentence := func(sentence string, firstSentense bool) {
+		if firstSentense {
+			if robot.prefix != "" {
+				sentence = fmt.Sprintf("%v %v", robot.prefix, sentence)
 			}
-
-			stage.ttsWorker.SubmitSegment(ctx, stage, NewAnswerSegment(func(segment *AnswerSegment) {
-				segment.rid = rid
-				segment.text = sentence
-				segment.first = isFirstSentence
-			}))
-			sentence = ""
+			if v.onFirstResponse != nil {
+				v.onFirstResponse(ctx, sentence)
+			}
 		}
+
+		stage.ttsWorker.SubmitSegment(ctx, stage, NewAnswerSegment(func(segment *AnswerSegment) {
+			segment.rid = rid
+			segment.text = sentence
+			segment.first = firstSentense
+		}))
+		return
+	}
+
+	var sentence string
+	var finished bool
+	firstSentense := true
+	for !finished && ctx.Err() == nil {
+		response, err := gptChatStream.Recv()
+		if tvFinished, tvSentense, err := filterAIResponse(&response, err); err != nil {
+			return errors.Wrapf(err, "filter")
+		} else {
+			finished, sentence = tvFinished, sentence+tvSentense
+		}
+
+		newSentence := gotNewSentence(sentence, firstSentense)
+		if !finished && !newSentence {
+			continue
+		}
+
+		// Use the sentence for prompt and logging.
+		stage.previousAssitant += sentence + " "
+		// We utilize user ASR and AI responses as prompts for the subsequent ASR, given that this is
+		// a chat-based scenario where the user converses with the AI, and the following audio should pertain to both user and AI text.
+		stage.previousAsrText += " " + sentence
+		// Commit the sentense to TTS worker and callbacks.
+		commitAISentence(sentence, firstSentense)
+		// Reset the sentence, because we have committed it.
+		sentence, firstSentense = "", false
 	}
 
 	return nil
@@ -566,6 +604,8 @@ type Stage struct {
 	lastSentence time.Time
 	// The time for last upload audio.
 	lastUploadAudio time.Time
+	// The time for last extract audio for ASR.
+	lastExtractAudio time.Time
 	// The time for last request ASR result.
 	lastRequestASR time.Time
 	// The last request ASR text.
@@ -636,9 +676,16 @@ func (v *Stage) upload() float64 {
 	return 0
 }
 
+func (v *Stage) exta() float64 {
+	if v.lastExtractAudio.After(v.lastUploadAudio) {
+		return float64(v.lastExtractAudio.Sub(v.lastUploadAudio)) / float64(time.Second)
+	}
+	return 0
+}
+
 func (v *Stage) asr() float64 {
-	if v.lastRequestASR.After(v.lastUploadAudio) {
-		return float64(v.lastRequestASR.Sub(v.lastUploadAudio)) / float64(time.Second)
+	if v.lastRequestASR.After(v.lastExtractAudio) {
+		return float64(v.lastRequestASR.Sub(v.lastExtractAudio)) / float64(time.Second)
 	}
 	return 0
 }
@@ -1090,6 +1137,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// Keep alive the stage.
 			stage.KeepAlive()
+			// For statistic, this is the last sentence from user, we start to count the cost from here.
 			stage.lastSentence = time.Now()
 			// Switch to the context of stage.
 			ctx = stage.loggingCtx
@@ -1130,7 +1178,9 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// Do ASR, convert to text.
 			var asrText string
-			asrService := NewOpenAIASRService(stage.aiConfig)
+			asrService := NewOpenAIASRService(stage.aiConfig, func(*openaiASRService) {
+				stage.lastExtractAudio = time.Now()
+			})
 			if resp, err := asrService.RequestASR(ctx, inputFile, robot.asrLanguage, stage.previousAsrText); err != nil {
 				return errors.Wrapf(err, "transcription")
 			} else {
@@ -1323,8 +1373,8 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			if !segment.logged && segment.first {
 				stage.lastDownloadAudio = time.Now()
 				speech := float64(stage.lastAsrDuration) / float64(time.Second)
-				logger.Tf(ctx, "Report cost total=%.1fs, steps=[upload=%.1fs,asr=%.1fs,chat=%.1fs,tts=%.1fs,download=%.1fs], ask=%v, speech=%.1fs, answer=%v",
-					stage.total(), stage.upload(), stage.asr(), stage.chat(), stage.tts(), stage.download(),
+				logger.Tf(ctx, "Report elapsed total=%.1fs, steps=[upload=%.1fs,exta=%.1fs,asr=%.1fs,chat=%.1fs,tts=%.1fs,download=%.1fs], ask=%v, speech=%.1fs, answer=%v",
+					stage.total(), stage.upload(), stage.exta(), stage.asr(), stage.chat(), stage.tts(), stage.download(),
 					stage.lastRequestAsrText, speech, stage.lastRobotFirstText)
 			}
 
@@ -1487,7 +1537,6 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// Keep alive the stage.
 			stage.KeepAlive()
-			stage.lastSentence = time.Now()
 
 			type StageRobotResult struct {
 				UUID  string `json:"uuid"`

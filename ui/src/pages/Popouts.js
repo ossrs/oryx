@@ -42,6 +42,7 @@ function PopoutAITalk({roomUUID}) {
 
   // The player ref, to access the audio player.
   const playerRef = React.useRef(null);
+  const [requesting, setRequesting] = React.useState(false);
   const [robotReady, setRobotReady] = React.useState(false);
 
   // The uuid and robot in stage, which is unchanged after stage started.
@@ -159,17 +160,23 @@ function PopoutAITalk({roomUUID}) {
 
   // Requires user to start the robot manually, for Chrome.
   const startChatting = React.useCallback(() => {
+    setRequesting(true);
+
     const listener = () => {
       playerRef.current.removeEventListener('ended', listener);
 
       setRobotReady(true);
+      setRequesting(false);
       console.log(`Stage started, AI is ready, sid=${stageUUID}`);
     };
     playerRef.current.addEventListener('ended', listener);
 
     playerRef.current.src = `/terraform/v1/ai-talk/stage/examples/${stageRobot.voice}?sid=${stageUUID}`;
-    playerRef.current.play().catch(error => errorLog(`${t('lr.room.speaker')}: ${error}`));
-  }, [t, errorLog, stageUUID, stageRobot, setRobotReady]);
+    playerRef.current.play().catch(error => {
+      errorLog(`${t('lr.room.speaker')}: ${error}`);
+      setRequesting(false);
+    });
+  }, [t, errorLog, stageUUID, stageRobot, setRobotReady, setRequesting]);
 
   // When robot is ready, show tip logs, and cleanup timeout tips.
   React.useEffect(() => {
@@ -269,11 +276,14 @@ function PopoutAITalk({roomUUID}) {
     <Container fluid>
       <p></p>
       <div>
-        {needUserStart === -1 ? <Button variant="primary" type="submit" onClick={startChatting}>{t('lr.room.talk')}</Button> : ''}
+        {needUserStart === -1 ?
+          <Button disabled={requesting} variant="primary" type="submit" onClick={startChatting}>
+            {t('lr.room.talk')}
+          </Button> : ''}
         <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
-        <AITalkTraceLogPanelPopout {...{traceLogs, traceCount}} />
         <AITalkErrorLogPanel {...{errorLogs, removeErrorLog}} />
         <AITalkTipLogPanel {...{tipLogs, removeTipLog}} />
+        <AITalkTraceLogPanelPopout {...{traceLogs, traceCount}} />
         <div ref={endPanelRef}></div>
       </div>
     </Container>

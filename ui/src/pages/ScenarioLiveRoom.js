@@ -30,7 +30,7 @@ export default function ScenarioLiveRoom() {
     setRoomId(id);
   }, [searchParams, setRoomId]);
 
-  if (roomId) return <ScenarioLiveRoomManager {...{setRoomId, roomId}} />;
+  if (roomId) return <ScenarioLiveRoomImpl {...{setRoomId, roomId}} />;
   return <ScenarioLiveRoomList {...{setRoomId}} />;
 }
 
@@ -187,7 +187,7 @@ function ScenarioLiveRoomList({setRoomId}) {
   );
 }
 
-function ScenarioLiveRoomManager({roomId, setRoomId}) {
+function ScenarioLiveRoomImpl({roomId, setRoomId}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
 
@@ -246,7 +246,7 @@ function ScenarioLiveRoomManager({roomId, setRoomId}) {
       {room && room.assistant ? <Accordion.Item eventKey="3">
         <Accordion.Header>{t('lr.room.aiw')}</Accordion.Header>
         <Accordion.Body>
-          <LiveRoomAssistantWorker {...{room}}/>
+          <LiveRoomAssistantStage {...{room}}/>
         </Accordion.Body>
       </Accordion.Item> : ''}
     </Accordion>
@@ -351,7 +351,7 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
   const [aiSecretKey, setAiSecretKey] = React.useState(room.aiSecretKey);
   const [aiBaseURL, setAiBaseURL] = React.useState(room.aiBaseURL || (language === 'zh' ? '' : 'https://api.openai.com/v1'));
   const [aiAsrLanguage, setAiAsrLanguage] = React.useState(room.aiAsrLanguage || language);
-  const [aiChatModel, setAiChatModel] = React.useState(room.aiChatModel || 'gpt-3.5-turbo-1106');
+  const [aiChatModel, setAiChatModel] = React.useState(room.aiChatModel || 'gpt-3.5-turbo');
   const [aiChatPrompt, setAiChatPrompt] = React.useState(room.aiChatPrompt || 'You are a helpful assistant.');
   const [aiChatMaxWindow, setAiChatMaxWindow] = React.useState(room.aiChatMaxWindow || 5);
   const [aiChatMaxWords, setAiChatMaxWords] = React.useState(room.aiChatMaxWords || 30);
@@ -420,7 +420,7 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
   );
 }
 
-function LiveRoomAssistantWorker({room}) {
+function LiveRoomAssistantStage({room}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
   const isMobile = useIsMobile();
@@ -433,6 +433,7 @@ function LiveRoomAssistantWorker({room}) {
 
   // The player ref, to access the audio player.
   const playerRef = React.useRef(null);
+  const [requesting, setRequesting] = React.useState(false);
   const [robotReady, setRobotReady] = React.useState(false);
   const [processing, setProcessing] = React.useState(false);
   const [micWorking, setMicWorking] = React.useState(false);
@@ -574,18 +575,23 @@ function LiveRoomAssistantWorker({room}) {
   }, [handleError, booting, room, setStageUUID, setStageRobot]);
 
   // Start to chat, set the robot to ready.
-  const startChatting = React.useCallback(() => {
+  const startChatting = React.useCallback(async () => {
+    setRequesting(true);
     const listener = () => {
       playerRef.current.removeEventListener('ended', listener);
 
       setRobotReady(true);
+      setRequesting(false);
       console.log(`Stage started, AI is ready, sid=${stageUUID}`);
     };
     playerRef.current.addEventListener('ended', listener);
 
     playerRef.current.src = `/terraform/v1/ai-talk/stage/examples/${stageRobot.voice}?sid=${stageUUID}`;
-    playerRef.current.play().catch(error => errorLog(`${t('lr.room.speaker')}: ${error}`));
-  }, [t, errorLog, stageUUID, stageRobot, setRobotReady]);
+    playerRef.current.play().catch(error => {
+      errorLog(`${t('lr.room.speaker')}: ${error}`);
+      setRequesting(false);
+    });
+  }, [t, errorLog, stageUUID, stageRobot, setRobotReady, setRequesting]);
 
   // When robot is ready, open the microphone ASAP to accept user input.
   React.useEffect(() => {
@@ -848,7 +854,10 @@ function LiveRoomAssistantWorker({room}) {
     <div>
       <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
       {booting ? <>Booting ...</> : ''}
-      {stageUUID && !robotReady ? <Button variant="primary" type="submit" onClick={startChatting}>{t('lr.room.talk')}</Button> : ''}
+      {stageUUID && !robotReady ?
+        <Button disabled={requesting} variant="primary" type="submit" onClick={startChatting}>
+          {t('lr.room.talk')}
+        </Button> : ''}
       {robotReady && !isMobile ?
         <Row>
           <Col>
