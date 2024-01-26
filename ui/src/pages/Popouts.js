@@ -10,7 +10,7 @@ import {useErrorHandler} from "react-error-boundary";
 import {Alert, Button, Spinner} from "react-bootstrap";
 import Container from "react-bootstrap/Container";
 import axios from "axios";
-import {Locale, Token} from "../utils";
+import {Token} from "../utils";
 import {AITalkErrorLogPanel, AITalkTipLogPanel, AITalkAssistantPanel} from "../components/AITalk";
 
 export default function Popouts() {
@@ -20,12 +20,12 @@ export default function Popouts() {
 
   React.useEffect(() => {
     const app = searchParams.get('app');
-    const token = searchParams.get('token');
+    const roomToken = searchParams.get('roomToken');
     const popout = searchParams.get('popout');
     const room = searchParams.get('room');
     const assistant = searchParams.get('assistant');
     console.log(`?app=ai-talk, current=${app}, The popout application`);
-    console.log(`?token=bearer, current=${token?.token}B, The popout token for each room`);
+    console.log(`?roomToken=xxx, current=${roomToken?.length}B, The popout token for each room`);
     console.log(`?popout=1, current=${popout}, Whether enable popout mode.`);
     if (app === 'ai-talk') {
       console.log(`?room=room-uuid, current=${room}, The room uuid for ai-talk.`);
@@ -33,18 +33,18 @@ export default function Popouts() {
     }
 
     if (!app) throw new Error(`no app`);
-    if (!token) throw new Error(`no popout token`);
+    if (!roomToken) throw new Error(`no room token`);
     if (app === 'ai-talk' && !room) throw new Error(`no room id`);
 
-    axios.post('/terraform/v1/ai-talk/popout/verify', {
-      room: searchParams.get('room'), token: searchParams.get('token'),
+    axios.post('/terraform/v1/ai-talk/stage/verify', {
+      room: searchParams.get('room'), roomToken: searchParams.get('roomToken'),
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
       const {token} = res.data.data;
       Token.updateBearer(token);
       setLoading(false);
-      console.log(`Verify temporary token ok, data=${JSON.stringify(res.data.data)}`);
+      console.log(`Verify room token ok, data=${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
   }, [handleError, searchParams, setLoading]);
 
@@ -59,7 +59,7 @@ export default function Popouts() {
     if (searchParams.get('assistant') === '1') {
       return <PopoutAIAssistant {...{roomUUID: searchParams.get('room')}}/>;
     }
-    return <PopoutAITalk {...{roomUUID: searchParams.get('room')}}/>;
+    return <PopoutAITalk {...{roomUUID: searchParams.get('room'), roomToken: searchParams.get('roomToken')}}/>;
   } else {
     return <>Invalid app {app}</>;
   }
@@ -74,7 +74,7 @@ function PopoutAIAssistant({roomUUID}) {
   );
 }
 
-function PopoutAITalk({roomUUID}) {
+function PopoutAITalk({roomUUID, roomToken}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
   const isMobile = false; // For popout, always PC, not mobile.
@@ -272,7 +272,7 @@ function PopoutAITalk({roomUUID}) {
 
           // Play the AI generated audio.
           await new Promise(resolve => {
-            const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}`;
+            const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}&roomToken=${roomToken}`;
             console.log(`TTS: Playing ${url}`);
 
             const listener = () => {
@@ -310,7 +310,7 @@ function PopoutAITalk({roomUUID}) {
       requestPopouts().catch(handleError);
     }, 1000);
     return () => clearInterval(timer);
-  }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest]);
+  }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, roomToken]);
 
   return (
     <Container fluid>

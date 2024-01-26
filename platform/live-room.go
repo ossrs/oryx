@@ -47,6 +47,8 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				Secret: strings.ToUpper(strings.ReplaceAll(uuid.NewString(), "-", ""))[:16],
 				// Create time.
 				CreatedAt: time.Now().Format(time.RFC3339),
+				// The stage level token for popout.
+				PopoutToken: uuid.NewString(),
 			}
 			if b, err := json.Marshal(room); err != nil {
 				return errors.Wrapf(err, "marshal room")

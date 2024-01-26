@@ -565,6 +565,7 @@ func initMmgt(ctx context.Context) error {
 }
 
 // Refresh the latest version.
+// TODO: Dup to queryLatestVersion of CrontabWorker?
 func refreshLatestVersion(ctx context.Context) error {
 	versionsCtx, versionsCancel := context.WithCancel(context.Background())
 	go func() {
@@ -577,11 +578,15 @@ func refreshLatestVersion(ctx context.Context) error {
 				versionsCancel()
 			}
 
-			duration := time.Duration(24*3600) * time.Second
+			duration := time.Duration(8*3600) * time.Second
 			if os.Getenv("NODE_ENV") == "development" {
-				duration = time.Duration(30) * time.Second
+				duration = time.Duration(300) * time.Second
 			}
-			time.Sleep(duration)
+
+			select {
+			case <-ctx.Done():
+			case <-time.After(duration):
+			}
 		}
 	}()
 

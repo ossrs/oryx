@@ -869,7 +869,6 @@ API without any authentication:
 * `/terraform/v1/ai/transcript/hls/original/:uuid.m3u8` Generate the preview HLS for original stream without overlay text.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/ai-talk/stage/examples/:file.aac` AI-Talk: Play the example audios.
-* `/terraform/v1/ai-talk/subscribe/tts` AI-Talk: Play the TTS audios.
 
 API without token authentication, but with password authentication:
 
@@ -914,12 +913,13 @@ Platform, with token authentication:
 * `/terraform/v1/live/room/remove`: Live: Remove a live room.
 * `/terraform/v1/live/room/list` Live: List all available live rooms.
 * `/terraform/v1/ai-talk/stage/start` AI-Talk: Start a new stage.
+* `/terraform/v1/ai-talk/stage/conversation` AI-Talk: Start a new conversation request of stage.
 * `/terraform/v1/ai-talk/stage/upload` AI-Talk: Upload a user input audio file.
 * `/terraform/v1/ai-talk/stage/query` AI-Talk: Query the response of input.
-* `/terraform/v1/ai-talk/popout/token` AI-Talk: Generate a temporary token for popout.
-* `/terraform/v1/ai-talk/popout/verify` AI-Talk: Verify the temporary token for popout.
+* `/terraform/v1/ai-talk/stage/verify` AI-Talk: Verify the stage level token for popout.
 * `/terraform/v1/ai-talk/subscribe/start` AI-Talk: Start a popout with stage.
 * `/terraform/v1/ai-talk/subscribe/query` AI-Talk: Query the popout audio responses.
+* `/terraform/v1/ai-talk/subscribe/tts` AI-Talk: Play the TTS audios.
 * `/terraform/v1/ai-talk/subscribe/remove` AI-Talk: Remove the popout audio responses.
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.

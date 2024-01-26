@@ -27,6 +27,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
 
   // The uuid and robot in stage, which is unchanged after stage started.
   const [stageRobot, setStageRobot] = React.useState(null);
+  const [roomToken, setRoomToken] = React.useState(null);
   const [stageUUID, setStageUUID] = React.useState(null);
   const [stagePopoutUUID, setStagePopoutUUID] = React.useState(null);
 
@@ -108,53 +109,56 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
   }, [robotReady, endPanelRef, tipLogs]);
 
   // The application is started now.
-  React.useEffect(async () => {
-    // Only allow localhost or https to access microphone.
-    const isLo = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const isHttps = window.location.protocol === 'https:';
-    const securityAllowed = isLo || isHttps;
-    securityAllowed || errorLog(t('lr.room.https'));
-    console.log(`App started, allowed=${securityAllowed}, lo=${isLo}, https=${isHttps}`);
-    if (!securityAllowed) return;
+  React.useEffect(() => {
+    const fnImpl = async () => {
+      // Only allow localhost or https to access microphone.
+      const isLo = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const isHttps = window.location.protocol === 'https:';
+      const securityAllowed = isLo || isHttps;
+      securityAllowed || errorLog(t('lr.room.https'));
+      console.log(`App started, allowed=${securityAllowed}, lo=${isLo}, https=${isHttps}`);
+      if (!securityAllowed) return;
 
-    // Wait util no audio is playing.
-    do {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-    } while(refRequest.current.playingAudio);
+      // Wait util no audio is playing.
+      do {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      } while (refRequest.current.playingAudio);
 
-    // Try to open the microphone to request permission.
-    new Promise(resolve => {
-      console.log(`Start: Startup open microphone`);
+      // Try to open the microphone to request permission.
+      new Promise(resolve => {
+        console.log(`Start: Startup open microphone`);
 
-      navigator.mediaDevices.getUserMedia(
-        {audio: true}
-      ).then((stream) => {
-        console.log(`Start: Microphone opened, try to record`);
-        const recorder = new MediaRecorder(stream);
+        navigator.mediaDevices.getUserMedia(
+          {audio: true}
+        ).then((stream) => {
+          console.log(`Start: Microphone opened, try to record`);
+          const recorder = new MediaRecorder(stream);
 
-        const audioChunks = [];
-        recorder.addEventListener("dataavailable", ({data}) => {
-          audioChunks.push(data);
-        });
-        recorder.addEventListener("stop", async () => {
-          // Stop the microphone.
-          console.log(`Start: Microphone ok, chunks=${audioChunks.length}, state=${recorder.state}`);
-          stream.getTracks().forEach(track => track.stop());
+          const audioChunks = [];
+          recorder.addEventListener("dataavailable", ({data}) => {
+            audioChunks.push(data);
+          });
+          recorder.addEventListener("stop", async () => {
+            // Stop the microphone.
+            console.log(`Start: Microphone ok, chunks=${audioChunks.length}, state=${recorder.state}`);
+            stream.getTracks().forEach(track => track.stop());
+            setTimeout(() => {
+              console.log(`Start: Microphone test ok.`);
+              resolve();
+            }, timeoutWaitForMicrophoneToClose);
+          });
+
+          recorder.start();
           setTimeout(() => {
-            console.log(`Start: Microphone test ok.`);
-            resolve();
-          }, timeoutWaitForMicrophoneToClose);
-        });
-
-        recorder.start();
-        setTimeout(() => {
-          recorder.stop();
-          console.log(`Start: Microphone stopping, state is ${recorder.state}`);
-        }, timeoutForMicrophoneTestToRun);
-      }).catch(error => errorLog(`${t('lr.room.mic')}: ${error}`));
-    }).then(() => {
-      setBooting(false);
-    });
+            recorder.stop();
+            console.log(`Start: Microphone stopping, state is ${recorder.state}`);
+          }, timeoutForMicrophoneTestToRun);
+        }).catch(error => errorLog(`${t('lr.room.mic')}: ${error}`));
+      }).then(() => {
+        setBooting(false);
+      });
+    };
+    fnImpl();
   }, [t, errorLog, setBooting, refRequest]);
 
   // Request server to create a new stage.
@@ -170,8 +174,9 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       console.log(`Start: Create stage success: ${JSON.stringify(res.data.data)}`);
       setStageUUID(res.data.data.sid);
       setStageRobot(res.data.data.robot);
+      setRoomToken(res.data.data.roomToken);
     }).catch(handleError);
-  }, [handleError, booting, roomUUID, setStageUUID, setStageRobot]);
+  }, [handleError, booting, roomUUID, setStageUUID, setStageRobot, setRoomToken]);
 
   // Start to chat, set the robot to ready.
   const startChatting = React.useCallback(async () => {
@@ -196,22 +201,25 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
   }, [t, errorLog, stageUUID, stageRobot, setRobotReady, setRequesting, refRequest]);
 
   // When robot is ready, open the microphone ASAP to accept user input.
-  React.useEffect(async () => {
-    if (!robotReady) return;
-    if (ref.current.mediaStream) return;
+  React.useEffect(() => {
+    const fnImpl = async () => {
+      if (!robotReady) return;
+      if (ref.current.mediaStream) return;
 
-    // Wait util no audio is playing.
-    do {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-    } while(refRequest.current.playingAudio);
+      // Wait util no audio is playing.
+      do {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      } while(refRequest.current.playingAudio);
 
-    console.log(`Robot is ready, open microphone.`)
-    navigator.mediaDevices.getUserMedia(
-      { audio: true }
-    ).then((stream) => {
-      ref.current.mediaStream = stream;
-      console.log(`Robot is ready, microphone opened.`);
-    }).catch(error => errorLog(`${t('lr.room.mic')}: ${error}`));
+      console.log(`Robot is ready, open microphone.`)
+      navigator.mediaDevices.getUserMedia(
+        { audio: true }
+      ).then((stream) => {
+        ref.current.mediaStream = stream;
+        console.log(`Robot is ready, microphone opened.`);
+      }).catch(error => errorLog(`${t('lr.room.mic')}: ${error}`));
+    };
+    fnImpl();
   }, [errorLog, t, robotReady, ref, refRequest]);
 
   // When robot is ready, show tip logs, and cleanup timeout tips.
@@ -268,6 +276,18 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
     if (!robotReady) return;
 
     const processUserInput = async(userMayInput) => {
+      // End conversation, for stat the elapsed time cost accurately.
+      const requestUUID = await new Promise((resolve, reject) => {
+        axios.post('/terraform/v1/ai-talk/stage/conversation', {
+          sid: stageUUID, robot: stageRobot.uuid,
+        }, {
+          headers: Token.loadBearerHeader(),
+        }).then(res => {
+          console.log(`ASR: Start conversation success, rid=${res.data.data.rid}`);
+          resolve(res.data.data.rid);
+        }).catch((error) => reject(error));
+      });
+
       // Convert audio from binary to base64 in text.
       const audioBase64Data = await new Promise((resolve) => {
         const reader = new FileReader();
@@ -283,12 +303,12 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       });
 
       // Upload the user input audio to the server.
-      const requestUUID = await new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
         console.log(`ASR: Uploading ${ref.current.audioChunks.length} chunks, robot=${stageRobot.uuid}`);
         ref.current.audioChunks = [];
 
         axios.post('/terraform/v1/ai-talk/stage/upload', {
-          sid: stageUUID, robot: stageRobot.uuid, umi: userMayInput, audio: audioBase64Data,
+          sid: stageUUID, robot: stageRobot.uuid, rid: requestUUID, umi: userMayInput, audio: audioBase64Data,
         }, {
           headers: Token.loadBearerHeader(),
         }).then(res => {
@@ -385,7 +405,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
     ref.current.stopHandler = setTimeout(() => {
       stopRecordingImpl();
     }, timeoutWaitForLastVoice);
-  }, [playerRef, stageUUID, stageRobot, robotReady, ref, setProcessing, setMicWorking, traceLog, refRequest]);
+  }, [stageUUID, stageRobot, robotReady, ref, setProcessing, setMicWorking, refRequest]);
 
   // Setup the keyboard event, for PC browser.
   React.useEffect(() => {
@@ -463,7 +483,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
 
           // Play the AI generated audio.
           await new Promise(resolve => {
-            const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}`;
+            const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}&roomToken=${roomToken}`;
             console.log(`TTS: Playing ${url}`);
 
             const listener = () => {
@@ -501,7 +521,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       requestPopouts().catch(handleError);
     }, 1000);
     return () => clearInterval(timer);
-  }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest]);
+  }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, roomToken]);
 
   // When we got any messages from server, set to playing mode and last for a while.
   React.useEffect(() => {
@@ -540,7 +560,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
             <AITalkMicrophone {...{processing, micWorking, startRecording, stopRecording}} />
           </Col>
           <Col>
-            <AITalkTraceLogPanelComplex {...{traceLogs, traceCount, roomUUID, fullscreen}}>
+            <AITalkTraceLogPanelComplex {...{traceLogs, traceCount, roomUUID, stageToken: roomToken, fullscreen}}>
               <AITalkErrorLogPanel {...{errorLogs, removeErrorLog}} />
               <AITalkTipLogPanel {...{tipLogs, removeTipLog}} />
             </AITalkTraceLogPanelComplex>
@@ -598,9 +618,8 @@ function AITalkMicrophone({processing, micWorking, startRecording, stopRecording
   );
 }
 
-function AITalkTraceLogPanelComplex({traceLogs, traceCount, children, roomUUID, fullscreen}) {
+function AITalkTraceLogPanelComplex({traceLogs, traceCount, children, roomUUID, stageToken, fullscreen}) {
   const {t} = useTranslation();
-  const handleError = useErrorHandler();
   const [showSettings, setShowSettings] = React.useState(false);
   const [popoutUrl, setPopoutUrl] = React.useState(null);
 
@@ -615,21 +634,12 @@ function AITalkTraceLogPanelComplex({traceLogs, traceCount, children, roomUUID, 
   React.useEffect(() => {
     if (!roomUUID) return;
 
-    axios.post('/terraform/v1/ai-talk/popout/token', {
-      room: roomUUID,
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      const {token} = res.data.data;
-      console.log(`Create temp token ok, data=${JSON.stringify(res.data.data)}`);
-
-      const r0 = Math.random().toString(16).slice(-8);
-      const created = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
-      const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&room=${roomUUID}&created=${created}&random=${r0}&token=${token}`;
-      setPopoutUrl(url);
-      console.log(`Generated popout URL: ${url}`);
-    }).catch(handleError);
-  }, [roomUUID, setPopoutUrl, handleError]);
+    const r0 = Math.random().toString(16).slice(-8);
+    const created = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
+    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&room=${roomUUID}&created=${created}&random=${r0}&roomToken=${stageToken}`;
+    setPopoutUrl(url);
+    console.log(`Generated popout URL: ${url}`);
+  }, [roomUUID, setPopoutUrl, stageToken]);
 
   const openPopoutChat = React.useCallback((e) => {
     e.preventDefault();

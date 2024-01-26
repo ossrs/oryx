@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -59,27 +60,20 @@ func NewOpenAIASRService(conf openai.ClientConfig, opts ...func(service *openaiA
 }
 
 func (v *openaiASRService) RequestASR(ctx context.Context, inputFile, language, prompt string) (*ASRResult, error) {
-	outputFile := fmt.Sprintf("%v.m4a", inputFile)
+	outputFile := fmt.Sprintf("%v.mp4", inputFile)
 	defer os.Remove(outputFile)
 
-	// Transcode input audio in opus or aac, to aac in m4a format.
-	if true {
-		err := exec.CommandContext(ctx, "ffmpeg",
-			"-i", inputFile,
-			"-vn", "-c:a", "aac", "-ac", "1", "-ar", "16000", "-ab", "30k",
-			outputFile,
-		).Run()
-
-		if err != nil {
-			return nil, errors.Errorf("Error converting the file")
-		}
-		logger.Tf(ctx, "Convert audio %v to %v ok", inputFile, outputFile)
+	// Transcode input audio in opus or aac, to aac in m4a/mp4 format.
+	// If need to encode to aac, use:
+	//		"-c:a", "aac", "-ac", "1", "-ar", "16000", "-ab", "30k",
+	if err := exec.CommandContext(ctx, "ffmpeg",
+		"-i", inputFile,
+		"-vn", "-c:a", "copy",
+		outputFile,
+	).Run(); err != nil {
+		return nil, errors.Errorf("Error converting the file")
 	}
-
-	duration, _, err := ffprobeAudio(ctx, outputFile)
-	if err != nil {
-		return nil, errors.Wrapf(err, "ffprobe")
-	}
+	logger.Tf(ctx, "Convert audio %v to %v ok", inputFile, outputFile)
 
 	if v.onBeforeRequest != nil {
 		v.onBeforeRequest()
@@ -92,7 +86,8 @@ func (v *openaiASRService) RequestASR(ctx context.Context, inputFile, language, 
 		openai.AudioRequest{
 			Model:    openai.Whisper1,
 			FilePath: outputFile,
-			Format:   openai.AudioResponseFormatJSON,
+			// Note that must use verbose JSON, to get the duration of file.
+			Format:   openai.AudioResponseFormatVerboseJSON,
 			Language: language,
 			Prompt:   prompt,
 		},
@@ -101,7 +96,7 @@ func (v *openaiASRService) RequestASR(ctx context.Context, inputFile, language, 
 		return nil, errors.Wrapf(err, "asr")
 	}
 
-	return &ASRResult{Text: resp.Text, Duration: time.Duration(duration * float64(time.Second))}, nil
+	return &ASRResult{Text: resp.Text, Duration: time.Duration(resp.Duration * float64(time.Second))}, nil
 }
 
 func ffprobeAudio(ctx context.Context, filename string) (duration float64, bitrate int, err error) {
@@ -225,11 +220,6 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 }
 
 func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Robot, sreq *StageRequest, gptChatStream *openai.ChatCompletionStream) error {
-	stage.generating = true
-	defer func() {
-		stage.generating = false
-	}()
-
 	filterAIResponse := func(response *openai.ChatCompletionStreamResponse, err error) (bool, string, error) {
 		finished := errors_std.Is(err, io.EOF)
 		if err != nil && !finished {
@@ -248,13 +238,21 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 
 		filteredStencese := strings.ReplaceAll(dc, "\n\n", "\n")
 		filteredStencese = strings.ReplaceAll(filteredStencese, "\n", " ")
-		logger.Tf(ctx, "AI response: text=%v", dc)
 
 		return finished, filteredStencese, nil
 	}
 
 	gotNewSentence := func(sentence, lastWords string, firstSentense bool) bool {
 		newSentence := false
+
+		isEnglish := func(s string) bool {
+			for _, r := range s {
+				if r > unicode.MaxASCII {
+					return false
+				}
+			}
+			return true
+		}
 
 		// Ignore empty.
 		if sentence == "" {
@@ -274,19 +272,16 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 			newSentence = true
 		}
 
-		isEnglish := func(s string) bool {
-			for _, r := range s {
-				if r > unicode.MaxASCII {
-					return false
-				}
-			}
-			return true
+		// Badcase, for number such as 1.3, or 1,300,000.
+		var badcase bool
+		if match, _ := regexp.MatchString(`\d+(\.|,)\d*$`, sentence); match {
+			badcase, newSentence = true, false
 		}
 
 		// Determine whether new sentence by length.
 		if isEnglish(sentence) {
 			maxWords, minWords := 30, 3
-			if !firstSentense {
+			if !firstSentense || badcase {
 				maxWords, minWords = 50, 5
 			}
 
@@ -297,7 +292,7 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 			}
 		} else {
 			maxWords, minWords := 50, 3
-			if !firstSentense {
+			if !firstSentense || badcase {
 				maxWords, minWords = 100, 5
 			}
 
@@ -312,23 +307,30 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 	}
 
 	commitAISentence := func(sentence string, firstSentense bool) {
+		filteredSentence := strings.TrimSpace(sentence)
+		if filteredSentence == "" {
+			return
+		}
+
 		if firstSentense {
 			if robot.prefix != "" {
-				sentence = fmt.Sprintf("%v %v", robot.prefix, sentence)
+				filteredSentence = fmt.Sprintf("%v %v", robot.prefix, filteredSentence)
 			}
 			if v.onFirstResponse != nil {
-				v.onFirstResponse(ctx, sentence)
+				v.onFirstResponse(ctx, filteredSentence)
 			}
 		}
 
-		current := NewAnswerSegment(func(segment *AnswerSegment) {
+		segment := NewAnswerSegment(func(segment *AnswerSegment) {
 			segment.request = sreq
-			segment.text = sentence
+			segment.text = filteredSentence
 			segment.first = firstSentense
 		})
-		sreq.segments = append(sreq.segments, current)
+		sreq.segments = append(sreq.segments, segment)
+		stage.ttsWorker.SubmitSegment(ctx, stage, sreq, segment)
 
-		stage.ttsWorker.SubmitSegment(ctx, stage, sreq, current)
+		logger.Tf(ctx, "TTS: Commit segment rid=%v, asid=%v, first=%v, sentence is %v",
+			sreq.rid, segment.asid, firstSentense, filteredSentence)
 		return
 	}
 
@@ -341,6 +343,7 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 		} else {
 			isFinished, sentence, lastWords = finished, sentence+words, words
 		}
+		//logger.Tf(ctx, "AI response: text=%v plus %v", lastWords, sentence)
 
 		newSentence := gotNewSentence(sentence, lastWords, firstSentense)
 		if !isFinished && !newSentence {
@@ -783,29 +786,6 @@ type Stage struct {
 	previousUser, previousAssitant string
 	// The chat history, to use as prompt for next chat.
 	histories []openai.ChatCompletionMessage
-	// Whether the stage is generating more sentences.
-	generating bool
-
-	// For time cost statistic.
-	lastSentence time.Time
-	// The time for last upload audio.
-	lastUploadAudio time.Time
-	// The time for last extract audio for ASR.
-	lastExtractAudio time.Time
-	// The time for last request ASR result.
-	lastRequestASR time.Time
-	// The last request ASR text.
-	lastRequestAsrText string
-	// The ASR duration of audio file.
-	lastAsrDuration time.Duration
-	// The time for last request Chat result, the first segment.
-	lastRequestChat time.Time
-	// The last response text of robot.
-	lastRobotFirstText string
-	// The time for last request TTS result, the first segment.
-	lastRequestTTS time.Time
-	// The time for last download the TTS result, the first segment.
-	lastDownloadAudio time.Time
 
 	// The robot created for this stage.
 	robot *Robot
@@ -817,6 +797,8 @@ type Stage struct {
 	requests []*StageRequest
 	// All the subscribers binding to this stage.
 	subscribers []*StageSubscriber
+	// Cache the room level token for popout.
+	roomToken string
 }
 
 func NewStage(opts ...func(*Stage)) *Stage {
@@ -851,55 +833,6 @@ func (v *Stage) Expired() bool {
 
 func (v *Stage) KeepAlive() {
 	v.update = time.Now()
-}
-
-func (v *Stage) total() float64 {
-	if v.lastDownloadAudio.After(v.lastSentence) {
-		return float64(v.lastDownloadAudio.Sub(v.lastSentence)) / float64(time.Second)
-	}
-	return 0
-}
-
-func (v *Stage) upload() float64 {
-	if v.lastUploadAudio.After(v.lastSentence) {
-		return float64(v.lastUploadAudio.Sub(v.lastSentence)) / float64(time.Second)
-	}
-	return 0
-}
-
-func (v *Stage) exta() float64 {
-	if v.lastExtractAudio.After(v.lastUploadAudio) {
-		return float64(v.lastExtractAudio.Sub(v.lastUploadAudio)) / float64(time.Second)
-	}
-	return 0
-}
-
-func (v *Stage) asr() float64 {
-	if v.lastRequestASR.After(v.lastExtractAudio) {
-		return float64(v.lastRequestASR.Sub(v.lastExtractAudio)) / float64(time.Second)
-	}
-	return 0
-}
-
-func (v *Stage) chat() float64 {
-	if v.lastRequestChat.After(v.lastRequestASR) {
-		return float64(v.lastRequestChat.Sub(v.lastRequestASR)) / float64(time.Second)
-	}
-	return 0
-}
-
-func (v *Stage) tts() float64 {
-	if v.lastRequestTTS.After(v.lastRequestChat) {
-		return float64(v.lastRequestTTS.Sub(v.lastRequestChat)) / float64(time.Second)
-	}
-	return 0
-}
-
-func (v *Stage) download() float64 {
-	if v.lastDownloadAudio.After(v.lastRequestTTS) {
-		return float64(v.lastDownloadAudio.Sub(v.lastRequestTTS)) / float64(time.Second)
-	}
-	return 0
 }
 
 func (v *Stage) addRequest(request *StageRequest) {
@@ -1079,6 +1012,7 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, sreq *Stage
 			logger.Tf(ctx, "File saved to %v, %v", segment.ttsFile, segment.text)
 		}
 
+		// TODO: FIXME: Keep the order.
 		// Notify all subscribers the segment is ready.
 		for _, subscriber := range stage.subscribers {
 			if err := subscriber.addRobotAudioMessage(ctx, sreq.rid, segment.text, segment.asid, segment.ttsFile, segment); err != nil {
@@ -1165,6 +1099,8 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 					// Initialize the AI services.
 					stage.aiConfig = openai.DefaultConfig(room.AISecretKey)
 					stage.aiConfig.BaseURL = room.AIBaseURL
+					// Cache the room token to stage.
+					stage.roomToken = room.PopoutToken
 
 					// Bind stage to room.
 					room.StageUUID = stage.sid
@@ -1204,11 +1140,13 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				Voice string `json:"voice"`
 			}
 			type StageResult struct {
-				StageID string           `json:"sid"`
-				Robot   StageRobotResult `json:"robot"`
+				StageID   string           `json:"sid"`
+				RoomToken string           `json:"roomToken"`
+				Robot     StageRobotResult `json:"robot"`
 			}
 			r0 := &StageResult{
-				StageID: stage.sid,
+				StageID:   stage.sid,
+				RoomToken: stage.roomToken,
 				Robot: StageRobotResult{
 					UUID:  stage.robot.uuid,
 					Label: stage.robot.label,
@@ -1224,22 +1162,18 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		}
 	})
 
-	ep = "/terraform/v1/ai-talk/stage/upload"
+	ep = "/terraform/v1/ai-talk/stage/conversation"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
-			var sid, robotUUID, audioBase64Data string
-			var userMayInput float64
+			var sid, robotUUID string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token        *string  `json:"token"`
-				StageUUID    *string  `json:"sid"`
-				RobotUUID    *string  `json:"robot"`
-				UserMayInput *float64 `json:"umi"`
-				AudioData    *string  `json:"audio"`
+				Token     *string `json:"token"`
+				StageUUID *string `json:"sid"`
+				RobotUUID *string `json:"robot"`
 			}{
 				Token: &token, StageUUID: &sid, RobotUUID: &robotUUID,
-				UserMayInput: &userMayInput, AudioData: &audioBase64Data,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -1263,8 +1197,6 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// Keep alive the stage.
 			stage.KeepAlive()
-			// For statistic, this is the last sentence from user, we start to count the cost from here.
-			stage.lastSentence = time.Now()
 			// Switch to the context of stage.
 			ctx = stage.loggingCtx
 
@@ -1275,6 +1207,83 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// The rid is the request id, which identify this request, generally a question.
 			sreq := &StageRequest{rid: uuid.NewString(), stage: stage}
+			sreq.lastSentence = time.Now()
+			stage.addRequest(sreq)
+
+			// Keep alive the stage.
+			stage.KeepAlive()
+
+			// Response the request UUID and pulling the response.
+			ohttp.WriteData(ctx, w, r, struct {
+				RequestUUID string `json:"rid"`
+			}{
+				RequestUUID: sreq.rid,
+			})
+			logger.Tf(ctx, "srs ai-talk stage create conversation ok, rid=%v", sreq.rid)
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
+	ep = "/terraform/v1/ai-talk/stage/upload"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var sid, rid, robotUUID, audioBase64Data string
+			var userMayInput float64
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token        *string  `json:"token"`
+				StageUUID    *string  `json:"sid"`
+				RobotUUID    *string  `json:"robot"`
+				RequestUUID  *string  `json:"rid"`
+				UserMayInput *float64 `json:"umi"`
+				AudioData    *string  `json:"audio"`
+			}{
+				Token: &token, StageUUID: &sid, RobotUUID: &robotUUID, RequestUUID: &rid,
+				UserMayInput: &userMayInput, AudioData: &audioBase64Data,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			if sid == "" {
+				return errors.Errorf("empty sid")
+			}
+			if rid == "" {
+				return errors.Errorf("empty rid")
+			}
+			if robotUUID == "" {
+				return errors.Errorf("empty robot")
+			}
+
+			stage := talkServer.QueryStage(sid)
+			if stage == nil {
+				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			// Keep alive the stage.
+			stage.KeepAlive()
+			// Switch to the context of stage.
+			ctx = stage.loggingCtx
+
+			robot := stage.robot
+			if robot == nil {
+				return errors.Errorf("invalid robot %v", robotUUID)
+			}
+
+			// Query the request.
+			sreq := stage.queryRequest(rid)
+			if sreq == nil {
+				return errors.Errorf("invalid sid=%v, rid=%v", sid, rid)
+			}
+
+			// The rid is the request id, which identify this request, generally a question.
 			defer sreq.FastDispose()
 
 			sreq.inputFile = path.Join(workDir, fmt.Sprintf("assistant-%v-input.audio", sreq.rid))
@@ -1294,7 +1303,6 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				robot.uuid, robot.label, robot.asrLanguage, stage.previousAsrText, sreq.asrText)
 
 			// Important trace log.
-			stage.addRequest(sreq)
 			stage.previousAsrText = sreq.asrText
 			logger.Tf(ctx, "You: %v", sreq.asrText)
 
@@ -1305,8 +1313,8 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			chatService := &openaiChatService{
 				conf: stage.aiConfig,
 				onFirstResponse: func(ctx context.Context, text string) {
-					stage.lastRequestChat = time.Now()
-					stage.lastRobotFirstText = text
+					sreq.lastRequestChat = time.Now()
+					sreq.lastRobotFirstText = text
 				},
 			}
 			if err := chatService.RequestChat(ctx, sreq, stage, robot); err != nil {
@@ -1419,68 +1427,17 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		}
 	})
 
-	ep = "/terraform/v1/ai-talk/popout/token"
+	ep = "/terraform/v1/ai-talk/stage/verify"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
+			var roomToken string
 			var roomUUID string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string `json:"token"`
-				RoomUUID *string `json:"room"`
+				RoomUUID  *string `json:"room"`
+				RoomToken *string `json:"roomToken"`
 			}{
-				Token: &token, RoomUUID: &roomUUID,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
-			var room SrsLiveRoom
-			if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, roomUUID).Result(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hget %v %v", SRS_LIVE_ROOM, roomUUID)
-			} else if r0 == "" {
-				return errors.Errorf("live room %v not exists", roomUUID)
-			} else if err = json.Unmarshal([]byte(r0), &room); err != nil {
-				return errors.Wrapf(err, "unmarshal %v %v", roomUUID, r0)
-			}
-
-			if room.PopoutToken == "" {
-				room.PopoutToken = uuid.NewString()
-
-				if b, err := json.Marshal(room); err != nil {
-					return errors.Wrapf(err, "marshal room")
-				} else if err := rdb.HSet(ctx, SRS_LIVE_ROOM, room.UUID, string(b)).Err(); err != nil {
-					return errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
-				}
-			}
-
-			ohttp.WriteData(ctx, w, r, &struct {
-				Token string `json:"token"`
-			}{
-				Token: room.PopoutToken,
-			})
-			logger.Tf(ctx, "srs ai-talk create popout token ok")
-			return nil
-		}(); err != nil {
-			ohttp.WriteError(ctx, w, r, err)
-		}
-	})
-
-	ep = "/terraform/v1/ai-talk/popout/verify"
-	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
-		if err := func() error {
-			var token string
-			var roomUUID string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string `json:"token"`
-				RoomUUID *string `json:"room"`
-			}{
-				Token: &token, RoomUUID: &roomUUID,
+				RoomToken: &roomToken, RoomUUID: &roomUUID,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -1494,10 +1451,12 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "unmarshal %v %v", roomUUID, r0)
 			}
 
-			if room.PopoutToken != token {
-				return errors.Errorf("invalid token")
+			if room.PopoutToken != roomToken {
+				return errors.Errorf("invalid room token")
 			}
 
+			// TODO: To improve security level, we should not response the bearer token, instead we can
+			//   support authentication with room token.
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
 			ohttp.WriteData(ctx, w, r, &struct {
 				Token string `json:"token"`
@@ -1630,7 +1589,8 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage.KeepAlive()
 			// Switch to the context of stage.
 			ctx = stage.loggingCtx
-			logger.Tf(ctx, "Stage: Query sid=%v, room=%v", sid, stage.room.UUID)
+			// Note that we should disable detail meanless logs for subscribe.
+			//logger.Tf(ctx, "Stage: Query sid=%v, room=%v", sid, stage.room.UUID)
 
 			subscriber := stage.querySubscriber(spid)
 			if subscriber == nil {
@@ -1642,7 +1602,9 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}{
 				Messages: subscriber.flushMessages(),
 			})
-			logger.Tf(ctx, "srs ai-talk query subscriber stage ok")
+
+			// Note that we should disable detail meanless logs for subscribe.
+			//logger.Tf(ctx, "srs ai-talk query subscriber stage ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -1670,9 +1632,18 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("empty asid")
 			}
 
+			roomToken := q.Get("roomToken")
+			if asid == "" {
+				return errors.Errorf("empty roomToken")
+			}
+
 			stage := talkServer.QueryStage(sid)
 			if stage == nil {
 				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			if stage.roomToken != roomToken {
+				return errors.Errorf("invalid roomToken")
 			}
 
 			// Keep alive the stage.
@@ -1693,12 +1664,13 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// When the first subscriber got the segment, we log the elapsed time.
 			if segment := answer.segment; !segment.logged {
+				sreq := segment.request
 				if segment.first {
-					stage.lastDownloadAudio = time.Now()
-					speech := float64(stage.lastAsrDuration) / float64(time.Second)
-					logger.Tf(ctx, "Report elapsed total=%.1fs, steps=[upload=%.1fs,exta=%.1fs,asr=%.1fs,chat=%.1fs,tts=%.1fs,download=%.1fs], ask=%v, speech=%.1fs, answer=%v",
-						stage.total(), stage.upload(), stage.exta(), stage.asr(), stage.chat(), stage.tts(), stage.download(),
-						stage.lastRequestAsrText, speech, stage.lastRobotFirstText)
+					sreq.lastDownloadAudio = time.Now()
+					speech := float64(sreq.lastAsrDuration) / float64(time.Second)
+					logger.Tf(ctx, "Elapsed cost total=%.1fs, steps=[upload=%.1fs,exta=%.1fs,asr=%.1fs,chat=%.1fs,tts=%.1fs,download=%.1fs], ask=%v, speech=%.1fs, answer=%v",
+						sreq.total(), sreq.upload(), sreq.exta(), sreq.asr(), sreq.chat(), sreq.tts(), sreq.download(),
+						sreq.lastRequestAsrText, speech, sreq.lastRobotFirstText)
 				}
 
 				// Important trace log. Note that browser may request multiple times, so we only log for the first
