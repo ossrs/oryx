@@ -578,193 +578,24 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       {robotReady && !isMobile ?
         <Row>
           <Col>
-            <AITalkMicrophone {...{processing, micWorking, startRecording, stopRecording, roomUUID, roomToken}} />
+            <AITalkAssistantImpl {...{processing, micWorking, startRecording, stopRecording, roomUUID, roomToken}} />
           </Col>
           <Col>
-            <AITalkTraceLogPanelComplex {...{traceLogs, traceCount, roomUUID, roomToken, fullscreen}}>
-              <AITalkErrorLogPanel {...{errorLogs, removeErrorLog}} />
-              <AITalkTipLogPanel {...{tipLogs, removeTipLog}} />
-            </AITalkTraceLogPanelComplex>
+            <AITalkTraceLogPC {...{traceLogs, traceCount, roomUUID, roomToken, fullscreen}}>
+              <AITalkErrorLog {...{errorLogs, removeErrorLog}} />
+              <AITalkTipLog {...{tipLogs, removeTipLog}} />
+            </AITalkTraceLogPC>
           </Col>
         </Row> : ''}
       {robotReady && isMobile ?
         <div>
-          <AITalkTraceLogPanelSimple {...{traceLogs, traceCount, fullscreen}} />
-          <AITalkErrorLogPanel {...{errorLogs, removeErrorLog}} />
-          <AITalkTipLogPanel {...{tipLogs, removeTipLog}} />
-          <AITalkMicrophone {...{processing, micWorking, startRecording, stopRecording}} />
+          <AITalkTraceLogMobile {...{traceLogs, traceCount, fullscreen}} />
+          <AITalkErrorLog {...{errorLogs, removeErrorLog}} />
+          <AITalkTipLog {...{tipLogs, removeTipLog}} />
+          <AITalkAssistantImpl {...{processing, micWorking, startRecording, stopRecording}} />
         </div> : ''}
       <div ref={endPanelRef}></div>
     </div>
-  );
-}
-
-function AITalkTraceLogPanelSimple({traceLogs, traceCount, fullscreen}) {
-  // Scroll the log panel.
-  const logPanelRef = React.useRef(null);
-  React.useEffect(() => {
-    if (!logPanelRef?.current) return;
-    console.log(`Logs scroll to end, height=${logPanelRef.current.scrollHeight}, logs=${traceLogs.length}, count=${traceCount}`);
-    logPanelRef.current.scrollTo(0, logPanelRef.current.scrollHeight);
-  }, [traceLogs, logPanelRef, traceCount]);
-
-  return (
-    <div className={fullscreen ? 'ai-talk-trace-logs-mobilefs' : 'ai-talk-trace-logs-mobile'} ref={logPanelRef}>
-      {traceLogs.map((log) => {
-        return (
-          <Alert key={log.id} variant={log.variant}>
-            {log.role}: {log.msg}
-          </Alert>
-        );
-      })}
-    </div>
-  );
-}
-
-function AITalkMicrophone({processing, micWorking, startRecording, stopRecording, roomUUID, roomToken}) {
-  const {t} = useTranslation();
-  const isMobile = useIsMobile();
-  const [showSettings, setShowSettings] = React.useState(false);
-  const [popoutUrl, setPopoutUrl] = React.useState(null);
-
-  React.useEffect(() => {
-    if (!roomUUID) return;
-
-    const r0 = Math.random().toString(16).slice(-8);
-    const created = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
-    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&assistant=1&room=${roomUUID}&created=${created}&random=${r0}&roomToken=${roomToken}`;
-    setPopoutUrl(url);
-    console.log(`Generated popout URL: ${url}`);
-  }, [roomUUID, setPopoutUrl, roomToken]);
-
-  const openPopout = React.useCallback((e) => {
-    e.preventDefault();
-    if (!popoutUrl) return;
-    setShowSettings(false);
-    window.open(popoutUrl, '_blank', 'noopener,noreferrer,width=1024,height=768');
-  }, [popoutUrl, setShowSettings]);
-
-  return (
-    <div>
-      <Card>
-        <Card.Header>
-          {t('lr.room.ait')}
-          <div role='button' className='ai-talk-settings-btn'>
-            <Icon.Gear size={20} onClick={(e) => setShowSettings(!showSettings)} />
-          </div>
-          <div className='ai-talk-settings-menu2'>
-            <Dropdown.Menu show={showSettings}>
-              <Dropdown.Item href="#!" onClick={openPopout}>{t('lr.room.popchat2')}</Dropdown.Item>
-            </Dropdown.Menu>
-          </div>
-        </Card.Header>
-        <Card.Body>
-          <div className={isMobile ? 'ai-talk-container-mobile' : 'ai-talk-container-pc'}
-               onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing}>
-            {!processing ?
-              <div>
-                <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
-                  <div className='ai-talk-mc'></div>
-                </div>
-              </div> :
-              <div>
-                <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
-              </div>}
-          </div>
-        </Card.Body>
-      </Card>
-    </div>
-  );
-}
-
-function AITalkTraceLogPanelComplex({traceLogs, traceCount, children, roomUUID, roomToken, fullscreen}) {
-  const {t} = useTranslation();
-  const [showSettings, setShowSettings] = React.useState(false);
-  const [popoutUrl, setPopoutUrl] = React.useState(null);
-
-  // Scroll the log panel.
-  const logPanelRef = React.useRef(null);
-  React.useEffect(() => {
-    if (!logPanelRef?.current) return;
-    console.log(`Logs scroll to end, height=${logPanelRef.current.scrollHeight}, logs=${traceLogs.length}, count=${traceCount}`);
-    logPanelRef.current.scrollTo(0, logPanelRef.current.scrollHeight);
-  }, [traceLogs, logPanelRef, traceCount]);
-
-  React.useEffect(() => {
-    if (!roomUUID) return;
-
-    const r0 = Math.random().toString(16).slice(-8);
-    const created = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
-    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&assistant=0&room=${roomUUID}&created=${created}&random=${r0}&roomToken=${roomToken}`;
-    setPopoutUrl(url);
-    console.log(`Generated popout URL: ${url}`);
-  }, [roomUUID, setPopoutUrl, roomToken]);
-
-  const openPopout = React.useCallback((e) => {
-    e.preventDefault();
-    if (!popoutUrl) return;
-    setShowSettings(false);
-    window.open(popoutUrl, '_blank', 'noopener,noreferrer,width=1024,height=768');
-  }, [popoutUrl, setShowSettings]);
-
-  return (
-    <div>
-      <Card>
-        <Card.Header>
-          {t('lr.room.ait2')}
-          <div role='button' className='ai-talk-settings-btn'>
-            <Icon.Gear size={20} onClick={(e) => setShowSettings(!showSettings)} />
-          </div>
-          <div className='ai-talk-settings-menu'>
-            <Dropdown.Menu show={showSettings}>
-              <Dropdown.Item href="#!" onClick={openPopout}>{t('lr.room.popchat')}</Dropdown.Item>
-            </Dropdown.Menu>
-          </div>
-        </Card.Header>
-        <Card.Body>
-          <div className={fullscreen ? 'ai-talk-trace-logs-pcfs' : 'ai-talk-trace-logs-pc'} ref={logPanelRef}>
-            {children}
-            {traceLogs.map((log) => {
-              return (
-                <Alert key={log.id} variant={log.variant}>
-                  {log.role}: {log.msg}
-                </Alert>
-              );
-            })}
-          </div>
-        </Card.Body>
-      </Card>
-    </div>
-  );
-}
-
-function AITalkErrorLogPanel({errorLogs, removeErrorLog}) {
-  return (
-    <React.Fragment>
-      {errorLogs.map((log) => {
-        return (
-          <Alert key={log.id} onClose={() => removeErrorLog(log)} variant='danger' dismissible>
-            <Alert.Heading>Error!</Alert.Heading>
-            <p>{log.msg}</p>
-          </Alert>
-        );
-      })}
-    </React.Fragment>
-  );
-}
-
-function AITalkTipLogPanel({tipLogs, removeTipLog}) {
-  return (
-    <React.Fragment>
-      {tipLogs.map((log) => {
-        return (
-          <Alert key={log.id} onClose={() => removeTipLog(log)} variant='success' dismissible>
-            <Alert.Heading>{log.title}</Alert.Heading>
-            <p>{log.msg}</p>
-          </Alert>
-        );
-      })}
-    </React.Fragment>
   );
 }
 
@@ -1016,16 +847,155 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
             {t('lr.room.talk')}
           </Button> : ''}
         <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
-        <AITalkErrorLogPanel {...{errorLogs, removeErrorLog}} />
-        <AITalkTipLogPanel {...{tipLogs, removeTipLog}} />
-        <AITalkTraceLogPanelPopout {...{traceLogs, traceCount}} />
+        <AITalkErrorLog {...{errorLogs, removeErrorLog}} />
+        <AITalkTipLog {...{tipLogs, removeTipLog}} />
+        <AITalkTraceLogPopout {...{traceLogs, traceCount}} />
         <div ref={endPanelRef}></div>
       </div>
     </Container>
   );
 }
 
-function AITalkTraceLogPanelPopout({traceLogs, traceCount}) {
+function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecording, roomUUID, roomToken}) {
+  const {t} = useTranslation();
+  const isMobile = useIsMobile();
+  const [showSettings, setShowSettings] = React.useState(false);
+  const [popoutUrl, setPopoutUrl] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!roomUUID) return;
+
+    const r0 = Math.random().toString(16).slice(-8);
+    const created = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
+    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&assistant=1&room=${roomUUID}&created=${created}&random=${r0}&roomToken=${roomToken}`;
+    setPopoutUrl(url);
+    console.log(`Generated popout URL: ${url}`);
+  }, [roomUUID, setPopoutUrl, roomToken]);
+
+  const openPopout = React.useCallback((e) => {
+    e.preventDefault();
+    if (!popoutUrl) return;
+    setShowSettings(false);
+    window.open(popoutUrl, '_blank', 'noopener,noreferrer,width=1024,height=768');
+  }, [popoutUrl, setShowSettings]);
+
+  return (
+    <div>
+      <Card>
+        <Card.Header>
+          {t('lr.room.ait')}
+          <div role='button' className='ai-talk-settings-btn'>
+            <Icon.Gear size={20} onClick={(e) => setShowSettings(!showSettings)} />
+          </div>
+          <div className='ai-talk-settings-menu2'>
+            <Dropdown.Menu show={showSettings}>
+              <Dropdown.Item href="#!" onClick={openPopout}>{t('lr.room.popchat2')}</Dropdown.Item>
+            </Dropdown.Menu>
+          </div>
+        </Card.Header>
+        <Card.Body>
+          <div className={isMobile ? 'ai-talk-container-mobile' : 'ai-talk-container-pc'}
+               onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing}>
+            {!processing ?
+              <div>
+                <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
+                  <div className='ai-talk-mc'></div>
+                </div>
+              </div> :
+              <div>
+                <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
+              </div>}
+          </div>
+        </Card.Body>
+      </Card>
+    </div>
+  );
+}
+
+function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken, fullscreen}) {
+  const {t} = useTranslation();
+  const [showSettings, setShowSettings] = React.useState(false);
+  const [popoutUrl, setPopoutUrl] = React.useState(null);
+
+  // Scroll the log panel.
+  const logPanelRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!logPanelRef?.current) return;
+    console.log(`Logs scroll to end, height=${logPanelRef.current.scrollHeight}, logs=${traceLogs.length}, count=${traceCount}`);
+    logPanelRef.current.scrollTo(0, logPanelRef.current.scrollHeight);
+  }, [traceLogs, logPanelRef, traceCount]);
+
+  React.useEffect(() => {
+    if (!roomUUID) return;
+
+    const r0 = Math.random().toString(16).slice(-8);
+    const created = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
+    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&assistant=0&room=${roomUUID}&created=${created}&random=${r0}&roomToken=${roomToken}`;
+    setPopoutUrl(url);
+    console.log(`Generated popout URL: ${url}`);
+  }, [roomUUID, setPopoutUrl, roomToken]);
+
+  const openPopout = React.useCallback((e) => {
+    e.preventDefault();
+    if (!popoutUrl) return;
+    setShowSettings(false);
+    window.open(popoutUrl, '_blank', 'noopener,noreferrer,width=1024,height=768');
+  }, [popoutUrl, setShowSettings]);
+
+  return (
+    <div>
+      <Card>
+        <Card.Header>
+          {t('lr.room.ait2')}
+          <div role='button' className='ai-talk-settings-btn'>
+            <Icon.Gear size={20} onClick={(e) => setShowSettings(!showSettings)} />
+          </div>
+          <div className='ai-talk-settings-menu'>
+            <Dropdown.Menu show={showSettings}>
+              <Dropdown.Item href="#!" onClick={openPopout}>{t('lr.room.popchat')}</Dropdown.Item>
+            </Dropdown.Menu>
+          </div>
+        </Card.Header>
+        <Card.Body>
+          <div className={fullscreen ? 'ai-talk-trace-logs-pcfs' : 'ai-talk-trace-logs-pc'} ref={logPanelRef}>
+            {children}
+            {traceLogs.map((log) => {
+              return (
+                <Alert key={log.id} variant={log.variant}>
+                  {log.role}: {log.msg}
+                </Alert>
+              );
+            })}
+          </div>
+        </Card.Body>
+      </Card>
+    </div>
+  );
+}
+
+function AITalkTraceLogMobile({traceLogs, traceCount, fullscreen}) {
+  // Scroll the log panel.
+  const logPanelRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!logPanelRef?.current) return;
+    console.log(`Logs scroll to end, height=${logPanelRef.current.scrollHeight}, logs=${traceLogs.length}, count=${traceCount}`);
+    logPanelRef.current.scrollTo(0, logPanelRef.current.scrollHeight);
+  }, [traceLogs, logPanelRef, traceCount]);
+
+  return (
+    <div className={fullscreen ? 'ai-talk-trace-logs-mobilefs' : 'ai-talk-trace-logs-mobile'} ref={logPanelRef}>
+      {traceLogs.map((log) => {
+        return (
+          <Alert key={log.id} variant={log.variant}>
+            {log.role}: {log.msg}
+          </Alert>
+        );
+      })}
+    </div>
+  );
+}
+
+function AITalkTraceLogPopout({traceLogs, traceCount}) {
   // Scroll the log panel.
   const logPanelRef = React.useRef(null);
   React.useEffect(() => {
@@ -1044,5 +1014,35 @@ function AITalkTraceLogPanelPopout({traceLogs, traceCount}) {
         );
       })}
     </div>
+  );
+}
+
+function AITalkErrorLog({errorLogs, removeErrorLog}) {
+  return (
+    <React.Fragment>
+      {errorLogs.map((log) => {
+        return (
+          <Alert key={log.id} onClose={() => removeErrorLog(log)} variant='danger' dismissible>
+            <Alert.Heading>Error!</Alert.Heading>
+            <p>{log.msg}</p>
+          </Alert>
+        );
+      })}
+    </React.Fragment>
+  );
+}
+
+function AITalkTipLog({tipLogs, removeTipLog}) {
+  return (
+    <React.Fragment>
+      {tipLogs.map((log) => {
+        return (
+          <Alert key={log.id} onClose={() => removeTipLog(log)} variant='success' dismissible>
+            <Alert.Heading>{log.title}</Alert.Heading>
+            <p>{log.msg}</p>
+          </Alert>
+        );
+      })}
+    </React.Fragment>
   );
 }
