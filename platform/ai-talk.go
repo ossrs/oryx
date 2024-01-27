@@ -37,21 +37,13 @@ type ASRResult struct {
 	Duration time.Duration
 }
 
-type ASRService interface {
-	RequestASR(ctx context.Context, filepath, language, prompt string) (*ASRResult, error)
-}
-
-type TTSService interface {
-	RequestTTS(ctx context.Context, buildFilepath func(ext string) string, text string) error
-}
-
 type openaiASRService struct {
 	conf openai.ClientConfig
 	// The callback before start ASR request.
 	onBeforeRequest func()
 }
 
-func NewOpenAIASRService(conf openai.ClientConfig, opts ...func(service *openaiASRService)) ASRService {
+func NewOpenAIASRService(conf openai.ClientConfig, opts ...func(service *openaiASRService)) *openaiASRService {
 	v := &openaiASRService{conf: conf}
 	for _, opt := range opts {
 		opt(v)
@@ -208,18 +200,35 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 		return errors.Wrapf(err, "create chat")
 	}
 
-	// Never wait for any response.
+	// Wait for AI got the first sentence response.
+	aiFirstResponseCtx, aiFirstResponseCancel := context.WithCancel(ctx)
+	defer aiFirstResponseCancel()
+
 	go func() {
 		defer gptChatStream.Close()
-		if err := v.handle(ctx, stage, robot, sreq, gptChatStream); err != nil {
+		if err := v.handle(ctx, stage, robot, sreq, gptChatStream, aiFirstResponseCancel); err != nil {
 			logger.Ef(ctx, "Handle stream failed, err %+v", err)
 		}
 	}()
 
+	// Util AI generated the first sentence and commit the audio segment to TTS worker, we are allowed
+	// response to client, and client will request the audio segments of this request and wait for segments
+	// to be ready. If response before AI generated the first sentence, client will get nothing audio
+	// segments and may start a new sentence.
+	select {
+	case <-ctx.Done():
+	case <-aiFirstResponseCtx.Done():
+	}
+
 	return nil
 }
 
-func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Robot, sreq *StageRequest, gptChatStream *openai.ChatCompletionStream) error {
+func (v *openaiChatService) handle(
+	ctx context.Context, stage *Stage, robot *Robot, sreq *StageRequest,
+	gptChatStream *openai.ChatCompletionStream, aiFirstResponseCancel context.CancelFunc,
+) error {
+	defer aiFirstResponseCancel()
+
 	filterAIResponse := func(response *openai.ChatCompletionStreamResponse, err error) (bool, string, error) {
 		finished := errors_std.Is(err, io.EOF)
 		if err != nil && !finished {
@@ -328,6 +337,12 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 		})
 		stage.ttsWorker.SubmitSegment(ctx, stage, sreq, segment)
 
+		// We have commit the segment to TTS worker, so we can return the response to client and allow
+		// it to query audio segments immediately.
+		if firstSentense {
+			aiFirstResponseCancel()
+		}
+
 		logger.Tf(ctx, "TTS: Commit segment rid=%v, asid=%v, first=%v, sentence is %v",
 			sreq.rid, segment.asid, firstSentense, filteredSentence)
 		return
@@ -367,7 +382,7 @@ type openaiTTSService struct {
 	conf openai.ClientConfig
 }
 
-func NewOpenAITTSService(conf openai.ClientConfig) TTSService {
+func NewOpenAITTSService(conf openai.ClientConfig) *openaiTTSService {
 	return &openaiTTSService{conf: conf}
 }
 
@@ -1374,6 +1389,11 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage.previousAsrText = sreq.asrText
 			logger.Tf(ctx, "You: %v", sreq.asrText)
 
+			// Notify all subscribers about the ASR text.
+			for _, subscriber := range stage.subscribers {
+				subscriber.addUserTextMessage(sreq.rid, sreq.asrText)
+			}
+
 			// Keep alive the stage.
 			stage.KeepAlive()
 
@@ -1387,11 +1407,6 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 			if err := chatService.RequestChat(ctx, sreq, stage, robot); err != nil {
 				return errors.Wrapf(err, "chat")
-			}
-
-			// Notify all subscribers about the ASR text.
-			for _, subscriber := range stage.subscribers {
-				subscriber.addUserTextMessage(sreq.rid, sreq.asrText)
 			}
 
 			// Response the request UUID and pulling the response.
@@ -1524,8 +1539,11 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// TODO: To improve security level, we should not response the bearer token, instead we can
-			//   support authentication with room token.
+			//   support authentication with room token. In the future, we can add a token type to support
+			//   other tokens.
+			// By default, it is the bearer token.
 			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+
 			ohttp.WriteData(ctx, w, r, &struct {
 				Token string `json:"token"`
 			}{
