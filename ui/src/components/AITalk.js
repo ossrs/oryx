@@ -1,5 +1,5 @@
 import React from "react";
-import {Alert, Button, Card, Col, Dropdown, Row, Spinner} from "react-bootstrap";
+import {Alert, Button, Card, Col, Dropdown, Form, Row, Spinner} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {useErrorHandler} from "react-error-boundary";
 import useIsMobile from "./IsMobile";
@@ -30,6 +30,8 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
   const [stageRobot, setStageRobot] = React.useState(null);
   const [roomToken, setRoomToken] = React.useState(null);
   const [stageUUID, setStageUUID] = React.useState(null);
+  const [userID, setUserID] = React.useState(null);
+  const [stageUser, setStageUser] = React.useState(null);
   const [stagePopoutUUID, setStagePopoutUUID] = React.useState(null);
 
   const [booting, setBooting] = React.useState(true);
@@ -176,12 +178,15 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       console.log(`Start: Create stage success: ${JSON.stringify(res.data.data)}`);
       setStageUUID(res.data.data.sid);
       setStageRobot(res.data.data.robot);
+      setUserID(res.data.data.userId);
       setRoomToken(res.data.data.roomToken);
     }).catch(handleError);
-  }, [handleError, booting, roomUUID, setStageUUID, setStageRobot, setRoomToken]);
+  }, [handleError, booting, roomUUID, setStageUUID, setStageRobot, setUserID, setRoomToken]);
 
   // Start to chat, set the robot to ready.
-  const startChatting = React.useCallback(async () => {
+  const startChatting = React.useCallback(async (user) => {
+    setStageUser(user);
+
     setRequesting(true);
     const listener = () => {
       playerRef.current.removeEventListener('ended', listener);
@@ -200,7 +205,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       errorLog(`${t('lr.room.speaker')}: ${error}`);
       setRequesting(false);
     });
-  }, [t, errorLog, stageUUID, stageRobot, setRobotReady, setRequesting, refRequest]);
+  }, [t, errorLog, stageUUID, stageRobot, setRobotReady, setRequesting, refRequest, setStageUser]);
 
   // When robot is ready, open the microphone ASAP to accept user input.
   React.useEffect(() => {
@@ -311,7 +316,8 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
         ref.current.audioChunks = [];
 
         axios.post('/terraform/v1/ai-talk/stage/upload', {
-          sid: stageUUID, robot: stageRobot.uuid, rid: requestUUID, umi: userMayInput, audio: audioBase64Data,
+          sid: stageUUID, robot: stageRobot.uuid, rid: requestUUID, userId: userID,
+          umi: userMayInput, audio: audioBase64Data,
         }, {
           headers: Token.loadBearerHeader(),
         }).then(res => {
@@ -408,7 +414,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
     ref.current.stopHandler = setTimeout(() => {
       stopRecordingImpl();
     }, timeoutWaitForLastVoice);
-  }, [stageUUID, stageRobot, robotReady, ref, setProcessing, setMicWorking, refRequest]);
+  }, [stageUUID, userID, stageRobot, robotReady, ref, setProcessing, setMicWorking, refRequest]);
 
   // Setup the keyboard event, for PC browser.
   React.useEffect(() => {
@@ -416,6 +422,8 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
 
     const handleKeyDown = (e) => {
       if (processing) return;
+      // Ignore the input event.
+      if (e.target.tagName.toLowerCase() === 'input') return;
       if (e.key !== 'r' && e.key !== '\\' && e.key !== ' ') return;
       startRecording();
     };
@@ -479,7 +487,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
         for (let i = 0; i < msgs.length; i++) {
           const msg = msgs[i];
           if (msg.role === 'user') {
-            traceLog('You', msg.msg, 'primary');
+            traceLog(msg.username || 'You', msg.msg, 'primary');
             continue;
           }
 
@@ -571,14 +579,13 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
   return (
     <div>
       <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
-      {stageUUID && !robotReady ?
-        <Button disabled={requesting} variant="primary" type="submit" onClick={startChatting}>
-          {t('lr.room.talk')}
-        </Button> : ''}
+      {stageUUID && !robotReady ? <>
+        <AITalkUserConfig {...{stageUUID, userID, disabled: requesting, label: t('lr.room.talk'), onSubmit: startChatting}} />
+      </> : ''}
       {robotReady && !isMobile ?
         <Row>
           <Col>
-            <AITalkAssistantImpl {...{processing, micWorking, startRecording, stopRecording, roomUUID, roomToken}} />
+            <AITalkAssistantImpl {...{processing, micWorking, startRecording, stopRecording, roomUUID, roomToken, stageUUID, stageUser}} />
           </Col>
           <Col>
             <AITalkTraceLogPC {...{traceLogs, traceCount, roomUUID, roomToken, fullscreen}}>
@@ -592,7 +599,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
           <AITalkTraceLogMobile {...{traceLogs, traceCount, fullscreen}} />
           <AITalkErrorLog {...{errorLogs, removeErrorLog}} />
           <AITalkTipLog {...{tipLogs, removeTipLog}} />
-          <AITalkAssistantImpl {...{processing, micWorking, startRecording, stopRecording}} />
+          <AITalkAssistantImpl {...{processing, micWorking, startRecording, stopRecording, roomUUID, roomToken, stageUUID, stageUser}} />
         </div> : ''}
       <div ref={endPanelRef}></div>
     </div>
@@ -856,17 +863,102 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
   );
 }
 
-function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecording, roomUUID, roomToken}) {
+function AITalkUserConfig({stageUUID, userID, disabled, label, onSubmit, onCancel}) {
+  const handleError = useErrorHandler();
+  const [loading, setLoading] = React.useState(true);
+  const [user, setUser] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!userID) return;
+
+    axios.post('/terraform/v1/ai-talk/user/query', {
+      sid: stageUUID, userId: userID,
+    }, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      setLoading(false);
+      setUser({...res.data.data, userId: userID});
+      console.log(`Start: Query stage user success, ${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError, setUser, setLoading, stageUUID, userID]);
+
+  if (loading || !user) {
+    return <><Spinner animation="border" variant="primary" size='sm'></Spinner> Loading...</>;
+  }
+  return <AITalkUserConfigImpl {...{stageUUID, user, disabled, label, onSubmit, onCancel}} />;
+}
+
+function AITalkUserConfigImpl({stageUUID, user, disabled, label, onSubmit, onCancel}) {
+  const {t} = useTranslation();
+  const handleError = useErrorHandler();
+
+  const [requesting, setRequesting] = React.useState(false);
+  const [userName, setUserName] = React.useState(user.username);
+  const [userLanguage, setUserLanguage] = React.useState(user.language);
+
+  const updateConfig = React.useCallback((e) => {
+    setRequesting(true);
+
+    axios.post('/terraform/v1/ai-talk/user/update', {
+      sid: stageUUID, userId: user.userId, name: userName, lang: userLanguage
+    }, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      setRequesting(false);
+      console.log(`Start: Update stage user success`);
+      onSubmit && onSubmit(res.data.data);
+    }).catch(handleError);
+  }, [handleError, stageUUID, user, userName, userLanguage, onSubmit, setRequesting]);
+
+  return <>
+    <Form>
+      <Form.Group className="mb-3">
+        <Form.Label>{t('lr.room.uname')}</Form.Label>
+        <Form.Text> * {t('lr.room.uname2')}</Form.Text>
+        <Form.Control as="input" type='input' defaultValue={userName} onChange={(e) => {
+          e.preventDefault();
+          setUserName(e.target.value);
+        }} />
+      </Form.Group>
+      <Form.Group className="mb-3">
+        <Form.Label>{t('transcript.lang')}</Form.Label>
+        <Form.Text> * {t('transcript.lang3')}. &nbsp;
+          {t('helper.eg')} <code>en, zh, fr, de, ja, ru </code>, ... &nbsp;
+          {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank' rel='noreferrer'>ISO-639-1</a>.
+        </Form.Text>
+        <Form.Control as="input" defaultValue={userLanguage} onChange={(e) => {
+          e.preventDefault();
+          setUserLanguage(e.target.value);
+        }} />
+      </Form.Group>
+      <Button variant="primary" type="button" disabled={requesting || disabled} onClick={updateConfig}>
+        {label || t('helper.submit')}
+      </Button>
+      {onCancel ? <>
+        &nbsp;
+        <Button variant="primary" type="button" disabled={requesting || disabled} onClick={onCancel}>
+        {t('helper.cancel')}
+      </Button>
+      </> : ''}
+      <p></p>
+    </Form>
+  </>;
+}
+
+function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecording, roomUUID, roomToken, stageUUID, stageUser}) {
   const {t} = useTranslation();
   const isMobile = useIsMobile();
   const [showSettings, setShowSettings] = React.useState(false);
   const [popoutUrl, setPopoutUrl] = React.useState(null);
+  const [showUserConfig, setShowUserConfig] = React.useState(false);
+  const [user, setUser] = React.useState(stageUser);
+  const [description, setDescription] = React.useState();
 
   React.useEffect(() => {
     if (!roomUUID) return;
 
     const r0 = Math.random().toString(16).slice(-8);
-    const created = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
+    const created = new Date().toISOString();
     const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&assistant=1&room=${roomUUID}&created=${created}&random=${r0}&roomToken=${roomToken}`;
     setPopoutUrl(url);
     console.log(`Generated popout URL: ${url}`);
@@ -879,23 +971,44 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
     window.open(popoutUrl, '_blank', 'noopener,noreferrer,width=1024,height=768');
   }, [popoutUrl, setShowSettings]);
 
+  const openSettings = React.useCallback((e) => {
+    e.preventDefault();
+    setShowUserConfig(true);
+    setShowSettings(false);
+  }, [setShowUserConfig, setShowSettings]);
+
+  const onFinishUserConfig = React.useCallback((user) => {
+    setShowUserConfig(false);
+    setUser({...user});
+  }, [setShowUserConfig, setUser]);
+
+  React.useEffect(() => {
+    if (!user) return;
+    setDescription(` for ${user.username || 'You'} (${user.language})`);
+  }, [user, setDescription]);
+
   return (
     <div>
       <Card>
         <Card.Header>
-          {t('lr.room.ait')}
+          {t('lr.room.ait')}{showSettings ? '' : description}
           <div role='button' className='ai-talk-settings-btn'>
             <Icon.Gear size={20} onClick={(e) => setShowSettings(!showSettings)} />
           </div>
-          <div className='ai-talk-settings-menu2'>
-            <Dropdown.Menu show={showSettings}>
+          {showSettings && <div className='ai-talk-settings-menu2'>
+            <Dropdown.Menu show={true}>
               <Dropdown.Item href="#!" onClick={openPopout}>{t('lr.room.popchat2')}</Dropdown.Item>
+              <Dropdown.Item href="#!" onClick={openSettings}>{t('lr.room.settings')}</Dropdown.Item>
             </Dropdown.Menu>
-          </div>
+          </div>}
         </Card.Header>
         <Card.Body>
+          {showUserConfig ? <AITalkUserConfig {...{
+            stageUUID, userID: stageUser.userId, onSubmit: onFinishUserConfig,
+            onCancel: () => setShowUserConfig(false),
+          }} /> : ''}
           <div className={isMobile ? 'ai-talk-container-mobile' : 'ai-talk-container-pc'}
-               onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing}>
+               onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing || showUserConfig}>
             {!processing ?
               <div>
                 <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
@@ -929,7 +1042,7 @@ function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken,
     if (!roomUUID) return;
 
     const r0 = Math.random().toString(16).slice(-8);
-    const created = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
+    const created = new Date().toISOString();
     const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&assistant=0&room=${roomUUID}&created=${created}&random=${r0}&roomToken=${roomToken}`;
     setPopoutUrl(url);
     console.log(`Generated popout URL: ${url}`);
@@ -950,11 +1063,11 @@ function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken,
           <div role='button' className='ai-talk-settings-btn'>
             <Icon.Gear size={20} onClick={(e) => setShowSettings(!showSettings)} />
           </div>
-          <div className='ai-talk-settings-menu'>
-            <Dropdown.Menu show={showSettings}>
+          {showSettings && <div className='ai-talk-settings-menu'>
+            <Dropdown.Menu show={true}>
               <Dropdown.Item href="#!" onClick={openPopout}>{t('lr.room.popchat')}</Dropdown.Item>
             </Dropdown.Menu>
-          </div>
+          </div>}
         </Card.Header>
         <Card.Body>
           <div className={fullscreen ? 'ai-talk-trace-logs-pcfs' : 'ai-talk-trace-logs-pc'} ref={logPanelRef}>

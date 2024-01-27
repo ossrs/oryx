@@ -1203,6 +1203,16 @@ func Authenticate(ctx context.Context, apiSecret, token string, header http.Head
 	return nil
 }
 
+// ChooseNotEmpty choose the first not empty string.
+func ChooseNotEmpty(strings ...string) string {
+	for _, str := range strings {
+		if str != "" {
+			return str
+		}
+	}
+	return ""
+}
+
 // RebuildStreamURL rebuild the stream URL, escape username and password in URL.
 func RebuildStreamURL(rawURL string) (*url.URL, error) {
 	// If parse success, for example, no special chars in username and password, return the URL.

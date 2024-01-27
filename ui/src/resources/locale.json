@@ -397,6 +397,7 @@
         "reset": "清理和重置任务",
         "lang": "语言",
         "lang2": "请输入视频的语言",
+        "lang3": "用户说的语言",
         "porg": "预览原始直播流",
         "pol": "预览AI字幕直播流",
         "test": "测试OpenAI服务可用性",
@@ -489,9 +490,12 @@
           "usage2": "按住空格键或者R键说话，松开结束",
           "popout": "新的消息将展示在这里，请等待",
           "ait": "直播间AI助手",
-          "ait": "聊天消息",
+          "ait2": "聊天消息",
           "popchat": "弹出聊天窗口",
-          "popchat2": "弹出AI助手"
+          "popchat2": "弹出AI助手",
+          "settings": "设置会话",
+          "uname": "用户名",
+          "uname2": "设置用户名，多人聊天可以方便的区分用户"
         }
       },
       "plat": {
@@ -660,10 +664,13 @@
       },
       "lr": {
         "room": {
+          "uname2": "Setup user name, for multi-user chat",
+          "uname": "User Name",
+          "settings": "Session Settings",
           "popchat2": "Popout AI Assistant",
           "popchat": "Popout Live Chat",
-          "ait": "AI Assistant",
           "ait2": "Live Chat",
+          "ait": "AI Assistant",
           "popout": "New messages will be displayed here, please wait",
           "usage2": "Press the R key or SPACE to talk",
           "usage": "Press and hold to talk, release to end",
@@ -755,6 +762,7 @@
         "test": "Test OpenAI Service",
         "pol": "Preview transcript live stream with subtitle",
         "porg": "Preview original live stream",
+        "lang3": "The language of user",
         "lang2": "Please input the language of the video",
         "lang": "Language",
         "reset": "Reset and Clean Task",

@@ -921,6 +921,8 @@ Platform, with token authentication:
 * `/terraform/v1/ai-talk/subscribe/query` AI-Talk: Query the popout audio responses.
 * `/terraform/v1/ai-talk/subscribe/tts` AI-Talk: Play the TTS audios.
 * `/terraform/v1/ai-talk/subscribe/remove` AI-Talk: Remove the popout audio responses.
+* `/terraform/v1/ai-talk/user/query` AI-Talk: Query the user information.
+* `/terraform/v1/ai-talk/user/update` AI-Talk: Update the user information.
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 * `/terraform/v1/ffmpeg/vlive/secret` Setup the Virtual Live streaming secret.
@@ -1109,6 +1111,7 @@ The following are the update records for the SRS Stack server.
     * Room: AI-Talk support popout live chat. v5.13.16
     * Room: AI-Talk support popout AI assistant. v5.13.17
     * Room: AI-Talk support multiple assistant in a room. v5.13.18
+    * Room: AI-Talk support user different languages. v5.13.18
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1

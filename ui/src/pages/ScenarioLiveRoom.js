@@ -391,7 +391,7 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
         <Form.Control as="input" type='input' defaultValue={aiChatModel} onChange={(e) => setAiChatModel(e.target.value)} />
       </Form.Group>
       <Form.Group className="mb-3">
-        <Form.Label>{t('lr.room.prmpt')}</Form.Label>
+        <Form.Label>{t('lr.room.prompt')}</Form.Label>
         <Form.Text> * {t('lr.room.prompt2')}</Form.Text>
         <Form.Control as="textarea" type='text' rows={3}  defaultValue={aiChatPrompt} onChange={(e) => setAiChatPrompt(e.target.value)} />
       </Form.Group>
