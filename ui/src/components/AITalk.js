@@ -578,10 +578,10 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       {robotReady && !isMobile ?
         <Row>
           <Col>
-            <AITalkMicrophone {...{processing, micWorking, startRecording, stopRecording}} />
+            <AITalkMicrophone {...{processing, micWorking, startRecording, stopRecording, roomUUID, roomToken}} />
           </Col>
           <Col>
-            <AITalkTraceLogPanelComplex {...{traceLogs, traceCount, roomUUID, stageToken: roomToken, fullscreen}}>
+            <AITalkTraceLogPanelComplex {...{traceLogs, traceCount, roomUUID, roomToken, fullscreen}}>
               <AITalkErrorLogPanel {...{errorLogs, removeErrorLog}} />
               <AITalkTipLogPanel {...{tipLogs, removeTipLog}} />
             </AITalkTraceLogPanelComplex>
@@ -621,25 +621,63 @@ function AITalkTraceLogPanelSimple({traceLogs, traceCount, fullscreen}) {
   );
 }
 
-function AITalkMicrophone({processing, micWorking, startRecording, stopRecording}) {
+function AITalkMicrophone({processing, micWorking, startRecording, stopRecording, roomUUID, roomToken}) {
+  const {t} = useTranslation();
   const isMobile = useIsMobile();
+  const [showSettings, setShowSettings] = React.useState(false);
+  const [popoutUrl, setPopoutUrl] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!roomUUID) return;
+
+    const r0 = Math.random().toString(16).slice(-8);
+    const created = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
+    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&assistant=1&room=${roomUUID}&created=${created}&random=${r0}&roomToken=${roomToken}`;
+    setPopoutUrl(url);
+    console.log(`Generated popout URL: ${url}`);
+  }, [roomUUID, setPopoutUrl, roomToken]);
+
+  const openPopout = React.useCallback((e) => {
+    e.preventDefault();
+    if (!popoutUrl) return;
+    setShowSettings(false);
+    window.open(popoutUrl, '_blank', 'noopener,noreferrer,width=1024,height=768');
+  }, [popoutUrl, setShowSettings]);
+
   return (
-    <div className={isMobile ? 'ai-talk-container-mobile' : 'ai-talk-container-pc'}
-         onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing}>
-      {!processing ?
-        <div>
-          <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
-            <div className='ai-talk-mc'></div>
+    <div>
+      <Card>
+        <Card.Header>
+          {t('lr.room.ait')}
+          <div role='button' className='ai-talk-settings-btn'>
+            <Icon.Gear size={20} onClick={(e) => setShowSettings(!showSettings)} />
           </div>
-        </div> :
-        <div>
-          <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
-        </div>}
+          <div className='ai-talk-settings-menu2'>
+            <Dropdown.Menu show={showSettings}>
+              <Dropdown.Item href="#!" onClick={openPopout}>{t('lr.room.popchat2')}</Dropdown.Item>
+            </Dropdown.Menu>
+          </div>
+        </Card.Header>
+        <Card.Body>
+          <div className={isMobile ? 'ai-talk-container-mobile' : 'ai-talk-container-pc'}
+               onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing}>
+            {!processing ?
+              <div>
+                <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
+                  <div className='ai-talk-mc'></div>
+                </div>
+              </div> :
+              <div>
+                <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
+              </div>}
+          </div>
+        </Card.Body>
+      </Card>
     </div>
   );
 }
 
-function AITalkTraceLogPanelComplex({traceLogs, traceCount, children, roomUUID, stageToken, fullscreen}) {
+function AITalkTraceLogPanelComplex({traceLogs, traceCount, children, roomUUID, roomToken, fullscreen}) {
   const {t} = useTranslation();
   const [showSettings, setShowSettings] = React.useState(false);
   const [popoutUrl, setPopoutUrl] = React.useState(null);
@@ -657,37 +695,29 @@ function AITalkTraceLogPanelComplex({traceLogs, traceCount, children, roomUUID, 
 
     const r0 = Math.random().toString(16).slice(-8);
     const created = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
-    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&room=${roomUUID}&created=${created}&random=${r0}&roomToken=${stageToken}`;
+    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&assistant=0&room=${roomUUID}&created=${created}&random=${r0}&roomToken=${roomToken}`;
     setPopoutUrl(url);
     console.log(`Generated popout URL: ${url}`);
-  }, [roomUUID, setPopoutUrl, stageToken]);
+  }, [roomUUID, setPopoutUrl, roomToken]);
 
-  const openPopoutChat = React.useCallback((e) => {
+  const openPopout = React.useCallback((e) => {
     e.preventDefault();
     if (!popoutUrl) return;
     setShowSettings(false);
-    window.open(`${popoutUrl}&assistant=0`, '_blank', 'noopener,noreferrer,width=1024,height=768');
-  }, [popoutUrl, setShowSettings]);
-
-  const openPopoutAssistant = React.useCallback((e) => {
-    e.preventDefault();
-    if (!popoutUrl) return;
-    setShowSettings(false);
-    window.open(`${popoutUrl}&assistant=1`, '_blank', 'noopener,noreferrer,width=1024,height=768');
+    window.open(popoutUrl, '_blank', 'noopener,noreferrer,width=1024,height=768');
   }, [popoutUrl, setShowSettings]);
 
   return (
     <div>
       <Card>
         <Card.Header>
-          {t('lr.room.ait')}
+          {t('lr.room.ait2')}
           <div role='button' className='ai-talk-settings-btn'>
             <Icon.Gear size={20} onClick={(e) => setShowSettings(!showSettings)} />
           </div>
           <div className='ai-talk-settings-menu'>
             <Dropdown.Menu show={showSettings}>
-              <Dropdown.Item href="#!" onClick={openPopoutChat}>{t('lr.room.popchat')}</Dropdown.Item>
-              {false && <Dropdown.Item href="#!" onClick={openPopoutAssistant}>{t('lr.room.popchat2')}</Dropdown.Item>}
+              <Dropdown.Item href="#!" onClick={openPopout}>{t('lr.room.popchat')}</Dropdown.Item>
             </Dropdown.Menu>
           </div>
         </Card.Header>

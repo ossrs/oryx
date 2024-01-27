@@ -489,6 +489,7 @@
           "usage2": "按住空格键或者R键说话，松开结束",
           "popout": "新的消息将展示在这里，请等待",
           "ait": "直播间AI助手",
+          "ait": "聊天消息",
           "popchat": "弹出聊天窗口",
           "popchat2": "弹出AI助手"
         }
@@ -661,7 +662,8 @@
         "room": {
           "popchat2": "Popout AI Assistant",
           "popchat": "Popout Live Chat",
-          "ait": "AI Assistant for Streamer",
+          "ait": "AI Assistant",
+          "ait2": "Live Chat",
           "popout": "New messages will be displayed here, please wait",
           "usage2": "Press the R key or SPACE to talk",
           "usage": "Press and hold to talk, release to end",

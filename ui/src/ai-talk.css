@@ -63,7 +63,7 @@
   border-radius: 3%;
 }
 
-.ai-talk-settings-btn, .ai-talk-settings-menu{
+.ai-talk-settings-btn, .ai-talk-settings-menu, .ai-talk-settings-menu2{
   display: inline-block;
   float: right;
 }
@@ -73,9 +73,21 @@
   margin-top: 25px;
 }
 
+.ai-talk-settings-menu2{
+  margin-right: 165px;
+  margin-top: 25px;
+}
+
 .ai-talk-container-pc{
-  min-height: 58.5vh;
-  max-height: 58.5vh;
+  min-height: 51vh;
+  max-height: 51vh;
+  min-width: 30vw;
+}
+
+.ai-talk-container-mobile{
+  margin-top: 5px;
+  min-height: 27vh;
+  max-height: 27vh;
   min-width: 30vw;
 }
 
@@ -95,21 +107,14 @@
   min-width: 55vw;
 }
 
-.ai-talk-container-mobile{
-  margin-top: 5px;
-  min-height: 30vh;
-  max-height: 30vh;
-  min-width: 30vw;
-}
-
 .ai-talk-trace-logs-mobile{
   min-height: 50vh;
   max-height: 50vh;
 }
 
 .ai-talk-trace-logs-mobilefs {
-  min-height: 65vh;
-  max-height: 65vh;
+  min-height: 62vh;
+  max-height: 62vh;
 }
 
 .ai-talk-trace-logs-popout {
