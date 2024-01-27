@@ -237,11 +237,11 @@ function PopoutAITalk({roomUUID, roomToken}) {
   const refRequest = React.useRef({
     requesting: false,
   });
-  // Try to request popouts util end.
+  // Try to request messages of stage util end.
   React.useEffect(() => {
     if (!robotReady) return;
 
-    const requestPopouts = async () => {
+    const requestMessages = async () => {
       if (!robotReady || !stageUUID || !stagePopoutUUID) return;
       if (refRequest.current.requesting) return;
       refRequest.current.requesting = true;
@@ -308,7 +308,7 @@ function PopoutAITalk({roomUUID, roomToken}) {
     };
 
     const timer = setInterval(async () => {
-      requestPopouts().catch(handleError);
+      requestMessages().catch(handleError);
     }, 1000);
     return () => clearInterval(timer);
   }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, roomToken]);

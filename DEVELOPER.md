@@ -1106,8 +1106,9 @@ The following are the update records for the SRS Stack server.
     * Camera: Support replace audio if enabled extra audio. v5.13.13
     * VLive/Camera/Forward: Extract multilingual text. v5.13.14
     * Room: AI-Talk support assistant for live room. v5.13.15
-    * Room: AI-Talk support popout window. v5.13.16
-    * Room: AI-Talk support popout assistant. v5.13.17
+    * Room: AI-Talk support popout live chat. v5.13.16
+    * Room: AI-Talk support popout AI assistant. v5.13.17
+    * Room: AI-Talk support multiple assistant in a room. v5.13.18
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1

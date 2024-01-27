@@ -307,8 +307,8 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 	}
 
 	commitAISentence := func(sentence string, firstSentense bool) {
-		filteredSentence := strings.TrimSpace(sentence)
-		if filteredSentence == "" {
+		filteredSentence := sentence
+		if strings.TrimSpace(sentence) == "" {
 			return
 		}
 
@@ -659,6 +659,8 @@ func (v *StageMessage) Close() error {
 type StageSubscriber struct {
 	// StageSubscriber UUID.
 	spid string
+	// Last update of stage.
+	update time.Time
 	// The logging context, to write all logs in one context for a sage.
 	loggingCtx context.Context
 	// The messages from user ASR and AI responses.
@@ -687,6 +689,14 @@ func (v *StageSubscriber) Close() error {
 		_ = message.Close()
 	}
 	return nil
+}
+
+func (v *StageSubscriber) Expired() bool {
+	return time.Since(v.update) > 300*time.Second
+}
+
+func (v *StageSubscriber) KeepAlive() {
+	v.update = time.Now()
 }
 
 func (v *StageSubscriber) addUserTextMessage(rid, msg string) {
@@ -755,8 +765,7 @@ func (v *StageSubscriber) completeRobotAudioMessage(ctx context.Context, sreq *S
 }
 
 // TODO: Cleanup flushed messages.
-func (v *StageSubscriber) flushMessages() []*StageMessage {
-	messages := []*StageMessage{}
+func (v *StageSubscriber) flushMessages() (messages []*StageMessage, pending bool) {
 	for _, message := range v.messages {
 		// TODO: Dispose and cleanup flushed messages.
 		// Ignore if already flushed.
@@ -766,6 +775,7 @@ func (v *StageSubscriber) flushMessages() []*StageMessage {
 
 		// If message not ready, break to keep the order.
 		if !message.finished {
+			pending = true
 			break
 		}
 
@@ -785,7 +795,7 @@ func (v *StageSubscriber) flushMessages() []*StageMessage {
 		// Got a good piece of message for subscriber.
 		messages = append(messages, message)
 	}
-	return messages
+	return
 }
 
 func (v *StageSubscriber) queryAudioFile(asid string) *StageMessage {
@@ -897,6 +907,15 @@ func (v *Stage) querySubscriber(spid string) *StageSubscriber {
 		}
 	}
 	return nil
+}
+
+func (v *Stage) removeSubscriber(subscriber *StageSubscriber) {
+	for i, s := range v.subscribers {
+		if s.spid == subscriber.spid {
+			v.subscribers = append(v.subscribers[:i], v.subscribers[i+1:]...)
+			return
+		}
+	}
 }
 
 // The AnswerSegment is a segment of answer, which is a sentence.
@@ -1569,8 +1588,26 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				stage.addSubscriber(subscriber)
 			})
 
+			go func() {
+				defer subscriber.Close()
+
+				for ctx.Err() == nil {
+					select {
+					case <-ctx.Done():
+					case <-time.After(3 * time.Second):
+						if subscriber.Expired() {
+							logger.Tf(ctx, "Stage: Remove spid=%v from stage sid=%v for expired, update=%v",
+								subscriber.spid, stage.sid, subscriber.update.Format(time.RFC3339))
+							stage.removeSubscriber(subscriber)
+							return
+						}
+					}
+				}
+			}()
+
 			// Keep alive the stage.
 			stage.KeepAlive()
+			subscriber.KeepAlive()
 
 			type StageRobotResult struct {
 				UUID  string `json:"uuid"`
@@ -1634,22 +1671,28 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("invalid sid %v", sid)
 			}
 
-			// Keep alive the stage.
-			stage.KeepAlive()
-			// Switch to the context of stage.
-			ctx = stage.loggingCtx
-			// Note that we should disable detail meanless logs for subscribe.
-			//logger.Tf(ctx, "Stage: Query sid=%v, room=%v", sid, stage.room.UUID)
-
 			subscriber := stage.querySubscriber(spid)
 			if subscriber == nil {
 				return errors.Errorf("invalid spid %v of sid %v", spid, sid)
 			}
 
+			// Keep alive the stage.
+			stage.KeepAlive()
+			subscriber.KeepAlive()
+			// Switch to the context of stage.
+			ctx = stage.loggingCtx
+			// Note that we should disable detail meanless logs for subscribe.
+			//logger.Tf(ctx, "Stage: Query sid=%v, room=%v", sid, stage.room.UUID)
+
+			msgs, pending := subscriber.flushMessages()
 			ohttp.WriteData(ctx, w, r, &struct {
+				// Finished messages.
 				Messages []*StageMessage `json:"msgs"`
+				// Is there any pending messages.
+				Pending bool `json:"pending"`
 			}{
-				Messages: subscriber.flushMessages(),
+				Messages: msgs,
+				Pending:  pending,
 			})
 
 			// Note that we should disable detail meanless logs for subscribe.
@@ -1695,12 +1738,6 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("invalid roomToken")
 			}
 
-			// Keep alive the stage.
-			stage.KeepAlive()
-			// Switch to the context of stage.
-			ctx = stage.loggingCtx
-			logger.Tf(ctx, "Stage: Download sid=%v, spid=%v, asid=%v", sid, spid, asid)
-
 			subscriber := stage.querySubscriber(spid)
 			if subscriber == nil {
 				return errors.Errorf("invalid spid %v of sid %v", spid, sid)
@@ -1710,6 +1747,13 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			if answer == nil {
 				return errors.Errorf("invalid asid %v of sid %v", asid, sid)
 			}
+
+			// Keep alive the stage.
+			stage.KeepAlive()
+			subscriber.KeepAlive()
+			// Switch to the context of stage.
+			ctx = stage.loggingCtx
+			logger.Tf(ctx, "Stage: Download sid=%v, spid=%v, asid=%v", sid, spid, asid)
 
 			// When the first subscriber got the segment, we log the elapsed time.
 			if segment := answer.segment; !segment.logged {
@@ -1780,16 +1824,18 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("invalid sid %v", sid)
 			}
 
-			// Keep alive the stage.
-			stage.KeepAlive()
-			// Switch to the context of stage.
-			ctx = stage.loggingCtx
-			logger.Tf(ctx, "Stage: Query sid=%v, room=%v", sid, stage.room.UUID)
-
 			subscriber := stage.querySubscriber(spid)
 			if subscriber == nil {
 				return errors.Errorf("invalid spid %v of sid %v", spid, sid)
 			}
+
+			// Keep alive the stage.
+			stage.KeepAlive()
+			subscriber.KeepAlive()
+			// Switch to the context of stage.
+			ctx = stage.loggingCtx
+			logger.Tf(ctx, "Stage: Remove segment room=%v, sid=%v, spid=%v, asid=%v",
+				stage.room.UUID, sid, spid, asid)
 
 			if err := subscriber.removeMessage(asid); err != nil {
 				return errors.Wrapf(err, "remove message asid=%v of sid=%v, spid=%v", asid, sid, spid)

@@ -55,6 +55,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
   const refRequest = React.useRef({
     requesting: false,
     gotMessages: 0,
+    hasPendingMessages: false,
     playingAudio: 0,
   });
 
@@ -245,6 +246,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
     if (ref.current.stopHandler) clearTimeout(ref.current.stopHandler);
     if (ref.current.mediaRecorder) return;
     if (ref.current.isRecording) return;
+    if (refRequest.current.playingAudio) return;
     ref.current.recordStarttime = new Date();
     ref.current.isRecording = true;
     ref.current.count += 1;
@@ -269,7 +271,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
 
     ref.current.mediaRecorder.start();
     console.log(`Event: Recording started`);
-  }, [robotReady, ref, setMicWorking]);
+  }, [robotReady, ref, setMicWorking, refRequest]);
 
   // User click stop button, we delay some time to allow cancel the stopping event.
   const stopRecording = React.useCallback(async () => {
@@ -378,7 +380,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
 
         // Wait util no audio is playing.
         do {
-          await new Promise((resolve) => setTimeout(resolve, 300));
+          await new Promise((resolve) => setTimeout(resolve, 600));
         } while(refRequest.current.playingAudio);
 
         // Reopen the microphone if no audio is playing.
@@ -446,17 +448,17 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
     }).catch(handleError);
   }, [handleError, roomUUID, setStagePopoutUUID, stageUUID]);
 
-  // Try to request popouts util end.
+  // Try to request messages of stage util end.
   React.useEffect(() => {
     if (!robotReady) return;
 
-    const requestPopouts = async () => {
+    const requestMessages = async () => {
       if (!robotReady || !stageUUID || !stagePopoutUUID) return;
       if (refRequest.current.requesting) return;
       refRequest.current.requesting = true;
 
       try {
-        const msgs = await new Promise((resolve, reject) => {
+        const {msgs, pending} = await new Promise((resolve, reject) => {
           axios.post('/terraform/v1/ai-talk/subscribe/query', {
             sid: stageUUID, spid: stagePopoutUUID,
           }, {
@@ -465,10 +467,11 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
             // Don't show detail logs for pulling.
             //const ts = new Date().toISOString().split('T')[1].split('Z')[0];
             //console.log(`Start: Query popout success at ${ts}: ${JSON.stringify(res.data.data)}`);
-            resolve(res.data.data.msgs);
+            resolve(res.data.data);
           }).catch(handleError);
         });
 
+        refRequest.current.hasPendingMessages = pending;
         refRequest.current.gotMessages = msgs?.length || 0;
         if (!msgs?.length) return;
 
@@ -476,7 +479,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
           const msg = msgs[i];
           if (msg.role === 'user') {
             traceLog('You', msg.msg, 'primary');
-            return;
+            continue;
           }
 
           const audioSegmentUUID = msg.asid;
@@ -519,7 +522,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
     };
 
     const timer = setInterval(async () => {
-      requestPopouts().catch(handleError);
+      requestMessages().catch(handleError);
     }, 1000);
     return () => clearInterval(timer);
   }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, roomToken]);
@@ -527,9 +530,12 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
   // When we got any messages from server, set to playing mode and last for a while.
   React.useEffect(() => {
     const timer = setInterval(async () => {
-      if (refRequest.current.gotMessages) {
+      if (refRequest.current.gotMessages || refRequest.current.hasPendingMessages) {
         if (!refRequest.current.playingAudio) {
-          console.log(`Subscribe: Got messages, start to play`);
+          console.log(`Subscribe: Got messages, start to play, mic=${micWorking}`);
+          if (!micWorking) {
+            setProcessing(true);
+          }
         }
         refRequest.current.playingAudio = 5;
         return;
@@ -538,10 +544,23 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       if (refRequest.current.playingAudio) {
         refRequest.current.playingAudio -= 1;
         if (!refRequest.current.playingAudio) {
-          console.log(`Subscribe: No messages, stop playing`);
+          console.log(`Subscribe: No messages, stop playing, mic=${micWorking}`);
+          if (!micWorking) {
+            setProcessing(false);
+          }
         }
       }
     }, 300);
+    return () => clearInterval(timer);
+  }, [refRequest, micWorking, setProcessing]);
+
+  // A long time interval logger.
+  React.useEffect(() => {
+    const timer = setInterval(async () => {
+      const ts = new Date().toISOString().split('T')[1].split('Z')[0];
+      const r0 = refRequest.current;
+      console.log(`Timer: ${ts}, messages got=${r0.gotMessages}, pending=${r0.hasPendingMessages}, playing=${r0.playingAudio}, requesting=${r0.requesting}`);
+    }, 10000);
     return () => clearInterval(timer);
   }, [refRequest]);
 
