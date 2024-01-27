@@ -326,7 +326,6 @@ func (v *openaiChatService) handle(ctx context.Context, stage *Stage, robot *Rob
 			segment.text = filteredSentence
 			segment.first = firstSentense
 		})
-		sreq.segments = append(sreq.segments, segment)
 		stage.ttsWorker.SubmitSegment(ctx, stage, sreq, segment)
 
 		logger.Tf(ctx, "TTS: Commit segment rid=%v, asid=%v, first=%v, sentence is %v",
@@ -634,7 +633,14 @@ type StageMessage struct {
 	// The audio tts file for audio message.
 	audioFile string
 
-	// The owner segment.
+	// Whether ready to flush to client.
+	finished bool
+	// The error object of message.
+	err error
+
+	// The owner subscriber.
+	subscriber *StageSubscriber
+	// The source segment.
 	segment *AnswerSegment
 	// Whether flushed to client.
 	flushed bool
@@ -685,20 +691,35 @@ func (v *StageSubscriber) Close() error {
 
 func (v *StageSubscriber) addUserTextMessage(rid, msg string) {
 	v.messages = append(v.messages, &StageMessage{
-		MessageUUID: uuid.NewString(), RequestUUID: rid, Role: "user", Message: msg,
+		finished: true, MessageUUID: uuid.NewString(), subscriber: v,
+		RequestUUID: rid, Role: "user", Message: msg,
 	})
 }
 
-func (v *StageSubscriber) addRobotAudioMessage(ctx context.Context, rid, msg, segmentUUID, ttsFile string, segment *AnswerSegment) error {
+// Create a robot empty message, to keep the order of messages.
+func (v *StageSubscriber) createRobotEmptyMessage() *StageMessage {
+	message := &StageMessage{
+		finished: false, MessageUUID: uuid.NewString(), subscriber: v,
+	}
+	v.messages = append(v.messages, message)
+	return message
+}
+
+func (v *StageSubscriber) completeRobotAudioMessage(ctx context.Context, sreq *StageRequest, segment *AnswerSegment, message *StageMessage) {
 	// Build a new copy file of ttsFile.
-	ttsExt := path.Ext(ttsFile)
-	copyFile := fmt.Sprintf("%v-copy-%v%v", ttsFile[:len(ttsFile)-len(ttsExt)], v.spid, ttsExt)
+	ttsExt := path.Ext(segment.ttsFile)
+	copyFile := fmt.Sprintf("%v-copy-%v%v", segment.ttsFile[:len(segment.ttsFile)-len(ttsExt)], v.spid, ttsExt)
 
 	// Copy the ttsFile to copyFile.
 	if err := func() error {
-		src, err := os.Open(ttsFile)
+		// If segment is error, ignore.
+		if segment.err != nil {
+			return nil
+		}
+
+		src, err := os.Open(segment.ttsFile)
 		if err != nil {
-			return errors.Errorf("open %v for reading", ttsFile)
+			return errors.Errorf("open %v for reading", segment.ttsFile)
 		}
 		defer src.Close()
 
@@ -713,17 +734,15 @@ func (v *StageSubscriber) addRobotAudioMessage(ctx context.Context, rid, msg, se
 		}
 
 		logger.Tf(ctx, "AITalk: Copy %v to %v ok, room=%v, sid=%v, spid=%v",
-			ttsFile, copyFile, v.room.UUID, v.stage.sid, v.spid)
+			segment.ttsFile, copyFile, v.room.UUID, v.stage.sid, v.spid)
 		return nil
 	}(); err != nil {
-		// TODO: FIXME: Cleanup message if error.
-		return errors.Wrapf(err, "copy %v to %v", ttsFile, copyFile)
+		message.err = errors.Wrapf(err, "copy %v to %v", segment.ttsFile, copyFile)
 	}
 
-	message := &StageMessage{
-		MessageUUID: uuid.NewString(), RequestUUID: rid, SegmentUUID: segmentUUID,
-		Role: "robot", Message: msg, audioFile: copyFile, segment: segment,
-	}
+	message.finished, message.segment = true, segment
+	message.RequestUUID, message.SegmentUUID = sreq.rid, segment.asid
+	message.Role, message.Message, message.audioFile = "robot", segment.text, copyFile
 
 	// Always close message if timeout.
 	go func() {
@@ -733,19 +752,38 @@ func (v *StageSubscriber) addRobotAudioMessage(ctx context.Context, rid, msg, se
 			message.Close()
 		}
 	}()
-
-	v.messages = append(v.messages, message)
-
-	return nil
 }
 
+// TODO: Cleanup flushed messages.
 func (v *StageSubscriber) flushMessages() []*StageMessage {
 	messages := []*StageMessage{}
 	for _, message := range v.messages {
-		if !message.flushed {
-			messages = append(messages, message)
-			message.flushed = true
+		// TODO: Dispose and cleanup flushed messages.
+		// Ignore if already flushed.
+		if message.flushed {
+			continue
 		}
+
+		// If message not ready, break to keep the order.
+		if !message.finished {
+			break
+		}
+
+		// Flush the message once finished.
+		message.flushed = true
+
+		// Ignore if error.
+		err := message.err
+		if err == nil && message.segment != nil {
+			err = message.segment.err
+		}
+		if err != nil {
+			// TODO: Handle the error.
+			continue
+		}
+
+		// Got a good piece of message for subscriber.
+		messages = append(messages, message)
 	}
 	return messages
 }
@@ -956,6 +994,7 @@ func (v *TalkServer) QueryStage(rid string) *Stage {
 
 // The TTSWorker is a worker to convert answers from text to audio.
 type TTSWorker struct {
+	// TODO: FIXME: Remove this because they are stored in the stage request.
 	segments []*AnswerSegment
 	lock     sync.Mutex
 	wg       sync.WaitGroup
@@ -985,12 +1024,25 @@ func (v *TTSWorker) RemoveSegment(asid string) {
 }
 
 func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, sreq *StageRequest, segment *AnswerSegment) {
-	// Append the sentence to queue.
+	var messages []*StageMessage
+
 	func() {
 		v.lock.Lock()
 		defer v.lock.Unlock()
 
+		// Append the sentence to queue.
 		v.segments = append(v.segments, segment)
+
+		// TODO: Should not use the lock of tts worker.
+		// Add segment to stage request.
+		sreq.segments = append(sreq.segments, segment)
+
+		// TODO: Should not use the lock of tts worker.
+		// Add message to subscriber, to keep the same order as segments.
+		for _, subscriber := range stage.subscribers {
+			message := subscriber.createRobotEmptyMessage()
+			messages = append(messages, message)
+		}
 	}()
 
 	// Start a goroutine to do TTS task.
@@ -1012,12 +1064,9 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, sreq *Stage
 			logger.Tf(ctx, "File saved to %v, %v", segment.ttsFile, segment.text)
 		}
 
-		// TODO: FIXME: Keep the order.
-		// Notify all subscribers the segment is ready.
-		for _, subscriber := range stage.subscribers {
-			if err := subscriber.addRobotAudioMessage(ctx, sreq.rid, segment.text, segment.asid, segment.ttsFile, segment); err != nil {
-				segment.err = errors.Wrapf(err, "copy to subscriber")
-			}
+		// Update all messages.
+		for _, m := range messages {
+			m.subscriber.completeRobotAudioMessage(ctx, sreq, segment, m)
 		}
 
 		// Start a goroutine to remove the sentence.

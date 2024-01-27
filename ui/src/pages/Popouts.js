@@ -253,8 +253,9 @@ function PopoutAITalk({roomUUID, roomToken}) {
           }, {
             headers: Token.loadBearerHeader(),
           }).then(res => {
-            const ts = new Date().toISOString().split('T')[1].split('Z')[0];
-            console.log(`Start: Query popout success at ${ts}: ${JSON.stringify(res.data.data)}`);
+            // Don't show detail logs for pulling.
+            //const ts = new Date().toISOString().split('T')[1].split('Z')[0];
+            //console.log(`Start: Query popout success at ${ts}: ${JSON.stringify(res.data.data)}`);
             resolve(res.data.data.msgs);
           }).catch(handleError);
         });
