@@ -795,6 +795,21 @@ cp ~/git/srs/trunk/doc/source.200kbps.768x320.flv test/
 
 Run testcase in Goland.
 
+## Update SRS Demo Environment
+
+To update the demo for SRS Stack, for bt.ossrs.net:
+
+```bash
+IMAGE=$(ssh root@ossrs.net docker images |grep srs-stack |grep v5 |awk '{print $1":"$2}' |head -n 1) &&
+docker build -t $IMAGE -f Dockerfile . &&
+docker save $IMAGE |gzip > t.tar.gz &&
+scp t.tar.gz root@ossrs.net:~/ &&
+ssh root@ossrs.net docker load -i t.tar.gz && 
+ssh root@ossrs.net docker stop srs-stack && 
+ssh root@ossrs.net docker rm srs-stack && 
+ssh root@ossrs.net docker image prune -f
+```
+
 ## Config SRS Container
 
 The SRS container is configured by environment variables, which loads the `/data/config/.srs.env` 

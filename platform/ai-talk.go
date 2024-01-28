@@ -30,7 +30,7 @@ import (
 )
 
 var talkServer *TalkServer
-var workDir string
+var aiTalkWorkDir, aiTalkExampleDir string
 
 type ASRResult struct {
 	Text     string
@@ -881,6 +881,7 @@ type Stage struct {
 	// The chat history, to use as prompt for next chat.
 	histories []openai.ChatCompletionMessage
 
+	// TODO: FIXME: Move robot to room.
 	// The robot created for this stage.
 	robot *Robot
 	// The AI configuration.
@@ -1141,7 +1142,7 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, sreq *Stage
 
 		ttsService := NewOpenAITTSService(stage.aiConfig)
 		if err := ttsService.RequestTTS(ctx, func(ext string) string {
-			segment.ttsFile = path.Join(workDir,
+			segment.ttsFile = path.Join(aiTalkWorkDir,
 				fmt.Sprintf("assistant-%v-sentence-%v-tts.%v", sreq.rid, segment.asid, ext),
 			)
 			return segment.ttsFile
@@ -1239,8 +1240,9 @@ func createNewStage(ctx context.Context, room *SrsLiveRoom) (*Stage, error) {
 }
 
 func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
-	workDir = path.Join(conf.Pwd, "containers/data/ai-talk")
-	logger.Tf(ctx, "AI-Talk work dir: %v", workDir)
+	aiTalkWorkDir = path.Join(conf.Pwd, "containers/data/ai-talk")
+	aiTalkExampleDir = path.Join(conf.Pwd, "containers/conf")
+	logger.Tf(ctx, "AI-Talk init workDir=%v, examples=%v", aiTalkWorkDir, aiTalkExampleDir)
 
 	ep := "/terraform/v1/ai-talk/stage/start"
 	logger.Tf(ctx, "Handle %v", ep)
@@ -1262,6 +1264,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "authenticate")
 			}
 
+			// TODO: FIXME: Should have room object in memory?
 			var room SrsLiveRoom
 			if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, roomUUID).Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v %v", SRS_LIVE_ROOM, roomUUID)
@@ -1477,7 +1480,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			// The rid is the request id, which identify this request, generally a question.
 			defer sreq.FastDispose()
 
-			sreq.inputFile = path.Join(workDir, fmt.Sprintf("assistant-%v-input.audio", sreq.rid))
+			sreq.inputFile = path.Join(aiTalkWorkDir, fmt.Sprintf("assistant-%v-input.audio", sreq.rid))
 			logger.Tf(ctx, "Stage: Got question sid=%v, rid=%v, user=%v, umi=%v, robot=%v(%v), input=%v",
 				sid, sreq.rid, userID, userMayInput, robot.uuid, robot.label, sreq.inputFile)
 
@@ -1613,7 +1616,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			logger.Tf(ctx, "Serve example file=%v, ext=%v, contentType=%v", filename, ext, contentType)
 
 			w.Header().Set("Content-Type", contentType)
-			http.ServeFile(w, r, path.Join(workDir, filename))
+			http.ServeFile(w, r, path.Join(aiTalkExampleDir, filename))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
