@@ -48,7 +48,7 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				// Create time.
 				CreatedAt: time.Now().Format(time.RFC3339),
 				// The stage level token for popout.
-				PopoutToken: uuid.NewString(),
+				RoomToken: uuid.NewString(),
 			}
 			if b, err := json.Marshal(room); err != nil {
 				return errors.Wrapf(err, "marshal room")
@@ -236,15 +236,16 @@ type SrsLiveRoom struct {
 	SrsAssistant
 	// The current AI assistant stage, might change to others.
 	StageUUID string `json:"stage_uuid"`
-	// The temporary authentication token, for each room.
-	PopoutToken string `json:"ptoken"`
+	// The room level authentication token, for example, popout application with this token to verify
+	// the room, to prevent leaking of the bearer token.
+	RoomToken string `json:"roomToken"`
 	// Create time.
 	CreatedAt string `json:"created_at"`
 }
 
 func (v *SrsLiveRoom) String() string {
-	return fmt.Sprintf("uuid=%v, title=%v, stream=%v, secret=%vB, ptoken=%vB, stage=%v, assistant=<%v>",
-		v.UUID, v.Title, v.StreamName, len(v.Secret), len(v.PopoutToken), v.StageUUID, v.SrsAssistant.String())
+	return fmt.Sprintf("uuid=%v, title=%v, stream=%v, secret=%vB, roomToken=%vB, stage=%v, assistant=<%v>",
+		v.UUID, v.Title, v.StreamName, len(v.Secret), len(v.RoomToken), v.StageUUID, v.SrsAssistant.String())
 }
 
 type SrsAssistant struct {

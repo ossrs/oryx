@@ -40,10 +40,8 @@ export default function Popouts() {
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
-      const {token} = res.data.data;
-      Token.updateBearer(token);
       setLoading(false);
-      console.log(`Verify room token ok, data=${JSON.stringify(res.data.data)}`);
+      console.log(`Verify room token ok`);
     }).catch(handleError);
   }, [handleError, searchParams, setLoading]);
 
@@ -62,7 +60,7 @@ export default function Popouts() {
       <Container fluid>
         <p></p>
         {assistant ?
-          <AITalkAssistantPanel {...{roomUUID, fullscreen: true}}/> :
+          <AITalkAssistantPanel {...{roomUUID, roomToken, fullscreen: true}}/> :
           <AITalkChatPanel {...{roomUUID, roomToken}}/>}
       </Container>
     );

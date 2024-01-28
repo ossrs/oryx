@@ -428,5 +428,5 @@ function LiveRoomAssistantStage({room}) {
     || !room.aiChatModel || !room.aiChatPrompt) {
     return <>{t('lr.room.aiwe')}</>;
   }
-  return <AITalkAssistantPanel {...{roomUUID: room.uuid, fullscreen: false}} />;
+  return <AITalkAssistantPanel {...{roomUUID: room.uuid, roomToken: room.roomToken, fullscreen: false}} />;
 }

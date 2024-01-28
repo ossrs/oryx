@@ -1203,7 +1203,7 @@ func createNewStage(ctx context.Context, room *SrsLiveRoom) (*Stage, error) {
 		stage.aiConfig = openai.DefaultConfig(room.AISecretKey)
 		stage.aiConfig.BaseURL = room.AIBaseURL
 		// Cache the room token to stage.
-		stage.roomToken = room.PopoutToken
+		stage.roomToken = room.RoomToken
 
 		// Bind stage to room.
 		room.StageUUID = stage.sid
@@ -1249,22 +1249,32 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
-			var roomUUID string
+			var roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string `json:"token"`
-				RoomUUID *string `json:"room"`
+				Token     *string `json:"token"`
+				RoomUUID  *string `json:"room"`
+				RoomToken *string `json:"roomToken"`
 			}{
-				Token: &token, RoomUUID: &roomUUID,
+				Token:    &token,
+				RoomUUID: &roomUUID, RoomToken: &roomToken,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
+			// Authenticate by bearer token if no room token
+			if roomToken == "" {
+				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+					return errors.Wrapf(err, "authenticate")
+				}
 			}
 
 			// TODO: FIXME: Should have room object in memory?
+			// Get the room to verify user.
+			if roomUUID == "" {
+				return errors.Errorf("empty room id")
+			}
+
 			var room SrsLiveRoom
 			if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, roomUUID).Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v %v", SRS_LIVE_ROOM, roomUUID)
@@ -1272,6 +1282,11 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("live room %v not exists", roomUUID)
 			} else if err = json.Unmarshal([]byte(r0), &room); err != nil {
 				return errors.Wrapf(err, "unmarshal %v %v", roomUUID, r0)
+			}
+
+			// Authenticate by room token if got one.
+			if roomToken != "" && room.RoomToken != roomToken {
+				return errors.Errorf("invalid room token %v", roomToken)
 			}
 
 			// Allow to reuse exists stage.
@@ -1352,19 +1367,26 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		if err := func() error {
 			var token string
 			var sid, robotUUID string
+			var roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token     *string `json:"token"`
 				StageUUID *string `json:"sid"`
 				RobotUUID *string `json:"robot"`
+				RoomUUID  *string `json:"room"`
+				RoomToken *string `json:"roomToken"`
 			}{
 				Token: &token, StageUUID: &sid, RobotUUID: &robotUUID,
+				RoomUUID: &roomUUID, RoomToken: &roomToken,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
+			// Authenticate by bearer token if no room token
+			if roomToken == "" {
+				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+					return errors.Wrapf(err, "authenticate")
+				}
 			}
 
 			if sid == "" {
@@ -1377,6 +1399,14 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage := talkServer.QueryStage(sid)
 			if stage == nil {
 				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			// Authenticate by room token if got one.
+			if roomToken != "" && stage.roomToken != roomToken {
+				return errors.Errorf("invalid room token %v", roomToken)
+			}
+			if roomUUID != "" && stage.room.UUID != roomUUID {
+				return errors.Errorf("invalid room %v", roomUUID)
 			}
 
 			// Keep alive the stage.
@@ -1416,6 +1446,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		if err := func() error {
 			var token string
 			var sid, rid, userID, robotUUID, audioBase64Data string
+			var roomUUID, roomToken string
 			var userMayInput float64
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token        *string  `json:"token"`
@@ -1425,16 +1456,22 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				RequestUUID  *string  `json:"rid"`
 				UserMayInput *float64 `json:"umi"`
 				AudioData    *string  `json:"audio"`
+				RoomUUID     *string  `json:"room"`
+				RoomToken    *string  `json:"roomToken"`
 			}{
 				Token: &token, StageUUID: &sid, UserID: &userID, RobotUUID: &robotUUID, RequestUUID: &rid,
 				UserMayInput: &userMayInput, AudioData: &audioBase64Data,
+				RoomUUID: &roomUUID, RoomToken: &roomToken,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
+			// Authenticate by bearer token if no room token
+			if roomToken == "" {
+				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+					return errors.Wrapf(err, "authenticate")
+				}
 			}
 
 			if sid == "" {
@@ -1453,6 +1490,14 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage := talkServer.QueryStage(sid)
 			if stage == nil {
 				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			// Authenticate by room token if got one.
+			if roomToken != "" && stage.roomToken != roomToken {
+				return errors.Errorf("invalid room token %v", roomToken)
+			}
+			if roomUUID != "" && stage.room.UUID != roomUUID {
+				return errors.Errorf("invalid room %v", roomUUID)
 			}
 
 			// Keep alive the stage.
@@ -1543,19 +1588,26 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		if err := func() error {
 			var token string
 			var sid, rid string
+			var roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token       *string `json:"token"`
 				StageUUID   *string `json:"sid"`
 				RequestUUID *string `json:"rid"`
+				RoomUUID    *string `json:"room"`
+				RoomToken   *string `json:"roomToken"`
 			}{
 				Token: &token, StageUUID: &sid, RequestUUID: &rid,
+				RoomUUID: &roomUUID, RoomToken: &roomToken,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
+			// Authenticate by bearer token if no room token
+			if roomToken == "" {
+				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+					return errors.Wrapf(err, "authenticate")
+				}
 			}
 
 			if sid == "" {
@@ -1568,6 +1620,14 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage := talkServer.QueryStage(sid)
 			if stage == nil {
 				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			// Authenticate by room token if got one.
+			if roomToken != "" && stage.roomToken != roomToken {
+				return errors.Errorf("invalid room token %v", roomToken)
+			}
+			if roomUUID != "" && stage.room.UUID != roomUUID {
+				return errors.Errorf("invalid room %v", roomUUID)
 			}
 
 			// Keep alive the stage.
@@ -1647,21 +1707,11 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "unmarshal %v %v", roomUUID, r0)
 			}
 
-			if room.PopoutToken != roomToken {
+			if room.RoomToken != roomToken {
 				return errors.Errorf("invalid room token")
 			}
 
-			// TODO: To improve security level, we should not response the bearer token, instead we can
-			//   support authentication with room token. In the future, we can add a token type to support
-			//   other tokens.
-			// By default, it is the bearer token.
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-
-			ohttp.WriteData(ctx, w, r, &struct {
-				Token string `json:"token"`
-			}{
-				Token: apiSecret,
-			})
+			ohttp.WriteData(ctx, w, r, nil)
 			logger.Tf(ctx, "srs ai-talk verify popout token ok")
 			return nil
 		}(); err != nil {
@@ -1674,21 +1724,28 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
-			var roomUUID string
+			var roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string `json:"token"`
-				RoomUUID *string `json:"room"`
+				Token     *string `json:"token"`
+				RoomUUID  *string `json:"room"`
+				RoomToken *string `json:"roomToken"`
 			}{
-				Token: &token, RoomUUID: &roomUUID,
+				Token:    &token,
+				RoomUUID: &roomUUID, RoomToken: &roomToken,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
+			// Authenticate by bearer token if no room token
+			if roomToken == "" {
+				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+					return errors.Wrapf(err, "authenticate")
+				}
 			}
 
+			// TODO: FIXME: Should have room object in memory?
+			// Get the room to verify user.
 			if roomUUID == "" {
 				return errors.Errorf("empty room id")
 			}
@@ -1700,6 +1757,11 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("live room %v not exists", roomUUID)
 			} else if err = json.Unmarshal([]byte(r0), &room); err != nil {
 				return errors.Wrapf(err, "unmarshal %v %v", roomUUID, r0)
+			}
+
+			// Authenticate by room token if got one.
+			if roomToken != "" && room.RoomToken != roomToken {
+				return errors.Errorf("invalid room token %v", roomToken)
 			}
 
 			// Use the latest stage as subscriber's source stage, note that it may change.
@@ -1775,19 +1837,26 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		if err := func() error {
 			var token string
 			var sid, spid string
+			var roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token        *string `json:"token"`
 				StageUUID    *string `json:"sid"`
 				SubscriberID *string `json:"spid"`
+				RoomUUID     *string `json:"room"`
+				RoomToken    *string `json:"roomToken"`
 			}{
 				Token: &token, StageUUID: &sid, SubscriberID: &spid,
+				RoomUUID: &roomUUID, RoomToken: &roomToken,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
+			// Authenticate by bearer token if no room token
+			if roomToken == "" {
+				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+					return errors.Wrapf(err, "authenticate")
+				}
 			}
 
 			if sid == "" {
@@ -1800,6 +1869,14 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage := talkServer.QueryStage(sid)
 			if stage == nil {
 				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			// Authenticate by room token if got one.
+			if roomToken != "" && stage.roomToken != roomToken {
+				return errors.Errorf("invalid room token %v", roomToken)
+			}
+			if roomUUID != "" && stage.room.UUID != roomUUID {
+				return errors.Errorf("invalid room %v", roomUUID)
 			}
 
 			subscriber := stage.querySubscriber(spid)
@@ -1855,14 +1932,27 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("empty asid")
 			}
 
+			roomUUID := q.Get("room")
+			if roomUUID == "" {
+				return errors.Errorf("empty room")
+			}
+
 			roomToken := q.Get("roomToken")
-			if asid == "" {
+			if roomToken == "" {
 				return errors.Errorf("empty roomToken")
 			}
 
 			stage := talkServer.QueryStage(sid)
 			if stage == nil {
 				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			// Authenticate by room token if got one.
+			if roomToken != "" && stage.roomToken != roomToken {
+				return errors.Errorf("invalid room token %v", roomToken)
+			}
+			if roomUUID != "" && stage.room.UUID != roomUUID {
+				return errors.Errorf("invalid room %v", roomUUID)
 			}
 
 			if stage.roomToken != roomToken {
@@ -1924,20 +2014,26 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		if err := func() error {
 			var token string
 			var sid, spid, asid string
+			var roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token            *string `json:"token"`
 				StageUUID        *string `json:"sid"`
 				SubscriberID     *string `json:"spid"`
 				AudioSegmentUUID *string `json:"asid"`
+				RoomUUID         *string `json:"room"`
+				RoomToken        *string `json:"roomToken"`
 			}{
 				Token: &token, StageUUID: &sid, SubscriberID: &spid, AudioSegmentUUID: &asid,
+				RoomUUID: &roomUUID, RoomToken: &roomToken,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
+			if roomToken == "" {
+				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+					return errors.Wrapf(err, "authenticate")
+				}
 			}
 
 			if sid == "" {
@@ -1953,6 +2049,14 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage := talkServer.QueryStage(sid)
 			if stage == nil {
 				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			// Authenticate by room token if got one.
+			if roomToken != "" && stage.roomToken != roomToken {
+				return errors.Errorf("invalid room token %v", roomToken)
+			}
+			if roomUUID != "" && stage.room.UUID != roomUUID {
+				return errors.Errorf("invalid room %v", roomUUID)
 			}
 
 			subscriber := stage.querySubscriber(spid)
@@ -1986,19 +2090,25 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		if err := func() error {
 			var token string
 			var sid, userID string
+			var roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token     *string `json:"token"`
 				StageUUID *string `json:"sid"`
 				UserID    *string `json:"userId"`
+				RoomUUID  *string `json:"room"`
+				RoomToken *string `json:"roomToken"`
 			}{
 				Token: &token, StageUUID: &sid, UserID: &userID,
+				RoomUUID: &roomUUID, RoomToken: &roomToken,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
+			if roomToken == "" {
+				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+					return errors.Wrapf(err, "authenticate")
+				}
 			}
 
 			if sid == "" {
@@ -2011,6 +2121,14 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage := talkServer.QueryStage(sid)
 			if stage == nil {
 				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			// Authenticate by room token if got one.
+			if roomToken != "" && stage.roomToken != roomToken {
+				return errors.Errorf("invalid room token %v", roomToken)
+			}
+			if roomUUID != "" && stage.room.UUID != roomUUID {
+				return errors.Errorf("invalid room %v", roomUUID)
 			}
 
 			user := stage.queryUser(userID)
@@ -2040,22 +2158,28 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		if err := func() error {
 			var token string
 			var sid, userID, username, userLanguage string
+			var roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token        *string `json:"token"`
 				StageUUID    *string `json:"sid"`
 				UserID       *string `json:"userId"`
 				Username     *string `json:"name"`
 				UserLanguage *string `json:"lang"`
+				RoomUUID     *string `json:"room"`
+				RoomToken    *string `json:"roomToken"`
 			}{
 				Token: &token, StageUUID: &sid, UserID: &userID,
 				Username: &username, UserLanguage: &userLanguage,
+				RoomUUID: &roomUUID, RoomToken: &roomToken,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
+			if roomToken == "" {
+				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+					return errors.Wrapf(err, "authenticate")
+				}
 			}
 
 			if sid == "" {
@@ -2068,6 +2192,14 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage := talkServer.QueryStage(sid)
 			if stage == nil {
 				return errors.Errorf("invalid sid %v", sid)
+			}
+
+			// Authenticate by room token if got one.
+			if roomToken != "" && stage.roomToken != roomToken {
+				return errors.Errorf("invalid room token %v", roomToken)
+			}
+			if roomUUID != "" && stage.room.UUID != roomUUID {
+				return errors.Errorf("invalid room %v", roomUUID)
 			}
 
 			user := stage.queryUser(userID)

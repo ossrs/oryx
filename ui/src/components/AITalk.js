@@ -8,7 +8,7 @@ import {Locale, Token} from "../utils";
 import * as Icon from "react-bootstrap-icons";
 import Container from "react-bootstrap/Container";
 
-export function AITalkAssistantPanel({roomUUID, fullscreen}) {
+export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
   const isMobile = useIsMobile();
@@ -28,7 +28,6 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
 
   // The uuid and robot in stage, which is unchanged after stage started.
   const [stageRobot, setStageRobot] = React.useState(null);
-  const [roomToken, setRoomToken] = React.useState(null);
   const [stageUUID, setStageUUID] = React.useState(null);
   const [userID, setUserID] = React.useState(null);
   const [stageUser, setStageUser] = React.useState(null);
@@ -171,7 +170,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
 
     console.log(`Start: Create a new stage`);
     axios.post('/terraform/v1/ai-talk/stage/start', {
-      room: roomUUID,
+      room: roomUUID, roomToken,
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
@@ -179,9 +178,8 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       setStageUUID(res.data.data.sid);
       setStageRobot(res.data.data.robot);
       setUserID(res.data.data.userId);
-      setRoomToken(res.data.data.roomToken);
     }).catch(handleError);
-  }, [handleError, booting, roomUUID, setStageUUID, setStageRobot, setUserID, setRoomToken]);
+  }, [handleError, booting, roomUUID, roomToken, setStageUUID, setStageRobot, setUserID]);
 
   // Start to chat, set the robot to ready.
   const startChatting = React.useCallback(async (user) => {
@@ -287,7 +285,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       // End conversation, for stat the elapsed time cost accurately.
       const requestUUID = await new Promise((resolve, reject) => {
         axios.post('/terraform/v1/ai-talk/stage/conversation', {
-          sid: stageUUID, robot: stageRobot.uuid,
+          room: roomUUID, roomToken, sid: stageUUID, robot: stageRobot.uuid,
         }, {
           headers: Token.loadBearerHeader(),
         }).then(res => {
@@ -316,7 +314,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
         ref.current.audioChunks = [];
 
         axios.post('/terraform/v1/ai-talk/stage/upload', {
-          sid: stageUUID, robot: stageRobot.uuid, rid: requestUUID, userId: userID,
+          room: roomUUID, roomToken, sid: stageUUID, robot: stageRobot.uuid, rid: requestUUID, userId: userID,
           umi: userMayInput, audio: audioBase64Data,
         }, {
           headers: Token.loadBearerHeader(),
@@ -331,7 +329,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       while (true) {
         const resp = await new Promise((resolve, reject) => {
           axios.post('/terraform/v1/ai-talk/stage/query', {
-            sid: stageUUID, rid: requestUUID,
+            room: roomUUID, roomToken, sid: stageUUID, rid: requestUUID,
           }, {
             headers: Token.loadBearerHeader(),
           }).then(res => {
@@ -414,7 +412,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
     ref.current.stopHandler = setTimeout(() => {
       stopRecordingImpl();
     }, timeoutWaitForLastVoice);
-  }, [stageUUID, userID, stageRobot, robotReady, ref, setProcessing, setMicWorking, refRequest]);
+  }, [roomUUID, roomToken, stageUUID, userID, stageRobot, robotReady, ref, setProcessing, setMicWorking, refRequest]);
 
   // Setup the keyboard event, for PC browser.
   React.useEffect(() => {
@@ -448,14 +446,14 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
 
     console.log(`Start: Create a new stage`);
     axios.post('/terraform/v1/ai-talk/subscribe/start', {
-      room: roomUUID,
+      room: roomUUID, roomToken,
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
       console.log(`Start: Create popout success: ${JSON.stringify(res.data.data)}`);
       setStagePopoutUUID(res.data.data.spid);
     }).catch(handleError);
-  }, [handleError, roomUUID, setStagePopoutUUID, stageUUID]);
+  }, [handleError, roomUUID, roomToken, setStagePopoutUUID, stageUUID]);
 
   // Try to request messages of stage util end.
   React.useEffect(() => {
@@ -469,7 +467,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       try {
         const {msgs, pending} = await new Promise((resolve, reject) => {
           axios.post('/terraform/v1/ai-talk/subscribe/query', {
-            sid: stageUUID, spid: stagePopoutUUID,
+            room: roomUUID, roomToken, sid: stageUUID, spid: stagePopoutUUID,
           }, {
             headers: Token.loadBearerHeader(),
           }).then(res => {
@@ -496,7 +494,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
 
           // Play the AI generated audio.
           await new Promise(resolve => {
-            const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}&roomToken=${roomToken}`;
+            const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}&room=${roomUUID}&roomToken=${roomToken}`;
             console.log(`TTS: Playing ${url}`);
 
             const listener = () => {
@@ -516,7 +514,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
           // Remove the AI generated audio.
           await new Promise((resolve, reject) => {
             axios.post('/terraform/v1/ai-talk/subscribe/remove', {
-              sid: stageUUID, spid: stagePopoutUUID, asid: audioSegmentUUID,
+              room: roomUUID, roomToken, sid: stageUUID, spid: stagePopoutUUID, asid: audioSegmentUUID,
             }, {
               headers: Token.loadBearerHeader(),
             }).then(res => {
@@ -534,7 +532,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
       requestMessages().catch(handleError);
     }, 1000);
     return () => clearInterval(timer);
-  }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, roomToken]);
+  }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, roomUUID, roomToken]);
 
   // When we got any messages from server, set to playing mode and last for a while.
   React.useEffect(() => {
@@ -580,7 +578,7 @@ export function AITalkAssistantPanel({roomUUID, fullscreen}) {
     <div>
       <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
       {stageUUID && !robotReady ? <>
-        <AITalkUserConfig {...{stageUUID, userID, disabled: requesting, label: t('lr.room.talk'), onSubmit: startChatting}} />
+        <AITalkUserConfig {...{roomUUID, roomToken, stageUUID, userID, disabled: requesting, label: t('lr.room.talk'), onSubmit: startChatting}} />
       </> : ''}
       {robotReady && !isMobile ?
         <Row>
@@ -699,7 +697,7 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
 
     console.log(`Start: Create a new stage`);
     axios.post('/terraform/v1/ai-talk/subscribe/start', {
-      room: roomUUID,
+      room: roomUUID, roomToken,
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
@@ -708,7 +706,7 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
       setStagePopoutUUID(res.data.data.spid);
       setStageRobot(res.data.data.robot);
     }).catch(handleError);
-  }, [handleError, roomUUID, setStagePopoutUUID, setStageRobot, setStageUUID]);
+  }, [handleError, roomUUID, roomToken, setStagePopoutUUID, setStageRobot, setStageUUID]);
 
   // Try to start the robot automatically, for OBS.
   React.useEffect(() => {
@@ -781,7 +779,7 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
       try {
         const msgs = await new Promise((resolve, reject) => {
           axios.post('/terraform/v1/ai-talk/subscribe/query', {
-            sid: stageUUID, spid: stagePopoutUUID,
+            room: roomUUID, roomToken, sid: stageUUID, spid: stagePopoutUUID,
           }, {
             headers: Token.loadBearerHeader(),
           }).then(res => {
@@ -805,7 +803,7 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
 
           // Play the AI generated audio.
           await new Promise(resolve => {
-            const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}&roomToken=${roomToken}`;
+            const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}&room=${roomUUID}&roomToken=${roomToken}`;
             console.log(`TTS: Playing ${url}`);
 
             const listener = () => {
@@ -825,7 +823,7 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
           // Remove the AI generated audio.
           await new Promise((resolve, reject) => {
             axios.post('/terraform/v1/ai-talk/subscribe/remove', {
-              sid: stageUUID, spid: stagePopoutUUID, asid: audioSegmentUUID,
+              room: roomUUID, roomToken, sid: stageUUID, spid: stagePopoutUUID, asid: audioSegmentUUID,
             }, {
               headers: Token.loadBearerHeader(),
             }).then(res => {
@@ -843,7 +841,7 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
       requestMessages().catch(handleError);
     }, 1000);
     return () => clearInterval(timer);
-  }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, roomToken]);
+  }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, roomUUID, roomToken]);
 
   return (
     <Container fluid>
@@ -863,7 +861,7 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
   );
 }
 
-function AITalkUserConfig({stageUUID, userID, disabled, label, onSubmit, onCancel}) {
+function AITalkUserConfig({roomUUID, roomToken, stageUUID, userID, disabled, label, onSubmit, onCancel}) {
   const handleError = useErrorHandler();
   const [loading, setLoading] = React.useState(true);
   const [user, setUser] = React.useState(null);
@@ -872,7 +870,7 @@ function AITalkUserConfig({stageUUID, userID, disabled, label, onSubmit, onCance
     if (!userID) return;
 
     axios.post('/terraform/v1/ai-talk/user/query', {
-      sid: stageUUID, userId: userID,
+      room: roomUUID, roomToken, sid: stageUUID, userId: userID,
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
@@ -880,15 +878,15 @@ function AITalkUserConfig({stageUUID, userID, disabled, label, onSubmit, onCance
       setUser({...res.data.data, userId: userID});
       console.log(`Start: Query stage user success, ${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
-  }, [handleError, setUser, setLoading, stageUUID, userID]);
+  }, [handleError, setUser, setLoading, roomUUID, roomToken, stageUUID, userID]);
 
   if (loading || !user) {
     return <><Spinner animation="border" variant="primary" size='sm'></Spinner> Loading...</>;
   }
-  return <AITalkUserConfigImpl {...{stageUUID, user, disabled, label, onSubmit, onCancel}} />;
+  return <AITalkUserConfigImpl {...{roomUUID, roomToken, stageUUID, user, disabled, label, onSubmit, onCancel}} />;
 }
 
-function AITalkUserConfigImpl({stageUUID, user, disabled, label, onSubmit, onCancel}) {
+function AITalkUserConfigImpl({roomUUID, roomToken, stageUUID, user, disabled, label, onSubmit, onCancel}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
 
@@ -900,7 +898,8 @@ function AITalkUserConfigImpl({stageUUID, user, disabled, label, onSubmit, onCan
     setRequesting(true);
 
     axios.post('/terraform/v1/ai-talk/user/update', {
-      sid: stageUUID, userId: user.userId, name: userName, lang: userLanguage
+      room: roomUUID, roomToken, sid: stageUUID, userId: user.userId,
+      name: userName, lang: userLanguage
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
@@ -908,7 +907,7 @@ function AITalkUserConfigImpl({stageUUID, user, disabled, label, onSubmit, onCan
       console.log(`Start: Update stage user success`);
       onSubmit && onSubmit(res.data.data);
     }).catch(handleError);
-  }, [handleError, stageUUID, user, userName, userLanguage, onSubmit, setRequesting]);
+  }, [handleError, roomUUID, roomToken, stageUUID, user, userName, userLanguage, onSubmit, setRequesting]);
 
   return <>
     <Form>
