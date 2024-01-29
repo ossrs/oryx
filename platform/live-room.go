@@ -120,6 +120,12 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "authenticate")
 			}
 
+			// As room is a template config, to create active stage. So if we update the template, we
+			// need to update the active stage object.
+			if err := room.UpdateStage(ctx); err != nil {
+				return errors.Wrapf(err, "update stage")
+			}
+
 			if b, err := json.Marshal(room); err != nil {
 				return errors.Wrapf(err, "marshal room")
 			} else if err := rdb.HSet(ctx, SRS_LIVE_ROOM, room.UUID, string(b)).Err(); err != nil {
@@ -246,6 +252,14 @@ type SrsLiveRoom struct {
 func (v *SrsLiveRoom) String() string {
 	return fmt.Sprintf("uuid=%v, title=%v, stream=%v, secret=%vB, roomToken=%vB, stage=%v, assistant=<%v>",
 		v.UUID, v.Title, v.StreamName, len(v.Secret), len(v.RoomToken), v.StageUUID, v.SrsAssistant.String())
+}
+
+func (v *SrsLiveRoom) UpdateStage(ctx context.Context) error {
+	if stage := talkServer.QueryStageOfRoom(v.UUID); stage != nil {
+		stage.UpdateFromRoom(v)
+	}
+
+	return nil
 }
 
 type SrsAssistant struct {

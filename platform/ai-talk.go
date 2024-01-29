@@ -149,7 +149,7 @@ type openaiChatService struct {
 	onFirstResponse func(ctx context.Context, text string)
 }
 
-func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest, stage *Stage, user *StageUser, robot *Robot) error {
+func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest, stage *Stage, user *StageUser) error {
 	if stage.previousUser != "" && stage.previousAssitant != "" {
 		stage.histories = append(stage.histories, openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleUser,
@@ -159,7 +159,7 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 			Content: stage.previousAssitant,
 		})
 
-		for len(stage.histories) > robot.chatWindow*2 {
+		for len(stage.histories) > stage.chatWindow*2 {
 			stage.histories = stage.histories[1:]
 		}
 	}
@@ -167,8 +167,8 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 	stage.previousUser = user.previousAsrText
 	stage.previousAssitant = ""
 
-	system := robot.prompt
-	system += fmt.Sprintf(" Keep your reply neat, limiting the reply to %v words.", robot.replyLimit)
+	system := stage.prompt
+	system += fmt.Sprintf(" Keep your reply neat, limiting the reply to %v words.", stage.replyLimit)
 	logger.Tf(ctx, "AI system prompt: %v", system)
 	messages := []openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleSystem, Content: system},
@@ -180,11 +180,11 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 		Content: user.previousAsrText,
 	})
 
-	model := robot.chatModel
+	model := stage.chatModel
 	maxTokens := 1024
 	temperature := float32(0.9)
-	logger.Tf(ctx, "robot=%v(%v), OPENAI_PROXY: %v, AIT_CHAT_MODEL: %v, AIT_MAX_TOKENS: %v, AIT_TEMPERATURE: %v, window=%v, histories=%v",
-		robot.uuid, robot.label, v.conf.BaseURL, model, maxTokens, temperature, robot.chatWindow, len(stage.histories))
+	logger.Tf(ctx, "AIChat is OPENAI_PROXY: %v, AIT_CHAT_MODEL: %v, AIT_MAX_TOKENS: %v, AIT_TEMPERATURE: %v, window=%v, histories=%v",
+		v.conf.BaseURL, model, maxTokens, temperature, stage.chatWindow, len(stage.histories))
 
 	client := openai.NewClientWithConfig(v.conf)
 	gptChatStream, err := client.CreateChatCompletionStream(
@@ -206,7 +206,7 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 
 	go func() {
 		defer gptChatStream.Close()
-		if err := v.handle(ctx, stage, user, robot, sreq, gptChatStream, aiFirstResponseCancel); err != nil {
+		if err := v.handle(ctx, stage, user, sreq, gptChatStream, aiFirstResponseCancel); err != nil {
 			logger.Ef(ctx, "Handle stream failed, err %+v", err)
 		}
 	}()
@@ -224,7 +224,7 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 }
 
 func (v *openaiChatService) handle(
-	ctx context.Context, stage *Stage, user *StageUser, robot *Robot, sreq *StageRequest,
+	ctx context.Context, stage *Stage, user *StageUser, sreq *StageRequest,
 	gptChatStream *openai.ChatCompletionStream, aiFirstResponseCancel context.CancelFunc,
 ) error {
 	defer aiFirstResponseCancel()
@@ -322,8 +322,8 @@ func (v *openaiChatService) handle(
 		}
 
 		if firstSentense {
-			if robot.prefix != "" {
-				filteredSentence = fmt.Sprintf("%v %v", robot.prefix, filteredSentence)
+			if stage.prefix != "" {
+				filteredSentence = fmt.Sprintf("%v %v", stage.prefix, filteredSentence)
 			}
 			if v.onFirstResponse != nil {
 				v.onFirstResponse(ctx, filteredSentence)
@@ -412,39 +412,6 @@ func (v *openaiTTSService) RequestTTS(ctx context.Context, buildFilepath func(ex
 	}
 
 	return nil
-}
-
-// The Robot is a robot that user can talk with.
-type Robot struct {
-	// The robot uuid.
-	uuid string
-	// The robot label.
-	label string
-	// The robot prompt.
-	prompt string
-	// The robot ASR language.
-	asrLanguage string
-	// The prefix for TTS for the first sentence if too short.
-	prefix string
-	// The welcome voice url.
-	voice string
-	// Reply words limit.
-	replyLimit int
-	// AI Chat model.
-	chatModel string
-	// AI Chat message window.
-	chatWindow int
-}
-
-func (v Robot) String() string {
-	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("uuid:%v,label:%v,asr:%v", v.uuid, v.label, v.asrLanguage))
-	if v.prefix != "" {
-		sb.WriteString(fmt.Sprintf(",prefix:%v", v.prefix))
-	}
-	sb.WriteString(fmt.Sprintf(",voice=%v,limit=%v,model=%v,window=%v,prompt:%v",
-		v.voice, v.replyLimit, v.chatModel, v.chatWindow, v.prompt))
-	return sb.String()
 }
 
 // The StageRequest is a request from user, submited to ASR and AI, generated answer segments,
@@ -840,8 +807,11 @@ type StageUser struct {
 	UserID string `json:"userId"`
 	// The username.
 	Username string `json:"username,omitempty"`
+
 	// The language the host use.
 	Language string `json:"language,omitempty"`
+	// The AI welcome voice url, binding to the language of user.
+	Voice string `json:"voice,omitempty"`
 
 	// Previous ASR text, to use as prompt for next ASR.
 	previousAsrText string
@@ -881,12 +851,25 @@ type Stage struct {
 	// The chat history, to use as prompt for next chat.
 	histories []openai.ChatCompletionMessage
 
-	// TODO: FIXME: Move robot to room.
-	// The robot created for this stage.
-	robot *Robot
+	// The AI prompt.
+	prompt string
+	// The AI ASR language.
+	asrLanguage string
+	// The prefix for TTS for the first sentence if too short.
+	prefix string
+	// The welcome voice url.
+	voice string
+	// Reply words limit.
+	replyLimit int
+	// AI Chat model.
+	chatModel string
+	// AI Chat message window.
+	chatWindow int
+
 	// The AI configuration.
 	aiConfig openai.ClientConfig
-	// The room it belongs to.
+	// The room it belongs to. Note that it's a caching object, update when updating the room. The room object
+	// is not the same one, even the uuid is the same. The room is always available when stage is not expired.
 	room *SrsLiveRoom
 	// All the requests from user.
 	requests []*StageRequest
@@ -894,8 +877,6 @@ type Stage struct {
 	subscribers []*StageSubscriber
 	// All the users binding to this stage.
 	users []*StageUser
-	// Cache the room level token for popout.
-	roomToken string
 }
 
 func NewStage(opts ...func(*Stage)) *Stage {
@@ -914,6 +895,17 @@ func NewStage(opts ...func(*Stage)) *Stage {
 	return v
 }
 
+func (v Stage) String() string {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("sid:%v,asr:%v", v.sid, v.asrLanguage))
+	if v.prefix != "" {
+		sb.WriteString(fmt.Sprintf(",prefix:%v", v.prefix))
+	}
+	sb.WriteString(fmt.Sprintf(",voice=%v,limit=%v,model=%v,window=%v,prompt:%v",
+		v.voice, v.replyLimit, v.chatModel, v.chatWindow, v.prompt))
+	return sb.String()
+}
+
 func (v *Stage) Close() error {
 	for _, subscriber := range v.subscribers {
 		subscriber.Close()
@@ -922,6 +914,31 @@ func (v *Stage) Close() error {
 		request.Close()
 	}
 	return v.ttsWorker.Close()
+}
+
+func helloVoiceFromLanguage(language string) string {
+	if language == "zh" {
+		return "hello-chinese.aac"
+	}
+	return "hello-english.aac"
+}
+
+func (v *Stage) UpdateFromRoom(room *SrsLiveRoom) {
+	// Create robot for the stage, which attach to a special room.
+	v.voice = helloVoiceFromLanguage(room.AIASRLanguage)
+	v.prompt = room.AIChatPrompt
+	v.asrLanguage = room.AIASRLanguage
+	v.replyLimit = room.AIChatMaxWords
+	v.chatModel = room.AIChatModel
+	v.chatWindow = room.AIChatMaxWindow
+
+	// Initialize the AI services.
+	v.aiConfig = openai.DefaultConfig(room.AISecretKey)
+	v.aiConfig.BaseURL = room.AIBaseURL
+
+	// Bind stage to room.
+	room.StageUUID = v.sid
+	v.room = room
 }
 
 func (v *Stage) Expired() bool {
@@ -1082,6 +1099,18 @@ func (v *TalkServer) QueryStage(rid string) *Stage {
 	return nil
 }
 
+func (v *TalkServer) QueryStageOfRoom(roomUUID string) *Stage {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
+	for _, stage := range v.stages {
+		if stage.room.UUID == roomUUID {
+			return stage
+		}
+	}
+	return nil
+}
+
 // The TTSWorker is a worker to convert answers from text to audio.
 type TTSWorker struct {
 	// TODO: FIXME: Remove this because they are stored in the stage request.
@@ -1183,62 +1212,6 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, sreq *Stage
 	}()
 }
 
-func createNewStage(ctx context.Context, room *SrsLiveRoom) (*Stage, error) {
-	ctx = logger.WithContext(ctx)
-
-	stage := NewStage(func(stage *Stage) {
-		stage.loggingCtx = ctx
-
-		// Create robot for the stage, which attach to a special room.
-		stage.robot = &Robot{
-			uuid: uuid.NewString(), label: "Default", voice: "hello-english.aac",
-			prompt: room.AIChatPrompt, asrLanguage: room.AIASRLanguage, replyLimit: room.AIChatMaxWords,
-			chatModel: room.AIChatModel, chatWindow: room.AIChatMaxWindow,
-		}
-		if room.AIASRLanguage == "zh" {
-			stage.robot.voice = "hello-chinese.aac"
-		}
-
-		// Initialize the AI services.
-		stage.aiConfig = openai.DefaultConfig(room.AISecretKey)
-		stage.aiConfig.BaseURL = room.AIBaseURL
-		// Cache the room token to stage.
-		stage.roomToken = room.RoomToken
-
-		// Bind stage to room.
-		room.StageUUID = stage.sid
-		stage.room = room
-	})
-
-	if b, err := json.Marshal(room); err != nil {
-		return nil, errors.Wrapf(err, "marshal room")
-	} else if err := rdb.HSet(ctx, SRS_LIVE_ROOM, room.UUID, string(b)).Err(); err != nil {
-		return nil, errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
-	}
-
-	talkServer.AddStage(stage)
-	logger.Tf(ctx, "Stage: Create new stage sid=%v, all=%v", stage.sid, talkServer.CountStage())
-
-	go func() {
-		defer stage.Close()
-
-		for ctx.Err() == nil {
-			select {
-			case <-ctx.Done():
-			case <-time.After(3 * time.Second):
-				if stage.Expired() {
-					logger.Tf(ctx, "Stage: Remove %v for expired, update=%v",
-						stage.sid, stage.update.Format(time.RFC3339))
-					talkServer.RemoveStage(stage)
-					return
-				}
-			}
-		}
-	}()
-
-	return stage, nil
-}
-
 func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 	aiTalkWorkDir = path.Join(conf.Pwd, "containers/data/ai-talk")
 	aiTalkExampleDir = path.Join(conf.Pwd, "containers/conf")
@@ -1247,6 +1220,44 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 	ep := "/terraform/v1/ai-talk/stage/start"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		createNewStage := func(ctx context.Context, room *SrsLiveRoom) (*Stage, error) {
+			ctx = logger.WithContext(ctx)
+
+			stage := NewStage(func(stage *Stage) {
+				stage.loggingCtx = ctx
+				stage.UpdateFromRoom(room)
+			})
+
+			// Store the room, as we modify the stage UUID of room.
+			if b, err := json.Marshal(room); err != nil {
+				return nil, errors.Wrapf(err, "marshal room")
+			} else if err := rdb.HSet(ctx, SRS_LIVE_ROOM, room.UUID, string(b)).Err(); err != nil {
+				return nil, errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
+			}
+
+			talkServer.AddStage(stage)
+			logger.Tf(ctx, "Stage: Create new stage sid=%v, all=%v", stage.sid, talkServer.CountStage())
+
+			go func() {
+				defer stage.Close()
+
+				for ctx.Err() == nil {
+					select {
+					case <-ctx.Done():
+					case <-time.After(3 * time.Second):
+						if stage.Expired() {
+							logger.Tf(ctx, "Stage: Remove %v for expired, update=%v",
+								stage.sid, stage.update.Format(time.RFC3339))
+							talkServer.RemoveStage(stage)
+							return
+						}
+					}
+				}
+			}()
+
+			return stage, nil
+		}
+
 		if err := func() error {
 			var token string
 			var roomUUID, roomToken string
@@ -1308,7 +1319,8 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			// Create new user bind to this stage.
 			user := &StageUser{
 				UserID: uuid.NewString(), stage: stage,
-				Language: stage.robot.asrLanguage,
+				Language: stage.asrLanguage,
+				Voice:    stage.voice,
 			}
 			user.KeepAlive()
 			stage.addUser(user)
@@ -1330,26 +1342,15 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}()
 
-			type StageRobotResult struct {
-				UUID  string `json:"uuid"`
-				Label string `json:"label"`
-				Voice string `json:"voice"`
-			}
 			type StageResult struct {
-				StageID   string           `json:"sid"`
-				RoomToken string           `json:"roomToken"`
-				UserID    string           `json:"userId"`
-				Robot     StageRobotResult `json:"robot"`
+				StageID   string `json:"sid"`
+				RoomToken string `json:"roomToken"`
+				UserID    string `json:"userId"`
 			}
 			r0 := &StageResult{
 				StageID:   stage.sid,
-				RoomToken: stage.roomToken,
+				RoomToken: stage.room.RoomToken,
 				UserID:    user.UserID,
-				Robot: StageRobotResult{
-					UUID:  stage.robot.uuid,
-					Label: stage.robot.label,
-					Voice: stage.robot.voice,
-				},
 			}
 
 			ohttp.WriteData(ctx, w, r, r0)
@@ -1366,17 +1367,14 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
-			var sid, robotUUID string
-			var roomUUID, roomToken string
+			var sid, roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token     *string `json:"token"`
 				StageUUID *string `json:"sid"`
-				RobotUUID *string `json:"robot"`
 				RoomUUID  *string `json:"room"`
 				RoomToken *string `json:"roomToken"`
 			}{
-				Token: &token, StageUUID: &sid, RobotUUID: &robotUUID,
-				RoomUUID: &roomUUID, RoomToken: &roomToken,
+				Token: &token, StageUUID: &sid, RoomUUID: &roomUUID, RoomToken: &roomToken,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -1392,9 +1390,6 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			if sid == "" {
 				return errors.Errorf("empty sid")
 			}
-			if robotUUID == "" {
-				return errors.Errorf("empty robot")
-			}
 
 			stage := talkServer.QueryStage(sid)
 			if stage == nil {
@@ -1402,7 +1397,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// Authenticate by room token if got one.
-			if roomToken != "" && stage.roomToken != roomToken {
+			if roomToken != "" && stage.room.RoomToken != roomToken {
 				return errors.Errorf("invalid room token %v", roomToken)
 			}
 			if roomUUID != "" && stage.room.UUID != roomUUID {
@@ -1413,11 +1408,6 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage.KeepAlive()
 			// Switch to the context of stage.
 			ctx = stage.loggingCtx
-
-			robot := stage.robot
-			if robot == nil {
-				return errors.Errorf("invalid robot %v", robotUUID)
-			}
 
 			// The rid is the request id, which identify this request, generally a question.
 			sreq := &StageRequest{rid: uuid.NewString(), stage: stage}
@@ -1445,21 +1435,20 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
-			var sid, rid, userID, robotUUID, audioBase64Data string
+			var sid, rid, userID, audioBase64Data string
 			var roomUUID, roomToken string
 			var userMayInput float64
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token        *string  `json:"token"`
 				StageUUID    *string  `json:"sid"`
 				UserID       *string  `json:"userId"`
-				RobotUUID    *string  `json:"robot"`
 				RequestUUID  *string  `json:"rid"`
 				UserMayInput *float64 `json:"umi"`
 				AudioData    *string  `json:"audio"`
 				RoomUUID     *string  `json:"room"`
 				RoomToken    *string  `json:"roomToken"`
 			}{
-				Token: &token, StageUUID: &sid, UserID: &userID, RobotUUID: &robotUUID, RequestUUID: &rid,
+				Token: &token, StageUUID: &sid, UserID: &userID, RequestUUID: &rid,
 				UserMayInput: &userMayInput, AudioData: &audioBase64Data,
 				RoomUUID: &roomUUID, RoomToken: &roomToken,
 			}); err != nil {
@@ -1480,9 +1469,6 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			if rid == "" {
 				return errors.Errorf("empty rid")
 			}
-			if robotUUID == "" {
-				return errors.Errorf("empty robot")
-			}
 			if userID == "" {
 				return errors.Errorf("empty userId")
 			}
@@ -1493,7 +1479,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// Authenticate by room token if got one.
-			if roomToken != "" && stage.roomToken != roomToken {
+			if roomToken != "" && stage.room.RoomToken != roomToken {
 				return errors.Errorf("invalid room token %v", roomToken)
 			}
 			if roomUUID != "" && stage.room.UUID != roomUUID {
@@ -1504,11 +1490,6 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage.KeepAlive()
 			// Switch to the context of stage.
 			ctx = stage.loggingCtx
-
-			robot := stage.robot
-			if robot == nil {
-				return errors.Errorf("invalid robot %v", robotUUID)
-			}
 
 			// Query the request.
 			sreq := stage.queryRequest(rid)
@@ -1526,8 +1507,8 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			defer sreq.FastDispose()
 
 			sreq.inputFile = path.Join(aiTalkWorkDir, fmt.Sprintf("assistant-%v-input.audio", sreq.rid))
-			logger.Tf(ctx, "Stage: Got question sid=%v, rid=%v, user=%v, umi=%v, robot=%v(%v), input=%v",
-				sid, sreq.rid, userID, userMayInput, robot.uuid, robot.label, sreq.inputFile)
+			logger.Tf(ctx, "Stage: Got question sid=%v, rid=%v, user=%v, umi=%v, input=%v",
+				sid, sreq.rid, userID, userMayInput, sreq.inputFile)
 
 			// Save audio input to file.
 			if err := sreq.receiveInputFile(ctx, audioBase64Data); err != nil {
@@ -1535,12 +1516,12 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// Do ASR, convert to text.
-			asrLanguage := ChooseNotEmpty(user.Language, robot.asrLanguage)
+			asrLanguage := ChooseNotEmpty(user.Language, stage.asrLanguage)
 			if err := sreq.asrAudioToText(ctx, stage.aiConfig, asrLanguage, user.previousAsrText); err != nil {
 				return errors.Wrapf(err, "asr lang=%v, previous=%v", asrLanguage, user.previousAsrText)
 			}
-			logger.Tf(ctx, "ASR ok, sid=%v, rid=%v, user=%v, robot=%v(%v), lang=%v, prompt=<%v>, resp is <%v>",
-				sid, sreq.rid, userID, robot.uuid, robot.label, asrLanguage, user.previousAsrText, sreq.asrText)
+			logger.Tf(ctx, "ASR ok, sid=%v, rid=%v, user=%v, lang=%v, prompt=<%v>, resp is <%v>",
+				sid, sreq.rid, userID, asrLanguage, user.previousAsrText, sreq.asrText)
 
 			// Important trace log.
 			user.previousAsrText = sreq.asrText
@@ -1562,7 +1543,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 					sreq.lastRobotFirstText = text
 				},
 			}
-			if err := chatService.RequestChat(ctx, sreq, stage, user, robot); err != nil {
+			if err := chatService.RequestChat(ctx, sreq, stage, user); err != nil {
 				return errors.Wrapf(err, "chat")
 			}
 
@@ -1623,7 +1604,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// Authenticate by room token if got one.
-			if roomToken != "" && stage.roomToken != roomToken {
+			if roomToken != "" && stage.room.RoomToken != roomToken {
 				return errors.Errorf("invalid room token %v", roomToken)
 			}
 			if roomUUID != "" && stage.room.UUID != roomUUID {
@@ -1654,11 +1635,11 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 		}
 	})
 
-	ep = "/terraform/v1/ai-talk/stage/examples/"
+	ep = "/terraform/v1/ai-talk/stage/hello-voices/"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			filename := r.URL.Path[len("/terraform/v1/ai-talk/stage/examples/"):]
+			filename := r.URL.Path[len("/terraform/v1/ai-talk/stage/hello-voices/"):]
 			if !strings.Contains(filename, ".") {
 				filename = fmt.Sprintf("%v.aac", filename)
 			}
@@ -1698,6 +1679,8 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "parse body")
 			}
 
+			// Note that when verifying stage, there may be no stage exists, so we must fetch the room token
+			// from redis, should never try to use cached token from stage.
 			var room SrsLiveRoom
 			if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, roomUUID).Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v %v", SRS_LIVE_ROOM, roomUUID)
@@ -1744,37 +1727,23 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}
 
-			// TODO: FIXME: Should have room object in memory?
-			// Get the room to verify user.
-			if roomUUID == "" {
-				return errors.Errorf("empty room id")
-			}
-
-			var room SrsLiveRoom
-			if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, roomUUID).Result(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hget %v %v", SRS_LIVE_ROOM, roomUUID)
-			} else if r0 == "" {
-				return errors.Errorf("live room %v not exists", roomUUID)
-			} else if err = json.Unmarshal([]byte(r0), &room); err != nil {
-				return errors.Wrapf(err, "unmarshal %v %v", roomUUID, r0)
+			// When subscribing, there must be a valid stage exists, so we can use cached stage to verify the
+			// room token, to make sure the stage started before any subscribers.
+			stage := talkServer.QueryStageOfRoom(roomUUID)
+			if stage == nil {
+				return errors.Errorf("no stage in room %v", roomUUID)
 			}
 
 			// Authenticate by room token if got one.
-			if roomToken != "" && room.RoomToken != roomToken {
+			if roomToken != "" && stage.room.RoomToken != roomToken {
 				return errors.Errorf("invalid room token %v", roomToken)
-			}
-
-			// Use the latest stage as subscriber's source stage, note that it may change.
-			stage := talkServer.QueryStage(room.StageUUID)
-			if stage == nil {
-				return errors.Errorf("no stage in room %v", roomUUID)
 			}
 
 			// TODO: FIXME: Cleanup subscribers for a room.
 			ctx = logger.WithContext(ctx)
 			subscriber := NewStageSubscriber(func(subscriber *StageSubscriber) {
 				subscriber.loggingCtx = ctx
-				subscriber.room = &room
+				subscriber.room = stage.room
 
 				// Bind the subscriber to the stage.
 				subscriber.stage = stage
@@ -1802,29 +1771,20 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage.KeepAlive()
 			subscriber.KeepAlive()
 
-			type StageRobotResult struct {
-				UUID  string `json:"uuid"`
-				Label string `json:"label"`
-				Voice string `json:"voice"`
-			}
 			type StageResult struct {
-				StageID      string           `json:"sid"`
-				SubscriberID string           `json:"spid"`
-				Robot        StageRobotResult `json:"robot"`
+				StageID      string `json:"sid"`
+				SubscriberID string `json:"spid"`
+				Voice        string `json:"voice"`
 			}
 			r0 := &StageResult{
 				StageID:      stage.sid,
 				SubscriberID: subscriber.spid,
-				Robot: StageRobotResult{
-					UUID:  stage.robot.uuid,
-					Label: stage.robot.label,
-					Voice: stage.robot.voice,
-				},
+				Voice:        stage.voice,
 			}
 
 			ohttp.WriteData(ctx, w, r, &r0)
 			logger.Tf(ctx, "Stage: create subscriber ok, room=%v, sid=%v, spid=%v",
-				room.UUID, stage.sid, subscriber.spid)
+				stage.room.UUID, stage.sid, subscriber.spid)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -1838,15 +1798,19 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			var token string
 			var sid, spid string
 			var roomUUID, roomToken string
+			// Optional, stream hosts has a userID, no this field for subscribers.
+			var userID string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token        *string `json:"token"`
 				StageUUID    *string `json:"sid"`
 				SubscriberID *string `json:"spid"`
 				RoomUUID     *string `json:"room"`
 				RoomToken    *string `json:"roomToken"`
+				UserID       *string `json:"userId"`
 			}{
 				Token: &token, StageUUID: &sid, SubscriberID: &spid,
 				RoomUUID: &roomUUID, RoomToken: &roomToken,
+				UserID: &userID,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -1872,7 +1836,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// Authenticate by room token if got one.
-			if roomToken != "" && stage.roomToken != roomToken {
+			if roomToken != "" && stage.room.RoomToken != roomToken {
 				return errors.Errorf("invalid room token %v", roomToken)
 			}
 			if roomUUID != "" && stage.room.UUID != roomUUID {
@@ -1891,6 +1855,11 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			ctx = stage.loggingCtx
 			// Note that we should disable detail meanless logs for subscribe.
 			//logger.Tf(ctx, "Stage: Query sid=%v, room=%v", sid, stage.room.UUID)
+
+			// For stream hosts, we should keep the user alive.
+			if user := stage.queryUser(userID); user != nil {
+				user.KeepAlive()
+			}
 
 			msgs, pending := subscriber.flushMessages()
 			ohttp.WriteData(ctx, w, r, &struct {
@@ -1948,15 +1917,11 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// Authenticate by room token if got one.
-			if roomToken != "" && stage.roomToken != roomToken {
+			if roomToken != "" && stage.room.RoomToken != roomToken {
 				return errors.Errorf("invalid room token %v", roomToken)
 			}
 			if roomUUID != "" && stage.room.UUID != roomUUID {
 				return errors.Errorf("invalid room %v", roomUUID)
-			}
-
-			if stage.roomToken != roomToken {
-				return errors.Errorf("invalid roomToken")
 			}
 
 			subscriber := stage.querySubscriber(spid)
@@ -2052,7 +2017,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// Authenticate by room token if got one.
-			if roomToken != "" && stage.roomToken != roomToken {
+			if roomToken != "" && stage.room.RoomToken != roomToken {
 				return errors.Errorf("invalid room token %v", roomToken)
 			}
 			if roomUUID != "" && stage.room.UUID != roomUUID {
@@ -2124,7 +2089,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// Authenticate by room token if got one.
-			if roomToken != "" && stage.roomToken != roomToken {
+			if roomToken != "" && stage.room.RoomToken != roomToken {
 				return errors.Errorf("invalid room token %v", roomToken)
 			}
 			if roomUUID != "" && stage.room.UUID != roomUUID {
@@ -2195,7 +2160,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// Authenticate by room token if got one.
-			if roomToken != "" && stage.roomToken != roomToken {
+			if roomToken != "" && stage.room.RoomToken != roomToken {
 				return errors.Errorf("invalid room token %v", roomToken)
 			}
 			if roomUUID != "" && stage.room.UUID != roomUUID {
@@ -2217,6 +2182,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			user.Username = username
 			user.Language = userLanguage
+			user.Voice = helloVoiceFromLanguage(userLanguage)
 
 			ohttp.WriteData(ctx, w, r, user)
 			logger.Tf(ctx, "srs ai-talk update user ok, sid=%v, user=%v", sid, userID)

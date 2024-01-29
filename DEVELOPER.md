@@ -883,7 +883,7 @@ API without any authentication:
 * `/terraform/v1/ai/transcript/hls/overlay/:uuid.m3u8` Generate the preview HLS for transcript stream with overlay text.
 * `/terraform/v1/ai/transcript/hls/original/:uuid.m3u8` Generate the preview HLS for original stream without overlay text.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
-* `/terraform/v1/ai-talk/stage/examples/:file.aac` AI-Talk: Play the example audios.
+* `/terraform/v1/ai-talk/stage/hello-voices/:file.aac` AI-Talk: Play the example audios.
 
 API without token authentication, but with password authentication:
 

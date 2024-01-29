@@ -27,7 +27,6 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
   const [micWorking, setMicWorking] = React.useState(false);
 
   // The uuid and robot in stage, which is unchanged after stage started.
-  const [stageRobot, setStageRobot] = React.useState(null);
   const [stageUUID, setStageUUID] = React.useState(null);
   const [userID, setUserID] = React.useState(null);
   const [stageUser, setStageUser] = React.useState(null);
@@ -176,10 +175,9 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
     }).then(res => {
       console.log(`Start: Create stage success: ${JSON.stringify(res.data.data)}`);
       setStageUUID(res.data.data.sid);
-      setStageRobot(res.data.data.robot);
       setUserID(res.data.data.userId);
     }).catch(handleError);
-  }, [handleError, booting, roomUUID, roomToken, setStageUUID, setStageRobot, setUserID]);
+  }, [handleError, booting, roomUUID, roomToken, setStageUUID, setUserID]);
 
   // Start to chat, set the robot to ready.
   const startChatting = React.useCallback(async (user) => {
@@ -198,12 +196,12 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
 
     console.log('Stage start to play demo audio');
     refRequest.current.playingAudio = true;
-    playerRef.current.src = `/terraform/v1/ai-talk/stage/examples/${stageRobot.voice}?sid=${stageUUID}`;
+    playerRef.current.src = `/terraform/v1/ai-talk/stage/hello-voices/${user.voice}?sid=${stageUUID}`;
     playerRef.current.play().catch(error => {
       errorLog(`${t('lr.room.speaker')}: ${error}`);
       setRequesting(false);
     });
-  }, [t, errorLog, stageUUID, stageRobot, setRobotReady, setRequesting, refRequest, setStageUser]);
+  }, [t, errorLog, stageUUID, setRobotReady, setRequesting, refRequest, setStageUser]);
 
   // When robot is ready, open the microphone ASAP to accept user input.
   React.useEffect(() => {
@@ -285,7 +283,7 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
       // End conversation, for stat the elapsed time cost accurately.
       const requestUUID = await new Promise((resolve, reject) => {
         axios.post('/terraform/v1/ai-talk/stage/conversation', {
-          room: roomUUID, roomToken, sid: stageUUID, robot: stageRobot.uuid,
+          room: roomUUID, roomToken, sid: stageUUID,
         }, {
           headers: Token.loadBearerHeader(),
         }).then(res => {
@@ -310,11 +308,11 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
 
       // Upload the user input audio to the server.
       await new Promise((resolve, reject) => {
-        console.log(`ASR: Uploading ${ref.current.audioChunks.length} chunks, robot=${stageRobot.uuid}`);
+        console.log(`ASR: Uploading ${ref.current.audioChunks.length} chunks, stage=${stageUUID}, user=${userID}`);
         ref.current.audioChunks = [];
 
         axios.post('/terraform/v1/ai-talk/stage/upload', {
-          room: roomUUID, roomToken, sid: stageUUID, robot: stageRobot.uuid, rid: requestUUID, userId: userID,
+          room: roomUUID, roomToken, sid: stageUUID, rid: requestUUID, userId: userID,
           umi: userMayInput, audio: audioBase64Data,
         }, {
           headers: Token.loadBearerHeader(),
@@ -412,7 +410,7 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
     ref.current.stopHandler = setTimeout(() => {
       stopRecordingImpl();
     }, timeoutWaitForLastVoice);
-  }, [roomUUID, roomToken, stageUUID, userID, stageRobot, robotReady, ref, setProcessing, setMicWorking, refRequest]);
+  }, [roomUUID, roomToken, stageUUID, userID, robotReady, ref, setProcessing, setMicWorking, refRequest]);
 
   // Setup the keyboard event, for PC browser.
   React.useEffect(() => {
@@ -616,7 +614,7 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
 
   // The uuid and robot in stage, which is unchanged after stage started.
   const [stageUUID, setStageUUID] = React.useState(null);
-  const [stageRobot, setStageRobot] = React.useState(null);
+  const [stageVoice, setStageVoice] = React.useState(null);
   const [stagePopoutUUID, setStagePopoutUUID] = React.useState(null);
 
   // Possible value is 1: yes, -1: no, 0: undefined.
@@ -704,13 +702,13 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
       console.log(`Start: Create popout success: ${JSON.stringify(res.data.data)}`);
       setStageUUID(res.data.data.sid);
       setStagePopoutUUID(res.data.data.spid);
-      setStageRobot(res.data.data.robot);
+      setStageVoice(res.data.data.voice);
     }).catch(handleError);
-  }, [handleError, roomUUID, roomToken, setStagePopoutUUID, setStageRobot, setStageUUID]);
+  }, [handleError, roomUUID, roomToken, setStagePopoutUUID, setStageVoice, setStageUUID]);
 
   // Try to start the robot automatically, for OBS.
   React.useEffect(() => {
-    if (!stageUUID || !stageRobot) return;
+    if (!stageUUID || !stageVoice) return;
 
     const listener = () => {
       playerRef.current.removeEventListener('ended', listener);
@@ -721,11 +719,11 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
     };
     playerRef.current.addEventListener('ended', listener);
 
-    playerRef.current.src = `/terraform/v1/ai-talk/stage/examples/${stageRobot.voice}?sid=${stageUUID}`;
+    playerRef.current.src = `/terraform/v1/ai-talk/stage/hello-voices/${stageVoice}?sid=${stageUUID}`;
     playerRef.current.play().catch((error) => {
       setObsAutostart(-1);
     });
-  }, [t, errorLog, stageUUID, stageRobot, setObsAutostart]);
+  }, [t, errorLog, stageUUID, stageVoice, setObsAutostart]);
 
   // Requires user to start the robot manually, for Chrome.
   const startChatting = React.useCallback(() => {
@@ -740,12 +738,12 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
     };
     playerRef.current.addEventListener('ended', listener);
 
-    playerRef.current.src = `/terraform/v1/ai-talk/stage/examples/${stageRobot.voice}?sid=${stageUUID}`;
+    playerRef.current.src = `/terraform/v1/ai-talk/stage/hello-voices/${stageVoice}?sid=${stageUUID}`;
     playerRef.current.play().catch(error => {
       errorLog(`${t('lr.room.speaker')}: ${error}`);
       setRequesting(false);
     });
-  }, [t, errorLog, stageUUID, stageRobot, setRobotReady, setRequesting]);
+  }, [t, errorLog, stageUUID, stageVoice, setRobotReady, setRequesting]);
 
   // When robot is ready, show tip logs, and cleanup timeout tips.
   React.useEffect(() => {
