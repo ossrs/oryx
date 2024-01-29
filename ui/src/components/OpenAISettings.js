@@ -5,7 +5,7 @@ import {Button, Form, Spinner} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {useErrorHandler} from "react-error-boundary";
 
-export function OpenAIWhisperSettings({baseURL, setBaseURL, secretKey, setSecretKey, targetLanguage, setTargetLanguage}) {
+export function OpenAISecretSettings({baseURL, setBaseURL, secretKey, setSecretKey}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
 
@@ -51,15 +51,6 @@ export function OpenAIWhisperSettings({baseURL, setBaseURL, secretKey, setSecret
         </Button> &nbsp;
         {checking && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />}
       </div>
-      <p></p>
-      <Form.Group className="mb-3">
-        <Form.Label>{t('transcript.lang')}</Form.Label>
-        <Form.Text> * {t('transcript.lang2')}. &nbsp;
-          {t('helper.eg')} <code>en, zh, fr, de, ja, ru </code>, ... &nbsp;
-          {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank' rel='noreferrer'>ISO-639-1</a>.
-        </Form.Text>
-        <Form.Control as="input" defaultValue={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)} />
-      </Form.Group>
     </React.Fragment>
   );
 }

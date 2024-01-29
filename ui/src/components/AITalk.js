@@ -1,5 +1,5 @@
 import React from "react";
-import {Alert, Button, Card, Col, Dropdown, Form, Row, Spinner} from "react-bootstrap";
+import {Alert, Button, Card, Col, Dropdown, Form, InputGroup, Row, Spinner} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {useErrorHandler} from "react-error-boundary";
 import useIsMobile from "./IsMobile";
@@ -29,8 +29,11 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
   // The uuid and robot in stage, which is unchanged after stage started.
   const [stageUUID, setStageUUID] = React.useState(null);
   const [userID, setUserID] = React.useState(null);
+  const [aiAsrEnabled, setAiAsrEnabled] = React.useState();
   const [stageUser, setStageUser] = React.useState(null);
   const [stagePopoutUUID, setStagePopoutUUID] = React.useState(null);
+  // Last user input text, from ASR, set to input for user to update it.
+  const [userAsrText, setUserAsrText] = React.useState(null);
 
   const [booting, setBooting] = React.useState(true);
   const [errorLogs, setErrorLogs] = React.useState([]);
@@ -176,8 +179,9 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
       console.log(`Start: Create stage success: ${JSON.stringify(res.data.data)}`);
       setStageUUID(res.data.data.sid);
       setUserID(res.data.data.userId);
+      setAiAsrEnabled(res.data.data.aiAsrEnabled);
     }).catch(handleError);
-  }, [handleError, booting, roomUUID, roomToken, setStageUUID, setUserID]);
+  }, [handleError, booting, roomUUID, roomToken, setStageUUID, setUserID, setAiAsrEnabled]);
 
   // Start to chat, set the robot to ready.
   const startChatting = React.useCallback(async (user) => {
@@ -319,6 +323,7 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
         }).then(res => {
           console.log(`ASR: Upload success: ${res.data.data.rid} ${res.data.data.asr}`);
           resolve(res.data.data.rid);
+          setUserAsrText(res.data.data.asr);
         }).catch((error) => reject(error));
       });
 
@@ -410,11 +415,45 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
     ref.current.stopHandler = setTimeout(() => {
       stopRecordingImpl();
     }, timeoutWaitForLastVoice);
-  }, [roomUUID, roomToken, stageUUID, userID, robotReady, ref, setProcessing, setMicWorking, refRequest]);
+  }, [roomUUID, roomToken, stageUUID, userID, robotReady, ref, setProcessing, setMicWorking, refRequest, setUserAsrText]);
+
+  // User directly send text message to assistant.
+  const sendText = React.useCallback(async (text, onFinished) => {
+    if (!robotReady) return;
+    if (!text) return;
+
+    try {
+      const requestUUID = await new Promise((resolve, reject) => {
+        axios.post('/terraform/v1/ai-talk/stage/conversation', {
+          room: roomUUID, roomToken, sid: stageUUID,
+        }, {
+          headers: Token.loadBearerHeader(),
+        }).then(res => {
+          console.log(`ASR: Start conversation success, rid=${res.data.data.rid}`);
+          resolve(res.data.data.rid);
+        }).catch(handleError);
+      });
+
+      await new Promise((resolve, reject) => {
+        axios.post('/terraform/v1/ai-talk/stage/upload', {
+          room: roomUUID, roomToken, sid: stageUUID, rid: requestUUID, userId: userID,
+          text: text,
+        }, {
+          headers: Token.loadBearerHeader(),
+        }).then(res => {
+          console.log(`ASR: Send text success: ${res.data.data.rid} ${res.data.data.asr}`);
+          resolve(res.data.data.rid);
+        }).catch(handleError);
+      });
+    } finally {
+      onFinished && onFinished();
+    }
+  }, [robotReady, handleError, roomUUID, roomToken, stageUUID, userID]);
 
   // Setup the keyboard event, for PC browser.
   React.useEffect(() => {
     if (!robotReady) return;
+    if (!aiAsrEnabled) return;
 
     const handleKeyDown = (e) => {
       if (processing) return;
@@ -436,7 +475,7 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [robotReady, startRecording, stopRecording, processing]);
+  }, [robotReady, startRecording, stopRecording, processing, aiAsrEnabled]);
 
   // Request server to create a new popout for subscribing all events.
   React.useEffect(() => {
@@ -489,26 +528,31 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
           }
 
           const audioSegmentUUID = msg.asid;
-          traceLog('Bot', msg.msg, 'success');
+          traceLog(msg.username, msg.msg, 'success');
 
-          // Play the AI generated audio.
-          await new Promise(resolve => {
-            const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}&room=${roomUUID}&roomToken=${roomToken}`;
-            console.log(`TTS: Playing ${url}`);
+          // No audio file, skip it.
+          if (!msg.hasAudio) {
+            console.log(`TTS: Consume text message done, ${JSON.stringify(msg)}`);
+          } else {
+            // Play the AI generated audio.
+            await new Promise(resolve => {
+              const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}&room=${roomUUID}&roomToken=${roomToken}`;
+              console.log(`TTS: Playing ${url}`);
 
-            const listener = () => {
-              playerRef.current.removeEventListener('ended', listener);
-              console.log(`TTS: Played ${url} done.`);
-              resolve();
-            };
-            playerRef.current.addEventListener('ended', listener);
+              const listener = () => {
+                playerRef.current.removeEventListener('ended', listener);
+                console.log(`TTS: Played ${url} done.`);
+                resolve();
+              };
+              playerRef.current.addEventListener('ended', listener);
 
-            playerRef.current.src = url;
-            playerRef.current.play().catch(error => {
-              console.log(`TTS: Play ${url} failed: ${error}`);
-              resolve();
+              playerRef.current.src = url;
+              playerRef.current.play().catch(error => {
+                console.log(`TTS: Play ${url} failed: ${error}`);
+                resolve();
+              });
             });
-          });
+          }
 
           // Remove the AI generated audio.
           await new Promise((resolve, reject) => {
@@ -582,7 +626,10 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
       {robotReady && !isMobile ?
         <Row>
           <Col>
-            <AITalkAssistantImpl {...{processing, micWorking, startRecording, stopRecording, roomUUID, roomToken, stageUUID, stageUser}} />
+            <AITalkAssistantImpl {...{
+              processing, micWorking, startRecording, stopRecording, sendText, roomUUID, roomToken,
+              stageUUID, stageUser, aiAsrEnabled, userAsrText
+            }} />
           </Col>
           <Col>
             <AITalkTraceLogPC {...{traceLogs, traceCount, roomUUID, roomToken, fullscreen}}>
@@ -596,7 +643,10 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
           <AITalkTraceLogMobile {...{traceLogs, traceCount, fullscreen}} />
           <AITalkErrorLog {...{errorLogs, removeErrorLog}} />
           <AITalkTipLog {...{tipLogs, removeTipLog}} />
-          <AITalkAssistantImpl {...{processing, micWorking, startRecording, stopRecording, roomUUID, roomToken, stageUUID, stageUser}} />
+          <AITalkAssistantImpl {...{
+            processing, micWorking, startRecording, stopRecording, sendText, roomUUID, roomToken,
+            stageUUID, stageUser, aiAsrEnabled, userAsrText
+          }} />
         </div> : ''}
       <div ref={endPanelRef}></div>
     </div>
@@ -793,12 +843,12 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
         for (let i = 0; i < msgs.length; i++) {
           const msg = msgs[i];
           if (msg.role === 'user') {
-            traceLog('You', msg.msg, 'primary');
+            traceLog(msg.username, msg.msg, 'primary');
             return;
           }
 
           const audioSegmentUUID = msg.asid;
-          traceLog('Bot', msg.msg, 'success');
+          traceLog(msg.username, msg.msg, 'success');
 
           // Play the AI generated audio.
           await new Promise(resolve => {
@@ -943,7 +993,7 @@ function AITalkUserConfigImpl({roomUUID, roomToken, stageUUID, user, disabled, l
   </>;
 }
 
-function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecording, roomUUID, roomToken, stageUUID, stageUser}) {
+function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecording, userAsrText, sendText, roomUUID, roomToken, stageUUID, stageUser, aiAsrEnabled}) {
   const {t} = useTranslation();
   const isMobile = useIsMobile();
   const [showSettings, setShowSettings] = React.useState(false);
@@ -951,6 +1001,7 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
   const [showUserConfig, setShowUserConfig] = React.useState(false);
   const [user, setUser] = React.useState(stageUser);
   const [description, setDescription] = React.useState();
+  const [userText, setUserText] = React.useState('');
 
   React.useEffect(() => {
     if (!roomUUID) return;
@@ -985,6 +1036,26 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
     setDescription(` for ${user.username || 'You'} (${user.language})`);
   }, [user, setDescription]);
 
+  const onSendText = React.useCallback((e) => {
+    e.preventDefault();
+    if (!userText) return;
+
+    sendText && sendText(userText, () => {
+      setUserText('');
+    });
+  }, [userText, sendText, setUserText]);
+
+  const onUserPressKey = React.useCallback((e) => {
+    if (e.key === 'Enter') {
+      onSendText(e);
+    }
+  }, [onSendText]);
+
+  React.useEffect(() => {
+    if (!userAsrText) return;
+    setUserText(userAsrText);
+  }, [userAsrText]);
+
   return (
     <div>
       <Card>
@@ -1005,18 +1076,27 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
             roomUUID, roomToken, stageUUID, userID: stageUser.userId, onSubmit: onFinishUserConfig,
             onCancel: () => setShowUserConfig(false),
           }} /> : ''}
-          <div className={isMobile ? 'ai-talk-container-mobile' : 'ai-talk-container-pc'}
-               onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing || showUserConfig}>
-            {!processing ?
-              <div>
-                <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
-                  <div className='ai-talk-mc'></div>
-                </div>
-              </div> :
-              <div>
-                <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
-              </div>}
-          </div>
+          <InputGroup className="mb-3">
+            <Form.Control
+              as="input" placeholder={t('lr.room.text')} aria-describedby="basic-addon2" value={userText}
+              onChange={(e) => setUserText(e.target.value)}
+              onKeyPress={onUserPressKey}/>
+            <Button variant="primary" id="button-addon2" onClick={onSendText}>{t('helper.send')}</Button>
+          </InputGroup>
+          {aiAsrEnabled && <>
+            <div className={isMobile ? 'ai-talk-container-mobile' : 'ai-talk-container-pc'}
+                 onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing || showUserConfig}>
+              {!processing ?
+                <div>
+                  <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
+                    <div className='ai-talk-mc'></div>
+                  </div>
+                </div> :
+                <div>
+                  <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
+                </div>}
+            </div>
+          </>}
         </Card.Body>
       </Card>
     </div>

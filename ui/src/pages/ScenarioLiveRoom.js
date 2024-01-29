@@ -15,7 +15,7 @@ import {buildUrls} from "../components/UrlGenerator";
 import {SrsEnvContext} from "../components/SrsEnvContext";
 import * as Icon from "react-bootstrap-icons";
 import PopoverConfirm from "../components/PopoverConfirm";
-import {OpenAIWhisperSettings} from "../components/OpenAISettings";
+import {OpenAISecretSettings} from "../components/OpenAISettings";
 import {AITalkAssistantPanel} from "../components/AITalk";
 
 export default function ScenarioLiveRoom() {
@@ -351,11 +351,21 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
   const [aiProvider, setAiProvider] = React.useState(room.aiProvider || 'openai');
   const [aiSecretKey, setAiSecretKey] = React.useState(room.aiSecretKey);
   const [aiBaseURL, setAiBaseURL] = React.useState(room.aiBaseURL || (language === 'zh' ? '' : 'https://api.openai.com/v1'));
+  const [aiAsrEnabled, setAiAsrEnabled] = React.useState(room.aiAsrEnabled);
+  const [aiChatEnabled, setAiChatEnabled] = React.useState(room.aiChatEnabled);
+  const [aiTtsEnabled, setAiTtsEnabled] = React.useState(room.aiTtsEnabled);
   const [aiAsrLanguage, setAiAsrLanguage] = React.useState(room.aiAsrLanguage || language);
-  const [aiChatModel, setAiChatModel] = React.useState(room.aiChatModel || 'gpt-3.5-turbo');
+  const [aiChatModel, setAiChatModel] = React.useState(room.aiChatModel || 'gpt-4-turbo-preview');
   const [aiChatPrompt, setAiChatPrompt] = React.useState(room.aiChatPrompt || 'You are a helpful assistant.');
   const [aiChatMaxWindow, setAiChatMaxWindow] = React.useState(room.aiChatMaxWindow || 5);
-  const [aiChatMaxWords, setAiChatMaxWords] = React.useState(room.aiChatMaxWords || 30);
+  const [aiChatMaxWords, setAiChatMaxWords] = React.useState(room.aiChatMaxWords || 300);
+
+  const [configItem, setConfigItem] = React.useState('basic');
+
+  const changeConfigItem = React.useCallback((e, t) => {
+    e.preventDefault();
+    setConfigItem(t);
+  }, [setConfigItem]);
 
   if (!room.assistant) {
     return (
@@ -367,49 +377,106 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
   }
   return (
     <Form>
-      <Form.Group className="mb-3">
-        <Form.Label>{t('lr.room.name')}</Form.Label>
-        <Form.Text> * {t('lr.room.name2')}</Form.Text>
-        <Form.Control as="input" type='input' defaultValue={aiName} onChange={(e) => setAiName(e.target.value)} />
-      </Form.Group>
-      <Form.Group className="mb-3">
-        <Form.Label>{t('lr.room.provider')}</Form.Label>
-        <Form.Text> * {t('lr.room.provider2')}</Form.Text>
-        <Form.Select defaultValue={aiProvider} onChange={(e) => setAiProvider(e.target.value)}>
-          <option value="">--{t('helper.noSelect')}--</option>
-          <option value="openai">OpenAI</option>
-        </Form.Select>
-      </Form.Group>
-      <OpenAIWhisperSettings {...{
-        baseURL: aiBaseURL, setBaseURL: setAiBaseURL,
-        secretKey: aiSecretKey, setSecretKey: setAiSecretKey,
-        targetLanguage: aiAsrLanguage, setTargetLanguage: setAiAsrLanguage
-      }} />
-      <Form.Group className="mb-3">
-        <Form.Label>{t('lr.room.model')}</Form.Label>
-        <Form.Text> * {t('lr.room.model2')}</Form.Text>
-        <Form.Control as="input" type='input' defaultValue={aiChatModel} onChange={(e) => setAiChatModel(e.target.value)} />
-      </Form.Group>
-      <Form.Group className="mb-3">
-        <Form.Label>{t('lr.room.prompt')}</Form.Label>
-        <Form.Text> * {t('lr.room.prompt2')}</Form.Text>
-        <Form.Control as="textarea" type='text' rows={3}  defaultValue={aiChatPrompt} onChange={(e) => setAiChatPrompt(e.target.value)} />
-      </Form.Group>
-      <Form.Group className="mb-3">
-        <Form.Label>{t('lr.room.window')}</Form.Label>
-        <Form.Text> * {t('lr.room.window2')}</Form.Text>
-        <Form.Control as="input" type='input' defaultValue={aiChatMaxWindow} onChange={(e) => setAiChatMaxWindow(e.target.value)} />
-      </Form.Group>
-      <Form.Group className="mb-3">
-        <Form.Label>{t('lr.room.words')}</Form.Label>
-        <Form.Text> * {t('lr.room.words2')}</Form.Text>
-        <Form.Control as="input" type='input' defaultValue={aiChatMaxWords} onChange={(e) => setAiChatMaxWords(e.target.value)} />
-      </Form.Group>
+      <Card>
+        <Card.Header>
+          <Nav variant="tabs" defaultActiveKey="#basic">
+            <Nav.Item>
+              <Nav.Link href="#basic" onClick={(e) => changeConfigItem(e, 'basic')}>{t('lr.room.basic')}</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link href="#provider" onClick={(e) => changeConfigItem(e, 'provider')}>{t('lr.room.provider')}</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link href="#asr" onClick={(e) => changeConfigItem(e, 'asr')}>{t('lr.room.asr')}</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link href="#chat" onClick={(e) => changeConfigItem(e, 'chat')}>{t('lr.room.chat')}</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link href="#tts" onClick={(e) => changeConfigItem(e, 'tts')}>{t('lr.room.tts')}</Nav.Link>
+            </Nav.Item>
+          </Nav>
+        </Card.Header>
+        {configItem === 'basic' && <Card.Body>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.name')}</Form.Label>
+            <Form.Text> * {t('lr.room.name2')}</Form.Text>
+            <Form.Control as="input" type='input' defaultValue={aiName} onChange={(e) => setAiName(e.target.value)} />
+          </Form.Group>
+        </Card.Body>}
+        {configItem === 'provider' && <Card.Body>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.provider')}</Form.Label>
+            <Form.Text> * {t('lr.room.provider2')}</Form.Text>
+            <Form.Select defaultValue={aiProvider} onChange={(e) => setAiProvider(e.target.value)}>
+              <option value="">--{t('helper.noSelect')}--</option>
+              <option value="openai">OpenAI</option>
+            </Form.Select>
+          </Form.Group>
+          <OpenAISecretSettings {...{
+            baseURL: aiBaseURL, setBaseURL: setAiBaseURL,
+            secretKey: aiSecretKey, setSecretKey: setAiSecretKey,
+            targetLanguage: aiAsrLanguage, setTargetLanguage: setAiAsrLanguage
+          }} />
+        </Card.Body>}
+        {configItem === 'asr' && <Card.Body>
+          <Form.Group className="mb-3">
+            <Form.Group className="mb-3" controlId="formAiAsrEnabledCheckbox">
+              <Form.Check type="checkbox" label={t('lr.room.asre')} defaultChecked={aiAsrEnabled} onClick={() => setAiAsrEnabled(!aiAsrEnabled)} />
+            </Form.Group>
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('transcript.lang')}</Form.Label>
+            <Form.Text> * {t('transcript.lang2')}. &nbsp;
+              {t('helper.eg')} <code>en, zh, fr, de, ja, ru </code>, ... &nbsp;
+              {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank' rel='noreferrer'>ISO-639-1</a>.
+            </Form.Text>
+            <Form.Control as="input" defaultValue={aiAsrLanguage} onChange={(e) => setAiAsrLanguage(e.target.value)} />
+          </Form.Group>
+        </Card.Body>}
+        {configItem === 'chat' && <Card.Body>
+          <Form.Group className="mb-3">
+            <Form.Group className="mb-3" controlId="formAiChatEnabledCheckbox">
+              <Form.Check disabled={true} type="checkbox" label={t('lr.room.chate')} defaultChecked={aiChatEnabled} onClick={() => setAiChatEnabled(!aiChatEnabled)} />
+            </Form.Group>
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.model')}</Form.Label>
+            <Form.Text> * {t('lr.room.model2')}</Form.Text>
+            <Form.Control as="input" type='input' defaultValue={aiChatModel} onChange={(e) => setAiChatModel(e.target.value)} />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.prompt')}</Form.Label>
+            <Form.Text> * {t('lr.room.prompt2')}</Form.Text>
+            <Form.Control as="textarea" type='text' rows={3}  defaultValue={aiChatPrompt} onChange={(e) => setAiChatPrompt(e.target.value)} />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.window')}</Form.Label>
+            <Form.Text> * {t('lr.room.window2')}</Form.Text>
+            <Form.Control as="input" type='input' defaultValue={aiChatMaxWindow} onChange={(e) => setAiChatMaxWindow(e.target.value)} />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.words')}</Form.Label>
+            <Form.Text> * {t('lr.room.words2')}</Form.Text>
+            <Form.Control as="input" type='input' defaultValue={aiChatMaxWords} onChange={(e) => setAiChatMaxWords(e.target.value)} />
+          </Form.Group>
+        </Card.Body>}
+        {configItem === 'tts' && <Card.Body>
+          <Form.Group className="mb-3">
+            <Form.Group className="mb-3" controlId="formAiTtsEnabledCheckbox">
+              <Form.Check type="checkbox" label={t('lr.room.ttse')} defaultChecked={aiTtsEnabled} onClick={() => setAiTtsEnabled(!aiTtsEnabled)} />
+            </Form.Group>
+          </Form.Group>
+        </Card.Body>}
+      </Card>
+      <p></p>
       <Button variant="primary" type="button" disabled={requesting}
               onClick={(e) => updateRoom({
                 ...room, assistant: true,
                 aiName, aiProvider, aiSecretKey, aiBaseURL, aiAsrLanguage, aiChatModel,
-                aiChatPrompt, aiChatMaxWindow, aiChatMaxWords,
+                aiChatPrompt, aiChatMaxWindow: parseInt(aiChatMaxWindow),
+                aiChatMaxWords: parseInt(aiChatMaxWords), aiAsrEnabled: !!aiAsrEnabled,
+                aiChatEnabled: !!aiChatEnabled, aiTtsEnabled: !!aiTtsEnabled,
               })}>
         {t('lr.room.update')}
       </Button> &nbsp;

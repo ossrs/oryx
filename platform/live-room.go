@@ -37,19 +37,9 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			room := &SrsLiveRoom{
-				UUID: uuid.NewString(),
-				// The title of live room.
-				Title: title,
-				// The stream name of room.
-				StreamName: strings.ToLower(strings.ReplaceAll(uuid.NewString(), "-", ""))[:12],
-				// The secret of live room.
-				Secret: strings.ToUpper(strings.ReplaceAll(uuid.NewString(), "-", ""))[:16],
-				// Create time.
-				CreatedAt: time.Now().Format(time.RFC3339),
-				// The stage level token for popout.
-				RoomToken: uuid.NewString(),
-			}
+			room := NewLiveRoom(func(room *SrsLiveRoom) {
+				room.Title = title
+			})
 			if b, err := json.Marshal(room); err != nil {
 				return errors.Wrapf(err, "marshal room")
 			} else if err := rdb.HSet(ctx, SRS_LIVE_ROOM, room.UUID, string(b)).Err(); err != nil {
@@ -239,7 +229,7 @@ type SrsLiveRoom struct {
 	// Live room secret.
 	Secret string `json:"secret"`
 	// The AI assistant settings.
-	SrsAssistant
+	*SrsAssistant
 	// The current AI assistant stage, might change to others.
 	StageUUID string `json:"stage_uuid"`
 	// The room level authentication token, for example, popout application with this token to verify
@@ -247,6 +237,26 @@ type SrsLiveRoom struct {
 	RoomToken string `json:"roomToken"`
 	// Create time.
 	CreatedAt string `json:"created_at"`
+}
+
+func NewLiveRoom(opts ...func(room *SrsLiveRoom)) *SrsLiveRoom {
+	v := &SrsLiveRoom{
+		UUID: uuid.NewString(),
+		// The stream name of room.
+		StreamName: strings.ToLower(strings.ReplaceAll(uuid.NewString(), "-", ""))[:12],
+		// The secret of live room.
+		Secret: strings.ToUpper(strings.ReplaceAll(uuid.NewString(), "-", ""))[:16],
+		// Create time.
+		CreatedAt: time.Now().Format(time.RFC3339),
+		// The stage level token for popout.
+		RoomToken: uuid.NewString(),
+		// Create a default assistant.
+		SrsAssistant: NewAssistant(),
+	}
+	for _, opt := range opts {
+		opt(v)
+	}
+	return v
 }
 
 func (v *SrsLiveRoom) String() string {
@@ -273,8 +283,14 @@ type SrsAssistant struct {
 	AISecretKey string `json:"aiSecretKey"`
 	// The AI base URL.
 	AIBaseURL string `json:"aiBaseURL"`
+
+	// Whether enable the AI ASR.
+	AIASREnabled bool `json:"aiAsrEnabled"`
 	// The AI asr language.
 	AIASRLanguage string `json:"aiAsrLanguage"`
+
+	// Whether enable the AI processing.
+	AIChatEnabled bool `json:"aiChatEnabled"`
 	// The AI model name.
 	AIChatModel string `json:"aiChatModel"`
 	// The AI chat system prompt.
@@ -283,9 +299,24 @@ type SrsAssistant struct {
 	AIChatMaxWindow int `json:"aiChatMaxWindow"`
 	// The AI chat max words.
 	AIChatMaxWords int `json:"aiChatMaxWords"`
+
+	// Whether enable the AI TTS.
+	AITTSEnabled bool `json:"aiTtsEnabled"`
+}
+
+func NewAssistant(opts ...func(*SrsAssistant)) *SrsAssistant {
+	v := &SrsAssistant{
+		AIASREnabled: true, AIChatEnabled: true, AITTSEnabled: true,
+	}
+	for _, opt := range opts {
+		opt(v)
+	}
+	return v
 }
 
 func (v *SrsAssistant) String() string {
-	return fmt.Sprintf("assistant=%v, aiName=%v, aiProvider=%v, aiSecretKey=%v, aiBaseURL=%v, aiAsrLanguage=%v, aiChatModel=%v, aiChatPrompt=%v, aiChatMaxWindow=%v, aiChatMaxWords=%v",
-		v.Assistant, v.AIName, v.AIProvider, len(v.AISecretKey), v.AIBaseURL, v.AIASRLanguage, v.AIChatModel, v.AIChatPrompt, v.AIChatMaxWindow, v.AIChatMaxWords)
+	return fmt.Sprintf("assistant=%v, name=%v, provider=%v, secretKey=%vB, baseURL=%v, asr=<enabled=%v,language=%v>, chat=<enabled=%v,model=%v,prompt=%v,window=%v,words=%v>, tts=<%v>",
+		v.Assistant, v.AIName, v.AIProvider, len(v.AISecretKey), v.AIBaseURL, v.AIASREnabled,
+		v.AIASRLanguage, v.AIChatEnabled, v.AIChatModel, v.AIChatPrompt, v.AIChatMaxWindow,
+		v.AIChatMaxWords, v.AITTSEnabled)
 }

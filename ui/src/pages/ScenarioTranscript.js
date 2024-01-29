@@ -6,7 +6,7 @@ import {Token} from "../utils";
 import axios from "axios";
 import {useErrorHandler} from "react-error-boundary";
 import PopoverConfirm from "../components/PopoverConfirm";
-import {OpenAIWhisperSettings} from "../components/OpenAISettings";
+import {OpenAISecretSettings} from "../components/OpenAISettings";
 
 export default function ScenarioTranscript(props) {
   const handleError = useErrorHandler();
@@ -280,7 +280,16 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
         <Accordion.Header>{t('transcript.service')}</Accordion.Header>
         <Accordion.Body>
           <Form>
-            <OpenAIWhisperSettings {...{baseURL, setBaseURL, secretKey, setSecretKey, targetLanguage, setTargetLanguage}} />
+            <OpenAISecretSettings {...{baseURL, setBaseURL, secretKey, setSecretKey, targetLanguage, setTargetLanguage}} />
+            <p></p>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('transcript.lang')}</Form.Label>
+              <Form.Text> * {t('transcript.lang2')}. &nbsp;
+                {t('helper.eg')} <code>en, zh, fr, de, ja, ru </code>, ... &nbsp;
+                {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank' rel='noreferrer'>ISO-639-1</a>.
+              </Form.Text>
+              <Form.Control as="input" defaultValue={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)} />
+            </Form.Group>
             <Button ariant="primary" type="submit" onClick={(e) => {
               e.preventDefault();
               updateAiService(!transcriptEnabled, () => {

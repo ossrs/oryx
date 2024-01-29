@@ -248,7 +248,8 @@
         "see": "请参考",
         "doc": "https://ossrs.net/lts/zh-cn/faq-srs-stack",
         "required": "必选",
-        "optional": "可选"
+        "optional": "可选",
+        "send": "发送"
       },
       "transcode": {
         "config": {
@@ -495,7 +496,15 @@
           "popchat2": "弹出AI助手",
           "settings": "设置会话",
           "uname": "用户名",
-          "uname2": "设置用户名，多人聊天可以方便的区分用户"
+          "uname2": "设置用户名，多人聊天可以方便的区分用户",
+          "basic": "基本设置",
+          "asr": "ASR语音转文字",
+          "chat": "AI模型配置",
+          "tts": "TTS文字转语音",
+          "asre": "开启ASR",
+          "chate": "开启AI处理",
+          "ttse": "开启TTS",
+          "text": "请输入聊天文字"
         }
       },
       "plat": {
@@ -664,6 +673,14 @@
       },
       "lr": {
         "room": {
+          "text": "Please input chat text",
+          "ttse": "Enable TTS",
+          "chate": "Enable AI processing",
+          "asre": "Enable ASR",
+          "tts": "TTS Text to Speech",
+          "chat": "AI Instructions",
+          "asr": "ASR Speech to Text",
+          "basic": "Basic Settings",
           "uname2": "Setup user name, for multi-user chat",
           "uname": "User Name",
           "settings": "Session Settings",
@@ -1157,7 +1174,8 @@
         "see": "Please see",
         "doc": "https://ossrs.io/lts/en-us/faq-srs-stack",
         "required": "Required",
-        "optional": "Optional"
+        "optional": "Optional",
+        "send": "Send"
       }
     }
   }
