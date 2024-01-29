@@ -963,6 +963,10 @@ func (v *Stage) removeUser(user *StageUser) {
 }
 
 func (v *Stage) queryUser(userID string) *StageUser {
+	if userID == "" {
+		return nil
+	}
+
 	for _, user := range v.users {
 		if user.UserID == userID {
 			return user
@@ -976,6 +980,10 @@ func (v *Stage) addRequest(request *StageRequest) {
 }
 
 func (v *Stage) queryRequest(rid string) *StageRequest {
+	if rid == "" {
+		return nil
+	}
+
 	for _, request := range v.requests {
 		if request.rid == rid {
 			return request
@@ -989,6 +997,10 @@ func (v *Stage) addSubscriber(subscriber *StageSubscriber) {
 }
 
 func (v *Stage) querySubscriber(spid string) *StageSubscriber {
+	if spid == "" {
+		return nil
+	}
+
 	for _, subscriber := range v.subscribers {
 		if subscriber.spid == spid {
 			return subscriber

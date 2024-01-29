@@ -466,7 +466,7 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
       try {
         const {msgs, pending} = await new Promise((resolve, reject) => {
           axios.post('/terraform/v1/ai-talk/subscribe/query', {
-            room: roomUUID, roomToken, sid: stageUUID, spid: stagePopoutUUID,
+            room: roomUUID, roomToken, sid: stageUUID, spid: stagePopoutUUID, userId: userID,
           }, {
             headers: Token.loadBearerHeader(),
           }).then(res => {
@@ -531,7 +531,7 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
       requestMessages().catch(handleError);
     }, 1000);
     return () => clearInterval(timer);
-  }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, roomUUID, roomToken]);
+  }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, roomUUID, roomToken, userID]);
 
   // When we got any messages from server, set to playing mode and last for a while.
   React.useEffect(() => {
