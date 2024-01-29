@@ -653,7 +653,7 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
   );
 }
 
-export function AITalkChatPanel({roomUUID, roomToken}) {
+export function AITalkChatOnlyPanel({roomUUID, roomToken}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
   const isMobile = false; // For popout, always PC, not mobile.
@@ -903,7 +903,7 @@ export function AITalkChatPanel({roomUUID, roomToken}) {
         <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
         <AITalkErrorLog {...{errorLogs, removeErrorLog}} />
         <AITalkTipLog {...{tipLogs, removeTipLog}} />
-        <AITalkTraceLogPopout {...{traceLogs, traceCount}} />
+        <AITalkTraceLogChatOnly {...{traceLogs, traceCount}} />
         <div ref={endPanelRef}></div>
       </div>
     </Container>
@@ -1006,12 +1006,19 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
   React.useEffect(() => {
     if (!roomUUID) return;
 
-    const r0 = Math.random().toString(16).slice(-8);
-    const created = new Date().toISOString();
-    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&assistant=1&room=${roomUUID}&created=${created}&random=${r0}&roomToken=${roomToken}`;
+    const params = [
+      'app=ai-talk',
+      'popout=1',
+      'assistant=1',
+      `created=${new Date().toISOString()}`,
+      `random=${Math.random().toString(16).slice(-8)}`,
+      `room=${roomUUID}`,
+      `roomToken=${roomToken}`,
+    ];
+    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?${params.join('&')}`;
     setPopoutUrl(url);
     console.log(`Generated popout URL: ${url}`);
-  }, [roomUUID, setPopoutUrl, roomToken]);
+  }, [roomUUID, setPopoutUrl, roomToken, user]);
 
   const openPopout = React.useCallback((e) => {
     e.preventDefault();
@@ -1119,9 +1126,16 @@ function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken,
   React.useEffect(() => {
     if (!roomUUID) return;
 
-    const r0 = Math.random().toString(16).slice(-8);
-    const created = new Date().toISOString();
-    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?app=ai-talk&popout=1&assistant=0&room=${roomUUID}&created=${created}&random=${r0}&roomToken=${roomToken}`;
+    const params = [
+      'app=ai-talk',
+      'popout=1',
+      'assistant=0', // Without assistant.
+      `created=${new Date().toISOString()}`,
+      `random=${Math.random().toString(16).slice(-8)}`,
+      `room=${roomUUID}`,
+      `roomToken=${roomToken}`,
+    ];
+    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?${params.join('&')}`;
     setPopoutUrl(url);
     console.log(`Generated popout URL: ${url}`);
   }, [roomUUID, setPopoutUrl, roomToken]);
@@ -1186,7 +1200,7 @@ function AITalkTraceLogMobile({traceLogs, traceCount, fullscreen}) {
   );
 }
 
-function AITalkTraceLogPopout({traceLogs, traceCount}) {
+function AITalkTraceLogChatOnly({traceLogs, traceCount}) {
   // Scroll the log panel.
   const logPanelRef = React.useRef(null);
   React.useEffect(() => {
@@ -1196,7 +1210,7 @@ function AITalkTraceLogPopout({traceLogs, traceCount}) {
   }, [traceLogs, logPanelRef, traceCount]);
 
   return (
-    <div className='ai-talk-trace-logs-popout' ref={logPanelRef}>
+    <div className='ai-talk-trace-logs-chat-only' ref={logPanelRef}>
       {traceLogs.map((log) => {
         return (
           <Alert key={log.id} variant={log.variant}>

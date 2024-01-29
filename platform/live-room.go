@@ -172,7 +172,7 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 			}{
 				Rooms: rooms,
 			})
-			logger.Tf(ctx, "srs live room create ok, rooms=%v", len(rooms))
+			logger.Tf(ctx, "srs live room list ok, rooms=%v", len(rooms))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

@@ -4,15 +4,49 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
 import React from 'react';
-import {useSearchParams} from "react-router-dom";
+import {useLocation, useSearchParams} from "react-router-dom";
 import {useErrorHandler} from "react-error-boundary";
 import {Spinner} from "react-bootstrap";
 import Container from "react-bootstrap/Container";
 import axios from "axios";
-import {Token} from "../utils";
-import {AITalkAssistantPanel, AITalkChatPanel} from "../components/AITalk";
+import {Locale, Token} from "../utils";
+import {AITalkAssistantPanel, AITalkChatOnlyPanel} from "../components/AITalk";
+import {useTranslation} from "react-i18next";
+import resources from "../resources/locale";
 
 export default function Popouts() {
+  const location = useLocation();
+  const {i18n} = useTranslation();
+  const [initialized, setInitialized] = React.useState(false);
+
+  // Switch language for popout, because it does not use navigator, so there is no
+  // LanguageSwitch to do this.
+  React.useEffect(() => {
+    const lang = location.pathname.split('/')[1];
+
+    // Ignore if invalid language.
+    if (!lang || !Object.keys(resources).includes(lang)) {
+      return;
+    }
+
+    // Change to language in url.
+    if (Locale.current() !== lang) {
+      i18n.changeLanguage(lang);
+    }
+
+    setInitialized(true);
+  }, [setInitialized]);
+
+  if (!initialized) {
+    return <>
+      <Spinner animation="border" variant="primary" size='sm'></Spinner>&nbsp;
+      Initializing...
+    </>;
+  }
+  return <PopoutsImpl/>;
+}
+
+function PopoutsImpl() {
   const handleError = useErrorHandler();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = React.useState(true);
@@ -61,7 +95,7 @@ export default function Popouts() {
         <p></p>
         {assistant ?
           <AITalkAssistantPanel {...{roomUUID, roomToken, fullscreen: true}}/> :
-          <AITalkChatPanel {...{roomUUID, roomToken}}/>}
+          <AITalkChatOnlyPanel {...{roomUUID, roomToken}}/>}
       </Container>
     );
   } else {

@@ -48,7 +48,7 @@
   width:20%; height:25%;
 }
 
-.ai-talk-trace-logs-pc, .ai-talk-trace-logs-pcfs, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-mobilefs, .ai-talk-trace-logs-popout{
+.ai-talk-trace-logs-pc, .ai-talk-trace-logs-pcfs, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-mobilefs, .ai-talk-trace-logs-chat-only{
   overflow: scroll;
 }
 
@@ -79,8 +79,8 @@
 }
 
 .ai-talk-container-pc{
-  min-height: 51vh;
-  max-height: 51vh;
+  min-height: 47vh;
+  max-height: 47vh;
   min-width: 30vw;
 }
 
@@ -91,7 +91,7 @@
   min-width: 30vw;
 }
 
-.ai-talk-trace-logs-pc, .ai-talk-trace-logs-pcfs, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-mobilefs, .ai-talk-trace-logs-popout{
+.ai-talk-trace-logs-pc, .ai-talk-trace-logs-pcfs, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-mobilefs, .ai-talk-trace-logs-chat-only{
   margin-bottom: 0px;
 }
 
@@ -108,16 +108,16 @@
 }
 
 .ai-talk-trace-logs-mobile{
-  min-height: 50vh;
-  max-height: 50vh;
+  min-height: 46vh;
+  max-height: 46vh;
 }
 
 .ai-talk-trace-logs-mobilefs {
-  min-height: 62vh;
-  max-height: 62vh;
+  min-height: 57vh;
+  max-height: 57vh;
 }
 
-.ai-talk-trace-logs-popout {
+.ai-talk-trace-logs-chat-only {
   min-height: 50vh;
   max-height: 96vh;
   min-width: 90vw;
