@@ -168,16 +168,26 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 	}
 	if rooms, err := rdb.HGetAll(ctx, SRS_LIVE_ROOM).Result(); err == nil {
 		var count int
+		// Live room with multiple assistants.
+		var lrmaCount int
 		for _, v := range rooms {
 			var obj SrsLiveRoom
 			if err = json.Unmarshal([]byte(v), &obj); err == nil {
 				if obj.Assistant {
 					count++
 				}
+				if talkServer != nil {
+					if stage := talkServer.QueryStageOfRoom(obj.UUID); stage != nil && len(stage.users) > 1 {
+						lrmaCount++
+					}
+				}
 			}
 		}
 		if count > 0 {
 			params["lra"] = fmt.Sprintf("%v", count)
+		}
+		if lrmaCount > 0 {
+			params["lrma"] = fmt.Sprintf("%v", lrmaCount)
 		}
 	}
 

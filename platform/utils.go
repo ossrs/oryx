@@ -446,7 +446,7 @@ func refreshIPv4(ctx context.Context) error {
 			}
 
 			// The ip address might change, so we should always resolve it.
-			time.Sleep(time.Duration(30) * time.Second)
+			time.Sleep(time.Duration(60) * time.Second)
 		}
 	}()
 

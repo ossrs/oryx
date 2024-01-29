@@ -419,7 +419,8 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
     const handleKeyDown = (e) => {
       if (processing) return;
       // Ignore the input event.
-      if (e.target.tagName.toLowerCase() === 'input') return;
+      const tagName = e.target.tagName.toLowerCase();
+      if (tagName === 'input' || tagName === 'textarea') return;
       if (e.key !== 'r' && e.key !== '\\' && e.key !== ' ') return;
       startRecording();
     };
@@ -1001,7 +1002,7 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
         </Card.Header>
         <Card.Body>
           {showUserConfig ? <AITalkUserConfig {...{
-            stageUUID, userID: stageUser.userId, onSubmit: onFinishUserConfig,
+            roomUUID, roomToken, stageUUID, userID: stageUser.userId, onSubmit: onFinishUserConfig,
             onCancel: () => setShowUserConfig(false),
           }} /> : ''}
           <div className={isMobile ? 'ai-talk-container-mobile' : 'ai-talk-container-pc'}

@@ -34,18 +34,26 @@ func (v *CrontabWorker) Start(ctx context.Context) error {
 	go func() {
 		defer v.wg.Done()
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(time.Duration(24*3600) * time.Second):
-			}
+		// Start the crontab when system startup for a while.
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(5 * time.Minute):
+		}
 
+		for {
 			logger.Tf(ctx, "crontab: start to query latest version")
 			if versions, err := queryLatestVersion(ctx); err != nil {
 				logger.Wf(ctx, "crontab: ignore err %v", err)
-			} else {
+			} else if versions != nil && versions.Latest != "" {
+				conf.Versions = *versions
 				logger.Tf(ctx, "crontab: query version ok, result is %v", versions.String())
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(15 * time.Minute):
 			}
 		}
 	}()
@@ -63,7 +71,7 @@ func (v *CrontabWorker) Start(ctx context.Context) error {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(time.Duration(24*3600) * time.Second):
+			case <-time.After(24 * time.Hour):
 			}
 		}
 	}()
