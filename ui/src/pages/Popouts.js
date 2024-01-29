@@ -22,6 +22,8 @@ export default function Popouts() {
   // Switch language for popout, because it does not use navigator, so there is no
   // LanguageSwitch to do this.
   React.useEffect(() => {
+    if (!i18n || !location) return;
+
     const lang = location.pathname.split('/')[1];
 
     // Ignore if invalid language.
@@ -35,7 +37,7 @@ export default function Popouts() {
     }
 
     setInitialized(true);
-  }, [setInitialized]);
+  }, [setInitialized, i18n, location]);
 
   if (!initialized) {
     return <>
@@ -57,12 +59,18 @@ function PopoutsImpl() {
     const popout = searchParams.get('popout');
     const room = searchParams.get('room');
     const assistant = searchParams.get('assistant');
+    const username = searchParams.get('username');
+    const userLanguage = searchParams.get('language');
     console.log(`?app=ai-talk, current=${app}, The popout application`);
     console.log(`?roomToken=xxx, current=${roomToken?.length}B, The popout token for each room`);
     console.log(`?popout=1, current=${popout}, Whether enable popout mode.`);
     if (app === 'ai-talk') {
       console.log(`?room=room-uuid, current=${room}, The room uuid for ai-talk.`);
       console.log(`?assistant=0, current=${assistant}, Whether popout the assistant, allow user to talk.`);
+      if (assistant === '1') {
+        console.log(`?username=xxx, current=${username}, The username of stream host.`);
+        console.log(`?language=xxx, current=${userLanguage}, The language of user.`);
+      }
     }
 
     if (!app) throw new Error(`no app`);
@@ -90,11 +98,13 @@ function PopoutsImpl() {
     const assistant = searchParams.get('assistant') === '1';
     const roomUUID = searchParams.get('room');
     const roomToken = searchParams.get('roomToken');
+    const username = searchParams.get('username');
+    const userLanguage = searchParams.get('language');
     return (
       <Container fluid>
         <p></p>
         {assistant ?
-          <AITalkAssistantPanel {...{roomUUID, roomToken, fullscreen: true}}/> :
+          <AITalkAssistantPanel {...{roomUUID, roomToken, username, userLanguage, fullscreen: true}}/> :
           <AITalkChatOnlyPanel {...{roomUUID, roomToken}}/>}
       </Container>
     );

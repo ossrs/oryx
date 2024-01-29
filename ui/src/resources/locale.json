@@ -249,7 +249,8 @@
         "doc": "https://ossrs.net/lts/zh-cn/faq-srs-stack",
         "required": "必选",
         "optional": "可选",
-        "send": "发送"
+        "send": "发送",
+        "generate": "生成"
       },
       "transcode": {
         "config": {
@@ -504,7 +505,9 @@
           "asre": "开启ASR",
           "chate": "开启AI处理",
           "ttse": "开启TTS",
-          "text": "请输入聊天文字"
+          "text": "请输入聊天文字",
+          "assistant": "助手链接",
+          "pattern": "工作模式"
         }
       },
       "plat": {
@@ -673,6 +676,8 @@
       },
       "lr": {
         "room": {
+          "pattern": "Work Pattern",
+          "assistant": "Assistant Link",
           "text": "Please input chat text",
           "ttse": "Enable TTS",
           "chate": "Enable AI processing",
@@ -1175,7 +1180,8 @@
         "doc": "https://ossrs.io/lts/en-us/faq-srs-stack",
         "required": "Required",
         "optional": "Optional",
-        "send": "Send"
+        "send": "Send",
+        "generate": "Generate"
       }
     }
   }

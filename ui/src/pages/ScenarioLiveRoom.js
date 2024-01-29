@@ -8,7 +8,7 @@ import {useSrsLanguage} from "../components/LanguageSwitch";
 import {Accordion, Button, Card, Form, Nav, Spinner, Table} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import axios from "axios";
-import {Clipboard, Token} from "../utils";
+import {Clipboard, Locale, Token} from "../utils";
 import {useErrorHandler} from "react-error-boundary";
 import {useSearchParams} from "react-router-dom";
 import {buildUrls} from "../components/UrlGenerator";
@@ -16,7 +16,6 @@ import {SrsEnvContext} from "../components/SrsEnvContext";
 import * as Icon from "react-bootstrap-icons";
 import PopoverConfirm from "../components/PopoverConfirm";
 import {OpenAISecretSettings} from "../components/OpenAISettings";
-import {AITalkAssistantPanel} from "../components/AITalk";
 
 export default function ScenarioLiveRoom() {
   const [searchParams] = useSearchParams();
@@ -239,15 +238,9 @@ function ScenarioLiveRoomImpl({roomId, setRoomId}) {
         </Accordion.Body>
       </Accordion.Item>
       {room ? <Accordion.Item eventKey="2">
-        <Accordion.Header>{t('lr.room.aic')}</Accordion.Header>
-        <Accordion.Body>
-          <LiveRoomAssistantConfiguration {...{room, requesting, updateRoom}}/>
-        </Accordion.Body>
-      </Accordion.Item> : ''}
-      {room && room.assistant ? <Accordion.Item eventKey="3">
         <Accordion.Header>{t('lr.room.aiw')}</Accordion.Header>
         <Accordion.Body>
-          <LiveRoomAssistantStage {...{room}}/>
+          <LiveRoomAssistant {...{room, requesting, updateRoom}}/>
         </Accordion.Body>
       </Accordion.Item> : ''}
     </Accordion>
@@ -343,9 +336,9 @@ function LiveRoomStreamer({room}) {
   );
 }
 
-function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
-  const language = useSrsLanguage();
+function LiveRoomAssistant({room, requesting, updateRoom}) {
   const {t} = useTranslation();
+  const language = useSrsLanguage();
 
   const [aiName, setAiName] = React.useState(room.aiName);
   const [aiProvider, setAiProvider] = React.useState(room.aiProvider || 'openai');
@@ -361,11 +354,62 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
   const [aiChatMaxWords, setAiChatMaxWords] = React.useState(room.aiChatMaxWords || 300);
 
   const [configItem, setConfigItem] = React.useState('basic');
+  const [userName, setUserName] = React.useState();
+  const [userLanguage, setUserLanguage] = React.useState(room.aiAsrLanguage || language);
+  const [assistantLink, setAssistantLink] = React.useState();
 
   const changeConfigItem = React.useCallback((e, t) => {
     e.preventDefault();
     setConfigItem(t);
   }, [setConfigItem]);
+
+  const onUpdateRoom = React.useCallback((e) => {
+    e.preventDefault();
+    updateRoom({
+      ...room, assistant: true,
+      aiName, aiProvider, aiSecretKey, aiBaseURL, aiAsrLanguage, aiChatModel,
+      aiChatPrompt, aiChatMaxWindow: parseInt(aiChatMaxWindow),
+      aiChatMaxWords: parseInt(aiChatMaxWords), aiAsrEnabled: !!aiAsrEnabled,
+      aiChatEnabled: !!aiChatEnabled, aiTtsEnabled: !!aiTtsEnabled,
+    })
+  }, [
+    updateRoom, room, aiName, aiProvider, aiSecretKey, aiBaseURL, aiAsrLanguage, aiChatModel, aiChatPrompt,
+    aiChatMaxWindow, aiChatMaxWords, aiAsrEnabled, aiChatEnabled, aiTtsEnabled
+  ]);
+
+  const onDisableRoom = React.useCallback((e) => {
+    e.preventDefault();
+    updateRoom({...room, assistant: false});
+  }, [updateRoom, room]);
+
+  const generateAssistantLink = React.useCallback((e) => {
+    e && e.preventDefault();
+
+    const roomUUID = room.uuid;
+    const roomToken = room.roomToken;
+    if (!roomUUID) return;
+
+    // For assistant link, we must set expire date.
+    const params = [
+      'app=ai-talk',
+      'popout=1',
+      'assistant=1',
+      `created=${new Date().toISOString()}`,
+      `random=${Math.random().toString(16).slice(-8)}`,
+      ...(userName ? [`username=${userName}`] : []),
+      ...(userLanguage ? [`language=${userLanguage}`] : []),
+      `room=${roomUUID}`,
+      `roomToken=${roomToken}`,
+    ];
+    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?${params.join('&')}`;
+    setAssistantLink(url);
+    console.log(`Generated assistant URL: ${url}`);
+  }, [setAssistantLink, room, userName, userLanguage]);
+
+  // If data updated, update link.
+  React.useEffect(() => {
+    generateAssistantLink();
+  }, [generateAssistantLink, userName, userLanguage]);
 
   if (!room.assistant) {
     return (
@@ -395,6 +439,9 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
             <Nav.Item>
               <Nav.Link href="#tts" onClick={(e) => changeConfigItem(e, 'tts')}>{t('lr.room.tts')}</Nav.Link>
             </Nav.Item>
+            <Nav.Item>
+              <Nav.Link href="#assistant" onClick={(e) => changeConfigItem(e, 'assistant')}>{t('lr.room.assistant')}</Nav.Link>
+            </Nav.Item>
           </Nav>
         </Card.Header>
         {configItem === 'basic' && <Card.Body>
@@ -403,6 +450,7 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
             <Form.Text> * {t('lr.room.name2')}</Form.Text>
             <Form.Control as="input" type='input' defaultValue={aiName} onChange={(e) => setAiName(e.target.value)} />
           </Form.Group>
+          <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
         </Card.Body>}
         {configItem === 'provider' && <Card.Body>
           <Form.Group className="mb-3">
@@ -418,6 +466,8 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
             secretKey: aiSecretKey, setSecretKey: setAiSecretKey,
             targetLanguage: aiAsrLanguage, setTargetLanguage: setAiAsrLanguage
           }} />
+          <p></p>
+          <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
         </Card.Body>}
         {configItem === 'asr' && <Card.Body>
           <Form.Group className="mb-3">
@@ -433,6 +483,7 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
             </Form.Text>
             <Form.Control as="input" defaultValue={aiAsrLanguage} onChange={(e) => setAiAsrLanguage(e.target.value)} />
           </Form.Group>
+          <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
         </Card.Body>}
         {configItem === 'chat' && <Card.Body>
           <Form.Group className="mb-3">
@@ -460,6 +511,7 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
             <Form.Text> * {t('lr.room.words2')}</Form.Text>
             <Form.Control as="input" type='input' defaultValue={aiChatMaxWords} onChange={(e) => setAiChatMaxWords(e.target.value)} />
           </Form.Group>
+          <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
         </Card.Body>}
         {configItem === 'tts' && <Card.Body>
           <Form.Group className="mb-3">
@@ -467,33 +519,50 @@ function LiveRoomAssistantConfiguration({room, requesting, updateRoom}) {
               <Form.Check type="checkbox" label={t('lr.room.ttse')} defaultChecked={aiTtsEnabled} onClick={() => setAiTtsEnabled(!aiTtsEnabled)} />
             </Form.Group>
           </Form.Group>
+          <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
+        </Card.Body>}
+        {configItem === 'assistant' && <Card.Body>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.uname')}</Form.Label>
+            <Form.Text> * {t('lr.room.uname2')}</Form.Text>
+            <Form.Control as="input" type='input' defaultValue={userName} onChange={(e) => {
+              e.preventDefault();
+              setUserName(e.target.value);
+            }} />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('transcript.lang')}</Form.Label>
+            <Form.Text> * {t('transcript.lang3')}. &nbsp;
+              {t('helper.eg')} <code>en, zh, fr, de, ja, ru </code>, ... &nbsp;
+              {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank' rel='noreferrer'>ISO-639-1</a>.
+            </Form.Text>
+            <Form.Control as="input" defaultValue={userLanguage} onChange={(e) => {
+              e.preventDefault();
+              setUserLanguage(e.target.value);
+            }} />
+          </Form.Group>
+          <Button variant="primary" type="button" onClick={generateAssistantLink}>
+            {t('helper.generate')}
+          </Button>
+          <p></p>
+          {assistantLink && <p>
+            Assistant: <a href={assistantLink} target='_blank' rel='noreferrer'>{userName} {userLanguage}</a>
+          </p>}
         </Card.Body>}
       </Card>
-      <p></p>
-      <Button variant="primary" type="button" disabled={requesting}
-              onClick={(e) => updateRoom({
-                ...room, assistant: true,
-                aiName, aiProvider, aiSecretKey, aiBaseURL, aiAsrLanguage, aiChatModel,
-                aiChatPrompt, aiChatMaxWindow: parseInt(aiChatMaxWindow),
-                aiChatMaxWords: parseInt(aiChatMaxWords), aiAsrEnabled: !!aiAsrEnabled,
-                aiChatEnabled: !!aiChatEnabled, aiTtsEnabled: !!aiTtsEnabled,
-              })}>
-        {t('lr.room.update')}
-      </Button> &nbsp;
-      <Button variant="primary" type="button" disabled={requesting}
-              onClick={(e) => updateRoom({...room, assistant: false})}>
-        {t('lr.room.disable')}
-      </Button>
     </Form>
   );
 }
 
-function LiveRoomAssistantStage({room}) {
+function LiveRoomAssistantUpdateButtons({requesting, onUpdateRoom, onDisableRoom}) {
   const {t} = useTranslation();
 
-  if (!room.assistant || !room.aiProvider || !room.aiSecretKey || !room.aiBaseURL || !room.aiAsrLanguage
-    || !room.aiChatModel || !room.aiChatPrompt) {
-    return <>{t('lr.room.aiwe')}</>;
-  }
-  return <AITalkAssistantPanel {...{roomUUID: room.uuid, roomToken: room.roomToken, fullscreen: false}} />;
+  return <>
+    <Button variant="primary" type="button" disabled={requesting} onClick={onUpdateRoom}>
+      {t('lr.room.update')}
+    </Button> &nbsp;
+    <Button variant="primary" type="button" disabled={requesting} onClick={onDisableRoom}>
+      {t('lr.room.disable')}
+    </Button>
+  </>;
 }

@@ -8,7 +8,8 @@ import {Locale, Token} from "../utils";
 import * as Icon from "react-bootstrap-icons";
 import Container from "react-bootstrap/Container";
 
-export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
+// TODO: FIXME: Remove fullscreen, not used now.
+export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguage, fullscreen}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
   const isMobile = useIsMobile();
@@ -621,7 +622,9 @@ export function AITalkAssistantPanel({roomUUID, roomToken, fullscreen}) {
     <div>
       <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
       {stageUUID && !robotReady ? <>
-        <AITalkUserConfig {...{roomUUID, roomToken, stageUUID, userID, disabled: requesting, label: t('lr.room.talk'), onSubmit: startChatting}} />
+        <AITalkUserConfig {...{roomUUID, roomToken,
+          username, userLanguage, stageUUID, userID, disabled: requesting, label: t('lr.room.talk'),
+          onSubmit: startChatting}} />
       </> : ''}
       {robotReady && !isMobile ?
         <Row>
@@ -910,7 +913,7 @@ export function AITalkChatOnlyPanel({roomUUID, roomToken}) {
   );
 }
 
-function AITalkUserConfig({roomUUID, roomToken, stageUUID, userID, disabled, label, onSubmit, onCancel}) {
+function AITalkUserConfig({roomUUID, roomToken, username, userLanguage, stageUUID, userID, disabled, label, onSubmit, onCancel}) {
   const handleError = useErrorHandler();
   const [loading, setLoading] = React.useState(true);
   const [user, setUser] = React.useState(null);
@@ -924,10 +927,15 @@ function AITalkUserConfig({roomUUID, roomToken, stageUUID, userID, disabled, lab
       headers: Token.loadBearerHeader(),
     }).then(res => {
       setLoading(false);
-      setUser({...res.data.data, userId: userID});
+      const u = res.data.data;
+      setUser({
+        ...u, userId: userID,
+        username: username || u.username,
+        language: userLanguage || u.language,
+      });
       console.log(`Start: Query stage user success, ${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
-  }, [handleError, setUser, setLoading, roomUUID, roomToken, stageUUID, userID]);
+  }, [handleError, setUser, setLoading, roomUUID, roomToken, username, userLanguage, stageUUID, userID]);
 
   if (loading || !user) {
     return <><Spinner animation="border" variant="primary" size='sm'></Spinner> Loading...</>;
@@ -1073,7 +1081,7 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
           </div>
           {showSettings && <div className='ai-talk-settings-menu2'>
             <Dropdown.Menu show={true}>
-              <Dropdown.Item href="#!" onClick={openPopout}>{t('lr.room.popchat2')}</Dropdown.Item>
+              {false && <Dropdown.Item href="#!" onClick={openPopout}>{t('lr.room.popchat2')}</Dropdown.Item>}
               <Dropdown.Item href="#!" onClick={openSettings}>{t('lr.room.settings')}</Dropdown.Item>
             </Dropdown.Menu>
           </div>}
