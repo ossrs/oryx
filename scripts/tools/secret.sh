@@ -73,6 +73,8 @@ if [[ ! -z $SRS_PLATFORM_SECRET ]]; then
     if [[ ! -z  $OUTPUT ]]; then
         echo "SRS_PLATFORM_SECRET=$SRS_PLATFORM_SECRET" > $OUTPUT
         echo "MGMT_PASSWORD=$MGMT_PASSWORD" >> $OUTPUT
+        # For local development OpenAI service test. Ignored by production, because there is no source .env file.
+        if [[ -f ~/git/issues-translation/.env ]]; then cat ~/git/issues-translation/.env |grep OPENAI >> $OUTPUT; fi
     fi
     exit 0
 fi

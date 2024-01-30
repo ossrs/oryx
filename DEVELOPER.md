@@ -777,12 +777,7 @@ Finally, open [http://localhost](http://localhost) to check it.
 Please setup the environment variable `OPENAI_API_KEY` and `OPENAI_PROXY`, if need to test the OpenAI 
 feature like transcript.
 
-```bash
-bash scripts/tools/secret.sh --output test/.env &&
-cat ~/git/issues-translation/.env |grep OPENAI >> test/.env
-```
-
-Now you can run test.
+> Note: Already setup in the secret.sh script, no extra steps needed.
 
 ## Run test in Goland
 

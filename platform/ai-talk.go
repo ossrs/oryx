@@ -750,13 +750,16 @@ func (v *StageSubscriber) completeRobotAudioMessage(ctx context.Context, sreq *S
 		message.err = errors.Wrapf(err, "copy %v to %v", segment.ttsFile, copyFile)
 	}
 
-	message.finished, message.segment = true, segment
+	message.segment = segment
 	message.RequestUUID, message.SegmentUUID = sreq.rid, segment.asid
 	message.Message, message.audioFile = segment.text, copyFile
 	message.Username = v.stage.room.AIName
 
 	// User may disable TTS, we only ship the text message to user.
 	message.HasAudioFile = !segment.noTTS
+
+	// Now, message is finished.
+	message.finished = true
 
 	// Always close message if timeout.
 	go func() {
@@ -1219,6 +1222,9 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, sreq *Stage
 	go func() {
 		defer v.wg.Done()
 
+		// Always make the segment ready or error, to update the stage to be ready.
+		defer sreq.onSegmentReady(segment)
+
 		if stage.aiTtsEnabled {
 			ttsService := NewOpenAITTSService(stage.aiConfig)
 			if err := ttsService.RequestTTS(ctx, func(ext string) string {
@@ -1230,13 +1236,11 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, sreq *Stage
 				segment.err = err
 			} else {
 				segment.ready, segment.noTTS = true, false
-				sreq.onSegmentReady(segment)
 				logger.Tf(ctx, "TTS: Complete rid=%v, asid=%v, file saved to %v, %v",
 					sreq.rid, segment.asid, segment.ttsFile, segment.text)
 			}
 		} else {
 			segment.ready, segment.noTTS = true, true
-			sreq.onSegmentReady(segment)
 			logger.Tf(ctx, "TTS: Skip rid=%v, asid=%v, %v", sreq.rid, segment.asid, segment.text)
 		}
 
@@ -1352,6 +1356,11 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "unmarshal %v %v", roomUUID, r0)
 			}
 
+			// If assistant is disabled in room, fail.
+			if !room.Assistant {
+				return errors.Errorf("assistant disabled")
+			}
+
 			// Authenticate by room token if got one.
 			if roomToken != "" && room.RoomToken != roomToken {
 				return errors.Errorf("invalid room token %v", roomToken)
@@ -1431,9 +1440,9 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			var sid, roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token     *string `json:"token"`
-				StageUUID *string `json:"sid"`
 				RoomUUID  *string `json:"room"`
 				RoomToken *string `json:"roomToken"`
+				StageUUID *string `json:"sid"`
 			}{
 				Token: &token, StageUUID: &sid, RoomUUID: &roomUUID, RoomToken: &roomToken,
 			}); err != nil {
@@ -1502,14 +1511,14 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			var audioBase64Data, textMessage string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token        *string  `json:"token"`
+				RoomUUID     *string  `json:"room"`
+				RoomToken    *string  `json:"roomToken"`
 				StageUUID    *string  `json:"sid"`
 				UserID       *string  `json:"userId"`
 				RequestUUID  *string  `json:"rid"`
 				UserMayInput *float64 `json:"umi"`
 				AudioData    *string  `json:"audio"`
 				TextMessage  *string  `json:"text"`
-				RoomUUID     *string  `json:"room"`
-				RoomToken    *string  `json:"roomToken"`
 			}{
 				Token: &token, StageUUID: &sid, UserID: &userID, RequestUUID: &rid,
 				UserMayInput: &userMayInput, TextMessage: &textMessage, AudioData: &audioBase64Data,
@@ -1655,10 +1664,10 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			var roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token       *string `json:"token"`
-				StageUUID   *string `json:"sid"`
-				RequestUUID *string `json:"rid"`
 				RoomUUID    *string `json:"room"`
 				RoomToken   *string `json:"roomToken"`
+				StageUUID   *string `json:"sid"`
+				RequestUUID *string `json:"rid"`
 			}{
 				Token: &token, StageUUID: &sid, RequestUUID: &rid,
 				RoomUUID: &roomUUID, RoomToken: &roomToken,
@@ -1854,12 +1863,12 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage.KeepAlive()
 			subscriber.KeepAlive()
 
-			type StageResult struct {
+			type SubscribeResult struct {
 				StageID      string `json:"sid"`
 				SubscriberID string `json:"spid"`
 				Voice        string `json:"voice"`
 			}
-			r0 := &StageResult{
+			r0 := &SubscribeResult{
 				StageID:      stage.sid,
 				SubscriberID: subscriber.spid,
 				Voice:        stage.voice,
@@ -1881,14 +1890,15 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			var token string
 			var sid, spid string
 			var roomUUID, roomToken string
-			// Optional, stream hosts has a userID, no this field for subscribers.
+			// Optional, stream hosts has a userID, no this field for subscribers. Use as heartbeat to
+			// make user keep in alive.
 			var userID string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token        *string `json:"token"`
-				StageUUID    *string `json:"sid"`
-				SubscriberID *string `json:"spid"`
 				RoomUUID     *string `json:"room"`
 				RoomToken    *string `json:"roomToken"`
+				StageUUID    *string `json:"sid"`
+				SubscriberID *string `json:"spid"`
 				UserID       *string `json:"userId"`
 			}{
 				Token: &token, StageUUID: &sid, SubscriberID: &spid,
@@ -2075,11 +2085,11 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			var roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token            *string `json:"token"`
+				RoomUUID         *string `json:"room"`
+				RoomToken        *string `json:"roomToken"`
 				StageUUID        *string `json:"sid"`
 				SubscriberID     *string `json:"spid"`
 				AudioSegmentUUID *string `json:"asid"`
-				RoomUUID         *string `json:"room"`
-				RoomToken        *string `json:"roomToken"`
 			}{
 				Token: &token, StageUUID: &sid, SubscriberID: &spid, AudioSegmentUUID: &asid,
 				RoomUUID: &roomUUID, RoomToken: &roomToken,
@@ -2156,10 +2166,10 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			var roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token     *string `json:"token"`
-				StageUUID *string `json:"sid"`
-				UserID    *string `json:"userId"`
 				RoomUUID  *string `json:"room"`
 				RoomToken *string `json:"roomToken"`
+				StageUUID *string `json:"sid"`
+				UserID    *string `json:"userId"`
 			}{
 				Token: &token, StageUUID: &sid, UserID: &userID,
 				RoomUUID: &roomUUID, RoomToken: &roomToken,
@@ -2224,12 +2234,12 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			var roomUUID, roomToken string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token        *string `json:"token"`
+				RoomUUID     *string `json:"room"`
+				RoomToken    *string `json:"roomToken"`
 				StageUUID    *string `json:"sid"`
 				UserID       *string `json:"userId"`
 				Username     *string `json:"name"`
 				UserLanguage *string `json:"lang"`
-				RoomUUID     *string `json:"room"`
-				RoomToken    *string `json:"roomToken"`
 			}{
 				Token: &token, StageUUID: &sid, UserID: &userID,
 				Username: &username, UserLanguage: &userLanguage,
