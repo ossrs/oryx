@@ -21,3 +21,20 @@ export default function useIsMobile() {
 
   return isMobile;
 }
+
+export function useIsMobileFS() {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  function handleWindowSizeChange() {
+    setIsMobile(window.innerWidth <= 1280);
+  }
+  React.useEffect(() => {
+    handleWindowSizeChange();
+    window.addEventListener('resize', handleWindowSizeChange);
+    return () => {
+      window.removeEventListener('resize', handleWindowSizeChange);
+    }
+  }, [setIsMobile]);
+
+  return isMobile;
+}

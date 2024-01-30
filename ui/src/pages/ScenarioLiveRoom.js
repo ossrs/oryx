@@ -224,7 +224,7 @@ function ScenarioLiveRoomImpl({roomId, setRoomId}) {
 
   if (!room) return <Spinner animation="border" variant="primary" />;
   return <>
-    <Accordion defaultActiveKey={room.assistant ? ['3'] : ['0', '1', '2', '3']} alwaysOpen>
+    <Accordion defaultActiveKey={room.assistant ? ['2'] : ['0', '1', '2', '3']} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('lr.room.nav')}</Accordion.Header>
         <Accordion.Body>
@@ -348,6 +348,7 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
   const [aiChatEnabled, setAiChatEnabled] = React.useState(room.aiChatEnabled);
   const [aiTtsEnabled, setAiTtsEnabled] = React.useState(room.aiTtsEnabled);
   const [aiAsrLanguage, setAiAsrLanguage] = React.useState(room.aiAsrLanguage || language);
+  const [aiAsrPrompt, setAiAsrPrompt] = React.useState(room.aiAsrPrompt || 'user-ai');
   const [aiChatModel, setAiChatModel] = React.useState(room.aiChatModel || 'gpt-4-turbo-preview');
   const [aiChatPrompt, setAiChatPrompt] = React.useState(room.aiChatPrompt || 'You are a helpful assistant.');
   const [aiChatMaxWindow, setAiChatMaxWindow] = React.useState(room.aiChatMaxWindow || 5);
@@ -356,6 +357,7 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
   const [configItem, setConfigItem] = React.useState('basic');
   const [userName, setUserName] = React.useState();
   const [userLanguage, setUserLanguage] = React.useState(room.aiAsrLanguage || language);
+  const [aiPattern, setAiPattern] = React.useState('chat');
   const [assistantLink, setAssistantLink] = React.useState();
 
   const changeConfigItem = React.useCallback((e, t) => {
@@ -371,10 +373,11 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
       aiChatPrompt, aiChatMaxWindow: parseInt(aiChatMaxWindow),
       aiChatMaxWords: parseInt(aiChatMaxWords), aiAsrEnabled: !!aiAsrEnabled,
       aiChatEnabled: !!aiChatEnabled, aiTtsEnabled: !!aiTtsEnabled,
+      aiAsrPrompt,
     })
   }, [
     updateRoom, room, aiName, aiProvider, aiSecretKey, aiBaseURL, aiAsrLanguage, aiChatModel, aiChatPrompt,
-    aiChatMaxWindow, aiChatMaxWords, aiAsrEnabled, aiChatEnabled, aiTtsEnabled
+    aiChatMaxWindow, aiChatMaxWords, aiAsrEnabled, aiChatEnabled, aiTtsEnabled, aiAsrPrompt
   ]);
 
   const onDisableRoom = React.useCallback((e) => {
@@ -398,18 +401,19 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
       `random=${Math.random().toString(16).slice(-8)}`,
       ...(userName ? [`username=${userName}`] : []),
       ...(userLanguage ? [`language=${userLanguage}`] : []),
+      ...(aiPattern ? [`pattern=${aiPattern}`] : []),
       `room=${roomUUID}`,
       `roomToken=${roomToken}`,
     ];
     const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?${params.join('&')}`;
     setAssistantLink(url);
     console.log(`Generated assistant URL: ${url}`);
-  }, [setAssistantLink, room, userName, userLanguage]);
+  }, [setAssistantLink, room, userName, userLanguage, aiPattern]);
 
   // If data updated, update link.
   React.useEffect(() => {
     generateAssistantLink();
-  }, [generateAssistantLink, userName, userLanguage]);
+  }, [generateAssistantLink, userName, userLanguage, aiPattern]);
 
   if (!room.assistant) {
     return (
@@ -483,12 +487,21 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
             </Form.Text>
             <Form.Control as="input" defaultValue={aiAsrLanguage} onChange={(e) => setAiAsrLanguage(e.target.value)} />
           </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.asrp')}</Form.Label>
+            <Form.Text> * {t('lr.room.asrp2')}.</Form.Text>
+            <Form.Select defaultValue={aiAsrPrompt} onChange={(e) => setAiAsrPrompt(e.target.value)}>
+              <option value="">--{t('helper.noSelect')}--</option>
+              <option value="user-only">User Input</option>
+              <option value="user-ai">User Input + AI Output</option>
+            </Form.Select>
+          </Form.Group>
           <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
         </Card.Body>}
         {configItem === 'chat' && <Card.Body>
           <Form.Group className="mb-3">
             <Form.Group className="mb-3" controlId="formAiChatEnabledCheckbox">
-              <Form.Check disabled={true} type="checkbox" label={t('lr.room.chate')} defaultChecked={aiChatEnabled} onClick={() => setAiChatEnabled(!aiChatEnabled)} />
+              <Form.Check type="checkbox" label={t('lr.room.chate')} defaultChecked={aiChatEnabled} onClick={() => setAiChatEnabled(!aiChatEnabled)} />
             </Form.Group>
           </Form.Group>
           <Form.Group className="mb-3">
@@ -541,12 +554,21 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
               setUserLanguage(e.target.value);
             }} />
           </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.pattern')}</Form.Label>
+            <Form.Text> * {t('lr.room.pattern2')}.</Form.Text>
+            <Form.Select defaultValue={aiPattern} onChange={(e) => setAiPattern(e.target.value)}>
+              <option value="">--{t('helper.noSelect')}--</option>
+              <option value="chat">Chat ({t('lr.room.patternChat')})</option>
+              <option value="dictation">Dictation ({t('lr.room.patternListen')})</option>
+            </Form.Select>
+          </Form.Group>
           <Button variant="primary" type="button" onClick={generateAssistantLink}>
             {t('helper.generate')}
           </Button>
           <p></p>
           {assistantLink && <p>
-            Assistant: <a href={assistantLink} target='_blank' rel='noreferrer'>{userName} {userLanguage}</a>
+            Assistant: <a href={assistantLink} target='_blank' rel='noreferrer'>{userName} {userLanguage} {aiPattern}</a>
           </p>}
         </Card.Body>}
       </Card>

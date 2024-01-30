@@ -48,7 +48,7 @@
   width:20%; height:25%;
 }
 
-.ai-talk-trace-logs-pc, .ai-talk-trace-logs-pcfs, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-mobilefs, .ai-talk-trace-logs-chat-only{
+.ai-talk-trace-logs-pc, .ai-talk-trace-logs-pcfs, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-mobilefs, .ai-talk-trace-logs-mobilefs-dictation, .ai-talk-trace-logs-chat-only{
   overflow: scroll;
 }
 
@@ -91,7 +91,7 @@
   min-width: 30vw;
 }
 
-.ai-talk-trace-logs-pc, .ai-talk-trace-logs-pcfs, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-mobilefs, .ai-talk-trace-logs-chat-only{
+.ai-talk-trace-logs-pc, .ai-talk-trace-logs-pcfs, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-mobilefs, .ai-talk-trace-logs-mobilefs-dictation, .ai-talk-trace-logs-chat-only{
   margin-bottom: 0px;
 }
 
@@ -115,6 +115,11 @@
 .ai-talk-trace-logs-mobilefs {
   min-height: 57vh;
   max-height: 57vh;
+}
+
+.ai-talk-trace-logs-mobilefs-dictation {
+  min-height: 78vh;
+  max-height: 78vh;
 }
 
 .ai-talk-trace-logs-chat-only {

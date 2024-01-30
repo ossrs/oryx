@@ -13,6 +13,7 @@ import {Locale, Token} from "../utils";
 import {AITalkAssistantPanel, AITalkChatOnlyPanel} from "../components/AITalk";
 import {useTranslation} from "react-i18next";
 import resources from "../resources/locale";
+import {AITalkDictationPanel} from "../components/AIDictation";
 
 export default function Popouts() {
   const location = useLocation();
@@ -39,13 +40,17 @@ export default function Popouts() {
     setInitialized(true);
   }, [setInitialized, i18n, location]);
 
-  if (!initialized) {
-    return <>
-      <Spinner animation="border" variant="primary" size='sm'></Spinner>&nbsp;
-      Initializing...
-    </>;
-  }
-  return <PopoutsImpl/>;
+  return (
+    <Container fluid>
+      <p></p>
+      {!initialized ?
+        <>
+          <Spinner animation="border" variant="primary" size='sm'></Spinner>&nbsp;
+          Initializing...
+        </> :
+        <PopoutsImpl/>}
+    </Container>
+  );
 }
 
 function PopoutsImpl() {
@@ -61,6 +66,7 @@ function PopoutsImpl() {
     const assistant = searchParams.get('assistant');
     const username = searchParams.get('username');
     const userLanguage = searchParams.get('language');
+    const aiPattern = searchParams.get('pattern');
     console.log(`?app=ai-talk, current=${app}, The popout application`);
     console.log(`?roomToken=xxx, current=${roomToken?.length}B, The popout token for each room`);
     console.log(`?popout=1, current=${popout}, Whether enable popout mode.`);
@@ -70,6 +76,7 @@ function PopoutsImpl() {
       if (assistant === '1') {
         console.log(`?username=xxx, current=${username}, The username of stream host.`);
         console.log(`?language=xxx, current=${userLanguage}, The language of user.`);
+        console.log(`?pattern=chat|dictation, current=${aiPattern}, The work pattern of AI assistant.`);
       }
     }
 
@@ -100,14 +107,15 @@ function PopoutsImpl() {
     const roomToken = searchParams.get('roomToken');
     const username = searchParams.get('username');
     const userLanguage = searchParams.get('language');
-    return (
-      <Container fluid>
-        <p></p>
-        {assistant ?
-          <AITalkAssistantPanel {...{roomUUID, roomToken, username, userLanguage, fullscreen: true}}/> :
-          <AITalkChatOnlyPanel {...{roomUUID, roomToken}}/>}
-      </Container>
-    );
+    const aiPattern = searchParams.get('pattern');
+    if (assistant) {
+      if (aiPattern === 'dictation') {
+        return <AITalkDictationPanel {...{roomUUID, roomToken, username, userLanguage}}/>;
+      }
+      return <AITalkAssistantPanel {...{roomUUID, roomToken, username, userLanguage, fullscreen: true}}/>
+    } else {
+      return <AITalkChatOnlyPanel {...{roomUUID, roomToken}}/>;
+    }
   } else {
     return <>Invalid app {app}</>;
   }

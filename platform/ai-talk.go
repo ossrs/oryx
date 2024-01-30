@@ -55,6 +55,8 @@ func (v *openaiASRService) RequestASR(ctx context.Context, inputFile, language, 
 	outputFile := fmt.Sprintf("%v.mp4", inputFile)
 	defer os.Remove(outputFile)
 
+	// TODO: FIXME: Use client to set the codec and format, skip to copy it in server, because it need about
+	//   1s to process in some weak performance VPS.
 	// Transcode input audio in opus or aac, to aac in m4a/mp4 format.
 	// If need to encode to aac, use:
 	//		"-c:a", "aac", "-ac", "1", "-ar", "16000", "-ab", "30k",
@@ -178,6 +180,10 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 	messages = append(messages, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: user.previousAsrText,
+	})
+	messages = append(messages, openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleAssistant,
+		Content: user.previousAiText,
 	})
 
 	model := stage.chatModel
@@ -368,7 +374,7 @@ func (v *openaiChatService) handle(
 		stage.previousAssitant += sentence + " "
 		// We utilize user ASR and AI responses as prompts for the subsequent ASR, given that this is
 		// a chat-based scenario where the user converses with the AI, and the following audio should pertain to both user and AI text.
-		user.previousAsrText += " " + sentence
+		user.previousAiText += " " + sentence
 		// Commit the sentense to TTS worker and callbacks.
 		commitAISentence(sentence, firstSentense)
 		// Reset the sentence, because we have committed it.
@@ -829,6 +835,8 @@ type StageUser struct {
 
 	// Previous ASR text, to use as prompt for next ASR.
 	previousAsrText string
+	// Previous AI response text, also can be used for next ASR.
+	previousAiText string
 
 	// Last update of user.
 	update time.Time
@@ -869,6 +877,8 @@ type Stage struct {
 	prompt string
 	// The AI ASR language.
 	asrLanguage string
+	// The AI asr prompt type. user or user-ai.
+	asrPrompt string
 	// The prefix for TTS for the first sentence if too short.
 	prefix string
 	// The welcome voice url.
@@ -916,7 +926,8 @@ func NewStage(opts ...func(*Stage)) *Stage {
 
 func (v Stage) String() string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("sid:%v,asr:%v", v.sid, v.asrLanguage))
+	sb.WriteString(fmt.Sprintf("sid:%v,asr:%v,asrp:%v",
+		v.sid, v.asrLanguage, v.asrPrompt))
 	if v.prefix != "" {
 		sb.WriteString(fmt.Sprintf(",prefix:%v", v.prefix))
 	}
@@ -952,6 +963,7 @@ func (v *Stage) UpdateFromRoom(room *SrsLiveRoom) {
 	v.voice = helloVoiceFromLanguage(room.AIASRLanguage)
 	v.prompt = room.AIChatPrompt
 	v.asrLanguage = room.AIASRLanguage
+	v.asrPrompt = room.AIASRPrompt
 	v.replyLimit = room.AIChatMaxWords
 	v.chatModel = room.AIChatModel
 	v.chatWindow = room.AIChatMaxWindow
@@ -1472,7 +1484,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}{
 				RequestUUID: sreq.rid,
 			})
-			logger.Tf(ctx, "srs ai-talk stage create conversation ok, rid=%v", sreq.rid)
+			logger.Tf(ctx, "ai-talk new conversation, room=%v, sid=%v, rid=%v", roomUUID, sid, sreq.rid)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -1593,7 +1605,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// Important trace log.
-			user.previousAsrText = sreq.asrText
+			user.previousAsrText, user.previousAiText = sreq.asrText, ""
 			logger.Tf(ctx, "You: %v", sreq.asrText)
 
 			// Notify all subscribers about the ASR text.
@@ -1605,15 +1617,17 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage.KeepAlive()
 
 			// Do chat, get the response in stream.
-			chatService := &openaiChatService{
-				conf: stage.aiConfig,
-				onFirstResponse: func(ctx context.Context, text string) {
-					sreq.lastRequestChat = time.Now()
-					sreq.lastRobotFirstText = text
-				},
-			}
-			if err := chatService.RequestChat(ctx, sreq, stage, user); err != nil {
-				return errors.Wrapf(err, "chat")
+			if stage.aiChatEnabled {
+				chatService := &openaiChatService{
+					conf: stage.aiConfig,
+					onFirstResponse: func(ctx context.Context, text string) {
+						sreq.lastRequestChat = time.Now()
+						sreq.lastRobotFirstText = text
+					},
+				}
+				if err := chatService.RequestChat(ctx, sreq, stage, user); err != nil {
+					return errors.Wrapf(err, "chat")
+				}
 			}
 
 			// Response the request UUID and pulling the response.

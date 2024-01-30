@@ -219,6 +219,8 @@
       "helper": {
         "manage": "管理",
         "delete": "删除",
+        "start": "开始",
+        "stop": "停止",
         "end": "结束",
         "preview": "预览",
         "seconds": "秒",
@@ -507,7 +509,13 @@
           "ttse": "开启TTS",
           "text": "请输入聊天文字",
           "assistant": "助手链接",
-          "pattern": "工作模式"
+          "pattern": "AI工作模式",
+          "pattern2": "请选择AI的工作模式，比如是对话还是听写",
+          "patternChat": "AI和用户对话方式，一来一回的对话",
+          "patternListen": "AI一直听用户对话，用户一直说，听写模式",
+          "startd": "开始听写",
+          "asrp": "ASR提示词",
+          "asrp2": "请选择生成ASR提示词的方式"
         }
       },
       "plat": {
@@ -676,7 +684,13 @@
       },
       "lr": {
         "room": {
-          "pattern": "Work Pattern",
+          "asrp2": "Please select the way to generate ASR prompt",
+          "asrp": "ASR Prompt",
+          "startd": "Start Dictation",
+          "patternListen": "AI listens to the user speech, and the user keeps talking",
+          "patternChat": "AI and user chat, taking turns with each sentence.",
+          "pattern2": "Please select AI work pattern, e.g. chat or dictation",
+          "pattern": "AI Pattern",
           "assistant": "Assistant Link",
           "text": "Please input chat text",
           "ttse": "Enable TTS",
@@ -1150,6 +1164,8 @@
       "helper": {
         "manage": "Manage",
         "delete": "Delete",
+        "start": "Start",
+        "stop": "Stop",
         "end": "End",
         "preview": "Preview",
         "seconds": "s",

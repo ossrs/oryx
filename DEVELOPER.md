@@ -1128,6 +1128,7 @@ The following are the update records for the SRS Stack server.
     * Room: AI-Talk support multiple assistant in a room. v5.13.18
     * Room: AI-Talk support user different languages. v5.13.18
     * Room: AI-Talk allow disable ASR/TTS, enable text. v5.13.19
+    * Room: AI-Talk support dictation mode. v5.13.20
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1

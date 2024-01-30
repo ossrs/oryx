@@ -288,6 +288,8 @@ type SrsAssistant struct {
 	AIASREnabled bool `json:"aiAsrEnabled"`
 	// The AI asr language.
 	AIASRLanguage string `json:"aiAsrLanguage"`
+	// The AI asr prompt type. user or user-ai.
+	AIASRPrompt string `json:"aiAsrPrompt"`
 
 	// Whether enable the AI processing.
 	AIChatEnabled bool `json:"aiChatEnabled"`
@@ -315,8 +317,8 @@ func NewAssistant(opts ...func(*SrsAssistant)) *SrsAssistant {
 }
 
 func (v *SrsAssistant) String() string {
-	return fmt.Sprintf("assistant=%v, name=%v, provider=%v, secretKey=%vB, baseURL=%v, asr=<enabled=%v,language=%v>, chat=<enabled=%v,model=%v,prompt=%v,window=%v,words=%v>, tts=<%v>",
+	return fmt.Sprintf("assistant=%v, name=%v, provider=%v, secretKey=%vB, baseURL=%v, asr=<enabled=%v,language=%v,prompt=%v>, chat=<enabled=%v,model=%v,prompt=%v,window=%v,words=%v>, tts=<%v>",
 		v.Assistant, v.AIName, v.AIProvider, len(v.AISecretKey), v.AIBaseURL, v.AIASREnabled,
-		v.AIASRLanguage, v.AIChatEnabled, v.AIChatModel, v.AIChatPrompt, v.AIChatMaxWindow,
+		v.AIASRLanguage, v.AIASRPrompt, v.AIChatEnabled, v.AIChatModel, v.AIChatPrompt, v.AIChatMaxWindow,
 		v.AIChatMaxWords, v.AITTSEnabled)
 }

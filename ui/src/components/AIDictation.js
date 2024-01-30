@@ -2,22 +2,21 @@ import React from "react";
 import {Alert, Button, Card, Col, Dropdown, Form, InputGroup, Row, Spinner} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {useErrorHandler} from "react-error-boundary";
-import useIsMobile from "./IsMobile";
+import {useIsMobileFS} from "./IsMobile";
 import axios from "axios";
 import {Locale, Token} from "../utils";
 import * as Icon from "react-bootstrap-icons";
 
-// TODO: FIXME: Remove fullscreen, not used now.
-export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguage, fullscreen}) {
+export function AITalkDictationPanel({roomUUID, roomToken, username, userLanguage}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobileFS();
 
   // The timeout in milliseconds.
   const timeoutForMicrophoneTestToRun = 50;
   const timeoutWaitForMicrophoneToClose = 900;
   const timeoutWaitForLastVoice = 700;
-  const durationRequiredUserInput = 600;
+  const maxSegmentTime = 10 * 1000; // in ms.
 
   // The player ref, to access the audio player.
   const playerRef = React.useRef(null);
@@ -43,13 +42,8 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
 
   // The refs, about the logs and audio chunks model.
   const ref = React.useRef({
-    count: 0,
-    isRecording: false,
-    recordStarttime: null,
-    stopHandler: null,
+    shouldStop: false,
     mediaStream: null,
-    mediaRecorder: null,
-    audioChunks: [],
     errorLogs: [],
     traceLogs: [],
     tipsLogs: [],
@@ -207,28 +201,6 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
     });
   }, [t, errorLog, stageUUID, setRobotReady, setRequesting, refRequest, setStageUser]);
 
-  // When robot is ready, open the microphone ASAP to accept user input.
-  React.useEffect(() => {
-    const fnImpl = async () => {
-      if (!robotReady) return;
-      if (ref.current.mediaStream) return;
-
-      // Wait util no audio is playing.
-      do {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-      } while(refRequest.current.playingAudio);
-
-      console.log(`Robot is ready, open microphone.`)
-      navigator.mediaDevices.getUserMedia(
-        { audio: true }
-      ).then((stream) => {
-        ref.current.mediaStream = stream;
-        console.log(`Robot is ready, microphone opened.`);
-      }).catch(error => errorLog(`${t('lr.room.mic')}: ${error}`));
-    };
-    fnImpl();
-  }, [errorLog, t, robotReady, ref, refRequest]);
-
   // When robot is ready, show tip logs, and cleanup timeout tips.
   React.useEffect(() => {
     if (!robotReady) return;
@@ -245,178 +217,218 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
     return () => clearInterval(timer);
   }, [t, robotReady, tipLog, isMobile, ref, removeTipLog]);
 
-  // User start a conversation, by recording input.
-  const startRecording = React.useCallback(async () => {
+  // Handle the user input audio data, upload to server.
+  const processUserInput = React.useCallback(async(artifact) => {
+    const userMayInput = artifact.duration();
+
+    // End conversation, for stat the elapsed time cost accurately.
+    const requestUUID = await new Promise((resolve, reject) => {
+      axios.post('/terraform/v1/ai-talk/stage/conversation', {
+        room: roomUUID, roomToken, sid: stageUUID,
+      }, {
+        headers: Token.loadBearerHeader(),
+      }).then(res => {
+        console.log(`ASR: Start conversation success, rid=${res.data.data.rid}`);
+        resolve(res.data.data.rid);
+      }).catch((error) => reject(error));
+    });
+
+    // Convert audio from binary to base64 in text.
+    const audioBase64Data = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = function() {
+        // Remove the data URL prefix, for example, result is:
+        //    application/octet-stream;base64,GkXfo59ChoEB.............
+        const base64Audio = reader.result.split(',')[1];
+        resolve(base64Audio);
+      };
+
+      const audioBlob = new Blob(artifact.audioChunks);
+      reader.readAsDataURL(audioBlob);
+    });
+
+    // Upload the user input audio to the server.
+    await new Promise((resolve, reject) => {
+      console.log(`ASR: Uploading ${artifact.audioChunks.length} chunks, stage=${stageUUID}, user=${userID}`);
+
+      axios.post('/terraform/v1/ai-talk/stage/upload', {
+        room: roomUUID, roomToken, sid: stageUUID, rid: requestUUID, userId: userID,
+        umi: userMayInput, audio: audioBase64Data,
+      }, {
+        headers: Token.loadBearerHeader(),
+      }).then(res => {
+        console.log(`ASR: Upload success: ${res.data.data.rid} ${res.data.data.asr}`);
+        resolve(res.data.data.rid);
+        setUserAsrText(res.data.data.asr);
+      }).catch((error) => reject(error));
+    });
+
+    // Get the AI generated audio from the server.
+    console.log(`TTS: Requesting ${requestUUID} response audios, rid=${requestUUID}`);
+    while (true) {
+      const resp = await new Promise((resolve, reject) => {
+        axios.post('/terraform/v1/ai-talk/stage/query', {
+          room: roomUUID, roomToken, sid: stageUUID, rid: requestUUID,
+        }, {
+          headers: Token.loadBearerHeader(),
+        }).then(res => {
+          if (res.data?.data?.finished) {
+          }
+          resolve(res.data.data);
+        }).catch(error => reject(error));
+      });
+
+      if (resp.finished) {
+        console.log(`TTS: Conversation finished.`);
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }, [roomUUID, roomToken, stageUUID, userID, setUserAsrText]);
+
+  // When user start dictation, open the microphone, start the media recorder, and send the audio
+  // every some seconds.
+  const startDictation = React.useCallback(async (onWorking) => {
+    if (!robotReady) return;
+    if (ref.current.mediaStream) return;
+
+    console.log(`Start dictation, open microphone.`)
+    await new Promise(resolve => {
+      navigator.mediaDevices.getUserMedia(
+        {audio: true}
+      ).then((stream) => {
+        ref.current.mediaStream = stream;
+        console.log(`Start dictation, microphone opened.`);
+        resolve();
+      }).catch(error => errorLog(`${t('lr.room.mic')}: ${error}`));
+    });
+
+    // Now dictation is working.
+    ref.current.shouldStop = false;
+    setProcessing(true);
+    onWorking && onWorking();
+
+    const startRecorder = async () => {
+      console.log("=============");
+
+      // Media artifact, a piece of audio segment generated by media recorder.
+      const artifact = {
+        // The time elappsed.
+        recordStarttime: new Date(),
+        recordStoptime: null,
+        duration: () => {
+          if (!artifact.recordStoptime) return null;
+          return artifact.recordStoptime - artifact.recordStarttime;
+        },
+        // For dictation, we never stop the media stream util user press the stop button.
+        // TODO: FIXME: Set the codec, see https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/mimeType
+        // The stream is already opened when robot ready, or all answers are played.
+        // See https://www.sitelint.com/lab/media-recorder-supported-mime-type/
+        mediaRecorder: new MediaRecorder(ref.current.mediaStream),
+        audioChunks: [],
+      };
+
+      // See https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder#events
+      artifact.mediaRecorder.addEventListener("start", () => {
+        console.log(`Event: Recording start to record`);
+        setMicWorking(true);
+      });
+
+      artifact.mediaRecorder.addEventListener("dataavailable", ({ data }) => {
+        artifact.audioChunks.push(data);
+        const userMayInput = new Date() - artifact.recordStarttime - timeoutWaitForLastVoice;
+        const ts = new Date().toISOString().split('T')[1].split('Z')[0];
+        console.log(`${ts} Event: Device dataavailable event ${data.size} bytes, duration=${userMayInput}ms`);
+      });
+
+      // For dictation, we use shorter timeslice, to trigger dataavailable event ASAP.
+      artifact.mediaRecorder.start(1500);
+      console.log(`Event: Recording started`);
+      return artifact;
+    };
+
+    const stopRecorder = async (artifact, dispose) => {
+      // Now, stop the dictation.
+      const closeMicrophone = () => {
+        if (!dispose) return;
+        console.log(`Stop dictation, close microphone.`);
+        const stream = ref.current.mediaStream;
+        ref.current.mediaStream = null;
+        stream.getTracks().forEach(track => track.stop());
+        setMicWorking(false);
+      };
+
+      if (!artifact) {
+        closeMicrophone();
+        return;
+      }
+
+      console.log(`Stop dictation, stop recorder.`)
+      await new Promise(resolve => {
+        artifact.mediaRecorder.addEventListener("stop", () => {
+          if (dispose) closeMicrophone();
+
+          // To help estimate the duration of artifact.
+          artifact.recordStoptime = new Date();
+
+          const ts = new Date().toISOString().split('T')[1].split('Z')[0];
+          console.log(`${ts} Event: Recorder stopped, chunks=${artifact.audioChunks.length}, duration=${artifact.duration()}ms`);
+          
+          resolve();
+        });
+
+        console.log(`Event: Recorder stop, chunks=${artifact.audioChunks.length}, state=${artifact.mediaRecorder.state}`);
+        artifact.mediaRecorder.stop();
+      });
+
+      return artifact;
+    };
+
+    // Handle all events during dictation.
+    try {
+      let artifact = await startRecorder();
+      while (true) {
+        if (ref.current.shouldStop) {
+          console.log(`Stop dictation, user reset it.`);
+          await stopRecorder(artifact, true);
+          return;
+        }
+
+        if (new Date() - artifact.recordStarttime >= maxSegmentTime) {
+          const readyArtifact = await stopRecorder(artifact, false);
+          artifact = await startRecorder();
+          const ts = new Date().toISOString().split('T')[1].split('Z')[0];
+          console.log(`${ts} Restart dictation ok, start to send artifact.`);
+
+          // Start a async task to process the audio segment.
+          processUserInput(readyArtifact).catch((e) => {
+            console.warn(`Dictation ignore any segment ${JSON.stringify(readyArtifact)} error ${e}`);
+          });
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } finally {
+      setProcessing(false);
+      setMicWorking(false);
+    }
+  }, [ref, robotReady, t, errorLog, maxSegmentTime, processUserInput]);
+
+  // When user stop dictation, close the microphone, stop the media recorder, and send the last
+  // audio data.
+  const stopDictation = React.useCallback(async () => {
     if (!robotReady) return;
     if (!ref.current.mediaStream) return;
-    if (ref.current.stopHandler) clearTimeout(ref.current.stopHandler);
-    if (ref.current.mediaRecorder) return;
-    if (ref.current.isRecording) return;
-    if (refRequest.current.playingAudio) return;
-    ref.current.recordStarttime = new Date();
-    ref.current.isRecording = true;
-    ref.current.count += 1;
 
-    console.log("=============");
+    // Notify to stop.
+    ref.current.shouldStop = true;
 
-    // TODO: FIXME: Set the codec, see https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/mimeType
-    // The stream is already opened when robot ready, or all answers are played.
-    // See https://www.sitelint.com/lab/media-recorder-supported-mime-type/
-    ref.current.mediaRecorder = new MediaRecorder(ref.current.mediaStream);
-    ref.current.mediaStream = null;
-
-    // See https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder#events
-    ref.current.mediaRecorder.addEventListener("start", () => {
-      console.log(`Event: Recording start to record`);
-      setMicWorking(true);
-    });
-
-    ref.current.mediaRecorder.addEventListener("dataavailable", ({ data }) => {
-      ref.current.audioChunks.push(data);
-      console.log(`Event: Device dataavailable event ${data.size} bytes`);
-    });
-
-    ref.current.mediaRecorder.start();
-    console.log(`Event: Recording started`);
-  }, [robotReady, ref, setMicWorking, refRequest]);
-
-  // User click stop button, we delay some time to allow cancel the stopping event.
-  const stopRecording = React.useCallback(async () => {
-    if (!robotReady) return;
-
-    const processUserInput = async(userMayInput) => {
-      // End conversation, for stat the elapsed time cost accurately.
-      const requestUUID = await new Promise((resolve, reject) => {
-        axios.post('/terraform/v1/ai-talk/stage/conversation', {
-          room: roomUUID, roomToken, sid: stageUUID,
-        }, {
-          headers: Token.loadBearerHeader(),
-        }).then(res => {
-          console.log(`ASR: Start conversation success, rid=${res.data.data.rid}`);
-          resolve(res.data.data.rid);
-        }).catch((error) => reject(error));
-      });
-
-      // Convert audio from binary to base64 in text.
-      const audioBase64Data = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = function() {
-          // Remove the data URL prefix, for example, result is:
-          //    application/octet-stream;base64,GkXfo59ChoEB.............
-          const base64Audio = reader.result.split(',')[1];
-          resolve(base64Audio);
-        };
-
-        const audioBlob = new Blob(ref.current.audioChunks);
-        reader.readAsDataURL(audioBlob);
-      });
-
-      // Upload the user input audio to the server.
-      await new Promise((resolve, reject) => {
-        console.log(`ASR: Uploading ${ref.current.audioChunks.length} chunks, stage=${stageUUID}, user=${userID}`);
-        ref.current.audioChunks = [];
-
-        axios.post('/terraform/v1/ai-talk/stage/upload', {
-          room: roomUUID, roomToken, sid: stageUUID, rid: requestUUID, userId: userID,
-          umi: userMayInput, audio: audioBase64Data,
-        }, {
-          headers: Token.loadBearerHeader(),
-        }).then(res => {
-          console.log(`ASR: Upload success: ${res.data.data.rid} ${res.data.data.asr}`);
-          resolve(res.data.data.rid);
-          setUserAsrText(res.data.data.asr);
-        }).catch((error) => reject(error));
-      });
-
-      // Get the AI generated audio from the server.
-      console.log(`TTS: Requesting ${requestUUID} response audios, rid=${requestUUID}`);
-      while (true) {
-        const resp = await new Promise((resolve, reject) => {
-          axios.post('/terraform/v1/ai-talk/stage/query', {
-            room: roomUUID, roomToken, sid: stageUUID, rid: requestUUID,
-          }, {
-            headers: Token.loadBearerHeader(),
-          }).then(res => {
-            if (res.data?.data?.finished) {
-            }
-            resolve(res.data.data);
-          }).catch(error => reject(error));
-        });
-
-        if (resp.finished) {
-          console.log(`TTS: Conversation finished.`);
-          break;
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-    };
-
-    const stopRecordingImpl = async () => {
-      if (!ref.current.mediaRecorder) return;
-
-      try {
-        const userMayInput = new Date() - ref.current.recordStarttime - timeoutWaitForLastVoice;
-        console.log(`Event: User stop record, duration=${userMayInput}ms, state=${ref.current.mediaRecorder.state}`);
-
-        await new Promise(resolve => {
-          ref.current.mediaRecorder.addEventListener("stop", () => {
-            const stream = ref.current.mediaRecorder.stream;
-            stream.getTracks().forEach(track => track.stop());
-            setTimeout(resolve, 30);
-          });
-
-          console.log(`Event: Recorder stop, chunks=${ref.current.audioChunks.length}, state=${ref.current.mediaRecorder.state}`);
-          ref.current.mediaRecorder.stop();
-        });
-
-        setMicWorking(false);
-        setProcessing(true);
-        console.log(`Event: Recoder stopped, chunks=${ref.current.audioChunks.length}`);
-
-        if (userMayInput < durationRequiredUserInput) {
-          console.warn(`System: You didn't say anything!`);
-          alert(`Warning: You didn't say anything!`);
-        } else {
-          try {
-            await processUserInput(userMayInput);
-          } catch (e) {
-            console.warn(`System: Server error ${e}`);
-            console.warn(`System: Please try again.`);
-            alert(`System: Server error ${e}`);
-          }
-        }
-
-        // Wait util no audio is playing.
-        do {
-          await new Promise((resolve) => setTimeout(resolve, 600));
-        } while(refRequest.current.playingAudio);
-
-        // Reopen the microphone if no audio is playing.
-        console.log(`Conversation is ended, open microphone.`)
-        new Promise((resolve, reject) => {
-          navigator.mediaDevices.getUserMedia(
-            { audio: true }
-          ).then((stream) => {
-            ref.current.mediaStream = stream;
-            console.log(`All audios is played, microphone opened.`);
-            resolve();
-          }).catch(error => reject(error));
-        });
-      } catch (e) {
-        alert(e);
-      } finally {
-        setProcessing(false);
-        ref.current.mediaRecorder = null;
-        ref.current.isRecording = false;
-      }
-    };
-
-    if (ref.current.stopHandler) clearTimeout(ref.current.stopHandler);
-    ref.current.stopHandler = setTimeout(() => {
-      stopRecordingImpl();
-    }, timeoutWaitForLastVoice);
-  }, [roomUUID, roomToken, stageUUID, userID, robotReady, ref, setProcessing, setMicWorking, refRequest, setUserAsrText]);
+    // Wait util stopped.
+    while (ref.current.mediaStream) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+  }, [ref, robotReady]);
 
   // User directly send text message to assistant.
   const sendText = React.useCallback(async (text, onFinished) => {
@@ -453,33 +465,6 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
       onFinished && onFinished();
     }
   }, [robotReady, handleError, roomUUID, roomToken, stageUUID, userID]);
-
-  // Setup the keyboard event, for PC browser.
-  React.useEffect(() => {
-    if (!robotReady) return;
-    if (!aiAsrEnabled) return;
-
-    const handleKeyDown = (e) => {
-      if (processing) return;
-      // Ignore the input event.
-      const tagName = e.target.tagName.toLowerCase();
-      if (tagName === 'input' || tagName === 'textarea') return;
-      if (e.key !== 'r' && e.key !== '\\' && e.key !== ' ') return;
-      startRecording();
-    };
-    const handleKeyUp = (e) => {
-      if (processing) return;
-      if (e.key !== 'r' && e.key !== '\\' && e.key !== ' ') return;
-      stopRecording();
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [robotReady, startRecording, stopRecording, processing, aiAsrEnabled]);
 
   // Request server to create a new popout for subscribing all events.
   React.useEffect(() => {
@@ -527,36 +512,16 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
         for (let i = 0; i < msgs.length; i++) {
           const msg = msgs[i];
           if (msg.role === 'user') {
-            traceLog(msg.username || 'You', msg.msg, 'primary');
+            traceLog(msg.username || 'You', msg.msg, 'primary', true);
             continue;
           }
 
           const audioSegmentUUID = msg.asid;
-          traceLog(msg.username || 'Bot', msg.msg, 'success');
+          traceLog(msg.username, msg.msg, 'success');
 
+          // For dictation pattern, we always ignore TTS audio files.
           // No audio file, skip it.
-          if (!msg.hasAudio) {
-            console.log(`TTS: Consume text message done, ${JSON.stringify(msg)}`);
-          } else {
-            // Play the AI generated audio.
-            await new Promise(resolve => {
-              const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}&room=${roomUUID}&roomToken=${roomToken}`;
-              console.log(`TTS: Playing ${url}`);
-
-              const listener = () => {
-                playerRef.current.removeEventListener('ended', listener);
-                console.log(`TTS: Played ${url} done.`);
-                resolve();
-              };
-              playerRef.current.addEventListener('ended', listener);
-
-              playerRef.current.src = url;
-              playerRef.current.play().catch(error => {
-                console.log(`TTS: Play ${url} failed: ${error}`);
-                resolve();
-              });
-            });
-          }
+          console.log(`TTS: Dictation always consume as text, ${JSON.stringify(msg)}`);
 
           // Remove the AI generated audio.
           await new Promise((resolve, reject) => {
@@ -581,43 +546,6 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
     return () => clearInterval(timer);
   }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, roomUUID, roomToken, userID]);
 
-  // When we got any messages from server, set to playing mode and last for a while.
-  React.useEffect(() => {
-    const timer = setInterval(async () => {
-      if (refRequest.current.gotMessages || refRequest.current.hasPendingMessages) {
-        if (!refRequest.current.playingAudio) {
-          console.log(`Subscribe: Got messages, start to play, mic=${micWorking}`);
-          if (!micWorking) {
-            setProcessing(true);
-          }
-        }
-        refRequest.current.playingAudio = 5;
-        return;
-      }
-
-      if (refRequest.current.playingAudio) {
-        refRequest.current.playingAudio -= 1;
-        if (!refRequest.current.playingAudio) {
-          console.log(`Subscribe: No messages, stop playing, mic=${micWorking}`);
-          if (!micWorking) {
-            setProcessing(false);
-          }
-        }
-      }
-    }, 300);
-    return () => clearInterval(timer);
-  }, [refRequest, micWorking, setProcessing]);
-
-  // A long time interval logger.
-  React.useEffect(() => {
-    const timer = setInterval(async () => {
-      const ts = new Date().toISOString().split('T')[1].split('Z')[0];
-      const r0 = refRequest.current;
-      console.log(`Timer: ${ts}, messages got=${r0.gotMessages}, pending=${r0.hasPendingMessages}, playing=${r0.playingAudio}, requesting=${r0.requesting}`);
-    }, 10000);
-    return () => clearInterval(timer);
-  }, [refRequest]);
-
   if (booting) {
     return <><Spinner animation="border" variant="primary" size='sm'></Spinner> Booting...</>;
   }
@@ -626,19 +554,19 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
       <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
       {stageUUID && !robotReady ? <>
         <AITalkUserConfig {...{roomUUID, roomToken,
-          username, userLanguage, stageUUID, userID, disabled: requesting, label: t('lr.room.talk'),
+          username, userLanguage, stageUUID, userID, disabled: requesting, label: t('lr.room.startd'),
           onSubmit: startChatting}} />
       </> : ''}
       {robotReady && !isMobile ?
         <Row>
           <Col>
-            <AITalkAssistantImpl {...{
-              processing, micWorking, startRecording, stopRecording, sendText, roomUUID, roomToken,
+            <AITalkDictationImpl {...{
+              processing, micWorking, startDictation, stopDictation, sendText, roomUUID, roomToken,
               stageUUID, stageUser, aiAsrEnabled, userAsrText
             }} />
           </Col>
           <Col>
-            <AITalkTraceLogPC {...{traceLogs, traceCount, roomUUID, roomToken, fullscreen}}>
+            <AITalkTraceLogPC {...{traceLogs, traceCount, roomUUID, roomToken}}>
               <AITalkErrorLog {...{errorLogs, removeErrorLog}} />
               <AITalkTipLog {...{tipLogs, removeTipLog}} />
             </AITalkTraceLogPC>
@@ -646,270 +574,16 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
         </Row> : ''}
       {robotReady && isMobile ?
         <div>
-          <AITalkTraceLogMobile {...{traceLogs, traceCount, fullscreen}} />
+          <AITalkTraceLogMobile {...{traceLogs, traceCount}} />
           <AITalkErrorLog {...{errorLogs, removeErrorLog}} />
           <AITalkTipLog {...{tipLogs, removeTipLog}} />
-          <AITalkAssistantImpl {...{
-            processing, micWorking, startRecording, stopRecording, sendText, roomUUID, roomToken,
+          <AITalkDictationImpl {...{
+            processing, micWorking, startDictation, stopDictation, sendText, roomUUID, roomToken,
             stageUUID, stageUser, aiAsrEnabled, userAsrText
           }} />
         </div> : ''}
       <div ref={endPanelRef}></div>
     </div>
-  );
-}
-
-export function AITalkChatOnlyPanel({roomUUID, roomToken}) {
-  const {t} = useTranslation();
-  const handleError = useErrorHandler();
-  const isMobile = false; // For popout, always PC, not mobile.
-
-  // The player ref, to access the audio player.
-  const playerRef = React.useRef(null);
-  const [requesting, setRequesting] = React.useState(false);
-  const [robotReady, setRobotReady] = React.useState(false);
-
-  // The uuid and robot in stage, which is unchanged after stage started.
-  const [stageUUID, setStageUUID] = React.useState(null);
-  const [stageVoice, setStageVoice] = React.useState(null);
-  const [stagePopoutUUID, setStagePopoutUUID] = React.useState(null);
-
-  // Possible value is 1: yes, -1: no, 0: undefined.
-  const [obsAutostart, setObsAutostart] = React.useState(0);
-  const [errorLogs, setErrorLogs] = React.useState([]);
-  const [traceCount, setTraceCount] = React.useState(0);
-  const [traceLogs, setTraceLogs] = React.useState([]);
-  const [tipLogs, setTipLogs] = React.useState([]);
-
-  // The refs, about the logs and audio chunks model.
-  const ref = React.useRef({
-    count: 0,
-    isRecording: false,
-    recordStarttime: null,
-    stopHandler: null,
-    mediaStream: null,
-    mediaRecorder: null,
-    audioChunks: [],
-    errorLogs: [],
-    traceLogs: [],
-    tipsLogs: [],
-    traceCount: 0
-  });
-
-  const errorLog = React.useCallback((msg) => {
-    const rid = `id-${Math.random().toString(16).slice(-4)}${new Date().getTime().toString(16).slice(-4)}`;
-    ref.current.errorLogs = [...ref.current.errorLogs, {id: rid, msg}];
-    setErrorLogs(ref.current.errorLogs);
-  }, [setErrorLogs, ref]);
-
-  const traceLog = React.useCallback((role, msg, variant, ignoreMerge) => {
-    setTraceCount(++ref.current.traceCount);
-
-    // Merge to last log with the same role.
-    if (ref.current.traceLogs.length > 0 && !ignoreMerge) {
-      const last = ref.current.traceLogs[ref.current.traceLogs.length - 1];
-      if (last.role === role) {
-        last.msg = `${last.msg}${msg}`;
-        setTraceLogs([...ref.current.traceLogs]);
-        return;
-      }
-    }
-
-    const rid = `id-${Math.random().toString(16).slice(-4)}${new Date().getTime().toString(16).slice(-4)}`;
-    ref.current.traceLogs = [...ref.current.traceLogs, {id: rid, role, msg, variant}];
-    setTraceLogs(ref.current.traceLogs);
-  }, [setTraceLogs, ref, setTraceCount]);
-
-  const tipLog = React.useCallback((title, msg) => {
-    const rid = `id-${Math.random().toString(16).slice(-4)}${new Date().getTime().toString(16).slice(-4)}`;
-    ref.current.tipsLogs = [...ref.current.tipsLogs, {id: rid, title, msg, created: new Date()}];
-    setTipLogs(ref.current.tipsLogs);
-  }, [setTipLogs, ref]);
-
-  const removeTipLog = React.useCallback((log) => {
-    const index = ref.current.tipsLogs.findIndex((l) => l.id === log.id);
-    ref.current.tipsLogs.splice(index, 1);
-    setTipLogs([...ref.current.tipsLogs]);
-  }, [setTipLogs, ref]);
-
-  const removeErrorLog = React.useCallback((log) => {
-    const index = ref.current.errorLogs.findIndex((l) => l.id === log.id);
-    ref.current.errorLogs.splice(index, 1);
-    setErrorLogs([...ref.current.errorLogs]);
-  }, [setErrorLogs, ref]);
-
-  // Scroll the log panel.
-  const endPanelRef = React.useRef(null);
-  React.useEffect(() => {
-    if (!robotReady || !endPanelRef?.current) return;
-    console.log(`Logs setup to end, height=${endPanelRef.current.scrollHeight}, tips=${tipLogs.length}`);
-    endPanelRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [robotReady, endPanelRef, tipLogs]);
-
-  // Request server to create a new popout from source stage.
-  React.useEffect(() => {
-    if (!roomUUID) return;
-
-    console.log(`Start: Create a new stage`);
-    axios.post('/terraform/v1/ai-talk/subscribe/start', {
-      room: roomUUID, roomToken,
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      console.log(`Start: Create popout success: ${JSON.stringify(res.data.data)}`);
-      setStageUUID(res.data.data.sid);
-      setStagePopoutUUID(res.data.data.spid);
-      setStageVoice(res.data.data.voice);
-    }).catch(handleError);
-  }, [handleError, roomUUID, roomToken, setStagePopoutUUID, setStageVoice, setStageUUID]);
-
-  // Try to start the robot automatically, for OBS.
-  React.useEffect(() => {
-    if (!stageUUID || !stageVoice) return;
-
-    const listener = () => {
-      playerRef.current.removeEventListener('ended', listener);
-
-      setObsAutostart(1);
-      setRobotReady(true);
-      console.log(`Stage started, AI is ready, sid=${stageUUID}`);
-    };
-    playerRef.current.addEventListener('ended', listener);
-
-    playerRef.current.src = `/terraform/v1/ai-talk/stage/hello-voices/${stageVoice}?sid=${stageUUID}`;
-    playerRef.current.play().catch((error) => {
-      setObsAutostart(-1);
-    });
-  }, [t, errorLog, stageUUID, stageVoice, setObsAutostart]);
-
-  // Requires user to start the robot manually, for Chrome.
-  const startChatting = React.useCallback(() => {
-    setRequesting(true);
-
-    const listener = () => {
-      playerRef.current.removeEventListener('ended', listener);
-
-      setRobotReady(true);
-      setRequesting(false);
-      console.log(`Stage started, AI is ready, sid=${stageUUID}`);
-    };
-    playerRef.current.addEventListener('ended', listener);
-
-    playerRef.current.src = `/terraform/v1/ai-talk/stage/hello-voices/${stageVoice}?sid=${stageUUID}`;
-    playerRef.current.play().catch(error => {
-      errorLog(`${t('lr.room.speaker')}: ${error}`);
-      setRequesting(false);
-    });
-  }, [t, errorLog, stageUUID, stageVoice, setRobotReady, setRequesting]);
-
-  // When robot is ready, show tip logs, and cleanup timeout tips.
-  React.useEffect(() => {
-    if (!robotReady) return;
-    tipLog('Usage', t('lr.room.popout'));
-
-    const timer = setInterval(() => {
-      const tipsLogs = [...ref.current.tipsLogs];
-      tipsLogs.forEach((log) => {
-        if (new Date() - log.created > 10 * 1000) {
-          removeTipLog(log);
-        }
-      });
-    }, 500);
-    return () => clearInterval(timer);
-  }, [t, robotReady, tipLog, isMobile, ref, removeTipLog]);
-
-  // When robot is ready, start query and play all text and voices.
-  const refRequest = React.useRef({
-    requesting: false,
-  });
-  // Try to request messages of stage util end.
-  React.useEffect(() => {
-    if (!robotReady) return;
-
-    const requestMessages = async () => {
-      if (!robotReady || !stageUUID || !stagePopoutUUID) return;
-      if (refRequest.current.requesting) return;
-      refRequest.current.requesting = true;
-
-      try {
-        const msgs = await new Promise((resolve, reject) => {
-          axios.post('/terraform/v1/ai-talk/subscribe/query', {
-            room: roomUUID, roomToken, sid: stageUUID, spid: stagePopoutUUID,
-          }, {
-            headers: Token.loadBearerHeader(),
-          }).then(res => {
-            // Don't show detail logs for pulling.
-            //const ts = new Date().toISOString().split('T')[1].split('Z')[0];
-            //console.log(`Start: Query popout success at ${ts}: ${JSON.stringify(res.data.data)}`);
-            resolve(res.data.data.msgs);
-          }).catch(handleError);
-        });
-
-        if (!msgs?.length) return;
-        for (let i = 0; i < msgs.length; i++) {
-          const msg = msgs[i];
-          if (msg.role === 'user') {
-            traceLog(msg.username, msg.msg, 'primary');
-            return;
-          }
-
-          const audioSegmentUUID = msg.asid;
-          traceLog(msg.username, msg.msg, 'success');
-
-          // Play the AI generated audio.
-          await new Promise(resolve => {
-            const url = `/terraform/v1/ai-talk/subscribe/tts?sid=${stageUUID}&spid=${stagePopoutUUID}&asid=${audioSegmentUUID}&room=${roomUUID}&roomToken=${roomToken}`;
-            console.log(`TTS: Playing ${url}`);
-
-            const listener = () => {
-              playerRef.current.removeEventListener('ended', listener);
-              console.log(`TTS: Played ${url} done.`);
-              resolve();
-            };
-            playerRef.current.addEventListener('ended', listener);
-
-            playerRef.current.src = url;
-            playerRef.current.play().catch(error => {
-              console.log(`TTS: Play ${url} failed: ${error}`);
-              resolve();
-            });
-          });
-
-          // Remove the AI generated audio.
-          await new Promise((resolve, reject) => {
-            axios.post('/terraform/v1/ai-talk/subscribe/remove', {
-              room: roomUUID, roomToken, sid: stageUUID, spid: stagePopoutUUID, asid: audioSegmentUUID,
-            }, {
-              headers: Token.loadBearerHeader(),
-            }).then(res => {
-              console.log(`TTS: Audio removed: ${audioSegmentUUID}`);
-              resolve();
-            }).catch(error => reject(error));
-          });
-        }
-      } finally {
-        refRequest.current.requesting = false;
-      }
-    };
-
-    const timer = setInterval(async () => {
-      requestMessages().catch(handleError);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [robotReady, handleError, stageUUID, stagePopoutUUID, traceLog, refRequest, roomUUID, roomToken]);
-
-  return (
-      <div>
-        {obsAutostart === -1 ?
-          <Button disabled={requesting} variant="primary" type="submit" onClick={startChatting}>
-            {t('lr.room.talk')}
-          </Button> : ''}
-        <div><audio ref={playerRef} controls={true} hidden='hidden' /></div>
-        <AITalkErrorLog {...{errorLogs, removeErrorLog}} />
-        <AITalkTipLog {...{tipLogs, removeTipLog}} />
-        <AITalkTraceLogChatOnly {...{traceLogs, traceCount}} />
-        <div ref={endPanelRef}></div>
-      </div>
   );
 }
 
@@ -993,23 +667,24 @@ function AITalkUserConfigImpl({roomUUID, roomToken, stageUUID, user, disabled, l
       {onCancel ? <>
         &nbsp;
         <Button variant="primary" type="button" disabled={requesting || disabled} onClick={onCancel}>
-        {t('helper.cancel')}
-      </Button>
+          {t('helper.cancel')}
+        </Button>
       </> : ''}
       <p></p>
     </Form>
   </>;
 }
 
-function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecording, userAsrText, sendText, roomUUID, roomToken, stageUUID, stageUser, aiAsrEnabled}) {
+function AITalkDictationImpl({processing, micWorking, userAsrText, sendText, startDictation, stopDictation, roomUUID, roomToken, stageUUID, stageUser, aiAsrEnabled}) {
   const {t} = useTranslation();
-  const isMobile = useIsMobile();
   const [showSettings, setShowSettings] = React.useState(false);
   const [popoutUrl, setPopoutUrl] = React.useState(null);
   const [showUserConfig, setShowUserConfig] = React.useState(false);
   const [user, setUser] = React.useState(stageUser);
   const [description, setDescription] = React.useState();
   const [userText, setUserText] = React.useState('');
+  const [takingDictation, setTakingDictation] = React.useState(processing);
+  const [stillWorking, setStillWorking] = React.useState(false);
 
   React.useEffect(() => {
     if (!roomUUID) return;
@@ -1071,6 +746,34 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
     setUserText(userAsrText);
   }, [userAsrText]);
 
+  const onUserStartDictation = React.useCallback(async (e) => {
+    e.preventDefault();
+    try {
+      setStillWorking(true);
+      // Note that we should never wait for all dictation finished, but only wait for
+      // callback onWorking.
+      await new Promise((resolve, reject) => {
+        startDictation(resolve).catch(reject);
+      });
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      setTakingDictation(true);
+    } finally {
+      setStillWorking(false);
+    }
+  }, [setStillWorking, startDictation, setTakingDictation]);
+
+  const onUserStopDictation = React.useCallback(async (e) => {
+    e.preventDefault();
+    try {
+      setStillWorking(true);
+      await stopDictation();
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setTakingDictation(false);
+    } finally {
+      setStillWorking(false);
+    }
+  }, [setStillWorking, stopDictation, setTakingDictation]);
+
   return (
     <div>
       <Card>
@@ -1099,18 +802,18 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
             <Button variant="primary" id="button-addon2" onClick={onSendText}>{t('helper.send')}</Button>
           </InputGroup>
           {aiAsrEnabled && <>
-            <div className={isMobile ? 'ai-talk-container-mobile' : 'ai-talk-container-pc'}
-                 onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing || showUserConfig}>
-              {!processing ?
-                <div>
-                  <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
-                    <div className='ai-talk-mc'></div>
-                  </div>
-                </div> :
-                <div>
-                  <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
-                </div>}
-            </div>
+            {!takingDictation ? <>
+                <Button variant="primary" type="button" disabled={stillWorking} onClick={onUserStartDictation}>
+                  {t('helper.start')}
+                </Button> &nbsp;
+                {(processing || micWorking) && <Spinner animation="border" variant="primary" size='sm'></Spinner>}
+              </> :
+              <>
+                <Button variant="primary" type="button" disabled={stillWorking} onClick={onUserStopDictation}>
+                  {t('helper.stop')}
+                </Button> &nbsp;
+                <Spinner animation="border" variant="primary" size='sm'></Spinner>
+              </>}
           </>}
         </Card.Body>
       </Card>
@@ -1118,7 +821,7 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
   );
 }
 
-function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken, fullscreen}) {
+function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken}) {
   const {t} = useTranslation();
   const [showSettings, setShowSettings] = React.useState(false);
   const [popoutUrl, setPopoutUrl] = React.useState(null);
@@ -1170,7 +873,7 @@ function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken,
           </div>}
         </Card.Header>
         <Card.Body>
-          <div className={fullscreen ? 'ai-talk-trace-logs-pcfs' : 'ai-talk-trace-logs-pc'} ref={logPanelRef}>
+          <div className='ai-talk-trace-logs-pcfs' ref={logPanelRef}>
             {children}
             {traceLogs.map((log) => {
               return (
@@ -1186,7 +889,7 @@ function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken,
   );
 }
 
-function AITalkTraceLogMobile({traceLogs, traceCount, fullscreen}) {
+function AITalkTraceLogMobile({traceLogs, traceCount}) {
   // Scroll the log panel.
   const logPanelRef = React.useRef(null);
   React.useEffect(() => {
@@ -1196,29 +899,7 @@ function AITalkTraceLogMobile({traceLogs, traceCount, fullscreen}) {
   }, [traceLogs, logPanelRef, traceCount]);
 
   return (
-    <div className={fullscreen ? 'ai-talk-trace-logs-mobilefs' : 'ai-talk-trace-logs-mobile'} ref={logPanelRef}>
-      {traceLogs.map((log) => {
-        return (
-          <Alert key={log.id} variant={log.variant}>
-            {log.role}: {log.msg}
-          </Alert>
-        );
-      })}
-    </div>
-  );
-}
-
-function AITalkTraceLogChatOnly({traceLogs, traceCount}) {
-  // Scroll the log panel.
-  const logPanelRef = React.useRef(null);
-  React.useEffect(() => {
-    if (!logPanelRef?.current) return;
-    console.log(`Logs scroll to end, height=${logPanelRef.current.scrollHeight}, logs=${traceLogs.length}, count=${traceCount}`);
-    logPanelRef.current.scrollTo(0, logPanelRef.current.scrollHeight);
-  }, [traceLogs, logPanelRef, traceCount]);
-
-  return (
-    <div className='ai-talk-trace-logs-chat-only' ref={logPanelRef}>
+    <div className='ai-talk-trace-logs-mobilefs-dictation' ref={logPanelRef}>
       {traceLogs.map((log) => {
         return (
           <Alert key={log.id} variant={log.variant}>
