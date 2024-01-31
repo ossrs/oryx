@@ -229,7 +229,7 @@ type SrsLiveRoom struct {
 	// Live room secret.
 	Secret string `json:"secret"`
 	// The AI assistant settings.
-	*SrsAssistant
+	SrsAssistant
 	// The current AI assistant stage, might change to others.
 	StageUUID string `json:"stage_uuid"`
 	// The room level authentication token, for example, popout application with this token to verify
@@ -251,7 +251,7 @@ func NewLiveRoom(opts ...func(room *SrsLiveRoom)) *SrsLiveRoom {
 		// The stage level token for popout.
 		RoomToken: uuid.NewString(),
 		// Create a default assistant.
-		SrsAssistant: NewAssistant(),
+		SrsAssistant: *NewAssistant(),
 	}
 	for _, opt := range opts {
 		opt(v)
