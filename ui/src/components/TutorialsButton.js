@@ -31,6 +31,11 @@ function useTutorialsEn(mediumRef) {
   const ref = React.useRef({tutorials:[]});
 
   const dict = React.useRef({
+    '13e28adf1e18': {
+      author: 'Winlin Yang',
+      link: 'https://blog.ossrs.io/transform-your-browser-into-a-personal-voice-driven-gpt-ai-assistant-with-srs-stack-13e28adf1e18',
+      title: 'Speak to the Future: Transform Your Browser into a Personal Voice-Driven GPT AI Assistant with SRS Stack'
+    },
     'b3011e390e38': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/unlock-universal-ultra-low-latency-achieving-5-second-hls-live-streams-for-all-no-special-gear-b3011e390e38',
