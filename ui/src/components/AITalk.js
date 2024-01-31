@@ -7,8 +7,7 @@ import axios from "axios";
 import {Locale, Token} from "../utils";
 import * as Icon from "react-bootstrap-icons";
 
-// TODO: FIXME: Remove fullscreen, not used now.
-export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguage, fullscreen}) {
+export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguage}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
   const isMobile = useIsMobile();
@@ -638,7 +637,7 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
             }} />
           </Col>
           <Col>
-            <AITalkTraceLogPC {...{traceLogs, traceCount, roomUUID, roomToken, fullscreen}}>
+            <AITalkTraceLogPC {...{traceLogs, traceCount, roomUUID, roomToken}}>
               <AITalkErrorLog {...{errorLogs, removeErrorLog}} />
               <AITalkTipLog {...{tipLogs, removeTipLog}} />
             </AITalkTraceLogPC>
@@ -646,7 +645,7 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
         </Row> : ''}
       {robotReady && isMobile ?
         <div>
-          <AITalkTraceLogMobile {...{traceLogs, traceCount, fullscreen}} />
+          <AITalkTraceLogMobile {...{traceLogs, traceCount}} />
           <AITalkErrorLog {...{errorLogs, removeErrorLog}} />
           <AITalkTipLog {...{tipLogs, removeTipLog}} />
           <AITalkAssistantImpl {...{
@@ -1143,7 +1142,7 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
   );
 }
 
-function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken, fullscreen}) {
+function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken}) {
   const {t} = useTranslation();
   const [showSettings, setShowSettings] = React.useState(false);
   const [popoutUrl, setPopoutUrl] = React.useState(null);
@@ -1195,7 +1194,7 @@ function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken,
           </div>}
         </Card.Header>
         <Card.Body>
-          <div className={fullscreen ? 'ai-talk-trace-logs-pcfs' : 'ai-talk-trace-logs-pc'} ref={logPanelRef}>
+          <div className='ai-talk-trace-logs-pcfs' ref={logPanelRef}>
             {children}
             {traceLogs.map((log) => {
               return (
@@ -1211,7 +1210,7 @@ function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken,
   );
 }
 
-function AITalkTraceLogMobile({traceLogs, traceCount, fullscreen}) {
+function AITalkTraceLogMobile({traceLogs, traceCount}) {
   // Scroll the log panel.
   const logPanelRef = React.useRef(null);
   React.useEffect(() => {
@@ -1221,7 +1220,7 @@ function AITalkTraceLogMobile({traceLogs, traceCount, fullscreen}) {
   }, [traceLogs, logPanelRef, traceCount]);
 
   return (
-    <div className={fullscreen ? 'ai-talk-trace-logs-mobilefs' : 'ai-talk-trace-logs-mobile'} ref={logPanelRef}>
+    <div className='ai-talk-trace-logs-mobilefs' ref={logPanelRef}>
       {traceLogs.map((log) => {
         return (
           <Alert key={log.id} variant={log.variant}>

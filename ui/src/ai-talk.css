@@ -79,6 +79,7 @@
 }
 
 .ai-talk-container-pc{
+  margin-top: -0.8rem;
   min-height: 47vh;
   max-height: 47vh;
   min-width: 30vw;

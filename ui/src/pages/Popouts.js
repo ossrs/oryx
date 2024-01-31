@@ -112,7 +112,7 @@ function PopoutsImpl() {
       if (aiPattern === 'dictation') {
         return <AITalkDictationPanel {...{roomUUID, roomToken, username, userLanguage}}/>;
       }
-      return <AITalkAssistantPanel {...{roomUUID, roomToken, username, userLanguage, fullscreen: true}}/>
+      return <AITalkAssistantPanel {...{roomUUID, roomToken, username, userLanguage}}/>
     } else {
       return <AITalkChatOnlyPanel {...{roomUUID, roomToken}}/>;
     }
