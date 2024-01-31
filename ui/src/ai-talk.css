@@ -3,8 +3,8 @@
   position:relative;
   margin: 5% auto;
   border-radius:50%;
-  width:10em;
-  height:10em;
+  width:9em;
+  height:9em;
 }
 
 .ai-talk-gn-normal:before, .ai-talk-gn-normal:after, .ai-talk-gn-active:before, .ai-talk-gn-active:after, .ai-talk-mc:before, .ai-talk-mc:after{
@@ -48,7 +48,7 @@
   width:20%; height:25%;
 }
 
-.ai-talk-trace-logs-pc, .ai-talk-trace-logs-pcfs, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-mobilefs, .ai-talk-trace-logs-mobilefs-dictation, .ai-talk-trace-logs-chat-only{
+.ai-talk-msgs-pc, .ai-talk-msgs-chat-mobile, .ai-talk-msgs-dictation-mobile, .ai-talk-msgs-text-only{
   overflow: scroll;
 }
 
@@ -78,52 +78,52 @@
   margin-top: 25px;
 }
 
+.ai-talk-container-pc-input{
+  margin-bottom: 0.15rem!important;
+}
+
 .ai-talk-container-pc{
-  margin-top: -0.8rem;
   min-height: 47vh;
   max-height: 47vh;
   min-width: 30vw;
 }
 
+.ai-talk-container-mobile-input{
+  margin-bottom: 0.05rem!important;
+}
+
 .ai-talk-container-mobile{
-  margin-top: -0.95rem;
   min-height: 27vh;
   max-height: 27vh;
   min-width: 30vw;
 }
 
-.ai-talk-trace-logs-pc, .ai-talk-trace-logs-pcfs, .ai-talk-trace-logs-mobile, .ai-talk-trace-logs-mobilefs, .ai-talk-trace-logs-mobilefs-dictation, .ai-talk-trace-logs-chat-only{
+.ai-talk-msgs-pc, .ai-talk-msgs-chat-mobile, .ai-talk-msgs-dictation-mobile, .ai-talk-msgs-text-only{
   margin-bottom: 0px;
 }
 
-.ai-talk-trace-logs-pc{
-  min-height: 51vh;
-  max-height: 51vh;
-  min-width: 55vw;
+.ai-talk-msgs-card{
+  margin-bottom: 0.2rem;
+  padding: 0.5rem;
 }
 
-.ai-talk-trace-logs-pcfs {
+.ai-talk-msgs-pc {
   min-height: 89vh;
   max-height: 89vh;
   min-width: 55vw;
 }
 
-.ai-talk-trace-logs-mobile{
-  min-height: 46vh;
-  max-height: 46vh;
+.ai-talk-msgs-chat-mobile {
+  min-height: 52vh;
+  max-height: 52vh;
 }
 
-.ai-talk-trace-logs-mobilefs {
-  min-height: 55vh;
-  max-height: 55vh;
+.ai-talk-msgs-dictation-mobile {
+  min-height: 65vh;
+  max-height: 65vh;
 }
 
-.ai-talk-trace-logs-mobilefs-dictation {
-  min-height: 78vh;
-  max-height: 78vh;
-}
-
-.ai-talk-trace-logs-chat-only {
+.ai-talk-msgs-text-only {
   min-height: 50vh;
   max-height: 96vh;
   min-width: 90vw;

@@ -677,6 +677,7 @@ function AITalkUserConfigImpl({roomUUID, roomToken, stageUUID, user, disabled, l
 
 function AITalkDictationImpl({processing, micWorking, userAsrText, sendText, startDictation, stopDictation, roomUUID, roomToken, stageUUID, stageUser, aiAsrEnabled}) {
   const {t} = useTranslation();
+  const isMobile = useIsMobile();
   const [showSettings, setShowSettings] = React.useState(false);
   const [popoutUrl, setPopoutUrl] = React.useState(null);
   const [showUserConfig, setShowUserConfig] = React.useState(false);
@@ -774,6 +775,31 @@ function AITalkDictationImpl({processing, micWorking, userAsrText, sendText, sta
     }
   }, [setStillWorking, stopDictation, setTakingDictation]);
 
+  if (isMobile) {
+    return <>
+      <InputGroup className="mb-3">
+        <Form.Control
+          as="input" placeholder={t('lr.room.text')} aria-describedby="basic-addon2" value={userText}
+          onChange={(e) => setUserText(e.target.value)}
+          onKeyPress={onUserPressKey}/>
+        <Button variant="primary" id="button-addon2" onClick={onSendText}>{t('helper.send')}</Button>
+      </InputGroup>
+      {aiAsrEnabled && <>
+        {!takingDictation ? <>
+            <Button variant="primary" type="button" disabled={stillWorking} onClick={onUserStartDictation}>
+              {t('helper.start')}
+            </Button> &nbsp;
+            {(processing || micWorking) && <Spinner animation="border" variant="primary" size='sm'></Spinner>}
+          </> :
+          <>
+            <Button variant="primary" type="button" disabled={stillWorking} onClick={onUserStopDictation}>
+              {t('helper.stop')}
+            </Button> &nbsp;
+            <Spinner animation="border" variant="primary" size='sm'></Spinner>
+          </>}
+      </>}
+    </>;
+  }
   return (
     <div>
       <Card>
@@ -873,11 +899,11 @@ function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken}
           </div>}
         </Card.Header>
         <Card.Body>
-          <div className='ai-talk-trace-logs-pcfs' ref={logPanelRef}>
+          <div className='ai-talk-msgs-pc' ref={logPanelRef}>
             {children}
             {traceLogs.map((log) => {
               return (
-                <Alert key={log.id} variant={log.variant}>
+                <Alert key={log.id} variant={log.variant} className='ai-talk-msgs-card'>
                   {log.role}: {log.msg}
                 </Alert>
               );
@@ -899,10 +925,10 @@ function AITalkTraceLogMobile({traceLogs, traceCount}) {
   }, [traceLogs, logPanelRef, traceCount]);
 
   return (
-    <div className='ai-talk-trace-logs-mobilefs-dictation' ref={logPanelRef}>
+    <div className='ai-talk-msgs-dictation-mobile' ref={logPanelRef}>
       {traceLogs.map((log) => {
         return (
-          <Alert key={log.id} variant={log.variant}>
+          <Alert key={log.id} variant={log.variant} className='ai-talk-msgs-card'>
             {log.role}: {log.msg}
           </Alert>
         );

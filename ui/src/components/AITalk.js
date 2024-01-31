@@ -1072,7 +1072,7 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
 
   if (isMobile) {
     return <>
-      <InputGroup className="mb-3">
+      <InputGroup className="mb-3 ai-talk-container-mobile-input">
         <Form.Control
           as="input" placeholder={t('lr.room.text')} aria-describedby="basic-addon2" value={userText}
           onChange={(e) => setUserText(e.target.value)}
@@ -1115,7 +1115,7 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
             roomUUID, roomToken, stageUUID, userID: stageUser.userId, onSubmit: onFinishUserConfig,
             onCancel: () => setShowUserConfig(false),
           }} /> : ''}
-          <InputGroup className="mb-3">
+          <InputGroup className="mb-3 ai-talk-container-pc-input">
             <Form.Control
               as="input" placeholder={t('lr.room.text')} aria-describedby="basic-addon2" value={userText}
               onChange={(e) => setUserText(e.target.value)}
@@ -1194,11 +1194,11 @@ function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken}
           </div>}
         </Card.Header>
         <Card.Body>
-          <div className='ai-talk-trace-logs-pcfs' ref={logPanelRef}>
+          <div className='ai-talk-msgs-pc' ref={logPanelRef}>
             {children}
             {traceLogs.map((log) => {
               return (
-                <Alert key={log.id} variant={log.variant}>
+                <Alert key={log.id} variant={log.variant} className='ai-talk-msgs-card'>
                   {log.role}: {log.msg}
                 </Alert>
               );
@@ -1220,10 +1220,10 @@ function AITalkTraceLogMobile({traceLogs, traceCount}) {
   }, [traceLogs, logPanelRef, traceCount]);
 
   return (
-    <div className='ai-talk-trace-logs-mobilefs' ref={logPanelRef}>
+    <div className='ai-talk-msgs-chat-mobile' ref={logPanelRef}>
       {traceLogs.map((log) => {
         return (
-          <Alert key={log.id} variant={log.variant}>
+          <Alert key={log.id} variant={log.variant} className='ai-talk-msgs-card'>
             {log.role}: {log.msg}
           </Alert>
         );
@@ -1242,7 +1242,7 @@ function AITalkTraceLogChatOnly({traceLogs, traceCount}) {
   }, [traceLogs, logPanelRef, traceCount]);
 
   return (
-    <div className='ai-talk-trace-logs-chat-only' ref={logPanelRef}>
+    <div className='ai-talk-msgs-text-only' ref={logPanelRef}>
       {traceLogs.map((log) => {
         return (
           <Alert key={log.id} variant={log.variant}>
