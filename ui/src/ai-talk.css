@@ -85,7 +85,7 @@
 }
 
 .ai-talk-container-mobile{
-  margin-top: 5px;
+  margin-top: -0.95rem;
   min-height: 27vh;
   max-height: 27vh;
   min-width: 30vw;
@@ -113,8 +113,8 @@
 }
 
 .ai-talk-trace-logs-mobilefs {
-  min-height: 57vh;
-  max-height: 57vh;
+  min-height: 55vh;
+  max-height: 55vh;
 }
 
 .ai-talk-trace-logs-mobilefs-dictation {

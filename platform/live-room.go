@@ -39,6 +39,8 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 
 			room := NewLiveRoom(func(room *SrsLiveRoom) {
 				room.Title = title
+				// By default, we always enable the AI assistant for user.
+				room.Assistant = true
 			})
 			if b, err := json.Marshal(room); err != nil {
 				return errors.Wrapf(err, "marshal room")

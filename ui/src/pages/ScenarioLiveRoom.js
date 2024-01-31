@@ -224,7 +224,7 @@ function ScenarioLiveRoomImpl({roomId, setRoomId}) {
 
   if (!room) return <Spinner animation="border" variant="primary" />;
   return <>
-    <Accordion defaultActiveKey={room.assistant ? ['2'] : ['0', '1', '2', '3']} alwaysOpen>
+    <Accordion defaultActiveKey={room.assistant ? ['1', '2'] : ['0', '1', '2']} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('lr.room.nav')}</Accordion.Header>
         <Accordion.Body>
@@ -349,7 +349,7 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
   const [aiTtsEnabled, setAiTtsEnabled] = React.useState(room.aiTtsEnabled);
   const [aiAsrLanguage, setAiAsrLanguage] = React.useState(room.aiAsrLanguage || language || 'en');
   const [aiAsrPrompt, setAiAsrPrompt] = React.useState(room.aiAsrPrompt || 'user-ai');
-  const [aiChatModel, setAiChatModel] = React.useState(room.aiChatModel || 'gpt-4-turbo-preview');
+  const [aiChatModel, setAiChatModel] = React.useState(room.aiChatModel || 'gpt-3.5-turbo');
   const [aiChatPrompt, setAiChatPrompt] = React.useState(room.aiChatPrompt || 'You are a helpful assistant.');
   const [aiChatMaxWindow, setAiChatMaxWindow] = React.useState(room.aiChatMaxWindow || 5);
   const [aiChatMaxWords, setAiChatMaxWords] = React.useState(room.aiChatMaxWords || 300);

@@ -5,28 +5,11 @@
 //
 import React from "react";
 
-export default function useIsMobile() {
+export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState(false);
 
   function handleWindowSizeChange() {
-    setIsMobile(window.innerWidth <= 768);
-  }
-  React.useEffect(() => {
-    handleWindowSizeChange();
-    window.addEventListener('resize', handleWindowSizeChange);
-    return () => {
-      window.removeEventListener('resize', handleWindowSizeChange);
-    }
-  }, [setIsMobile]);
-
-  return isMobile;
-}
-
-export function useIsMobileFS() {
-  const [isMobile, setIsMobile] = React.useState(false);
-
-  function handleWindowSizeChange() {
-    setIsMobile(window.innerWidth <= 1280);
+    setIsMobile(window.innerWidth <= 1100);
   }
   React.useEffect(() => {
     handleWindowSizeChange();

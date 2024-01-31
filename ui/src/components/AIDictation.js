@@ -2,7 +2,7 @@ import React from "react";
 import {Alert, Button, Card, Col, Dropdown, Form, InputGroup, Row, Spinner} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {useErrorHandler} from "react-error-boundary";
-import {useIsMobileFS} from "./IsMobile";
+import {useIsMobile} from "./IsMobile";
 import axios from "axios";
 import {Locale, Token} from "../utils";
 import * as Icon from "react-bootstrap-icons";
@@ -10,7 +10,7 @@ import * as Icon from "react-bootstrap-icons";
 export function AITalkDictationPanel({roomUUID, roomToken, username, userLanguage}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
-  const isMobile = useIsMobileFS();
+  const isMobile = useIsMobile();
 
   // The timeout in milliseconds.
   const timeoutForMicrophoneTestToRun = 50;

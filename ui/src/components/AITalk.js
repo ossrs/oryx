@@ -2,7 +2,7 @@ import React from "react";
 import {Alert, Button, Card, Col, Dropdown, Form, InputGroup, Row, Spinner} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {useErrorHandler} from "react-error-boundary";
-import useIsMobile from "./IsMobile";
+import {useIsMobile} from "./IsMobile";
 import axios from "axios";
 import {Locale, Token} from "../utils";
 import * as Icon from "react-bootstrap-icons";
@@ -1071,6 +1071,31 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
     setUserText(userAsrText);
   }, [userAsrText]);
 
+  if (isMobile) {
+    return <>
+      <InputGroup className="mb-3">
+        <Form.Control
+          as="input" placeholder={t('lr.room.text')} aria-describedby="basic-addon2" value={userText}
+          onChange={(e) => setUserText(e.target.value)}
+          onKeyPress={onUserPressKey}/>
+        <Button variant="primary" id="button-addon2" onClick={onSendText}>{t('helper.send')}</Button>
+      </InputGroup>
+      {aiAsrEnabled && <>
+        <div className='ai-talk-container-mobile'
+             onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing || showUserConfig}>
+          {!processing ?
+            <div>
+              <div className={micWorking ? 'ai-talk-gn-active' : 'ai-talk-gn-normal'}>
+                <div className='ai-talk-mc'></div>
+              </div>
+            </div> :
+            <div>
+              <Spinner animation="border" variant="light" className='ai-talk-spinner'></Spinner>
+            </div>}
+        </div>
+      </>}
+    </>;
+  }
   return (
     <div>
       <Card>
@@ -1099,7 +1124,7 @@ function AITalkAssistantImpl({processing, micWorking, startRecording, stopRecord
             <Button variant="primary" id="button-addon2" onClick={onSendText}>{t('helper.send')}</Button>
           </InputGroup>
           {aiAsrEnabled && <>
-            <div className={isMobile ? 'ai-talk-container-mobile' : 'ai-talk-container-pc'}
+            <div className='ai-talk-container-pc'
                  onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={processing || showUserConfig}>
               {!processing ?
                 <div>
