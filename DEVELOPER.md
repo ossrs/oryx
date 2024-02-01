@@ -801,7 +801,7 @@ docker save $IMAGE |gzip > t.tar.gz &&
 scp t.tar.gz root@ossrs.net:~/ &&
 ssh root@ossrs.net docker load -i t.tar.gz && 
 ssh root@ossrs.net docker stop srs-stack && 
-ssh root@ossrs.net docker rm srs-stack && 
+sleep 3 && ssh root@ossrs.net docker rm -f srs-stack && 
 ssh root@ossrs.net docker image prune -f
 ```
 
@@ -814,7 +814,7 @@ docker save $IMAGE |gzip > t.tar.gz &&
 scp t.tar.gz root@ossrs.io:~/ &&
 ssh root@ossrs.io docker load -i t.tar.gz && 
 ssh root@ossrs.io docker stop srs-stack && 
-ssh root@ossrs.io docker rm srs-stack && 
+sleep 3 && ssh root@ossrs.io docker rm -f srs-stack && 
 ssh root@ossrs.io docker image prune -f
 ```
 

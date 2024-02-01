@@ -563,7 +563,7 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
             <Form.Select defaultValue={aiPattern} onChange={(e) => setAiPattern(e.target.value)}>
               <option value="">--{t('helper.noSelect')}--</option>
               <option value="chat">Chat ({t('lr.room.patternChat')})</option>
-              <option value="dictation">Dictation ({t('lr.room.patternListen')})</option>
+              {false && <option value="dictation">Dictation ({t('lr.room.patternListen')})</option>}
             </Form.Select>
           </Form.Group>
           <Button variant="primary" type="button" onClick={generateAssistantLink}>

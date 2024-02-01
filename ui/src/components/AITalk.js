@@ -1184,9 +1184,9 @@ function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken}
       <Card>
         <Card.Header>
           {t('lr.room.ait2')}
-          <div role='button' className='ai-talk-settings-btn'>
-            <Icon.Gear size={20} onClick={(e) => setShowSettings(!showSettings)} />
-          </div>
+          {false && <div role='button' className='ai-talk-settings-btn'>
+            <Icon.Gear size={20} onClick={(e) => setShowSettings(!showSettings)}/>
+          </div>}
           {showSettings && <div className='ai-talk-settings-menu'>
             <Dropdown.Menu show={true}>
               <Dropdown.Item href="#!" onClick={openPopout}>{t('lr.room.popchat')}</Dropdown.Item>
