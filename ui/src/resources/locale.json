@@ -463,7 +463,8 @@
         "list": {
           "title": "直播间列表",
           "empty": "暂无直播间",
-          "delete": "删除后不可恢复，确认删除直播间吗？"
+          "delete": "删除后不可恢复，确认删除直播间吗？",
+          "copy": "以当前直播间为模板，复制新的直播间，除了密钥都不变"
         },
         "room": {
           "nav": "导航",
@@ -736,6 +737,7 @@
           "nav": "Navigation"
         },
         "list": {
+          "copy": "Using this live room as the template, create a new one, copy everything except tokens and secrets",
           "delete": "Deleted rooms cannot be restored. Confirm to delete the room?",
           "empty": "No Live Rooms",
           "title": "Live Rooms"

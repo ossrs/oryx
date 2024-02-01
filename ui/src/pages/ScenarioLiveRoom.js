@@ -73,6 +73,36 @@ function ScenarioLiveRoomList({setRoomId}) {
     setRoomId(room.uuid);
   }, [searchParams, setSearchParams, setRoomId]);
 
+  const copyRoom = React.useCallback(async (roomCopy) => {
+    const name = `Copy of ${roomCopy.title}`;
+    const room = await new Promise(resolve => {
+      axios.post('/terraform/v1/live/room/create', {
+        title: name,
+      }, {
+        headers: Token.loadBearerHeader(),
+      }).then(res => {
+        const room = res.data.data;
+        console.log(`Status: Create ok, name=${name}, data=${JSON.stringify(res.data.data)}`);
+        resolve(room);
+      }).catch(handleError);
+    });
+
+    await new Promise(resolve => {
+      axios.post('/terraform/v1/live/room/update', {
+        ...roomCopy,
+        // Do not copy the stream, secret, and token.
+        uuid: room.uuid, title: room.title, stream: room.stream, secret: room.secret,
+        roomToken: room.roomToken,
+      }, {
+        headers: Token.loadBearerHeader(),
+      }).then(res => {
+        alert(t('helper.setOk'));
+        console.log(`Room: Update ok, uuid=${room.uuid}, data=${JSON.stringify(res.data.data)}`);
+        resolve();
+      }).catch(handleError);
+    });
+  }, [handleError]);
+
   React.useEffect(() => {
     const refreshLiveRoomsTask = () => {
       axios.post('/terraform/v1/live/room/list', {
@@ -172,9 +202,10 @@ function ScenarioLiveRoomList({setRoomId}) {
                     manageRoom(room);
                   }}>{t('helper.manage')}</a> &nbsp;
                   <PopoverConfirm placement='top' trigger={ <a href='#!'>{t('helper.delete')}</a> } onClick={() => removeRoom(room.uuid)}>
-                    <p>
-                      {t('lr.list.delete')}
-                    </p>
+                    <p>{t('lr.list.delete')}</p>
+                  </PopoverConfirm> &nbsp;
+                  <PopoverConfirm placement='top' trigger={ <a href='#!'>{t('helper.copy')}</a> } onClick={() => copyRoom(room)}>
+                    <p>{t('lr.list.copy')}</p>
                   </PopoverConfirm>
                 </td>
               </tr>;
@@ -208,15 +239,18 @@ function ScenarioLiveRoomImpl({roomId, setRoomId}) {
   const updateRoom = React.useCallback((room) => {
     setRequesting(true);
     try {
-      axios.post('/terraform/v1/live/room/update', {
-        uuid: room.uuid, ...room,
-      }, {
-        headers: Token.loadBearerHeader(),
-      }).then(res => {
-        alert(t('helper.setOk'));
-        setRoom(res.data.data);
-        console.log(`Room: Update ok, uuid=${room.uuid}, data=${JSON.stringify(res.data.data)}`);
-      }).catch(handleError);
+      new Promise(resolve => {
+        axios.post('/terraform/v1/live/room/update', {
+          uuid: room.uuid, ...room,
+        }, {
+          headers: Token.loadBearerHeader(),
+        }).then(res => {
+          alert(t('helper.setOk'));
+          setRoom(res.data.data);
+          console.log(`Room: Update ok, uuid=${room.uuid}, data=${JSON.stringify(res.data.data)}`);
+          resolve();
+        }).catch(handleError);
+      });
     } finally {
       setRequesting(false);
     }
