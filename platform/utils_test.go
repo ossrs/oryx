@@ -35,3 +35,26 @@ func TestUtils_RebuildStreamURL(t *testing.T) {
 		}
 	}
 }
+
+func TestUtils_ParseFFmpegLogs(t *testing.T) {
+	for _, e := range []struct {
+		log   string
+		ts    string
+		speed string
+	}{
+		{log: "time=00:10:09.138 speed=1x", ts: "00:10:09.138", speed: "1x"},
+		{log: "size=18859kB time=00:10:09.138 speed=1x", ts: "00:10:09.138", speed: "1x"},
+		{log: "size=18859kB time=00:10:09.138 speed=1x dup=1", ts: "00:10:09.138", speed: "1x"},
+		{log: "size=18859kB time=00:10:09.138 bitrate=253.5kbits/s speed=1x dup=1", ts: "00:10:09.138", speed: "1x"},
+		{log: "size=18859kB time=00:10:09.38 bitrate=253.5kbits/s speed=1x", ts: "00:10:09.38", speed: "1x"},
+		{log: "frame=184 fps=9.7 q=28.0 size=364kB time=00:00:19.41 bitrate=153.7kbits/s dup=0 drop=235 speed=1.03x", ts: "00:00:19.41", speed: "1.03x"},
+	} {
+		if ts, speed, err := ParseFFmpegCycleLog(e.log); err != nil {
+			t.Errorf("Fail parse %v for err %+v", e, err)
+		} else if ts != e.ts {
+			t.Errorf("Fail for ts %v of %v", ts, e)
+		} else if speed != e.speed {
+			t.Errorf("Fail for speed %v of %v", speed, e)
+		}
+	}
+}

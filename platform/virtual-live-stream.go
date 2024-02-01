@@ -1090,40 +1090,17 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 		return errors.Wrapf(err, "save task %v", v.String())
 	}
 
-	// Monitor FFmpeg update, restart if not update for a while.
+	// Pull the latest log frame.
+	heartbeat := NewFFmpegHeartbeat()
+	heartbeat.Polling(ctx, stderr)
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(3 * time.Second):
+			case frame := <-heartbeat.FrameLogs:
+				v.updateFrame(frame)
 			}
-
-			if v.update.Add(10 * time.Second).Before(time.Now()) {
-				logger.Tf(ctx, "vLive: FFmpeg not update for a while, restart it")
-				cancel()
-				return
-			}
-		}
-	}()
-
-	// Read stderr to update status and output of FFmpeg.
-	pollingCtx, pollingCancel := context.WithCancel(ctx)
-	go func() {
-		defer pollingCancel()
-		buf := make([]byte, 4096)
-		for ctx.Err() == nil {
-			nn, err := stderr.Read(buf)
-			if err != nil || nn == 0 {
-				break
-			}
-
-			line := string(buf[:nn])
-			for strings.Contains(line, "= ") {
-				line = strings.ReplaceAll(line, "= ", "=")
-			}
-
-			v.updateFrame(line)
 		}
 	}()
 
@@ -1131,7 +1108,7 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 	select {
 	case <-parentCtx.Done():
 	case <-ctx.Done():
-	case <-pollingCtx.Done():
+	case <-heartbeat.PollingCtx.Done():
 	}
 
 	err = cmd.Wait()
