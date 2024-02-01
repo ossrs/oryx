@@ -238,6 +238,7 @@
         "disable": "禁用",
         "submit": "提交",
         "create": "创建",
+        "update": "更新",
         "setOk": "设置成功",
         "testOk": "测试通过",
         "upload": "上传文件",
@@ -516,7 +517,8 @@
           "patternListen": "AI一直听用户对话，用户一直说，听写模式",
           "startd": "开始听写",
           "asrp": "ASR提示词",
-          "asrp2": "请选择生成ASR提示词的方式"
+          "asrp2": "请选择生成ASR提示词的方式",
+          "rbasic": "房间基本设置"
         }
       },
       "plat": {
@@ -685,6 +687,7 @@
       },
       "lr": {
         "room": {
+          "rbasic": "Room Settings",
           "asrp2": "Please select the way to generate ASR prompt",
           "asrp": "ASR Prompt",
           "startd": "Start Dictation",
@@ -1185,6 +1188,7 @@
         "disable": "Off",
         "submit": "Submit",
         "create": "Create",
+        "update": "Update",
         "setOk": "Setup OK",
         "testOk": "Test OK",
         "upload": "Upload File",

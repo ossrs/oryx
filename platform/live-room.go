@@ -233,6 +233,7 @@ type SrsLiveRoom struct {
 	// The AI assistant settings.
 	SrsAssistant
 	// The current AI assistant stage, might change to others.
+	// TODO: FIXME: Should not return to the client.
 	StageUUID string `json:"stage_uuid"`
 	// The room level authentication token, for example, popout application with this token to verify
 	// the room, to prevent leaking of the bearer token.

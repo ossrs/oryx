@@ -92,7 +92,9 @@ function ScenarioLiveRoomList({setRoomId}) {
         ...roomCopy,
         // Do not copy the stream, secret, and token.
         uuid: room.uuid, title: room.title, stream: room.stream, secret: room.secret,
-        roomToken: room.roomToken,
+        roomToken: room.roomToken, created_at: room.created_at,
+        // Avoid copying the stage uuid, as there should be no stage for the new room.
+        stage_uuid: '',
       }, {
         headers: Token.loadBearerHeader(),
       }).then(res => {
@@ -110,7 +112,10 @@ function ScenarioLiveRoomList({setRoomId}) {
         headers: Token.loadBearerHeader(),
       }).then(res => {
         const {rooms} = res.data.data;
-        setRooms(rooms || []);
+        setRooms(rooms.sort((a, b) => {
+          if (a.created_at === b.created_at) return a.uuid > b.uuid ? -1 : 1;
+          return a.created_at > b.created_at ? -1 : 1;
+        }) || []);
         console.log(`Status: List ok, data=${JSON.stringify(res.data.data)}`);
       }).catch(handleError);
     };
@@ -258,7 +263,7 @@ function ScenarioLiveRoomImpl({roomId, setRoomId}) {
 
   if (!room) return <Spinner animation="border" variant="primary" />;
   return <>
-    <Accordion defaultActiveKey={room.assistant ? ['1', '2'] : ['0', '1', '2']} alwaysOpen>
+    <Accordion defaultActiveKey={['2', '3']} alwaysOpen>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('lr.room.nav')}</Accordion.Header>
         <Accordion.Body>
@@ -266,12 +271,18 @@ function ScenarioLiveRoomImpl({roomId, setRoomId}) {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">
+        <Accordion.Header>{t('lr.room.rbasic')}</Accordion.Header>
+        <Accordion.Body>
+          {room ? <LiveRoomSettings {...{room, requesting, updateRoom}}/> : ''}
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="2">
         <Accordion.Header>{t('lr.room.stream')}</Accordion.Header>
         <Accordion.Body>
           {room ? <LiveRoomStreamer {...{room}}/> : ''}
         </Accordion.Body>
       </Accordion.Item>
-      {room ? <Accordion.Item eventKey="2">
+      {room ? <Accordion.Item eventKey="3">
         <Accordion.Header>{t('lr.room.aiw')}</Accordion.Header>
         <Accordion.Body>
           <LiveRoomAssistant {...{room, requesting, updateRoom}}/>
@@ -279,6 +290,31 @@ function ScenarioLiveRoomImpl({roomId, setRoomId}) {
       </Accordion.Item> : ''}
     </Accordion>
   </>;
+}
+
+function LiveRoomSettings({room, requesting, updateRoom}) {
+  const {t} = useTranslation();
+  const [name, setName] = React.useState(room.title);
+
+  const onUpdateRoom = React.useCallback((e, room) => {
+    e.preventDefault();
+    updateRoom({
+      ...room, title: name,
+    });
+  }, [name]);
+
+  return (
+    <Form>
+      <Form.Group className="mb-3">
+        <Form.Label>{t('lr.create.name')}</Form.Label>
+        <Form.Text> * {t('lr.create.name2')}</Form.Text>
+        <Form.Control as="input" defaultValue={name} onChange={(e) => setName(e.target.value)} />
+      </Form.Group>
+      <Button ariant="primary" type="submit" disabled={requesting} onClick={(e) => onUpdateRoom(e, room)}>
+        {t('helper.update')}
+      </Button>
+    </Form>
+  );
 }
 
 function LiveRoomStreamer({room}) {
@@ -389,7 +425,7 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
   const [aiChatMaxWords, setAiChatMaxWords] = React.useState(room.aiChatMaxWords || 300);
 
   const [configItem, setConfigItem] = React.useState('basic');
-  const [userName, setUserName] = React.useState();
+  const [userName, setUserName] = React.useState('You');
   const [userLanguage, setUserLanguage] = React.useState(room.aiAsrLanguage || language);
   const [aiPattern, setAiPattern] = React.useState('chat');
   const [assistantLink, setAssistantLink] = React.useState();
