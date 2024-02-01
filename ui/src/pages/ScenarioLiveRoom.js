@@ -103,7 +103,7 @@ function ScenarioLiveRoomList({setRoomId}) {
         resolve();
       }).catch(handleError);
     });
-  }, [handleError]);
+  }, [handleError, t]);
 
   React.useEffect(() => {
     const refreshLiveRoomsTask = () => {
@@ -301,7 +301,7 @@ function LiveRoomSettings({room, requesting, updateRoom}) {
     updateRoom({
       ...room, title: name,
     });
-  }, [name]);
+  }, [name, updateRoom]);
 
   return (
     <Form>

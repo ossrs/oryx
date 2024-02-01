@@ -1380,10 +1380,16 @@ func (v *TranscriptTask) OnTsSegment(ctx context.Context, msg *SrsOnHlsObject) e
 		return nil
 	}
 
-	v.LiveQueue.enqueue(&TranscriptSegment{
-		Msg:    msg.Msg,
-		TsFile: msg.TsFile,
-	})
+	func() {
+		// We must not update the queue, when persistence goroutine is working.
+		v.lock.Lock()
+		v.lock.Unlock()
+
+		v.LiveQueue.enqueue(&TranscriptSegment{
+			Msg:    msg.Msg,
+			TsFile: msg.TsFile,
+		})
+	}()
 
 	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
@@ -1489,7 +1495,12 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 
 	// Remove segment if file not exists.
 	if _, err := os.Stat(segment.TsFile.File); err != nil && os.IsNotExist(err) {
-		v.LiveQueue.dequeue(segment)
+		func() {
+			v.lock.Lock()
+			defer v.lock.Unlock()
+			v.LiveQueue.dequeue(segment)
+		}()
+
 		segment.Dispose()
 		logger.Tf(ctx, "transcript: remove not exist ts segment %v", segment.String())
 		return nil
@@ -1527,10 +1538,15 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 	audioFile.Size = uint64(stats.Size())
 
 	// Dequeue the segment from live queue and attach to asr queue.
-	v.LiveQueue.dequeue(segment)
-	segment.AudioFile = audioFile
-	segment.CostExtractAudio = time.Since(starttime)
-	v.AsrQueue.enqueue(segment)
+	func() {
+		v.lock.Lock()
+		defer v.lock.Unlock()
+
+		v.LiveQueue.dequeue(segment)
+		segment.AudioFile = audioFile
+		segment.CostExtractAudio = time.Since(starttime)
+		v.AsrQueue.enqueue(segment)
+	}()
 	logger.Tf(ctx, "transcript: extract audio %v to %v, size=%v, cost=%v",
 		segment.TsFile.File, audioFile.File, audioFile.Size, segment.CostExtractAudio)
 
@@ -1555,7 +1571,11 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 
 	// Remove segment if file not exists.
 	if _, err := os.Stat(segment.AudioFile.File); err != nil && os.IsNotExist(err) {
-		v.AsrQueue.dequeue(segment)
+		func() {
+			v.lock.Lock()
+			defer v.lock.Unlock()
+			v.AsrQueue.dequeue(segment)
+		}()
 		segment.Dispose()
 		logger.Tf(ctx, "transcript: remove not exist audio segment %v", segment.String())
 		return nil
@@ -1662,7 +1682,11 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 	segment.SrtFile = fileName
 
 	// Dequeue the segment from asr queue and attach to correct queue.
-	v.AsrQueue.dequeue(segment)
+	func() {
+		v.lock.Lock()
+		defer v.lock.Unlock()
+		v.AsrQueue.dequeue(segment)
+	}()
 	segment.AsrText = &TranscriptAsrResult{
 		Task:     resp.Task,
 		Language: resp.Language,
@@ -1680,7 +1704,11 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 	}
 	v.PreviousAsrText = resp.Text
 	segment.CostASR = time.Since(starttime)
-	v.FixQueue.enqueue(segment)
+	func() {
+		v.lock.Lock()
+		defer v.lock.Unlock()
+		v.FixQueue.enqueue(segment)
+	}()
 	logger.Tf(ctx, "transcript: asr audio=%v, prompt=%v, text=%v, cost=%v",
 		segment.AudioFile.File, prompt, resp.Text, segment.CostASR)
 
@@ -1705,7 +1733,11 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 
 	// Remove segment if file not exists.
 	if _, err := os.Stat(segment.TsFile.File); err != nil && os.IsNotExist(err) {
-		v.FixQueue.dequeue(segment)
+		func() {
+			v.lock.Lock()
+			defer v.lock.Unlock()
+			v.FixQueue.dequeue(segment)
+		}()
 		segment.Dispose()
 		logger.Tf(ctx, "transcript: remove not exist fix segment %v", segment.String())
 		return nil
@@ -1758,10 +1790,15 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 	overlayFile.Size = uint64(stats.Size())
 
 	// Dequeue the segment from live queue and attach to asr queue.
-	v.FixQueue.dequeue(segment)
-	segment.OverlayFile = overlayFile
-	segment.CostOverlay = time.Since(starttime)
-	v.OverlayQueue.enqueue(segment)
+	func() {
+		v.lock.Lock()
+		defer v.lock.Unlock()
+
+		v.FixQueue.dequeue(segment)
+		segment.OverlayFile = overlayFile
+		segment.CostOverlay = time.Since(starttime)
+		v.OverlayQueue.enqueue(segment)
+	}()
 	logger.Tf(ctx, "transcript: overlay %v to %v, size=%v, cost=%v",
 		segment.TsFile.File, overlayFile.File, overlayFile.Size, segment.CostOverlay)
 
@@ -1787,7 +1824,11 @@ func (v *TranscriptTask) DriveOverlayQueue(ctx context.Context) error {
 
 	// Cleanup the old segments.
 	segment := v.OverlayQueue.first()
-	v.OverlayQueue.dequeue(segment)
+	func() {
+		v.lock.Lock()
+		defer v.lock.Unlock()
+		v.OverlayQueue.dequeue(segment)
+	}()
 	defer segment.Dispose()
 
 	// Notify the main loop to persistent current task.
