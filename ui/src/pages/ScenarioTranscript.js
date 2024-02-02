@@ -49,6 +49,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   const [refreshNow, setRefreshNow] = React.useState();
   const [transcriptEnabled, setTranscriptEnabled] = React.useState(defaultEnabled);
   const [secretKey, setSecretKey] = React.useState(defaultConf.secretKey);
+  const [organization, setOrganization] = React.useState(defaultConf.organization);
   const [baseURL, setBaseURL] = React.useState(defaultConf.baseURL || (language === 'zh' ? '' : 'https://api.openai.com/v1'));
   const [targetLanguage, setTargetLanguage] = React.useState(defaultConf.lang || language);
 
@@ -80,7 +81,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
     if (!baseURL) return alert(`Invalid base url ${baseURL}`);
 
     axios.post('/terraform/v1/ai/transcript/apply', {
-      uuid, all: !!enabled, secretKey, baseURL, lang: targetLanguage,
+      uuid, all: !!enabled, secretKey, organization, baseURL, lang: targetLanguage,
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
@@ -88,7 +89,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
       console.log(`Transcript: Apply config ok, uuid=${uuid}.`);
       success && success();
     }).catch(handleError);
-  }, [t, handleError, secretKey, baseURL, targetLanguage, uuid]);
+  }, [t, handleError, secretKey, baseURL, targetLanguage, uuid, organization]);
 
   const resetTask = React.useCallback(() => {
     setOperating(true);
@@ -280,7 +281,10 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
         <Accordion.Header>{t('transcript.service')}</Accordion.Header>
         <Accordion.Body>
           <Form>
-            <OpenAISecretSettings {...{baseURL, setBaseURL, secretKey, setSecretKey, targetLanguage, setTargetLanguage}} />
+            <OpenAISecretSettings {...{
+              baseURL, setBaseURL, secretKey, setSecretKey,
+              organization, setOrganization,
+            }} />
             <p></p>
             <Form.Group className="mb-3">
               <Form.Label>{t('transcript.lang')}</Form.Label>

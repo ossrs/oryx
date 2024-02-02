@@ -284,6 +284,8 @@ type SrsAssistant struct {
 	AIProvider string `json:"aiProvider"`
 	// The AI secret key.
 	AISecretKey string `json:"aiSecretKey"`
+	// The AI organization.
+	AIOrganization string `json:"aiOrganization"`
 	// The AI base URL.
 	AIBaseURL string `json:"aiBaseURL"`
 

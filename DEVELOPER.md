@@ -1138,7 +1138,8 @@ The following are the update records for the SRS Stack server.
     * Room: AI-Talk allow disable ASR/TTS, enable text. v5.13.19
     * Room: AI-Talk support dictation mode. v5.13.20
     * FFmpeg: Restart if time and speed abnormal. v5.13.21
-    * Transcript: Fix panic bug for sync goroutines. v5.13.21
+    * Transcript: Fix panic bug for sync goroutines. [v5.13.21](https://github.com/ossrs/srs-stack/releases/tag/v5.13.21)
+    * Support OpenAI organization for billing. v5.13.22
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1

@@ -5,7 +5,7 @@ import {Button, Form, Spinner} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {useErrorHandler} from "react-error-boundary";
 
-export function OpenAISecretSettings({baseURL, setBaseURL, secretKey, setSecretKey}) {
+export function OpenAISecretSettings({baseURL, setBaseURL, secretKey, setSecretKey, organization, setOrganization}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
 
@@ -50,7 +50,13 @@ export function OpenAISecretSettings({baseURL, setBaseURL, secretKey, setSecretK
           {t('transcript.test')}
         </Button> &nbsp;
         {checking && <Spinner animation="border" variant="success" style={{verticalAlign: 'middle'}} />}
+        <p></p>
       </div>
+      <Form.Group className="mb-3">
+        <Form.Label>{t('transcript.org')}</Form.Label>
+        <Form.Text> * {t('transcript.org2')}, <a href='https://platform.openai.com/account/organization' target='_blank' rel='noreferrer'>{t('helper.link')}</a></Form.Text>
+        <Form.Control as="input" defaultValue={organization} onChange={(e) => setOrganization(e.target.value)} />
+      </Form.Group>
     </React.Fragment>
   );
 }

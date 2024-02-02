@@ -1014,13 +1014,15 @@ type TranscriptConfig struct {
 	SecretKey string `json:"secretKey"`
 	// The base URL for AI service.
 	BaseURL string `json:"baseURL"`
+	// The AI organization.
+	Organization string `json:"organization"`
 	// The language of the stream.
 	Language string `json:"lang"`
 }
 
 func (v TranscriptConfig) String() string {
-	return fmt.Sprintf("all=%v, key=%vB, base=%v, lang=%v",
-		v.All, len(v.SecretKey), v.BaseURL, v.Language)
+	return fmt.Sprintf("all=%v, key=%vB, organization=%v, base=%v, lang=%v",
+		v.All, len(v.SecretKey), v.Organization, v.BaseURL, v.Language)
 }
 
 func (v *TranscriptConfig) Load(ctx context.Context) error {

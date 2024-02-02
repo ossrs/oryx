@@ -171,7 +171,6 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 
 	system := stage.prompt
 	system += fmt.Sprintf(" Keep your reply neat, limiting the reply to %v words.", stage.replyLimit)
-	logger.Tf(ctx, "AI system prompt: %v", system)
 	messages := []openai.ChatCompletionMessage{
 		{Role: openai.ChatMessageRoleSystem, Content: system},
 	}
@@ -189,8 +188,8 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 	model := stage.chatModel
 	maxTokens := 1024
 	temperature := float32(0.9)
-	logger.Tf(ctx, "AIChat is OPENAI_PROXY: %v, AIT_CHAT_MODEL: %v, AIT_MAX_TOKENS: %v, AIT_TEMPERATURE: %v, window=%v, histories=%v",
-		v.conf.BaseURL, model, maxTokens, temperature, stage.chatWindow, len(stage.histories))
+	logger.Tf(ctx, "AIChat is baseURL=%v, org=%v, model=%v, maxTokens=%v, temperature=%v, window=%v, histories=%v, system is %v",
+		v.conf.BaseURL, v.conf.OrgID, model, maxTokens, temperature, stage.chatWindow, len(stage.histories), system)
 
 	client := openai.NewClientWithConfig(v.conf)
 	gptChatStream, err := client.CreateChatCompletionStream(
@@ -973,6 +972,7 @@ func (v *Stage) UpdateFromRoom(room *SrsLiveRoom) {
 
 	// Initialize the AI services.
 	v.aiConfig = openai.DefaultConfig(room.AISecretKey)
+	v.aiConfig.OrgID = room.AIOrganization
 	v.aiConfig.BaseURL = room.AIBaseURL
 
 	// Bind stage to room.

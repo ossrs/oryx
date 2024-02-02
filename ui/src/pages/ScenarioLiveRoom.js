@@ -413,6 +413,7 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
   const [aiName, setAiName] = React.useState(room.aiName);
   const [aiProvider, setAiProvider] = React.useState(room.aiProvider || 'openai');
   const [aiSecretKey, setAiSecretKey] = React.useState(room.aiSecretKey);
+  const [aiOrganization, setAiOrganization] = React.useState(room.aiOrganization);
   const [aiBaseURL, setAiBaseURL] = React.useState(room.aiBaseURL || (language === 'zh' ? '' : 'https://api.openai.com/v1'));
   const [aiAsrEnabled, setAiAsrEnabled] = React.useState(room.aiAsrEnabled);
   const [aiChatEnabled, setAiChatEnabled] = React.useState(room.aiChatEnabled);
@@ -439,7 +440,7 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
     e.preventDefault();
     updateRoom({
       ...room, assistant: true,
-      aiName, aiProvider, aiSecretKey, aiBaseURL, aiAsrLanguage, aiChatModel,
+      aiName, aiProvider, aiSecretKey, aiOrganization, aiBaseURL, aiAsrLanguage, aiChatModel,
       aiChatPrompt, aiChatMaxWindow: parseInt(aiChatMaxWindow),
       aiChatMaxWords: parseInt(aiChatMaxWords), aiAsrEnabled: !!aiAsrEnabled,
       aiChatEnabled: !!aiChatEnabled, aiTtsEnabled: !!aiTtsEnabled,
@@ -447,7 +448,7 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
     })
   }, [
     updateRoom, room, aiName, aiProvider, aiSecretKey, aiBaseURL, aiAsrLanguage, aiChatModel, aiChatPrompt,
-    aiChatMaxWindow, aiChatMaxWords, aiAsrEnabled, aiChatEnabled, aiTtsEnabled, aiAsrPrompt
+    aiChatMaxWindow, aiChatMaxWords, aiAsrEnabled, aiChatEnabled, aiTtsEnabled, aiAsrPrompt, aiOrganization
   ]);
 
   const onDisableRoom = React.useCallback((e) => {
@@ -538,7 +539,7 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
           <OpenAISecretSettings {...{
             baseURL: aiBaseURL, setBaseURL: setAiBaseURL,
             secretKey: aiSecretKey, setSecretKey: setAiSecretKey,
-            targetLanguage: aiAsrLanguage, setTargetLanguage: setAiAsrLanguage
+            organization: aiOrganization, setOrganization: setAiOrganization,
           }} />
           <p></p>
           <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
