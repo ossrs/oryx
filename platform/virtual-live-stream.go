@@ -1035,6 +1035,9 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 	}
 	outputURL := fmt.Sprintf("%v%v", outputServer, v.config.Secret)
 
+	// Create a heartbeat to poll and manage the status of FFmpeg process.
+	heartbeat := NewFFmpegHeartbeat(cancel)
+
 	// Start FFmpeg process.
 	args := []string{}
 	if input.Type != FFprobeSourceTypeStream {
@@ -1053,6 +1056,7 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 			return errors.Wrapf(err, "rebuild %v", input.Target)
 		} else {
 			args = append(args, "-i", u.String())
+			heartbeat.Parse(u)
 		}
 	} else {
 		args = append(args, "-i", input.Target)
@@ -1091,7 +1095,6 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 	}
 
 	// Pull the latest log frame.
-	heartbeat := NewFFmpegHeartbeat()
 	heartbeat.Polling(ctx, stderr)
 	go func() {
 		for {
@@ -1110,6 +1113,7 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 	case <-ctx.Done():
 	case <-heartbeat.PollingCtx.Done():
 	}
+	logger.Tf(ctx, "vLive: Cycle stopping, platform=%v, input=%v, pid=%v", v.Platform, input.Target, v.PID)
 
 	err = cmd.Wait()
 	logger.Tf(ctx, "vLive: Cycle done, platform=%v, input=%v, pid=%v, err=%v",

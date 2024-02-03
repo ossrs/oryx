@@ -1116,6 +1116,7 @@ The following are the update records for the SRS Stack server.
 
 * v5.14:
     * Room: Fix the empty room UI sort and secret bug. v5.14.1
+    * FFmpeg: Fix restart bug for abnormal speed. v5.14.2
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
@@ -1143,6 +1144,7 @@ The following are the update records for the SRS Stack server.
     * Transcript: Fix panic bug for sync goroutines. [v5.13.21](https://github.com/ossrs/srs-stack/releases/tag/v5.13.21)
     * Support OpenAI organization for billing. v5.13.22
     * Room: Fix the empty room UI sort and secret bug. [v5.13.23](https://github.com/ossrs/srs-stack/releases/tag/v5.13.23)
+    * FFmpeg: Fix restart bug for abnormal speed. v5.13.24
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1

@@ -822,11 +822,11 @@ func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource
 	}
 	outputURL := fmt.Sprintf("%v%v", outputServer, v.config.Secret)
 
+	// Create a heartbeat to poll and manage the status of FFmpeg process.
+	heartbeat := NewFFmpegHeartbeat(cancel)
+
 	// Start FFmpeg process.
 	args := []string{}
-	if input.Type != FFprobeSourceTypeStream {
-		args = append(args, "-stream_loop", "-1")
-	}
 	args = append(args, "-re",
 		"-fflags", "nobuffer", // Reduce the latency introduced by optional buffering.
 	)
@@ -840,6 +840,7 @@ func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource
 			return errors.Wrapf(err, "rebuild %v", input.Target)
 		} else {
 			args = append(args, "-i", u.String())
+			heartbeat.Parse(u)
 		}
 	} else {
 		args = append(args, "-i", input.Target)
@@ -889,7 +890,6 @@ func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource
 	}
 
 	// Pull the latest log frame.
-	heartbeat := NewFFmpegHeartbeat()
 	heartbeat.Polling(ctx, stderr)
 	go func() {
 		for {
@@ -908,6 +908,7 @@ func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource
 	case <-ctx.Done():
 	case <-heartbeat.PollingCtx.Done():
 	}
+	logger.Tf(ctx, "Camera: Cycle stopping, platform=%v, input=%v, pid=%v", v.Platform, input.Target, v.PID)
 
 	err = cmd.Wait()
 	logger.Tf(ctx, "Camera: Cycle done, platform=%v, input=%v, pid=%v, err=%v",
