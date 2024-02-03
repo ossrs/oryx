@@ -110,6 +110,8 @@ func TestMedia_WithStream_LiveRoomPublishStream(t *testing.T) {
 	type LiveRoomCreateResult struct {
 		// Live room UUID.
 		UUID string `json:"uuid"`
+		// The stream name, should never use roomUUID because it's secret.
+		StreamName string `json:"stream"`
 		// Live room title.
 		Title string `json:"title"`
 		// Live room secret.
@@ -137,7 +139,7 @@ func TestMedia_WithStream_LiveRoomPublishStream(t *testing.T) {
 	defer wg.Wait()
 
 	// Start FFmpeg to publish stream.
-	streamID := liveRoom.UUID
+	streamID := liveRoom.StreamName
 	streamURL := fmt.Sprintf("%v/live/%v?secret=%v", *endpointRTMP, streamID, liveRoom.Secret)
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
@@ -207,6 +209,8 @@ func TestMedia_WithStream_LiveRoomPublishInvalidStream(t *testing.T) {
 	type LiveRoomCreateResult struct {
 		// Live room UUID.
 		UUID string `json:"uuid"`
+		// The stream name, should never use roomUUID because it's secret.
+		StreamName string `json:"stream"`
 		// Live room title.
 		Title string `json:"title"`
 		// Live room secret.
@@ -299,6 +303,8 @@ func TestMedia_WithStream_LiveRoomPublishInvalidSecret(t *testing.T) {
 	type LiveRoomCreateResult struct {
 		// Live room UUID.
 		UUID string `json:"uuid"`
+		// The stream name, should never use roomUUID because it's secret.
+		StreamName string `json:"stream"`
 		// Live room title.
 		Title string `json:"title"`
 		// Live room secret.
@@ -327,7 +333,7 @@ func TestMedia_WithStream_LiveRoomPublishInvalidSecret(t *testing.T) {
 
 	// Start FFmpeg to publish stream.
 	// Use a invalid random stream ID, which should be failed.
-	streamID := liveRoom.UUID
+	streamID := liveRoom.StreamName
 	streamURL := fmt.Sprintf("%v/live/%v?secret=%v", *endpointRTMP, streamID, uuid.NewString())
 	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
 		v.args = []string{
