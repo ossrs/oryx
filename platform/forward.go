@@ -588,10 +588,32 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 	}
 	outputURL := fmt.Sprintf("%v%v", outputServer, v.config.Secret)
 
+	// Create a heartbeat to poll and manage the status of FFmpeg process.
+	heartbeat := NewFFmpegHeartbeat(cancel)
+
 	// Start FFmpeg process.
-	args := []string{
-		"-stream_loop", "-1", "-i", inputURL, "-c", "copy", "-f", "flv", outputURL,
+	args := []string{}
+	args = append(args, "-re",
+		"-fflags", "nobuffer", // Reduce the latency introduced by optional buffering.
+	)
+	// For RTSP stream source, always use TCP transport.
+	if strings.HasPrefix(inputURL, "rtsp://") {
+		args = append(args, "-rtsp_transport", "tcp")
 	}
+	// Rebuild the stream url, because it may contain special characters.
+	if strings.Contains(inputURL, "://") {
+		if u, err := RebuildStreamURL(inputURL); err != nil {
+			return errors.Wrapf(err, "rebuild %v", inputURL)
+		} else {
+			args = append(args, "-i", u.String())
+			heartbeat.Parse(u)
+		}
+	} else {
+		args = append(args, "-i", inputURL)
+	}
+	args = append(args,
+		"-c", "copy", "-f", "flv", outputURL,
+	)
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
 	stderr, err := cmd.StderrPipe()
@@ -625,7 +647,6 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 	}
 
 	// Pull the latest log frame.
-	heartbeat := NewFFmpegHeartbeat()
 	heartbeat.Polling(ctx, stderr)
 	go func() {
 		for {
@@ -644,6 +665,8 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 	case <-ctx.Done():
 	case <-heartbeat.PollingCtx.Done():
 	}
+	logger.Tf(ctx, "Forward: Cycle stopping, platform=%v, stream=%v, pid=%v",
+		v.Platform, input.StreamURL(), v.PID)
 
 	err = cmd.Wait()
 	logger.Tf(ctx, "forward done, platform=%v, stream=%v, pid=%v, err=%v",

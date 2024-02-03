@@ -1467,6 +1467,8 @@ func (v *FFprobeSource) String() string {
 // The FFmpegHeartbeat is used to manage the heartbeat of FFmpeg, the status of FFmpeg, by detecting the
 // log message from FFmpeg output.
 type FFmpegHeartbeat struct {
+	// The starttime.
+	starttime time.Time
 	// The last update time.
 	update time.Time
 
@@ -1479,7 +1481,7 @@ type FFmpegHeartbeat struct {
 	// separately as extra logs.
 	extraLogs []string
 	// Last line of FFmpeg log.
-	timestamp, speed string
+	line, timestamp, speed string
 	// Total count of failed to parsed logs.
 	failedParsedCount uint64
 	// Last line of log which is not parsed successfully.
@@ -1501,27 +1503,60 @@ type FFmpegHeartbeat struct {
 	FrameLogs chan string
 	// Whether FFmpeg is EOF polling.
 	PollingCtx context.Context
+	// To cancel the FFmpeg.
+	cancelFFmpeg context.CancelFunc
+
+	// Exit when published for a duration.
+	MaxStreamDuration time.Duration
+	// The abnormal slow speed, such as 0.5x.
+	AbnormalFastSpeed float64
 }
 
-func NewFFmpegHeartbeat() *FFmpegHeartbeat {
-	return &FFmpegHeartbeat{
-		update:    time.Now(),
-		FrameLogs: make(chan string, 1),
+// NewFFmpegHeartbeat create a new FFmpeg heartbeat manager, with cancelFFmpeg to cancel the FFmpeg
+// process. Please note that the cancelFFmpeg is crucial because when timeout we need to directly
+// cancel the execute of FFmpeg, or it will be blocked and endless waiting.
+func NewFFmpegHeartbeat(cancelFFmpeg context.CancelFunc, opts ...func(*FFmpegHeartbeat)) *FFmpegHeartbeat {
+	v := &FFmpegHeartbeat{
+		starttime:    time.Now(),
+		update:       time.Now(),
+		FrameLogs:    make(chan string, 1),
+		cancelFFmpeg: cancelFFmpeg,
+		// Set the default duration to 0, no timeout duration.
+		MaxStreamDuration: time.Duration(0),
+		// Set the default abnormal fast speed to the global const.
+		AbnormalFastSpeed: FFmpegAbnormalFastSpeed,
+	}
+	for _, opt := range opts {
+		opt(v)
+	}
+	return v
+}
+
+// Parse the input URL u and update the configuration from query string. Note that it only works for
+// URL based input, not for file.
+func (v *FFmpegHeartbeat) Parse(u *url.URL) {
+	q := u.Query()
+	if qv := q.Get("max-stream-duration"); qv != "" {
+		v.MaxStreamDuration, _ = time.ParseDuration(qv)
+	}
+	if qv := q.Get("abnormal-fast-speed"); qv != "" {
+		v.AbnormalFastSpeed, _ = strconv.ParseFloat(qv, 64)
 	}
 }
 
 // Polling the FFmpeg stderr and detect the error.
 func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
-	var pollingCancel context.CancelFunc
-	v.PollingCtx, pollingCancel = context.WithCancel(ctx)
+	pollingReadyCtx, cancelPollingReady := context.WithCancel(ctx)
 
 	// Print the extra logs when quit.
 	go func() {
+		<-pollingReadyCtx.Done()
+
 		select {
 		case <-ctx.Done():
 		case <-v.PollingCtx.Done():
 		}
-		logger.Tf(ctx, "FFmpeg: exit-normally=%v, parsed=%v, failed=%v,<%v>, speed=%v,%v,%v,<%v>, not-change=%v,<%v>, extra logs is %v",
+		logger.Tf(ctx, "FFmpeg: Quit exit-normally=%v, parsed=%v, failed=%v,<%v>, speed=%v,%v,%v,<%v>, not-change=%v,<%v>, extra logs is %v",
 			v.exitingNormally, v.parsedCount, v.failedParsedCount, v.lastFailedParsed, v.failedSpeedCount,
 			v.veryFastSpeedCount, v.verySlowSpeedCount, v.lastFailedSpeed, v.notChangedCount, v.lastNotChanged,
 			strings.Join(v.extraLogs, " "))
@@ -1529,6 +1564,8 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 
 	// Monitor FFmpeg update, restart if not update for a while.
 	go func() {
+		<-pollingReadyCtx.Done()
+
 		for {
 			select {
 			case <-ctx.Done():
@@ -1540,102 +1577,148 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 
 			if v.update.Add(10 * time.Second).Before(time.Now()) {
 				logger.Wf(ctx, "FFmpeg: not update for %v, restart it", time.Since(v.update))
-				pollingCancel()
+				v.cancelFFmpeg()
 				return
 			}
 		}
 	}()
 
+	// Handle the FFmpeg log, detect the error and update the heartbeat.
+	handleOutputOfFFmpeg := func(ffmpegLog string) {
+		// Filter the line of log.
+		line := strings.TrimSpace(ffmpegLog)
+		for strings.Contains(line, "= ") {
+			line = strings.ReplaceAll(line, "= ", "=")
+		}
+		line = strings.ReplaceAll(line, "\n", " ")
+		line = strings.ReplaceAll(line, "\r", " ")
+
+		// Whether exit normally.
+		if strings.Contains(line, "Exiting normally") {
+			v.exitingNormally = true
+		}
+
+		// Handle the extra logs.
+		if !strings.Contains(line, "size=") && !strings.Contains(line, "time=") {
+			v.extraLogs = append(v.extraLogs, line)
+			return
+		}
+		if strings.Contains(line, "time=N/A") {
+			v.extraLogs = append(v.extraLogs, line)
+			return
+		}
+
+		// Scanf the log line, get the time and speed.
+		timestamp, speed, err := ParseFFmpegCycleLog(line)
+		if err != nil {
+			v.failedParsedCount, v.lastFailedParsed = v.failedParsedCount+1, line
+			return
+		}
+
+		// The FFmpeg is alive, only if time is changing.
+		if v.timestamp == timestamp {
+			v.notChangedCount, v.lastNotChanged = v.notChangedCount+1, line
+			return
+		}
+
+		// During live streaming, the speed should typically be approximately 1x. At times, particularly
+		// during initialization, it might exceed 1x, but the mean rate should remain at 1x.
+		if speedv, err := strconv.ParseFloat(strings.Trim(speed, "x"), 64); err != nil || speedv <= 0 {
+			v.failedSpeedCount, v.lastFailedSpeed = v.failedSpeedCount+1, line
+		} else {
+			// The number of consecutive instances of high speed, like 1.5x.
+			if speedv > v.AbnormalFastSpeed {
+				v.veryFastSpeedCount++
+			} else {
+				v.veryFastSpeedCount = 0
+			}
+
+			// The number of continuous instances of low speed, like 0.5x.
+			if speedv < FFmpegAbnormalSlowSpeed {
+				v.verySlowSpeedCount++
+			} else {
+				v.verySlowSpeedCount = 0
+			}
+
+			// Whether exit for timeout.
+			var exitForTimeout bool
+			if v.MaxStreamDuration > 0 && time.Now().After(v.starttime.Add(v.MaxStreamDuration)) {
+				logger.Tf(ctx, "FFmpeg: exit after duration=%v, start=%v, now=%v",
+					v.MaxStreamDuration, v.starttime, time.Now())
+				exitForTimeout = true
+			}
+
+			// If the speed is very fast or slow, restart FFmpeg.
+			if mv := RestartFFmpegCountAbnormalSpeed; v.veryFastSpeedCount > mv || v.verySlowSpeedCount > mv || exitForTimeout {
+				logger.Wf(ctx, "FFmpeg: abnormal speed=%v, fast=%v, slow=%v, mv=%v, timeout=%v,%v, restart it",
+					speed, v.veryFastSpeedCount, v.verySlowSpeedCount, mv, exitForTimeout, v.MaxStreamDuration)
+				v.cancelFFmpeg()
+				return
+			}
+		}
+
+		v.update, v.parsedCount = time.Now(), v.parsedCount+1
+		v.line, v.timestamp, v.speed = line, timestamp, speed
+
+		// Handle the routine heartbeat logs.
+		select {
+		case <-ctx.Done():
+		case v.FrameLogs <- line:
+		}
+	}
+
 	// Read stderr to update status and output of FFmpeg.
 	go func() {
+		defer v.cancelFFmpeg()
+
+		var pollingCancel context.CancelFunc
+		v.PollingCtx, pollingCancel = context.WithCancel(ctx)
 		defer pollingCancel()
+
+		// Let other goroutines to run, which depends on v.PollingCtx.
+		cancelPollingReady()
 
 		buf := make([]byte, 4096)
 		for ctx.Err() == nil {
 			nn, err := stderr.Read(buf)
-			if err != nil {
-				if !v.exitingNormally {
-					logger.Wf(ctx, "FFmpeg: read stderr failed: %v", err)
-				}
+			if nn > 0 {
+				handleOutputOfFFmpeg(string(buf[:nn]))
+			}
+
+			if err != nil && !v.exitingNormally {
+				logger.Wf(ctx, "FFmpeg: read stderr failed: %v", err)
+			}
+			if nn == 0 && !v.exitingNormally {
+				logger.Wf(ctx, "FFmpeg: EOF of stderr")
+			}
+
+			if err != nil || nn == 0 {
 				return
-			}
-			if nn == 0 {
-				if !v.exitingNormally {
-					logger.Wf(ctx, "FFmpeg: EOF of stderr")
-				}
-				return
-			}
-
-			// Filter the line of log.
-			line := strings.TrimSpace(string(buf[:nn]))
-			for strings.Contains(line, "= ") {
-				line = strings.ReplaceAll(line, "= ", "=")
-			}
-			line = strings.ReplaceAll(line, "\n", " ")
-			line = strings.ReplaceAll(line, "\r", " ")
-
-			// Whether exit normally.
-			if strings.Contains(line, "Exiting normally") {
-				v.exitingNormally = true
-			}
-
-			// Handle the extra logs.
-			if !strings.Contains(line, "size=") && !strings.Contains(line, "time=") {
-				v.extraLogs = append(v.extraLogs, line)
-				continue
-			}
-
-			// Scanf the log line, get the time and speed.
-			timestamp, speed, err := ParseFFmpegCycleLog(line)
-			if err != nil {
-				v.failedParsedCount, v.lastFailedParsed = v.failedParsedCount+1, line
-				continue
-			}
-
-			// The FFmpeg is alive, only if time is changing.
-			if v.timestamp == timestamp {
-				v.notChangedCount, v.lastNotChanged = v.notChangedCount+1, line
-				continue
-			}
-
-			// During live streaming, the speed should typically be approximately 1x. At times, particularly
-			// during initialization, it might exceed 1x, but the mean rate should remain at 1x.
-			if speedv, err := strconv.ParseFloat(strings.Trim(speed, "x"), 64); err != nil || speedv <= 0 {
-				v.failedSpeedCount, v.lastFailedSpeed = v.failedSpeedCount+1, line
-			} else {
-				// The number of consecutive instances of high speed, like 1.5x.
-				if speedv > FFmpegAbnormalFastSpeed {
-					v.veryFastSpeedCount++
-				} else {
-					v.veryFastSpeedCount = 0
-				}
-
-				// The number of continuous instances of low speed, like 0.5x.
-				if speedv < FFmpegAbnormalSlowSpeed {
-					v.verySlowSpeedCount++
-				} else {
-					v.verySlowSpeedCount = 0
-				}
-
-				// If the speed is very fast or slow, restart FFmpeg.
-				if mv := RestartFFmpegCountAbnormalSpeed; v.veryFastSpeedCount > mv || v.verySlowSpeedCount > mv {
-					logger.Wf(ctx, "FFmpeg: abnormal speed=%v, fast=%v, slow=%v, mv=%v, restart it",
-						speed, v.veryFastSpeedCount, v.verySlowSpeedCount, mv)
-					pollingCancel()
-					return
-				}
-			}
-
-			v.update, v.parsedCount = time.Now(), v.parsedCount+1
-			v.timestamp, v.speed = timestamp, speed
-
-			// Handle the routine heartbeat logs.
-			select {
-			case <-ctx.Done():
-			case v.FrameLogs <- line:
 			}
 		}
 	}()
+
+	// Print the log every 30s.
+	go func() {
+		<-pollingReadyCtx.Done()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-v.PollingCtx.Done():
+				return
+			case <-time.After(15 * time.Second):
+				logger.Tf(ctx, "FFmpeg: Running parsed=%v, failed=%v,<%v>, speed=%v,%v,%v,<%v>, not-change=%v,<%v>, last=<%v>",
+					v.parsedCount, v.failedParsedCount, v.lastFailedParsed, v.failedSpeedCount,
+					v.veryFastSpeedCount, v.verySlowSpeedCount, v.lastFailedSpeed, v.notChangedCount, v.lastNotChanged,
+					v.line)
+			}
+		}
+	}()
+
+	// Must wait for v.PollingCtx to be ready, because user depends on it.
+	<-pollingReadyCtx.Done()
 }
 
 // If the speed of FFmpeg exceed this value, it's abnormal.

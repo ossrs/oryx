@@ -476,9 +476,27 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 	}
 	outputURL := fmt.Sprintf("%v%v", outputServer, v.config.Secret)
 
+	// Create a heartbeat to poll and manage the status of FFmpeg process.
+	heartbeat := NewFFmpegHeartbeat(cancel)
+
 	// Start FFmpeg process.
-	args := []string{
-		"-stream_loop", "-1", "-i", inputURL,
+	args := []string{}
+	// For RTSP stream source, always use TCP transport.
+	if strings.HasPrefix(inputURL, "rtsp://") {
+		args = append(args, "-rtsp_transport", "tcp")
+	}
+	// Rebuild the stream url, because it may contain special characters.
+	if strings.Contains(inputURL, "://") {
+		if u, err := RebuildStreamURL(inputURL); err != nil {
+			return errors.Wrapf(err, "rebuild %v", inputURL)
+		} else {
+			args = append(args, "-i", u.String())
+			heartbeat.Parse(u)
+		}
+	} else {
+		args = append(args, "-i", inputURL)
+	}
+	args = append(args,
 		"-vcodec", v.config.VideoCodec,
 		"-profile:v", v.config.VideoProfile,
 		"-preset:v", v.config.VideoPreset,
@@ -488,7 +506,7 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 		"-bf", "0", // Disable B frame for WebRTC.
 		"-acodec", v.config.AudioCodec,
 		"-b:a", fmt.Sprintf("%vk", v.config.AudioBitrate),
-	}
+	)
 	if v.config.AudioChannels > 0 {
 		args = append(args, "-ac", fmt.Sprintf("%v", v.config.AudioChannels))
 	}
@@ -526,7 +544,6 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 	}
 
 	// Pull the latest log frame.
-	heartbeat := NewFFmpegHeartbeat()
 	heartbeat.Polling(ctx, stderr)
 	go func() {
 		for {
@@ -545,6 +562,7 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 	case <-ctx.Done():
 	case <-heartbeat.PollingCtx.Done():
 	}
+	logger.Tf(ctx, "Transcode: Cycle stopping, stream=%v, pid=%v", input.StreamURL(), v.PID)
 
 	err = cmd.Wait()
 	logger.Tf(ctx, "transcode done, stream=%v, pid=%v, err=%v",
