@@ -110,6 +110,7 @@ your own high-quality streaming and RTC platforms to support your businesses.
 - [x] Support Typecho Plugin: [CN](https://github.com/ossrs/Typecho-Plugin-SrsPlayer).
 - [x] Support live stream transcoding: [Blog](https://blog.ossrs.io/efficient-live-streaming-transcoding-for-reducing-bandwidth-and-saving-costs-39bd001af02d), [EN](https://ossrs.io/lts/en-us/blog/Live-Transcoding), [CN](https://ossrs.net/lts/zh-cn/blog/Live-Transcoding).
 - [x] Support transcription for converting speech to text: [Blog](https://blog.ossrs.io/revolutionizing-live-streams-with-ai-transcription-creating-accessible-multilingual-subtitles-1e902ab856bd), [EN](https://ossrs.io/lts/en-us/blog/live-streams-transcription), [CN](https://ossrs.net/lts/zh-cn/blog/live-streams-transcription).
+- [x] Support AI assistant for live room: [Blog](https://blog.ossrs.io/transform-your-browser-into-a-personal-voice-driven-gpt-ai-assistant-with-srs-stack-13e28adf1e18), [EN](https://ossrs.io/lts/en-us/blog/browser-voice-driven-gpt), [CN](https://ossrs.net/lts/zh-cn/blog/live-streams-transcription)
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
 
@@ -126,7 +127,7 @@ The features that we're developing:
 - [x] Support publish by SRT, play by RTMP/HTTP-FLV/HLS/WebRTC/SRT.
 - [x] Change redis port and use randomly password.
 - [x] Support integrity with tencent cloud VoD.
-- [x] Forward stream to multiple platforms.
+- [x] Support restreaming to multiple platforms.
 - [x] Support WordPress Plugin: SrsPlayer.
 - [x] Support aaPanel to install on any linux.
 - [x] Support DVR to local disk.
@@ -139,6 +140,7 @@ The features that we're developing:
 - [x] Support pull RTSP from IP Camera and stream to YouTube/Twitch/Facebook.
 - [x] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
 - [x] Support transcription for converting speech to text.
+- [x] Support AI assistant for live room.
 - [ ] Support limit the streaming duration to limit the fee.
 - [ ] Support GB28181 by SRS 5.0 container.
 - [ ] Support WebRTC face to face chat, see [#2857](https://github.com/ossrs/srs/issues/2857).
