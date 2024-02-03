@@ -298,10 +298,11 @@ const (
 	SRS_CONTAINER_DISABLED = "SRS_CONTAINER_DISABLED"
 	// For live stream and rooms.
 	SRS_LIVE_ROOM = "SRS_LIVE_ROOM"
+	// About authentication.
+	SRS_AUTH_SECRET    = "SRS_AUTH_SECRET"
+	SRS_SECRET_PUBLISH = "SRS_SECRET_PUBLISH"
 	// For system settings.
 	SRS_LOCALE          = "SRS_LOCALE"
-	SRS_SECRET_PUBLISH  = "SRS_SECRET_PUBLISH"
-	SRS_AUTH_SECRET     = "SRS_AUTH_SECRET"
 	SRS_FIRST_BOOT      = "SRS_FIRST_BOOT"
 	SRS_UPGRADING       = "SRS_UPGRADING"
 	SRS_UPGRADE_WINDOW  = "SRS_UPGRADE_WINDOW"
@@ -313,6 +314,11 @@ const (
 	SRS_HOOKS           = "SRS_HOOKS"
 	SRS_SYS_LIMITS      = "SRS_SYS_LIMITS"
 )
+
+// GenerateRoomPublishKey to build the redis hashset key from room stream name.
+func GenerateRoomPublishKey(roomStreamName string) string {
+	return fmt.Sprintf("room-pub-%v", roomStreamName)
+}
 
 // Default limit to 5Mbps for virtual live streaming.
 const SrsSysLimitsVLive = 5 * 1000

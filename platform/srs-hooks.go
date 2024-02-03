@@ -110,28 +110,19 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				}
 
 				// Use live room secret to verify if stream name matches.
-				if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, streamObj.Stream).Result(); (err == nil || err == redis.Nil) && r0 != "" {
-					var room SrsLiveRoom
-					if err = json.Unmarshal([]byte(r0), &room); err != nil {
-						return errors.Wrapf(err, "unmarshal %v %v", streamObj.Stream, r0)
-					}
-
-					if !isSecretOK(room.Secret, streamObj.Stream, streamObj.Param) {
-						return errors.Errorf("invalid live room stream=%v, param=%v, action=%v", streamObj.Stream, streamObj.Param, action)
-					}
-
-					verifiedBy = "LiveRoom"
-				} else {
+				roomPublishAuthKey := GenerateRoomPublishKey(streamObj.Stream)
+				publish, err := rdb.HGet(ctx, SRS_AUTH_SECRET, roomPublishAuthKey).Result()
+				verifiedBy = "room"
+				if publish == "" {
 					// Use global publish secret to verify
-					publish, err := rdb.HGet(ctx, SRS_AUTH_SECRET, "pubSecret").Result()
-					if err != nil && err != redis.Nil {
-						return errors.Wrapf(err, "hget %v pubSecret", SRS_AUTH_SECRET)
-					}
-					if !isSecretOK(publish, streamObj.Stream, streamObj.Param) {
-						return errors.Errorf("invalid normal stream=%v, param=%v, action=%v", streamObj.Stream, streamObj.Param, action)
-					}
-
-					verifiedBy = "NormalStream"
+					publish, err = rdb.HGet(ctx, SRS_AUTH_SECRET, "pubSecret").Result()
+					verifiedBy = "global"
+				}
+				if err != nil && err != redis.Nil {
+					return errors.Wrapf(err, "hget %v pubSecret", SRS_AUTH_SECRET)
+				}
+				if !isSecretOK(publish, streamObj.Stream, streamObj.Param) {
+					return errors.Errorf("invalid normal stream=%v, param=%v, action=%v", streamObj.Stream, streamObj.Param, action)
 				}
 			}
 

@@ -48,6 +48,12 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
 			}
 
+			// Note that we need to update the auth secret, because we do not use room uuid as stream name.
+			roomPublishAuthKey := GenerateRoomPublishKey(room.StreamName)
+			if err := rdb.HSet(ctx, SRS_AUTH_SECRET, roomPublishAuthKey, room.Secret).Err(); err != nil {
+				return errors.Wrapf(err, "hset %v %v %v", SRS_AUTH_SECRET, roomPublishAuthKey, room.Secret)
+			}
+
 			ohttp.WriteData(ctx, w, r, &room)
 			logger.Tf(ctx, "srs live room create ok, title=%v, room=%v", title, room.String())
 			return nil
@@ -124,6 +130,12 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
 			}
 
+			// Note that we need to update the auth secret, because we do not use room uuid as stream name.
+			roomPublishAuthKey := GenerateRoomPublishKey(room.StreamName)
+			if err := rdb.HSet(ctx, SRS_AUTH_SECRET, roomPublishAuthKey, room.Secret).Err(); err != nil {
+				return errors.Wrapf(err, "hset %v %v %v", SRS_AUTH_SECRET, roomPublishAuthKey, room.Secret)
+			}
+
 			// Limit the changing rate for AI Assistant.
 			select {
 			case <-ctx.Done():
@@ -185,12 +197,12 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, rid string
+			var token, roomUUID string
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token    *string `json:"token"`
 				RoomUUID *string `json:"uuid"`
 			}{
-				Token: &token, RoomUUID: &rid,
+				Token: &token, RoomUUID: &roomUUID,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -200,18 +212,27 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, rid).Result(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hget %v %v", SRS_LIVE_ROOM, rid)
+			var room SrsLiveRoom
+			if r0, err := rdb.HGet(ctx, SRS_LIVE_ROOM, roomUUID).Result(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v %v", SRS_LIVE_ROOM, roomUUID)
 			} else if r0 == "" {
-				return errors.Errorf("live room %v not exists", rid)
+				return errors.Errorf("live room %v not exists", roomUUID)
+			} else if err = json.Unmarshal([]byte(r0), &room); err != nil {
+				return errors.Wrapf(err, "unmarshal %v %v", roomUUID, r0)
 			}
 
-			if err := rdb.HDel(ctx, SRS_LIVE_ROOM, rid).Err(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hdel %v %v", SRS_LIVE_ROOM, rid)
+			if err := rdb.HDel(ctx, SRS_LIVE_ROOM, roomUUID).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hdel %v %v", SRS_LIVE_ROOM, roomUUID)
+			}
+
+			// Note that we need to update the auth secret, because we do not use room uuid as stream name.
+			roomPublishAuthKey := GenerateRoomPublishKey(room.StreamName)
+			if err := rdb.HDel(ctx, SRS_AUTH_SECRET, roomPublishAuthKey).Err(); err != nil {
+				return errors.Wrapf(err, "hdel %v %v", SRS_AUTH_SECRET, roomPublishAuthKey)
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "srs remove room ok, uuid=%v", rid)
+			logger.Tf(ctx, "srs remove room ok, uuid=%v", roomUUID)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
