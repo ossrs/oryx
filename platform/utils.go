@@ -1603,7 +1603,7 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 			v.extraLogs = append(v.extraLogs, line)
 			return
 		}
-		if strings.Contains(line, "time=N/A") {
+		if strings.Contains(line, "time=N/A") || strings.Contains(line, "time=00:00:00.00") {
 			v.extraLogs = append(v.extraLogs, line)
 			return
 		}
