@@ -471,7 +471,7 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 
 	// Build output URL.
 	outputServer := strings.ReplaceAll(v.config.Server, "localhost", host)
-	if !strings.HasSuffix(outputServer, "/") && !strings.HasPrefix(v.config.Secret, "/") {
+	if !strings.HasSuffix(outputServer, "/") && !strings.HasPrefix(v.config.Secret, "/") && v.config.Secret != "" {
 		outputServer += "/"
 	}
 	outputURL := fmt.Sprintf("%v%v", outputServer, v.config.Secret)
@@ -510,7 +510,14 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 	if v.config.AudioChannels > 0 {
 		args = append(args, "-ac", fmt.Sprintf("%v", v.config.AudioChannels))
 	}
-	args = append(args, "-f", "flv", outputURL)
+	// If RTMP use flv, if SRT use mpegts, otherwise do not set.
+	if strings.HasPrefix(outputURL, "rtmp://") {
+		args = append(args, "-f", "flv")
+	} else if strings.HasPrefix(outputURL, "srt://") {
+		args = append(args, "-pes_payload_size", "0", "-f", "mpegts")
+	}
+	args = append(args, outputURL)
+	// Create the command object.
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
 	stderr, err := cmd.StderrPipe()

@@ -832,18 +832,10 @@ func (v VLiveConfigure) String() string {
 }
 
 func (v *VLiveConfigure) Update(u *VLiveConfigure) error {
-	if u.Platform != "" {
-		v.Platform = u.Platform
-	}
-	if u.Server != "" {
-		v.Server = u.Server
-	}
-	if u.Secret != "" {
-		v.Secret = u.Secret
-	}
-	if u.Label != "" {
-		v.Label = u.Label
-	}
+	v.Platform = u.Platform
+	v.Server = u.Server
+	v.Secret = u.Secret
+	v.Label = u.Label
 	v.Enabled = u.Enabled
 	v.Customed = u.Customed
 	v.Files = append([]*FFprobeSource{}, u.Files...)
@@ -1030,7 +1022,7 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 
 	// Build output URL.
 	outputServer := strings.ReplaceAll(v.config.Server, "localhost", host)
-	if !strings.HasSuffix(outputServer, "/") && !strings.HasPrefix(v.config.Secret, "/") {
+	if !strings.HasSuffix(outputServer, "/") && !strings.HasPrefix(v.config.Secret, "/") && v.config.Secret != "" {
 		outputServer += "/"
 	}
 	outputURL := fmt.Sprintf("%v%v", outputServer, v.config.Secret)
@@ -1043,9 +1035,6 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 	if input.Type != FFprobeSourceTypeStream {
 		args = append(args, "-stream_loop", "-1")
 	}
-	args = append(args, "-re",
-		"-fflags", "nobuffer", // Reduce the latency introduced by optional buffering.
-	)
 	// For RTSP stream source, always use TCP transport.
 	if strings.HasPrefix(input.Target, "rtsp://") {
 		args = append(args, "-rtsp_transport", "tcp")
@@ -1061,7 +1050,15 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 	} else {
 		args = append(args, "-i", input.Target)
 	}
-	args = append(args, "-c", "copy", "-f", "flv", outputURL)
+	args = append(args, "-c", "copy")
+	// If RTMP use flv, if SRT use mpegts, otherwise do not set.
+	if strings.HasPrefix(outputURL, "rtmp://") {
+		args = append(args, "-f", "flv")
+	} else if strings.HasPrefix(outputURL, "srt://") {
+		args = append(args, "-pes_payload_size", "0", "-f", "mpegts")
+	}
+	args = append(args, outputURL)
+	// Create the command object.
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
 	stderr, err := cmd.StderrPipe()
