@@ -429,7 +429,7 @@ function CameraStreamSelector({platform, cameraFiles, setCameraFiles}) {
   const checkStreamUrl = React.useCallback(async () => {
     if (!inputStream) return alert(t('plat.tool.stream3'));
     const isHTTP = inputStream.startsWith('http://') || inputStream.startsWith('https://');
-    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('rtsp://') && !isHTTP) return alert(t('plat.tool.stream2'));
+    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('srt://') && !inputStream.startsWith('rtsp://') && !isHTTP) return alert(t('plat.tool.stream2'));
     if (isHTTP && inputStream.indexOf('.flv') < 0 && inputStream.indexOf('.m3u8') < 0) return alert(t('plat.tool.stream4'));
 
     setSubmiting(true);

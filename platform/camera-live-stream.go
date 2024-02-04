@@ -242,7 +242,7 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 			}
 
 			// Check url if valid rtmp or rtsp or http-flv or https-flv or hls live url
-			if u.Scheme != "rtmp" && u.Scheme != "rtsp" && u.Scheme != "http" && u.Scheme != "https" {
+			if u.Scheme != "rtmp" && u.Scheme != "srt" && u.Scheme != "rtsp" && u.Scheme != "http" && u.Scheme != "https" {
 				return errors.Errorf("invalid url scheme %v", u.Scheme)
 			}
 			if u.Scheme == "http" || u.Scheme == "https" {
