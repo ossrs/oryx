@@ -511,7 +511,7 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 		args = append(args, "-ac", fmt.Sprintf("%v", v.config.AudioChannels))
 	}
 	// If RTMP use flv, if SRT use mpegts, otherwise do not set.
-	if strings.HasPrefix(outputURL, "rtmp://") {
+	if strings.HasPrefix(outputURL, "rtmp://") || strings.HasPrefix(outputURL, "rtmps://") {
 		args = append(args, "-f", "flv")
 	} else if strings.HasPrefix(outputURL, "srt://") {
 		args = append(args, "-pes_payload_size", "0", "-f", "mpegts")
