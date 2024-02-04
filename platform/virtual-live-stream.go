@@ -1052,7 +1052,7 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 	}
 	args = append(args, "-c", "copy")
 	// If RTMP use flv, if SRT use mpegts, otherwise do not set.
-	if strings.HasPrefix(outputURL, "rtmp://") {
+	if strings.HasPrefix(outputURL, "rtmp://") || strings.HasPrefix(outputURL, "rtmps://") {
 		args = append(args, "-f", "flv")
 	} else if strings.HasPrefix(outputURL, "srt://") {
 		args = append(args, "-pes_payload_size", "0", "-f", "mpegts")
