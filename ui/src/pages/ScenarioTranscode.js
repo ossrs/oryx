@@ -51,7 +51,7 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
   const [acodec, setAcodec] = React.useState(defaultConf.acodec || 'aac');
   const [achannels, setAchannels] = React.useState(defaultConf.achannels || 0);
   const [server, setServer] = React.useState(defaultConf.server || urls.rtmpServer);
-  const [secret, setSecret] = React.useState(defaultConf.secret || urls.transcodeStreamKey);
+  const [secret, setSecret] = React.useState((defaultConf.server || defaultConf.secret) ? defaultConf.secret : urls.transcodeStreamKey);
 
   const [task, setTask] = React.useState();
   const [taskInputUrls, setTaskInputUrls] = React.useState();
@@ -102,8 +102,7 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
     if (!acodec || acodec !== 'aac') return alert(`Invalid acodec ${acodec}, should be aac`);
     if (achannels === undefined || achannels === null || achannels === '') return alert(`Invalid achannels ${achannels}, should not empty`);
     if (![0, 1, 2].includes(achannels)) return alert(`Invalid achannels ${achannels}, should be in [0, 1, 2]`);
-    if (!server) return alert(`Invalid server ${server}`);
-    if (!secret) return alert(`Invalid key ${secret}`);
+    if (!server && !secret) return alert(`Invalid server ${server} and key ${secret}`);
 
     axios.post('/terraform/v1/ffmpeg/transcode/apply', {
       all: enabled, vcodec, acodec, vbitrate, abitrate, achannels: achannels, vprofile, vpreset,
