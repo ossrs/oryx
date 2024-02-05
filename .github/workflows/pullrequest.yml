@@ -416,7 +416,4 @@ jobs:
       - test-zh-installer
       - test-en-installer
     steps:
-      - uses: geekyeggo/delete-artifact@v2
-        with:
-          name: platform-cache
       - run: echo OK

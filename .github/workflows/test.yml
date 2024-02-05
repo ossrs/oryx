@@ -483,7 +483,4 @@ jobs:
       - test-bt-plugin
       - test-aapanel-plugin
     steps:
-      - uses: geekyeggo/delete-artifact@v2
-        with:
-          name: platform-cache
       - run: echo OK

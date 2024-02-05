@@ -365,10 +365,6 @@ jobs:
         run: |
           echo "SRS_DOMAIN=${{ needs.envs.outputs.SRS_DOMAIN }}" >> $GITHUB_ENV
           echo "SRS_DROPLET_EIP=${{ needs.run-test.outputs.SRS_DROPLET_EIP }}" >> $GITHUB_ENV
-      - name: Dispose artifacts
-        uses: geekyeggo/delete-artifact@v2
-        with:
-          name: platform-cache
       - name: Tips for Debugging
         run: |
           # We will handle the error by ourselves.
@@ -456,10 +452,6 @@ jobs:
             echo "Remove $DOMAIN_ID" &&
             doctl compute domain records delete ossrs.io $DOMAIN_ID -f
           fi
-      - name: Dispose artifacts
-        uses: geekyeggo/delete-artifact@v2
-        with:
-          name: platform-cache
       - run: echo OK
     runs-on: ubuntu-20.04
 
