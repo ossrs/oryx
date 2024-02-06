@@ -481,6 +481,7 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 
 	// Start FFmpeg process.
 	args := []string{}
+	args = append(args, "-re")
 	// For RTSP stream source, always use TCP transport.
 	if strings.HasPrefix(inputURL, "rtsp://") {
 		args = append(args, "-rtsp_transport", "tcp")
