@@ -1032,8 +1032,9 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 
 	// Start FFmpeg process.
 	args := []string{}
-	if input.Type != FFprobeSourceTypeStream {
+	if input.Type == FFprobeSourceTypeFile || input.Type == FFprobeSourceTypeUpload {
 		args = append(args, "-stream_loop", "-1")
+		args = append(args, "-re")
 	}
 	// For RTSP stream source, always use TCP transport.
 	if strings.HasPrefix(input.Target, "rtsp://") {

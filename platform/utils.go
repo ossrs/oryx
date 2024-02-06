@@ -1547,6 +1547,8 @@ func (v *FFmpegHeartbeat) Parse(u *url.URL) {
 // Polling the FFmpeg stderr and detect the error.
 func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 	pollingReadyCtx, cancelPollingReady := context.WithCancel(ctx)
+	logger.Tf(ctx, "FFmpeg: Start to polling heartbeat, start=%v, msd=%v, afs=%v",
+		v.starttime, v.MaxStreamDuration, v.AbnormalFastSpeed)
 
 	// Print the extra logs when quit.
 	go func() {
@@ -1584,6 +1586,7 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 	}()
 
 	// Handle the FFmpeg log, detect the error and update the heartbeat.
+	var firstNormalFrame bool
 	handleOutputOfFFmpeg := func(ffmpegLog string) {
 		// Filter the line of log.
 		line := strings.TrimSpace(ffmpegLog)
@@ -1603,7 +1606,7 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 			v.extraLogs = append(v.extraLogs, line)
 			return
 		}
-		if strings.Contains(line, "time=N/A") || strings.Contains(line, "time=00:00:00.00") {
+		if strings.Contains(line, "time=N/A") || strings.Contains(line, "speed=N/A") {
 			v.extraLogs = append(v.extraLogs, line)
 			return
 		}
@@ -1659,6 +1662,13 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 
 		v.update, v.parsedCount = time.Now(), v.parsedCount+1
 		v.line, v.timestamp, v.speed = line, timestamp, speed
+		if !firstNormalFrame {
+			firstNormalFrame = true
+			logger.Tf(ctx, "FFmpeg: First normal frame, parsed=%v, failed=%v,<%v>, speed=%v,%v,%v,<%v>, not-change=%v,<%v>, last=<%v>",
+				v.parsedCount, v.failedParsedCount, v.lastFailedParsed, v.failedSpeedCount,
+				v.veryFastSpeedCount, v.verySlowSpeedCount, v.lastFailedSpeed, v.notChangedCount, v.lastNotChanged,
+				v.line)
+		}
 
 		// Handle the routine heartbeat logs.
 		select {
