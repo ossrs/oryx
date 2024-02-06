@@ -180,9 +180,9 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					}
 
 					var pid int32
-					var inputUUID, frame, update string
+					var inputUUID, frame, update, starttime, ready string
 					if task := vLiveWorker.GetTask(config.Platform); task != nil {
-						pid, inputUUID, frame, update = task.queryFrame()
+						pid, inputUUID, frame, update, starttime, ready = task.queryFrame()
 					}
 
 					elem := map[string]interface{}{
@@ -195,6 +195,8 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 
 					if pid > 0 {
 						elem["source"] = inputUUID
+						elem["start"] = starttime
+						elem["ready"] = ready
 						elem["frame"] = map[string]string{
 							"log":    frame,
 							"update": update,
@@ -861,7 +863,11 @@ type VLiveTask struct {
 	// FFmpeg last frame.
 	frame string
 	// The last update time.
-	update time.Time
+	update *time.Time
+	// The task start time.
+	starttime *time.Time
+	// The first ready time.
+	firstReadyTime *time.Time
 
 	// The context for current task.
 	cancel context.CancelFunc
@@ -934,13 +940,30 @@ func (v *VLiveTask) updateFrame(frame string) {
 	defer v.lock.Unlock()
 
 	v.frame = frame
-	v.update = time.Now()
+
+	var now = time.Now()
+	v.update = &now
 }
 
-func (v *VLiveTask) queryFrame() (int32, string, string, string) {
+func (v *VLiveTask) queryFrame() (int32, string, string, string, string, string) {
 	v.lock.Lock()
 	defer v.lock.Unlock()
-	return v.PID, v.inputUUID, v.frame, v.update.Format(time.RFC3339)
+
+	ready := ""
+	if v.firstReadyTime != nil {
+		ready = v.firstReadyTime.Format(time.RFC3339)
+	}
+
+	update := ""
+	if v.update != nil {
+		update = v.update.Format(time.RFC3339)
+	}
+
+	starttime := ""
+	if v.starttime != nil {
+		starttime = v.starttime.Format(time.RFC3339)
+	}
+	return v.PID, v.inputUUID, v.frame, update, starttime, ready
 }
 
 func (v *VLiveTask) Initialize(ctx context.Context, w *VLiveWorker) error {
@@ -1029,6 +1052,10 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 
 	// Create a heartbeat to poll and manage the status of FFmpeg process.
 	heartbeat := NewFFmpegHeartbeat(cancel)
+	v.starttime, v.firstReadyTime = &heartbeat.starttime, nil
+	defer func() {
+		v.starttime = nil
+	}()
 
 	// Start FFmpeg process.
 	args := []string{}
@@ -1099,6 +1126,8 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 			select {
 			case <-ctx.Done():
 				return
+			case <-heartbeat.firstReadyCtx.Done():
+				v.firstReadyTime = &heartbeat.firstReadyTime
 			case frame := <-heartbeat.FrameLogs:
 				v.updateFrame(frame)
 			}

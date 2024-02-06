@@ -96,6 +96,8 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
               bilibili: t('plat.bl.title'),
               kuaishou: t('plat.ks.title')
             }[e.platform],
+            start: e.start ? moment(e.start) : null,
+            ready: e.ready ? moment(e.ready) : null,
             update: e.frame?.update ? moment(e.frame.update) : null,
             i,
           };
@@ -327,6 +329,8 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
                   <th>#</th>
                   <th>{t('plat.com.platform')}</th>
                   <th>{t('plat.com.status2')}</th>
+                  <th>Start</th>
+                  <th>Ready</th>
                   <th>{t('plat.com.update')}</th>
                   <th>{t('plat.com.source')}</th>
                   <th>{t('camera.extra')}</th>
@@ -345,6 +349,14 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
                         </Badge>
                       </td>
                       <td>
+                        {file.start && file.start?.format('YYYY-MM-DD')}<br/>
+                        {file.start && file.start?.format('HH:mm:ss')}
+                      </td>
+                      <td>
+                        {file.ready && file.ready?.format('YYYY-MM-DD')}<br/>
+                        {file.ready && file.ready?.format('HH:mm:ss')}
+                      </td>
+                      <td>
                         {file.update && file.update?.format('YYYY-MM-DD')}<br/>
                         {file.update && file.update?.format('HH:mm:ss')}
                       </td>
@@ -352,7 +364,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
                         {file.sourceObj?.name}<br/>
                         <CameraFileFormatInfo file={file.sourceObj}/>
                       </td>
-                      <td>{file?.extraAudio}</td>
+                      <td>{file?.extraAudio || 'OFF'}</td>
                       <td>{file.frame?.log}</td>
                     </tr>;
                   })

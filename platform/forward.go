@@ -173,9 +173,9 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 					}
 
 					var pid int32
-					var streamURL, frame, update string
+					var streamURL, frame, update, starttime, ready string
 					if task := v.GetTask(config.Platform); task != nil {
-						pid, streamURL, frame, update = task.queryFrame()
+						pid, streamURL, frame, update, starttime, ready = task.queryFrame()
 					}
 
 					elem := map[string]interface{}{
@@ -187,6 +187,8 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 
 					if pid > 0 {
 						elem["stream"] = streamURL
+						elem["start"] = starttime
+						elem["ready"] = ready
 						elem["frame"] = map[string]string{
 							"log":    frame,
 							"update": update,
@@ -380,7 +382,11 @@ type ForwardTask struct {
 	// FFmpeg last frame.
 	frame string
 	// The last update time.
-	update time.Time
+	update *time.Time
+	// The task start time.
+	starttime *time.Time
+	// The first ready time.
+	firstReadyTime *time.Time
 
 	// The context for current task.
 	cancel context.CancelFunc
@@ -453,13 +459,31 @@ func (v *ForwardTask) updateFrame(frame string) {
 	defer v.lock.Unlock()
 
 	v.frame = strings.TrimSpace(frame)
-	v.update = time.Now()
+
+	var now = time.Now()
+	v.update = &now
 }
 
-func (v *ForwardTask) queryFrame() (int32, string, string, string) {
+func (v *ForwardTask) queryFrame() (int32, string, string, string, string, string) {
 	v.lock.Lock()
 	defer v.lock.Unlock()
-	return v.PID, v.inputStreamURL, v.frame, v.update.Format(time.RFC3339)
+
+	ready := ""
+	if v.firstReadyTime != nil {
+		ready = v.firstReadyTime.Format(time.RFC3339)
+	}
+
+	update := ""
+	if v.update != nil {
+		update = v.update.Format(time.RFC3339)
+	}
+
+	starttime := ""
+	if v.starttime != nil {
+		starttime = v.starttime.Format(time.RFC3339)
+	}
+
+	return v.PID, v.inputStreamURL, v.frame, update, starttime, ready
 }
 
 func (v *ForwardTask) Initialize(ctx context.Context, w *ForwardWorker) error {
@@ -582,6 +606,10 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 
 	// Create a heartbeat to poll and manage the status of FFmpeg process.
 	heartbeat := NewFFmpegHeartbeat(cancel)
+	v.starttime, v.firstReadyTime = &heartbeat.starttime, nil
+	defer func() {
+		v.starttime = nil
+	}()
 
 	// Start FFmpeg process.
 	args := []string{}
@@ -649,6 +677,8 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 			select {
 			case <-ctx.Done():
 				return
+			case <-heartbeat.firstReadyCtx.Done():
+				v.firstReadyTime = &heartbeat.firstReadyTime
 			case frame := <-heartbeat.FrameLogs:
 				v.updateFrame(frame)
 			}

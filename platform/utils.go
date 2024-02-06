@@ -1472,6 +1472,11 @@ type FFmpegHeartbeat struct {
 	// The last update time.
 	update time.Time
 
+	// The first ready time.
+	firstReadyTime time.Time
+	// The last ready context.
+	firstReadyCtx context.Context
+
 	// Whether exit normally, the log is like:
 	//		Exiting normally, received signal 2.
 	exitingNormally bool
@@ -1587,6 +1592,8 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 
 	// Handle the FFmpeg log, detect the error and update the heartbeat.
 	var firstNormalFrame bool
+	var firstReadyCancel context.CancelFunc
+	v.firstReadyCtx, firstReadyCancel = context.WithCancel(context.Background())
 	handleOutputOfFFmpeg := func(ffmpegLog string) {
 		// Filter the line of log.
 		line := strings.TrimSpace(ffmpegLog)
@@ -1663,7 +1670,9 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 		v.update, v.parsedCount = time.Now(), v.parsedCount+1
 		v.line, v.timestamp, v.speed = line, timestamp, speed
 		if !firstNormalFrame {
-			firstNormalFrame = true
+			firstNormalFrame, v.firstReadyTime = true, time.Now()
+			firstReadyCancel()
+
 			logger.Tf(ctx, "FFmpeg: First normal frame, parsed=%v, failed=%v,<%v>, speed=%v,%v,%v,<%v>, not-change=%v,<%v>, last=<%v>",
 				v.parsedCount, v.failedParsedCount, v.lastFailedParsed, v.failedSpeedCount,
 				v.veryFastSpeedCount, v.verySlowSpeedCount, v.lastFailedSpeed, v.notChangedCount, v.lastNotChanged,

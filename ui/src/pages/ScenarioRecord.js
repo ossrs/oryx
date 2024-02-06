@@ -198,7 +198,7 @@ function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultP
   }, [t]);
 
   return (
-    <Accordion defaultActiveKey={activeKeys} alwaysOpen>
+    <Accordion defaultActiveKey={activeKeys}>
       <React.Fragment>
         {language === 'zh' ?
           <Accordion.Item eventKey="0">

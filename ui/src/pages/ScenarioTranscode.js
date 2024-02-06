@@ -117,7 +117,7 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
   }, [handleError, t, vbitrate, abitrate, achannels, vcodec, vprofile, vpreset, acodec, server, secret]);
 
   return (
-    <Accordion defaultActiveKey={[activeKey]} alwaysOpen>
+    <Accordion defaultActiveKey={[activeKey]}>
       <React.Fragment>
         {language === 'zh' ?
           <Accordion.Item eventKey="0">

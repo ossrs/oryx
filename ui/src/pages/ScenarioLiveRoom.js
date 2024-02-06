@@ -263,7 +263,7 @@ function ScenarioLiveRoomImpl({roomId, setRoomId}) {
 
   if (!room) return <Spinner animation="border" variant="primary" />;
   return <>
-    <Accordion defaultActiveKey={['2', '3']} alwaysOpen>
+    <Accordion defaultActiveKey={['2', '3']}>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('lr.room.nav')}</Accordion.Header>
         <Accordion.Body>

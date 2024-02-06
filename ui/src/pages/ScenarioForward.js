@@ -88,6 +88,8 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
             bilibili: t('plat.bl.title'),
             kuaishou: t('plat.ks.title')
           }[e.platform],
+          start: e.start ? moment(e.start) : null,
+          ready: e.ready ? moment(e.ready) : null,
           update: e.frame?.update ? moment(e.frame.update) : null,
           i,
         })));
@@ -122,7 +124,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
   }, [t, handleError, setSubmiting]);
 
   return (
-    <Accordion defaultActiveKey={[defaultActiveKey]} alwaysOpen>
+    <Accordion defaultActiveKey={[defaultActiveKey]}>
       <React.Fragment>
         {language === 'zh' ?
           <Accordion.Item eventKey="0">
@@ -299,6 +301,8 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
                   <th>#</th>
                   <th>{t('plat.com.platform')}</th>
                   <th>{t('plat.com.status2')}</th>
+                  <th>Start</th>
+                  <th>Ready</th>
                   <th>{t('plat.com.update')}</th>
                   <th>{t('plat.com.source')}</th>
                   <th>{t('plat.com.log')}</th>
@@ -315,6 +319,8 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
                           {file.enabled ? (file.frame ? t('plat.com.s0') : t('plat.com.s1')) : t('plat.com.s2')}
                         </Badge>
                       </td>
+                      <td>{file.start && `${file.start?.format('YYYY-MM-DD HH:mm:ss')}`}</td>
+                      <td>{file.ready && `${file.ready?.format('YYYY-MM-DD HH:mm:ss')}`}</td>
                       <td>{file.update && `${file.update?.format('YYYY-MM-DD HH:mm:ss')}`}</td>
                       <td>{file.stream}</td>
                       <td>{file.frame?.log}</td>

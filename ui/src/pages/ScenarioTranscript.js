@@ -230,7 +230,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   }, [handleError, setOverlayQueue]);
 
   return (
-    <Accordion defaultActiveKey={activeKey} alwaysOpen>
+    <Accordion defaultActiveKey={activeKey}>
       <React.Fragment>
         {language === 'zh' ?
           <Accordion.Item eventKey="0">
