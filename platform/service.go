@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -44,13 +45,21 @@ func (v *httpService) Close() error {
 	servers := v.servers
 	v.servers = nil
 
-	for _, server := range servers {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
+	var wg sync.WaitGroup
+	defer wg.Wait()
 
-		if err := server.Shutdown(ctx); err != nil {
-			logger.Tf(ctx, "ignore HTTP server shutdown err %v", err)
-		}
+	for index, server := range servers {
+		wg.Add(1)
+		go func(index int, server *http.Server) {
+			defer wg.Done()
+
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			logger.Tf(ctx, "service shutting down server #%v/%v: %v", index, len(v.servers), server.Addr)
+			err := server.Shutdown(ctx)
+			logger.Tf(ctx, "service shutdown ok, server #%v/%v: %v, err=%v", index, len(v.servers), server.Addr, err)
+		}(index, server)
 	}
 
 	return nil
@@ -59,6 +68,14 @@ func (v *httpService) Close() error {
 func (v *httpService) Run(ctx context.Context) error {
 	var wg sync.WaitGroup
 	defer wg.Wait()
+
+	// For debugging server, listen at 127.0.0.1:22022
+	go func() {
+		dh := http.NewServeMux()
+		handleDebuggingGoroutines(context.Background(), dh)
+		server := &http.Server{Addr: "127.0.0.1:22022", Handler: dh}
+		server.ListenAndServe()
+	}()
 
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -401,6 +418,16 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	})
 
 	return nil
+}
+
+func handleDebuggingGoroutines(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/debug/goroutines"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		buf := make([]byte, 1<<16)
+		stacklen := runtime.Stack(buf, true)
+		fmt.Fprintf(w, "%s", buf[:stacklen])
+	})
 }
 
 func handleHostVersions(ctx context.Context, handler *http.ServeMux) {

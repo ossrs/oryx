@@ -119,6 +119,13 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		}
 	}
 
+	// Report about the camera streaming.
+	if r0, err := rdb.HLen(ctx, SRS_CAMERA_TASK).Result(); err != nil && err != redis.Nil {
+		return nil, errors.Wrapf(err, "hlen %v", SRS_CAMERA_TASK)
+	} else if r0 > 0 {
+		params["cam"] = fmt.Sprintf("%v", r0)
+	}
+
 	// Report about active streams.
 	if r0, err := rdb.HGet(ctx, SRS_STAT_COUNTER, "publish").Int64(); err != nil && err != redis.Nil {
 		return nil, errors.Wrapf(err, "hget %v publish", SRS_STAT_COUNTER)
