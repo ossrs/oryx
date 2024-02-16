@@ -873,6 +873,7 @@ The ports allocated:
 | ------ |---------------------------------------------------| --------- |--------------------------------------------------------------------------------------------------------------------------------------------------|
 | SRS | 1935, 1985, 8080,<br/> 8088, 1990, 554,<br/> 8936 | 8000, 8935, 10080,<br/> 1989 | See [SRS ports](https://github.com/ossrs/srs/blob/develop/trunk/doc/Resources.md#ports)                                                          |
 | platform | 2022                                              |  - | Mount at `/mgmt/`, `/terraform/v1/mgmt/`, `/terraform/v1/hooks/`, `/terraform/v1/ffmpeg/` and `/terraform/v1/tencent/` |
+| debugging | 22022 | - | Mount at `/terraform/v1/debug/goroutines` |
 
 > Note: FFmpeg(2019), TencentCloud(2020), Hooks(2021), Mgmt(2022), Platform(2024) has been migrated to platform(2024).
 
