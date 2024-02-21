@@ -124,6 +124,7 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "update stage")
 			}
 
+			// TODO: FIXME: Should load room from redis and merge the fields.
 			if b, err := json.Marshal(room); err != nil {
 				return errors.Wrapf(err, "marshal room")
 			} else if err := rdb.HSet(ctx, SRS_LIVE_ROOM, room.UUID, string(b)).Err(); err != nil {

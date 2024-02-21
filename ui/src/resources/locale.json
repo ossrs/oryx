@@ -573,7 +573,7 @@
           "file": "指定服务器文件",
           "file2": "文件必须在 /data 目录下面",
           "file3": "请输入文件路径",
-          "file4": "文件必须是 mp4/flv/ts 格式",
+          "file4": "文件必须是特定格式",
           "file5": "检查服务器文件成功",
           "file6": "更新直播源为服务器文件成功",
           "file7": "请输入文件路径",
@@ -602,11 +602,67 @@
         "tip": "将文件转直播流",
         "source2": "该直播就是将视频源(文件/流)转换成直播流",
         "s3": "没有流。请开启直播间后，等待大约30秒左右，列表会自动更新"
+      },
+      "dubb": {
+        "title": "视频翻译",
+        "create": {
+          "title": "创建翻译项目",
+          "name": "项目名称",
+          "name2": "请输入翻译项目名称",
+          "projects": "翻译项目列表",
+          "delete": "删除后不可恢复，确认删除翻译项目吗？",
+          "empty": "暂无翻译项目"
+        },
+        "setting": {
+          "title": "视频翻译设置",
+          "basic": "基本设置",
+          "asr": "语音识别设置",
+          "trans": "多语言翻译设置",
+          "rephrase": "改进翻译文本",
+          "tts": "语音合成设置"
+        },
+        "studio": {
+          "title": "Dubbing Studio",
+          "source": "视频源处理",
+          "start": "开始翻译",
+          "mpre": "合并前一组",
+          "mpost": "合并后一组",
+          "rephrase": "改进翻译",
+          "download": "下载翻译视频"
+        }
       }
     }
   },
   "en": {
     "translation": {
+      "dubb": {
+        "studio": {
+          "download": "Download Dubbing Video",
+          "rephrase": "Rephrase",
+          "mpost": "Merge next",
+          "mpre": "Merge previous",
+          "start": "Start Dubbing",
+          "source": "Video Source Processing",
+          "title": "Dubbing Studio"
+        },
+        "setting": {
+          "tts": "TTS Settings",
+          "rephrase": "Improve Translation",
+          "trans": "Multilingual Translation",
+          "asr": "ASR Settings",
+          "basic": "Basic Settings",
+          "title": "Dubbing Settings"
+        },
+        "create": {
+          "empty": "No dubbing project",
+          "delete": "Once deleted, it cannot be restored. Are you sure you want to delete the dubbing project?",
+          "projects": "Dubbing Projects",
+          "name2": "Please enter the name of the dubbing project",
+          "name": "Project Name",
+          "title": "Create Dubbing Project"
+        },
+        "title": "Dubbing"
+      },
       "vle": {
         "s3": "There is no stream. Please start the live event and wait for about 30 seconds, the list will update automatically.",
         "tip": "Convert file to live stream",
@@ -636,7 +692,7 @@
           "file7": "Please input file path",
           "file6": "Setup the live file ok",
           "file5": "Check server file ok",
-          "file4": "The file must be in mp4/flv/ts format.",
+          "file4": "The file must be in formats",
           "file3": "Please input file path",
           "file2": "The file must be in the /data directory.",
           "file": "Use server file",

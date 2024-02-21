@@ -1,0 +1,42 @@
+
+.ai-dubbing-audio {
+  width: 100%;
+  height: 15rem;
+}
+
+.ai-dubbing-video {
+  width: 100%;
+  height: 30rem;
+}
+
+.ai-dubbing-spinner {
+  vertical-align: middle;
+}
+
+.ai-dubbing-workspace {
+  min-height: 55rem;
+  max-height: 55rem;
+  overflow: scroll;
+}
+
+.ai-dubbing-group {
+  margin-bottom: 0.3rem;
+}
+
+.ai-dubbing-command {
+  cursor: pointer;
+  user-select: none;
+}
+
+.ai-dubbing-alert {
+  margin-bottom: 0.08rem;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+}
+
+.ai-dubbing-button {
+  padding-top: 0.1rem;
+  padding-bottom: 0.1rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}

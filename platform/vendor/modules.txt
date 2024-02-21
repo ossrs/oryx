@@ -7,6 +7,15 @@ github.com/clbanning/mxj
 # github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f
 ## explicit
 github.com/dgryski/go-rendezvous
+# github.com/go-audio/audio v1.0.0
+## explicit
+github.com/go-audio/audio
+# github.com/go-audio/riff v1.0.0
+## explicit; go 1.12
+github.com/go-audio/riff
+# github.com/go-audio/wav v1.1.0
+## explicit; go 1.13
+github.com/go-audio/wav
 # github.com/go-redis/redis/v8 v8.11.5
 ## explicit; go 1.17
 github.com/go-redis/redis/v8

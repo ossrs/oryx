@@ -13,7 +13,6 @@ import (
 	"os/exec"
 	"path"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -91,57 +90,6 @@ func (v *openaiASRService) RequestASR(ctx context.Context, inputFile, language, 
 	}
 
 	return &ASRResult{Text: resp.Text, Duration: time.Duration(resp.Duration * float64(time.Second))}, nil
-}
-
-func ffprobeAudio(ctx context.Context, filename string) (duration float64, bitrate int, err error) {
-	args := []string{
-		"-show_error", "-show_private_data", "-v", "quiet", "-find_stream_info", "-print_format", "json",
-		"-show_format",
-	}
-	args = append(args, "-i", filename)
-
-	stdout, err := exec.CommandContext(ctx, "ffprobe", args...).Output()
-	if err != nil {
-		err = errors.Wrapf(err, "probe %v", filename)
-		return
-	}
-
-	type VLiveFileFormat struct {
-		Starttime string `json:"start_time"`
-		Duration  string `json:"duration"`
-		Bitrate   string `json:"bit_rate"`
-		Streams   int32  `json:"nb_streams"`
-		Score     int32  `json:"probe_score"`
-		HasVideo  bool   `json:"has_video"`
-		HasAudio  bool   `json:"has_audio"`
-	}
-
-	format := struct {
-		Format VLiveFileFormat `json:"format"`
-	}{}
-	if err = json.Unmarshal([]byte(stdout), &format); err != nil {
-		err = errors.Wrapf(err, "parse format %v", stdout)
-		return
-	}
-
-	var fv float64
-	if fv, err = strconv.ParseFloat(format.Format.Duration, 64); err != nil {
-		err = errors.Wrapf(err, "parse duration %v", format.Format.Duration)
-		return
-	} else {
-		duration = fv
-	}
-
-	var iv int64
-	if iv, err = strconv.ParseInt(format.Format.Bitrate, 10, 64); err != nil {
-		err = errors.Wrapf(err, "parse bitrate %v", format.Format.Bitrate)
-		return
-	} else {
-		bitrate = int(iv)
-	}
-
-	logger.Tf(ctx, "FFprobe input=%v, duration=%v, bitrate=%v", filename, duration, bitrate)
-	return
 }
 
 type openaiChatService struct {
@@ -1274,6 +1222,7 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, sreq *Stage
 }
 
 func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
+	// TODO: FIXME: Should use relative path, never expose absolute path to client.
 	aiTalkWorkDir = path.Join(conf.Pwd, "containers/data/ai-talk")
 	aiTalkExampleDir = path.Join(conf.Pwd, "containers/conf")
 	logger.Tf(ctx, "AI-Talk init workDir=%v, examples=%v", aiTalkWorkDir, aiTalkExampleDir)

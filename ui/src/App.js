@@ -7,6 +7,7 @@ import React from 'react';
 import axios from "axios";
 import './App.css';
 import './ai-talk.css';
+import './ai-dubbing.css';
 import {Container} from "react-bootstrap";
 import {
   BrowserRouter,

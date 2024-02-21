@@ -198,6 +198,13 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		}
 	}
 
+	// Report about dubbing.
+	if r0, err := rdb.HLen(ctx, SRS_DUBBING_PROJECTS).Result(); err != nil && err != redis.Nil {
+		return nil, errors.Wrapf(err, "hlen %v", SRS_DUBBING_PROJECTS)
+	} else if r0 > 0 {
+		params["dub"] = fmt.Sprintf("%v", r0)
+	}
+
 	// Report about HLS high performance feature.
 	if r0, err := rdb.HGet(ctx, SRS_HP_HLS, "noHlsCtx").Result(); err != nil && err != redis.Nil {
 		return nil, errors.Wrapf(err, "hget %v noHlsCtx", SRS_HP_HLS)

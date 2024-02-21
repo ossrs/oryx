@@ -19,6 +19,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"regexp"
 	"runtime"
@@ -298,6 +299,9 @@ const (
 	SRS_CONTAINER_DISABLED = "SRS_CONTAINER_DISABLED"
 	// For live stream and rooms.
 	SRS_LIVE_ROOM = "SRS_LIVE_ROOM"
+	// For dubbing service.
+	SRS_DUBBING_PROJECTS = "SRS_DUBBING_PROJECTS"
+	SRS_DUBBING_TASKS    = "SRS_DUBBING_TASKS"
 	// About authentication.
 	SRS_AUTH_SECRET    = "SRS_AUTH_SECRET"
 	SRS_SECRET_PUBLISH = "SRS_SECRET_PUBLISH"
@@ -343,12 +347,16 @@ const FFprobeSourceTypeStream FFprobeSourceType = "stream"
 // For vLive upload directory.
 var dirUploadPath = path.Join(".", "upload")
 var dirVLivePath = path.Join(".", "vlive")
+var dirDubbingPath = path.Join(".", "dub")
 
 // For SRS Stack to use the files.
 const serverDataDirectory = "/data"
 
-// The files allowed to use by SRS Stack.
+// The video files allowed to use by SRS Stack.
 var serverAllowVideoFiles []string = []string{".mp4", ".flv", ".ts"}
+
+// The audio files allowed to use by SRS Stack.
+var serverAllowAudioFiles []string = []string{".mp3", ".aac", ".m4a"}
 
 // rdb is a global redis client object.
 var rdb *redis.Client
@@ -1442,6 +1450,8 @@ func (v *FFprobeAudio) String() string {
 type FFprobeSource struct {
 	// The file name.
 	Name string `json:"name"`
+	// The file path.
+	Path string `json:"path"`
 	// The size in bytes.
 	Size uint64 `json:"size"`
 	// The file UUID.
@@ -1459,8 +1469,8 @@ type FFprobeSource struct {
 }
 
 func (v *FFprobeSource) String() string {
-	return fmt.Sprintf("name=%v, size=%v, uuid=%v, target=%v, format=(%v), video=(%v), audio=(%v)",
-		v.Name, v.Size, v.UUID, v.Target, v.Format, v.Video, v.Audio,
+	return fmt.Sprintf("name=%v, path=%v, size=%v, uuid=%v, target=%v, format=(%v), video=(%v), audio=(%v)",
+		v.Name, v.Path, v.Size, v.UUID, v.Target, v.Format, v.Video, v.Audio,
 	)
 }
 
@@ -1760,5 +1770,114 @@ func ParseFFmpegCycleLog(line string) (timestamp, speed string, err error) {
 		return
 	}
 	timestamp, speed = matches[1], matches[3]
+	return
+}
+
+// MediaFormat is the format object in ffprobe response.
+type MediaFormat struct {
+	Starttime string  `json:"start_time"`
+	Duration  float64 `json:"duration"`
+	Bitrate   int64   `json:"bit_rate"`
+	Streams   int32   `json:"nb_streams"`
+	Score     int32   `json:"probe_score"`
+	HasVideo  bool    `json:"has_video"`
+	HasAudio  bool    `json:"has_audio"`
+}
+
+func (v *MediaFormat) FromFFprobeFormat(format *FFprobeFormat) error {
+	v.Starttime = format.Starttime
+	v.Streams = format.Streams
+	v.Score = format.Score
+	v.HasVideo = format.HasVideo
+	v.HasAudio = format.HasAudio
+
+	if fv, err := strconv.ParseFloat(format.Duration, 64); err != nil {
+		return errors.Wrapf(err, "parse duration %v of %v", format.Duration, format)
+	} else {
+		v.Duration = fv
+	}
+
+	if iv, err := strconv.ParseInt(format.Bitrate, 10, 64); err != nil {
+		return errors.Wrapf(err, "parse bitrate %v of %v", format.Bitrate, format)
+	} else {
+		v.Bitrate = iv
+	}
+
+	return nil
+}
+
+func (v *MediaFormat) String() string {
+	return fmt.Sprintf("starttime=%v, duration=%v, bitrate=%v, streams=%v, score=%v, video=%v, audio=%v",
+		v.Starttime, v.Duration, v.Bitrate, v.Streams, v.Score, v.HasVideo, v.HasAudio,
+	)
+}
+
+// FFprobeFileFormat use ffprobe to probe the file, return the format of file.
+func FFprobeFileFormat(ctx context.Context, filename string) (format *MediaFormat, video *FFprobeVideo, audio *FFprobeAudio, err error) {
+	args := []string{
+		"-show_error", "-show_private_data", "-v", "quiet", "-find_stream_info", "-print_format", "json",
+		"-show_format", "-show_streams",
+	}
+	args = append(args, "-i", filename)
+
+	var stdout []byte
+	stdout, err = exec.CommandContext(ctx, "ffprobe", args...).Output()
+	if err != nil {
+		err = errors.Wrapf(err, "probe %v", filename)
+		return
+	}
+
+	// Parse the format.
+	ffprobeFormat := struct {
+		Format FFprobeFormat `json:"format"`
+	}{}
+	if err = json.Unmarshal([]byte(stdout), &ffprobeFormat); err != nil {
+		err = errors.Wrapf(err, "parse format %v", stdout)
+		return
+	}
+
+	// Parse video streams.
+	videos := struct {
+		Streams []FFprobeVideo `json:"streams"`
+	}{}
+	if err = json.Unmarshal([]byte(stdout), &videos); err != nil {
+		err = errors.Wrapf(err, "parse video streams %v", stdout)
+		return
+	}
+	var matchVideo *FFprobeVideo
+	for _, video := range videos.Streams {
+		if video.CodecType == "video" {
+			matchVideo = &video
+			ffprobeFormat.Format.HasVideo = true
+			break
+		}
+	}
+
+	// Parse audio streams.
+	audios := struct {
+		Streams []FFprobeAudio `json:"streams"`
+	}{}
+	if err = json.Unmarshal([]byte(stdout), &audios); err != nil {
+		err = errors.Wrapf(err, "parse audio streams %v", stdout)
+		return
+	}
+	var matchAudio *FFprobeAudio
+	for _, audio := range audios.Streams {
+		if audio.CodecType == "audio" {
+			matchAudio = &audio
+			ffprobeFormat.Format.HasAudio = true
+			break
+		}
+	}
+
+	// Parse to the format.
+	format = &MediaFormat{}
+	if err = format.FromFFprobeFormat(&ffprobeFormat.Format); err != nil {
+		err = errors.Wrapf(err, "from ffprobe format %v", ffprobeFormat.Format)
+		return
+	}
+
+	video = matchVideo
+	audio = matchAudio
 	return
 }

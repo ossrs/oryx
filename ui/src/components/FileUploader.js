@@ -5,14 +5,14 @@
 //
 import React from "react";
 import {useErrorHandler} from "react-error-boundary";
-import {Tools} from "../utils";
+import {MediaSource, Tools} from "../utils";
 import {useTranslation} from "react-i18next";
 import moment from "moment";
 import {Button, Col, Form, Row, ListGroup} from "react-bootstrap";
 import axios from "axios";
 
 export default function FileUploader({onFilesUploaded}) {
-  const accept = React.useMemo(() => ['.mp4', '.flv', '.ts'], []);
+  const accept = React.useMemo(() => MediaSource.exts, []);
   const multiple = React.useMemo(() => false, []);
 
   const handleError = useErrorHandler();

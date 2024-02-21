@@ -28,8 +28,10 @@ export default function ScenarioLiveRoom() {
     setRoomId(id);
   }, [searchParams, setRoomId]);
 
-  if (roomId) return <ScenarioLiveRoomImpl {...{setRoomId, roomId}} />;
-  return <ScenarioLiveRoomList {...{setRoomId}} />;
+  return <>
+    {!roomId && <ScenarioLiveRoomList {...{setRoomId}} />}
+    {roomId && <ScenarioLiveRoomImpl {...{setRoomId, roomId}} />}
+  </>;
 }
 
 function ScenarioLiveRoomList({setRoomId}) {
@@ -184,7 +186,7 @@ function ScenarioLiveRoomList({setRoomId}) {
               <th>UUID</th>
               <th>Title</th>
               <th>Stream</th>
-              <th>Created At</th>
+              <th>Created</th>
               <th>Actions</th>
             </tr>
             </thead>
@@ -226,9 +228,9 @@ function ScenarioLiveRoomList({setRoomId}) {
 function ScenarioLiveRoomImpl({roomId, setRoomId}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
-
   const [requesting, setRequesting] = React.useState(false);
   const [room, setRoom] = React.useState();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   React.useEffect(() => {
     axios.post('/terraform/v1/live/room/query', {
@@ -267,7 +269,10 @@ function ScenarioLiveRoomImpl({roomId, setRoomId}) {
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('lr.room.nav')}</Accordion.Header>
         <Accordion.Body>
-          <Button variant="link" onClick={() => setRoomId(null)}>Back to Rooms</Button>
+          <Button variant="link" onClick={() => {
+            setRoomId(null);
+            searchParams.delete('roomid'); setSearchParams(searchParams);
+          }}>Back to Rooms</Button>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">

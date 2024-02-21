@@ -190,7 +190,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Control as="input" defaultValue={wxLabel} onChange={(e) => setWxLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSource platform='wx' cameraFiles={wxFiles} setCameraFiles={setWxFiles} />
+              <ChooseCameraSource platform='wx' cameraFiles={wxFiles} setCameraFiles={setWxFiles} />
               <CameraExtraAudioTrack extraAudio={wxExtraAudio} setExtraAudio={setWxExtraAudio} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
@@ -236,7 +236,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Control as="input" defaultValue={bilibiliLabel} onChange={(e) => setBilibiliLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSource platform='bilibili' cameraFiles={bilibiliFiles} setCameraFiles={setBilibiliFiles} />
+              <ChooseCameraSource platform='bilibili' cameraFiles={bilibiliFiles} setCameraFiles={setBilibiliFiles} />
               <CameraExtraAudioTrack extraAudio={bilibiliExtraAudio} setExtraAudio={setBilibiliExtraAudio} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
@@ -282,7 +282,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Control as="input" defaultValue={kuaishouLabel} onChange={(e) => setKuaishouLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSource platform='kuaishou' cameraFiles={kuaishouFiles} setCameraFiles={setKuaishouFiles} />
+              <ChooseCameraSource platform='kuaishou' cameraFiles={kuaishouFiles} setCameraFiles={setKuaishouFiles} />
               <CameraExtraAudioTrack extraAudio={kuaishouExtraAudio} setExtraAudio={setKuaishouExtraAudio} />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
@@ -418,7 +418,7 @@ function CameraExtraAudioTrack({extraAudio, setExtraAudio}) {
   </>;
 }
 
-function ChooseVideoSource({platform, cameraFiles, setCameraFiles}) {
+function ChooseCameraSource({platform, cameraFiles, setCameraFiles}) {
   const {t} = useTranslation();
 
   return (<>

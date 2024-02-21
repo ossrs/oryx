@@ -947,13 +947,25 @@ Platform, with token authentication:
 * `/terraform/v1/ai-talk/subscribe/remove` AI-Talk: Remove the popout audio responses.
 * `/terraform/v1/ai-talk/user/query` AI-Talk: Query the user information.
 * `/terraform/v1/ai-talk/user/update` AI-Talk: Update the user information.
+* `/terraform/v1/dubbing/create` Dubbing: Create a dubbing project.
+* `/terraform/v1/dubbing/list` Dubbing: List all dubbing projects.
+* `/terraform/v1/dubbing/remove` Dubbing: Remove a dubbing project.
+* `/terraform/v1/dubbing/query` Dubbing: Query a dubbing project.
+* `/terraform/v1/dubbing/update` Dubbing: Update a dubbing project.
+* `/terraform/v1/dubbing/play` Dubbing: Play the dubbing audio or video.
+* `/terraform/v1/dubbing/export` Dubbing: Generate and download the dubbing audio artifact.
+* `/terraform/v1/dubbing/task-start` Dubbing: Start the work task for dubbing.
+* `/terraform/v1/dubbing/task-query` Dubbing: Query the work task for dubbing.
+* `/terraform/v1/dubbing/task-tts` Dubbing: Play the TTS audio for dubbing.
+* `/terraform/v1/dubbing/task-rephrase` Dubbing: Rephrase and regenerate TTS of the dubbing group.
+* `/terraform/v1/dubbing/task-merge`: Dubbing: Merge the dubbing group to previous or next group.
 * `/terraform/v1/ffmpeg/forward/secret` FFmpeg: Setup the forward secret to live streaming platforms.
 * `/terraform/v1/ffmpeg/forward/streams` FFmpeg: Query the forwarding streams.
 * `/terraform/v1/ffmpeg/vlive/secret` Setup the Virtual Live streaming secret.
 * `/terraform/v1/ffmpeg/vlive/streams` Query the Virtual Live streaming streams.
 * `/terraform/v1/ffmpeg/vlive/source` Setup Virtual Live source file.
-* `/terraform/v1/ffmpeg/vlive/upload/` Source: Upload Virtual Live source file.
-* `/terraform/v1/ffmpeg/vlive/server` Source: Use server file as Virtual Live source.
+* `/terraform/v1/ffmpeg/vlive/upload/` Source: Upload Virtual Live or Dubbing source file.
+* `/terraform/v1/ffmpeg/vlive/server` Source: Use server file as Virtual Live or Dubbing source.
 * `/terraform/v1/ffmpeg/vlive/stream-url` Source: Use stream URL as Virtual Live source.
 * `/terraform/v1/ffmpeg/camera/secret` Setup the IP camera streaming secret.
 * `/terraform/v1/ffmpeg/camera/streams` Query the IP camera streaming streams.
@@ -1109,6 +1121,14 @@ type CameraConfigure struct {
 }
 ```
 
+Or use the format:
+
+```go
+type CameraConfigure struct {
+    ExtraAudio string `json:"extra_audio"`
+}
+```
+
 Generally we follow this guide except for some legacy code.
 
 ## Changelog
@@ -1116,9 +1136,8 @@ Generally we follow this guide except for some legacy code.
 The following are the update records for the SRS Stack server.
 
 * v5.14:
-    * Room: Fix the empty room UI sort and secret bug. v5.14.1
-    * FFmpeg: Fix restart bug, support ingest SRT protocol. v5.14.1
-    * VLive: Fix the re bug for file. v5.14.1
+    * Merge features and bugfix from releases. v5.14.1
+    * Dubbing: Support VoD dubbing for multiple languages. v5.14.2
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2

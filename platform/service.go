@@ -119,7 +119,7 @@ func (v *httpService) Run(ctx context.Context) error {
 		go func() {
 			defer wg.Done()
 			<-ctx.Done()
-			logger.Tf(ctx, "shutting down HTTP server...")
+			logger.Tf(ctx, "shutting down HTTP server, addr=%v", addr)
 			v.Close()
 		}()
 
@@ -130,7 +130,7 @@ func (v *httpService) Run(ctx context.Context) error {
 			if err := server.ListenAndServe(); err != nil && ctx.Err() != context.Canceled {
 				r0 = errors.Wrapf(err, "listen %v", addr)
 			}
-			logger.Tf(ctx, "HTTP server is done")
+			logger.Tf(ctx, "HTTP server is done, addr=%v", addr)
 		}()
 	}
 
@@ -149,7 +149,7 @@ func (v *httpService) Run(ctx context.Context) error {
 		go func() {
 			defer wg.Done()
 			<-ctx.Done()
-			logger.Tf(ctx, "shutting down HTTP server...")
+			logger.Tf(ctx, "shutting down HTTP server, addr=%v", addr)
 			v.Close()
 		}()
 
@@ -160,7 +160,7 @@ func (v *httpService) Run(ctx context.Context) error {
 			if err := server.ListenAndServe(); err != nil && ctx.Err() != context.Canceled {
 				r1 = errors.Wrapf(err, "listen %v", addr)
 			}
-			logger.Tf(ctx, "HTTP server is done")
+			logger.Tf(ctx, "HTTP server is done, addr=%v", addr)
 		}()
 	}
 
@@ -187,7 +187,7 @@ func (v *httpService) Run(ctx context.Context) error {
 		go func() {
 			defer wg.Done()
 			<-ctx.Done()
-			logger.Tf(ctx, "shutting down HTTPS server...")
+			logger.Tf(ctx, "shutting down HTTPS server, addr=%v", addr)
 			v.Close()
 		}()
 
@@ -198,7 +198,7 @@ func (v *httpService) Run(ctx context.Context) error {
 			if err := server.ListenAndServeTLS("", ""); err != nil && ctx.Err() != context.Canceled {
 				r2 = errors.Wrapf(err, "listen %v", addr)
 			}
-			logger.Tf(ctx, "HTTPS server is done")
+			logger.Tf(ctx, "HTTPS server is done, addr=%v", addr)
 		}()
 	}
 
@@ -244,6 +244,10 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 
 	if err := handleLiveRoomService(ctx, handler); err != nil {
 		return errors.Wrapf(err, "handle live room")
+	}
+
+	if err := handleDubbingService(ctx, handler); err != nil {
+		return errors.Wrapf(err, "handle dubbing")
 	}
 
 	if err := handleAITalkService(ctx, handler); err != nil {

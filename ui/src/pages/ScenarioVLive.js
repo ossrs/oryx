@@ -4,15 +4,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
 import React from "react";
-import {Accordion, Badge, Button, Col, Form, InputGroup, ListGroup, Row, Table} from "react-bootstrap";
+import {Accordion, Badge, Button, Col, Form, ListGroup, Row, Table} from "react-bootstrap";
 import {Token} from "../utils";
 import axios from "axios";
 import moment from "moment";
 import {useErrorHandler} from "react-error-boundary";
 import {useSrsLanguage} from "../components/LanguageSwitch";
-import FileUploader from "../components/FileUploader";
 import {useTranslation} from "react-i18next";
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
+import ChooseVideoSource, {VLiveFileFormatInfo} from "../components/VideoSourceSelector";
 
 export default function ScenarioVLive() {
   const [init, setInit] = React.useState();
@@ -187,7 +187,7 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Control as="input" defaultValue={wxLabel} onChange={(e) => setWxLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSource platform='wx' vLiveFiles={wxFiles} setVLiveFiles={setWxFiles} />
+              <ChooseVideoSource platform='wx' vLiveFiles={wxFiles} setVLiveFiles={setWxFiles} endpoint='vlive' />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>{wxCustom ? t('plat.com.server') : t('plat.com.server2')}</Form.Label>
@@ -232,7 +232,7 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Control as="input" defaultValue={bilibiliLabel} onChange={(e) => setBilibiliLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSource platform='bilibili' vLiveFiles={bilibiliFiles} setVLiveFiles={setBilibiliFiles} />
+              <ChooseVideoSource platform='bilibili' vLiveFiles={bilibiliFiles} setVLiveFiles={setBilibiliFiles} endpoint='vlive' />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>{bilibiliCustom ? t('plat.com.server') : t('plat.com.server2')}</Form.Label>
@@ -277,7 +277,7 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
               <Form.Control as="input" defaultValue={kuaishouLabel} onChange={(e) => setKuaishouLabel(e.target.value)}/>
             </Form.Group>
             <SrsErrorBoundary>
-              <ChooseVideoSource platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} />
+              <ChooseVideoSource platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} endpoint='vlive' />
             </SrsErrorBoundary>
             <Form.Group className="mb-3">
               <Form.Label>{kuaishouCustom ? t('plat.com.server') : t('plat.com.server2')}</Form.Label>
@@ -370,251 +370,5 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
       </Accordion.Item>
     </Accordion>
   );
-}
-
-function VLiveFileList({files, onChangeFiles}) {
-  const {t} = useTranslation();
-  return (
-    <Row>
-      <Col xs='auto'>
-        <ListGroup>
-          {files.map((f, index) => {
-            return <ListGroup.Item key={index}>
-              {f.name} &nbsp;
-              <VLiveFileFormatInfo file={f}/> &nbsp;
-              <VLiveFileVideoInfo file={f}/> &nbsp;
-              <VLiveFileAudioInfo file={f}/>
-            </ListGroup.Item>;
-          })}
-        </ListGroup>
-      </Col>
-      <Col>
-        <Button variant="primary" type="button" onClick={onChangeFiles}>{t('helper.changeFiles')}</Button>
-      </Col>
-    </Row>
-  );
-}
-
-function ChooseVideoSource({platform, vLiveFiles, setVLiveFiles}) {
-  const {t} = useTranslation();
-
-  const [checkType, setCheckType] = React.useState('upload');
-  React.useEffect(() => {
-    if (vLiveFiles?.length) {
-      const type = vLiveFiles[0].type;
-      if (type === 'upload' || type === 'file' || type === 'stream') {
-        setCheckType(type);
-      }
-    }
-  }, [vLiveFiles]);
-  return (<>
-    <Form.Group className="mb-3">
-      <Form.Label>{t('plat.tool.source')}</Form.Label>
-      <Form.Text> * {t('vle.source2')}</Form.Text>
-      <Form.Check type="radio" label={t('plat.tool.upload')} id={'upload-' + platform} checked={checkType === 'upload'}
-        name={'chooseSource-' + platform} onChange={e => setCheckType('upload')}
-      />
-      {checkType === 'upload' && 
-      <SrsErrorBoundary>
-        <VLiveFileUploader platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles} />
-      </SrsErrorBoundary>
-      }
-    </Form.Group>
-    <Form.Group className="mb-3">
-      <InputGroup>
-        <Form.Check type="radio" label={t('plat.tool.file')} id={'server-' + platform} checked={checkType === 'file'}
-                    name={'chooseSource' + platform} onChange={e => setCheckType('file')}
-        /> &nbsp;
-        <Form.Text> * {t('plat.tool.file2')}</Form.Text>
-      </InputGroup>
-      {checkType === 'file' &&
-      <SrsErrorBoundary>
-        <VLiveFileSelector platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
-      </SrsErrorBoundary>
-      }
-    </Form.Group>
-    <Form.Group className="mb-3">
-      <InputGroup>
-        <Form.Check type="radio" label={t('plat.tool.stream')} id={'stream-' + platform} checked={checkType === 'stream'}
-                    name={'chooseSource' + platform} onChange={e => setCheckType('stream')}
-        /> &nbsp;
-        <Form.Text> * {t('plat.tool.stream2')}</Form.Text>
-      </InputGroup>
-      {checkType === 'stream' &&
-      <SrsErrorBoundary>
-        <VLiveStreamSelector platform={platform} vLiveFiles={vLiveFiles} setVLiveFiles={setVLiveFiles}/>
-      </SrsErrorBoundary>
-      }
-    </Form.Group>
-  </>);
-}
-
-function VLiveStreamSelector({platform, vLiveFiles, setVLiveFiles}) {
-  const {t} = useTranslation();
-  const handleError = useErrorHandler();
-  const [inputStream, setInputStream] = React.useState(vLiveFiles?.length ? vLiveFiles[0].target :'');
-  const [submiting, setSubmiting] = React.useState();
-
-  const checkStreamUrl = React.useCallback(async () => {
-    if (!inputStream) return alert(t('plat.tool.stream3'));
-    const isHTTP = inputStream.startsWith('http://') || inputStream.startsWith('https://');
-    if (!inputStream.startsWith('rtmp://') && !inputStream.startsWith('srt://') && !inputStream.startsWith('rtsp://') && !isHTTP) return alert(t('plat.tool.stream2'));
-    if (isHTTP && inputStream.indexOf('.flv') < 0 && inputStream.indexOf('.m3u8') < 0) return alert(t('plat.tool.stream4'));
-
-    setSubmiting(true);
-    try {
-      const res = await new Promise((resolve, reject) => {
-        axios.post(`/terraform/v1/ffmpeg/vlive/stream-url`, {
-          url: inputStream,
-        }, {
-          headers: Token.loadBearerHeader(),
-        }).then(res => {
-          resolve(res);
-        }).catch(reject);
-      });
-
-      await new Promise((resolve, reject) => {
-        console.log(`${t('plat.tool.stream5')}，${JSON.stringify(res.data.data)}`);
-        const streamObj = res.data.data;
-        const files = [{name: streamObj.name, size: 0, uuid: streamObj.uuid, target: streamObj.target, type: "stream"}];
-        axios.post('/terraform/v1/ffmpeg/vlive/source', {
-          platform, files,
-        }, {
-          headers: Token.loadBearerHeader(),
-        }).then(res => {
-          console.log(`${t('plat.tool.stream6')}，${JSON.stringify(res.data.data)}`);
-          setVLiveFiles(res.data.data.files);
-          resolve();
-        }).catch(reject);
-      });
-    } catch (e) {
-      handleError(e);
-    } finally {
-      setSubmiting(false);
-    }
-  }, [t, inputStream, handleError, platform, setVLiveFiles, setSubmiting]);
-
-  return (<>
-    <Form.Control as="div">
-      {!vLiveFiles?.length && <>
-        <Row>
-          <Col>
-            <Form.Control type="text" defaultValue={inputStream} placeholder={t('plat.tool.stream3')} onChange={e => setInputStream(e.target.value)} />
-          </Col>
-          <Col xs="auto">
-            <Button variant="primary" disabled={submiting} onClick={checkStreamUrl}>{t('helper.submit')}</Button>
-          </Col>
-        </Row></>
-      }
-      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
-    </Form.Control>
-  </>);
-}
-
-function VLiveFileSelector({platform, vLiveFiles, setVLiveFiles}) {
-  const {t} = useTranslation();
-  const handleError = useErrorHandler();
-  // TODO: FIXME: As the file path is changed after used, so we can not use te target.
-  const [inputFile, setInputFile] = React.useState('');
-
-  const CheckLocalFile = React.useCallback(() => {
-    if (!inputFile) return alert(t('plat.tool.file3'));
-    if (!inputFile.startsWith('/data') && !inputFile.startsWith('upload/') && !inputFile.startsWith('./upload/')) return alert(t('plat.tool.file2'));
-
-    const fileExtension = inputFile.slice(inputFile.lastIndexOf('.'));
-    if (!['.mp4', '.flv', '.ts'].includes(fileExtension)) return alert(t('plat.tool.file4'));
-
-    axios.post(`/terraform/v1/ffmpeg/vlive/server`, {
-      file: inputFile,
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      console.log(`${t('plat.tool.file5')}，${JSON.stringify(res.data.data)}`);
-      const localFileObj = res.data.data;
-      const files = [{name: localFileObj.name, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target, type: "file"}];
-      axios.post('/terraform/v1/ffmpeg/vlive/source', {
-        platform, files,
-      }, {
-        headers: Token.loadBearerHeader(),
-      }).then(res => {
-        console.log(`${t('plat.tool.file6')}，${JSON.stringify(res.data.data)}`);
-        setVLiveFiles(res.data.data.files);
-      }).catch(handleError);
-    }).catch(handleError);
-  }, [t, inputFile, handleError, platform, setVLiveFiles]);
-
-  return (<>
-    <Form.Control as="div">
-      {!vLiveFiles?.length && <>
-        <Row>
-          <Col>
-            <Form.Control type="text" defaultValue={inputFile} placeholder={t('plat.tool.file7')} onChange={e => setInputFile(e.target.value)} />
-          </Col>
-          <Col xs="auto">
-            <Button variant="primary" onClick={CheckLocalFile}>{t('helper.submit')}</Button>
-          </Col>
-        </Row></>
-      }
-      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
-    </Form.Control>
-  </>);
-}
-
-function VLiveFileUploader({platform, vLiveFiles, setVLiveFiles}) {
-  const {t} = useTranslation();
-  const handleError = useErrorHandler();
-  const updateSources = React.useCallback((platform, files, setFiles) => {
-    if (!files?.length) return alert(t('plat.tool.upload2'));
-
-    axios.post('/terraform/v1/ffmpeg/vlive/source', {
-      platform, files: files.map(f => {
-        return {name: f.name, size: f.size, uuid: f.uuid, target: f.target, type: "upload"};
-      }),
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      console.log(`${t('plat.tool.upload3')}, ${JSON.stringify(res.data.data)}`);
-      setFiles(res.data.data.files);
-    }).catch(handleError);
-  }, [t, handleError]);
-
-  return (<>
-    <Form.Control as='div'>
-      {!vLiveFiles?.length && <FileUploader onFilesUploaded={(files) => updateSources(platform, files, setVLiveFiles)}/>}
-      {vLiveFiles?.length && <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/>}
-    </Form.Control>
-  </>);
-}
-
-function VLiveFileFormatInfo({file}) {
-  const f = file;
-  if (!f?.format) return <></>;
-  return <>
-    {f?.type !== 'stream' && 
-      <>
-      File &nbsp;
-      {Number(f?.size/1024/1024).toFixed(1)}MB &nbsp;
-      {Number(f?.format?.duration).toFixed(0)}s &nbsp;
-      </>
-    }
-    {f?.type === 'stream' &&
-      <>
-      Stream &nbsp;
-      </>
-    }
-    {Number(f?.format?.bit_rate/1000).toFixed(1)}Kbps
-  </>;
-}
-
-function VLiveFileVideoInfo({file}) {
-  const f = file;
-  if (!f?.video) return <>NoVideo</>;
-  return <>Video({f?.video?.codec_name} {f?.video?.profile} {f?.video?.width}x{f?.video?.height})</>;
-}
-
-function VLiveFileAudioInfo({file}) {
-  const f = file;
-  if (!f?.audio) return <>NoAudio</>;
-  return <>Audio({f?.audio?.codec_name} {f?.audio?.sample_rate}HZ {f?.audio?.channels}CH)</>;
 }
 

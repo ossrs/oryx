@@ -315,14 +315,15 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}
 
 			var validExtension bool
-			for _, ext := range serverAllowVideoFiles {
+			for _, ext := range append(serverAllowVideoFiles, serverAllowAudioFiles...) {
 				if strings.HasSuffix(fileAbsPath, ext) {
 					validExtension = true
 					break
 				}
 			}
 			if !validExtension {
-				return errors.Errorf("invalid file extension %v, should be %v", fileAbsPath, serverAllowVideoFiles)
+				return errors.Errorf("invalid file extension %v, should be %v",
+					fileAbsPath, append(serverAllowVideoFiles, serverAllowAudioFiles...))
 			}
 
 			info, err := os.Stat(fileAbsPath)
@@ -345,6 +346,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}
 			defer sourceFile.Close()
 
+			// TODO: FIXME: Cleanup the file if error.
 			if _, err = io.Copy(targetFile, sourceFile); err != nil {
 				return errors.Wrapf(err, "copy %v to %v", fileAbsPath, targetFileName)
 			}
@@ -465,6 +467,8 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			type VLiveTempFile struct {
 				// The file name.
 				Name string `json:"name"`
+				// The file path.
+				Path string `json:"path"`
 				// The file size in bytes.
 				Size int64 `json:"size"`
 				// The UUID for file.
@@ -528,12 +532,16 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}
 
 			// Check platform.
-			allowedPlatforms := []string{"wx", "bilibili", "kuaishou"}
 			if platform == "" {
 				return errors.New("no platform")
 			}
-			if !slicesContains(allowedPlatforms, platform) {
-				return errors.Errorf("invalid platform %v", platform)
+			// For virtual live event only.
+			if true {
+				// The platforms limited for vlive.
+				allowedPlatforms := []string{"wx", "bilibili", "kuaishou"}
+				if !slicesContains(allowedPlatforms, platform) {
+					return errors.Errorf("invalid platform %v", platform)
+				}
 			}
 
 			// Parsed source files.
@@ -564,6 +572,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					args = append(args, "-i", file.Target)
 				}
 
+				// TODO: FIXME: Use FFprobeFileFormat.
 				stdout, err := exec.CommandContext(toCtx, "ffprobe", args...).Output()
 				if err != nil {
 					return errors.Wrapf(err, "probe %v with ffprobe %v", file.Target, args)
@@ -626,7 +635,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				}
 
 				parsedFile := &FFprobeSource{
-					Name: file.Name, Size: uint64(file.Size), UUID: file.UUID,
+					Name: file.Name, Path: file.Path, Size: uint64(file.Size), UUID: file.UUID,
 					Target: file.Target,
 					Type:   file.Type,
 					Format: &format.Format, Video: matchVideo, Audio: matchAudio,
@@ -642,36 +651,39 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				logger.Tf(ctx, "vLive: Process file %v", parsedFile.String())
 			}
 
-			// Update redis object.
-			confObj := VLiveConfigure{Platform: platform}
-			if conf, err := rdb.HGet(ctx, SRS_VLIVE_CONFIG, platform).Result(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hget %v %v", SRS_VLIVE_CONFIG, platform)
-			} else if conf != "" {
-				if err = json.Unmarshal([]byte(conf), &confObj); err != nil {
-					return errors.Wrapf(err, "parse %v", conf)
-				}
-			}
-
-			// Remove old files.
-			for _, f := range confObj.Files {
-				if f.Type != FFprobeSourceTypeStream {
-					if _, err := os.Stat(f.Target); err == nil {
-						os.Remove(f.Target)
+			// For virtual live stream only.
+			if true {
+				// Update redis object.
+				confObj := VLiveConfigure{Platform: platform}
+				if conf, err := rdb.HGet(ctx, SRS_VLIVE_CONFIG, platform).Result(); err != nil && err != redis.Nil {
+					return errors.Wrapf(err, "hget %v %v", SRS_VLIVE_CONFIG, platform)
+				} else if conf != "" {
+					if err = json.Unmarshal([]byte(conf), &confObj); err != nil {
+						return errors.Wrapf(err, "parse %v", conf)
 					}
 				}
-			}
-			confObj.Files = parsedFiles
 
-			if b, err := json.Marshal(&confObj); err != nil {
-				return errors.Wrapf(err, "marshal %v", confObj.String())
-			} else if err = rdb.HSet(ctx, SRS_VLIVE_CONFIG, platform, string(b)).Err(); err != nil && err != redis.Nil {
-				return errors.Wrapf(err, "hset %v %v %v", SRS_VLIVE_CONFIG, platform, string(b))
-			}
+				// Remove old files.
+				for _, f := range confObj.Files {
+					if f.Type != FFprobeSourceTypeStream {
+						if _, err := os.Stat(f.Target); err == nil {
+							os.Remove(f.Target)
+						}
+					}
+				}
+				confObj.Files = parsedFiles
 
-			// Restart the vLive if exists.
-			if task := vLiveWorker.GetTask(platform); task != nil {
-				if err := task.Restart(ctx); err != nil {
-					return errors.Wrapf(err, "restart task %v", platform)
+				if b, err := json.Marshal(&confObj); err != nil {
+					return errors.Wrapf(err, "marshal %v", confObj.String())
+				} else if err = rdb.HSet(ctx, SRS_VLIVE_CONFIG, platform, string(b)).Err(); err != nil && err != redis.Nil {
+					return errors.Wrapf(err, "hset %v %v %v", SRS_VLIVE_CONFIG, platform, string(b))
+				}
+
+				// Restart the vLive if exists.
+				if task := vLiveWorker.GetTask(platform); task != nil {
+					if err := task.Restart(ctx); err != nil {
+						return errors.Wrapf(err, "restart task %v", platform)
+					}
 				}
 			}
 
