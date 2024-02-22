@@ -85,7 +85,7 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				dubbing.FileType, dubbing.FilePath = targetFile.Type, targetFile.Path
 			})
 
-			if err := dubbing.CheckSource(ctx); err != nil {
+			if err := dubbing.CheckSource(ctx, targetFile.Target); err != nil {
 				return errors.Wrapf(err, "check source type=%v, %v", targetFile.Type, targetFile.Target)
 			}
 
@@ -2160,14 +2160,14 @@ func (v *SrsDubbingProject) Save(ctx context.Context) error {
 	return nil
 }
 
-func (v *SrsDubbingProject) CheckSource(ctx context.Context) error {
+func (v *SrsDubbingProject) CheckSource(ctx context.Context, target string) error {
 	if v.FileType != FFprobeSourceTypeFile && v.FileType != FFprobeSourceTypeUpload {
 		return errors.Errorf("unsupported file type %v", v.FileType)
 	}
 
-	fileAbsPath, err := filepath.Abs(v.FilePath)
+	fileAbsPath, err := filepath.Abs(target)
 	if err != nil {
-		return errors.Wrapf(err, "abs %v", v.FilePath)
+		return errors.Wrapf(err, "abs %v", target)
 	}
 
 	var validExtension bool
@@ -2186,7 +2186,7 @@ func (v *SrsDubbingProject) CheckSource(ctx context.Context) error {
 		return errors.Wrapf(err, "stat %v", fileAbsPath)
 	}
 
-	logger.Tf(ctx, "check source ok, type=%v, file=%v", v.FileType, v.FilePath)
+	logger.Tf(ctx, "check source ok, type=%v, file=%v", v.FileType, target)
 	return nil
 }
 

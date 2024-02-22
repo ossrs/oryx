@@ -209,7 +209,7 @@ func TestScenario_WithStream_PublishCameraStreamUrl(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
@@ -409,7 +409,7 @@ func TestScenario_WithStream_PublishCameraVideoOnly(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }

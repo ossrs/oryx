@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
 import React from "react";
-import {Accordion, Badge, Button, Col, Form, ListGroup, Row, Table} from "react-bootstrap";
+import {Accordion, Badge, Button, Col, Form, Row, Table} from "react-bootstrap";
 import {Token} from "../utils";
 import axios from "axios";
 import moment from "moment";

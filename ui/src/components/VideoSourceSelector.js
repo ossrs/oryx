@@ -26,8 +26,8 @@ export default function ChooseVideoSource({platform, endpoint, vLiveFiles, setVL
   }, [vLiveFiles]);
   return (<>
     <Form.Group className="mb-3">
-      <Form.Label>{t('plat.tool.source')}</Form.Label>
-      <Form.Text> * {t('vle.source2')}</Form.Text>
+      <Form.Label>{endpoint === 'dubbing' ? t('plat.tool.source2') : t('plat.tool.source')}</Form.Label>
+      <Form.Text> * {endpoint === 'dubbing' ? t('dubb.create.source') : t('vle.source2')}</Form.Text>
       <Form.Check type="radio" label={t('plat.tool.upload')} id={'upload-' + platform} checked={checkType === 'upload'}
                   name={'chooseSource-' + platform} onChange={e => setCheckType('upload')}
       />
@@ -164,7 +164,7 @@ function VLiveFileSelector({platform, endpoint, vLiveFiles, setVLiveFiles}) {
         setVLiveFiles(res.data.data.files);
       }).catch(handleError);
     }).catch(handleError);
-  }, [t, inputFile, handleError, platform, setVLiveFiles]);
+  }, [t, inputFile, handleError, platform, setVLiveFiles, endpoint]);
 
   return (<>
     <Form.Control as="div">

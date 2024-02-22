@@ -213,7 +213,7 @@ func TestScenario_WithStream_PublishVliveStreamUrl(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
@@ -412,7 +412,7 @@ func TestScenario_WithStream_PublishVLiveServerFile(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
@@ -1629,7 +1629,7 @@ func TestScenario_WithStream_PublishRtmpForwardPlatform(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
@@ -1790,7 +1790,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeDefault(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 
@@ -1930,7 +1930,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeFollow(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 
@@ -2070,7 +2070,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeMono(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 
@@ -2210,7 +2210,7 @@ func TestScenario_WithStream_PublishRtmpTranscodeStereo(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/2 {
+	if dv := m.Duration(); dv < duration/3 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 

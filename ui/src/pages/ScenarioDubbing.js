@@ -40,6 +40,7 @@ function ScenarioDubbingList({setDubbingId}) {
 
   const createDubbingProject = React.useCallback((e) => {
     e.preventDefault();
+    if (!files || files.length === 0) return alert('Please upload a video file to dubbing.');
 
     axios.post('/terraform/v1/dubbing/create', {
       title: name, files,
@@ -51,7 +52,7 @@ function ScenarioDubbingList({setDubbingId}) {
       setDubbingId(uuid);
       console.log(`Status: Create ok, name=${name}, files=${files}, data=${JSON.stringify(res.data.data)}`);
     }).catch(handleError);
-  }, [t, handleError, setDubbingId, searchParams, setSearchParams, name, files]);
+  }, [handleError, setDubbingId, searchParams, setSearchParams, name, files]);
 
   const manageProject = React.useCallback((project) => {
     const uuid = project.uuid;
@@ -569,6 +570,7 @@ function DubbingStudioEditor({project}) {
 
       let timeout = 0.5;
       do {
+        // eslint-disable-next-line no-loop-func
         task = await new Promise(resolve => {
           axios.post('/terraform/v1/dubbing/task-query', {
             uuid: project.uuid, task: task.uuid,
@@ -588,6 +590,7 @@ function DubbingStudioEditor({project}) {
         });
 
         timeout = Math.min(3, timeout * 2);
+        // eslint-disable-next-line no-loop-func
         await new Promise(resolve => setTimeout(resolve, timeout * 1000));
       } while (task.status !== 'done');
     } finally {
@@ -615,7 +618,7 @@ function DubbingStudioEditor({project}) {
     } finally {
       setRequesting(false);
     }
-  }, [setRequesting, handleError, project, saveAs]);
+  }, [setRequesting, handleError, project]);
 
   const formatDuration = React.useCallback((duration) => {
     let hours = Math.floor(duration / 3600);

@@ -566,6 +566,7 @@
           "link2": "创建直播"
         },
         "tool": {
+          "source2": "视频源",
           "source": "视频源",
           "upload": "上传本地文件",
           "upload2": "无上传文件",
@@ -611,7 +612,8 @@
           "name2": "请输入翻译项目名称",
           "projects": "翻译项目列表",
           "delete": "删除后不可恢复，确认删除翻译项目吗？",
-          "empty": "暂无翻译项目"
+          "empty": "暂无翻译项目",
+          "source": "翻译的视频的源文件或地址"
         },
         "setting": {
           "title": "视频翻译设置",
@@ -654,6 +656,7 @@
           "title": "Dubbing Settings"
         },
         "create": {
+          "source": "Video source file or URL for dubbing",
           "empty": "No dubbing project",
           "delete": "Once deleted, it cannot be restored. Are you sure you want to delete the dubbing project?",
           "projects": "Dubbing Projects",
@@ -699,7 +702,8 @@
           "upload3": "Set file source ok",
           "upload2": "No file selected",
           "upload": "Upload local file",
-          "source": "Live Stream Source"
+          "source": "Live Stream Source",
+          "source2": "Video Source"
         },
         "ks": {
           "link2": "Live Producer",
