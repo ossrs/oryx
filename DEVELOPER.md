@@ -1146,6 +1146,7 @@ The following are the update records for the SRS Stack server.
     * FFmpeg: Fix bug for output SRT protocol. v5.13.25
     * FFmpeg: Support ingest SRT protocol. v5.13.26
     * VLive: Fix the re bug for file. [v5.13.27](https://github.com/ossrs/srs-stack/releases/tag/v5.13.27)
+    * Release stable version and support debugging. [v5.13.28](https://github.com/ossrs/srs-stack/releases/tag/v5.13.28)
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
