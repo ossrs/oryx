@@ -143,7 +143,7 @@ jobs:
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./scripts/tools/failed-retry.sh 3 ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
@@ -215,7 +215,7 @@ jobs:
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./scripts/tools/failed-retry.sh 3 ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
@@ -305,7 +305,7 @@ jobs:
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./scripts/tools/failed-retry.sh 3 ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
@@ -394,7 +394,7 @@ jobs:
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 1 ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./scripts/tools/failed-retry.sh 3 ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"

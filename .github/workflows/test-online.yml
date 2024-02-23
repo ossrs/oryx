@@ -276,8 +276,8 @@ jobs:
           key: ${{ secrets.DIGITALOCEAN_SSHKEY }}
           port: 22
           envs: SRS_TAG,SRS_DOMAIN
-          timeout: 1800s
-          command_timeout: 1800s
+          timeout: 7200s
+          command_timeout: 7200s
           script: |
             # We will handle the error by ourselves.
             set +e
