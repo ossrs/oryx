@@ -31,6 +31,11 @@ function useTutorialsEn(mediumRef) {
   const ref = React.useRef({tutorials:[]});
 
   const dict = React.useRef({
+    '544e1db671c2': {
+      author: 'Winlin Yang',
+      link: 'https://blog.ossrs.io/expand-your-global-reach-with-srs-stack-effortless-video-translation-and-dubbing-solutions-544e1db671c2',
+      title: 'Revolutionize Video Content with SRS Stack: Effortless Dubbing and Translating to Multiple Languages Using OpenAI'
+    },
     '13e28adf1e18': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/transform-your-browser-into-a-personal-voice-driven-gpt-ai-assistant-with-srs-stack-13e28adf1e18',

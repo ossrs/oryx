@@ -37,7 +37,8 @@ export default function ScenarioTutorials() {
       {id: '68PIGFDGihU'},
       {id: 'bb19c2a3bb7a'},
       {id: 'b3011e390e38'},
-      {id: '13e28adf1e18'}
+      {id: '13e28adf1e18'},
+      {id: '544e1db671c2'}
     ])
   });
 

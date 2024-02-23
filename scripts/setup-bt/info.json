@@ -1,8 +1,8 @@
 {
   "title": "SRS音视频服务器",
   "name": "srs_stack",
-  "ps": "SRS Stack让你一键拥有自己的视频云解决方案，可以在云上或私有化部署，支持丰富的音视频协议，提供鉴权、私人直播间、多平台转播、录制、转码、虚拟直播、AI字幕、直播间AI助手、自动HTTPS、开放API等丰富功能，基于SRS、FFmpeg和WebRTC构建。",
-  "versions": "5.13.27",
+  "ps": "SRS Stack让你一键拥有自己的视频云解决方案，可以在云上或私有化部署，支持丰富的音视频协议，提供鉴权、私人直播间、多平台转播、录制、转码、虚拟直播、AI字幕、直播间AI助手、视频翻译、自动HTTPS、开放API等丰富功能，基于SRS、FFmpeg和WebRTC构建。",
+  "versions": "5.14.2",
   "checks": "/www/server/panel/plugin/srs_stack",
   "author": "Winlin",
   "home": "https://github.com/ossrs/srs-stack"

@@ -111,6 +111,7 @@ your own high-quality streaming and RTC platforms to support your businesses.
 - [x] Support live stream transcoding: [Blog](https://blog.ossrs.io/efficient-live-streaming-transcoding-for-reducing-bandwidth-and-saving-costs-39bd001af02d), [EN](https://ossrs.io/lts/en-us/blog/Live-Transcoding), [CN](https://ossrs.net/lts/zh-cn/blog/Live-Transcoding).
 - [x] Support transcription for converting speech to text: [Blog](https://blog.ossrs.io/revolutionizing-live-streams-with-ai-transcription-creating-accessible-multilingual-subtitles-1e902ab856bd), [EN](https://ossrs.io/lts/en-us/blog/live-streams-transcription), [CN](https://ossrs.net/lts/zh-cn/blog/live-streams-transcription).
 - [x] Support AI assistant for live room: [Blog](https://blog.ossrs.io/transform-your-browser-into-a-personal-voice-driven-gpt-ai-assistant-with-srs-stack-13e28adf1e18), [EN](https://ossrs.io/lts/en-us/blog/browser-voice-driven-gpt), [CN](https://ossrs.net/lts/zh-cn/blog/live-streams-transcription)
+- [x] Support video dubbing for multiple languages: [Blog](https://blog.ossrs.io/expand-your-global-reach-with-srs-stack-effortless-video-translation-and-dubbing-solutions-544e1db671c2), [EN](https://ossrs.io/lts/en-us/blog/browser-voice-driven-gpt), [CN](https://ossrs.net/lts/zh-cn/blog/live-streams-transcription)
 
 Other more use scenarios is on the way, please read [this post](https://github.com/ossrs/srs/issues/2856#lighthouse).
 
