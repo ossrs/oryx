@@ -790,7 +790,7 @@ function DubbingStudioEditor({project}) {
         <Col xs={11} className='ai-dubbing-workspace'>
           {task?.asr_response?.groups?.map((g, index) => {
             return <Card key={g.uuid} className='ai-dubbing-group'>
-              <Card.Header>
+              <Card.Header className='ai-dubbing-title'>
                 <Row>
                   <Col xs={6}>
                     <small className="text-secondary">

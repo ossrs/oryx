@@ -14,13 +14,18 @@
 }
 
 .ai-dubbing-workspace {
-  min-height: 55rem;
-  max-height: 55rem;
+  min-height: 64rem;
+  max-height: 64rem;
   overflow: scroll;
 }
 
+.ai-dubbing-title {
+  padding-top: 0rem;
+  padding-bottom: 0rem;
+}
+
 .ai-dubbing-group {
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.15rem;
 }
 
 .ai-dubbing-command {
@@ -30,8 +35,8 @@
 
 .ai-dubbing-alert {
   margin-bottom: 0.08rem;
-  padding-top: 0.2rem;
-  padding-bottom: 0.2rem;
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
 }
 
 .ai-dubbing-button {
