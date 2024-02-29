@@ -24,6 +24,10 @@
   padding-bottom: 0rem;
 }
 
+.ai-dubbing-title-playing {
+  background-color: darkseagreen;
+}
+
 .ai-dubbing-group {
   margin-bottom: 0.15rem;
 }

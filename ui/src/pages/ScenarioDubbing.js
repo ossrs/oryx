@@ -11,6 +11,7 @@ import {OpenAISecretSettings} from "../components/OpenAISettings";
 import { saveAs } from 'file-saver';
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import ChooseVideoSource from "../components/VideoSourceSelector";
+import * as Icon from "react-bootstrap-icons";
 
 export default function ScenarioDubbing() {
   const [searchParams] = useSearchParams();
@@ -534,6 +535,8 @@ function DubbingStudioEditor({project}) {
   const [startupRequesting, setStartupRequesting] = React.useState(true);
   const [allGroupReady, setAllGroupReady] = React.useState(false);
   const [task, setTask] = React.useState();
+  const [activeGroup, setActiveGroup] = React.useState();
+  const [isPlayingAudio, setIsPlayingAudio] = React.useState(false);
   const playerRef = React.useRef(null);
   const ttsPlayer = React.useRef(null);
 
@@ -658,18 +661,6 @@ function DubbingStudioEditor({project}) {
     return hours+':'+minutes+':'+seconds+'.'+milliseconds;
   }, []);
 
-  const playSegemnt = React.useCallback((e, segment) => {
-    if (segment.start === null || segment.start === undefined) return alert('Segment start is null');
-
-    const isPlayingCurrentSegment = playerRef.current.currentTime >= segment.start && playerRef.current.currentTime <= segment.end;
-    if (playerRef.current.paused || !isPlayingCurrentSegment) {
-      playerRef.current.currentTime = segment.start;
-      playerRef.current.play();
-    } else {
-      playerRef.current.pause();
-    }
-  }, [playerRef]);
-
   const rephraseGroup = React.useCallback(async (e, taskUUID, group) => {
     e.preventDefault();
     setRequesting(true);
@@ -723,6 +714,7 @@ function DubbingStudioEditor({project}) {
   }, [setRequesting, handleError, project, setTask]);
 
   const playGroup = React.useCallback((e, group) => {
+    e.preventDefault();
     if (!ttsPlayer || !project) return;
     if (!group.tts_duration) return alert(`Group ${group.id} no tts file`);
 
@@ -730,6 +722,38 @@ function DubbingStudioEditor({project}) {
     ttsPlayer.current.src = `/terraform/v1/dubbing/task-tts?uuid=${project.uuid}&group=${group.uuid}&token=${token}`;
     ttsPlayer.current.play();
   }, [ttsPlayer, project]);
+
+  const playSegment = React.useCallback((e, segment) => {
+    e.preventDefault();
+    if (segment.start === null || segment.start === undefined) return alert('Segment start is null');
+
+    const isPlayingCurrentSegment = playerRef.current.currentTime >= segment.start && playerRef.current.currentTime <= segment.end;
+    if (playerRef.current.paused || !isPlayingCurrentSegment) {
+      // Include a very brief duration, as occasionally the prior end time is equal to the start time. By adding
+      // this duration, it ensures distinct playback from the current segment rather than the previous one.
+      playerRef.current.currentTime = segment.start + 0.001;
+      playerRef.current.play();
+    } else {
+      playerRef.current.pause();
+    }
+  }, [playerRef]);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      if (!playerRef?.current || !playerRef?.current?.currentTime) return;
+      if (!task?.asr_response?.groups?.length) return;
+
+      let group = task?.asr_response?.groups?.find(s => {
+        return s.start <= playerRef.current.currentTime && playerRef.current.currentTime <= s.end;
+      });
+      if (!group) return;
+
+      setActiveGroup(group);
+      setIsPlayingAudio(!playerRef.current.paused);
+      //console.log(`Player time ${playerRef.current.currentTime}, group is ${group?.id}, ${group?.start} ~ ${group?.end}`);
+    }, 600);
+    return () => clearInterval(timer);
+  }, [playerRef, task, setActiveGroup, setIsPlayingAudio]);
 
   // Automatically start dubbing task.
   React.useEffect(() => {
@@ -795,31 +819,35 @@ function DubbingStudioEditor({project}) {
         </Row>
       </Col>
     </Row>
-    {task?.status !== 'done' && <>
-      <Button variant="primary" type="submit" disabled={requesting || processing} onClick={startDubbingTask}>
-        {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status" aria-hidden="true"/> &nbsp;</>}
-        {t('dubb.studio.start')} {task?.status && task?.status !== 'done' && <>, status: {task?.status || 'init'}</>}
-        {(requesting || processing) && <>&nbsp;...</>}
-      </Button> &nbsp;
-    </>}
-    {!startupRequesting && task?.status === 'done' && <>
-      <Button variant='primary' type='submit' disabled={requesting || processing || !allGroupReady} onClick={(e) => downloadArtifact(e, task.uuid)}>
-        {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status" aria-hidden="true"/> &nbsp;</>}
-        {t('dubb.studio.download')}
-      </Button>
-    </>}
-    <p></p>
+    <div>
+      {task?.status !== 'done' && <>
+        <Button variant="primary" type="submit" disabled={requesting || processing} onClick={startDubbingTask}>
+          {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status" aria-hidden="true"/> &nbsp;</>}
+          {t('dubb.studio.start')} {task?.status && task?.status !== 'done' && <>, status: {task?.status || 'init'}</>}
+          {(requesting || processing) && <>&nbsp;...</>}
+        </Button> &nbsp;
+      </>}
+      {!startupRequesting && task?.status === 'done' && <>
+        <Button variant='primary' type='submit' disabled={requesting || processing || !allGroupReady} onClick={(e) => downloadArtifact(e, task.uuid)}>
+          {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status" aria-hidden="true"/> &nbsp;</>}
+          {t('dubb.studio.download')}
+        </Button>
+      </>}
+      <p></p>
+    </div>
     <div>
       <Row>
         <Col xs={11} className='ai-dubbing-workspace'>
           {task?.asr_response?.groups?.map((g, index) => {
             return <Card key={g.uuid} className='ai-dubbing-group'>
-              <Card.Header className='ai-dubbing-title'>
+              <Card.Header className={g === activeGroup ? 'ai-dubbing-title ai-dubbing-title-playing' : 'ai-dubbing-title'}>
                 <Row>
                   <Col xs={6}>
                     <small className="text-secondary">
                       ID.{g.id}: {formatDuration(g.start)} ~ {formatDuration(g.end)}
-                    </small>
+                    </small> &nbsp;
+                    {g === activeGroup && isPlayingAudio ?
+                      <Spinner animation="border" as='span' variant="primary" size='sm' style={{verticalAlign: 'middle'}} /> : ''}
                   </Col>
                   <Col xs={6} className='text-end'>
                     <>
@@ -844,10 +872,11 @@ function DubbingStudioEditor({project}) {
                 {g.segments.map((s) => {
                   return <div key={s.uuid}>
                     <Row>
-                      <Col xs={1} onClick={(e) => playSegemnt(e, s)} className='ai-dubbing-command'>
+                      <Col xs={1} onClick={(e) => playSegment(e, s)} className='ai-dubbing-command'>
                         <small className="text-secondary">
                           #{s.id}: {Number(s.end - s.start).toFixed(1)}s
-                        </small>
+                        </small> &nbsp;
+                        <Icon.Soundwave size={16} className='ai-dubbing-command' />
                       </Col>
                       <Col>
                         {s.text}
@@ -861,7 +890,8 @@ function DubbingStudioEditor({project}) {
                   <Col xs={1} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'>
                     <small className="text-secondary">
                       #{g.id}: {Number(g.tts_duration).toFixed(1)}s
-                    </small>
+                    </small> &nbsp;
+                    {g.tts && <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
                   </Col>
                   <Col>
                     {g.translated}
@@ -871,7 +901,8 @@ function DubbingStudioEditor({project}) {
                   <Col xs={1} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'>
                     <small className="text-secondary">
                       #{g.id}: {Number(g.tts_duration).toFixed(1)}s
-                    </small>
+                    </small> &nbsp;
+                    {g.rephrased && <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
                   </Col>
                   <Col>
                     {g.rephrased}
