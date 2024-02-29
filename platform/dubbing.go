@@ -709,24 +709,39 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				// Reset the translated and rephrased text.
 				group.Translated, group.Rephrased = "", ""
 
-				if err := group.Translate(ctx, dubbing.Rephrase, previous); err != nil {
-					return errors.Wrapf(err, "translate group %v", group)
+				if dubbing.Translation.AIChatEnabled && group.Text() != "" {
+					if err := group.Translate(ctx, dubbing.Translation, previous); err != nil {
+						return errors.Wrapf(err, "translate group %v", group)
+					}
+				} else {
+					logger.Tf(ctx, "Dubbing: Ignore translate for group %v", group)
 				}
 
-				if err := group.GenerateTTS(ctx, dubbing.TTS, dubbingUUID); err != nil {
-					return errors.Wrapf(err, "generate tts group %v", group)
+				if dubbing.TTS.AITTSEnabled && group.SourceTextForTTS() != "" {
+					if err := group.GenerateTTS(ctx, dubbing.TTS, dubbingUUID); err != nil {
+						return errors.Wrapf(err, "generate tts group %v", group)
+					}
+				} else {
+					logger.Tf(ctx, "Dubbing: Ignore tts for group %v", group)
 				}
 			}
 
-			// Ignore if the group is already rephrased.
+			// Rephrase and regenerate TTS of group.
 			if group.manuallyRephrasedCount > 1 {
-				// Rephrase and regenerate TTS of group.
-				if err := group.RephraseGroup(ctx, dubbing.Rephrase, previous, maxOutputLength); err != nil {
-					return errors.Wrapf(err, "rephrase group %v", group)
+				if dubbing.Rephrase.AIChatEnabled && group.Translated != "" {
+					if err := group.RephraseGroup(ctx, dubbing.Rephrase, previous, maxOutputLength); err != nil {
+						return errors.Wrapf(err, "rephrase group %v", group)
+					}
+				} else {
+					logger.Tf(ctx, "Dubbing: Ignore rephrase for group %v", group)
 				}
 
-				if err := group.GenerateTTS(ctx, dubbing.TTS, dubbingUUID); err != nil {
-					return errors.Wrapf(err, "generate tts group %v", group)
+				if dubbing.TTS.AITTSEnabled && group.SourceTextForTTS() != "" {
+					if err := group.GenerateTTS(ctx, dubbing.TTS, dubbingUUID); err != nil {
+						return errors.Wrapf(err, "generate tts group %v", group)
+					}
+				} else {
+					logger.Tf(ctx, "Dubbing: Ignore tts for group %v", group)
 				}
 			}
 
@@ -800,16 +815,13 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("group %v not exists", groupUUID)
 			}
 
-			if direction == "previous" {
-				previous := task.AsrResponse.PreviousGroup(group)
-				if err := task.AsrResponse.MergeGroup(ctx, dubbing, group, previous); err != nil {
-					return errors.Wrapf(err, "merge group %v to %v", group, previous)
-				}
-			} else {
-				next := task.AsrResponse.NextGroup(group)
-				if err := task.AsrResponse.MergeGroup(ctx, dubbing, next, group); err != nil {
-					return errors.Wrapf(err, "merge group %v to %v", next, group)
-				}
+			if direction != "next" {
+				return errors.Errorf("invalid direction %v", direction)
+			}
+
+			next := task.AsrResponse.NextGroup(group)
+			if err := task.AsrResponse.MergeGroup(ctx, dubbing, next, group); err != nil {
+				return errors.Wrapf(err, "merge group %v to %v", next, group)
 			}
 
 			// Save the task.
@@ -1488,13 +1500,21 @@ func (v *AudioResponse) MergeGroup(ctx context.Context, dubbing *SrsDubbingProje
 	}
 
 	// Rephrase the merged group.
-	if err := to.RephraseGroup(ctx, dubbing.Rephrase, v.PreviousGroup(to), len(to.Translated)/3); err != nil {
-		return errors.Wrapf(err, "rephrase group")
+	if dubbing.Rephrase.AIChatEnabled && to.Translated != "" {
+		if err := to.RephraseGroup(ctx, dubbing.Rephrase, v.PreviousGroup(to), len(to.Translated)/3); err != nil {
+			return errors.Wrapf(err, "rephrase group")
+		}
+	} else {
+		logger.Tf(ctx, "Dubbing: Ignore rephrase for group %v", to)
 	}
 
 	// Regenerate TTS for the group.
-	if err := to.GenerateTTS(ctx, dubbing.TTS, dubbing.UUID); err != nil {
-		return errors.Wrapf(err, "generate tts")
+	if dubbing.TTS.AITTSEnabled && to.SourceTextForTTS() != "" {
+		if err := to.GenerateTTS(ctx, dubbing.TTS, dubbing.UUID); err != nil {
+			return errors.Wrapf(err, "generate tts")
+		}
+	} else {
+		logger.Tf(ctx, "Dubbing: Ignore tts for group %v", to)
 	}
 
 	return nil
@@ -1755,6 +1775,12 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 		// We are generating the ASR response.
 		v.status = SrsDubbingTaskStatusAsrGenerating
 
+		// Ignore if disabled.
+		if !v.project.ASR.AIASREnabled {
+			logger.Tf(ctx, "Dubbing: ignore for ASR disabled, task=%v, project=%v", v.UUID, v.project.UUID)
+			return nil
+		}
+
 		// Whether force to generate ASR response.
 		if alwaysForceRegenerateASRResponse {
 			v.AsrResponse = NewAudioResponse()
@@ -1833,6 +1859,11 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 
 	// Always try to merge very small segments to previous groups.
 	mergeSegmentsBetweenGroups := func() error {
+		if v.AsrResponse == nil {
+			logger.Tf(ctx, "Dubbing: ignore merge for no ASR response, task=%v, project=%v", v.UUID, v.project.UUID)
+			return nil
+		}
+
 		isEnglish := func(s string) bool {
 			for _, r := range s {
 				if r > unicode.MaxASCII {
@@ -1919,6 +1950,17 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 	translateGroups := func() error {
 		v.status = SrsDubbingTaskStatusTranslating
 
+		if v.AsrResponse == nil {
+			logger.Tf(ctx, "Dubbing: ignore translate for no ASR response, task=%v, project=%v", v.UUID, v.project.UUID)
+			return nil
+		}
+
+		// Ignore if disabled.
+		if !v.project.Translation.AIChatEnabled {
+			logger.Tf(ctx, "Dubbing: ignore for translate disabled, task=%v, project=%v", v.UUID, v.project.UUID)
+			return nil
+		}
+
 		for _, g := range v.AsrResponse.Groups {
 			if g.Translated != "" {
 				continue
@@ -1942,8 +1984,22 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 	generateTTS := func() error {
 		v.status = SrsDubbingTaskStatusTTSGenerating
 
+		if v.AsrResponse == nil {
+			logger.Tf(ctx, "Dubbing: ignore TTS for no ASR response, task=%v, project=%v", v.UUID, v.project.UUID)
+			return nil
+		}
+
+		// Ignore if disabled.
+		if !v.project.TTS.AITTSEnabled {
+			logger.Tf(ctx, "Dubbing: ignore for TTS disabled, task=%v, project=%v", v.UUID, v.project.UUID)
+			return nil
+		}
+
 		for _, g := range v.AsrResponse.Groups {
 			if g.TTS != "" {
+				continue
+			}
+			if g.SourceTextForTTS() == "" {
 				continue
 			}
 
@@ -1962,6 +2018,17 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 
 	rephraseAsShorterTranslations := func() error {
 		v.status = SrsDubbingTaskStatusRephrasing
+
+		if v.AsrResponse == nil {
+			logger.Tf(ctx, "Dubbing: ignore rephrase for no ASR response, task=%v, project=%v", v.UUID, v.project.UUID)
+			return nil
+		}
+
+		// Ignore if disabled.
+		if !v.project.Rephrase.AIChatEnabled {
+			logger.Tf(ctx, "Dubbing: ignore for rephrase disabled, task=%v, project=%v", v.UUID, v.project.UUID)
+			return nil
+		}
 
 		for _, g := range v.AsrResponse.Groups {
 			if g.Rephrased != "" && !alwaysRephraseTranslations {
@@ -2120,6 +2187,8 @@ func NewSrsDubbingProject(opts ...func(dubbing *SrsDubbingProject)) *SrsDubbingP
 		ASR: NewAssistant(),
 		// Create a default Translation assistant.
 		Translation: NewAssistant(),
+		// Create a default rephrase assistant.
+		Rephrase: NewAssistant(),
 		// Create a default TTS assistant.
 		TTS: NewAssistant(),
 	}

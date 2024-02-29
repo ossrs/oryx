@@ -270,17 +270,21 @@ function DubbingSettings({project, requesting, updateProject}) {
   const [aiBaseURL, setAiBaseURL] = React.useState();
   const [aiOrganization, setAiOrganization] = React.useState();
 
+  const [aiAsrEnabled, setAiAsrEnabled] = React.useState(project?.asr?.aiAsrEnabled);
   const [aiAsrProvider, setAiAsrProvider] = React.useState(project?.asr?.aiProvider || 'openai');
   const [aiAsrLanguage, setAiAsrLanguage] = React.useState(project?.asr?.aiAsrLanguage || language || 'en');
 
+  const [aiChatEnabled, setAiChatEnabled] = React.useState(project?.trans?.aiChatEnabled);
   const [aiTransProvider, setAiTransProvider] = React.useState(project?.trans?.aiProvider || 'openai');
   const [aiChatModel, setAiChatModel] = React.useState(project?.trans?.aiChatModel || 'gpt-4-turbo-preview');
   const [aiChatPrompt, setAiChatPrompt] = React.useState(project?.trans?.aiChatPrompt || (aiAsrLanguage === 'en' ? 'Translate all user input text into Chinese.' : 'Translate all user input text into English.'));
 
+  const [aiRephraseEnabled, setAiRephraseEnabled] = React.useState(project?.rephrase?.aiChatEnabled);
   const [aiRephraseProvider, setAiRephraseProvider] = React.useState(project?.rephrase?.aiProvider || 'openai');
   const [aiRephraseModel, setAiRephraseModel] = React.useState(project?.rephrase?.aiChatModel || 'gpt-4-turbo-preview');
   const [aiRephrasePrompt, setAiRephrasePrompt] = React.useState(project?.rephrase?.aiChatPrompt || 'Use the same language and do not translate. Remember to maintain original meanings. Rephrase the text shorter.');
 
+  const [aiTtsEnabled, setAiTtsEnabled] = React.useState(project?.tts?.aiTtsEnabled);
   const [aiTtsProvider, setAiTtsProvider] = React.useState(project?.tts?.aiProvider || 'openai');
 
   React.useEffect(() => {
@@ -322,20 +326,20 @@ function DubbingSettings({project, requesting, updateProject}) {
       ...project,
       asr: {
         aiProvider: aiAsrProvider, aiSecretKey, aiOrganization, aiBaseURL,
-        aiAsrLanguage, aiAsrEnabled: true,
+        aiAsrLanguage, aiAsrEnabled,
         aiAsrPrompt: 'user-only',
       },
       trans: {
         aiProvider: aiTransProvider, aiSecretKey, aiOrganization, aiBaseURL,
-        aiChatEnabled: true, aiChatModel, aiChatPrompt,
+        aiChatEnabled, aiChatModel, aiChatPrompt,
       },
       rephrase: {
         aiProvider: aiRephraseProvider, aiSecretKey, aiOrganization, aiBaseURL,
-        aiChatEnabled: true, aiChatModel: aiRephraseModel, aiChatPrompt: aiRephrasePrompt,
+        aiChatEnabled: aiRephraseEnabled, aiChatModel: aiRephraseModel, aiChatPrompt: aiRephrasePrompt,
       },
       tts: {
         aiProvider: aiTtsProvider, aiSecretKey, aiOrganization, aiBaseURL,
-        aiTtsEnabled: true,
+        aiTtsEnabled,
       }
     });
   }, [
@@ -343,13 +347,13 @@ function DubbingSettings({project, requesting, updateProject}) {
     // For OpenAI settings.
     aiSecretKey, aiOrganization, aiBaseURL,
     // For ASR.
-    aiAsrProvider, aiAsrLanguage,
+    aiAsrProvider, aiAsrLanguage, aiAsrEnabled,
     // For Translation.
-    aiTransProvider, aiChatModel, aiChatPrompt,
+    aiTransProvider, aiChatModel, aiChatPrompt, aiChatEnabled,
     // For Rephrase.
-    aiRephraseProvider, aiRephraseModel, aiRephrasePrompt,
+    aiRephraseProvider, aiRephraseModel, aiRephrasePrompt, aiRephraseEnabled,
     // For TTS.
-    aiTtsProvider,
+    aiTtsProvider, aiTtsEnabled,
   ]);
 
   return <>
@@ -394,6 +398,11 @@ function DubbingSettings({project, requesting, updateProject}) {
         </Card.Body>}
         {configItem === 'asr' && <Card.Body>
           <Form.Group className="mb-3">
+            <Form.Group className="mb-3" controlId="formAiAsrEnabledCheckbox">
+              <Form.Check type="checkbox" disabled={true} label={t('lr.room.asre')} defaultChecked={aiAsrEnabled} onClick={() => setAiAsrEnabled(!aiAsrEnabled)} />
+            </Form.Group>
+          </Form.Group>
+          <Form.Group className="mb-3">
             <Form.Label>{t('lr.room.provider')}</Form.Label>
             <Form.Text> * {t('lr.room.provider2')}</Form.Text>
             <Form.Select defaultValue={aiAsrProvider} onChange={(e) => setAiAsrProvider(e.target.value)}>
@@ -421,6 +430,11 @@ function DubbingSettings({project, requesting, updateProject}) {
           </Button>
         </Card.Body>}
         {configItem === 'trans' && <Card.Body>
+          <Form.Group className="mb-3">
+            <Form.Group className="mb-3" controlId="formAiChatEnabledCheckbox">
+              <Form.Check type="checkbox" label={t('lr.room.chate')} defaultChecked={aiChatEnabled} onClick={() => setAiChatEnabled(!aiChatEnabled)} />
+            </Form.Group>
+          </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label>{t('lr.room.provider')}</Form.Label>
             <Form.Text> * {t('lr.room.provider2')}</Form.Text>
@@ -451,6 +465,11 @@ function DubbingSettings({project, requesting, updateProject}) {
         </Card.Body>}
         {configItem === 'rephrase' && <Card.Body>
           <Form.Group className="mb-3">
+            <Form.Group className="mb-3" controlId="formAiRephraseEnabledCheckbox">
+              <Form.Check type="checkbox" label={t('dubb.setting.rephrase2')} defaultChecked={aiRephraseEnabled} onClick={() => setAiRephraseEnabled(!aiRephraseEnabled)} />
+            </Form.Group>
+          </Form.Group>
+          <Form.Group className="mb-3">
             <Form.Label>{t('lr.room.provider')}</Form.Label>
             <Form.Text> * {t('lr.room.provider2')}</Form.Text>
             <Form.Select defaultValue={aiRephraseProvider} onChange={(e) => setAiRephraseProvider(e.target.value)}>
@@ -479,6 +498,11 @@ function DubbingSettings({project, requesting, updateProject}) {
           </Button>
         </Card.Body>}
         {configItem === 'tts' && <Card.Body>
+          <Form.Group className="mb-3">
+            <Form.Group className="mb-3" controlId="formAiTtsEnabledCheckbox">
+              <Form.Check type="checkbox" label={t('lr.room.ttse')} defaultChecked={aiTtsEnabled} onClick={() => setAiTtsEnabled(!aiTtsEnabled)} />
+            </Form.Group>
+          </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label>{t('lr.room.provider')}</Form.Label>
             <Form.Text> * {t('lr.room.provider2')}</Form.Text>

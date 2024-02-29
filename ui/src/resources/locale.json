@@ -621,7 +621,8 @@
           "asr": "语音识别设置",
           "trans": "多语言翻译设置",
           "rephrase": "改进翻译文本",
-          "tts": "语音合成设置"
+          "tts": "语音合成设置",
+          "rephrase2": "开启改进翻译文本"
         },
         "studio": {
           "title": "Dubbing Studio",
@@ -648,6 +649,7 @@
           "title": "Dubbing Studio"
         },
         "setting": {
+          "rephrase2": "Enable Rephrasing Translation",
           "tts": "TTS Settings",
           "rephrase": "Improve Translation",
           "trans": "Multilingual Translation",
