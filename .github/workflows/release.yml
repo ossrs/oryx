@@ -111,8 +111,6 @@ jobs:
           src: ossrs/srs-stack:${{ env.SRS_TAG }}
           dst: |
             ossrs/srs-stack:${{ env.SRS_XYZ }}
-            ossrs/srs-stack:${{ env.SRS_MAJOR }}
-            ossrs/srs-stack:v${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
   aliyun:
@@ -139,8 +137,6 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_TAG }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_XYZ }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:v${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
   draft:
