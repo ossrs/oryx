@@ -1,8 +1,6 @@
-//
 // Copyright (c) 2022-2023 Winlin
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//
 package main
 
 import (
@@ -30,6 +28,23 @@ func (v *CrontabWorker) Close() error {
 }
 
 func (v *CrontabWorker) Start(ctx context.Context) error {
+	v.wg.Add(1)
+	go func() {
+		defer v.wg.Done()
+
+		for {
+			if err := fastCache.Refresh(ctx); err != nil {
+				logger.Wf(ctx, "crontab: refresh fast cache err %v", err)
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(3 * time.Second):
+			}
+		}
+	}()
+
 	v.wg.Add(1)
 	go func() {
 		defer v.wg.Done()

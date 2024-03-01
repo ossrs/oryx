@@ -1,8 +1,6 @@
-//
 // Copyright (c) 2022-2023 Winlin
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//
 package main
 
 import (
@@ -305,17 +303,6 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	wellKnownFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/data")))
 	hlsFileServer := http.FileServer(http.Dir(path.Join(conf.Pwd, "containers/objs/nginx/html")))
 
-	// Fast and simple cache for HP HLS.
-	var hpHlsEnabled bool
-	go func() {
-		for {
-			if v, err := rdb.HGet(ctx, SRS_HP_HLS, "noHlsCtx").Result(); err == nil {
-				hpHlsEnabled = v == "true"
-			}
-			time.Sleep(time.Second * 3)
-		}
-	}()
-
 	ep = "/"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
@@ -398,9 +385,9 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 		}
 
 		// Always directly serve the HLS ts files.
-		if hpHlsEnabled && strings.HasSuffix(r.URL.Path, ".m3u8") {
-			m3u8ExpireInSeconds := 10
-			if hlsLowLatency, _ := rdb.HGet(ctx, SRS_LL_HLS, "hlsLowLatency").Result(); hlsLowLatency == "true" {
+		if fastCache.HLSHighPerformance && strings.HasSuffix(r.URL.Path, ".m3u8") {
+			var m3u8ExpireInSeconds int = 10
+			if fastCache.HLSLowLatency {
 				m3u8ExpireInSeconds = 1 // Note that we use smaller expire time that fragment duration.
 			}
 

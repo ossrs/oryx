@@ -1142,6 +1142,7 @@ The following are the update records for the SRS Stack server.
     * Dubbing: Highlight the currently playing group. v5.14.3
     * NGINX: Support set the m3u8 and ts expire. v5.14.3
     * HLS: Set m3u8 expire time to 1s for LLHLS. v5.14.4
+    * HLS: Use fast cache for HLS config. v5.14.4
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2

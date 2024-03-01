@@ -1,8 +1,6 @@
-//
 // Copyright (c) 2022-2023 Winlin
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//
 package main
 
 import (
@@ -32,6 +30,9 @@ var conf *Config
 func init() {
 	certManager = NewCertManager()
 	conf = NewConfig()
+
+	// We use polling to update some fast cache, for example, LLHLS config.
+	fastCache = NewFastCache()
 }
 
 func main() {
