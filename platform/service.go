@@ -395,7 +395,12 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 
 		// Always directly serve the HLS ts files.
 		if hpHlsEnabled && strings.HasSuffix(r.URL.Path, ".m3u8") {
-			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 10))
+			m3u8ExpireInSeconds := 10
+			if hlsLowLatency, _ := rdb.HGet(ctx, SRS_LL_HLS, "hlsLowLatency").Result(); hlsLowLatency == "true" {
+				m3u8ExpireInSeconds = 1 // Note that we use smaller expire time that fragment duration.
+			}
+
+			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", m3u8ExpireInSeconds))
 			hlsFileServer.ServeHTTP(w, r)
 			return
 		}

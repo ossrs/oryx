@@ -1147,6 +1147,7 @@ The following are the update records for the SRS Stack server.
     * FFmpeg: Support ingest SRT protocol. v5.13.26
     * VLive: Fix the re bug for file. [v5.13.27](https://github.com/ossrs/srs-stack/releases/tag/v5.13.27)
     * Release stable version and support debugging. [v5.13.28](https://github.com/ossrs/srs-stack/releases/tag/v5.13.28)
+    * HLS: Set m3u8 expire time to 1s for LLHLS. v5.13.29
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
@@ -1173,6 +1174,7 @@ The following are the update records for the SRS Stack server.
     * VLive: Fix rebuild URL bug. v5.12.20
     * HLS: Fix LL HLS setting bug. [v5.12.21](https://github.com/ossrs/srs-stack/releases/tag/v5.12.21)
     * VLive: Support SRT URL filter. v5.12.22
+    * HLS: Set m3u8 expire time to 1s for LLHLS. [v5.12.22](https://github.com/ossrs/srs-stack/releases/tag/v5.12.22)
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2
