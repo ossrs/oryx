@@ -1140,6 +1140,7 @@ The following are the update records for the SRS Stack server.
     * Dubbing: Support VoD dubbing for multiple languages. v5.14.2
     * Dubbing: Support disable translation, rephrase, or tts. v5.14.3
     * Dubbing: Highlight the currently playing group. v5.14.3
+    * NGINX: Support set the m3u8 and ts expire. v5.14.3
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2

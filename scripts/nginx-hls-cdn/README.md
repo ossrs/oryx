@@ -132,7 +132,11 @@ docker run --rm -it --name srs-stack-nginx01 -d \
   ossrs/srs-stack:nginx-hls-cdn-https
 ```
 
-> Note: Please replace the IP `128.199.114.145` with your SRS Stack.
+> Note: Please set the `SRS_STACK_SERVER` by replacing the IP `128.199.114.145` with your SRS Stack.
+
+> Note: Set the `SRS_M3U8_EXPIRE` to your SRS `hls_fragment` which is the TS duration, or the expired time to refresh the m3u8. Default value is 10 seconds.
+
+> Note: Set the `SRS_TS_EXPIRE` for the expired time for TS file. Default value is 3600 seconds.
 
 A HTTPS HLS stream should be available at [https://nginx01.your-domain.com/live/livestream.m3u8](http://128.199.114.145:2022/tools/player.html?url=https://nginx01.your-domain.com/live/livestream.m3u8),
 and now you got an Nginx server that supports HLS stream over HTTPS.

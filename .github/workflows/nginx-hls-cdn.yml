@@ -11,7 +11,7 @@ jobs:
         run: |
           SRS_MAJOR_HTTP=nginx-hls-cdn-http
           SRS_MAJOR_HTTPS=nginx-hls-cdn-https
-          SRS_VERSION=v1.0.1
+          SRS_VERSION=v1.0.2
           echo "SRS_MAJOR_HTTP=$SRS_MAJOR_HTTP" >> $GITHUB_ENV
           echo "SRS_MAJOR_HTTPS=$SRS_MAJOR_HTTPS" >> $GITHUB_ENV
           echo "SRS_VERSION=$SRS_VERSION" >> $GITHUB_ENV

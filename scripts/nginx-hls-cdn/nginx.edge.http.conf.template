@@ -6,7 +6,7 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
 
-    proxy_cache_valid  404      10s;
+    proxy_cache_valid  404 10s;
     proxy_cache_lock on;
     proxy_cache_lock_age 300s;
     proxy_cache_lock_timeout 300s;
@@ -18,7 +18,7 @@ server {
 
         proxy_cache srs_cache;
         proxy_cache_key $scheme$proxy_host$uri$args;
-        proxy_cache_valid  200 302  10s;
+        proxy_cache_valid  200 302 ${SRS_M3U8_EXPIRE}s;
         add_header X-Cache-Status $upstream_cache_status;
     }
 
@@ -28,7 +28,7 @@ server {
 
         proxy_cache srs_cache;
         proxy_cache_key $scheme$proxy_host$uri;
-        proxy_cache_valid  200 302  60m;
+        proxy_cache_valid  200 302 ${SRS_TS_EXPIRE}s;
         add_header X-Cache-Status $upstream_cache_status;
     }
 }
