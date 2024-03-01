@@ -1081,7 +1081,7 @@ The following are the update records for the SRS Stack server.
     * VLive: Fix rebuild URL bug. v5.12.20
     * HLS: Fix LL HLS setting bug. [v5.12.21](https://github.com/ossrs/srs-stack/releases/tag/v5.12.21)
     * VLive: Support SRT URL filter. v5.12.22
-    * HLS: Set m3u8 expire time to 1s for LLHLS. v5.12.22
+    * HLS: Set m3u8 expire time to 1s for LLHLS. [v5.12.22](https://github.com/ossrs/srs-stack/releases/tag/v5.12.22)
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2
