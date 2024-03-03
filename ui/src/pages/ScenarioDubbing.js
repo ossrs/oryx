@@ -723,20 +723,27 @@ function DubbingStudioEditor({project}) {
     ttsPlayer.current.play();
   }, [ttsPlayer, project]);
 
+  const replaySegment = React.useCallback((e, segment) => {
+    e.preventDefault();
+    if (segment.start === null || segment.start === undefined) return alert('Segment start is null');
+
+    // Include a very brief duration, as occasionally the prior end time is equal to the start time. By adding
+    // this duration, it ensures distinct playback from the current segment rather than the previous one.
+    playerRef.current.currentTime = segment.start + 0.001;
+    playerRef.current.play();
+  }, [playerRef]);
+
   const playSegment = React.useCallback((e, segment) => {
     e.preventDefault();
     if (segment.start === null || segment.start === undefined) return alert('Segment start is null');
 
     const isPlayingCurrentSegment = playerRef.current.currentTime >= segment.start && playerRef.current.currentTime <= segment.end;
     if (playerRef.current.paused || !isPlayingCurrentSegment) {
-      // Include a very brief duration, as occasionally the prior end time is equal to the start time. By adding
-      // this duration, it ensures distinct playback from the current segment rather than the previous one.
-      playerRef.current.currentTime = segment.start + 0.001;
-      playerRef.current.play();
+      replaySegment(e, segment);
     } else {
       playerRef.current.pause();
     }
-  }, [playerRef]);
+  }, [playerRef, replaySegment]);
 
   React.useEffect(() => {
     const timer = setInterval(() => {
@@ -839,77 +846,83 @@ function DubbingStudioEditor({project}) {
       <Row>
         <Col xs={11} className='ai-dubbing-workspace'>
           {task?.asr_response?.groups?.map((g, index) => {
-            return <Card key={g.uuid} className='ai-dubbing-group'>
-              <Card.Header className={g === activeGroup ? 'ai-dubbing-title ai-dubbing-title-playing' : 'ai-dubbing-title'}>
-                <Row>
-                  <Col xs={6}>
-                    <small className="text-secondary">
-                      ID.{g.id}: {formatDuration(g.start)} ~ {formatDuration(g.end)}
-                    </small> &nbsp;
-                    {g === activeGroup && isPlayingAudio ?
-                      <Spinner animation="border" as='span' variant="primary" size='sm' style={{verticalAlign: 'middle'}} /> : ''}
-                  </Col>
-                  <Col xs={6} className='text-end'>
-                    <>
-                      <Button variant='link' size='sm' className='ai-dubbing-button' disabled={requesting}
-                              onClick={(e) => rephraseGroup(e, task.uuid, g)}>
-                        {t('dubb.studio.rephrase')}
-                      </Button>
-                    </>
-                    <>
-                      <Button variant='link' size='sm' className='ai-dubbing-button' disabled={requesting}
-                              onClick={(e) => mergeToGroup(e, task.uuid, g, 'next')}>
-                        {t('dubb.studio.mpost')}
-                      </Button>
-                    </>
-                    {g.free_space !== undefined && <>
-                      <small className="text-secondary">Free: {Number(g.free_space).toFixed(1)}s</small>
-                    </>}
-                  </Col>
-                </Row>
-              </Card.Header>
-              <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
-                {g.segments.map((s) => {
-                  return <div key={s.uuid}>
-                    <Row>
-                      <Col xs={1} onClick={(e) => playSegment(e, s)} className='ai-dubbing-command'>
-                        <small className="text-secondary">
-                          #{s.id}: {Number(s.end - s.start).toFixed(1)}s
-                        </small> &nbsp;
-                        <Icon.Soundwave size={16} className='ai-dubbing-command' />
-                      </Col>
-                      <Col>
-                        {s.text}
-                      </Col>
-                    </Row>
-                  </div>;
-                })}
-              </Alert>
-              <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
-                <Row>
-                  <Col xs={1} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'>
-                    <small className="text-secondary">
-                      #{g.id}: {Number(g.tts_duration).toFixed(1)}s
-                    </small> &nbsp;
-                    {g.tts && <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
-                  </Col>
-                  <Col>
-                    {g.translated}
-                  </Col>
-                </Row>
-                {g.rephrased && g.rephrased !== g.translated && <Row>
-                  <Col xs={1} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'>
-                    <small className="text-secondary">
-                      #{g.id}: {Number(g.tts_duration).toFixed(1)}s
-                    </small> &nbsp;
-                    {g.rephrased && <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
-                  </Col>
-                  <Col>
-                    {g.rephrased}
-                  </Col>
-                </Row>}
-              </Alert>
-            </Card>;
+            return (
+              <Card key={g.uuid} className='ai-dubbing-group'>
+                <Card.Header className={g === activeGroup ? 'ai-dubbing-title ai-dubbing-title-playing' : 'ai-dubbing-title'}>
+                  <Row>
+                    <Col xs={6}>
+                      <small className="text-secondary">
+                        ID.{g.id}: {formatDuration(g.start)} ~ {formatDuration(g.end)}
+                      </small> &nbsp;
+                      {g === activeGroup && isPlayingAudio ?
+                        <Spinner animation="border" as='span' variant="primary" size='sm' style={{verticalAlign: 'middle'}} /> : ''}
+                    </Col>
+                    <Col xs={6} className='text-end'>
+                      <>
+                        <Button variant='link' size='sm' className='ai-dubbing-button' disabled={requesting}
+                                onClick={(e) => rephraseGroup(e, task.uuid, g)}>
+                          {t('dubb.studio.rephrase')}
+                        </Button>
+                      </>
+                      <>
+                        <Button variant='link' size='sm' className='ai-dubbing-button' disabled={requesting}
+                                onClick={(e) => mergeToGroup(e, task.uuid, g, 'next')}>
+                          {t('dubb.studio.mpost')}
+                        </Button>
+                      </>
+                      {g.free_space !== undefined && <>
+                        <small className="text-secondary">Free: {Number(g.free_space).toFixed(1)}s</small>
+                      </>}
+                    </Col>
+                  </Row>
+                </Card.Header>
+                <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
+                  {g.segments.map((s) => {
+                    return <div key={s.uuid}>
+                      <Row>
+                        <Col xs={1}>
+                          <label className='ai-dubbing-command' onClick={(e) => playSegment(e, s)}>
+                            <small className="text-secondary">
+                              #{s.id}: {Number(s.end - s.start).toFixed(1)}s
+                            </small> &nbsp;
+                          </label>
+                          <Icon.Soundwave
+                            className='ai-dubbing-command' size={16}
+                            onClick={(e) => replaySegment(e, s)} />
+                        </Col>
+                        <Col>
+                          {s.text}
+                        </Col>
+                      </Row>
+                    </div>;
+                  })}
+                </Alert>
+                <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
+                  <Row>
+                    <Col xs={1} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'>
+                      <small className="text-secondary">
+                        #{g.id}: {Number(g.tts_duration).toFixed(1)}s
+                      </small> &nbsp;
+                      {g.tts && <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
+                    </Col>
+                    <Col>
+                      {g.translated}
+                    </Col>
+                  </Row>
+                  {g.rephrased && g.rephrased !== g.translated && <Row>
+                    <Col xs={1} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'>
+                      <small className="text-secondary">
+                        #{g.id}: {Number(g.tts_duration).toFixed(1)}s
+                      </small> &nbsp;
+                      {g.rephrased && <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
+                    </Col>
+                    <Col>
+                      {g.rephrased}
+                    </Col>
+                  </Row>}
+                </Alert>
+              </Card>
+            );
           })}
         </Col>
         <Col></Col>

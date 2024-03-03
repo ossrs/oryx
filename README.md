@@ -142,6 +142,7 @@ The features that we're developing:
 - [x] Support live streaming transcoding by FFmpeg, see [#2869](https://github.com/ossrs/srs/issues/2869).
 - [x] Support transcription for converting speech to text.
 - [x] Support AI assistant for live room.
+- [x] Support video dubbing for multiple languages.
 - [ ] Support limit the streaming duration to limit the fee.
 - [ ] Support GB28181 by SRS 5.0 container.
 - [ ] Support WebRTC face to face chat, see [#2857](https://github.com/ossrs/srs/issues/2857).
