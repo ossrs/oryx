@@ -1,5 +1,5 @@
 import React from "react";
-import {Accordion, Button, Form, Spinner, Table} from "react-bootstrap";
+import {Accordion, Button, Form, Nav, Spinner, Table, Card} from "react-bootstrap";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 import {useTranslation} from "react-i18next";
 import {Token} from "../utils";
@@ -52,6 +52,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   const [organization, setOrganization] = React.useState(defaultConf.organization);
   const [baseURL, setBaseURL] = React.useState(defaultConf.baseURL || (language === 'zh' ? '' : 'https://api.openai.com/v1'));
   const [targetLanguage, setTargetLanguage] = React.useState(defaultConf.lang || language);
+  const [forceStyle, setForceStyle] = React.useState(defaultConf.forceStyle || 'Alignment=2,MarginV=20');
 
   const [liveQueue, setLiveQueue] = React.useState();
   const [asrQueue, setAsrQueue] = React.useState();
@@ -63,6 +64,13 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   const [overlayHlsPreview, setOverlayHlsPreview] = React.useState();
   const [originalHlsUrl, setOriginalHlsUrl] = React.useState();
   const [originalHlsPreview, setOriginalHlsPreview] = React.useState();
+
+  const [configItem, setConfigItem] = React.useState('provider');
+
+  const changeConfigItem = React.useCallback((e, t) => {
+    e.preventDefault();
+    setConfigItem(t);
+  }, [setConfigItem]);
 
   React.useEffect(() => {
     const l = window.location;
@@ -81,7 +89,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
     if (!baseURL) return alert(`Invalid base url ${baseURL}`);
 
     axios.post('/terraform/v1/ai/transcript/apply', {
-      uuid, all: !!enabled, secretKey, organization, baseURL, lang: targetLanguage,
+      uuid, all: !!enabled, secretKey, organization, baseURL, lang: targetLanguage, forceStyle,
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
@@ -89,7 +97,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
       console.log(`Transcript: Apply config ok, uuid=${uuid}.`);
       success && success();
     }).catch(handleError);
-  }, [t, handleError, secretKey, baseURL, targetLanguage, uuid, organization]);
+  }, [t, handleError, secretKey, baseURL, targetLanguage, forceStyle, uuid, organization]);
 
   const resetTask = React.useCallback(() => {
     setOperating(true);
@@ -281,19 +289,47 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
         <Accordion.Header>{t('transcript.service')}</Accordion.Header>
         <Accordion.Body>
           <Form>
-            <OpenAISecretSettings {...{
-              baseURL, setBaseURL, secretKey, setSecretKey,
-              organization, setOrganization,
-            }} />
+            <Card>
+              <Card.Header>
+                <Nav variant="tabs" defaultActiveKey="#provider">
+                  <Nav.Item>
+                    <Nav.Link href="#provider" onClick={(e) => changeConfigItem(e, 'provider')}>{t('lr.room.provider')}</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link href="#asr" onClick={(e) => changeConfigItem(e, 'asr')}>{t('lr.room.asr')}</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link href="#overlay" onClick={(e) => changeConfigItem(e, 'overlay')}>{t('transcript.overlay2')}</Nav.Link>
+                  </Nav.Item>
+                </Nav>
+              </Card.Header>
+              {configItem === 'provider' && <Card.Body>
+                <OpenAISecretSettings {...{
+                  baseURL, setBaseURL, secretKey, setSecretKey,
+                  organization, setOrganization,
+                }} />
+              </Card.Body>}
+              {configItem === 'asr' && <Card.Body>
+                <Form.Group className="mb-3">
+                  <Form.Label>{t('transcript.lang')}</Form.Label>
+                  <Form.Text> * {t('transcript.lang2')}. &nbsp;
+                    {t('helper.eg')} <code>en, zh, fr, de, ja, ru </code>, ... &nbsp;
+                    {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank' rel='noreferrer'>ISO-639-1</a>.
+                  </Form.Text>
+                  <Form.Control as="input" defaultValue={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)} />
+                </Form.Group>
+              </Card.Body>}
+              {configItem === 'overlay' && <Card.Body>
+                <Form.Group className="mb-3">
+                  <Form.Label>{t('transcript.fstyle')}</Form.Label>
+                  <Form.Text> * {t('transcript.fstyle2')}. &nbsp;
+                    {t('helper.see')} <a href={t('transcript.fstyle3')} target='_blank' rel='noreferrer'>FFmpeg: force_style</a>.
+                  </Form.Text>
+                  <Form.Control as="input" defaultValue={forceStyle} onChange={(e) => setForceStyle(e.target.value)} />
+                </Form.Group>
+              </Card.Body>}
+            </Card>
             <p></p>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('transcript.lang')}</Form.Label>
-              <Form.Text> * {t('transcript.lang2')}. &nbsp;
-                {t('helper.eg')} <code>en, zh, fr, de, ja, ru </code>, ... &nbsp;
-                {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank' rel='noreferrer'>ISO-639-1</a>.
-              </Form.Text>
-              <Form.Control as="input" defaultValue={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)} />
-            </Form.Group>
             <Button ariant="primary" type="submit" onClick={(e) => {
               e.preventDefault();
               updateAiService(!transcriptEnabled, () => {

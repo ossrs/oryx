@@ -379,6 +379,10 @@
         "res": "最后收到的响应"
       },
       "transcript": {
+        "fstyle3": "https://ossrs.net/lts/zh-cn/faq-srs-stack#how-to-setup-the-font-style-for-ai-transcript",
+        "fstyle2": "设置字幕的样式",
+        "fstyle": "字幕样式",
+        "overlay2": "叠加字幕",
         "title": "AI字幕",
         "service": "服务设置",
         "key": "OpenAI 密钥",
@@ -798,6 +802,10 @@
         "setupOk": "Set record rule ok"
       },
       "transcript": {
+        "fstyle3": "https://ossrs.io/lts/en-us/faq-srs-stack#how-to-setup-the-font-style-for-ai-transcript",
+        "fstyle2": "Force the style of the subtitle",
+        "fstyle": "Force Style",
+        "overlay2": "Overlay Subtitle",
         "clear2": "After clearing the subtitle, the video segment will have no subtitle, continue?",
         "clear": "Clear Subtitle",
         "action": "Actions",

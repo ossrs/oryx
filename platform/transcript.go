@@ -1,8 +1,6 @@
-//
 // Copyright (c) 2022-2023 Winlin
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//
 package main
 
 import (
@@ -1018,11 +1016,13 @@ type TranscriptConfig struct {
 	Organization string `json:"organization"`
 	// The language of the stream.
 	Language string `json:"lang"`
+	// The force_style for overlay subtitle.
+	ForceStyle string `json:"forceStyle"`
 }
 
 func (v TranscriptConfig) String() string {
-	return fmt.Sprintf("all=%v, key=%vB, organization=%v, base=%v, lang=%v",
-		v.All, len(v.SecretKey), v.Organization, v.BaseURL, v.Language)
+	return fmt.Sprintf("all=%v, key=%vB, organization=%v, base=%v, lang=%v, forceStyle=%v",
+		v.All, len(v.SecretKey), v.Organization, v.BaseURL, v.Language, v.ForceStyle)
 }
 
 func (v *TranscriptConfig) Load(ctx context.Context) error {
@@ -1766,8 +1766,13 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 	if !segment.UserClearASR {
 		if stats, err := os.Stat(segment.SrtFile); err == nil && stats.Size() > 0 {
 			// Note that the Alignment=2 means bottom center.
+			forceStyle := "Alignment=2,MarginV=20"
+			if v.config.ForceStyle != "" {
+				forceStyle = v.config.ForceStyle
+			}
+
 			args = append(args, []string{
-				"-vf", fmt.Sprintf("subtitles=%v:force_style='Alignment=2,MarginV=20'", segment.SrtFile),
+				"-vf", fmt.Sprintf("subtitles=%v:force_style='%v'", segment.SrtFile, forceStyle),
 			}...)
 		}
 	}
