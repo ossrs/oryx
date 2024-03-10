@@ -1149,7 +1149,7 @@ The following are the update records for the SRS Stack server.
     * Release stable version and support debugging. [v5.13.28](https://github.com/ossrs/srs-stack/releases/tag/v5.13.28)
     * HLS: Set m3u8 expire time to 1s for LLHLS. v5.13.29
     * Transcript: Support set the force_style for overlay subtitle. v5.13.30
-    * Transcript: Use Whisper response without LF. (#163). v5.13.31
+    * Transcript: Use Whisper response without LF. (#163). [v5.13.31](https://github.com/ossrs/srs-stack/releases/tag/v5.13.31)
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
