@@ -1646,26 +1646,8 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 		srt.WriteString(fmt.Sprintf("%02d:%02d:%02d,%03d\n",
 			int(e.Hours()), int(e.Minutes())%60, int(e.Seconds())%60, int(e.Milliseconds())%1000))
 
-		// Limit each line of text, write a new line if exceed.
-		lineMaxSize := 45
-		words := strings.Split(srtSegment.Text, " ")
-		var current string
-		for _, word := range words {
-			if word == "" {
-				continue
-			}
-
-			if len(current)+len(word) < lineMaxSize {
-				current += word + " "
-				continue
-			}
-
-			srt.WriteString(fmt.Sprintf("%v\n", current))
-			current = word + " "
-		}
-		if current != "" {
-			srt.WriteString(fmt.Sprintf("%v\n", current))
-		}
+		// Write the subtitle text.
+		srt.WriteString(fmt.Sprintf("%v\n", srtSegment.Text))
 
 		// Insert a new line.
 		srt.WriteString("\n")

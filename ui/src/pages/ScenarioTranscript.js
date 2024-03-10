@@ -192,6 +192,9 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
             size: Number(segment.size / 1024.0),
             eac: Number(segment.eac),
             asrc: Number(segment.asrc),
+            // The max length of the subtitle text in asrs array.
+            asrsMaxLength: Math.max(...segment.asrs.map(asr => asr.text.length)),
+            asrsMaxWords: Math.max(...segment.asrs.map(asr => asr.text.split(' ').length)),
             // Rules:
             // 1. Always allow to clear the first segment, that is only one segment in the queue.
             // 2. Prevent the first segment from clearing subtitles, as it may have already been added
@@ -225,6 +228,9 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
             eac: Number(segment.eac),
             asrc: Number(segment.asrc),
             olc: Number(segment.olc),
+            // The max length of the subtitle text in asrs array.
+            asrsMaxLength: Math.max(...segment.asrs.map(asr => asr.text.length)),
+            asrsMaxWords: Math.max(...segment.asrs.map(asr => asr.text.split(' ').length)),
           };
         });
         setOverlayQueue(queue);
@@ -420,6 +426,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
                 <th>Duration</th>
                 <th title={t('transcript.eac')}>EAC</th>
                 <th title={t('transcript.asrc')}>ASRC</th>
+                <th>Segments</th>
                 <th>Size</th>
                 <th>Text</th>
                 <th>{t('transcript.action')}</th>
@@ -433,6 +440,9 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
                   <td>{`${segment.duration.toFixed(1)}`}s</td>
                   <td>{`${segment.eac.toFixed(1)}`}ms</td>
                   <td>{`${segment.asrc.toFixed(1)}`}ms</td>
+                  <td title={`There are ${segment.asrs.length} segments, max text length is ${segment.asrsMaxLength} bytes, max words is ${segment.asrsMaxWords}`}>
+                    {segment.asrs.length}/{segment.asrsMaxLength}/{segment.asrsMaxWords}
+                  </td>
                   <td>{`${segment.size.toFixed(1)}`}KB</td>
                   <td style={{textDecoration: segment.uca ? "line-through" : ''}}>{segment.asr}</td>
                   <td>
@@ -464,6 +474,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
                 <th title={t('transcript.eac')}>EAC</th>
                 <th title={t('transcript.asrc')}>ASRC</th>
                 <th title={t('transcript.olc')}>OLC</th>
+                <th>Segments</th>
                 <th>Size</th>
                 <th>Text</th>
               </tr>
@@ -478,6 +489,9 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
                   <td>{`${segment.asrc.toFixed(1)}`}ms</td>
                   <td>{`${segment.olc.toFixed(1)}`}ms</td>
                   <td>{`${segment.size.toFixed(1)}`}MB</td>
+                  <td title={`There are ${segment.asrs.length} segments, max text length is ${segment.asrsMaxLength} bytes, max words is ${segment.asrsMaxWords}`}>
+                    {segment.asrs.length}/{segment.asrsMaxLength}/{segment.asrsMaxWords}
+                  </td>
                   <td style={{textDecoration: segment.uca ? "line-through" : ''}}>{segment.asr}</td>
                 </tr>;
               })}
