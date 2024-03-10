@@ -21,10 +21,14 @@ func NewFastCache() *FastCache {
 func (v *FastCache) Refresh(ctx context.Context) error {
 	if vs, _ := rdb.HGet(ctx, SRS_LL_HLS, "hlsLowLatency").Result(); vs == "true" {
 		v.HLSLowLatency = true
+	} else {
+		v.HLSLowLatency = false
 	}
 
 	if vs, _ := rdb.HGet(ctx, SRS_HP_HLS, "noHlsCtx").Result(); vs == "true" {
 		v.HLSHighPerformance = true
+	} else {
+		v.HLSHighPerformance = false
 	}
 
 	return nil

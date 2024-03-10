@@ -243,7 +243,7 @@ func prepareTest(ctx context.Context) (err error) {
 
 		// Try to find file by which if it's a command like ffmpeg.
 		cmd := exec.Command("which", filename)
-		cmd.Env = []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+		cmd.Env = []string{"PATH=/opt/homebrew/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
 		if v, err := cmd.Output(); err == nil {
 			return strings.TrimSpace(string(v)), nil
 		}
