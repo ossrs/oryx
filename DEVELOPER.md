@@ -1144,6 +1144,7 @@ The following are the update records for the SRS Stack server.
     * HLS: Set m3u8 expire time to 1s for LLHLS. v5.14.4
     * HLS: Use fast cache for HLS config. v5.14.4
     * Transcript: Support set the force_style for overlay subtitle. v5.14.5
+    * Transcript: Use Whisper response without LF. (#163). v5.14.5
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
@@ -1178,6 +1179,7 @@ The following are the update records for the SRS Stack server.
     * Release stable version and support debugging. [v5.13.28](https://github.com/ossrs/srs-stack/releases/tag/v5.13.28)
     * HLS: Set m3u8 expire time to 1s for LLHLS. v5.13.29
     * Transcript: Support set the force_style for overlay subtitle. v5.13.30
+    * Transcript: Use Whisper response without LF. (#163). v5.13.31
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
