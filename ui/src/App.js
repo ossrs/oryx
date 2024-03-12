@@ -116,7 +116,7 @@ function AppRoute({initialized, setInitialized}) {
   }, [tokenUpdated]);
 
   const onInit = React.useCallback((token) => {
-    setInitialized(true);
+    setInitialized(1);
     setTokenUpdated(true);
   }, [setInitialized, setTokenUpdated]);
 

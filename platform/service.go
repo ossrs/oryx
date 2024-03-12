@@ -524,6 +524,7 @@ func handleMgmtInit(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "load %v", envFile)
 			}
 
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
 			expireAt, createAt, token, err := createToken(ctx, os.Getenv("SRS_PLATFORM_SECRET"))
 			if err != nil {
 				return errors.Wrapf(err, "build token")
@@ -533,8 +534,11 @@ func handleMgmtInit(ctx context.Context, handler *http.ServeMux) {
 				Token    string `json:"token"`
 				CreateAt string `json:"createAt"`
 				ExpireAt string `json:"expireAt"`
+				// Allow user to directly use Bearer token.
+				Bearer string `json:"bearer"`
 			}{
 				Token: token, CreateAt: createAt.Format(time.RFC3339), ExpireAt: expireAt.Format(time.RFC3339),
+				Bearer: apiSecret,
 			})
 			logger.Tf(ctx, "init password ok, create=%v, expire=%v, password=%vB", createAt, expireAt, len(password))
 			return nil
