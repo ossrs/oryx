@@ -376,12 +376,13 @@ In the [application store](http://localhost:7800/soft), there is a `srs_stack` p
 
 To build SRS droplet image for [DigitalOcean Marketplace](https://marketplace.digitalocean.com/).
 
-For the first run, please [install Packer](https://www.packer.io/intro/getting-started/install.html) and plugin:
+For the first run, please [install Packer](https://www.packer.io/intro/getting-started/install.html) and 
+[plugin](https://developer.hashicorp.com/packer/integrations/digitalocean/digitalocean):
 
 ```bash
 brew tap hashicorp/tap &&
 brew install hashicorp/tap/packer &&
-PACKER_LOG=1 packer plugins install github.com/digitalocean/digitalocean v1.1.1
+PACKER_LOG=1 packer plugins install github.com/digitalocean/digitalocean
 ```
 
 Start to build SRS image by:
