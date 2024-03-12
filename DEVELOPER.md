@@ -411,12 +411,16 @@ ssh root@$SRS_DROPLET_EIP sudo mkdir -p /data/upload test scripts/tools &&
 ssh root@$SRS_DROPLET_EIP sudo chmod 777 /data/upload &&
 cp ~/git/srs/trunk/doc/source.200kbps.768x320.flv test/ &&
 scp ./test/source.200kbps.768x320.flv root@$SRS_DROPLET_EIP:/data/upload/ &&
-docker run --rm -it -v $(pwd):/g -w /g ossrs/srs:ubuntu20 make -C test clean default &&
+docker run --rm -it -v $(pwd):/g -w /g -e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=amd64 \
+    ossrs/srs:ubuntu20 make -C test clean default &&
 scp ./test/srs-stack.test ./test/source.200kbps.768x320.flv root@$SRS_DROPLET_EIP:~/test/ &&
 scp ./scripts/tools/secret.sh root@$SRS_DROPLET_EIP:~/scripts/tools &&
 ssh root@$SRS_DROPLET_EIP docker run --rm -v /usr/bin:/g ossrs/srs:tools \
     cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
 ```
+
+> Note: By setting `CGO_ENABLED=0 GOOS=linux GOARCH=amd64`, we always build for x86_64 linux platform, 
+> because we only use the DigitalOcean VPS with x86_64.
 
 Test the droplet instance:
 
@@ -424,14 +428,10 @@ Test the droplet instance:
 ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh --output test/.env &&
 ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://$SRS_DROPLET_EIP:2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
-    -test.run TestSystem_Empty &&
+    -test.run TestSystem_Empty && sleep 3 &&
 ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh --output test/.env &&
 ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://$SRS_DROPLET_EIP:2022 \
     -endpoint-rtmp rtmp://$SRS_DROPLET_EIP -endpoint-http http://$SRS_DROPLET_EIP -endpoint-srt srt://$SRS_DROPLET_EIP:10080 \
-    -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
-    -test.parallel 1 &&
-ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://$SRS_DROPLET_EIP:2443 \
-    -endpoint-rtmp rtmp://$SRS_DROPLET_EIP -endpoint-http https://$SRS_DROPLET_EIP -endpoint-srt srt://$SRS_DROPLET_EIP:10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 1
 ```
@@ -1181,7 +1181,7 @@ The following are the update records for the SRS Stack server.
     * Release stable version and support debugging. [v5.13.28](https://github.com/ossrs/srs-stack/releases/tag/v5.13.28)
     * HLS: Set m3u8 expire time to 1s for LLHLS. v5.13.29
     * Transcript: Support set the force_style for overlay subtitle. v5.13.30
-    * Transcript: Use Whisper response without LF. (#163). [v5.13.31](https://github.com/ossrs/srs-stack/releases/tag/v5.13.31)
+    * Transcript: Use Whisper response without LF. (#163). v5.13.31
     * Token: Fix bug for Bearer token while initializing. [v5.13.32](https://github.com/ossrs/srs-stack/releases/tag/v5.13.32)
 * v5.12
     * Refine local variable name conf to config. v5.12.1
