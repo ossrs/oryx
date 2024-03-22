@@ -99,7 +99,7 @@ type openaiChatService struct {
 	onFirstResponse func(ctx context.Context, text string)
 }
 
-func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest, stage *Stage, user *StageUser) error {
+func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest, stage *Stage, user *StageUser, taskCancel context.CancelFunc) error {
 	if stage.previousUser != "" && stage.previousAssitant != "" {
 		stage.histories = append(stage.histories, openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleUser,
@@ -128,10 +128,6 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 		Role:    openai.ChatMessageRoleUser,
 		Content: user.previousAsrText,
 	})
-	messages = append(messages, openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleAssistant,
-		Content: user.previousAiText,
-	})
 
 	model := stage.chatModel
 	maxTokens := 1024
@@ -159,8 +155,91 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 
 	go func() {
 		defer gptChatStream.Close()
-		if err := v.handle(ctx, stage, user, sreq, gptChatStream, aiFirstResponseCancel); err != nil {
+		if err := v.handle(ctx,
+			stage, user, sreq, gptChatStream, aiFirstResponseCancel, taskCancel,
+			func(sentence string) {
+				stage.previousAssitant += sentence + " "
+			},
+		); err != nil {
 			logger.Ef(ctx, "Handle stream failed, err %+v", err)
+		}
+	}()
+
+	// Util AI generated the first sentence and commit the audio segment to TTS worker, we are allowed
+	// response to client, and client will request the audio segments of this request and wait for segments
+	// to be ready. If response before AI generated the first sentence, client will get nothing audio
+	// segments and may start a new sentence.
+	select {
+	case <-ctx.Done():
+	case <-aiFirstResponseCtx.Done():
+	}
+
+	return nil
+}
+
+func (v *openaiChatService) RequestPostProcess(ctx context.Context, sreq *StageRequest, stage *Stage, user *StageUser) error {
+	if stage.postPreviousUser != "" && stage.postPreviousAssitant != "" {
+		stage.postHistories = append(stage.postHistories, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleUser,
+			Content: stage.postPreviousUser,
+		}, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleAssistant,
+			Content: stage.postPreviousAssitant,
+		})
+
+		for len(stage.postHistories) > stage.postChatWindow*2 {
+			stage.postHistories = stage.postHistories[1:]
+		}
+	}
+
+	stage.postPreviousUser = stage.previousAssitant
+	stage.postPreviousAssitant = ""
+
+	system := stage.postPrompt
+	system += fmt.Sprintf(" Keep your reply neat, limiting the reply to %v words.", stage.postReplyLimit)
+	messages := []openai.ChatCompletionMessage{
+		{Role: openai.ChatMessageRoleSystem, Content: system},
+	}
+
+	messages = append(messages, stage.postHistories...)
+	messages = append(messages, openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: stage.previousAssitant,
+	})
+
+	model := stage.postChatModel
+	maxTokens := 1024
+	temperature := float32(0.9)
+	logger.Tf(ctx, "AIPostProcess is baseURL=%v, org=%v, model=%v, maxTokens=%v, temperature=%v, window=%v, histories=%v, system is %v",
+		v.conf.BaseURL, v.conf.OrgID, model, maxTokens, temperature, stage.postChatWindow, len(stage.postHistories), system)
+
+	client := openai.NewClientWithConfig(v.conf)
+	gptChatStream, err := client.CreateChatCompletionStream(
+		ctx, openai.ChatCompletionRequest{
+			Model:       model,
+			Messages:    messages,
+			Stream:      true,
+			Temperature: temperature,
+			MaxTokens:   maxTokens,
+		},
+	)
+	if err != nil {
+		return errors.Wrapf(err, "create post-process")
+	}
+
+	// Wait for AI got the first sentence response.
+	aiFirstResponseCtx, aiFirstResponseCancel := context.WithCancel(ctx)
+	defer aiFirstResponseCancel()
+
+	go func() {
+		defer gptChatStream.Close()
+		if err := v.handle(ctx,
+			stage, user, sreq, gptChatStream, aiFirstResponseCancel, nil,
+			func(sentence string) {
+				stage.postPreviousAssitant += sentence + " "
+			},
+		); err != nil {
+			logger.Ef(ctx, "Handle post-process stream failed, err %+v", err)
 		}
 	}()
 
@@ -179,8 +258,12 @@ func (v *openaiChatService) RequestChat(ctx context.Context, sreq *StageRequest,
 func (v *openaiChatService) handle(
 	ctx context.Context, stage *Stage, user *StageUser, sreq *StageRequest,
 	gptChatStream *openai.ChatCompletionStream, aiFirstResponseCancel context.CancelFunc,
+	taskCancel context.CancelFunc, onSentence func(string),
 ) error {
 	defer aiFirstResponseCancel()
+	if taskCancel != nil {
+		defer taskCancel()
+	}
 
 	filterAIResponse := func(response *openai.ChatCompletionStreamResponse, err error) (bool, string, error) {
 		finished := errors_std.Is(err, io.EOF)
@@ -318,10 +401,9 @@ func (v *openaiChatService) handle(
 		}
 
 		// Use the sentence for prompt and logging.
-		stage.previousAssitant += sentence + " "
-		// We utilize user ASR and AI responses as prompts for the subsequent ASR, given that this is
-		// a chat-based scenario where the user converses with the AI, and the following audio should pertain to both user and AI text.
-		user.previousAiText += " " + sentence
+		if onSentence != nil && sentence != "" {
+			onSentence(sentence)
+		}
 		// Commit the sentense to TTS worker and callbacks.
 		commitAISentence(sentence, firstSentense)
 		// Reset the sentence, because we have committed it.
@@ -559,6 +641,8 @@ type StageMessage struct {
 	Role string `json:"role"`
 	// The username who send this message.
 	Username string `json:"username,omitempty"`
+	// Whether it's a new sentence.
+	NewSentence bool `json:"sentence,omitempty"`
 
 	// For role text.
 	// The message content.
@@ -701,6 +785,7 @@ func (v *StageSubscriber) completeRobotAudioMessage(ctx context.Context, sreq *S
 	message.RequestUUID, message.SegmentUUID = sreq.rid, segment.asid
 	message.Message, message.audioFile = segment.text, copyFile
 	message.Username = v.stage.room.AIName
+	message.NewSentence = segment.first
 
 	// User may disable TTS, we only ship the text message to user.
 	message.HasAudioFile = !segment.noTTS
@@ -785,8 +870,6 @@ type StageUser struct {
 
 	// Previous ASR text, to use as prompt for next ASR.
 	previousAsrText string
-	// Previous AI response text, also can be used for next ASR.
-	previousAiText string
 
 	// Last update of user.
 	update time.Time
@@ -818,21 +901,33 @@ type Stage struct {
 	ttsWorker *TTSWorker
 	// The logging context, to write all logs in one context for a sage.
 	loggingCtx context.Context
-	// Previous chat text, to use as prompt for next chat.
-	previousUser, previousAssitant string
-	// The chat history, to use as prompt for next chat.
-	histories []openai.ChatCompletionMessage
 
+	// For post processing.
+	// Previous chat text, to use as prompt for next chat.
+	postPreviousUser, postPreviousAssitant string
+	// The chat history, to use as prompt for next chat.
+	postHistories []openai.ChatCompletionMessage
+	// Reply words limit.
+	postReplyLimit int
+	// AI Chat model.
+	postChatModel string
+	// AI Chat message window.
+	postChatWindow int
 	// The AI prompt.
-	prompt string
-	// The AI ASR language.
-	asrLanguage string
-	// The AI asr prompt type. user or user-ai.
-	asrPrompt string
+	postPrompt string
+
+	// Shared configurations for both chat and post processing.
 	// The prefix for TTS for the first sentence if too short.
 	prefix string
 	// The welcome voice url.
 	voice string
+
+	// Previous chat text, to use as prompt for next chat.
+	previousUser, previousAssitant string
+	// The chat history, to use as prompt for next chat.
+	histories []openai.ChatCompletionMessage
+	// The AI prompt.
+	prompt string
 	// Reply words limit.
 	replyLimit int
 	// AI Chat model.
@@ -840,9 +935,15 @@ type Stage struct {
 	// AI Chat message window.
 	chatWindow int
 
+	// The AI ASR language.
+	asrLanguage string
+	// The AI asr prompt type. user or user-ai.
+	asrPrompt string
+
 	// Whether enabled AI services.
 	aiASREnabled  bool
 	aiChatEnabled bool
+	aiPostEnabled bool
 	aiTtsEnabled  bool
 
 	// The AI configuration.
@@ -876,13 +977,22 @@ func NewStage(opts ...func(*Stage)) *Stage {
 
 func (v Stage) String() string {
 	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("enabled(asr:%v,chat:%v,post:%v,tts:%v)",
+		v.aiASREnabled, v.aiChatEnabled, v.aiPostEnabled, v.aiTtsEnabled))
 	sb.WriteString(fmt.Sprintf("sid:%v,asr:%v,asrp:%v",
 		v.sid, v.asrLanguage, v.asrPrompt))
 	if v.prefix != "" {
 		sb.WriteString(fmt.Sprintf(",prefix:%v", v.prefix))
 	}
-	sb.WriteString(fmt.Sprintf(",voice=%v,limit=%v,model=%v,window=%v,prompt:%v",
-		v.voice, v.replyLimit, v.chatModel, v.chatWindow, v.prompt))
+	sb.WriteString(fmt.Sprintf(",voice=%v", v.voice))
+	if v.aiChatEnabled {
+		sb.WriteString(fmt.Sprintf(",chat(limit=%v,model=%v,window=%v,prompt:%v)",
+			v.replyLimit, v.chatModel, v.chatWindow, v.prompt))
+	}
+	if v.aiPostEnabled {
+		sb.WriteString(fmt.Sprintf(",post(limit=%v,model=%v,window=%v,prompt:%v)",
+			v.postReplyLimit, v.postChatModel, v.postChatWindow, v.postPrompt))
+	}
 	return sb.String()
 }
 
@@ -907,6 +1017,7 @@ func (v *Stage) UpdateFromRoom(room *SrsLiveRoom) {
 	// Whether enabled.
 	v.aiASREnabled = room.AIASREnabled
 	v.aiChatEnabled = room.AIChatEnabled
+	v.aiPostEnabled = room.AIPostEnabled
 	v.aiTtsEnabled = room.AITTSEnabled
 
 	// Create robot for the stage, which attach to a special room.
@@ -917,6 +1028,12 @@ func (v *Stage) UpdateFromRoom(room *SrsLiveRoom) {
 	v.replyLimit = room.AIChatMaxWords
 	v.chatModel = room.AIChatModel
 	v.chatWindow = room.AIChatMaxWindow
+
+	// Setup the post processing AI configuration.
+	v.postReplyLimit = room.AIPostMaxWords
+	v.postChatModel = room.AIPostModel
+	v.postChatWindow = room.AIPostMaxWindow
+	v.postPrompt = room.AIPostPrompt
 
 	// Initialize the AI services.
 	v.aiConfig = openai.DefaultConfig(room.AISecretKey)
@@ -1563,7 +1680,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// Important trace log.
-			user.previousAsrText, user.previousAiText = sreq.asrText, ""
+			user.previousAsrText = sreq.asrText
 			logger.Tf(ctx, "You: %v", sreq.asrText)
 
 			// Notify all subscribers about the ASR text.
@@ -1575,6 +1692,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			stage.KeepAlive()
 
 			// Do chat, get the response in stream.
+			chatTaskCtx, chatTaskCancel := context.WithCancel(context.Background())
 			if stage.aiChatEnabled {
 				chatService := &openaiChatService{
 					conf: stage.aiConfig,
@@ -1583,8 +1701,25 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 						sreq.lastRobotFirstText = text
 					},
 				}
-				if err := chatService.RequestChat(ctx, sreq, stage, user); err != nil {
+				if err := chatService.RequestChat(ctx, sreq, stage, user, chatTaskCancel); err != nil {
 					return errors.Wrapf(err, "chat")
+				}
+			}
+
+			// Do AI post-process ,get the response in stream.
+			if stage.aiChatEnabled && stage.aiPostEnabled {
+				// Wait for chat to be completed.
+				select {
+				case <-ctx.Done():
+				case <-chatTaskCtx.Done():
+				}
+
+				// Start post processing task.
+				chatService := &openaiChatService{
+					conf: stage.aiConfig,
+				}
+				if err := chatService.RequestPostProcess(ctx, sreq, stage, user); err != nil {
+					return errors.Wrapf(err, "post-process")
 				}
 			}
 

@@ -517,7 +517,7 @@ export function AITalkDictationPanel({roomUUID, roomToken, username, userLanguag
           }
 
           const audioSegmentUUID = msg.asid;
-          traceLog(msg.username || 'Bot', msg.msg, 'success');
+          traceLog(msg.username || 'Bot', msg.msg, 'success', msg.sentence);
 
           // For dictation pattern, we always ignore TTS audio files.
           // No audio file, skip it.

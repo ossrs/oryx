@@ -329,13 +329,24 @@ type SrsAssistant struct {
 	// The AI chat max words.
 	AIChatMaxWords int `json:"aiChatMaxWords"`
 
+	// Whether enable the AI post processing.
+	AIPostEnabled bool `json:"aiPostEnabled"`
+	// The AI model name.
+	AIPostModel string `json:"aiPostModel"`
+	// The AI chat system prompt.
+	AIPostPrompt string `json:"aiPostPrompt"`
+	// The AI chat max window.
+	AIPostMaxWindow int `json:"aiPostMaxWindow"`
+	// The AI chat max words.
+	AIPostMaxWords int `json:"aiPostMaxWords"`
+
 	// Whether enable the AI TTS.
 	AITTSEnabled bool `json:"aiTtsEnabled"`
 }
 
 func NewAssistant(opts ...func(*SrsAssistant)) *SrsAssistant {
 	v := &SrsAssistant{
-		AIASREnabled: true, AIChatEnabled: true, AITTSEnabled: true,
+		AIASREnabled: true, AIChatEnabled: true, AIPostEnabled: true, AITTSEnabled: true,
 	}
 	for _, opt := range opts {
 		opt(v)
@@ -344,8 +355,9 @@ func NewAssistant(opts ...func(*SrsAssistant)) *SrsAssistant {
 }
 
 func (v *SrsAssistant) String() string {
-	return fmt.Sprintf("assistant=%v, name=%v, provider=%v, secretKey=%vB, baseURL=%v, asr=<enabled=%v,language=%v,prompt=%v>, chat=<enabled=%v,model=%v,prompt=%v,window=%v,words=%v>, tts=<%v>",
+	return fmt.Sprintf("assistant=%v, name=%v, provider=%v, secretKey=%vB, baseURL=%v, asr=<enabled=%v,language=%v,prompt=%v>, chat=<enabled=%v,model=%v,prompt=%v,window=%v,words=%v>, post=<enabled=%v,model=%v,prompt=%v,window=%v,words=%v>, tts=<%v>",
 		v.Assistant, v.AIName, v.AIProvider, len(v.AISecretKey), v.AIBaseURL, v.AIASREnabled,
 		v.AIASRLanguage, v.AIASRPrompt, v.AIChatEnabled, v.AIChatModel, v.AIChatPrompt, v.AIChatMaxWindow,
-		v.AIChatMaxWords, v.AITTSEnabled)
+		v.AIChatMaxWords, v.AIPostEnabled, v.AIPostModel, v.AIPostPrompt, v.AIPostMaxWindow,
+		v.AIPostMaxWords, v.AITTSEnabled)
 }

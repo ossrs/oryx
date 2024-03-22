@@ -524,7 +524,8 @@
           "startd": "开始听写",
           "asrp": "ASR提示词",
           "asrp2": "请选择生成ASR提示词的方式",
-          "rbasic": "房间基本设置"
+          "rbasic": "房间基本设置",
+          "post": "后处理"
         }
       },
       "plat": {
@@ -759,6 +760,7 @@
       },
       "lr": {
         "room": {
+          "post": "Post Processing",
           "rbasic": "Room Settings",
           "asrp2": "Please select the way to generate ASR prompt",
           "asrp": "ASR Prompt",

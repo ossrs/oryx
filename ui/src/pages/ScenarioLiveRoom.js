@@ -422,6 +422,7 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
   const [aiBaseURL, setAiBaseURL] = React.useState(room.aiBaseURL || (language === 'zh' ? '' : 'https://api.openai.com/v1'));
   const [aiAsrEnabled, setAiAsrEnabled] = React.useState(room.aiAsrEnabled);
   const [aiChatEnabled, setAiChatEnabled] = React.useState(room.aiChatEnabled);
+  const [aiPostEnabled, setAiPostEnabled] = React.useState(room.aiPostEnabled);
   const [aiTtsEnabled, setAiTtsEnabled] = React.useState(room.aiTtsEnabled);
   const [aiAsrLanguage, setAiAsrLanguage] = React.useState(room.aiAsrLanguage || language || 'en');
   const [aiAsrPrompt, setAiAsrPrompt] = React.useState(room.aiAsrPrompt || 'user-ai');
@@ -429,6 +430,10 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
   const [aiChatPrompt, setAiChatPrompt] = React.useState(room.aiChatPrompt || 'You are a helpful assistant.');
   const [aiChatMaxWindow, setAiChatMaxWindow] = React.useState(room.aiChatMaxWindow || 5);
   const [aiChatMaxWords, setAiChatMaxWords] = React.useState(room.aiChatMaxWords || 300);
+  const [aiPostModel, setAiPostModel] = React.useState(room.aiPostModel || 'gpt-3.5-turbo');
+  const [aiPostPrompt, setAiPostPrompt] = React.useState(room.aiPostPrompt || 'You are a helpful assistant.');
+  const [aiPostMaxWindow, setAiPostMaxWindow] = React.useState(room.aiPostMaxWindow || 5);
+  const [aiPostMaxWords, setAiPostMaxWords] = React.useState(room.aiPostMaxWords || 300);
 
   const [configItem, setConfigItem] = React.useState('basic');
   const [userName, setUserName] = React.useState('You');
@@ -450,10 +455,13 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
       aiChatMaxWords: parseInt(aiChatMaxWords), aiAsrEnabled: !!aiAsrEnabled,
       aiChatEnabled: !!aiChatEnabled, aiTtsEnabled: !!aiTtsEnabled,
       aiAsrPrompt,
+      aiPostEnabled: !!aiPostEnabled, aiPostModel, aiPostPrompt,
+      aiPostMaxWindow: parseInt(aiPostMaxWindow), aiPostMaxWords: parseInt(aiPostMaxWords),
     })
   }, [
     updateRoom, room, aiName, aiProvider, aiSecretKey, aiBaseURL, aiAsrLanguage, aiChatModel, aiChatPrompt,
-    aiChatMaxWindow, aiChatMaxWords, aiAsrEnabled, aiChatEnabled, aiTtsEnabled, aiAsrPrompt, aiOrganization
+    aiChatMaxWindow, aiChatMaxWords, aiAsrEnabled, aiChatEnabled, aiTtsEnabled, aiAsrPrompt, aiOrganization,
+    aiPostEnabled, aiPostModel, aiPostPrompt, aiPostMaxWindow, aiPostMaxWords,
   ]);
 
   const onDisableRoom = React.useCallback((e) => {
@@ -515,6 +523,9 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
             </Nav.Item>
             <Nav.Item>
               <Nav.Link href="#chat" onClick={(e) => changeConfigItem(e, 'chat')}>{t('lr.room.chat')}</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link href="#post" onClick={(e) => changeConfigItem(e, 'post')}>{t('lr.room.post')}</Nav.Link>
             </Nav.Item>
             <Nav.Item>
               <Nav.Link href="#tts" onClick={(e) => changeConfigItem(e, 'tts')}>{t('lr.room.tts')}</Nav.Link>
@@ -602,6 +613,34 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
             <Form.Label>{t('lr.room.words')}</Form.Label>
             <Form.Text> * {t('lr.room.words2')}</Form.Text>
             <Form.Control as="input" type='input' defaultValue={aiChatMaxWords} onChange={(e) => setAiChatMaxWords(e.target.value)} />
+          </Form.Group>
+          <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
+        </Card.Body>}
+        {configItem === 'post' && <Card.Body>
+          <Form.Group className="mb-3">
+            <Form.Group className="mb-3" controlId="formAiChatEnabledCheckbox">
+              <Form.Check type="checkbox" label={t('lr.room.chate')} defaultChecked={aiPostEnabled} onClick={() => setAiPostEnabled(!aiPostEnabled)} />
+            </Form.Group>
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.model')}</Form.Label>
+            <Form.Text> * {t('lr.room.model2')}</Form.Text>
+            <Form.Control as="input" type='input' defaultValue={aiPostModel} onChange={(e) => setAiPostModel(e.target.value)} />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.prompt')}</Form.Label>
+            <Form.Text> * {t('lr.room.prompt2')}</Form.Text>
+            <Form.Control as="textarea" type='text' rows={7}  defaultValue={aiPostPrompt} onChange={(e) => setAiPostPrompt(e.target.value)} />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.window')}</Form.Label>
+            <Form.Text> * {t('lr.room.window2')}</Form.Text>
+            <Form.Control as="input" type='input' defaultValue={aiPostMaxWindow} onChange={(e) => setAiPostMaxWindow(e.target.value)} />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>{t('lr.room.words')}</Form.Label>
+            <Form.Text> * {t('lr.room.words2')}</Form.Text>
+            <Form.Control as="input" type='input' defaultValue={aiPostMaxWords} onChange={(e) => setAiPostMaxWords(e.target.value)} />
           </Form.Group>
           <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
         </Card.Body>}

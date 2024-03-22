@@ -526,12 +526,12 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
         for (let i = 0; i < msgs.length; i++) {
           const msg = msgs[i];
           if (msg.role === 'user') {
-            traceLog(msg.username || 'You', msg.msg, 'primary');
+            traceLog(msg.username || 'You', msg.msg, 'primary', msg.sentence);
             continue;
           }
 
           const audioSegmentUUID = msg.asid;
-          traceLog(msg.username || 'Bot', msg.msg, 'success');
+          traceLog(msg.username || 'Bot', msg.msg, 'success', msg.sentence);
 
           // No audio file, skip it.
           if (!msg.hasAudio) {
@@ -848,12 +848,12 @@ export function AITalkChatOnlyPanel({roomUUID, roomToken}) {
         for (let i = 0; i < msgs.length; i++) {
           const msg = msgs[i];
           if (msg.role === 'user') {
-            traceLog(msg.username, msg.msg, 'primary');
+            traceLog(msg.username, msg.msg, 'primary', msg.sentence);
             return;
           }
 
           const audioSegmentUUID = msg.asid;
-          traceLog(msg.username, msg.msg, 'success');
+          traceLog(msg.username, msg.msg, 'success', msg.sentence);
 
           // Play the AI generated audio.
           await new Promise(resolve => {
