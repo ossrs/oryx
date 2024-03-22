@@ -635,7 +635,9 @@
           "mpre": "合并前一组",
           "mpost": "合并后一组",
           "rephrase": "改进翻译",
-          "download": "下载翻译视频"
+          "download": "下载翻译视频",
+          "disabled": "无法下载视频，请确认TTS完成，并调整所有红色背景的片段",
+          "link": "https://ossrs.net/lts/zh-cn/blog/dubbing-translating#step-5-start-dubbing-and-download-translated-video"
         }
       }
     }
@@ -644,6 +646,8 @@
     "translation": {
       "dubb": {
         "studio": {
+          "link": "https://ossrs.io/lts/en-us/blog/dubbing-translating#step-5-start-dubbing-and-download-translated-video",
+          "disabled": "Cannot download video, please confirm TTS is completed, and adjust all red background segments",
           "download": "Download Dubbing Video",
           "rephrase": "Rephrase",
           "mpost": "Merge next",

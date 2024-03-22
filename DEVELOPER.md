@@ -1148,6 +1148,7 @@ The following are the update records for the SRS Stack server.
     * Transcript: Use Whisper response without LF. (#163). v5.14.5
     * Token: Fix bug for Bearer token while initializing. [v5.14.6](https://github.com/ossrs/srs-stack/releases/tag/v5.14.6)
     * Room: Enable dictation mode for AI-Talk. v5.14.7
+    * Dubbing: Refine download button with comments. v5.14.8
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2

@@ -835,10 +835,16 @@ function DubbingStudioEditor({project}) {
         </Button> &nbsp;
       </>}
       {!startupRequesting && task?.status === 'done' && <>
-        <Button variant='primary' type='submit' disabled={requesting || processing || !allGroupReady} onClick={(e) => downloadArtifact(e, task.uuid)}>
-          {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status" aria-hidden="true"/> &nbsp;</>}
-          {t('dubb.studio.download')}
-        </Button>
+        <Form.Group className='mb-3'>
+          <Button variant='primary' type='submit' disabled={requesting || processing || !allGroupReady} onClick={(e) => downloadArtifact(e, task.uuid)}>
+            {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status" aria-hidden="true"/> &nbsp;</>}
+            {t('dubb.studio.download')}
+          </Button>
+          <Form.Text> * {t('dubb.studio.disabled')}. &nbsp;
+            {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank'
+                                 rel='noreferrer'>this article</a>.
+          </Form.Text>
+        </Form.Group>
       </>}
       <p></p>
     </div>
