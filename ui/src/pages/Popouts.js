@@ -19,6 +19,7 @@ export default function Popouts() {
   const location = useLocation();
   const {i18n} = useTranslation();
   const [initialized, setInitialized] = React.useState(false);
+  const handleError = useErrorHandler();
 
   // Switch language for popout, because it does not use navigator, so there is no
   // LanguageSwitch to do this.
@@ -39,6 +40,14 @@ export default function Popouts() {
 
     setInitialized(true);
   }, [setInitialized, i18n, location]);
+
+  React.useEffect(() => {
+    axios.get('/terraform/v1/mgmt/beian/query')
+      .then(res => {
+        document.title = res.data.data.title || 'SRS Stack';
+        console.log(`Beian: query ${JSON.stringify(res.data.data)}`);
+      }).catch(handleError);
+  }, [handleError]);
 
   return (
     <Container fluid>
