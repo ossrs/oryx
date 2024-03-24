@@ -1794,8 +1794,8 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		segment.CostOverlay = time.Since(starttime)
 		v.OverlayQueue.enqueue(segment)
 	}()
-	logger.Tf(ctx, "transcript: overlay %v to %v, size=%v, cost=%v",
-		segment.TsFile.File, overlayFile.File, overlayFile.Size, segment.CostOverlay)
+	logger.Tf(ctx, "transcript: overlay %v to %v, size=%v, transcode=<ffmpeg %v>, cost=%v",
+		segment.TsFile.File, overlayFile.File, overlayFile.Size, strings.Join(args, " "), segment.CostOverlay)
 
 	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
