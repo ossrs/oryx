@@ -53,6 +53,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   const [baseURL, setBaseURL] = React.useState(defaultConf.baseURL || (language === 'zh' ? '' : 'https://api.openai.com/v1'));
   const [targetLanguage, setTargetLanguage] = React.useState(defaultConf.lang || language);
   const [forceStyle, setForceStyle] = React.useState(defaultConf.forceStyle || 'Alignment=2,MarginV=20');
+  const [videoCodecParams, setVideoCodecParams] = React.useState(defaultConf.videoCodecParams || '-c:v libx264 -profile:v main -preset:v medium -tune zerolatency -bf 0');
 
   const [liveQueue, setLiveQueue] = React.useState();
   const [asrQueue, setAsrQueue] = React.useState();
@@ -89,7 +90,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
     if (!baseURL) return alert(`Invalid base url ${baseURL}`);
 
     axios.post('/terraform/v1/ai/transcript/apply', {
-      uuid, all: !!enabled, secretKey, organization, baseURL, lang: targetLanguage, forceStyle,
+      uuid, all: !!enabled, secretKey, organization, baseURL, lang: targetLanguage, forceStyle, videoCodecParams,
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
@@ -97,7 +98,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
       console.log(`Transcript: Apply config ok, uuid=${uuid}.`);
       success && success();
     }).catch(handleError);
-  }, [t, handleError, secretKey, baseURL, targetLanguage, forceStyle, uuid, organization]);
+  }, [t, handleError, secretKey, baseURL, targetLanguage, forceStyle, videoCodecParams, uuid, organization]);
 
   const resetTask = React.useCallback(() => {
     setOperating(true);
@@ -307,6 +308,9 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
                   <Nav.Item>
                     <Nav.Link href="#overlay" onClick={(e) => changeConfigItem(e, 'overlay')}>{t('transcript.overlay2')}</Nav.Link>
                   </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link href="#transcode" onClick={(e) => changeConfigItem(e, 'transcode')}>{t('transcript.transcode')}</Nav.Link>
+                  </Nav.Item>
                 </Nav>
               </Card.Header>
               {configItem === 'provider' && <Card.Body>
@@ -332,6 +336,15 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
                     {t('helper.see')} <a href={t('transcript.fstyle3')} target='_blank' rel='noreferrer'>FFmpeg: force_style</a>.
                   </Form.Text>
                   <Form.Control as="input" defaultValue={forceStyle} onChange={(e) => setForceStyle(e.target.value)} />
+                </Form.Group>
+              </Card.Body>}
+              {configItem === 'transcode' && <Card.Body>
+                <Form.Group className="mb-3">
+                  <Form.Label>{t('transcript.trans0')}</Form.Label>
+                  <Form.Text> * {t('transcript.trans1')}. &nbsp;
+                    {t('helper.see')} <a href={t('transcript.trans2')} target='_blank' rel='noreferrer'>FFmpeg: video codec</a>.
+                  </Form.Text>
+                  <Form.Control as="input" defaultValue={videoCodecParams} onChange={(e) => setVideoCodecParams(e.target.value)} />
                 </Form.Group>
               </Card.Body>}
             </Card>

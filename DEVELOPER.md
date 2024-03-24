@@ -1151,6 +1151,7 @@ The following are the update records for the SRS Stack server.
     * Dubbing: Refine download button with comments. v5.14.8
     * Room: AI-Talk support post processing. v5.14.9
     * Website: Support setting title for popout. v5.14.10
+    * Transcript: Support set the video codec parameters. [v5.14.11](https://github.com/ossrs/srs-stack/releases/tag/v5.14.11)
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2

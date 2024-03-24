@@ -379,6 +379,10 @@
         "res": "最后收到的响应"
       },
       "transcript": {
+        "trans2": "https://ossrs.net/lts/zh-cn/faq-srs-stack#how-to-setup-the-video-codec-parameters-for-ai-transcript",
+        "trans1": "自定义视频转码参数",
+        "trans0": "视频转码参数",
+        "transcode": "转码设置",
         "fstyle3": "https://ossrs.net/lts/zh-cn/faq-srs-stack#how-to-setup-the-font-style-for-ai-transcript",
         "fstyle2": "设置字幕的样式",
         "fstyle": "字幕样式",
@@ -870,6 +874,10 @@
         "setupOk": "Set record rule ok"
       },
       "transcript": {
+        "trans2": "https://ossrs.io/lts/en-us/faq-srs-stack#how-to-setup-the-video-codec-parameters-for-ai-transcript",
+        "trans1": "Customize video transcode parameters",
+        "trans0": "Video Transcode Parameters",
+        "transcode": "Transcode Settings",
         "fstyle3": "https://ossrs.io/lts/en-us/faq-srs-stack#how-to-setup-the-font-style-for-ai-transcript",
         "fstyle2": "Force the style of the subtitle",
         "fstyle": "Force Style",

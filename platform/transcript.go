@@ -1018,11 +1018,13 @@ type TranscriptConfig struct {
 	Language string `json:"lang"`
 	// The force_style for overlay subtitle.
 	ForceStyle string `json:"forceStyle"`
+	// The video codec parameters.
+	VideoCodecParams string `json:"videoCodecParams"`
 }
 
 func (v TranscriptConfig) String() string {
-	return fmt.Sprintf("all=%v, key=%vB, organization=%v, base=%v, lang=%v, forceStyle=%v",
-		v.All, len(v.SecretKey), v.Organization, v.BaseURL, v.Language, v.ForceStyle)
+	return fmt.Sprintf("all=%v, key=%vB, organization=%v, base=%v, lang=%v, forceStyle=%v, videoCodecParams=%v",
+		v.All, len(v.SecretKey), v.Organization, v.BaseURL, v.Language, v.ForceStyle, v.VideoCodecParams)
 }
 
 func (v *TranscriptConfig) Load(ctx context.Context) error {
@@ -1758,11 +1760,15 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 			}...)
 		}
 	}
+	// Generate the video parameters.
+	videoCodecParams := "-c:v libx264 -profile:v main -preset:v medium -tune zerolatency -bf 0"
+	if v.config.VideoCodecParams != "" {
+		videoCodecParams = v.config.VideoCodecParams
+	}
+	args = append(args, strings.Split(videoCodecParams, " ")...)
+	// Generate other parameters for FFmpeg.
 	args = append(args, []string{
-		"-vcodec", "libx264", "-profile:v", "main", "-preset:v", "medium",
-		"-tune", "zerolatency", // Low latency mode.
-		"-bf", "0", // Disable B frame for WebRTC.
-		"-acodec", "aac",
+		"-c:a", "aac",
 		"-copyts", // To keep the pts not changed.
 		"-y", overlayFile.File,
 	}...)
