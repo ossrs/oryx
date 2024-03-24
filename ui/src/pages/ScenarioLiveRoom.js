@@ -566,17 +566,15 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
               <Form.Check type="checkbox" label={t('lr.room.asre')} defaultChecked={aiAsrEnabled} onClick={() => setAiAsrEnabled(!aiAsrEnabled)} />
             </Form.Group>
           </Form.Group>
-          {false /* Do not set the ASR language here, because each user need to set before startup. */ && <>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('transcript.lang')}</Form.Label>
-              <Form.Text> * {t('transcript.lang2')}. &nbsp;
-                {t('helper.eg')} <code>en, zh, fr, de, ja, ru </code>, ... &nbsp;
-                {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank'
-                                     rel='noreferrer'>ISO-639-1</a>.
-              </Form.Text>
-              <Form.Control as="input" defaultValue={aiAsrLanguage} onChange={(e) => setAiAsrLanguage(e.target.value)}/>
-            </Form.Group>
-          </>}
+          <Form.Group className="mb-3">
+            <Form.Label>{t('transcript.lang')}</Form.Label>
+            <Form.Text> * {t('transcript.lang2')}. &nbsp;
+              {t('helper.eg')} <code>en, zh, fr, de, ja, ru </code>, ... &nbsp;
+              {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank'
+                                   rel='noreferrer'>ISO-639-1</a>.
+            </Form.Text>
+            <Form.Control as="input" defaultValue={aiAsrLanguage} onChange={(e) => setAiAsrLanguage(e.target.value)}/>
+          </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label>{t('lr.room.asrp')}</Form.Label>
             <Form.Text> * {t('lr.room.asrp2')}.</Form.Text>
