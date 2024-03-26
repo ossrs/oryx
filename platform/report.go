@@ -180,7 +180,7 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		for _, v := range rooms {
 			var obj SrsLiveRoom
 			if err = json.Unmarshal([]byte(v), &obj); err == nil {
-				if obj.Assistant {
+				if obj.Assistant && obj.AISecretKey != "" {
 					count++
 				}
 				if talkServer != nil {
