@@ -1151,6 +1151,7 @@ The following are the update records for the SRS Stack server.
     * Transcript: Support set the force_style for overlay subtitle. v5.13.30
     * Transcript: Use Whisper response without LF. (#163). [v5.13.31](https://github.com/ossrs/srs-stack/releases/tag/v5.13.31)
     * Token: Fix bug for Bearer token while initializing. [v5.13.32](https://github.com/ossrs/srs-stack/releases/tag/v5.13.32)
+    * Room: Refine stat for AI-Talk. v5.13.33
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
