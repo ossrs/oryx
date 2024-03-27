@@ -54,6 +54,8 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   const [targetLanguage, setTargetLanguage] = React.useState(defaultConf.lang || language);
   const [forceStyle, setForceStyle] = React.useState(defaultConf.forceStyle || 'Alignment=2,MarginV=20');
   const [videoCodecParams, setVideoCodecParams] = React.useState(defaultConf.videoCodecParams || '-c:v libx264 -profile:v main -preset:v medium -tune zerolatency -bf 0');
+  const [overlayEnabled, setOverlayEnabled] = React.useState(defaultConf.overlayEnabled);
+  const [webvttEnabled, setWebvttEnabled] = React.useState(defaultConf.webvttEnabled);
 
   const [liveQueue, setLiveQueue] = React.useState();
   const [asrQueue, setAsrQueue] = React.useState();
@@ -63,6 +65,8 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   const [uuid, setUuid] = React.useState(defaultUuid);
   const [overlayHlsUrl, setOverlayHlsUrl] = React.useState();
   const [overlayHlsPreview, setOverlayHlsPreview] = React.useState();
+  const [webvttHlsUrl, setWebvttHlsUrl] = React.useState();
+  const [webvttHlsPreview, setWebvttHlsPreview] = React.useState();
   const [originalHlsUrl, setOriginalHlsUrl] = React.useState();
   const [originalHlsPreview, setOriginalHlsPreview] = React.useState();
 
@@ -81,16 +85,21 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
     setOverlayHlsUrl(`${l.protocol}//${l.host}/terraform/v1/ai/transcript/hls/overlay/${uuid}.m3u8`);
     setOverlayHlsPreview(`/players/srs_player.html?schema=${schema}&port=${httpPort}&autostart=true&app=terraform/v1/ai/transcript/hls/overlay&stream=${uuid}.m3u8`);
 
+    setWebvttHlsUrl(`${l.protocol}//${l.host}/terraform/v1/ai/transcript/hls/webvtt/${uuid}/index.m3u8`);
+    setWebvttHlsPreview(`/players/srs_player.html?schema=${schema}&port=${httpPort}&autostart=true&app=terraform/v1/ai/transcript/hls/webvtt/${uuid}&stream=index.m3u8`);
+
     setOriginalHlsUrl(`${l.protocol}//${l.host}/terraform/v1/ai/transcript/hls/original/${uuid}.m3u8`);
     setOriginalHlsPreview(`/players/srs_player.html?schema=${schema}&port=${httpPort}&autostart=true&app=terraform/v1/ai/transcript/hls/original&stream=${uuid}.m3u8`);
-  }, [uuid, setOverlayHlsUrl, setOverlayHlsPreview, setOriginalHlsUrl, setOriginalHlsPreview]);
+  }, [uuid, setOverlayHlsUrl, setOverlayHlsPreview, setWebvttHlsUrl, setWebvttHlsPreview, setOriginalHlsUrl, setOriginalHlsPreview]);
 
   const updateAiService = React.useCallback((enabled, success) => {
     if (!secretKey) return alert(`Invalid secret key ${secretKey}`);
     if (!baseURL) return alert(`Invalid base url ${baseURL}`);
 
     axios.post('/terraform/v1/ai/transcript/apply', {
-      uuid, all: !!enabled, secretKey, organization, baseURL, lang: targetLanguage, forceStyle, videoCodecParams,
+      uuid, all: !!enabled, secretKey, organization, baseURL, lang: targetLanguage,
+      overlayEnabled: !!overlayEnabled, forceStyle, videoCodecParams,
+      webvttEnabled: !!webvttEnabled,
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
@@ -98,7 +107,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
       console.log(`Transcript: Apply config ok, uuid=${uuid}.`);
       success && success();
     }).catch(handleError);
-  }, [t, handleError, secretKey, baseURL, targetLanguage, forceStyle, videoCodecParams, uuid, organization]);
+  }, [t, handleError, secretKey, baseURL, targetLanguage, overlayEnabled, forceStyle, videoCodecParams, webvttEnabled, uuid, organization]);
 
   const resetTask = React.useCallback(() => {
     setOperating(true);
@@ -309,7 +318,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
                     <Nav.Link href="#overlay" onClick={(e) => changeConfigItem(e, 'overlay')}>{t('transcript.overlay2')}</Nav.Link>
                   </Nav.Item>
                   <Nav.Item>
-                    <Nav.Link href="#transcode" onClick={(e) => changeConfigItem(e, 'transcode')}>{t('transcript.transcode')}</Nav.Link>
+                    <Nav.Link href="#webvtt" onClick={(e) => changeConfigItem(e, 'webvtt')}>{t('transcript.vtt')}</Nav.Link>
                   </Nav.Item>
                 </Nav>
               </Card.Header>
@@ -331,20 +340,30 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
               </Card.Body>}
               {configItem === 'overlay' && <Card.Body>
                 <Form.Group className="mb-3">
+                  <Form.Group className="mb-3" controlId="formOverlayEnabledCheckbox">
+                    <Form.Check type="checkbox" label={t('transcript.ole')} defaultChecked={overlayEnabled} onClick={() => setOverlayEnabled(!overlayEnabled)} />
+                  </Form.Group>
+                </Form.Group>
+                <Form.Group className="mb-3">
                   <Form.Label>{t('transcript.fstyle')}</Form.Label>
                   <Form.Text> * {t('transcript.fstyle2')}. &nbsp;
                     {t('helper.see')} <a href={t('transcript.fstyle3')} target='_blank' rel='noreferrer'>FFmpeg: force_style</a>.
                   </Form.Text>
                   <Form.Control as="input" defaultValue={forceStyle} onChange={(e) => setForceStyle(e.target.value)} />
                 </Form.Group>
-              </Card.Body>}
-              {configItem === 'transcode' && <Card.Body>
                 <Form.Group className="mb-3">
                   <Form.Label>{t('transcript.trans0')}</Form.Label>
                   <Form.Text> * {t('transcript.trans1')}. &nbsp;
                     {t('helper.see')} <a href={t('transcript.trans2')} target='_blank' rel='noreferrer'>FFmpeg: video codec</a>.
                   </Form.Text>
                   <Form.Control as="input" defaultValue={videoCodecParams} onChange={(e) => setVideoCodecParams(e.target.value)} />
+                </Form.Group>
+              </Card.Body>}
+              {configItem === 'webvtt' && <Card.Body>
+                <Form.Group className="mb-3">
+                  <Form.Group className="mb-3" controlId="formWebvttEnabledCheckbox">
+                    <Form.Check type="checkbox" label={t('transcript.vtt2')} defaultChecked={webvttEnabled} onClick={() => setWebvttEnabled(!webvttEnabled)} />
+                  </Form.Group>
                 </Form.Group>
               </Card.Body>}
             </Card>
@@ -518,6 +537,9 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
         <Accordion.Body>
           {t('transcript.porg')}: <a href={originalHlsPreview} target='_blank' rel='noreferrer'>{originalHlsUrl}</a><br/>
           {t('transcript.pol')}: <a href={overlayHlsPreview} target='_blank' rel='noreferrer'>{overlayHlsUrl}</a><br/>
+          {webvttEnabled && <>
+            {t('transcript.pvtt')}: <a href={webvttHlsPreview} target='_blank' rel='noreferrer'>{webvttHlsUrl}</a><br/>
+          </>}
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>

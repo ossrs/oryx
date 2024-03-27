@@ -379,10 +379,13 @@
         "res": "最后收到的响应"
       },
       "transcript": {
+        "pvtt": "预览WebVTT字幕",
+        "vtt2": "是否开启WebVTT字幕",
+        "vtt": "WebVTT字幕",
+        "ole":"是否开启视频叠加字幕",
         "trans2": "https://ossrs.net/lts/zh-cn/faq-srs-stack#how-to-setup-the-video-codec-parameters-for-ai-transcript",
         "trans1": "自定义视频转码参数",
         "trans0": "视频转码参数",
-        "transcode": "转码设置",
         "fstyle3": "https://ossrs.net/lts/zh-cn/faq-srs-stack#how-to-setup-the-font-style-for-ai-transcript",
         "fstyle2": "设置字幕的样式",
         "fstyle": "字幕样式",
@@ -874,10 +877,13 @@
         "setupOk": "Set record rule ok"
       },
       "transcript": {
+        "pvtt": "Preview live stream with WebVTT",
+        "vtt2": "Enable WebVTT subtitle",
+        "vtt": "WebVTT Subtitle",
+        "ole": "Enable video overlay subtitle",
         "trans2": "https://ossrs.io/lts/en-us/faq-srs-stack#how-to-setup-the-video-codec-parameters-for-ai-transcript",
         "trans1": "Customize video transcode parameters",
         "trans0": "Video Transcode Parameters",
-        "transcode": "Transcode Settings",
         "fstyle3": "https://ossrs.io/lts/en-us/faq-srs-stack#how-to-setup-the-font-style-for-ai-transcript",
         "fstyle2": "Force the style of the subtitle",
         "fstyle": "Force Style",

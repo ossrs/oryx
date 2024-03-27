@@ -1,8 +1,6 @@
-//
 // Copyright (c) 2022-2023 Winlin
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//
 package main
 
 import (
@@ -930,6 +928,25 @@ func buildLiveM3u8ForLocal(
 	return
 }
 
+// buildLiveM3u8ForVariantCC go generate variant m3u8 with CC(Closed Caption).
+func buildLiveM3u8ForVariantCC(
+	ctx context.Context, bitrate int64, lang, stream, subtitles string,
+) (contentType, m3u8Body string, err error) {
+	m3u8 := []string{
+		"#EXTM3U",
+		fmt.Sprintf(
+			`#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="Subtitle-%v",LANGUAGE="%v",DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,URI="%v"`,
+			strings.ToUpper(lang), lang, subtitles,
+		),
+		fmt.Sprintf(`#EXT-X-STREAM-INF:BANDWIDTH=%v,SUBTITLES="subs"`, bitrate),
+		stream,
+	}
+
+	contentType = "application/vnd.apple.mpegurl"
+	m3u8Body = strings.Join(m3u8, "\n")
+	return
+}
+
 // slicesContains is a function to check whether elem in arr.
 func slicesContains(arr []string, elem string) bool {
 	for _, e := range arr {
@@ -1760,8 +1777,9 @@ const FFmpegAbnormalSlowSpeed = 0.5
 const RestartFFmpegCountAbnormalSpeed = uint64(30)
 
 // ParseFFmpegCycleLog parse the FFmpeg cycle log, return the timestamp and speed. The log is mostly like:
-//		size=18859kB time=00:10:09.38 bitrate=253.5kbits/s speed=1x
-//		frame=184 fps=9.7 q=28.0 size=364kB time=00:00:19.41 bitrate=153.7kbits/s dup=0 drop=235 speed=1.03x
+//
+//	size=18859kB time=00:10:09.38 bitrate=253.5kbits/s speed=1x
+//	frame=184 fps=9.7 q=28.0 size=364kB time=00:00:19.41 bitrate=153.7kbits/s dup=0 drop=235 speed=1.03x
 func ParseFFmpegCycleLog(line string) (timestamp, speed string, err error) {
 	re := regexp.MustCompile(`time=(\S+)( .*)speed=(\S+)`)
 	matches := re.FindStringSubmatch(line)

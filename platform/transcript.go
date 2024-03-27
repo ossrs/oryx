@@ -77,13 +77,13 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			var config TranscriptConfig
+			config := NewTranscriptConfig()
 			if err := config.Load(ctx); err != nil {
 				return errors.Wrapf(err, "load config")
 			}
 
 			type QueryResponse struct {
-				Config TranscriptConfig `json:"config"`
+				Config *TranscriptConfig `json:"config"`
 				Task   struct {
 					UUID string `json:"uuid"`
 				} `json:"task"`
@@ -600,11 +600,206 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 		}
 	})
 
+	ep = "/terraform/v1/ai/transcript/hls/webvtt/"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		hlsM3u8VariantHandler := func(w http.ResponseWriter, r *http.Request) error {
+			// Format is webvtt/:uuid/index.m3u8
+			webvttPrefix := "/terraform/v1/ai/transcript/hls/webvtt/"
+			filename := r.URL.Path[len(webvttPrefix):]
+			// Format is :uuid/index.m3u8
+			uuid := filename[:len(filename)-len("/index.m3u8")]
+			if len(uuid) == 0 {
+				return errors.Errorf("invalid uuid %v from %v of %v", uuid, filename, r.URL.Path)
+			}
+
+			segments := v.task.overlaySegments()
+			if len(segments) == 0 {
+				return errors.Errorf("no segments for %v", uuid)
+			}
+
+			firstSegment := segments[0]
+			if firstSegment.OverlayFile == nil {
+				return errors.Errorf("no overlay file for %v", uuid)
+			}
+			if firstSegment.OverlayFile.Duration == 0.0 {
+				return errors.Errorf("no duration for %v %v", uuid, firstSegment.OverlayFile.TsID)
+			}
+			bitrate := int64(firstSegment.OverlayFile.Size) * 8 / int64(firstSegment.OverlayFile.Duration)
+			if bitrate <= 0 {
+				return errors.Errorf("invalid bitrate %v of %v %v", bitrate, uuid, firstSegment.OverlayFile.TsID)
+			}
+
+			contentType, m3u8Body, err := buildLiveM3u8ForVariantCC(
+				ctx, bitrate, v.task.config.Language,
+				fmt.Sprintf("%v%v.m3u8", webvttPrefix, uuid),
+				"subtitles.m3u8",
+			)
+			if err != nil {
+				return errors.Wrapf(err, "build transcript webvtt m3u8 of %v", uuid)
+			}
+
+			w.Header().Set("Content-Type", contentType)
+			w.Write([]byte(m3u8Body))
+			logger.Tf(ctx, "transcript generate m3u8 ok, uuid=%v", uuid)
+			return nil
+		}
+
+		hlsM3u8Handler := func(w http.ResponseWriter, r *http.Request) error {
+			// Format is /webvtt/:uuid.m3u8
+			filename := r.URL.Path[len("/terraform/v1/ai/transcript/hls/webvtt/"):]
+			// Format is :uuid.m3u8
+			uuid := filename[:len(filename)-len(path.Ext(filename))]
+			if len(uuid) == 0 {
+				return errors.Errorf("invalid uuid %v from %v of %v", uuid, filename, r.URL.Path)
+			}
+
+			var tsFiles []*TsFile
+			segments := v.task.overlaySegments()
+			for _, segment := range segments {
+				tsFiles = append(tsFiles, segment.TsFile)
+			}
+
+			contentType, m3u8Body, duration, err := buildLiveM3u8ForLocal(
+				ctx, tsFiles, false, "/terraform/v1/ai/transcript/hls/webvtt/",
+			)
+			if err != nil {
+				return errors.Wrapf(err, "build transcript webvtt m3u8 of %v", tsFiles)
+			}
+
+			w.Header().Set("Content-Type", contentType)
+			w.Write([]byte(m3u8Body))
+			logger.Tf(ctx, "transcript generate m3u8 ok, uuid=%v, duration=%v", uuid, duration)
+			return nil
+		}
+
+		hlsTsHandler := func(w http.ResponseWriter, r *http.Request) error {
+			// Format is :uuid.ts
+			filename := r.URL.Path[len("/terraform/v1/ai/transcript/hls/webvtt/"):]
+			fileBase := path.Base(filename)
+			uuid := fileBase[:len(fileBase)-len(path.Ext(fileBase))]
+			if len(uuid) == 0 {
+				return errors.Errorf("invalid uuid %v from %v of %v", uuid, fileBase, r.URL.Path)
+			}
+
+			tsFilePath := path.Join("transcript", fmt.Sprintf("%v.ts", uuid))
+			if _, err := os.Stat(tsFilePath); err != nil {
+				return errors.Wrapf(err, "no ts file %v", tsFilePath)
+			}
+
+			if tsFile, err := os.Open(tsFilePath); err != nil {
+				return errors.Wrapf(err, "open file %v", tsFilePath)
+			} else {
+				defer tsFile.Close()
+				w.Header().Set("Content-Type", "application/vnd.apple.mpegurl")
+				io.Copy(w, tsFile)
+			}
+
+			logger.Tf(ctx, "transcript server ts file ok, uuid=%v, ts=%v", uuid, tsFilePath)
+			return nil
+		}
+
+		hlsM3u8SubtitleHandler := func(w http.ResponseWriter, r *http.Request) error {
+			// Format is webvtt/:uuid/subtitles.m3u8
+			webvttPrefix := "/terraform/v1/ai/transcript/hls/webvtt/"
+			filename := r.URL.Path[len(webvttPrefix):]
+			// Format is :uuid/index.m3u8
+			uuid := filename[:len(filename)-len("/subtitles.m3u8")]
+			if len(uuid) == 0 {
+				return errors.Errorf("invalid uuid %v from %v of %v", uuid, filename, r.URL.Path)
+			}
+
+			var tsFiles []*TsFile
+			segments := v.task.overlaySegments()
+			for _, segment := range segments {
+				vttFile := *segment.OverlayFile
+				vttFile.Key = fmt.Sprintf("%v.vtt", vttFile.TsID)
+				tsFiles = append(tsFiles, &vttFile)
+			}
+
+			contentType, m3u8Body, _, err := buildLiveM3u8ForLocal(
+				ctx, tsFiles, true, "/terraform/v1/ai/transcript/hls/webvtt/",
+			)
+			if err != nil {
+				return errors.Wrapf(err, "build transcript webvtt m3u8 of %v", tsFiles)
+			}
+
+			w.Header().Set("Content-Type", contentType)
+			w.Write([]byte(m3u8Body))
+			logger.Tf(ctx, "transcript generate m3u8 ok, uuid=%v", uuid)
+			return nil
+		}
+
+		hlsVttHandler := func(w http.ResponseWriter, r *http.Request) error {
+			// Format is :uuid.ts
+			filename := r.URL.Path[len("/terraform/v1/ai/transcript/hls/webvtt/"):]
+			fileBase := path.Base(filename)
+			uuid := fileBase[:len(fileBase)-len(path.Ext(fileBase))]
+			if len(uuid) == 0 {
+				return errors.Errorf("invalid uuid %v from %v of %v", uuid, fileBase, r.URL.Path)
+			}
+
+			// Find out the segment by overlay vtt ID.
+			var segment *TranscriptSegment
+			for _, s := range v.task.overlaySegments() {
+				if s.OverlayFile != nil && s.OverlayFile.TsID == uuid {
+					segment = s
+					break
+				}
+			}
+			if segment == nil {
+				return errors.Errorf("no segment for %v", uuid)
+			}
+
+			if segment.AsrText == nil {
+				return errors.Errorf("no asr text for %v", uuid)
+			}
+			if len(segment.AsrText.Segments) == 0 {
+				return errors.Errorf("no asr text segments for %v", uuid)
+			}
+
+			var vttBody strings.Builder
+			vttBody.WriteString(fmt.Sprintf("WEBVTT\n\n"))
+			for _, as := range segment.AsrText.Segments {
+				s := segment.StreamStarttime + time.Duration(as.Start*float64(time.Second))
+				e := segment.StreamStarttime + time.Duration(as.End*float64(time.Second))
+				vttBody.WriteString(fmt.Sprintf("%02d:%02d:%02d.%03d --> ",
+					int(s.Hours()), int(s.Minutes())%60, int(s.Seconds())%60, int(s.Milliseconds())%1000))
+				vttBody.WriteString(fmt.Sprintf("%02d:%02d:%02d.%03d\n",
+					int(e.Hours()), int(e.Minutes())%60, int(e.Seconds())%60, int(e.Milliseconds())%1000))
+				vttBody.WriteString(fmt.Sprintf("%v\n\n", as.Text))
+			}
+
+			w.Header().Set("Content-Type", "text/vtt")
+			w.Write([]byte(vttBody.String()))
+			logger.Tf(ctx, "transcript server vtt file ok, uuid=%v", uuid)
+			return nil
+		}
+
+		if err := func() error {
+			if strings.HasSuffix(r.URL.Path, "/index.m3u8") {
+				return hlsM3u8VariantHandler(w, r)
+			} else if strings.HasSuffix(r.URL.Path, "/subtitles.m3u8") {
+				return hlsM3u8SubtitleHandler(w, r)
+			} else if strings.HasSuffix(r.URL.Path, ".m3u8") {
+				return hlsM3u8Handler(w, r)
+			} else if strings.HasSuffix(r.URL.Path, ".ts") {
+				return hlsTsHandler(w, r)
+			} else if strings.HasSuffix(r.URL.Path, ".vtt") {
+				return hlsVttHandler(w, r)
+			}
+
+			return errors.Errorf("invalid handler for %v", r.URL.Path)
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
 	ep = "/terraform/v1/ai/transcript/hls/overlay/"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		overlayM3u8Handler := func(w http.ResponseWriter, r *http.Request) error {
-			// Format is :uuid.m3u8 or :uuid/index.m3u8
+			// Format is /overlay/:uuid.m3u8
 			filename := r.URL.Path[len("/terraform/v1/ai/transcript/hls/overlay/"):]
 			// Format is :uuid.m3u8
 			uuid := filename[:len(filename)-len(path.Ext(filename))]
@@ -674,7 +869,7 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		originalM3u8Handler := func(w http.ResponseWriter, r *http.Request) error {
-			// Format is :uuid.m3u8 or :uuid/index.m3u8
+			// Format is /original/:uuid.m3u8
 			filename := r.URL.Path[len("/terraform/v1/ai/transcript/hls/original/"):]
 			// Format is :uuid.m3u8
 			uuid := filename[:len(filename)-len(path.Ext(filename))]
@@ -1020,11 +1215,22 @@ type TranscriptConfig struct {
 	ForceStyle string `json:"forceStyle"`
 	// The video codec parameters.
 	VideoCodecParams string `json:"videoCodecParams"`
+	// Whether enable overlay subtitle.
+	EnableOverlay bool `json:"overlayEnabled"`
+	// Whether enable WebVTT subtitle.
+	EnableWebVTT bool `json:"webvttEnabled"`
+}
+
+func NewTranscriptConfig() *TranscriptConfig {
+	return &TranscriptConfig{
+		All: false, EnableOverlay: true, EnableWebVTT: true,
+	}
 }
 
 func (v TranscriptConfig) String() string {
-	return fmt.Sprintf("all=%v, key=%vB, organization=%v, base=%v, lang=%v, forceStyle=%v, videoCodecParams=%v",
-		v.All, len(v.SecretKey), v.Organization, v.BaseURL, v.Language, v.ForceStyle, v.VideoCodecParams)
+	return fmt.Sprintf("all=%v, key=%vB, organization=%v, base=%v, lang=%v, overlay=%v, forceStyle=%v, videoCodecParams=%v, webvtt=%v",
+		v.All, len(v.SecretKey), v.Organization, v.BaseURL, v.Language, v.EnableOverlay, v.ForceStyle,
+		v.VideoCodecParams, v.EnableWebVTT)
 }
 
 func (v *TranscriptConfig) Load(ctx context.Context) error {
@@ -1743,37 +1949,49 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 	}
 	overlayFile.File = path.Join("transcript", fmt.Sprintf("%v.ts", overlayFile.TsID))
 
-	args := []string{
-		"-i", segment.TsFile.File,
-	}
-	// Ignore subtitle if user clear it.
-	if !segment.UserClearASR {
-		if stats, err := os.Stat(segment.SrtFile); err == nil && stats.Size() > 0 {
-			// Note that the Alignment=2 means bottom center.
-			forceStyle := "Alignment=2,MarginV=20"
-			if v.config.ForceStyle != "" {
-				forceStyle = v.config.ForceStyle
-			}
-
-			args = append(args, []string{
-				"-vf", fmt.Sprintf("subtitles=%v:force_style='%v'", segment.SrtFile, forceStyle),
-			}...)
+	var processCmd string
+	if v.config.EnableOverlay {
+		args := []string{
+			"-i", segment.TsFile.File,
 		}
-	}
-	// Generate the video parameters.
-	videoCodecParams := "-c:v libx264 -profile:v main -preset:v medium -tune zerolatency -bf 0"
-	if v.config.VideoCodecParams != "" {
-		videoCodecParams = v.config.VideoCodecParams
-	}
-	args = append(args, strings.Split(videoCodecParams, " ")...)
-	// Generate other parameters for FFmpeg.
-	args = append(args, []string{
-		"-c:a", "aac",
-		"-copyts", // To keep the pts not changed.
-		"-y", overlayFile.File,
-	}...)
-	if err := exec.CommandContext(ctx, "ffmpeg", args...).Run(); err != nil {
-		return errors.Wrapf(err, "transcode %v", args)
+		// Ignore subtitle if user clear it.
+		if !segment.UserClearASR {
+			if stats, err := os.Stat(segment.SrtFile); err == nil && stats.Size() > 0 {
+				// Note that the Alignment=2 means bottom center.
+				forceStyle := "Alignment=2,MarginV=20"
+				if v.config.ForceStyle != "" {
+					forceStyle = v.config.ForceStyle
+				}
+
+				args = append(args, []string{
+					"-vf", fmt.Sprintf("subtitles=%v:force_style='%v'", segment.SrtFile, forceStyle),
+				}...)
+			}
+		}
+		// Generate the video parameters.
+		videoCodecParams := "-c:v libx264 -profile:v main -preset:v medium -tune zerolatency -bf 0"
+		if v.config.VideoCodecParams != "" {
+			videoCodecParams = v.config.VideoCodecParams
+		}
+		args = append(args, strings.Split(videoCodecParams, " ")...)
+		// Generate other parameters for FFmpeg.
+		args = append(args, []string{
+			"-c:a", "aac",
+			"-copyts", // To keep the pts not changed.
+			"-y", overlayFile.File,
+		}...)
+		if err := exec.CommandContext(ctx, "ffmpeg", args...).Run(); err != nil {
+			return errors.Wrapf(err, "transcode %v", args)
+		}
+
+		processCmd = fmt.Sprintf("ffmpeg %v", strings.Join(args, " "))
+	} else {
+		args := []string{segment.TsFile.File, overlayFile.File}
+		if err := exec.CommandContext(ctx, "cp", args...).Run(); err != nil {
+			return errors.Wrapf(err, "copy %v", args)
+		}
+
+		processCmd = fmt.Sprintf("cp %v", strings.Join(args, " "))
 	}
 
 	// Update the size of audio file.
@@ -1794,8 +2012,8 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		segment.CostOverlay = time.Since(starttime)
 		v.OverlayQueue.enqueue(segment)
 	}()
-	logger.Tf(ctx, "transcript: overlay %v to %v, size=%v, transcode=<ffmpeg %v>, cost=%v",
-		segment.TsFile.File, overlayFile.File, overlayFile.Size, strings.Join(args, " "), segment.CostOverlay)
+	logger.Tf(ctx, "transcript: overlay %v to %v, size=%v, cmd=<%v>, cost=%v",
+		segment.TsFile.File, overlayFile.File, overlayFile.Size, processCmd, segment.CostOverlay)
 
 	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
