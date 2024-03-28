@@ -1973,7 +1973,7 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		if v.config.VideoCodecParams != "" {
 			videoCodecParams = v.config.VideoCodecParams
 		}
-		args = append(args, strings.Split(videoCodecParams, " ")...)
+		args = append(args, strings.Fields(videoCodecParams)...)
 		// Generate other parameters for FFmpeg.
 		args = append(args, []string{
 			"-c:a", "aac",

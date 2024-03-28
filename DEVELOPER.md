@@ -891,6 +891,9 @@ API without any authentication:
 * `/terraform/v1/hooks/record/hls/:uuid/index.m3u8` Hooks: Serve HLS m3u8 files.
 * `/terraform/v1/hooks/record/hls/:dir/:m3u8/:uuid.ts` Hooks: Serve HLS ts files.
 * `/terraform/v1/ai/transcript/hls/overlay/:uuid.m3u8` Generate the preview HLS for transcript stream with overlay text.
+* `/terraform/v1/ai/transcript/hls/webvtt/:uuid/index.m3u8` Generate the preview HLS for transcript stream with WebVTT text.
+  * `/terraform/v1/ai/transcript/hls/webvtt/:uuid/subtitles.m3u8` The HLS subtitles for the HLS.
+  * `/terraform/v1/ai/transcript/hls/webvtt/:uuid.m3u8` The HLS stream for the WebVTT.
 * `/terraform/v1/ai/transcript/hls/original/:uuid.m3u8` Generate the preview HLS for original stream without overlay text.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/ai-talk/stage/hello-voices/:file.aac` AI-Talk: Play the example audios.
@@ -1153,6 +1156,7 @@ The following are the update records for the SRS Stack server.
     * Website: Support setting title for popout. v5.14.10
     * Transcript: Support set the video codec parameters. [v5.14.11](https://github.com/ossrs/srs-stack/releases/tag/v5.14.11)
     * Transcript: Support subtitle with WebVTT format. v5.14.12
+    * Transcript: Fix overlay transcoding parameters parsing bug. v5.14.13
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
