@@ -1157,6 +1157,7 @@ The following are the update records for the SRS Stack server.
     * Transcript: Support set the video codec parameters. [v5.14.11](https://github.com/ossrs/srs-stack/releases/tag/v5.14.11)
     * Transcript: Support subtitle with WebVTT format. v5.14.12
     * Transcript: Fix overlay transcoding parameters parsing bug. v5.14.13
+    * Use port 80/443 by default in README. v5.14.14 
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2

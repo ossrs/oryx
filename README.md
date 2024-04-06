@@ -20,11 +20,11 @@ automatic HTTPS, and an easy-to-use HTTP Open API.
 
 ## Usage
 
-Run srs-stack in one docker, then open http://localhost:2022 in browser:
+Run srs-stack in one docker, then open http://localhost in browser:
 
 ```bash
 docker run --restart always -d -it --name srs-stack -v $HOME/data:/data \
-  -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
+  -p 80:2022 -p 443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
   ossrs/srs-stack:5
 ```
 
@@ -32,8 +32,8 @@ docker run --restart always -d -it --name srs-stack -v $HOME/data:/data \
 > if you mount `/data` to `$HOME/data`, all data will be stored in the `$HOME/data` folder. Be sure to modify this 
 > according to your desired directory.
 
-> Important: To use WebRTC WHIP in a browser, avoid using localhost or 127.0.0.1. Instead, use a private IP (e.g., https://192.168.3.85:2443), 
-> a public IP (e.g., https://136.12.117.13:2443), or a domain (e.g., https://your-domain.com:2443). To set up HTTPS, 
+> Important: To use WebRTC WHIP in a browser, avoid using localhost or 127.0.0.1. Instead, use a private IP (e.g., https://192.168.3.85), 
+> a public IP (e.g., https://136.12.117.13), or a domain (e.g., https://your-domain.com). To set up HTTPS, 
 > refer to [this post](https://blog.ossrs.io/how-to-secure-srs-with-lets-encrypt-by-1-click-cb618777639f).
 
 > Note: In China, use `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:5` to accelerate the Docker pull process 
@@ -41,8 +41,8 @@ docker run --restart always -d -it --name srs-stack -v $HOME/data:/data \
 
 The ports used for SRS Stack:
 
-* `2022/tcp`: The HTTP port, you can also use `80` instead, such as `-p 80:2022` etc.
-* `2443/tcp`: The HTTPS port, you can also use `443` instead, such as `-p 443:2443` etc.
+* `80/tcp`: The HTTP port, you can also use `2022` instead, such as `-p 2022:2022` etc.
+* `443/tcp`: The HTTPS port, you can also use `2443` instead, such as `-p 2443:2443` etc.
 * `1935/tcp`: The RTMP port, to support publish stream by RTMP to SRS Stack.
 * `8000/udp`: The WebRTC UDP port, to transport WebRTC media data like RTP packets.
 * `10080/udp`: The SRT UDP port, to support publish stream via SRT protocol.
