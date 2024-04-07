@@ -46,7 +46,7 @@ if [[ -z $user ]]; then echo "No user"; exit 1; fi
 if [[ -z $password ]]; then echo "No password"; exit 1; fi
 if [[ -z $VERSION ]]; then echo "No VERSION"; exit 1; fi
 
-IMAGE_URL="registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$VERSION"
+IMAGE_URL="registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$VERSION"
 echo "SOURCE=$SOURCE, ip=$ip, os=$os, user=$user, password=${#password}B, cleanup=$cleanup, VERSION=$VERSION, IMAGE_URL=$IMAGE_URL"
 
 sshCmd="sshpass -p $password ssh -o StrictHostKeyChecking=no"
@@ -55,7 +55,7 @@ scpCmd="sshpass -p $password scp -o StrictHostKeyChecking=no"
 $sshCmd -t $user@$ip "hostname" && echo "Check sshpass ok"
 if [[ $ret -ne 0 ]]; then echo "Check sshpass failed"; echo "See https://stackoverflow.com/a/32258393/17679565"; exit 1; fi
 
-SRS_HOME=/tmp/lighthouse/srs-stack &&
+SRS_HOME=/tmp/lighthouse/oryx &&
 rm -rf $(dirname $SRS_HOME) && mkdir -p $SRS_HOME &&
 echo "mkdir $SRS_HOME ok"
 ret=$?; if [[ 0 -ne $ret ]]; then echo "mkdir $SRS_HOME failed, ret=$ret"; exit $ret; fi
@@ -68,14 +68,14 @@ cp ${SOURCE}/LICENSE ${SRS_HOME}/LICENSE &&
 cp ${SOURCE}/README.md ${SRS_HOME}/README.md &&
 cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap &&
 cp ${SOURCE}/platform/containers/conf/nginx.conf ${SRS_HOME}/platform/containers/conf/nginx.conf
-if [[ $? -ne 0 ]]; then echo "Copy srs-stack failed"; exit 1; fi
+if [[ $? -ne 0 ]]; then echo "Copy oryx failed"; exit 1; fi
 
 echo "Start to update bootstrap"
 sed -i '' "s|^IMAGE=.*|IMAGE=${IMAGE_URL}|g" ${SRS_HOME}/mgmt/bootstrap
 if [[ $? -ne 0 ]]; then echo "Update bootstrap failed"; exit 1; fi
 echo "Update bootstrap ok"
 
-tgzName=/tmp/lighthouse/srs-stack.zip &&
+tgzName=/tmp/lighthouse/oryx.zip &&
 (cd $(dirname $tgzName) && rm -f $tgzName && zip -q -r $tgzName $(basename $SRS_HOME)) &&
 echo "Package $tgzName ok" && ls -lh $tgzName
 if [[ $? -ne 0 ]]; then echo "Package $tgzName failed"; exit 1; fi

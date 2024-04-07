@@ -28,12 +28,12 @@ cd $WORK_DIR
 # The main directory.
 SRS_HOME=/usr/local/srs-stack
 DATA_HOME=/data
-IMAGE_URL=registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:5
+IMAGE_URL=registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:5
 SOURCE=$WORK_DIR
 
-mkdir -p /usr/local/lighthouse/softwares/srs-stack &&
-rm -rf $SRS_HOME && ln -sf /usr/local/lighthouse/softwares/srs-stack $SRS_HOME &&
-(cd /usr/local/lighthouse/softwares && rm -rf srs-terraform && ln -sf srs-stack srs-terraform)
+mkdir -p /usr/local/lighthouse/softwares/oryx &&
+rm -rf $SRS_HOME && ln -sf /usr/local/lighthouse/softwares/oryx $SRS_HOME &&
+(cd /usr/local/lighthouse/softwares && rm -rf srs-terraform && ln -sf oryx srs-terraform)
 ret=$?; if [[ 0 -ne $ret ]]; then echo "Failed to create $SRS_HOME"; exit $ret; fi
 
 if [[ $(id -un lighthouse 2>/dev/null) == '' ]]; then
@@ -94,7 +94,7 @@ cp -r ${SOURCE}/usr ${SRS_HOME}/usr &&
 cp ${SOURCE}/LICENSE ${SRS_HOME}/LICENSE &&
 cp ${SOURCE}/README.md ${SRS_HOME}/README.md &&
 mkdir -p ${SRS_HOME}/mgmt && cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap
-if [[ $? -ne 0 ]]; then echo "Copy srs-stack failed"; exit 1; fi
+if [[ $? -ne 0 ]]; then echo "Copy oryx failed"; exit 1; fi
 
 ########################################################################################################################
 echo "Start to create data and config files"
@@ -137,18 +137,18 @@ else
     if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 fi
 
-# Create srs-stack service, and the credential file.
+# Create oryx service, and the credential file.
 # Remark: Never start the service, because the IP will change for new machine created.
-cp -f ${SRS_HOME}/usr/lib/systemd/system/srs-stack.service /usr/lib/systemd/system/srs-stack.service &&
-systemctl daemon-reload && systemctl enable srs-stack
-if [[ $? -ne 0 ]]; then echo "Install srs-stack failed"; exit 1; fi
+cp -f ${SRS_HOME}/usr/lib/systemd/system/oryx.service /usr/lib/systemd/system/oryx.service &&
+systemctl daemon-reload && systemctl enable oryx
+if [[ $? -ne 0 ]]; then echo "Install oryx failed"; exit 1; fi
 
 ########################################################################################################################
 # Create srs-cloud soft link, to keep compatible with lighthouse HTTPS management. If user user lighthouse to
 # setup the HTTPS and domain, the lighthouse will create a file like /etc/nginx/init.d/yourdomain.conf, which
 # includes the file /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/conf/default.d/proxy.conf, which
-# finally proxy to srs-stack.
-(cd /usr/local/lighthouse/softwares && rm -rf srs-cloud && ln -sf srs-stack srs-cloud) &&
+# finally proxy to oryx.
+(cd /usr/local/lighthouse/softwares && rm -rf srs-cloud && ln -sf oryx srs-cloud) &&
 mkdir -p /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/conf/default.d &&
 cat << END > /usr/local/lighthouse/softwares/srs-cloud/mgmt/containers/conf/default.d/proxy.conf
   location / {
@@ -159,11 +159,11 @@ END
 if [[ $? -ne 0 ]]; then echo "Compatible lighthouse HTTPS failed"; exit 1; fi
 
 ########################################################################################################################
-# Note that we keep files as root, because we run srs-stack as root, see https://stackoverflow.com/a/70953525/17679565
+# Note that we keep files as root, because we run oryx as root, see https://stackoverflow.com/a/70953525/17679565
 chown lighthouse:lighthouse ${DATA_HOME}/config/.env
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 
 rm -rf ~lighthouse/credentials.txt && ln -sf ${DATA_HOME}/config/.env ~lighthouse/credentials.txt
 if [[ $? -ne 0 ]]; then echo "Link files failed"; exit 1; fi
 
-echo "Install srs-stack ok"
+echo "Install oryx ok"

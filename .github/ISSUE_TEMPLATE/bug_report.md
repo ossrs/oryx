@@ -11,7 +11,7 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **Version**
-Desribe your SRS Stack version here.
+Desribe your Oryx version here.
 
 **To Reproduce**
 Steps to reproduce the behavior:

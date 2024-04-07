@@ -144,7 +144,7 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
           <Accordion.Header>场景介绍</Accordion.Header>
           <Accordion.Body>
             <div>
-              虚拟直播，是将一个视频文件，用FFmpeg转成直播流，推送到SRS Stack或其他平台。
+              虚拟直播，是将一个视频文件，用FFmpeg转成直播流，推送到Oryx或其他平台。
               <p></p>
             </div>
             <p>可应用的具体场景包括：</p>
@@ -162,7 +162,7 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
           <Accordion.Header>Introduction</Accordion.Header>
           <Accordion.Body>
             <div>
-              Virtual live streaming is the process of converting a video file into a live stream using FFmpeg and pushing it to the SRS Stack or other platforms.
+              Virtual live streaming is the process of converting a video file into a live stream using FFmpeg and pushing it to the Oryx or other platforms.
               <p></p>
             </div>
             <p>Specific application scenarios include:</p>

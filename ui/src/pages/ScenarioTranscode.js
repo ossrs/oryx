@@ -124,7 +124,7 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
             <Accordion.Header>场景介绍</Accordion.Header>
             <Accordion.Body>
               <div>
-                直播转码，是将SRS Stack的直播流，用FFmpeg转成不同码率和清晰度的直播流，再推送到SRS Stack。
+                直播转码，是将Oryx的直播流，用FFmpeg转成不同码率和清晰度的直播流，再推送到Oryx。
                 <p></p>
               </div>
               <p>可应用的具体场景包括：</p>
@@ -135,9 +135,9 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
               </ul>
               <p>使用说明：</p>
               <ul>
-                <li>首先先将需要转码的原始流，推送到SRS Stack</li>
+                <li>首先先将需要转码的原始流，推送到Oryx</li>
                 <li>然后配置转码的信息，选择不同的转码模板，调整转码参数</li>
-                <li>开始转码后，将生成新的不同的转码的流，推送到SRS Stack上</li>
+                <li>开始转码后，将生成新的不同的转码的流，推送到Oryx上</li>
               </ul>
             </Accordion.Body>
           </Accordion.Item> :
@@ -145,7 +145,7 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
             <Accordion.Header>Introduction</Accordion.Header>
             <Accordion.Body>
               <div>
-                Live streaming transcoding is the process of converting the live stream from SRS Stack using FFmpeg into different bitrates and resolutions, and then pushing it back to SRS Stack.
+                Live streaming transcoding is the process of converting the live stream from Oryx using FFmpeg into different bitrates and resolutions, and then pushing it back to Oryx.
                 <p></p>
               </div>
               <p>Specific scenarios where this can be applied include:</p>
@@ -156,9 +156,9 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
               </ul>
               <p>Instructions for use:</p>
               <ul>
-                <li>First, push the original stream that needs to be transcoded to SRS Stack.</li>
+                <li>First, push the original stream that needs to be transcoded to Oryx.</li>
                 <li>Then, configure the transcoding information, choose different transcoding templates, and adjust the transcoding parameters.</li>
-                <li>After starting the transcoding, new streams with different transcoded resolutions and bitrates will be generated and pushed to SRS Stack.</li>
+                <li>After starting the transcoding, new streams with different transcoded resolutions and bitrates will be generated and pushed to Oryx.</li>
               </ul>
             </Accordion.Body>
           </Accordion.Item>

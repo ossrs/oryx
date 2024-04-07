@@ -31,7 +31,7 @@ function FooterImpl() {
     axios.get('/terraform/v1/mgmt/beian/query')
       .then(res => {
         setBeian(res.data.data);
-        document.title = res.data.data.title || 'SRS Stack';
+        document.title = res.data.data.title || 'Oryx';
         console.log(`Beian: query ${JSON.stringify(res.data.data)}`);
       }).catch(handleError);
   }, [handleError]);
@@ -40,8 +40,8 @@ function FooterImpl() {
     <Container fluid>
       <p></p>
       <p className="text-center">
-        <a href='https://github.com/ossrs/srs-stack' target='_blank' rel='noreferrer'>
-          &copy;srs-stack/v{versions?.data?.version}
+        <a href='https://github.com/ossrs/oryx' target='_blank' rel='noreferrer'>
+          &copy;Oryx/v{versions?.data?.version}
         </a>
         &nbsp; <a href='https://beian.miit.gov.cn' target='_blank' rel='noreferrer'>{beian?.icp}</a>
       </p>

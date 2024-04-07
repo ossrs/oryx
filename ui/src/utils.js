@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
 const SRS_TERRAFORM_TOKEN = 'SRS_TERRAFORM_TOKEN';
-const SRS_STACK_LOCALE = 'SRS_STACK_LOCALE';
+const ORYX_LOCALE = 'ORYX_LOCALE';
 const SRS_STREAM_NAME = 'SRS_STREAM_NAME';
 
 export const Token = {
@@ -43,10 +43,10 @@ export const Locale = {
   _cache: null,
   save: (data) => {
     Locale._cache = data;
-    localStorage.setItem(SRS_STACK_LOCALE, JSON.stringify(data));
+    localStorage.setItem(ORYX_LOCALE, JSON.stringify(data));
   },
   load: () => {
-    const info = localStorage.getItem(SRS_STACK_LOCALE);
+    const info = localStorage.getItem(ORYX_LOCALE);
     Locale._cache = info ? JSON.parse(info) : null;
     return Locale._cache;
   },

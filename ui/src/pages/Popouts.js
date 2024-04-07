@@ -44,7 +44,7 @@ export default function Popouts() {
   React.useEffect(() => {
     axios.get('/terraform/v1/mgmt/beian/query')
       .then(res => {
-        document.title = res.data.data.title || 'SRS Stack';
+        document.title = res.data.data.title || 'Oryx';
         console.log(`Beian: query ${JSON.stringify(res.data.data)}`);
       }).catch(handleError);
   }, [handleError]);

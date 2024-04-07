@@ -32,25 +32,25 @@ fi
 
 for ((i=0; i<3; i++)); do
     # Start by docker.
-    SRS_PLATFORM_SECRET=$(docker exec srs-stack redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
-    MGMT_PASSWORD=$(docker exec srs-stack bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
+    SRS_PLATFORM_SECRET=$(docker exec oryx redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
+    MGMT_PASSWORD=$(docker exec oryx bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
 
     # Start by script.
     if [[ -z $SRS_PLATFORM_SECRET ]]; then
-        SRS_PLATFORM_SECRET=$(docker exec script docker exec srs-stack redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
-        MGMT_PASSWORD=$(docker exec script docker exec srs-stack bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
+        SRS_PLATFORM_SECRET=$(docker exec script docker exec oryx redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
+        MGMT_PASSWORD=$(docker exec script docker exec oryx bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
     fi
 
     # Start by BT.
     if [[ -z $SRS_PLATFORM_SECRET ]]; then
-        SRS_PLATFORM_SECRET=$(docker exec bt docker exec srs-stack redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
-        MGMT_PASSWORD=$(docker exec bt docker exec srs-stack bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
+        SRS_PLATFORM_SECRET=$(docker exec bt docker exec oryx redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
+        MGMT_PASSWORD=$(docker exec bt docker exec oryx bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
     fi
 
     # Start by aaPanel.
     if [[ -z $SRS_PLATFORM_SECRET ]]; then
-        SRS_PLATFORM_SECRET=$(docker exec aapanel docker exec srs-stack redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
-        MGMT_PASSWORD=$(docker exec aapanel docker exec srs-stack bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
+        SRS_PLATFORM_SECRET=$(docker exec aapanel docker exec oryx redis-cli hget SRS_PLATFORM_SECRET token 2>/dev/null)
+        MGMT_PASSWORD=$(docker exec aapanel docker exec oryx bash -c '. /data/config/.env && echo $MGMT_PASSWORD' 2>/dev/null)
     fi
 
     # Start by develop.

@@ -3,7 +3,7 @@
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 
-install_path=/www/server/panel/plugin/srs_stack
+install_path=/www/server/panel/plugin/oryx
 SRS_HOME=/usr/local/srs-stack
 DATA_HOME=/data
 
@@ -36,12 +36,12 @@ Install() {
   chmod +x $install_path/mgmt/bootstrap
   if [[ $? -ne 0 ]]; then echo "Set mgmt bootstrap permission failed"; exit 1; fi
 
-  # Move srs-stack to its home.
-  echo "Link srs-stack to $SRS_HOME"
+  # Move oryx to its home.
+  echo "Link oryx to $SRS_HOME"
   rm -rf $SRS_HOME && mkdir $SRS_HOME &&
   ln -sf $install_path/mgmt $SRS_HOME/mgmt &&
   ln -sf $install_path/usr $SRS_HOME/usr
-  if [[ $? -ne 0 ]]; then echo "Link srs-stack failed"; exit 1; fi
+  if [[ $? -ne 0 ]]; then echo "Link oryx failed"; exit 1; fi
 
   # Create global data directory.
   echo "Create data and config file"
@@ -63,26 +63,26 @@ Install() {
   update_sysctl net.core.wmem_default 16777216
 
   # Now, we're ready to install by BT.
-  echo 'Wait for srs-stack plugin ready...'; sleep 1.3;
+  echo 'Wait for oryx plugin ready...'; sleep 1.3;
   touch ${install_path}/.bt_ready
 
   echo 'Install OK'
 }
 
 Uninstall() {
-  if [[ -f /etc/init.d/srs_stack ]]; then /etc/init.d/srs_stack stop; fi
-  echo "Stop srs-stack service ok"
+  if [[ -f /etc/init.d/oryx ]]; then /etc/init.d/oryx stop; fi
+  echo "Stop oryx service ok"
 
-  INIT_D=/etc/init.d/srs_stack && rm -f $INIT_D
+  INIT_D=/etc/init.d/oryx && rm -f $INIT_D
   echo "Remove init.d script $INIT_D ok"
 
-  if [[ -f /usr/lib/systemd/system/srs-stack.service ]]; then
-    systemctl disable srs-stack
-    rm -f /usr/lib/systemd/system/srs-stack.service
+  if [[ -f /usr/lib/systemd/system/oryx.service ]]; then
+    systemctl disable oryx
+    rm -f /usr/lib/systemd/system/oryx.service
     systemctl daemon-reload
     systemctl reset-failed
   fi
-  echo "Remove srs-stack.service ok"
+  echo "Remove oryx.service ok"
 
   INSTALL_HOME=/usr/local/srs-stack
   rm -rf $INSTALL_HOME
@@ -99,7 +99,7 @@ Uninstall() {
   rmdir $install_path 2>/dev/null
   echo "Remove plugin path $install_path ok"
 
-  LOGS=$(ls /tmp/srs_stack_install.* 2>/dev/null)
+  LOGS=$(ls /tmp/oryx_install.* 2>/dev/null)
   if [[ ! -z $LOGS ]]; then rm -f $LOGS; fi
   echo "Remove install flag files $LOGS ok"
 }

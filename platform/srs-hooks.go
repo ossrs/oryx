@@ -33,7 +33,7 @@ import (
 type SrsAction string
 
 const (
-	// The actions for SRS server and SRS Stack.
+	// The actions for SRS server and Oryx.
 	// The publish action.
 	SrsActionOnPublish SrsAction = "on_publish"
 	// The unpublish action.
@@ -519,7 +519,7 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				request := vod.NewCreateSubAppIdRequest()
 
 				request.Name = common.StringPtr(vodAppName)
-				request.Description = common.StringPtr("Application VoD for srs-stack")
+				request.Description = common.StringPtr("Application VoD for Oryx")
 
 				if response, err := vodClient.CreateSubAppIdWithContext(ctx, request); err != nil {
 					return errors.Wrapf(err, "create vod appid")

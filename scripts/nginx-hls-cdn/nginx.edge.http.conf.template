@@ -14,7 +14,7 @@ server {
 
     location ~ /.+/.*\.(m3u8)$ {
         proxy_set_header Host $host;
-        proxy_pass http://${SRS_STACK_SERVER}$request_uri;
+        proxy_pass http://${ORYX_SERVER}$request_uri;
 
         proxy_cache srs_cache;
         proxy_cache_key $scheme$proxy_host$uri$args;
@@ -24,7 +24,7 @@ server {
 
     location ~ /.+/.*\.(ts)$ {
         proxy_set_header Host $host;
-        proxy_pass http://${SRS_STACK_SERVER}$request_uri;
+        proxy_pass http://${ORYX_SERVER}$request_uri;
 
         proxy_cache srs_cache;
         proxy_cache_key $scheme$proxy_host$uri;

@@ -60,7 +60,7 @@ function ScenarioSrtCn({copyToClipboard, urls}) {
           <ul>
             <li>超高清视频会议，使用专业导播台，把直播流投屏到大屏，注意需要专门的硬件做降噪和回声消除</li>
             <li>远距离和弱网推流直播，比如跨国推流，注意推RTMP后并不使用SRT播放而是普通直播播放（HTTP-FLV/HLS/WebRTC）</li>
-            <li>远程制作和导播，户外直播用手机或摄像头推流到SRS Stack，用OBS/vMix/芯象制作后再播出，编辑不用在直播现场</li>
+            <li>远程制作和导播，户外直播用手机或摄像头推流到Oryx，用OBS/vMix/芯象制作后再播出，编辑不用在直播现场</li>
           </ul>
           <p>使用说明：</p>
           <ul>

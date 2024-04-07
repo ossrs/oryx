@@ -147,7 +147,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
             <Accordion.Header>场景介绍</Accordion.Header>
             <Accordion.Body>
               <div>
-                摄像头直播，是将一个摄像头的流，用FFmpeg转成直播流，推送到SRS Stack或其他平台。
+                摄像头直播，是将一个摄像头的流，用FFmpeg转成直播流，推送到Oryx或其他平台。
                 <p></p>
               </div>
               <p>可应用的具体场景包括：</p>
@@ -165,7 +165,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
             <Accordion.Header>Introduction</Accordion.Header>
             <Accordion.Body>
               <div>
-                Camera streaming is the process of converting the stream from RTSP/IP Camera into a live stream using FFmpeg and pushing it to the SRS Stack or other platforms.
+                Camera streaming is the process of converting the stream from RTSP/IP Camera into a live stream using FFmpeg and pushing it to the Oryx or other platforms.
                 <p></p>
               </div>
               <p>Specific application scenarios include:</p>

@@ -65,15 +65,15 @@ Start a container:
 
 ```bash
 docker stop redis 2>/dev/null || echo ok && docker rm -f redis srs 2>/dev/null &&
-docker run --rm -it --name srs-stack -v $HOME/data:/data \
+docker run --rm -it --name oryx -v $HOME/data:/data \
   -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
   -p 80:2022 -p 443:2443 -e CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
   platform
 ```
 
-Access [http://localhost/mgmt](http://localhost/mgmt) to manage SRS Stack.
+Access [http://localhost/mgmt](http://localhost/mgmt) to manage Oryx.
 
-Or [http://srs.stack.local/mgmt](http://srs.stack.local/mgmt) to test SRS Stack with domain.
+Or [http://srs.stack.local/mgmt](http://srs.stack.local/mgmt) to test Oryx with domain.
 
 To update the platform in docker:
 
@@ -85,7 +85,7 @@ Start a container with the new platform:
 
 ```bash
 docker stop redis 2>/dev/null || echo ok && docker rm -f redis srs 2>/dev/null &&
-docker run --rm -it --name srs-stack -v $HOME/data:/data \
+docker run --rm -it --name oryx -v $HOME/data:/data \
   -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
   -p 80:2022 -p 443:2443 -e CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
   -v $(pwd)/platform/platform:/usr/local/srs-stack/platform/platform \
@@ -132,8 +132,8 @@ Enter the docker container:
 ```bash
 version=$(bash scripts/version.sh) &&
 docker exec -it script docker load -i platform.tar && 
-docker exec -it script docker tag platform:latest ossrs/srs-stack:$version &&
-docker exec -it script docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
+docker exec -it script docker tag platform:latest ossrs/oryx:$version &&
+docker exec -it script docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$version &&
 docker exec -it script docker images
 ```
 
@@ -141,25 +141,25 @@ Test the build script, in the docker container:
 
 ```bash
 docker exec -it script rm -f /data/config/.env &&
-docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/uninstall.sh 2>/dev/null || echo OK &&
+docker exec -it script bash build/oryx/scripts/setup-ubuntu/uninstall.sh 2>/dev/null || echo OK &&
 bash scripts/setup-ubuntu/build.sh --output $(pwd)/build --extract &&
-docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
+docker exec -it script bash build/oryx/scripts/setup-ubuntu/install.sh --verbose
 ```
 
 Run test for script:
 
 ```bash
-rm -f test/srs-stack.test &&
+rm -f test/oryx.test &&
 docker exec -it script make -j -C test &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it script ./test/srs-stack.test -test.timeout=1h  -test.v -endpoint http://localhost:2022 \
+docker exec -it script ./test/oryx.test -test.timeout=1h  -test.v -endpoint http://localhost:2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it script ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://localhost:2022 \
+docker exec -it script ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint http://localhost:2022 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-docker exec -it script ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://localhost:2443 \
+docker exec -it script ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint https://localhost:2443 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
 ```
@@ -177,7 +177,7 @@ docker rm -f bt aapanel 2>/dev/null &&
 AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3) &&
 docker run -p 80:80 -p 443:443 -p 7800:7800 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
     --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
-    -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
+    -v $(pwd)/build/oryx:/www/server/panel/plugin/oryx \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
     -d --rm -it -v $(pwd):/g -w /g --name=aapanel ossrs/aapanel-plugin-dev:1
@@ -202,10 +202,10 @@ Enter the docker container:
 version=$(bash scripts/version.sh) &&
 major=$(echo $version |awk -F '.' '{print $1}' |sed 's/v//g') &&
 docker exec -it aapanel docker load -i platform.tar && 
-docker exec -it aapanel docker tag platform:latest ossrs/srs-stack:$version &&
-docker exec -it aapanel docker tag platform:latest ossrs/srs-stack:$major &&
-docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
-docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$major &&
+docker exec -it aapanel docker tag platform:latest ossrs/oryx:$version &&
+docker exec -it aapanel docker tag platform:latest ossrs/oryx:$major &&
+docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$version &&
+docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$major &&
 docker exec -it aapanel docker images
 ```
 
@@ -213,19 +213,19 @@ Next, build the aaPanel plugin and install it:
 
 ```bash
 docker exec -it aapanel rm -f /data/config/.env &&
-docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh uninstall 2>/dev/null || echo OK &&
+docker exec -it aapanel bash /www/server/panel/plugin/oryx/install.sh uninstall 2>/dev/null || echo OK &&
 bash scripts/setup-aapanel/auto/zip.sh --output $(pwd)/build --extract &&
-docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh install
+docker exec -it aapanel bash /www/server/panel/plugin/oryx/install.sh install
 ```
 
 You can use aaPanel panel to install the plugin, or by command:
 
 ```bash
-docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
-docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py &&
-docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
-docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/setup.sh \
-    --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+docker exec -it aapanel python3 /www/server/panel/plugin/oryx/bt_api_remove_site.py &&
+docker exec -it aapanel python3 /www/server/panel/plugin/oryx/bt_api_create_site.py &&
+docker exec -it aapanel python3 /www/server/panel/plugin/oryx/bt_api_setup_site.py &&
+docker exec -it aapanel bash /www/server/panel/plugin/oryx/setup.sh \
+    --r0 /tmp/oryx_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
     --www /www/wwwroot --site srs.stack.local
 ```
 
@@ -235,26 +235,26 @@ Setup the dns lookup for domain `srs.stack.local`:
 PIP=$(docker exec -it aapanel ifconfig eth0 |grep 'inet ' |awk '{print $2}') &&
 docker exec -it aapanel bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
 docker exec -it aapanel cat /etc/hosts && echo OK &&
-docker exec -it aapanel docker exec -it srs-stack bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
-docker exec -it aapanel docker exec -it srs-stack cat /etc/hosts
+docker exec -it aapanel docker exec -it oryx bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
+docker exec -it aapanel docker exec -it oryx cat /etc/hosts
 ```
 > Note: We add host `srs.stack.local` to the ip of eth0, because we need to access it in the
-> srs-stack docker in docker.
+> oryx docker in docker.
 
 Run test for aaPanel:
 
 ```bash
-rm -f test/srs-stack.test &&
+rm -f test/oryx.test &&
 docker exec -it aapanel make -j -C test &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it aapanel ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://srs.stack.local:80 \
+docker exec -it aapanel ./test/oryx.test -test.timeout=1h -test.v -endpoint http://srs.stack.local:80 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it aapanel ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://srs.stack.local:80 \
+docker exec -it aapanel ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint http://srs.stack.local:80 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-docker exec -it aapanel ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://srs.stack.local:443 \
+docker exec -it aapanel ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint https://srs.stack.local:443 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
 ```
@@ -263,8 +263,8 @@ Open [http://localhost:7800/srsstack](http://localhost:7800/srsstack) to install
 
 > Note: Or you can use `docker exec -it aapanel bt default` to show the login info.
 
-In the [application store](http://localhost:7800/soft), there is a `srs_stack` plugin. After test, you can install the plugin
-`build/aapanel-srs_stack.zip` to production aaPanel panel.
+In the [application store](http://localhost:7800/soft), there is a `oryx` plugin. After test, you can install the plugin
+`build/aapanel-oryx.zip` to production aaPanel panel.
 
 ## Develop the BT Plugin
 
@@ -277,7 +277,7 @@ docker rm -f bt aapanel 2>/dev/null &&
 BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3) &&
 docker run -p 80:80 -p 443:443 -p 7800:7800 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
     --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
-    -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
+    -v $(pwd)/build/oryx:/www/server/panel/plugin/oryx \
     -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
     -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
     --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
@@ -306,30 +306,30 @@ Enter the docker container:
 version=$(bash scripts/version.sh) &&
 major=$(echo $version |awk -F '.' '{print $1}' |sed 's/v//g') &&
 docker exec -it bt docker load -i platform.tar && 
-docker exec -it bt docker tag platform:latest ossrs/srs-stack:$version &&
-docker exec -it bt docker tag platform:latest ossrs/srs-stack:$major &&
-docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
-docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$major &&
+docker exec -it bt docker tag platform:latest ossrs/oryx:$version &&
+docker exec -it bt docker tag platform:latest ossrs/oryx:$major &&
+docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$version &&
+docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$major &&
 docker exec -it bt docker images
 ```
 
 Next, build the BT plugin and install it:
 
 ```bash
-docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh uninstall 2>/dev/null || echo OK &&
+docker exec -it bt bash /www/server/panel/plugin/oryx/install.sh uninstall 2>/dev/null || echo OK &&
 docker exec -it bt rm -f /data/config/.env &&
 bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
-docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh install
+docker exec -it bt bash /www/server/panel/plugin/oryx/install.sh install
 ```
 
 You can use BT panel to install the plugin, or by command:
 
 ```bash
-docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
-docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py &&
-docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
-docker exec -it bt bash /www/server/panel/plugin/srs_stack/setup.sh \
-    --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+docker exec -it bt python3 /www/server/panel/plugin/oryx/bt_api_remove_site.py &&
+docker exec -it bt python3 /www/server/panel/plugin/oryx/bt_api_create_site.py &&
+docker exec -it bt python3 /www/server/panel/plugin/oryx/bt_api_setup_site.py &&
+docker exec -it bt bash /www/server/panel/plugin/oryx/setup.sh \
+    --r0 /tmp/oryx_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
     --www /www/wwwroot --site srs.stack.local
 ```
 
@@ -339,26 +339,26 @@ Setup the dns lookup for domain `srs.stack.local`:
 PIP=$(docker exec -it bt ifconfig eth0 |grep 'inet ' |awk '{print $2}') &&
 docker exec -it bt bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
 docker exec -it bt cat /etc/hosts && echo OK &&
-docker exec -it bt docker exec -it srs-stack bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
-docker exec -it bt docker exec -it srs-stack cat /etc/hosts
+docker exec -it bt docker exec -it oryx bash -c "echo '$PIP srs.stack.local' >> /etc/hosts" &&
+docker exec -it bt docker exec -it oryx cat /etc/hosts
 ```
 > Note: We add host `srs.stack.local` to the ip of eth0, because we need to access it in the
-> srs-stack docker in docker.
+> oryx docker in docker.
 
 Run test for BT:
 
 ```bash
-rm -f test/srs-stack.test &&
+rm -f test/oryx.test &&
 docker exec -it bt make -j -C test &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it bt ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://srs.stack.local:80 \
+docker exec -it bt ./test/oryx.test -test.timeout=1h -test.v -endpoint http://srs.stack.local:80 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
 bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it bt ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://srs.stack.local:80 \
+docker exec -it bt ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint http://srs.stack.local:80 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-docker exec -it bt ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://srs.stack.local:443 \
+docker exec -it bt ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint https://srs.stack.local:443 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
 ```
@@ -367,8 +367,8 @@ Open [http://localhost:7800/srsstack](http://localhost:7800/srsstack) to install
 
 > Note: Or you can use `docker exec -it bt bt default` to show the login info.
 
-In the [application store](http://localhost:7800/soft), there is a `srs_stack` plugin. After test, you can install the plugin 
-`build/bt-srs_stack.zip` to production BT panel.
+In the [application store](http://localhost:7800/soft), there is a `oryx` plugin. After test, you can install the plugin 
+`build/bt-oryx.zip` to production BT panel.
 
 ## Develop the Droplet Image
 
@@ -399,9 +399,9 @@ Please check the [snapshot](https://cloud.digitalocean.com/images/snapshots/drop
 ```bash
 IMAGE=$(doctl compute snapshot list --context market --format ID --no-header) &&
 sshkey=$(doctl compute ssh-key list --context market --no-header |grep srs |awk '{print $1}') &&
-doctl compute droplet create srs-stack-test --context market --image $IMAGE \
+doctl compute droplet create oryx-test --context market --image $IMAGE \
     --region sgp1 --size s-2vcpu-2gb --ssh-keys $sshkey --wait &&
-SRS_DROPLET_EIP=$(doctl compute droplet get srs-stack-test --context market --format PublicIPv4 --no-header)
+SRS_DROPLET_EIP=$(doctl compute droplet get oryx-test --context market --format PublicIPv4 --no-header)
 ```
 
 Prepare test environment:
@@ -413,7 +413,7 @@ cp ~/git/srs/trunk/doc/source.200kbps.768x320.flv test/ &&
 scp ./test/source.200kbps.768x320.flv root@$SRS_DROPLET_EIP:/data/upload/ &&
 docker run --rm -it -v $(pwd):/g -w /g -e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=amd64 \
     ossrs/srs:ubuntu20 make -C test clean default &&
-scp ./test/srs-stack.test ./test/source.200kbps.768x320.flv root@$SRS_DROPLET_EIP:~/test/ &&
+scp ./test/oryx.test ./test/source.200kbps.768x320.flv root@$SRS_DROPLET_EIP:~/test/ &&
 scp ./scripts/tools/secret.sh root@$SRS_DROPLET_EIP:~/scripts/tools &&
 ssh root@$SRS_DROPLET_EIP docker run --rm -v /usr/bin:/g ossrs/srs:tools \
     cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
@@ -426,11 +426,11 @@ Test the droplet instance:
 
 ```bash
 ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh --output test/.env &&
-ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://$SRS_DROPLET_EIP:2022 \
+ssh root@$SRS_DROPLET_EIP ./test/oryx.test -test.timeout=1h -test.v -endpoint http://$SRS_DROPLET_EIP:2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty && sleep 3 &&
 ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh --output test/.env &&
-ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://$SRS_DROPLET_EIP:2022 \
+ssh root@$SRS_DROPLET_EIP ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint http://$SRS_DROPLET_EIP:2022 \
     -endpoint-rtmp rtmp://$SRS_DROPLET_EIP -endpoint-http http://$SRS_DROPLET_EIP -endpoint-srt srt://$SRS_DROPLET_EIP:10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 1
@@ -439,7 +439,7 @@ ssh root@$SRS_DROPLET_EIP ./test/srs-stack.test -test.timeout=1h -test.v -wait-r
 Remove the droplet instance:
 
 ```bash
-doctl compute droplet delete srs-stack-test --context market --force
+doctl compute droplet delete oryx-test --context market --force
 ```
 
 After submit to [marketplace](https://cloud.digitalocean.com/vendorportal/624145d53da4ad68de259945/10/edit), cleanup the snapshot:
@@ -505,7 +505,7 @@ $sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo chmod 777 /data/upload &&
 cp ~/git/srs/trunk/doc/source.200kbps.768x320.flv test/ &&
 $scpCmd test/source.200kbps.768x320.flv ubuntu@$(cat .tmp/lh-ip2.txt):/data/upload/ &&
 docker run --rm -it -v $(pwd):/g -w /g ossrs/srs:ubuntu20 make -C test clean default &&
-$scpCmd ./test/srs-stack.test ./test/source.200kbps.768x320.flv ubuntu@$(cat .tmp/lh-ip2.txt):~/test/ &&
+$scpCmd ./test/oryx.test ./test/source.200kbps.768x320.flv ubuntu@$(cat .tmp/lh-ip2.txt):~/test/ &&
 $scpCmd ./scripts/tools/secret.sh ubuntu@$(cat .tmp/lh-ip2.txt):~/scripts/tools &&
 $sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo docker run --rm -v /usr/bin:/g \
     registry.cn-hangzhou.aliyuncs.com/ossrs/srs:tools \
@@ -516,15 +516,15 @@ Test the CVM instance:
 
 ```bash
 $sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
-$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/oryx.test -test.timeout=1h -test.v -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
 $sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
-$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
     -endpoint-rtmp rtmp://$(cat .tmp/lh-ip2.txt) -endpoint-http http://$(cat .tmp/lh-ip2.txt) -endpoint-srt srt://$(cat .tmp/lh-ip2.txt):10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-ssh ubuntu@$(cat .tmp/lh-ip2.txt) ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://$(cat .tmp/lh-ip2.txt):2443 \
+ssh ubuntu@$(cat .tmp/lh-ip2.txt) ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint https://$(cat .tmp/lh-ip2.txt):2443 \
     -endpoint-rtmp rtmp://$(cat .tmp/lh-ip2.txt) -endpoint-http https://$(cat .tmp/lh-ip2.txt) -endpoint-srt srt://$(cat .tmp/lh-ip2.txt):10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
@@ -585,8 +585,8 @@ scp platform.tar.gz root@$LNAME.$LDOMAIN:~ &&
 ssh root@$LNAME.$LDOMAIN tar xf platform.tar.gz &&
 version=$(bash scripts/version.sh) &&
 ssh root@$LNAME.$LDOMAIN docker load -i platform.tar &&
-ssh root@$LNAME.$LDOMAIN docker tag platform:latest ossrs/srs-stack:$version &&
-ssh root@$LNAME.$LDOMAIN docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
+ssh root@$LNAME.$LDOMAIN docker tag platform:latest ossrs/oryx:$version &&
+ssh root@$LNAME.$LDOMAIN docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$version &&
 ssh root@$LNAME.$LDOMAIN docker image prune -f &&
 ssh root@$LNAME.$LDOMAIN docker images
 ```
@@ -594,11 +594,11 @@ ssh root@$LNAME.$LDOMAIN docker images
 Next, build the BT plugin and install it:
 
 ```bash
-ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/srs_stack/install.sh uninstall 2>/dev/null || echo OK &&
+ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/oryx/install.sh uninstall 2>/dev/null || echo OK &&
 bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
-scp build/bt-srs_stack.zip root@$LNAME.$LDOMAIN:~ &&
-ssh root@$LNAME.$LDOMAIN unzip -q bt-srs_stack.zip -d /www/server/panel/plugin &&
-ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/srs_stack/install.sh install
+scp build/bt-oryx.zip root@$LNAME.$LDOMAIN:~ &&
+ssh root@$LNAME.$LDOMAIN unzip -q bt-oryx.zip -d /www/server/panel/plugin &&
+ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/oryx/install.sh install
 ```
 
 On the server, setup the `.bashrc`:
@@ -611,20 +611,20 @@ export PYTHONIOENCODING=UTF-8
 You can use BT panel to install the plugin, or by command:
 
 ```bash
-ssh root@$LNAME.$LDOMAIN python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
-ssh root@$LNAME.$LDOMAIN DOMAIN=$LNAME.$LDOMAIN python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py &&
-ssh root@$LNAME.$LDOMAIN python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
-ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/srs_stack/setup.sh \
-    --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+ssh root@$LNAME.$LDOMAIN python3 /www/server/panel/plugin/oryx/bt_api_remove_site.py &&
+ssh root@$LNAME.$LDOMAIN DOMAIN=$LNAME.$LDOMAIN python3 /www/server/panel/plugin/oryx/bt_api_create_site.py &&
+ssh root@$LNAME.$LDOMAIN python3 /www/server/panel/plugin/oryx/bt_api_setup_site.py &&
+ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/oryx/setup.sh \
+    --r0 /tmp/oryx_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
     --www /www/wwwroot --site srs.stack.local
 ```
 
 Cleanup, remove the files and domain:
 
 ```bash
-ssh root@$LNAME.$LDOMAIN rm -f platform.tar* bt-srs_stack.zip 2>/dev/null &&
-ssh root@$LNAME.$LDOMAIN python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
-ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/srs_stack/install.sh uninstall 2>/dev/null || echo OK &&
+ssh root@$LNAME.$LDOMAIN rm -f platform.tar* bt-oryx.zip 2>/dev/null &&
+ssh root@$LNAME.$LDOMAIN python3 /www/server/panel/plugin/oryx/bt_api_remove_site.py &&
+ssh root@$LNAME.$LDOMAIN bash /www/server/panel/plugin/oryx/install.sh uninstall 2>/dev/null || echo OK &&
 domains=$(doctl compute domain records ls $LDOMAIN --no-header |grep $LNAME) && echo "Cleanup domains: $domains" &&
 doctl compute domain records delete $LDOMAIN $(echo $domains |awk '{print $1}') -f
 ```
@@ -638,7 +638,7 @@ doctl compute droplet ls |grep lego
 
 ## Develop the NGINX HLS CDN
 
-Run SRS Stack by previous steps, such as [Develop All in macOS](#develop-all-in-macos), publish stream 
+Run Oryx by previous steps, such as [Develop All in macOS](#develop-all-in-macos), publish stream 
 and there should be a HLS stream:
 
 * [http://localhost:2022/live/livestream.m3u8](http://localhost:2022/tools/player.html?url=http://localhost:2022/live/livestream.m3u8)
@@ -648,18 +648,18 @@ Build the image of nginx:
 ```bash
 docker rm -f nginx 2>/dev/null &&
 docker rmi scripts/nginx-hls-cdn 2>/dev/null || echo OK &&
-docker build -t ossrs/srs-stack:nginx-hls-cdn scripts/nginx-hls-cdn
+docker build -t ossrs/oryx:nginx-hls-cdn scripts/nginx-hls-cdn
 ```
 
-> Note: The official image is build by [workflow](https://github.com/ossrs/srs-stack/actions/runs/5970907929) 
+> Note: The official image is build by [workflow](https://github.com/ossrs/oryx/actions/runs/5970907929) 
 > which is triggered manually.
 
 If you want to use NGINX as proxy, run by docker:
 
 ```bash
-SRS_STACK_SERVER=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') &&
-docker run --rm -it -p 80:80 --name nginx -e SRS_STACK_SERVER=${SRS_STACK_SERVER}:2022 \
-    ossrs/srs-stack:nginx-hls-cdn
+ORYX_SERVER=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') &&
+docker run --rm -it -p 80:80 --name nginx -e ORYX_SERVER=${ORYX_SERVER}:2022 \
+    ossrs/oryx:nginx-hls-cdn
 ```
 
 There should be a new HLS stream, cached by NGINX:
@@ -680,12 +680,12 @@ docker run --rm -d ossrs/srs:sb ./objs/sb_hls_load \
     -c 100 -r http://host.docker.internal/live/livestream.m3u8
 ```
 
-The load should be taken by NGINX, not the SRS Stack.
+The load should be taken by NGINX, not the Oryx.
 
 ## Product the NGINX HLS CDN
 
-Install SRS Stack by BT or aaPanel or docker, assume the domain is `bt.ossrs.net`, publish
-a RTMP stream to SRS Stack:
+Install Oryx by BT or aaPanel or docker, assume the domain is `bt.ossrs.net`, publish
+a RTMP stream to Oryx:
 
 ```bash
 ffmpeg -re -i ~/git/srs/trunk/doc/source.flv -c copy \
@@ -720,11 +720,11 @@ location / {
 Start a NGINX HLS Edge server:
 
 ```bash
-docker rm -f srs-stack-nginx01 || echo OK &&
+docker rm -f oryx-nginx01 || echo OK &&
 PIP=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}') &&
-docker run --rm -it -e SRS_STACK_SERVER=$PIP:2022 \
-    -p 23080:80 --name srs-stack-nginx01 -d \
-    ossrs/srs-stack:nginx-hls-cdn
+docker run --rm -it -e ORYX_SERVER=$PIP:2022 \
+    -p 23080:80 --name oryx-nginx01 -d \
+    ossrs/oryx:nginx-hls-cdn
 ```
 
 Open the [http://bt2.ossrs.net/live/livestream.m3u8](http://bt.ossrs.net/tools/player.html?url=http://bt2.ossrs.net/live/livestream.m3u8)
@@ -743,31 +743,31 @@ Be aware that the cache will store the CORS headers as well. This means that if 
 and obtain HLS without CORS, it will remain without CORS even when a request includes an 
 Origin header that necessitates CORS.
 
-## Use HELM to Install SRS Stack
+## Use HELM to Install Oryx
 
 Install [HELM](https://helm.sh/docs/intro/install/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/),
-then add repo of SRS Stack:
+then add repo of Oryx:
 
 ```bash
 helm repo add srs http://helm.ossrs.io/stable
 ```
 
-Install the latest SRS Stack:
+Install the latest Oryx:
 
 ```bash
-helm install srs srs/srs-stack
+helm install srs srs/oryx
 ```
 
 Or, install from file:
 
 ```bash
-helm install srs ~/git/srs-helm/stable/srs-stack-1.0.5.tgz
+helm install srs ~/git/srs-helm/stable/oryx-1.0.6.tgz
 ```
 
 Or, setup the persistence directory:
 
 ```bash
-helm install srs ~/git/srs-helm/stable/srs-stack-1.0.5.tgz \
+helm install srs ~/git/srs-helm/stable/oryx-1.0.6.tgz \
   --set persistence.path=$HOME/data
 ```
 
@@ -793,29 +793,29 @@ Run testcase in Goland.
 
 ## Update SRS Demo Environment
 
-To update the demo for SRS Stack, for bt.ossrs.net:
+To update the demo for Oryx, for bt.ossrs.net:
 
 ```bash
-IMAGE=$(ssh root@ossrs.net docker images |grep srs-stack |grep v5 |awk '{print $1":"$2}' |head -n 1) &&
+IMAGE=$(ssh root@ossrs.net docker images |grep oryx |grep v5 |awk '{print $1":"$2}' |head -n 1) &&
 docker build -t $IMAGE -f Dockerfile . &&
 docker save $IMAGE |gzip > t.tar.gz &&
 scp t.tar.gz root@ossrs.net:~/ &&
 ssh root@ossrs.net docker load -i t.tar.gz && 
-ssh root@ossrs.net docker stop srs-stack && 
-sleep 3 && ssh root@ossrs.net docker rm -f srs-stack && 
+ssh root@ossrs.net docker stop oryx && 
+sleep 3 && ssh root@ossrs.net docker rm -f oryx && 
 ssh root@ossrs.net docker image prune -f
 ```
 
 For bt.ossrs.io:
 
 ```bash
-IMAGE=$(ssh root@ossrs.io docker images |grep srs-stack |grep v5 |awk '{print $1":"$2}' |head -n 1) &&
+IMAGE=$(ssh root@ossrs.io docker images |grep oryx |grep v5 |awk '{print $1":"$2}' |head -n 1) &&
 docker build -t $IMAGE -f Dockerfile . &&
 docker save $IMAGE |gzip > t.tar.gz &&
 scp t.tar.gz root@ossrs.io:~/ &&
 ssh root@ossrs.io docker load -i t.tar.gz && 
-ssh root@ossrs.io docker stop srs-stack && 
-sleep 3 && ssh root@ossrs.io docker rm -f srs-stack && 
+ssh root@ossrs.io docker stop oryx && 
+sleep 3 && ssh root@ossrs.io docker rm -f oryx && 
 ssh root@ossrs.io docker image prune -f
 ```
 
@@ -825,8 +825,8 @@ The SRS container is configured by environment variables, which loads the `/data
 file. To build a test image:
 
 ```bash
-docker rmi srs-stack-env 2>/dev/null || echo OK &&
-docker build -t srs-stack-env -f Dockerfile .
+docker rmi oryx-env 2>/dev/null || echo OK &&
+docker build -t oryx-env -f Dockerfile .
 ```
 
 Setup the logging to file:
@@ -835,13 +835,13 @@ Setup the logging to file:
 echo 'SRS_LOG_TANK=file' > $HOME/data/config/.srs.env
 ```
 
-Run SRS Stack by docker:
+Run Oryx by docker:
 
 ```bash
 docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935 \
-  -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
+  -p 8000:8000/udp -p 10080:10080/udp --name oryx \
   --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
-  -v $HOME/data:/data srs-stack-env
+  -v $HOME/data:/data oryx-env
 ```
 
 Note that the logs should be written to file, there is no log `write log to console`, instead there
@@ -849,17 +849,17 @@ should be a log like `you can check log by`.
 
 ## WebRTC Candidate
 
-SRS Stack follows the rules for WebRTC candidate, see [CANDIDATE](https://ossrs.io/lts/en-us/docs/v5/doc/webrtc#config-candidate),
+Oryx follows the rules for WebRTC candidate, see [CANDIDATE](https://ossrs.io/lts/en-us/docs/v5/doc/webrtc#config-candidate),
 but also has extra improvements for we can do more after proxy the API.
 
 1. Disable `use_auto_detect_network_ip` and `api_as_candidates` in SRS config.
 1. Always use `?eip=xxx` and ignore any other config, if user force to use the specified IP.
-1. If `NAME_LOOKUP` (default is `on`) isn't `off`, try to resolve the candidate from `Host` of HTTP API by SRS Stack.
-  1. If access SRS Stack by `localhost` for debugging or run in localhost.
-    1. If `PLATFORM_DOCKER` is `off`, such as directly run in host, not in docker, use the private ip of SRS Stack.
-    1. If not set `CANDIDATE`, use `127.0.0.1` for OBS WHIP or native client to access SRS Stack by localhost.
-  1. Use `Host` if it's a valid IP address, for example, to access SRS Stack by public ip address.
-  1. Use DNS lookup if `Host` is a domain, for example, to access SRS Stack by domain name.
+1. If `NAME_LOOKUP` (default is `on`) isn't `off`, try to resolve the candidate from `Host` of HTTP API by Oryx.
+  1. If access Oryx by `localhost` for debugging or run in localhost.
+    1. If `PLATFORM_DOCKER` is `off`, such as directly run in host, not in docker, use the private ip of Oryx.
+    1. If not set `CANDIDATE`, use `127.0.0.1` for OBS WHIP or native client to access Oryx by localhost.
+  1. Use `Host` if it's a valid IP address, for example, to access Oryx by public ip address.
+  1. Use DNS lookup if `Host` is a domain, for example, to access Oryx by domain name.
 1. If no candidate, use docker IP address discovered by SRS. 
 
 > Note: Client can also set the header `X-Real-Host` to set the candidate.
@@ -1137,11 +1137,11 @@ Generally we follow this guide except for some legacy code.
 
 ## Changelog
 
-The following are the update records for the SRS Stack server.
+The following are the update records for the Oryx server.
 
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
-    * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/srs-stack/releases/tag/v5.14.2)
+    * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)
     * Dubbing: Support disable translation, rephrase, or tts. v5.14.3
     * Dubbing: Highlight the currently playing group. v5.14.3
     * NGINX: Support set the m3u8 and ts expire. v5.14.3
@@ -1149,15 +1149,16 @@ The following are the update records for the SRS Stack server.
     * HLS: Use fast cache for HLS config. v5.14.4
     * Transcript: Support set the force_style for overlay subtitle. v5.14.5
     * Transcript: Use Whisper response without LF. (#163). v5.14.5
-    * Token: Fix bug for Bearer token while initializing. [v5.14.6](https://github.com/ossrs/srs-stack/releases/tag/v5.14.6)
+    * Token: Fix bug for Bearer token while initializing. [v5.14.6](https://github.com/ossrs/oryx/releases/tag/v5.14.6)
     * Room: Enable dictation mode for AI-Talk. v5.14.7
     * Dubbing: Refine download button with comments. v5.14.8
     * Room: AI-Talk support post processing. v5.14.9
     * Website: Support setting title for popout. v5.14.10
-    * Transcript: Support set the video codec parameters. [v5.14.11](https://github.com/ossrs/srs-stack/releases/tag/v5.14.11)
+    * Transcript: Support set the video codec parameters. [v5.14.11](https://github.com/ossrs/oryx/releases/tag/v5.14.11)
     * Transcript: Support subtitle with WebVTT format. v5.14.12
     * Transcript: Fix overlay transcoding parameters parsing bug. v5.14.13
     * Use port 80/443 by default in README. v5.14.14 
+    * Rename project to Oryx. v5.14.15
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
@@ -1167,7 +1168,7 @@ The following are the update records for the SRS Stack server.
     * Switch to fluid max width. v5.13.6
     * HLS: Support low latency mode about 5s. v5.13.7
     * RTSP: Rebuild the URL with escaped user info. v5.13.8
-    * VLive: Support SRT URL filter. [v5.13.9](https://github.com/ossrs/srs-stack/releases/tag/v5.13.9)
+    * VLive: Support SRT URL filter. [v5.13.9](https://github.com/ossrs/oryx/releases/tag/v5.13.9)
     * FFmpeg: Monitor and restart FFmpeg if stuck. v5.13.10
     * Room: Support live room secret with stream URL. v5.13.11
     * Camera: Support IP Camera streaming scenario. v5.13.12
@@ -1182,95 +1183,96 @@ The following are the update records for the SRS Stack server.
     * Room: AI-Talk allow disable ASR/TTS, enable text. v5.13.19
     * Room: AI-Talk support dictation mode. v5.13.20
     * FFmpeg: Restart if time and speed abnormal. v5.13.21
-    * Transcript: Fix panic bug for sync goroutines. [v5.13.21](https://github.com/ossrs/srs-stack/releases/tag/v5.13.21)
+    * Transcript: Fix panic bug for sync goroutines. [v5.13.21](https://github.com/ossrs/oryx/releases/tag/v5.13.21)
     * Support OpenAI organization for billing. v5.13.22
-    * Room: Fix the empty room UI sort and secret bug. [v5.13.23](https://github.com/ossrs/srs-stack/releases/tag/v5.13.23)
+    * Room: Fix the empty room UI sort and secret bug. [v5.13.23](https://github.com/ossrs/oryx/releases/tag/v5.13.23)
     * FFmpeg: Fix restart bug for abnormal speed. v5.13.24
     * FFmpeg: Fix bug for output SRT protocol. v5.13.25
     * FFmpeg: Support ingest SRT protocol. v5.13.26
-    * VLive: Fix the re bug for file. [v5.13.27](https://github.com/ossrs/srs-stack/releases/tag/v5.13.27)
-    * Release stable version and support debugging. [v5.13.28](https://github.com/ossrs/srs-stack/releases/tag/v5.13.28)
+    * VLive: Fix the re bug for file. [v5.13.27](https://github.com/ossrs/oryx/releases/tag/v5.13.27)
+    * Release stable version and support debugging. [v5.13.28](https://github.com/ossrs/oryx/releases/tag/v5.13.28)
     * HLS: Set m3u8 expire time to 1s for LLHLS. v5.13.29
     * Transcript: Support set the force_style for overlay subtitle. v5.13.30
     * Transcript: Use Whisper response without LF. (#163). v5.13.31
-    * Token: Fix bug for Bearer token while initializing. [v5.13.32](https://github.com/ossrs/srs-stack/releases/tag/v5.13.32)
+    * Token: Fix bug for Bearer token while initializing. [v5.13.32](https://github.com/ossrs/oryx/releases/tag/v5.13.32)
     * Room: Refine stat for AI-Talk. v5.13.33
+    * Rename Oryx to Oryx. [v5.13.34](https://github.com/ossrs/oryx/releases/tag/v5.13.34)
 * v5.12
     * Refine local variable name conf to config. v5.12.1
     * Add forced exit on timeout for program termination. v5.12.1
-    * Transcript: Support convert live speech to text by whisper. [v5.12.2](https://github.com/ossrs/srs-stack/releases/tag/v5.12.2)
+    * Transcript: Support convert live speech to text by whisper. [v5.12.2](https://github.com/ossrs/oryx/releases/tag/v5.12.2)
     * Transcript: Update base image for FFmpeg subtitles. v5.12.3
     * Transcript: Limit all queue base on overlay. v5.12.4
-    * Transcript: Allow work without active stream. [v5.12.5](https://github.com/ossrs/srs-stack/releases/tag/v5.12.5)
+    * Transcript: Allow work without active stream. [v5.12.5](https://github.com/ossrs/oryx/releases/tag/v5.12.5)
     * Transcript: Support testing connection to OpenAI service. v5.12.6
     * Filter locale value. v5.12.6
-    * Transcript: Add test case for OpenAI. [v5.12.7](https://github.com/ossrs/srs-stack/releases/tag/v5.12.7)
+    * Transcript: Add test case for OpenAI. [v5.12.7](https://github.com/ossrs/oryx/releases/tag/v5.12.7)
     * Transcript: Use m4a and 30kbps bitrate to make ASR faster. v5.12.8
     * Hooks: Support callback on_record_begin and on_record_end. v5.12.9
     * VLive: Fix ffprobe RTSP bug, always use TCP transport. v5.12.10
     * Confirm when user logout. v5.12.11
     * Record: Support glob filters to match stream. v5.12.11
-    * Transcript: Show detail error if exceeded quota. [v5.12.12](https://github.com/ossrs/srs-stack/releases/tag/v5.12.12)
+    * Transcript: Show detail error if exceeded quota. [v5.12.12](https://github.com/ossrs/oryx/releases/tag/v5.12.12)
     * Record: Support finish record task quickly after stream unpublished. v5.12.13
     * Record: Support post-processing to cp file for S3. v5.12.14
-    * Transcript: Support clear the subtitle of segment in fixing queue. [v5.12.15](https://github.com/ossrs/srs-stack/releases/tag/v5.12.15)
+    * Transcript: Support clear the subtitle of segment in fixing queue. [v5.12.15](https://github.com/ossrs/oryx/releases/tag/v5.12.15)
     * VLive: Fix bug for url with query string. v5.12.16
-    * Transcript: Check the base url for OpenAI. [v5.12.17](https://github.com/ossrs/srs-stack/releases/tag/v5.12.17)
+    * Transcript: Check the base url for OpenAI. [v5.12.17](https://github.com/ossrs/oryx/releases/tag/v5.12.17)
     * HLS: Support low latency mode about 5s. v5.12.18
     * RTSP: Rebuild the URL with escaped user info. v5.12.19
     * VLive: Fix rebuild URL bug. v5.12.20
-    * HLS: Fix LL HLS setting bug. [v5.12.21](https://github.com/ossrs/srs-stack/releases/tag/v5.12.21)
+    * HLS: Fix LL HLS setting bug. [v5.12.21](https://github.com/ossrs/oryx/releases/tag/v5.12.21)
     * VLive: Support SRT URL filter. v5.12.22
-    * HLS: Set m3u8 expire time to 1s for LLHLS. [v5.12.22](https://github.com/ossrs/srs-stack/releases/tag/v5.12.22)
+    * HLS: Set m3u8 expire time to 1s for LLHLS. [v5.12.22](https://github.com/ossrs/oryx/releases/tag/v5.12.22)
 * v5.11
     * VLive: Decrease the latency for virtual live. v5.11.1
     * Live: Refine multiple language. v5.11.2
-    * Hooks: Support HTTP Callback and test. [v5.11.3](https://github.com/ossrs/srs-stack/releases/tag/v5.11.3)
+    * Hooks: Support HTTP Callback and test. [v5.11.3](https://github.com/ossrs/oryx/releases/tag/v5.11.3)
     * HELM: Support resolve name to ip for rtc. v5.11.4
-    * HELM: Disable NAME_LOOKUP by default. [v5.11.5](https://github.com/ossrs/srs-stack/releases/tag/v5.11.5)
+    * HELM: Disable NAME_LOOKUP by default. [v5.11.5](https://github.com/ossrs/oryx/releases/tag/v5.11.5)
     * Refine env variable for bool. v5.11.7
     * RTC: Refine WHIP player and enable NAME_LOOKUP by default. v5.11.8
     * RTC: Update WHIP and WHEP player. v5.11.9
     * RTC: Resolve candidate for lo and docker. v5.11.10
-    * RTC: Refine test and tutorial for WHIP/WHEP. [v5.11.10](https://github.com/ossrs/srs-stack/releases/tag/v5.11.10)
+    * RTC: Refine test and tutorial for WHIP/WHEP. [v5.11.10](https://github.com/ossrs/oryx/releases/tag/v5.11.10)
     * Refine player open speed. v5.11.11
     * HTTPS: Check dashboard and ssl domain. v5.11.12
     * API: Add curl and jQuery example. v5.11.12
     * API: Allow CORS by default. v5.11.13
-    * API: Remove duplicated CORS headers. [v5.11.14](https://github.com/ossrs/srs-stack/releases/tag/v5.11.14)
+    * API: Remove duplicated CORS headers. [v5.11.14](https://github.com/ossrs/oryx/releases/tag/v5.11.14)
     * Support expose ports for multiple containers. v5.11.15
     * HTTPS: Check dashboard hostname and port. v5.11.15
     * Error when eslint fail. v5.11.16
     * Use upx to make binary smaller. v5.11.16
-    * Refine transcode test case. [v5.11.17](https://github.com/ossrs/srs-stack/releases/tag/v5.11.17)
+    * Refine transcode test case. [v5.11.17](https://github.com/ossrs/oryx/releases/tag/v5.11.17)
     * HTTPS: Enable self-signed certificate by default. v5.11.18
     * HLS: Nginx HLS CDN support HTTPS. v5.11.19
     * Refine scenarios with discouraged and deprecated. v5.11.20
     * Transcode: Refine stream compare algorithm. v5.11.21
     * Hooks: Support callback self-sign HTTPS URL. v5.11.22
-    * Fix utest fail. [v5.11.23](https://github.com/ossrs/srs-stack/releases/tag/v5.11.23)
-    * VLive: Fix ffprobe RTSP bug, always use TCP transport. [v5.11.24](https://github.com/ossrs/srs-stack/releases/tag/v5.11.24)
+    * Fix utest fail. [v5.11.23](https://github.com/ossrs/oryx/releases/tag/v5.11.23)
+    * VLive: Fix ffprobe RTSP bug, always use TCP transport. [v5.11.24](https://github.com/ossrs/oryx/releases/tag/v5.11.24)
 * v5.10
     * Refine README. v5.10.1
     * Refine DO and droplet release script. v5.10.2
     * VLive: Fix bug of link. v5.10.2
     * Record: Fix bug of change record directory. v5.10.2 (#133)
-    * Streaming: Add SRT streaming. [v5.10.2](https://github.com/ossrs/srs-stack/releases/tag/v5.10.2)
+    * Streaming: Add SRT streaming. [v5.10.2](https://github.com/ossrs/oryx/releases/tag/v5.10.2)
     * Streaming: Add OBS SRT streaming. v5.10.3
     * Fix lighthouse script bug. v5.10.4
     * VLive: Support forward stream. v5.10.5
     * VLive: Cleanup temporary file when uploading. v5.10.6
-    * VLive: Use TCP transport when pull RTSP stream. [v5.10.7](https://github.com/ossrs/srs-stack/releases/tag/v5.10.7)
+    * VLive: Use TCP transport when pull RTSP stream. [v5.10.7](https://github.com/ossrs/oryx/releases/tag/v5.10.7)
     * Refine statistic and report data. v5.10.8
-    * Support file picker with language. [v5.10.9](https://github.com/ossrs/srs-stack/releases/tag/v5.10.9)
+    * Support file picker with language. [v5.10.9](https://github.com/ossrs/oryx/releases/tag/v5.10.9)
     * Report language. v5.10.10
-    * Transcode: Support live stream transcoding. [v5.10.11](https://github.com/ossrs/srs-stack/releases/tag/v5.10.11)
+    * Transcode: Support live stream transcoding. [v5.10.11](https://github.com/ossrs/oryx/releases/tag/v5.10.11)
     * Transcode: Fix param bug. v5.10.12
     * Fix default stream name bug. v5.10.13
     * Update doc. v5.10.14
-    * New stable release. [v5.10.15](https://github.com/ossrs/srs-stack/releases/tag/v5.10.15)
+    * New stable release. [v5.10.15](https://github.com/ossrs/oryx/releases/tag/v5.10.15)
     * Fix js missing bug. v5.10.16
-    * Support docker images for helm. [v5.10.17](https://github.com/ossrs/srs-stack/releases/tag/v5.10.17)
+    * Support docker images for helm. [v5.10.17](https://github.com/ossrs/oryx/releases/tag/v5.10.17)
     * Use WHIP and WHEP for RTC. v5.10.18
     * Transcode: Refine stream compare algorithm. v5.10.19
 * v5.9
@@ -1285,25 +1287,25 @@ The following are the update records for the SRS Stack server.
     * Add test for virtual live. v5.9.10
     * Add test for record. v5.9.11
     * Add test for forward. v5.9.12
-    * Refine test to transmux to mp4. [v5.9.13](https://github.com/ossrs/srs-stack/releases/tag/v5.9.13)
+    * Refine test to transmux to mp4. [v5.9.13](https://github.com/ossrs/oryx/releases/tag/v5.9.13)
     * Upgrade jquery and mpegtsjs. v5.9.14
-    * Support authentication for SRS HTTP API. [v5.9.15](https://github.com/ossrs/srs-stack/releases/tag/v5.9.15)
+    * Support authentication for SRS HTTP API. [v5.9.15](https://github.com/ossrs/oryx/releases/tag/v5.9.15)
     * Don't expose 1985 API port. v5.9.16
     * Load environment variables from /data/config/.srs.env. v5.9.17
     * Change guide to use $HOME/data as home. v5.9.18
-    * Translate forward to English. [v5.9.19](https://github.com/ossrs/srs-stack/releases/tag/v5.9.19)
+    * Translate forward to English. [v5.9.19](https://github.com/ossrs/oryx/releases/tag/v5.9.19)
     * Refine record, dvr, and vod files. v5.9.20
-    * Translate record to English. [v5.9.21](https://github.com/ossrs/srs-stack/releases/tag/v5.9.21)
+    * Translate record to English. [v5.9.21](https://github.com/ossrs/oryx/releases/tag/v5.9.21)
     * Refine virtual live files. v5.9.22
     * Translate virtual live to English. v5.9.23
     * Support always open tabs. v5.9.24
-    * Remove record and vlive group. [v5.9.25](https://github.com/ossrs/srs-stack/releases/tag/v5.9.25)
+    * Remove record and vlive group. [v5.9.25](https://github.com/ossrs/oryx/releases/tag/v5.9.25)
     * Refine project description. v5.9.26
-    * Refine DO and droplet release script. [v5.9.27](https://github.com/ossrs/srs-stack/releases/tag/v5.9.27)
+    * Refine DO and droplet release script. [v5.9.27](https://github.com/ossrs/oryx/releases/tag/v5.9.27)
     * Fix bug, release stable version. v5.9.28
     * VLive: Fix bug of link. v5.9.28
     * Record: Fix bug of change record directory. v5.9.28 (#133)
-    * Streaming: Add SRT streaming. [v5.9.28](https://github.com/ossrs/srs-stack/releases/tag/v5.9.28)
+    * Streaming: Add SRT streaming. [v5.9.28](https://github.com/ossrs/oryx/releases/tag/v5.9.28)
     * Fix lighthouse HTTPS bug. v5.9.29
 * v5.8
     * Always dispose DO VM and domain for test. v1.0.306
@@ -1313,7 +1315,7 @@ The following are the update records for the SRS Stack server.
     * Support High Performance HLS mode. v1.0.307
     * Show current config for settings. v1.0.307
     * Switch MIT to AGPL License. v1.0.307
-    * Use one version strategy. [v5.8.20](https://github.com/ossrs/srs-stack/releases/tag/v5.8.20)
+    * Use one version strategy. [v5.8.20](https://github.com/ossrs/oryx/releases/tag/v5.8.20)
     * Always check test result. v5.8.21
     * SRT: Enable srt in default vhost. v5.8.22
     * Add utest for HP HLS. v5.8.23
@@ -1325,27 +1327,27 @@ The following are the update records for the SRS Stack server.
     * Fix Failed to execute 'insertBefore' on 'Node'. v5.8.26
     * Eliminate unused callback events. v5.8.26
     * Add docker for nginx HLS CDN. v5.8.27
-    * Update SRS Stack architecture. v5.8.27
+    * Update Oryx architecture. v5.8.27
     * Use DO droplet s-1vcpu-1gb for auto test. v5.8.28
-    * Use default context when restore hphls. [v5.8.28](https://github.com/ossrs/srs-stack/releases/tag/v5.8.28)
+    * Use default context when restore hphls. [v5.8.28](https://github.com/ossrs/oryx/releases/tag/v5.8.28)
     * Support remote test. v5.8.29
-    * Enable CORS and timestamp in HLS. [v5.8.30](https://github.com/ossrs/srs-stack/releases/tag/v5.8.30)
-    * Release stable version. [v5.8.31](https://github.com/ossrs/srs-stack/releases/tag/v5.8.31)
+    * Enable CORS and timestamp in HLS. [v5.8.30](https://github.com/ossrs/oryx/releases/tag/v5.8.30)
+    * Release stable version. [v5.8.31](https://github.com/ossrs/oryx/releases/tag/v5.8.31)
 * v5.7
     * Refine DigitalOcean droplet image. v1.0.302
     * Support local test all script. v1.0.302
     * Rewrite script for lighthouse. v1.0.303
     * Set nginx max body to 100GB. v1.0.303
     * Use LEGO instead of certbot. v1.0.304
-    * Rename SRS Cloud to SRS Stack. v1.0.304
+    * Rename SRS Cloud to Oryx. v1.0.304
     * Support HTTPS by SSL file. v1.0.305
     * Support reload nginx for SSL. v1.0.305
     * Support request SSL from letsencrypt. v1.0.305
     * Support work with bt/aaPanel ssl. v1.0.305
     * Support self-sign certificate by default. v1.0.305
     * Query configured SSL cert. v1.0.305
-    * 2023.08.13: Support test online environment. [v5.7.19](https://github.com/ossrs/srs-stack/releases/tag/publication-v5.7.19)
-    * 2023.08.20: Fix the BT and aaPanel filename issue. [v5.7.20](https://github.com/ossrs/srs-stack/releases/tag/publication-v5.7.20)
+    * 2023.08.13: Support test online environment. [v5.7.19](https://github.com/ossrs/oryx/releases/tag/publication-v5.7.19)
+    * 2023.08.20: Fix the BT and aaPanel filename issue. [v5.7.20](https://github.com/ossrs/oryx/releases/tag/publication-v5.7.20)
 * 2023.08.06, v1.0.301, v5.7.18
     * Simplify startup script, fix bug, adjust directory to `/data` top-level directory. v1.0.296
     * Improve message prompts, script comments, and log output. v1.0.297
@@ -1385,7 +1387,7 @@ The following are the update records for the SRS Stack server.
 * 2022.11.20, v1.0.256, major version update, experience improvement, Release 4.6
     * Proxy root site resources, such as favicon.ico
     * Support [SrsPlayer](https://wordpress.org/plugins/srs-player) WebRTC push stream shortcode.
-    * Support [local recording](https://github.com/ossrs/srs-stack/issues/42), recording to SRS Stack local disk.
+    * Support [local recording](https://github.com/ossrs/oryx/issues/42), recording to Oryx local disk.
     * Support deleting local recording files and tasks.
     * Support local recording as MP4 files and downloads.
     * Support local recording directory as a soft link, storing recorded content on other disks.
@@ -1422,13 +1424,13 @@ The following are the update records for the SRS Stack server.
     * Change `filing` to `website`, can set home page redirection and footer filing number.
     * Improve NGINX configuration file structure, centralize configuration in `containers` directory.
     * Support setting simple load balancing, randomly selecting a backend NGINX for HLS distribution.
-    * Containers work in an independent `srs-stack` network.
+    * Containers work in an independent `oryx` network.
     * Add `System > Tools` option.
     * Use Redis container, not dependent on host Redis service.
 * 2022.04.06, v1.0.200, major version update, multi-language, Release 4.4
     * Support Chinese and English bilingual.
     * Support DigitalOcean image, see [SRS Droplet](https://marketplace.digitalocean.com/apps/srs).
-    * Support OpenAPI to get push stream key, see [#19](https://github.com/ossrs/srs-stack/pull/19).
+    * Support OpenAPI to get push stream key, see [#19](https://github.com/ossrs/oryx/pull/19).
     * Improve container image update script.
     * Support using NGINX to distribute HLS, see [#2989](https://github.com/ossrs/srs/issues/2989#nginx-direclty-serve-hls).
     * Improve VoD storage and service detection.

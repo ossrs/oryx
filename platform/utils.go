@@ -33,7 +33,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-// Versions is latest and stable version from SRS Stack API.
+// Versions is latest and stable version from Oryx API.
 type Versions struct {
 	Version string `json:"version"`
 	Stable  string `json:"stable"`
@@ -48,7 +48,7 @@ func (v Versions) String() string {
 // TODO: FIXME: Should be merged to mgmt.
 type Config struct {
 	IsDarwin bool
-	// Current working directory, at xxx/srs-stack/platform.
+	// Current working directory, at xxx/oryx/platform or xxx/srs-stack/platform.
 	Pwd string
 
 	Cloud    string
@@ -60,7 +60,7 @@ type Config struct {
 	ipv4  net.IP
 	Iface string
 
-	// The latest and stable version from SRS Stack API.
+	// The latest and stable version from Oryx API.
 	Versions Versions
 }
 
@@ -347,13 +347,13 @@ var dirUploadPath = path.Join(".", "upload")
 var dirVLivePath = path.Join(".", "vlive")
 var dirDubbingPath = path.Join(".", "dub")
 
-// For SRS Stack to use the files.
+// For Oryx to use the files.
 const serverDataDirectory = "/data"
 
-// The video files allowed to use by SRS Stack.
+// The video files allowed to use by Oryx.
 var serverAllowVideoFiles []string = []string{".mp4", ".flv", ".ts"}
 
-// The audio files allowed to use by SRS Stack.
+// The audio files allowed to use by Oryx.
 var serverAllowAudioFiles []string = []string{".mp3", ".aac", ".m4a"}
 
 // rdb is a global redis client object.
@@ -525,7 +525,7 @@ func srsGenerateConfig(ctx context.Context) error {
 	// Build the config for SRS.
 	if true {
 		confLines := []string{
-			"# !!! Important: This file is produced and maintained by the SRS Stack, please never modify it.",
+			"# !!! Important: This file is produced and maintained by the Oryx, please never modify it.",
 		}
 		confLines = append(confLines, "", "")
 
@@ -542,7 +542,7 @@ func srsGenerateConfig(ctx context.Context) error {
 	}
 	if true {
 		confLines := []string{
-			"# !!! Important: This file is produced and maintained by the SRS Stack, please never modify it.",
+			"# !!! Important: This file is produced and maintained by the Oryx, please never modify it.",
 		}
 		confLines = append(confLines, hlsConf...)
 		confLines = append(confLines, "", "")
@@ -690,7 +690,7 @@ func nginxGenerateConfig(ctx context.Context) error {
 	// Build the config for NGINX.
 	if true {
 		confLines := []string{
-			"# !!! Important: This file is produced and maintained by the SRS Stack, please never modify it.",
+			"# !!! Important: This file is produced and maintained by the Oryx, please never modify it.",
 		}
 		confLines = append(confLines, "", "")
 
@@ -707,7 +707,7 @@ func nginxGenerateConfig(ctx context.Context) error {
 	}
 	if true {
 		confLines := []string{
-			"# !!! Important: This file is produced and maintained by the SRS Stack, please never modify it.",
+			"# !!! Important: This file is produced and maintained by the Oryx, please never modify it.",
 		}
 		confLines = append(confLines, uploadLimit...)
 		confLines = append(confLines, sslConf...)
@@ -742,7 +742,7 @@ func nginxGenerateConfig(ctx context.Context) error {
 			return errors.Wrapf(err, "open file %v", fileName)
 		} else {
 			defer f.Close()
-			msg := fmt.Sprintf("SRS Stack reload Nginx at %v\n", time.Now().Format(time.RFC3339))
+			msg := fmt.Sprintf("Oryx reload Nginx at %v\n", time.Now().Format(time.RFC3339))
 			if _, err = f.Write([]byte(msg)); err != nil {
 				return errors.Wrapf(err, "write file %v", fileName)
 			}

@@ -6,11 +6,11 @@
 package main
 
 // Note that we don't use the version from API anymore.
-// The latest version of SRS Stack.
+// The latest version of Oryx.
 const latest = "v1.0.307"
 
 // Note that we don't use the version from API anymore.
-// The api service version of SRS Stack.
+// The api service version of Oryx.
 const api = "v1.0.374"
 
 // Note that we don't use the version from API anymore.

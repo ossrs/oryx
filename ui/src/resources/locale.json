@@ -172,7 +172,7 @@
         "version": "你的版本",
         "stable": "稳定版本",
         "latest": "最新版本",
-        "versionLink": "https://ossrs.net/lts/zh-cn/faq-srs-stack#changelog",
+        "versionLink": "https://ossrs.net/lts/zh-cn/faq-oryx#changelog",
         "autoUpgrade": "自动更新",
         "autoUpgradeTip": "是否自动更新到稳定版本",
         "upgradeManually": "若需要升级，请手动重装，或者更新镜像版本"
@@ -249,7 +249,7 @@
         "copy": "拷贝",
         "copy2": "复制",
         "see": "请参考",
-        "doc": "https://ossrs.net/lts/zh-cn/faq-srs-stack",
+        "doc": "https://ossrs.net/lts/zh-cn/faq-oryx",
         "required": "必选",
         "optional": "可选",
         "send": "发送",
@@ -284,9 +284,9 @@
           "achannel1": "单声道，Mono",
           "achannel2": "双声道，Stereo, 即立体声",
           "server": "推流地址",
-          "server2": "转码流输出的地址，可以是SRS Stack或其他直播流平台的地址",
+          "server2": "转码流输出的地址，可以是Oryx或其他直播流平台的地址",
           "key": "推流密钥",
-          "key2": "转码流输出的流密钥，可以是SRS Stack或其他直播流平台的流密钥"
+          "key2": "转码流输出的流密钥，可以是Oryx或其他直播流平台的流密钥"
         },
         "status": {
           "header": "转码状态",
@@ -352,7 +352,7 @@
           "tip2": "注意先停止掉FFmpeg/OBS推流。",
           "wp": "使用WordPress页面推流：",
           "sc": "WordPress简码",
-          "nolo": "SRS Stack不支持localhost WHIP推流，请使用内网或公网IP访问"
+          "nolo": "Oryx不支持localhost WHIP推流，请使用内网或公网IP访问"
         },
         "rtc2": {
           "title": "WebRTC: WHIP OBS"
@@ -360,7 +360,7 @@
       },
       "cb": {
         "title": "场景介绍",
-        "summary": "设置回调后，SRS Stack会发起HTTP请求，回调你的服务，支持HTTP或HTTPS地址",
+        "summary": "设置回调后，Oryx会发起HTTP请求，回调你的服务，支持HTTP或HTTPS地址",
         "usage1": "实现更加高级的鉴权，比如只有在某些时间段才允许推流",
         "usage2": "实现数据统计和分析，可以通过回调获取流的信息和状态",
         "setting": "回调设置",
@@ -383,10 +383,10 @@
         "vtt2": "是否开启WebVTT字幕",
         "vtt": "WebVTT字幕",
         "ole":"是否开启视频叠加字幕",
-        "trans2": "https://ossrs.net/lts/zh-cn/faq-srs-stack#how-to-setup-the-video-codec-parameters-for-ai-transcript",
+        "trans2": "https://ossrs.net/lts/zh-cn/faq-oryx#how-to-setup-the-video-codec-parameters-for-ai-transcript",
         "trans1": "自定义视频转码参数",
         "trans0": "视频转码参数",
-        "fstyle3": "https://ossrs.net/lts/zh-cn/faq-srs-stack#how-to-setup-the-font-style-for-ai-transcript",
+        "fstyle3": "https://ossrs.net/lts/zh-cn/faq-oryx#how-to-setup-the-font-style-for-ai-transcript",
         "fstyle2": "设置字幕的样式",
         "fstyle": "字幕样式",
         "overlay2": "叠加字幕",
@@ -881,10 +881,10 @@
         "vtt2": "Enable WebVTT subtitle",
         "vtt": "WebVTT Subtitle",
         "ole": "Enable video overlay subtitle",
-        "trans2": "https://ossrs.io/lts/en-us/faq-srs-stack#how-to-setup-the-video-codec-parameters-for-ai-transcript",
+        "trans2": "https://ossrs.io/lts/en-us/faq-oryx#how-to-setup-the-video-codec-parameters-for-ai-transcript",
         "trans1": "Customize video transcode parameters",
         "trans0": "Video Transcode Parameters",
-        "fstyle3": "https://ossrs.io/lts/en-us/faq-srs-stack#how-to-setup-the-font-style-for-ai-transcript",
+        "fstyle3": "https://ossrs.io/lts/en-us/faq-oryx#how-to-setup-the-font-style-for-ai-transcript",
         "fstyle2": "Force the style of the subtitle",
         "fstyle": "Force Style",
         "overlay2": "Overlay Subtitle",
@@ -939,7 +939,7 @@
         "setting": "Callback Settings",
         "usage2": "Implement data statistics and analysis, you can get stream information and status through callbacks",
         "usage1": "Implement more advanced authentication, such as only allowing publishing in certain time periods",
-        "summary": "After setting the callback, SRS Stack will initiate an HTTP request to your service, supporting HTTP or HTTPS addresses",
+        "summary": "After setting the callback, Oryx will initiate an HTTP request to your service, supporting HTTP or HTTPS addresses",
         "title": "Introduction"
       },
       "live": {
@@ -947,7 +947,7 @@
           "title": "WebRTC: WHIP OBS"
         },
         "rtc": {
-          "nolo": "SRS Stack does not support localhost WHIP publishing, please use intranet or public network IP to access",
+          "nolo": "Oryx does not support localhost WHIP publishing, please use intranet or public network IP to access",
           "sc": "WordPress Shortcode",
           "wp": "Publish by WordPress:",
           "tip2": "Please stop FFmpeg/OBS before publishing.",
@@ -1013,9 +1013,9 @@
           "start": "Start Transcode"
         },
         "config": {
-          "key2": "Output stream key for transcoded stream, can be SRS Stack or other live streaming platform.",
+          "key2": "Output stream key for transcoded stream, can be Oryx or other live streaming platform.",
           "key": "Stream Key",
-          "server2": "Output server address for transcoded stream, can be SRS Stack or other live streaming platform.",
+          "server2": "Output server address for transcoded stream, can be Oryx or other live streaming platform.",
           "server": "Server",
           "achannel0": "Same to the channels of input stream",
           "achannel1": "Mono, single channel",
@@ -1216,14 +1216,14 @@
         "version": "Version",
         "stable": "Stable",
         "latest": "Latest",
-        "versionLink": "https://ossrs.io/lts/en-us/faq-srs-stack#changelog",
+        "versionLink": "https://ossrs.io/lts/en-us/faq-oryx#changelog",
         "autoUpgrade": "Auto",
         "autoUpgradeTip": "Whether automatically upgrade",
         "upgradeManually": "Please upgrade manually by reinstall or docker pull"
       },
       "openapi": {
         "title": "Introduction",
-        "summary": "For developer to call OpenAPI of SRS Stack",
+        "summary": "For developer to call OpenAPI of Oryx",
         "usage1": "ApiSecret is used for authentication of OpenAPI via Bearer Token, should be used in each API",
         "usage2": "All operations on web pages can be archived by invoking the OpenAPI, please use Chrome console to finger out the detail API",
         "secret": "Copy ApiSecret",
@@ -1293,7 +1293,7 @@
         "copy": "Copy",
         "copy2": "Copy",
         "see": "Please see",
-        "doc": "https://ossrs.io/lts/en-us/faq-srs-stack",
+        "doc": "https://ossrs.io/lts/en-us/faq-oryx",
         "required": "Required",
         "optional": "Optional",
         "send": "Send",

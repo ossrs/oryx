@@ -44,8 +44,8 @@ jobs:
       # Build SRS image
       - name: Build SRS docker image
         run: |
-          echo "Release ossrs/srs-stack:$SRS_TAG"
-          docker build --tag ossrs/srs-stack:$SRS_TAG -f releases/Dockerfile .
+          echo "Release ossrs/oryx:$SRS_TAG"
+          docker build --tag ossrs/oryx:$SRS_TAG -f releases/Dockerfile .
       # Create main images for Docker
       - name: Login to docker hub
         uses: docker/login-action@v2
@@ -54,8 +54,8 @@ jobs:
           password: "${{ secrets.DOCKER_PASSWORD }}"
       - name: Push to Docker hub
         run: |
-          docker tag ossrs/srs-stack:$SRS_TAG ossrs/srs-stack:$SRS_MAJOR
-          docker push --all-tags ossrs/srs-stack
+          docker tag ossrs/oryx:$SRS_TAG ossrs/oryx:$SRS_MAJOR
+          docker push --all-tags ossrs/oryx
     runs-on: ubuntu-20.04
 
   aliyun:
@@ -74,13 +74,13 @@ jobs:
           registry: registry.cn-hangzhou.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
           password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Docker alias images for ossrs/srs-stack
+      - name: Docker alias images for ossrs/oryx
         uses: akhilerm/tag-push-action@v2.1.0
         with:
-          src: ossrs/srs-stack:${{ env.SRS_TAG }}
+          src: ossrs/oryx:${{ env.SRS_TAG }}
           dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_TAG }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_TAG }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
   deploy:
@@ -121,14 +121,14 @@ jobs:
             export SRS_DROPLET_PIP=$(ifconfig eth0 |grep 'inet ' |awk '{print $2}')
             echo "SRS_DROPLET_PIP=$SRS_DROPLET_PIP"
             #
-            # Restart SRS Stack release
+            # Restart Oryx release
             cat << END > /root/restart_docs-stack.sh
-              # See https://github.com/ossrs/srs-stack
-              docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_MAJOR
+              # See https://github.com/ossrs/oryx
+              docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$SRS_MAJOR
               docker rm -f docs-cloudversion || sleep 1
               docker run -d -it --restart always --privileged --name docs-cloudversion -p 8101:9000 \\
                 --log-driver=json-file --log-opt=max-size=500m --log-opt=max-file=3 \\
-                registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_MAJOR
+                registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$SRS_MAJOR
             END
             bash /root/restart_docs-stack.sh
             #

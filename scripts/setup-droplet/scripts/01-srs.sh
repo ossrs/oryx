@@ -3,23 +3,23 @@
 # The main directory.
 SRS_HOME=/usr/local/srs-stack
 DATA_HOME=/data
-IMAGE_URL=docker.io/ossrs/srs-stack:v${application_version}
+IMAGE_URL=docker.io/ossrs/oryx:v${application_version}
 echo "SRS_HOME=$SRS_HOME, DATA_HOME=$DATA_HOME, IMAGE_URL=$IMAGE_URL"
 
 # When droplet created, it might fail as:
 #   gnutls_handshake() failed: The TLS connection was non-properly terminated.
 # so we try to wait for a while and try later.
-SOURCE=/tmp/srs-stack
-echo "Install srs-stack at $SOURCE"
+SOURCE=/tmp/oryx
+echo "Install oryx at $SOURCE"
 for ((i=0; i<30; i++)); do
-  cd $(dirname $SOURCE) && rm -rf srs-stack &&
-  git clone -b main --depth 1 https://github.com/ossrs/srs-stack.git &&
+  cd $(dirname $SOURCE) && rm -rf oryx &&
+  git clone -b main --depth 1 https://github.com/ossrs/oryx.git &&
   GIT_DONE=YES
   if [[ $? -eq 0 ]]; then break; fi
   echo "Ignore error and try later..."; sleep 3;
 done
 if [[ $GIT_DONE != YES ]]; then
-  echo "Clone srs-stack failed"; exit 1;
+  echo "Clone oryx failed"; exit 1;
 fi
 
 # Install files to lighthouse directory.
@@ -28,7 +28,7 @@ cp -r ${SOURCE}/usr ${SRS_HOME}/usr &&
 cp ${SOURCE}/LICENSE ${SRS_HOME}/LICENSE &&
 cp ${SOURCE}/README.md ${SRS_HOME}/README.md &&
 cp ${SOURCE}/mgmt/bootstrap ${SRS_HOME}/mgmt/bootstrap
-if [[ $? -ne 0 ]]; then echo "Copy srs-stack failed"; exit 1; fi
+if [[ $? -ne 0 ]]; then echo "Copy oryx failed"; exit 1; fi
 
 echo "Start to create data and config files"
 mkdir -p ${DATA_HOME}/config && touch ${DATA_HOME}/config/.env
@@ -70,15 +70,15 @@ else
     if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 fi
 
-# Create srs-stack service, and the credential file.
+# Create oryx service, and the credential file.
 # Remark: Never start the service, because the IP will change for new machine created.
 cd ${SRS_HOME} &&
-cp -f usr/lib/systemd/system/srs-stack.service /usr/lib/systemd/system/srs-stack.service &&
-systemctl daemon-reload && systemctl enable srs-stack
-if [[ $? -ne 0 ]]; then echo "Install srs-stack failed"; exit 1; fi &&
+cp -f usr/lib/systemd/system/oryx.service /usr/lib/systemd/system/oryx.service &&
+systemctl daemon-reload && systemctl enable oryx
+if [[ $? -ne 0 ]]; then echo "Install oryx failed"; exit 1; fi &&
 
 rm -rf $SOURCE
-if [[ $? -ne 0 ]]; then echo "Remove srs-stack failed"; exit 1; fi
+if [[ $? -ne 0 ]]; then echo "Remove oryx failed"; exit 1; fi
 
 echo 'Install OK'
 

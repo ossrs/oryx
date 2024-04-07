@@ -38,7 +38,7 @@ fi
 OUTPUT=$(cd ${WORK_DIR} && mkdir -p ${OUTPUT} && cd ${OUTPUT} && pwd)
 echo "Install with options: LANGUAGE=${LANGUAGE}, VERSION=${VERSION}, EXTRACT=${EXTRACT}, OUTPUT=${OUTPUT}"
 
-TMP_DIR="/tmp/srs_stack-$(date +%s)" && TARGET_DIR="${TMP_DIR}/srs_stack" &&
+TMP_DIR="/tmp/oryx-$(date +%s)" && TARGET_DIR="${TMP_DIR}/oryx" &&
 mkdir -p ${TARGET_DIR} && cd ${TARGET_DIR}
 ret=$?; if [[ 0 -ne ${ret} ]]; then echo "mkdir ${TARGET_DIR} failed, ret=$ret"; exit $ret; fi
 echo "Enter work directory ${TARGET_DIR}"
@@ -54,13 +54,13 @@ echo "Copy files to ${TARGET_DIR}"
 
 cat << END > ${TARGET_DIR}/scripts/setup-ubuntu/.env
 LANGUAGE=${LANGUAGE}
-IMAGE=ossrs/srs-stack:${VERSION}
+IMAGE=ossrs/oryx:${VERSION}
 END
 ret=$?; if [[ 0 -ne ${ret} ]]; then echo "write .env failed, ret=$ret"; exit $ret; fi
 echo "Write .env to ${TARGET_DIR}/scripts/setup-ubuntu/.env"
 
-INSTALL_FILE=linux-srs_stack-${LANGUAGE}.tar.gz
-(cd ${TMP_DIR} && tar zcf $INSTALL_FILE srs_stack) &&
+INSTALL_FILE=linux-oryx-${LANGUAGE}.tar.gz
+(cd ${TMP_DIR} && tar zcf $INSTALL_FILE oryx) &&
 ret=$?; if [[ 0 -ne ${ret} ]]; then echo "tar failed, ret=$ret"; exit $ret; fi
 echo "Tar $INSTALL_FILE"
 

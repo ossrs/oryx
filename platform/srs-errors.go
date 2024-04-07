@@ -5,7 +5,7 @@
 //
 package main
 
-// General error code for SRS Stack, it uses 100~999 for all errors.
+// General error code for Oryx, it uses 100~999 for all errors.
 type SrsStackError int
 
 // Error code for callback, 100 ~ 200.

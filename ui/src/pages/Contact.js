@@ -22,10 +22,10 @@ function ContactCn() {
           <img
             className="d-block w-100"
             src={srsStack}
-            alt="SRS Stack"
+            alt="Oryx"
           />
           <Carousel.Caption>
-            <h5>欢迎加SRS Stack微信群</h5>
+            <h5>欢迎加Oryx微信群</h5>
             <p>
               欢迎加群探讨使用经验，寻求帮助，请先观看<a href='https://www.bilibili.com/video/BV1844y1L7dL/' target='_blank' rel='noreferrer'>视频入门教程</a>。
             </p>
@@ -68,8 +68,8 @@ function ContactEn() {
         </li>
         <li>
           GitHub:
-          <a href='https://github.com/ossrs/srs-stack' target='_blank' rel='noreferrer'>
-            https://github.com/ossrs/srs-stack
+          <a href='https://github.com/ossrs/oryx' target='_blank' rel='noreferrer'>
+            https://github.com/ossrs/oryx
           </a>
         </li>
       </ul>

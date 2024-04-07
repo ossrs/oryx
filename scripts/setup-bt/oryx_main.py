@@ -13,20 +13,20 @@ from firewalls import firewalls
 import bt_tools
 print(f"bt_tools version: {bt_tools.version()}")
 
-class srs_stack_main:
+class oryx_main:
     # Normally the plugin is at:
-    #       /www/server/panel/plugin/srs_stack
+    #       /www/server/panel/plugin/oryx
     # Other paths are:
     #       public.get_setup_path() is /www/server
     #       public.get_panel_path() is /www/server/panel
     #       public.get_site_path() is /www/wwwroot
     #       public.get_vhost_path() is /www/server/panel/vhost
-    __plugin_path = "{}/panel/plugin/srs_stack".format(public.get_setup_path())
-    __srs_service = "/usr/lib/systemd/system/srs-stack.service"
+    __plugin_path = "{}/panel/plugin/oryx".format(public.get_setup_path())
+    __srs_service = "/usr/lib/systemd/system/oryx.service"
     __srs_home = '/usr/local/srs-stack'
-    __r0_file = '/tmp/srs_stack_install.r0'
-    __firewall = '/tmp/srs_stack_install.fw'
-    __log_file = '/tmp/srs_stack_install.log'
+    __r0_file = '/tmp/oryx_install.r0'
+    __firewall = '/tmp/oryx_install.fw'
+    __log_file = '/tmp/oryx_install.log'
     __ready_file = '{}/.bt_ready'.format(__plugin_path)
     __site = 'srs.stack.local'
 
@@ -101,7 +101,7 @@ class srs_stack_main:
             return public.returnMsg(False, 'not nginx, but {}'.format(public.GetWebServer()))
 
         srs = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
-        running = public.ExecShell('ps aux |grep -v grep |grep srs_stack |grep setup >/dev/null 2>&1 && echo -n ok')[0]
+        running = public.ExecShell('ps aux |grep -v grep |grep oryx |grep setup >/dev/null 2>&1 && echo -n ok')[0]
 
         [tail, wc] = ['', 0]
         r0 = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
@@ -110,7 +110,7 @@ class srs_stack_main:
                 plugin=self.__plugin_path, r0=self.__r0_file, nginx=nginx, www=public.get_site_path(),
                 site=self.__site, log=self.__log_file,
             ))
-        elif os.path.exists('/tmp/srs_stack_install.log'):
+        elif os.path.exists('/tmp/oryx_install.log'):
             tail = public.ExecShell('sed -n "{start},{end}p" {log}'.format(
                 start=args.start, end=args.end, log=self.__log_file,
             ))[0]
@@ -120,7 +120,7 @@ class srs_stack_main:
 
     def querySrs(self, args):
         srs = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n ok'.format(self.__srs_service))[0]
-        running = public.ExecShell('ps aux |grep -v grep |grep srs_stack |grep setup >/dev/null 2>&1 && echo -n ok')[0]
+        running = public.ExecShell('ps aux |grep -v grep |grep oryx |grep setup >/dev/null 2>&1 && echo -n ok')[0]
 
         r0 = public.ExecShell('ls {} >/dev/null 2>&1 && echo -n failed'.format(self.__r0_file))[0]
         tail = public.ExecShell('tail {}'.format(self.__log_file))[0]
@@ -134,7 +134,7 @@ class srs_stack_main:
     # If not set site_created.
     def createSrsSite(self, args):
         if 'domain' not in args or args.domain == '':
-            self.__trace(f"Error: Empty SRS Stack domain.")
+            self.__trace(f"Error: Empty Oryx domain.")
             return public.returnMsg(False, 'invalid domain')
 
         site = panelSite().AddSite(Params(
@@ -190,7 +190,7 @@ class srs_stack_main:
         }))
 
     def querySrsService(self, args):
-        ok = public.ExecShell('systemctl status srs-stack.service >/dev/null 2>&1 && echo -n ok')[0]
+        ok = public.ExecShell('systemctl status oryx.service >/dev/null 2>&1 && echo -n ok')[0]
         return public.returnMsg(True, json.dumps({'active': ok}))
 
     def __discover_path(self, general_path):

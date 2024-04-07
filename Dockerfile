@@ -52,9 +52,9 @@ RUN echo "Before UPX for $TARGETARCH" && \
 
 # http://releases.ubuntu.com/focal/
 #FROM ${ARCH}ubuntu:focal AS dist
-FROM ${ARCH}ossrs/srs-stack:focal-1 AS dist
+FROM ${ARCH}ossrs/oryx:focal-1 AS dist
 
-# Expose ports @see https://github.com/ossrs/srs-stack/blob/main/DEVELOPER.md#docker-allocated-ports
+# Expose ports @see https://github.com/ossrs/oryx/blob/main/DEVELOPER.md#docker-allocated-ports
 EXPOSE 2022 2443 1935 8080 5060 9000 8000/udp 10080/udp
 
 # Copy files from build.

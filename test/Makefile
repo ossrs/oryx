@@ -2,10 +2,10 @@
 
 default: build
 
-build: ./srs-stack.test
+build: ./oryx.test
 
 clean:
-	rm -f srs-stack.test
+	rm -f oryx.test
 
-./srs-stack.test: *.go Makefile go.mod
-	go test -mod=vendor -c -o srs-stack.test .
+./oryx.test: *.go Makefile go.mod
+	go test -mod=vendor -c -o oryx.test .

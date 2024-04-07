@@ -42,7 +42,7 @@ else
 	rm -rf $(__REAL_INSTALL)/platform/containers/objs/*
 	rm -rf $(__REAL_INSTALL)/platform/containers/data/*
 	cp -rf usr $(__REAL_INSTALL)/usr
-	sed -i "s|/usr/local/srs-stack|$(PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/srs-stack.service
+	sed -i "s|/usr/local/srs-stack|$(PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/oryx.service
 endif
 
 uninstall:

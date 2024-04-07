@@ -9,7 +9,7 @@ cd ${WORK_DIR}
 
 DATA_HOME=/data
 WELL_KNOWN=${DATA_HOME}/.well-known
-IMAGE=ossrs/srs-stack:5
+IMAGE=ossrs/oryx:5
 MGMT_PORT=2022
 HTTPS_PORT=2443
 RTMP_PORT=1935
@@ -22,29 +22,29 @@ echo -n ", RTC_PORT=${RTC_PORT}, SRT_PORT=${SRT_PORT}, NGINX_RELOAD=${NGINX_RELO
 echo ", HTTPS_PORT=${HTTPS_PORT}, EXTRA_PARAMS=${EXTRA_PARAMS}"
 
 echo "Force to stop platform container"
-docker rm -f srs-stack 2>/dev/null
+docker rm -f oryx 2>/dev/null
 
 echo "Start platform container"
 CMD="docker run -v ${DATA_HOME}:/data -v ${WELL_KNOWN}:/data/.well-known ${EXTRA_PARAMS}
     -p ${MGMT_PORT}:2022/tcp -p ${HTTPS_PORT}:2443/tcp -p ${RTMP_PORT}:1935/tcp
     -p ${RTC_PORT}:8000/udp -p ${SRT_PORT}:10080/udp
     --log-driver=json-file --log-opt=max-size=1g --log-opt=max-file=3
-    --restart no -it --name srs-stack --detach
+    --restart no -it --name oryx --detach
     ${IMAGE}"
 echo $CMD && $CMD
 if [[ $? -ne 0 ]]; then echo "Start platform container failed"; exit 1; fi
 echo "Start platform container ok"
 
 # Show all logs of container.
-docker logs -f srs-stack &
+docker logs -f oryx &
 
 function handle_signals() {
     echo "Signal $1 received. Cleaning up and exiting..."
 
-    ID=$(docker ps --filter "name=srs-stack" --format "{{.ID}}")
+    ID=$(docker ps --filter "name=oryx" --format "{{.ID}}")
     if [[ ! -z $ID ]]; then
-        docker stop srs-stack
-        docker rm -f srs-stack 2>/dev/null
+        docker stop oryx
+        docker rm -f oryx 2>/dev/null
     fi
 
     exit 0
@@ -66,15 +66,15 @@ function do_reload() {
 }
 
 while true; do
-    ID=$(docker ps --filter "name=srs-stack" --format "{{.ID}}")
+    ID=$(docker ps --filter "name=oryx" --format "{{.ID}}")
     if [[ -z $ID ]]; then
         echo "Platform container not found"
-        docker stop srs-stack 2>/dev/null
-        docker rm -f srs-stack 2>/dev/null
+        docker stop oryx 2>/dev/null
+        docker rm -f oryx 2>/dev/null
         exit 1
     fi
 
-    docker ps -a --filter "name=srs-stack" --format "{{.Names}} {{.ID}} {{.Ports}}"
+    docker ps -a --filter "name=oryx" --format "{{.Names}} {{.ID}} {{.Ports}}"
     for (( i=0; i<3; i++ )); do
         do_reload
         sleep 1

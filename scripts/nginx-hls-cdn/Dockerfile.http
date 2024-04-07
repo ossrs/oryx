@@ -3,7 +3,7 @@ ARG ARCH
 FROM ${ARCH}nginx:latest AS dist
 
 # The environment variables for template.
-ENV SRS_STACK_SERVER=127.0.0.1:2022 \
+ENV ORYX_SERVER=127.0.0.1:2022 \
     SRS_M3U8_EXPIRE=10 SRS_TS_EXPIRE=3600
 ADD nginx.edge.http.conf.template /etc/nginx/templates/default.conf.template
 

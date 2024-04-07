@@ -205,12 +205,12 @@ function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultP
             <Accordion.Header>场景介绍</Accordion.Header>
             <Accordion.Body>
               <div>
-                本地录制，指录制视频流到SRS Stack的本地磁盘，只要推送到服务器的流都可以录制。
+                本地录制，指录制视频流到Oryx的本地磁盘，只要推送到服务器的流都可以录制。
                 <p></p>
               </div>
               <p>可应用的具体场景包括：</p>
               <ul>
-                <li>直播转点播，录制直播流成为一个HLS文件，存储在SRS Stack本地磁盘，可以下载</li>
+                <li>直播转点播，录制直播流成为一个HLS文件，存储在Oryx本地磁盘，可以下载</li>
               </ul>
               <p>特别注意：</p>
               <ul>
@@ -228,12 +228,12 @@ function ScenarioRecordImpl({activeKeys, defaultApplyAll, defaultGlobs, defaultP
             <Accordion.Header>Introduction</Accordion.Header>
             <Accordion.Body>
               <div>
-                Local recording refers to recording video streams to the local disk of the SRS Stack, and any stream pushed to the server can be recorded.
+                Local recording refers to recording video streams to the local disk of the Oryx, and any stream pushed to the server can be recorded.
                 <p></p>
               </div>
               <p>Specific application scenarios include:</p>
               <ul>
-                <li>Live to VOD, recording live streams into an HLS file, stored on the SRS Stack local disk, and can be downloaded</li>
+                <li>Live to VOD, recording live streams into an HLS file, stored on the Oryx local disk, and can be downloaded</li>
               </ul>
               <p>Special attention:</p>
               <ul>

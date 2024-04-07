@@ -35,13 +35,13 @@
                         </p>
                         <div class="sfm-opt">
                             <button class="btn btn-default btn-sm btn_server_start" style="display: none"
-                                    onclick="bt.pub.set_server_status('srs_stack','start')">Start
+                                    onclick="bt.pub.set_server_status('oryx','start')">Start
                             </button>
                             <button class="btn btn-default btn-sm btn_server_stop"
-                                    onclick="bt.pub.set_server_status('srs_stack','stop')">Stop
+                                    onclick="bt.pub.set_server_status('oryx','stop')">Stop
                             </button>
                             <button class="btn btn-default btn-sm"
-                                    onclick="bt.pub.set_server_status('srs_stack','restart')">Restart
+                                    onclick="bt.pub.set_server_status('oryx','restart')">Restart
                             </button>
                         </div>
                     </div>
@@ -49,20 +49,20 @@
                 <div class="conter_box install_version_box" name="install">
                     <div>
                         Domain: <input type="text" class="txt_srs_domain"/>
-                        * Access the SRS Stack console through the domain name, please see <a href="https://ossrs.io/lts/en-us/faq-srs-stack#how-to-set-domain" target="_blank" style="color:red">here</a>
+                        * Access the Oryx console through the domain name, please see <a href="https://ossrs.io/lts/en-us/faq-oryx#how-to-set-domain" target="_blank" style="color:red">here</a>
                     </div>
                     <br/>
-                    <button class="btn btn-success btn-sm va0 ml5 btn_install_srs">Install SRS Stack</button>
+                    <button class="btn btn-success btn-sm va0 ml5 btn_install_srs">Install Oryx</button>
                     <textarea class="install_log tomcat_log" style="display:none"></textarea>
                     <ul class="help-info-text c7">
-                        <li style="color:red">The installation of the SRS Stack version will take a relatively long time, please be patient and wait.</li>
-                        <li style="color:red">If you need to uninstall the SRS Stack, please directly delete the SRS Stack plugin.</li>
-                        <li style="color:red">If you need to upgrade the SRS Stack, please uninstall it directly and then reinstall it.</li>
+                        <li style="color:red">The installation of the Oryx version will take a relatively long time, please be patient and wait.</li>
+                        <li style="color:red">If you need to uninstall the Oryx, please directly delete the Oryx plugin.</li>
+                        <li style="color:red">If you need to upgrade the Oryx, please uninstall it directly and then reinstall it.</li>
                     </ul>
                 </div>
                 <div class="conter_box srs_mgmt_box" name="mgmt">
-                    <p><a href="#" class="btn btn-link srs_mgmt_link" target="_blank" rel="noreferrer">SRS Stack Dashboard</a></p>
-                    <p style="color:red">Attention!!! Please set domain name by DNS or hosts, please see <a href="https://ossrs.io/lts/en-us/faq-srs-stack#how-to-set-domain" target="_blank" style="color:blue">here</a></p>
+                    <p><a href="#" class="btn btn-link srs_mgmt_link" target="_blank" rel="noreferrer">Oryx Dashboard</a></p>
+                    <p style="color:red">Attention!!! Please set domain name by DNS or hosts, please see <a href="https://ossrs.io/lts/en-us/faq-oryx#how-to-set-domain" target="_blank" style="color:blue">here</a></p>
                 </div>
             </div>
         </div>
@@ -71,12 +71,12 @@
 <script type="text/javascript">
   // Request the backend api by functionName with args.
   // @param timeout The timeout in ms, default to 300s.
-  async function srs_stack_request(functionName, args, timeout) {
+  async function oryx_request(functionName, args, timeout) {
     try {
       return await new Promise((resolve, reject) => {
         $.ajax({
           type: 'POST',
-          url: `/plugin?action=a&s=${functionName}&name=srs_stack`,
+          url: `/plugin?action=a&s=${functionName}&name=oryx`,
           data: args,
           timeout: timeout || 300 * 1000,
           success: function (res, status, xhr) {
@@ -111,13 +111,13 @@
       layer.open({
         icon: 0,
         closeBtn: 0,
-        title: 'Install SRS Stack',
+        title: 'Install Oryx',
         area: '400px',
         btn: [],
         content: `
         <p>Please install the following dependencies:</p>
         <ul>${depsContent}</ul>
-        <p style="color: red; font-weight: bold;">Please continue to install the SRS Stack after installing the dependencies.</p>
+        <p style="color: red; font-weight: bold;">Please continue to install the Oryx after installing the dependencies.</p>
       `,
         success: function (layero, index) {
           // Note that this is called when the window is open, not closed or finished.
@@ -138,13 +138,13 @@
       layer.open({
         icon: 0,
         closeBtn: 0,
-        title: 'Install SRS Stack',
+        title: 'Install Oryx',
         area: '400px',
         btn: [],
         content: `
         <p>Please install the following dependencies:</p>
         <ul>${depsContent}</ul>
-        Please continue to install the SRS Stack after installing the dependencies. Click <a href="javascript:void(0)" class="btlink" onclick="messagebox()">here</a> for detail.
+        Please continue to install the Oryx after installing the dependencies. Click <a href="javascript:void(0)" class="btlink" onclick="messagebox()">here</a> for detail.
       `,
         success: function (layero, index) {
           // Note that this is called when the window is open, not closed or finished.
@@ -155,16 +155,16 @@
   }
 </script>
 <script type="text/javascript">
-  async function srs_stack_init() {
+  async function oryx_init() {
     $(".bt-w-menu p").click(function () {
-      srs_stack_dispatch($(this));
+      oryx_dispatch($(this));
     });
 
     $('.btn_install_srs').click(function () {
-      srs_stack_try_install();
+      oryx_try_install();
     });
 
-    const services = await srs_stack_request('serviceStatus');
+    const services = await oryx_request('serviceStatus');
     if (services?.site_domain) {
       $('.txt_srs_domain').val(services?.site_domain);
     }
@@ -173,32 +173,32 @@
     if (!services?.srs_ready || services?.srs_error) {
       $(".bt-w-menu p[name='install']").addClass('bgw').siblings().removeClass('bgw');
       $('.install_version_box').show().siblings().hide();
-      await srs_stack_setup_install_view();
+      await oryx_setup_install_view();
     } else {
-      await srs_stack_dispatch($("p[name='mgmt']"));
+      await oryx_dispatch($("p[name='mgmt']"));
     }
 
-    const pid = await srs_stack_request('querySrs');
+    const pid = await oryx_request('querySrs');
     console.log(`srs is ${JSON.stringify(services)}`);
     if (pid?.running) {
-      await do_srs_stack_install();
+      await do_oryx_install();
     }
   }
 
-  async function srs_stack_refresh_logs() {
-    const pid = await srs_stack_request('querySrs');
+  async function oryx_refresh_logs() {
+    const pid = await oryx_request('querySrs');
     if (pid.tail) {
       const elem = $('.install_log').val($('.install_log').val() + pid.tail).show();
       elem.get(0).scrollTop = elem.get(0)?.scrollHeight;
     }
   }
 
-  async function srs_stack_dispatch(self) {
+  async function oryx_dispatch(self) {
     const menuName = self.attr('name');
 
-    const services = await srs_stack_request('serviceStatus');
+    const services = await oryx_request('serviceStatus');
     if (!services?.srs_ready || services?.srs_error) {
-      if (menuName !== 'install') layer.msg('Please install the SRS Stack first', {icon: 7});
+      if (menuName !== 'install') layer.msg('Please install the Oryx first', {icon: 7});
       return console.log(`service not ready ${JSON.stringify(services)}`);
     }
 
@@ -206,16 +206,16 @@
     $(`.conter_box[name=${menuName}]`).show().siblings().hide();
 
     if (menuName === 'service') {
-      await srs_stack_setup_service_view();
+      await oryx_setup_service_view();
     } else if (menuName === 'mgmt') {
-      await srs_stack_setup_mgmt_view();
+      await oryx_setup_mgmt_view();
     } else if (menuName === 'install') {
-      await srs_stack_setup_install_view();
+      await oryx_setup_install_view();
     }
   }
 
-  async function srs_stack_setup_install_view() {
-    const pid = await srs_stack_request('querySrs');
+  async function oryx_setup_install_view() {
+    const pid = await oryx_request('querySrs');
     console.log(`installing pid is ${JSON.stringify(pid)}`);
     if (pid?.srs || pid?.running) {
       $('.btn_install_srs').html(pid?.srs ? 'Installed' : 'Installing').attr({'disabled': 'disabled'}).show();
@@ -227,15 +227,15 @@
       return;
     }
 
-    $('.btn_install_srs').html(pid?.r0 ? 'Reinstall the SRS Stack' : 'Install the SRS Stack').removeAttr('disabled').show();
+    $('.btn_install_srs').html(pid?.r0 ? 'Reinstall the Oryx' : 'Install the Oryx').removeAttr('disabled').show();
     if (pid.tail) {
       const elem = $('.install_log').val($('.install_log').val() + pid.tail).show();
       elem.get(0).scrollTop = elem.get(0)?.scrollHeight;
     }
   }
 
-  async function srs_stack_setup_service_view() {
-    const r0 = await srs_stack_request('querySrsService');
+  async function oryx_setup_service_view() {
+    const r0 = await oryx_request('querySrsService');
     console.log(`srs service is ${JSON.stringify(r0)}`);
 
     const status = !!(r0?.active);
@@ -246,8 +246,8 @@
     $('.srs_service_box .status span:eq(0)').html(status ? 'Active' : 'Inactive');
   }
 
-  async function srs_stack_setup_mgmt_view() {
-    const r0 = await srs_stack_request('serviceStatus');
+  async function oryx_setup_mgmt_view() {
+    const r0 = await oryx_request('serviceStatus');
 
     // Always use HTTP, because HTTPS might not be available.
     //const url = `${l.protocol}//${r0.site_domain}/mgmt/`;
@@ -256,7 +256,7 @@
     $('.srs_mgmt_link').attr('href', url);
   }
 
-  async function srs_stack_try_install() {
+  async function oryx_try_install() {
     const domain = $('.txt_srs_domain').val();
     if (!domain) {
       alert('Please input the domain');
@@ -271,36 +271,36 @@
 
     $('.btn_install_srs').html('Prepare to install').attr({'disabled': 'disabled'});
     try {
-      await srs_stack_install();
+      await oryx_install();
     } catch (e) {
       $('.btn_install_srs').html('Retry for error').removeAttr('disabled').show();
       // If install failed, refresh and show the latest logs.
-      srs_stack_refresh_logs();
+      oryx_refresh_logs();
       throw e;
     };
 
-    const services = await srs_stack_request('serviceStatus');
+    const services = await oryx_request('serviceStatus');
 
     // Allow user to install SRS, if not installed, or failed.
     // It already refreshed the logs, so we don't do it when failed.
     if (!services?.srs_ready || services?.srs_error) {
-      await do_srs_stack_install();
+      await do_oryx_install();
     }
   }
 
-  async function srs_stack_install() {
+  async function oryx_install() {
     if ($('.install_log').empty()) {
       $('.install_log').show().val('Installing...\n');
     }
 
     let tips = layer.msg('Check the service status.', {icon: 16});
-    const services = await srs_stack_request('serviceStatus');
+    const services = await oryx_request('serviceStatus');
     console.log(`services status is ${JSON.stringify(services)}`);
     layer.close(tips);
 
     // If BT or aaPanel not ready to install SRS, should wait.
     if (services?.plugin_ready !== 'ok') {
-      const msg = `Installing SRS Stack plugin, please try again later.`;
+      const msg = `Installing Oryx plugin, please try again later.`;
       layer.msg(msg, {icon: 2});
       throw msg;
     }
@@ -315,7 +315,7 @@
       deps.push({id: 'docker', title: 'Docker', call: 'bt.soft.install'});
     }
 
-    const tasks = await srs_stack_request('installTasks');
+    const tasks = await oryx_request('installTasks');
     const notInstalledDeps = deps.filter(dep => {
       if (tasks.filter(task => {
         return task?.name?.indexOf(`[${dep.id}-`) >= 0 ? task : null;
@@ -334,30 +334,30 @@
     // Try to install docker service.
     if (!services?.docker_installed) {
       layer.msg('Install Docker service', {icon: 1});
-      await srs_stack_request('installService', {service: 'docker'});
+      await oryx_request('installService', {service: 'docker'});
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     // Try to start docker service.
     if (!services?.docker_running) {
       layer.msg('Start Docker service', {icon: 1});
-      await srs_stack_request('restartService', {service: 'docker'});
+      await oryx_request('restartService', {service: 'docker'});
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    // Try to create site for SRS Stack.
+    // Try to create site for Oryx.
     if (!services?.site_created) {
       const domain = $('.txt_srs_domain').val();
-      layer.msg(`Create the SRS Stack website: ${domain}`, {icon: 1});
-      const site = await srs_stack_request('createSrsSite', {domain: domain});
+      layer.msg(`Create the Oryx website: ${domain}`, {icon: 1});
+      const site = await oryx_request('createSrsSite', {domain: domain});
       console.log(`Create site ${JSON.stringify(site)}`);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     // Setup the website. Note that it depends on http configuration files.
     if (!services?.site_setup) {
-      layer.msg('Setup the SRS Stack website', {icon: 1});
-      const data = await srs_stack_request('setupSrsSite');
+      layer.msg('Setup the Oryx website', {icon: 1});
+      const data = await oryx_request('setupSrsSite');
       console.log('setup site', data);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
@@ -365,19 +365,19 @@
     // Setup the firewall.
     if (!services?.firewall_ready) {
       layer.msg('Setup the firewall', {icon: 1});
-      const data = await srs_stack_request('setupFirewall');
+      const data = await oryx_request('setupFirewall');
       console.log('setup firewall', data);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 
-  async function do_srs_stack_install() {
+  async function do_oryx_install() {
     const installing = async (resolve, reject) => {
       $('.btn_install_srs').html('Installing').attr({'disabled': 'disabled'});
       let pos = 1;
       for (; ;) {
         try {
-          const pid = await srs_stack_request('installSrs', {start: pos, end: pos + 100});
+          const pid = await oryx_request('installSrs', {start: pos, end: pos + 100});
           console.log(`installing pid is ${JSON.stringify(pid)}`);
 
           if (pid.tail) {
@@ -389,7 +389,7 @@
           if (pid.srs) return resolve();
 
           if (pid.r0) {
-            layer.msg('Install SRS Stack failed', {icon: 2});
+            layer.msg('Install Oryx failed', {icon: 2});
             return reject(pid);
           }
 
@@ -400,30 +400,30 @@
       }
     };
 
-    const pid = await srs_stack_request('querySrs');
+    const pid = await oryx_request('querySrs');
     console.log(`installing pid is ${JSON.stringify(pid)}`);
 
     if (pid.r0) {
-      await srs_stack_request('cleanupIntall');
+      await oryx_request('cleanupIntall');
     }
 
     await new Promise((resolve, reject) => {
       installing(resolve, reject);
     });
 
-    layer.msg('Starting SRS Stack......', {icon: 1});
+    layer.msg('Starting Oryx......', {icon: 1});
     $('.btn_install_srs').html('Starting').attr({'disabled': 'disabled'});
     await new Promise(resolve => setTimeout(resolve, 30000));
 
-    layer.msg('SRS Stack installation successful.', {icon: 1});
+    layer.msg('Oryx installation successful.', {icon: 1});
     $('.btn_install_srs').html('Installed').attr({'disabled': 'disabled'});
 
     await new Promise(resolve => setTimeout(resolve, 1500));
-    await srs_stack_dispatch($("p[name='mgmt']"));
+    await oryx_dispatch($("p[name='mgmt']"));
   }
 
   $(function () {
-    srs_stack_init();
+    oryx_init();
   });
 </script>
 

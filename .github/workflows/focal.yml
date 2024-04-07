@@ -56,16 +56,16 @@ jobs:
           password: "${{ secrets.DOCKER_PASSWORD }}"
       - name: Build SRS docker image
         run: |
-          echo "Release ossrs/srs-stack:$SRS_TAG"
+          echo "Release ossrs/oryx:$SRS_TAG"
           docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
             --output "type=image,push=true" \
-            --tag ossrs/srs-stack:$SRS_TAG -f focal/Dockerfile .
-      - name: Docker alias images for ossrs/srs-stack
+            --tag ossrs/oryx:$SRS_TAG -f focal/Dockerfile .
+      - name: Docker alias images for ossrs/oryx
         uses: akhilerm/tag-push-action@v2.1.0
         with:
-          src: ossrs/srs-stack:${{ env.SRS_TAG }}
+          src: ossrs/oryx:${{ env.SRS_TAG }}
           dst: |
-            ossrs/srs-stack:${{ env.SRS_MAJOR }}
+            ossrs/oryx:${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04
 
   aliyun:
@@ -84,11 +84,11 @@ jobs:
           registry: registry.cn-hangzhou.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
           password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Docker alias images for ossrs/srs-stack
+      - name: Docker alias images for ossrs/oryx
         uses: akhilerm/tag-push-action@v2.1.0
         with:
-          src: ossrs/srs-stack:${{ env.SRS_TAG }}
+          src: ossrs/oryx:${{ env.SRS_TAG }}
           dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_TAG }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:${{ env.SRS_MAJOR }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_TAG }}
+            registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_MAJOR }}
     runs-on: ubuntu-20.04

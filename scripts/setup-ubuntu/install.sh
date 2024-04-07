@@ -15,7 +15,7 @@ VERBOSE=no
 LANGUAGE=zh
 REGISTRY=auto
 REGION=auto
-IMAGE=ossrs/srs-stack:5
+IMAGE=ossrs/oryx:5
 
 # Allow use .env to override the default values.
 if [[ -f ${SCRIPT_DIR}/.env ]]; then source ${SCRIPT_DIR}/.env; fi
@@ -162,23 +162,23 @@ fi
 
 # If install ok, the directory should exists.
 if [[ ! -d ${SRS_HOME} ]]; then
-  echo "Install srs-stack failed"; exit 1;
+  echo "Install oryx failed"; exit 1;
 fi
 
 # Create init.d script.
-rm -f /etc/init.d/srs_stack &&
-cp ${SCRIPT_DIR}/init.d.sh /etc/init.d/srs_stack &&
-chmod +x /etc/init.d/srs_stack
+rm -f /etc/init.d/oryx &&
+cp ${SCRIPT_DIR}/init.d.sh /etc/init.d/oryx &&
+chmod +x /etc/init.d/oryx
 if [[ $? -ne 0 ]]; then echo "Setup init.d script failed"; exit 1; fi
 
-# Create srs-stack service.
+# Create oryx service.
 # Remark: Never start the service, because the IP will change for new machine created.
 cd ${SRS_HOME} &&
-cp -f usr/lib/systemd/system/srs-stack.service /usr/lib/systemd/system/srs-stack.service &&
-systemctl daemon-reload && systemctl enable srs-stack
-if [[ $? -ne 0 ]]; then echo "Install srs-stack failed"; exit 1; fi
+cp -f usr/lib/systemd/system/oryx.service /usr/lib/systemd/system/oryx.service &&
+systemctl daemon-reload && systemctl enable oryx
+if [[ $? -ne 0 ]]; then echo "Install oryx failed"; exit 1; fi
 
-/etc/init.d/srs_stack restart srs-stack
-if [[ $? -ne 0 ]]; then echo "Start srs-stack failed"; exit 1; fi
+/etc/init.d/oryx restart oryx
+if [[ $? -ne 0 ]]; then echo "Start oryx failed"; exit 1; fi
 
 echo 'Install OK'

@@ -76,26 +76,26 @@ if [[ $TARGET == all || $TARGET == script ]]; then
     echo "Load platform image to docker" &&
     version=$(bash scripts/version.sh) &&
     docker exec -it script docker load -i platform.tar &&
-    docker exec -it script docker tag platform:latest ossrs/srs-stack:$version &&
-    docker exec -it script docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
+    docker exec -it script docker tag platform:latest ossrs/oryx:$version &&
+    docker exec -it script docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$version &&
     docker exec -it script docker images
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Load platform image to docker failed, ret=$ret"; exit $ret; fi
 
     echo "Setup script installer" &&
     docker exec -it bt rm -f /data/config/.env &&
-    docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/uninstall.sh || echo OK &&
+    docker exec -it script bash build/oryx/scripts/setup-ubuntu/uninstall.sh || echo OK &&
     bash scripts/setup-ubuntu/build.sh --output $(pwd)/build --extract &&
-    docker exec -it script bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
+    docker exec -it script bash build/oryx/scripts/setup-ubuntu/install.sh --verbose
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Setup script installer failed, ret=$ret"; exit $ret; fi
 
     echo "Test script installer" &&
     docker exec -it script make -j -C test &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it script ./test/srs-stack.test -test.v -endpoint http://localhost:2022 \
+    docker exec -it script ./test/oryx.test -test.v -endpoint http://localhost:2022 \
         -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
         -check-api-secret=true &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it script ./test/srs-stack.test -test.v -wait-ready -endpoint https://localhost:2443 \
+    docker exec -it script ./test/oryx.test -test.v -wait-ready -endpoint https://localhost:2443 \
         -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
         -check-api-secret=true
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Test script installer failed, ret=$ret"; exit $ret; fi
@@ -111,7 +111,7 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
     docker rm -f $CONTAINERS 2>/dev/null || echo 'OK' &&
     AAPANEL_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
     docker run -p 80:80 -p 7800:7800 \
-        -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
+        -v $(pwd)/build/oryx:/www/server/panel/plugin/oryx \
         -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$AAPANEL_KEY \
         --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
         --add-host srs.stack.local:127.0.0.1 \
@@ -122,35 +122,35 @@ if [[ $TARGET == all || $TARGET == aapanel ]]; then
     echo "Load platform image to docker" &&
     version=$(bash scripts/version.sh) &&
     docker exec -it aapanel docker load -i platform.tar &&
-    docker exec -it aapanel docker tag platform:latest ossrs/srs-stack:$version &&
-    docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
+    docker exec -it aapanel docker tag platform:latest ossrs/oryx:$version &&
+    docker exec -it aapanel docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$version &&
     docker exec -it aapanel docker images
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Load platform image to docker failed, ret=$ret"; exit $ret; fi
 
     echo "Setup aaPanel installer" &&
     docker exec -it aapanel rm -f /data/config/.env &&
-    docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh uninstall || echo 'OK' &&
+    docker exec -it aapanel bash /www/server/panel/plugin/oryx/install.sh uninstall || echo 'OK' &&
     bash scripts/setup-aapanel/auto/zip.sh --output $(pwd)/build --extract &&
-    docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/install.sh install
+    docker exec -it aapanel bash /www/server/panel/plugin/oryx/install.sh install
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Setup aaPanel installer failed, ret=$ret"; exit $ret; fi
 
     echo "Test aaPanel installer" &&
-    docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
-    docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py &&
-    docker exec -it aapanel python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
-    docker exec -it aapanel bash /www/server/panel/plugin/srs_stack/setup.sh \
-        --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+    docker exec -it aapanel python3 /www/server/panel/plugin/oryx/bt_api_remove_site.py &&
+    docker exec -it aapanel python3 /www/server/panel/plugin/oryx/bt_api_create_site.py &&
+    docker exec -it aapanel python3 /www/server/panel/plugin/oryx/bt_api_setup_site.py &&
+    docker exec -it aapanel bash /www/server/panel/plugin/oryx/setup.sh \
+        --r0 /tmp/oryx_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
         --www /www/wwwroot --site srs.stack.local
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Test aaPanel installer failed, ret=$ret"; exit $ret; fi
 
     echo "Test aaPanel installer" &&
     docker exec -it aapanel make -j -C test &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it aapanel ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+    docker exec -it aapanel ./test/oryx.test -test.v -endpoint http://srs.stack.local:80 \
         -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
         -check-api-secret=true &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it aapanel ./test/srs-stack.test -test.v -wait-ready -endpoint https://srs.stack.local:443 \
+    docker exec -it aapanel ./test/oryx.test -test.v -wait-ready -endpoint https://srs.stack.local:443 \
         -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
         -check-api-secret=true
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Test aaPanel installer failed, ret=$ret"; exit $ret; fi
@@ -166,7 +166,7 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
     docker rm -f $CONTAINERS 2>/dev/null || echo 'OK' &&
     BT_KEY=$(cat $HOME/.bt/api.json |awk -F token_crypt '{print $2}' |cut -d'"' -f3)
     docker run -p 80:80 -p 7800:7800 \
-        -v $(pwd)/build/srs_stack:/www/server/panel/plugin/srs_stack \
+        -v $(pwd)/build/oryx:/www/server/panel/plugin/oryx \
         -v $HOME/.bt/userInfo.json:/www/server/panel/data/userInfo.json \
         -v $HOME/.bt/api.json:/www/server/panel/config/api.json -e BT_KEY=$BT_KEY \
         --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
@@ -178,35 +178,35 @@ if [[ $TARGET == all || $TARGET == bt ]]; then
     echo "Load platform image to docker" &&
     version=$(bash scripts/version.sh) &&
     docker exec -it bt docker load -i platform.tar &&
-    docker exec -it bt docker tag platform:latest ossrs/srs-stack:$version &&
-    docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$version &&
+    docker exec -it bt docker tag platform:latest ossrs/oryx:$version &&
+    docker exec -it bt docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$version &&
     docker exec -it bt docker images
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Load platform image to docker failed, ret=$ret"; exit $ret; fi
 
     echo "Install bt installer" &&
     docker exec -it bt rm -f /data/config/.env &&
-    docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh uninstall || echo 'OK' &&
+    docker exec -it bt bash /www/server/panel/plugin/oryx/install.sh uninstall || echo 'OK' &&
     bash scripts/setup-bt/auto/zip.sh --output $(pwd)/build --extract &&
-    docker exec -it bt bash /www/server/panel/plugin/srs_stack/install.sh install
+    docker exec -it bt bash /www/server/panel/plugin/oryx/install.sh install
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Setup bt installer failed, ret=$ret"; exit $ret; fi
 
     echo "Setup bt installer" &&
-    docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_remove_site.py &&
-    docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_create_site.py &&
-    docker exec -it bt python3 /www/server/panel/plugin/srs_stack/bt_api_setup_site.py &&
-    docker exec -it bt bash /www/server/panel/plugin/srs_stack/setup.sh \
-        --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
+    docker exec -it bt python3 /www/server/panel/plugin/oryx/bt_api_remove_site.py &&
+    docker exec -it bt python3 /www/server/panel/plugin/oryx/bt_api_create_site.py &&
+    docker exec -it bt python3 /www/server/panel/plugin/oryx/bt_api_setup_site.py &&
+    docker exec -it bt bash /www/server/panel/plugin/oryx/setup.sh \
+        --r0 /tmp/oryx_install.r0 --nginx /www/server/nginx/logs/nginx.pid \
         --www /www/wwwroot --site srs.stack.local
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Test bt installer failed, ret=$ret"; exit $ret; fi
 
     echo "Test bt installer" &&
     docker exec -it bt make -j -C test &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it bt ./test/srs-stack.test -test.v -endpoint http://srs.stack.local:80 \
+    docker exec -it bt ./test/oryx.test -test.v -endpoint http://srs.stack.local:80 \
           -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
           -check-api-secret=true &&
     bash scripts/tools/secret.sh --output test/.env &&
-    docker exec -it bt ./test/srs-stack.test -test.v -wait-ready -endpoint https://srs.stack.local:443 \
+    docker exec -it bt ./test/oryx.test -test.v -wait-ready -endpoint https://srs.stack.local:443 \
           -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
           -check-api-secret=true
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "Test bt installer failed, ret=$ret"; exit $ret; fi

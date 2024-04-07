@@ -82,19 +82,19 @@ a=msid:Larix audio
 a=sendonly
 `
 
-// initPassword is used to init the password for SRS Stack.
+// initPassword is used to init the password for Oryx.
 //
-// SRS Stack requires initializing and setting up a password by default when the system is initialized.
+// Oryx requires initializing and setting up a password by default when the system is initialized.
 // This password is utilized for logging into the system through the UI and API. Typically, for testing
 // purposes, we generate a random password and proceed with system initialization. However, when developing
 // and debugging tests for an already initialized system, there is no need to initialize a new password,
 // as it has already been established.
 var initPassword *bool
 
-// systemPassword is the password sued by SRS Stack.
+// systemPassword is the password sued by Oryx.
 //
 // Users can specify a dedicated password; if not provided, a temporary password will be created to
-// initialize the SRS Stack. This password will be used to test the login feature.
+// initialize the Oryx. This password will be used to test the login feature.
 var systemPassword *string
 
 // initSelfSignedCert is used to init the self-signed cert for HTTPS.
@@ -102,12 +102,12 @@ var systemPassword *string
 // We should not initialize self-signed certificates by default, as this sets up SSL files for nginx,
 // making it impossible for BT or aaPanel to configure SSL. Therefore, we disable it by default, and users
 // can enable it if necessary, such as for testing the HTTPS API. It is important to note that we support
-// requesting SSL certificates through BT or aaPanel, or via SRS Stack, all of which share the same
-// .well-known web directory and nginx configurations. However, SRS Stack does not rely on the NGINX SSL
+// requesting SSL certificates through BT or aaPanel, or via Oryx, all of which share the same
+// .well-known web directory and nginx configurations. However, Oryx does not rely on the NGINX SSL
 // files.
 //
 // When this feature is enabled and there are no certificate files (nginx.key and nginx.crt) in the nginx
-// directory, SRS Stack will create a self-signed certificate, save it to the nginx SSL file, and then
+// directory, Oryx will create a self-signed certificate, save it to the nginx SSL file, and then
 // generate the nginx configuration in nginx.server.conf.
 var initSelfSignedCert *bool
 

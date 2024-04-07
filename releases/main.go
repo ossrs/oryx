@@ -33,7 +33,7 @@ func main() {
 			API: api,
 		}
 
-		w.Header().Set("Server", fmt.Sprintf("srs-stack/%v", api))
+		w.Header().Set("Server", fmt.Sprintf("Oryx/%v", api))
 
 		b,err := json.Marshal(res)
 		if err != nil {

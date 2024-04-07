@@ -8,8 +8,8 @@ server {
 
     listen 443 ssl default_server;
     listen [::]:443 ssl default_server;
-    ssl_certificate ${SRS_STACK_SSL_CRT};
-    ssl_certificate_key ${SRS_STACK_SSL_KEY};
+    ssl_certificate ${ORYX_SSL_CRT};
+    ssl_certificate_key ${ORYX_SSL_KEY};
     ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
     add_header Strict-Transport-Security "max-age=0";
     ssl_session_cache shared:SSL:10m;
@@ -23,7 +23,7 @@ server {
 
     location ~ /.+/.*\.(m3u8)$ {
         proxy_set_header Host $host;
-        proxy_pass http://${SRS_STACK_SERVER}$request_uri;
+        proxy_pass http://${ORYX_SERVER}$request_uri;
 
         proxy_cache srs_cache;
         proxy_cache_key $scheme$proxy_host$uri$args;
@@ -33,7 +33,7 @@ server {
 
     location ~ /.+/.*\.(ts)$ {
         proxy_set_header Host $host;
-        proxy_pass http://${SRS_STACK_SERVER}$request_uri;
+        proxy_pass http://${ORYX_SERVER}$request_uri;
 
         proxy_cache srs_cache;
         proxy_cache_key $scheme$proxy_host$uri;

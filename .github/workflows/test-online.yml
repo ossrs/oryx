@@ -116,9 +116,9 @@ jobs:
           
           # All files in provision will be uploaded to server.
           mkdir -p provision provision/test
-          cp test/srs-stack.test test/source.200kbps.768x320.flv provision/test/
+          cp test/oryx.test test/source.200kbps.768x320.flv provision/test/
           cp scripts/tools/failed-retry.sh provision/
-          cp build/linux-srs_stack-en.tar.gz platform/containers/conf/nginx.conf \
+          cp build/linux-oryx-en.tar.gz platform/containers/conf/nginx.conf \
             scripts/tools/secret.sh provision/
       - name: Copy file via ssh key
         uses: appleboy/scp-action@v0.1.4
@@ -254,13 +254,13 @@ jobs:
               tar xf platform.tar.gz
               docker load -i platform.tar
             fi
-            docker tag platform:latest ossrs/srs-stack:$SRS_TAG
-            docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
+            docker tag platform:latest ossrs/oryx:$SRS_TAG
+            docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$SRS_TAG
             docker image prune -f
             docker images
             
-            tar xf linux-srs_stack-en.tar.gz
-            bash srs_stack/scripts/setup-ubuntu/install.sh
+            tar xf linux-oryx-en.tar.gz
+            bash oryx/scripts/setup-ubuntu/install.sh
             
             # Setup journald to write logs.
             sed -i 's/#Storage=auto/Storage=volatile/g' /etc/systemd/journald.conf
@@ -283,16 +283,16 @@ jobs:
             set +e
 
             # Record all logs.
-            journalctl -u srs-stack -f >srs.log 2>&1 & pid_srs=$!
+            journalctl -u oryx -f >srs.log 2>&1 & pid_srs=$!
             journalctl -u nginx -f >nginx.log 2>&1 & pid_nginx=$!
             
             # Restart the service, might fail because journald restarted.
-            systemctl restart srs-stack nginx
-            systemctl status srs-stack nginx
+            systemctl restart oryx nginx
+            systemctl status oryx nginx
             
             echo "Wait for service ready." &&
             bash secret.sh >./test/.env &&
-            ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
+            ./test/oryx.test -test.timeout=1h -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
               -test.run TestSystem_Empty -no-bilibili-test=true &&
 
@@ -301,38 +301,38 @@ jobs:
             
             echo "Test HTTP API with self-signed cert." &&
             bash secret.sh >./test/.env &&
-            ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://$SRS_DOMAIN.ossrs.io \
+            ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint http://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -no-media-test \
               -no-bilibili-test=true &&
             
             echo "Test HTTPS API with self-signed cert." &&
             bash secret.sh >./test/.env &&
-            ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://$SRS_DOMAIN.ossrs.io \
+            ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint https://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -no-media-test \
               -no-bilibili-test=true &&
             
             echo "Request CERT from letsencrypt." &&
             bash secret.sh >./test/.env &&
-            ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
+            ./test/oryx.test -test.timeout=1h -test.v -endpoint http://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -domain-lets-encrypt=$SRS_DOMAIN.ossrs.io \
               -test.run TestApi_LetsEncryptUpdateCert -no-media-test \
               -no-bilibili-test=true &&
             
             echo "Test HTTPS API with letsencrypt cert." &&
             bash secret.sh >./test/.env &&
-            ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint https://$SRS_DOMAIN.ossrs.io \
+            ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint https://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -https-insecure-verify \
               -no-media-test -no-bilibili-test=true &&
             
             echo "Run media test with retry" &&
             bash secret.sh >./test/.env &&
-            ./failed-retry.sh 5 ./test/srs-stack.test -test.timeout=1h -test.v -wait-ready -endpoint http://$SRS_DOMAIN.ossrs.io \
+            ./failed-retry.sh 5 ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint http://$SRS_DOMAIN.ossrs.io \
               -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true -test.run WithStream \
               -no-bilibili-test=true
             ret=$?; echo "Test result: $ret"
   
             echo "Stop service"
-            sudo systemctl stop srs-stack
+            sudo systemctl stop oryx
             kill $pid_srs 2>/dev/null
             kill $pid_nginx 2>/dev/null
             echo "Log of srs.log" && cat srs.log
@@ -403,7 +403,7 @@ jobs:
               echo "Test done normally."
             else
               echo "Start service for debugging"
-              sudo systemctl start srs-stack
+              sudo systemctl start oryx
               
               echo "Dispose in 60s..."
               for ((i=60; i>0; i--)); do

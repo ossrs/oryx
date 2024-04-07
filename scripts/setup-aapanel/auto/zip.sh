@@ -35,7 +35,7 @@ fi
 OUTPUT=$(cd ${WORK_DIR} && mkdir -p ${OUTPUT} && cd ${OUTPUT} && pwd)
 echo "Install with options: VERSION=${VERSION}, OUTPUT=${OUTPUT}, EXTRACT=${EXTRACT}"
 
-TMP_DIR="/tmp/srs-stack-$(date +%s)" && TARGET_DIR="${TMP_DIR}/srs_stack" && mkdir -p ${TARGET_DIR}
+TMP_DIR="/tmp/oryx-$(date +%s)" && TARGET_DIR="${TMP_DIR}/oryx" && mkdir -p ${TARGET_DIR}
 ret=$?; if [[ 0 -ne ${ret} ]]; then echo "mkdir ${TARGET_DIR} failed, ret=$ret"; exit $ret; fi
 echo "Create tmp dir ${TARGET_DIR}"
 
@@ -51,13 +51,13 @@ if [[ $? -ne 0 ]]; then echo "Copy files failed"; exit 1; fi
 # For aaPanel, should never use .env, because it will be removed when install.
 cat << END > $TARGET_DIR/config
 LANGUAGE=en
-IMAGE=ossrs/srs-stack:${VERSION}
+IMAGE=ossrs/oryx:${VERSION}
 END
 if [[ $? -ne 0 ]]; then echo "Generate config failed"; exit 1; fi
 echo "Generate config to $TARGET_DIR/config"
 
-INSTALL_FILE=aapanel-srs_stack.zip
-(cd $TMP_DIR/ && zip -q -r $INSTALL_FILE srs_stack) &&
+INSTALL_FILE=aapanel-oryx.zip
+(cd $TMP_DIR/ && zip -q -r $INSTALL_FILE oryx) &&
 echo "Zip generated at $TMP_DIR/$INSTALL_FILE"
 if [[ $? -ne 0 ]]; then echo "Zip plugin failed"; exit 1; fi
 
@@ -67,7 +67,7 @@ ret=$?; if [[ 0 -ne ${ret} ]]; then echo "mv failed, ret=$ret"; exit $ret; fi
 echo "Move $INSTALL_FILE to ${OUTPUT}"
 
 if [[ $EXTRACT == yes ]]; then
-    if [[ -d $OUTPUT/srs_stack ]]; then rm -rf $OUTPUT/srs_stack/*; fi &&
+    if [[ -d $OUTPUT/oryx ]]; then rm -rf $OUTPUT/oryx/*; fi &&
     (cd ${OUTPUT} && unzip -q $INSTALL_FILE)
     ret=$?; if [[ 0 -ne ${ret} ]]; then echo "tar failed, ret=$ret"; exit $ret; fi
     echo "Extract $INSTALL_FILE to ${OUTPUT}"

@@ -1,6 +1,6 @@
 {
-  "short_name": "SRS Stack",
-  "name": "A lightweight open-source video solution based on Go, SRS, FFmpeg, WebRTC, etc.",
+  "short_name": "Oryx",
+  "name": "Oryx(SRS Stack) is a lightweight open-source video solution based on Go, SRS, FFmpeg, WebRTC, etc.",
   "icons": [
     {
       "src": "favicon.ico",

@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Install srs-stack, for example:
-#   bash /www/server/panel/plugin/srs_stack/setup.sh --r0 /tmp/srs_stack_install.r0 --nginx /www/server/nginx/logs/nginx.pid --www /www/wwwroot --site srs.stack.local
+# Install oryx, for example:
+#   bash /www/server/panel/plugin/oryx/setup.sh --r0 /tmp/oryx_install.r0 --nginx /www/server/nginx/logs/nginx.pid --www /www/wwwroot --site srs.stack.local
 # If ok, we will create systemctl service at:
-#   /usr/lib/systemd/system/srs-stack.service
+#   /usr/lib/systemd/system/oryx.service
 
 HELP=no
 R0_FILE=
 NGINX_PID=
 WWW_HOME=
 SITE_NAME=
-install_path=/www/server/panel/plugin/srs_stack
+install_path=/www/server/panel/plugin/oryx
 SRS_HOME=/usr/local/srs-stack
 DATA_HOME=/data
 
@@ -19,7 +19,7 @@ VERBOSE=no
 LANGUAGE=en
 REGISTRY=auto
 REGION=auto
-IMAGE=ossrs/srs-stack:5
+IMAGE=ossrs/oryx:5
 
 # Allow use config to override the default values.
 # For aaPanel, should never use .env, because it will be removed when install.
@@ -99,7 +99,7 @@ if [[ $? -ne 0 ]]; then echo "Cache docker images failed"; exit 1; fi
 
 # If install ok, the directory should exists.
 if [[ ! -d ${SRS_HOME} || ! -d ${SRS_HOME}/mgmt ]]; then
-  echo "Install srs-stack failed"; exit 1;
+  echo "Install oryx failed"; exit 1;
 fi
 
 # Link the www root to container.
@@ -111,18 +111,18 @@ fi
 #if [[ $? -ne 0 ]]; then echo "Link www root failed"; exit 1; fi
 
 # Create init.d script.
-rm -f /etc/init.d/srs_stack &&
-cp $install_path/init.d.sh /etc/init.d/srs_stack &&
-chmod +x /etc/init.d/srs_stack
+rm -f /etc/init.d/oryx &&
+cp $install_path/init.d.sh /etc/init.d/oryx &&
+chmod +x /etc/init.d/oryx
 if [[ $? -ne 0 ]]; then echo "Setup init.d script failed"; exit 1; fi
 
-# Create srs-stack service, and the credential file.
+# Create oryx service, and the credential file.
 # Remark: Never start the service, because the IP will change for new machine created.
 cd ${SRS_HOME} &&
-cp -f usr/lib/systemd/system/srs-stack.service /usr/lib/systemd/system/srs-stack.service &&
-systemctl daemon-reload && systemctl enable srs-stack
-if [[ $? -ne 0 ]]; then echo "Install srs-stack failed"; exit 1; fi
+cp -f usr/lib/systemd/system/oryx.service /usr/lib/systemd/system/oryx.service &&
+systemctl daemon-reload && systemctl enable oryx
+if [[ $? -ne 0 ]]; then echo "Install oryx failed"; exit 1; fi
 
-/etc/init.d/srs_stack restart srs-stack
-if [[ $? -ne 0 ]]; then echo "Start srs-stack failed"; exit 1; fi
+/etc/init.d/oryx restart oryx
+if [[ $? -ne 0 ]]; then echo "Start oryx failed"; exit 1; fi
 

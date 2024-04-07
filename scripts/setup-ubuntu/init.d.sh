@@ -1,27 +1,27 @@
 #!/bin/bash
 
 ### BEGIN INIT INFO
-# Provides:          ossrs(srs-stack)
+# Provides:          ossrs(oryx)
 # Required-Start:    $all
 # Required-Stop:     $all
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: ossrs(srs-stack)
-# Description:       https://github.com/ossrs/srs-stack
+# Short-Description: ossrs(oryx)
+# Description:       https://github.com/ossrs/oryx
 ### END INIT INFO
 
 SRS_HOME=/usr/local/srs-stack
 
 start() {
-  systemctl start srs-stack.service
+  systemctl start oryx.service
 }
 
 stop() {
-  systemctl stop srs-stack.service
+  systemctl stop oryx.service
 }
 
 status() {
-  systemctl status srs-stack.service
+  systemctl status oryx.service
 }
 
 menu() {

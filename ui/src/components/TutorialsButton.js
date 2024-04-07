@@ -34,12 +34,12 @@ function useTutorialsEn(mediumRef) {
     '544e1db671c2': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/expand-your-global-reach-with-srs-stack-effortless-video-translation-and-dubbing-solutions-544e1db671c2',
-      title: 'Revolutionize Video Content with SRS Stack: Effortless Dubbing and Translating to Multiple Languages Using OpenAI'
+      title: 'Revolutionize Video Content with Oryx: Effortless Dubbing and Translating to Multiple Languages Using OpenAI'
     },
     '13e28adf1e18': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/transform-your-browser-into-a-personal-voice-driven-gpt-ai-assistant-with-srs-stack-13e28adf1e18',
-      title: 'Speak to the Future: Transform Your Browser into a Personal Voice-Driven GPT AI Assistant with SRS Stack'
+      title: 'Speak to the Future: Transform Your Browser into a Personal Voice-Driven GPT AI Assistant with Oryx'
     },
     'b3011e390e38': {
       author: 'Winlin Yang',
@@ -89,7 +89,7 @@ function useTutorialsEn(mediumRef) {
     '2aa792c35b25': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/how-to-record-live-streaming-to-mp4-file-2aa792c35b25',
-      title: 'Effortless Live Stream Recording with SRS Stack: A Step-by-Step Guide to Server-Side Recording and AWS S3 Integration'
+      title: 'Effortless Live Stream Recording with Oryx: A Step-by-Step Guide to Server-Side Recording and AWS S3 Integration'
     },
     '9748ae754c8c': {
       author: 'Winlin Yang',
@@ -99,7 +99,7 @@ function useTutorialsEn(mediumRef) {
     '38be22beec57': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/maximize-your-live-streaming-reach-a-guide-to-multi-platform-streaming-38be22beec57',
-      title: 'Maximize Audience Engagement: Effortlessly Restream Live Content Across Multiple Platforms with SRS Stack'
+      title: 'Maximize Audience Engagement: Effortlessly Restream Live Content Across Multiple Platforms with Oryx'
     },
     'e9fe6f314ac6': {
       author: 'Winlin Yang',
@@ -109,7 +109,7 @@ function useTutorialsEn(mediumRef) {
     'cb618777639f': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/how-to-secure-srs-with-lets-encrypt-by-1-click-cb618777639f',
-      title: 'How to Secure SRS Stack with Let’s Encrypt by 1-Click',
+      title: 'How to Secure Oryx with Let’s Encrypt by 1-Click',
     },
     'ec18dfae7d6f': {
       author: 'Roboin',

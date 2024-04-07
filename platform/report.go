@@ -21,7 +21,7 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-// queryLatestVersion is to query the latest and stable version from SRS Stack API.
+// queryLatestVersion is to query the latest and stable version from Oryx API.
 func queryLatestVersion(ctx context.Context) (*Versions, error) {
 	// Request release api with params.
 	params := make(map[string]string)

@@ -16,11 +16,11 @@ function ScenarioSourceCn() {
   return (
     <Accordion defaultActiveKey="0">
       <Accordion.Item eventKey="0">
-        <Accordion.Header>SRS Stack</Accordion.Header>
+        <Accordion.Header>Oryx</Accordion.Header>
         <Accordion.Body>
-          <div>SRS Stack是开源项目：</div>
-          <div>1. Github：<a href='https://github.com/ossrs/srs-stack'>https://github.com/ossrs/srs-stack</a></div>
-          <div>2. Gitee：<a href='https://gitee.com/ossrs/srs-stack'>https://gitee.com/ossrs/srs-stack</a></div>
+          <div>Oryx是开源项目：</div>
+          <div>1. Github：<a href='https://github.com/ossrs/oryx'>https://github.com/ossrs/oryx</a></div>
+          <div>2. Gitee：<a href='https://gitee.com/ossrs/oryx'>https://gitee.com/ossrs/oryx</a></div>
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">

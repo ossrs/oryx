@@ -107,22 +107,22 @@ jobs:
       - name: Run test for platform image
         run: |
           docker load -i platform.tar
-          docker tag platform ossrs/srs-stack:5
+          docker tag platform ossrs/oryx:5
           docker run --rm -d -p 2022:2022 -p 2443:2443 -p 1935:1935 \
-            -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
-            -v /data:/data -e REACT_APP_LOCALE=zh ossrs/srs-stack:5
+            -p 8000:8000/udp -p 10080:10080/udp --name oryx \
+            -v /data:/data -e REACT_APP_LOCALE=zh ossrs/oryx:5
       - name: Check and Test service
         run: |
           # We will handle the error by ourselves.
           set +e
           
           # Record all logs.
-          docker logs -f srs-stack >docker.log 2>&1 & pid_docker=$!
+          docker logs -f oryx >docker.log 2>&1 & pid_docker=$!
           
           echo "Wait for service ready." &&
           make -j -C test &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./test/oryx.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
               -check-api-secret=true -test.run TestSystem_Empty &&
           
@@ -131,25 +131,25 @@ jobs:
           
           echo "Test HTTP service." &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./test/oryx.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -no-media-test &&
           
           echo "Test HTTPS service." &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./test/srs-stack.test -test.timeout=1h -test.v -endpoint https://localhost:2443 \
+          ./test/oryx.test -test.timeout=1h -test.v -endpoint https://localhost:2443 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -no-media-test &&
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 3 ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./scripts/tools/failed-retry.sh 3 ./test/oryx.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
-          docker stop srs-stack
+          docker stop oryx
           kill $pid_docker 2>/dev/null
           echo "Log of docker.log" && cat docker.log
           
@@ -179,22 +179,22 @@ jobs:
       - name: Run test for platform image
         run: |
           docker load -i platform.tar
-          docker tag platform ossrs/srs-stack:5
+          docker tag platform ossrs/oryx:5
           docker run --rm -d -p 2022:2022 -p 2443:2443 -p 1935:1935 \
-            -p 8000:8000/udp -p 10080:10080/udp --name srs-stack \
-            -v /data:/data -e REACT_APP_LOCALE=en ossrs/srs-stack:5
+            -p 8000:8000/udp -p 10080:10080/udp --name oryx \
+            -v /data:/data -e REACT_APP_LOCALE=en ossrs/oryx:5
       - name: Check and Test service
         run: |
           # We will handle the error by ourselves.
           set +e
           
           # Record all logs.
-          docker logs -f srs-stack >docker.log 2>&1 & pid_docker=$!
+          docker logs -f oryx >docker.log 2>&1 & pid_docker=$!
           
           echo "Wait for service ready." &&
           make -j -C test &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./test/oryx.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
               -check-api-secret=true -test.run TestSystem_Empty &&
           
@@ -203,25 +203,25 @@ jobs:
           
           echo "Test HTTP service." &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./test/oryx.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -no-media-test &&
           
           echo "Test HTTPS service." &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./test/srs-stack.test -test.timeout=1h -test.v -endpoint https://localhost:2443 \
+          ./test/oryx.test -test.timeout=1h -test.v -endpoint https://localhost:2443 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -no-media-test &&
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 3 ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./scripts/tools/failed-retry.sh 3 ./test/oryx.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
-          docker stop srs-stack
+          docker stop oryx
           kill $pid_docker 2>/dev/null
           echo "Log of docker.log" && cat docker.log
           
@@ -260,8 +260,8 @@ jobs:
       - name: Load platform image
         run: |
           docker load -i platform.tar
-          docker tag platform:latest ossrs/srs-stack:$SRS_TAG
-          docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
+          docker tag platform:latest ossrs/oryx:$SRS_TAG
+          docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$SRS_TAG
           docker images
       - name: Build package
         run: |
@@ -270,7 +270,7 @@ jobs:
           du -sh $(pwd)/build/*
       - name: Install package
         run: |
-          sudo bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
+          sudo bash build/oryx/scripts/setup-ubuntu/install.sh --verbose
           echo "" && echo "/usr/local/srs-stack/" && du -sh /usr/local/srs-stack/*
           echo "" && ls -lha /data /data/config
       - name: Check and Test service
@@ -279,12 +279,12 @@ jobs:
           set +e
           
           # Record all logs.
-          journalctl -u srs-stack -f >journalctl.log 2>&1 & pid_journalctl=$!
+          journalctl -u oryx -f >journalctl.log 2>&1 & pid_journalctl=$!
           
           echo "Wait for service ready." &&
           make -j -C test &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./test/oryx.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
               -check-api-secret=true -test.run TestSystem_Empty &&
           
@@ -293,25 +293,25 @@ jobs:
           
           echo "Test HTTP service." &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./test/oryx.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -no-media-test &&
           
           echo "Test HTTPS service." &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./test/srs-stack.test -test.timeout=1h -test.v -endpoint https://localhost:2443 \
+          ./test/oryx.test -test.timeout=1h -test.v -endpoint https://localhost:2443 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -no-media-test &&
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 3 ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./scripts/tools/failed-retry.sh 3 ./test/oryx.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
-          sudo systemctl stop srs-stack
+          sudo systemctl stop oryx
           kill $pid_journalctl 2>/dev/null
           echo "Log of journalctl.log" && cat journalctl.log
           
@@ -349,8 +349,8 @@ jobs:
       - name: Load platform image
         run: |
           docker load -i platform.tar
-          docker tag platform:latest ossrs/srs-stack:$SRS_TAG
-          docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:$SRS_TAG
+          docker tag platform:latest ossrs/oryx:$SRS_TAG
+          docker tag platform:latest registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:$SRS_TAG
           docker images
       - name: Build package
         run: |
@@ -359,7 +359,7 @@ jobs:
           du -sh $(pwd)/build/*
       - name: Install package
         run: |
-          sudo bash build/srs_stack/scripts/setup-ubuntu/install.sh --verbose
+          sudo bash build/oryx/scripts/setup-ubuntu/install.sh --verbose
           echo "" && echo "/usr/local/srs-stack/" && du -sh /usr/local/srs-stack/*
           echo "" && ls -lha /data /data/config
       - name: Check and Test service
@@ -368,12 +368,12 @@ jobs:
           set +e
           
           # Record all logs.
-          journalctl -u srs-stack -f >journalctl.log 2>&1 & pid_journalctl=$!
+          journalctl -u oryx -f >journalctl.log 2>&1 & pid_journalctl=$!
           
           echo "Wait for service ready." &&
           make -j -C test &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./test/oryx.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=true -init-self-signed-cert=true \
               -check-api-secret=true -test.run TestSystem_Empty &&
           
@@ -382,25 +382,25 @@ jobs:
           
           echo "Test HTTP service." &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./test/oryx.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -no-media-test &&
           
           echo "Test HTTPS service." &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./test/srs-stack.test -test.timeout=1h -test.v -endpoint https://localhost:2443 \
+          ./test/oryx.test -test.timeout=1h -test.v -endpoint https://localhost:2443 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -no-media-test &&
           
           echo "Run media test with retry" &&
           bash scripts/tools/secret.sh --output test/.env &&
-          ./scripts/tools/failed-retry.sh 3 ./test/srs-stack.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
+          ./scripts/tools/failed-retry.sh 3 ./test/oryx.test -test.timeout=1h -test.v -endpoint http://localhost:2022 \
               -srs-log=true -wait-ready=true -init-password=false -init-self-signed-cert=false \
               -check-api-secret=true -test.run WithStream
           ret=$?; echo "Test result: $ret"
           
           echo "Stop service"
-          sudo systemctl stop srs-stack
+          sudo systemctl stop oryx
           kill $pid_journalctl 2>/dev/null
           echo "Log of journalctl.log" && cat journalctl.log
           

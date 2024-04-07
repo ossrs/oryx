@@ -1,4 +1,4 @@
-# SRS-Stack
+# ORYXY
 
 [![](https://img.shields.io/twitter/follow/srs_server?style=social)](https://twitter.com/srs_server)
 [![](https://badgen.net/discord/members/bQUPDRqy79)](https://discord.gg/bQUPDRqy79)
@@ -6,26 +6,29 @@
 [![](https://ossrs.net/wiki/images/do-btn-srs-125x20.svg)](https://marketplace.digitalocean.com/apps/srs)
 [![](https://opencollective.com/srs-server/tiers/badge.svg)](https://opencollective.com/srs-server)
 
-SRS Stack is an all-in-one, out-of-the-box, and open-source video solution for creating online video 
-services, including live streaming and WebRTC, on the cloud or through self-hosting.
+Oryx(SRS Stack), is an all-in-one, out-of-the-box, and open-source video solution for creating 
+online video services, including live streaming and WebRTC, on the cloud or through self-hosting.
 
-SRS Stack makes it easy for you to create an online video service. It is made using Go, Reactjs, SRS, 
+> Note: We renamed the project from Oryx to Oryx, because we only need a new name for AI assistant to identify 
+> Oryx and SRS media server. AI assistant is confused with SRS and Oryx.
+
+Oryx makes it easy for you to create an online video service. It is made using Go, Reactjs, SRS, 
 FFmpeg, and WebRTC. It supports protocols like RTMP, WebRTC, HLS, HTTP-FLV, and SRT. It offers features 
 like authentication, streaming on multiple platforms, recording, transcoding, virtual live events, 
 automatic HTTPS, and an easy-to-use HTTP Open API.
 
-[![](https://ossrs.io/lts/en-us/img/SRS-Stack-5-sd.png?v=1)](https://ossrs.io/lts/en-us/img/SRS-Stack-5-hd.png)
+[![](https://ossrs.io/lts/en-us/img/Oryx-5-sd.png?v=1)](https://ossrs.io/lts/en-us/img/Oryx-5-hd.png)
 
-> Note: For more details on the SRS Stack, please visit the following [link](https://www.figma.com/file/Ju5h2DZeJMzUtx5k7D0Oak/SRS-Stack).
+> Note: For more details on the Oryx, please visit the following [link](https://www.figma.com/file/Ju5h2DZeJMzUtx5k7D0Oak/Oryx).
 
 ## Usage
 
-Run srs-stack in one docker, then open http://localhost in browser:
+Run Oryx in one docker, then open http://localhost in browser:
 
 ```bash
-docker run --restart always -d -it --name srs-stack -v $HOME/data:/data \
+docker run --restart always -d -it --name oryx -v $HOME/data:/data \
   -p 80:2022 -p 443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
-  ossrs/srs-stack:5
+  ossrs/oryx:5
 ```
 
 > Important: Remember to mount the `/data` volume to avoid losing data when the container restarts. For instance, 
@@ -36,18 +39,18 @@ docker run --restart always -d -it --name srs-stack -v $HOME/data:/data \
 > a public IP (e.g., https://136.12.117.13), or a domain (e.g., https://your-domain.com). To set up HTTPS, 
 > refer to [this post](https://blog.ossrs.io/how-to-secure-srs-with-lets-encrypt-by-1-click-cb618777639f).
 
-> Note: In China, use `registry.cn-hangzhou.aliyuncs.com/ossrs/srs-stack:5` to accelerate the Docker pull process 
+> Note: In China, use `registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:5` to accelerate the Docker pull process 
 > and ensure the proper language is set.
 
-The ports used for SRS Stack:
+The ports used for Oryx:
 
 * `80/tcp`: The HTTP port, you can also use `2022` instead, such as `-p 2022:2022` etc.
 * `443/tcp`: The HTTPS port, you can also use `2443` instead, such as `-p 2443:2443` etc.
-* `1935/tcp`: The RTMP port, to support publish stream by RTMP to SRS Stack.
+* `1935/tcp`: The RTMP port, to support publish stream by RTMP to Oryx.
 * `8000/udp`: The WebRTC UDP port, to transport WebRTC media data like RTP packets.
 * `10080/udp`: The SRT UDP port, to support publish stream via SRT protocol.
 
-You have the option to modify the volumes for srs-stack and direct them to different directories.
+You have the option to modify the volumes for Oryx and direct them to different directories.
 
 * `/data` The global data directory.
     * `.well-known` The directory for Let's Encrypt ACME challenge.
@@ -91,19 +94,19 @@ your own high-quality streaming and RTC platforms to support your businesses.
 
 ## FAQ
 
-1. [English FAQ](https://ossrs.io/lts/en-us/faq-srs-stack)
-1. [中文 FAQ](https://ossrs.net/lts/zh-cn/faq-srs-stack)
+1. [English FAQ](https://ossrs.io/lts/en-us/faq-oryx)
+1. [中文 FAQ](https://ossrs.net/lts/zh-cn/faq-oryx)
 
 ## Tutorials
 
 - [x] Getting Started: [Blog](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-1-click-e9fe6f314ac6), [EN](https://ossrs.io/lts/en-us/docs/v6/doc/getting-started-stack), [CN](https://ossrs.net/lts/zh-cn/docs/v5/doc/getting-started-stack).
 - [x] Support WordPress Plugin: [Blog](https://blog.ossrs.io/publish-your-srs-livestream-through-wordpress-ec18dfae7d6f), [EN](https://ossrs.io/lts/en-us/blog/WordPress-Plugin), [CN](https://ossrs.net/lts/zh-cn/blog/WordPress-Plugin) or [WordPress Plugin](https://wordpress.org/plugins/srs-player).
-- [x] Support Automatic HTTPS: [Blog](https://blog.ossrs.io/how-to-secure-srs-with-lets-encrypt-by-1-click-cb618777639f), [EN](https://ossrs.io/lts/en-us/blog/SRS-Stack-Tutorial), [CN](https://ossrs.net/lts/zh-cn/blog/SRS-Stack-HTTPS).
+- [x] Support Automatic HTTPS: [Blog](https://blog.ossrs.io/how-to-secure-srs-with-lets-encrypt-by-1-click-cb618777639f), [EN](https://ossrs.io/lts/en-us/blog/Oryx-Tutorial), [CN](https://ossrs.net/lts/zh-cn/blog/Oryx-HTTPS).
 - [x] Support aaPanel to install on any linux: [Blog](https://blog.ossrs.io/how-to-setup-a-video-streaming-service-by-aapanel-9748ae754c8c), [EN](https://ossrs.io/lts/en-us/blog/BT-aaPanel), [CN](https://ossrs.net/lts/zh-cn/blog/BT-aaPanel).
 - [x] Support DVR to local disk: [Blog](https://blog.ossrs.io/how-to-record-live-streaming-to-mp4-file-2aa792c35b25), [EN](https://ossrs.io/lts/en-us/blog/Record-Live-Streaming), [CN](https://mp.weixin.qq.com/s/axN_TPo-Gk_H7CbdqUud6g).
 - [x] Support Virtual Live Streaming: [CN](https://mp.weixin.qq.com/s/I0Kmxtc24txpngO-PiR_tQ).
 - [x] Support Stream IP Camera: [Blog](https://blog.ossrs.io/easily-stream-your-rtsp-ip-camera-to-youtube-twitch-or-facebook-c078db917149), [EN](http://ossrs.io/lts/en-us/blog/Stream-IP-Camera-Events), [CN](https://ossrs.net/lts/zh-cn/blog/Stream-IP-Camera-Events).
-- [x] Support build small [HLS deliver CDN](https://github.com/ossrs/srs-stack/tree/main/scripts/nginx-hls-cdn) by Nginx.
+- [x] Support build small [HLS deliver CDN](https://github.com/ossrs/oryx/tree/main/scripts/nginx-hls-cdn) by Nginx.
 - [x] Support Live Streaming: [CN](https://mp.weixin.qq.com/s/AKqVWIdk3SBD-6uiTMliyA).
 - [x] Support Realtime SRT Streaming: [CN](https://mp.weixin.qq.com/s/HQb3gLRyJHHu56pnyHerxA).
 - [x] Support DVR to Tencent Cloud Storage or VoD: [CN](https://mp.weixin.qq.com/s/UXR5EBKZ-LnthwKN_rlIjg).
@@ -156,7 +159,7 @@ The features that we're developing:
 
 ## License
 
-SRS Stack is an open-source project, licensed under the [AGPL-3.0-or-later](https://spdx.org/licenses/AGPL-3.0-or-later.html) license.
+Oryx is an open-source project, licensed under the [AGPL-3.0-or-later](https://spdx.org/licenses/AGPL-3.0-or-later.html) license.
 
 ## Developer
 
