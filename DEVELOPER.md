@@ -151,7 +151,7 @@ Run test for script:
 ```bash
 rm -f test/oryx.test &&
 docker exec -it script make -j -C test &&
-bash scripts/tools/secret.sh --output test/.env &&
+bash scripts/tools/secret.sh --output test/.env && sleep 5 &&
 docker exec -it script ./test/oryx.test -test.timeout=1h  -test.v -endpoint http://localhost:2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&

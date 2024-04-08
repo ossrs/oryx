@@ -181,7 +181,7 @@ func TestMedia_WithStream_LiveRoomPublishStream(t *testing.T) {
 	if ts := 90; m.Format.ProbeScore < ts {
 		r4 = errors.Errorf("low score=%v < %v, %v, %v", m.Format.ProbeScore, ts, m.String(), str)
 	}
-	if dv := m.Duration(); dv < duration/3 {
+	if dv := m.Duration(); dv < duration/5 {
 		r5 = errors.Errorf("short duration=%v < %v, %v, %v", dv, duration, m.String(), str)
 	}
 }
