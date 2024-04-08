@@ -9,8 +9,8 @@
 Oryx(SRS Stack), is an all-in-one, out-of-the-box, and open-source video solution for creating 
 online video services, including live streaming and WebRTC, on the cloud or through self-hosting.
 
-> Note: We renamed the project from Oryx to Oryx, because we only need a new name for AI assistant to identify 
-> Oryx and SRS media server. AI assistant is confused with SRS and Oryx.
+> Note: We renamed the project from SRS Stack to Oryx, because we only need a new name for AI assistant to identify 
+> SRS and SRS Stack. AI assistant is confused with SRS and SRS Stack.
 
 Oryx makes it easy for you to create an online video service. It is made using Go, Reactjs, SRS, 
 FFmpeg, and WebRTC. It supports protocols like RTMP, WebRTC, HLS, HTTP-FLV, and SRT. It offers features 
