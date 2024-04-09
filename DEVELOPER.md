@@ -39,8 +39,8 @@ Run all tests:
 
 ```bash
 bash scripts/tools/secret.sh --output test/.env &&
-(cd test && go test -timeout=1h -v --endpoint=http://localhost:2022 -init-self-signed-cert=true) &&
-(cd test && go test -timeout=1h -v --endpoint=https://localhost:2443 -init-self-signed-cert=false)
+(cd test && go test -timeout=1h -failfast -v --endpoint=http://localhost:2022 -init-self-signed-cert=true) &&
+(cd test && go test -timeout=1h -failfast -v --endpoint=https://localhost:2443 -init-self-signed-cert=false)
 ```
 
 Run the platform react ui, or run in WebStorm:
@@ -152,14 +152,14 @@ Run test for script:
 rm -f test/oryx.test &&
 docker exec -it script make -j -C test &&
 bash scripts/tools/secret.sh --output test/.env && sleep 5 &&
-docker exec -it script ./test/oryx.test -test.timeout=1h  -test.v -endpoint http://localhost:2022 \
+docker exec -it script ./test/oryx.test -test.timeout=1h -test.failfast -test.v -endpoint http://localhost:2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
-bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it script ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint http://localhost:2022 \
+bash scripts/tools/secret.sh --output test/.env && sleep 5 &&
+docker exec -it script ./test/oryx.test -test.timeout=1h -test.failfast -test.v -wait-ready -endpoint http://localhost:2022 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-docker exec -it script ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint https://localhost:2443 \
+docker exec -it script ./test/oryx.test -test.timeout=1h -test.failfast -test.v -wait-ready -endpoint https://localhost:2443 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
 ```
@@ -246,15 +246,15 @@ Run test for aaPanel:
 ```bash
 rm -f test/oryx.test &&
 docker exec -it aapanel make -j -C test &&
-bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it aapanel ./test/oryx.test -test.timeout=1h -test.v -endpoint http://srs.stack.local:80 \
+bash scripts/tools/secret.sh --output test/.env && sleep 5 &&
+docker exec -it aapanel ./test/oryx.test -test.timeout=1h -test.failfast -test.v -endpoint http://srs.stack.local:80 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
-bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it aapanel ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint http://srs.stack.local:80 \
+bash scripts/tools/secret.sh --output test/.env && sleep 5 &&
+docker exec -it aapanel ./test/oryx.test -test.timeout=1h -test.failfast -test.v -wait-ready -endpoint http://srs.stack.local:80 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-docker exec -it aapanel ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint https://srs.stack.local:443 \
+docker exec -it aapanel ./test/oryx.test -test.timeout=1h -test.failfast -test.v -wait-ready -endpoint https://srs.stack.local:443 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
 ```
@@ -350,15 +350,15 @@ Run test for BT:
 ```bash
 rm -f test/oryx.test &&
 docker exec -it bt make -j -C test &&
-bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it bt ./test/oryx.test -test.timeout=1h -test.v -endpoint http://srs.stack.local:80 \
+bash scripts/tools/secret.sh --output test/.env && sleep 5 &&
+docker exec -it bt ./test/oryx.test -test.timeout=1h -test.failfast -test.v -endpoint http://srs.stack.local:80 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
-bash scripts/tools/secret.sh --output test/.env &&
-docker exec -it bt ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint http://srs.stack.local:80 \
+bash scripts/tools/secret.sh --output test/.env && sleep 5 &&
+docker exec -it bt ./test/oryx.test -test.timeout=1h -test.failfast -test.v -wait-ready -endpoint http://srs.stack.local:80 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-docker exec -it bt ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint https://srs.stack.local:443 \
+docker exec -it bt ./test/oryx.test -test.timeout=1h -test.failfast -test.v -wait-ready -endpoint https://srs.stack.local:443 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
 ```
@@ -425,12 +425,12 @@ ssh root@$SRS_DROPLET_EIP docker run --rm -v /usr/bin:/g ossrs/srs:tools \
 Test the droplet instance:
 
 ```bash
-ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh --output test/.env &&
-ssh root@$SRS_DROPLET_EIP ./test/oryx.test -test.timeout=1h -test.v -endpoint http://$SRS_DROPLET_EIP:2022 \
+ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh --output test/.env && sleep 5 &&
+ssh root@$SRS_DROPLET_EIP ./test/oryx.test -test.timeout=1h -test.failfast -test.v -endpoint http://$SRS_DROPLET_EIP:2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
-    -test.run TestSystem_Empty && sleep 3 &&
-ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh --output test/.env &&
-ssh root@$SRS_DROPLET_EIP ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint http://$SRS_DROPLET_EIP:2022 \
+    -test.run TestSystem_Empty &&
+ssh root@$SRS_DROPLET_EIP bash scripts/tools/secret.sh --output test/.env && sleep 5 &&
+ssh root@$SRS_DROPLET_EIP ./test/oryx.test -test.timeout=1h -test.failfast -test.v -wait-ready -endpoint http://$SRS_DROPLET_EIP:2022 \
     -endpoint-rtmp rtmp://$SRS_DROPLET_EIP -endpoint-http http://$SRS_DROPLET_EIP -endpoint-srt srt://$SRS_DROPLET_EIP:10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 1
@@ -515,16 +515,16 @@ $sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo docker run --rm -v /usr/bin:/g \
 Test the CVM instance:
 
 ```bash
-$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
-$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/oryx.test -test.timeout=1h -test.v -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env && sleep 5 &&
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/oryx.test -test.timeout=1h -test.failfast -test.v -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
     -srs-log=true -wait-ready=true -init-password=true -check-api-secret=true -init-self-signed-cert=true \
     -test.run TestSystem_Empty &&
-$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env &&
-$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) sudo bash scripts/tools/secret.sh --output test/.env && sleep 5 &&
+$sshCmd ubuntu@$(cat .tmp/lh-ip2.txt) ./test/oryx.test -test.timeout=1h -test.failfast -test.v -wait-ready -endpoint http://$(cat .tmp/lh-ip2.txt):2022 \
     -endpoint-rtmp rtmp://$(cat .tmp/lh-ip2.txt) -endpoint-http http://$(cat .tmp/lh-ip2.txt) -endpoint-srt srt://$(cat .tmp/lh-ip2.txt):10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3 &&
-ssh ubuntu@$(cat .tmp/lh-ip2.txt) ./test/oryx.test -test.timeout=1h -test.v -wait-ready -endpoint https://$(cat .tmp/lh-ip2.txt):2443 \
+ssh ubuntu@$(cat .tmp/lh-ip2.txt) ./test/oryx.test -test.timeout=1h -test.failfast -test.v -wait-ready -endpoint https://$(cat .tmp/lh-ip2.txt):2443 \
     -endpoint-rtmp rtmp://$(cat .tmp/lh-ip2.txt) -endpoint-http https://$(cat .tmp/lh-ip2.txt) -endpoint-srt srt://$(cat .tmp/lh-ip2.txt):10080 \
     -srs-log=true -wait-ready=true -init-password=false -check-api-secret=true \
     -test.parallel 3
@@ -1158,6 +1158,7 @@ The following are the update records for the Oryx server.
     * Transcript: Support subtitle with WebVTT format. v5.14.12
     * Transcript: Fix overlay transcoding parameters parsing bug. v5.14.13
     * Use port 80/443 by default in README. v5.14.14 
+    * Use fastfail for test and utest. v5.14.15
     * Rename project to Oryx.[v5.14.15](https://github.com/ossrs/oryx/releases/tag/v5.14.15)
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1

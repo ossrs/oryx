@@ -299,7 +299,7 @@ func TestMedia_WithStream_PublishSrtPlayFlv_SecretQuery(t *testing.T) {
 	}
 	select {
 	case <-ctx.Done():
-	case <-time.After(time.Duration(*srsFFprobeTimeout) / 10 * time.Millisecond):
+	case <-time.After(time.Duration(*srsFFprobeTimeout) * time.Millisecond / 8):
 	}
 
 	// Start FFprobe to detect and verify stream.
