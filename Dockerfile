@@ -66,4 +66,7 @@ RUN mkdir -p /data && \
     cd /usr/local/srs-stack/platform/containers && \
     rm -rf data && ln -sf /data .
 
+# Compatible with the old version. Note that new version use /usr/local/oryx/platform as work directory.
+WORKDIR /usr/local/srs-stack/platform
+
 CMD ["./bootstrap"]
