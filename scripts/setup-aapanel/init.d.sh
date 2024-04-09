@@ -10,7 +10,7 @@
 # Description:       https://github.com/ossrs/oryx
 ### END INIT INFO
 
-SRS_HOME=/usr/local/srs-stack
+SRS_HOME=/usr/local/oryx
 
 start() {
   systemctl start oryx.service

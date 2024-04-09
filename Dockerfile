@@ -44,11 +44,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y && apt-get install -y upx
 
 RUN echo "Before UPX for $TARGETARCH" && \
-    ls -lh /usr/local/srs/objs/srs /usr/local/srs-stack/platform/platform && \
+    ls -lh /usr/local/srs/objs/srs /usr/local/oryx/platform/platform && \
     upx --best --lzma /usr/local/srs/objs/srs && \
-    upx --best --lzma /usr/local/srs-stack/platform/platform && \
+    upx --best --lzma /usr/local/oryx/platform/platform && \
     echo "After UPX for $TARGETARCH" && \
-    ls -lh /usr/local/srs/objs/srs /usr/local/srs-stack/platform/platform
+    ls -lh /usr/local/srs/objs/srs /usr/local/oryx/platform/platform
 
 # http://releases.ubuntu.com/focal/
 #FROM ${ARCH}ubuntu:focal AS dist
@@ -58,12 +58,12 @@ FROM ${ARCH}ossrs/oryx:focal-1 AS dist
 EXPOSE 2022 2443 1935 8080 5060 9000 8000/udp 10080/udp
 
 # Copy files from build.
-COPY --from=build /usr/local/srs-stack /usr/local/srs-stack
+COPY --from=build /usr/local/oryx /usr/local/oryx
 COPY --from=build /usr/local/srs /usr/local/srs
 
 # Prepare data directory.
 RUN mkdir -p /data && \
-    cd /usr/local/srs-stack/platform/containers && \
+    cd /usr/local/oryx/platform/containers && \
     rm -rf data && ln -sf /data .
 
 CMD ["./bootstrap"]

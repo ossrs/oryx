@@ -129,10 +129,8 @@ t.md
 /build
 /*.tar
 /*.gz
-/srs-stack2
 /oryx
 /test/oryx.test
-/test/srs-stack.test
 __pycache__
 *.flv
 *.mp4

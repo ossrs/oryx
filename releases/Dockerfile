@@ -10,8 +10,8 @@ RUN make
 #FROM ${ARCH}ubuntu:focal AS dist
 FROM ${ARCH}ubuntu:focal AS dist
 
-COPY --from=build /g/releases/releases /usr/local/srs-stack/releases/releases
+COPY --from=build /g/releases/releases /usr/local/oryx/releases/releases
 
 ENV PORT=":9000"
-WORKDIR /usr/local/srs-stack/releases
+WORKDIR /usr/local/oryx/releases
 CMD ["./releases"]

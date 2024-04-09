@@ -23,7 +23,7 @@ class oryx_main:
     #       public.get_vhost_path() is /www/server/panel/vhost
     __plugin_path = "{}/panel/plugin/oryx".format(public.get_setup_path())
     __srs_service = "/usr/lib/systemd/system/oryx.service"
-    __srs_home = '/usr/local/srs-stack'
+    __srs_home = '/usr/local/oryx'
     __r0_file = '/tmp/oryx_install.r0'
     __firewall = '/tmp/oryx_install.fw'
     __log_file = '/tmp/oryx_install.log'

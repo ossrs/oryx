@@ -24,7 +24,7 @@ if [[ -f /usr/lib/systemd/system/oryx.service ]]; then
     echo "Remove oryx.service ok"
 fi
 
-INSTALL_HOME=/usr/local/srs-stack
+INSTALL_HOME=/usr/local/oryx
 rm -rf $INSTALL_HOME
 echo "Remove install $INSTALL_HOME ok"
 

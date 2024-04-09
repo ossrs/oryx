@@ -48,7 +48,7 @@ func (v Versions) String() string {
 // TODO: FIXME: Should be merged to mgmt.
 type Config struct {
 	IsDarwin bool
-	// Current working directory, at xxx/oryx/platform or xxx/srs-stack/platform.
+	// Current working directory, at xxx/oryx/platform.
 	Pwd string
 
 	Cloud    string

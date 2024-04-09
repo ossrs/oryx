@@ -6,7 +6,7 @@ Wants=docker.service
 [Service]
 Type=simple
 Restart=always
-ExecStart=/usr/local/srs-stack/mgmt/bootstrap
+ExecStart=/usr/local/oryx/mgmt/bootstrap
 KillSignal=SIGTERM
 TimeoutStopSec=30
 SendSIGKILL=yes

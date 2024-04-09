@@ -271,7 +271,7 @@ jobs:
       - name: Install package
         run: |
           sudo bash build/oryx/scripts/setup-ubuntu/install.sh --verbose
-          echo "" && echo "/usr/local/srs-stack/" && du -sh /usr/local/srs-stack/*
+          echo "" && echo "/usr/local/oryx/" && du -sh /usr/local/oryx/*
           echo "" && ls -lha /data /data/config
       - name: Check and Test service
         run: |
@@ -360,7 +360,7 @@ jobs:
       - name: Install package
         run: |
           sudo bash build/oryx/scripts/setup-ubuntu/install.sh --verbose
-          echo "" && echo "/usr/local/srs-stack/" && du -sh /usr/local/srs-stack/*
+          echo "" && echo "/usr/local/oryx/" && du -sh /usr/local/oryx/*
           echo "" && ls -lha /data /data/config
       - name: Check and Test service
         run: |

@@ -88,7 +88,7 @@ docker stop redis 2>/dev/null || echo ok && docker rm -f redis srs 2>/dev/null &
 docker run --rm -it --name oryx -v $HOME/data:/data \
   -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
   -p 80:2022 -p 443:2443 -e CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
-  -v $(pwd)/platform/platform:/usr/local/srs-stack/platform/platform \
+  -v $(pwd)/platform/platform:/usr/local/oryx/platform/platform \
   platform
 ```
 

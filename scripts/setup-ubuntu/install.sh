@@ -8,7 +8,7 @@ echo "BASH_SOURCE=${BASH_SOURCE}, REALPATH=${REALPATH}, SCRIPT_DIR=${SCRIPT_DIR}
 cd ${WORK_DIR}
 
 DATA_HOME=/data
-SRS_HOME=/usr/local/srs-stack
+SRS_HOME=/usr/local/oryx
 
 HELP=no
 VERBOSE=no

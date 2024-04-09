@@ -26,7 +26,7 @@ echo "Run setup at $WORK_DIR from $0"
 cd $WORK_DIR
 
 # The main directory.
-SRS_HOME=/usr/local/srs-stack
+SRS_HOME=/usr/local/oryx
 DATA_HOME=/data
 IMAGE_URL=registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:5
 SOURCE=$WORK_DIR

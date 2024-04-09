@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # The main directory.
-SRS_HOME=/usr/local/srs-stack
+SRS_HOME=/usr/local/oryx
 DATA_HOME=/data
 IMAGE_URL=docker.io/ossrs/oryx:v${application_version}
 echo "SRS_HOME=$SRS_HOME, DATA_HOME=$DATA_HOME, IMAGE_URL=$IMAGE_URL"

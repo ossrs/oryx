@@ -37,7 +37,7 @@ if [[ ! -s ${WORK_DIR}/containers/data/config/srs.vhost.conf ]]; then
     echo '# OK' > ${WORK_DIR}/containers/data/config/srs.vhost.conf
 fi
 
-# Current directory should be /usr/local/srs-stack/platform
+# Current directory should be /usr/local/oryx/platform
 # We don't check the exit value, see https://github.com/ossrs/srs/issues/3757
 /usr/local/srs/objs/srs $SRS_PARAMS
 if [[ $? -ne 0 ]]; then echo "Warning: SRS start with none zero, but might be ok, see #3757."; fi

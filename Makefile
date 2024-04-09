@@ -1,6 +1,6 @@
 .PHONY: default build build-no-ui install run uninstall upgrade test npm help clean
 
-PREFIX ?= /usr/local/srs-stack
+PREFIX ?= /usr/local/oryx
 __REAL_INSTALL = $(DESTDIR)$(PREFIX)
 
 default: build
@@ -42,7 +42,7 @@ else
 	rm -rf $(__REAL_INSTALL)/platform/containers/objs/*
 	rm -rf $(__REAL_INSTALL)/platform/containers/data/*
 	cp -rf usr $(__REAL_INSTALL)/usr
-	sed -i "s|/usr/local/srs-stack|$(PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/oryx.service
+	sed -i "s|/usr/local/oryx|$(PREFIX)|g" $(__REAL_INSTALL)/usr/lib/systemd/system/oryx.service
 endif
 
 uninstall:

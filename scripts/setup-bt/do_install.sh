@@ -4,7 +4,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 
 install_path=/www/server/panel/plugin/oryx
-SRS_HOME=/usr/local/srs-stack
+SRS_HOME=/usr/local/oryx
 DATA_HOME=/data
 
 # Update sysctl.conf and add if not exists. For example:
@@ -84,7 +84,7 @@ Uninstall() {
   fi
   echo "Remove oryx.service ok"
 
-  INSTALL_HOME=/usr/local/srs-stack
+  INSTALL_HOME=/usr/local/oryx
   rm -rf $INSTALL_HOME
   echo "Remove install $INSTALL_HOME ok"
 

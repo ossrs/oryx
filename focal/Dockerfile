@@ -51,4 +51,4 @@ COPY --from=upx /usr/local/bin/lego \
 ENV PORT=":2024" NODE_ENV=production CLOUD=DOCKER PLATFORM_DOCKER=on
 
 # Setup the work directory to platform.
-WORKDIR /usr/local/srs-stack/platform
+WORKDIR /usr/local/oryx/platform

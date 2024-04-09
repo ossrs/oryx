@@ -11,7 +11,7 @@ NGINX_PID=
 WWW_HOME=
 SITE_NAME=
 install_path=/www/server/panel/plugin/oryx
-SRS_HOME=/usr/local/srs-stack
+SRS_HOME=/usr/local/oryx
 DATA_HOME=/data
 
 HELP=no
