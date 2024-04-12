@@ -1,6 +1,6 @@
 certifi==2023.7.22
 charset-normalizer==3.2.0
-idna==3.4
+idna==3.7
 python-dotenv==1.0.0
 requests==2.31.0
 tencentcloud-sdk-python==3.0.953
