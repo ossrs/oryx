@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -256,4 +257,113 @@ func TestSystem_CandidateByHostIp(t *testing.T) {
 		r0 = errors.Errorf("invalid answer %v", answer)
 		return
 	}
+}
+
+func TestSystem_WithStream_PublishRtmpKickoff(t *testing.T) {
+	ctx, cancel := context.WithTimeout(logger.WithContext(context.Background()), time.Duration(*srsLongTimeout)*time.Millisecond)
+	defer cancel()
+
+	if *noMediaTest {
+		return
+	}
+
+	var r0, r1, r2, r3, r4, r5 error
+	defer func(ctx context.Context) {
+		if err := filterTestError(ctx.Err(), r0, r1, r2, r3, r4, r5); err != nil {
+			t.Errorf("Fail for err %+v", err)
+		} else {
+			logger.Tf(ctx, "test done")
+		}
+	}(ctx)
+
+	var pubSecret string
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/hooks/srs/secret/query", nil, &struct {
+		Publish *string `json:"publish"`
+	}{
+		Publish: &pubSecret,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	// Start FFmpeg to publish stream.
+	streamID := fmt.Sprintf("stream-%v-%v", os.Getpid(), rand.Int())
+	streamURL := fmt.Sprintf("%v/live/%v?secret=%v", *endpointRTMP, streamID, pubSecret)
+	ffmpeg := NewFFmpeg(func(v *ffmpegClient) {
+		v.args = []string{
+			"-re", "-stream_loop", "-1", "-i", *srsInputFile, "-c", "copy",
+			"-f", "flv", streamURL,
+		}
+	})
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r1 = ffmpeg.Run(ctx, cancel)
+	}()
+
+	// Wait for stream to be ready.
+	select {
+	case <-ctx.Done():
+	case <-time.After(5 * time.Second):
+	}
+
+	// Query all streams.
+	type StreamQueryResult struct {
+		Vhost  string `json:"vhost"`
+		App    string `json:"app"`
+		Stream string `json:"stream"`
+		Client string `json:"client_id"`
+	}
+	var streams []StreamQueryResult
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/streams/query", nil, &struct {
+		Streams *[]StreamQueryResult `json:"streams"`
+	}{
+		Streams: &streams,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	// Find the target stream.
+	var stream *StreamQueryResult
+	for _, s := range streams {
+		if s.Stream == streamID {
+			stream = &s
+			break
+		}
+	}
+	if stream == nil {
+		r0 = errors.Errorf("stream %v not found", streamID)
+		return
+	}
+
+	// Kickoff the stream.
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/streams/kickoff", stream, nil); err != nil {
+		r0 = err
+		return
+	}
+
+	streams = nil
+	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/streams/query", nil, &struct {
+		Streams *[]StreamQueryResult `json:"streams"`
+	}{
+		Streams: &streams,
+	}); err != nil {
+		r0 = err
+		return
+	}
+
+	for _, s := range streams {
+		if s.Stream == streamID {
+			r0 = errors.Errorf("stream %v should be kicked off", streamID)
+			return
+		}
+	}
+
+	time.Sleep(3 * time.Second)
+	logger.Tf(ctx, "kickoff ok")
+	cancel()
 }

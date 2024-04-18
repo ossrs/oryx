@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
 import React from "react";
-import {Accordion, Container, Form, Button, Tabs, Tab, Spinner, Stack, Badge} from "react-bootstrap";
+import {Accordion, Container, Form, Button, Tabs, Tab, Spinner, Stack, Badge, Table} from "react-bootstrap";
 import {Clipboard, Token} from "../utils";
 import axios from "axios";
 import {useSearchParams} from "react-router-dom";
@@ -12,6 +12,8 @@ import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 import {useTranslation} from "react-i18next";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
+import moment from "moment";
+import PopoverConfirm from "../components/PopoverConfirm";
 
 export default function Systems() {
   return (
@@ -78,6 +80,9 @@ function SettingsImpl2({defaultActiveTab}) {
           </Tab>
           <Tab eventKey="limits" title={t('settings.tabLimits')}>
             <SettingLimits />
+          </Tab>
+          <Tab eventKey="streams" title={t('settings.tabStreams')}>
+            <SettingStreams />
           </Tab>
           <Tab eventKey="callback" title={t('settings.tabCallback')}>
             <SettingCallback />
@@ -409,6 +414,79 @@ function SettingCallbackImpl({activeKey, defaultEnabled, defaultConf}) {
       </Accordion.Body>
     </Accordion.Item>
   </Accordion>;
+}
+
+function SettingStreams() {
+  const handleError = useErrorHandler();
+  const {t} = useTranslation();
+  const [streams, setStreams] = React.useState();
+  const [refresh, setRefresh] = React.useState(false);
+
+  React.useEffect(() => {
+    axios.post('/terraform/v1/mgmt/streams/query', {
+    }, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      if (res.data.data?.streams?.length) {
+        setStreams(res.data.data.streams.map((e) => {
+          return {...e, update: moment(e.update)};
+        }));
+      } else {
+        setStreams(null);
+      }
+      console.log(`Streams: refresh=${refresh}, query ${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError, setStreams, refresh]);
+
+  const removeStream = React.useCallback((stream) => {
+    axios.post('/terraform/v1/mgmt/streams/kickoff', {
+      vhost: stream.vhost, app: stream.app, stream: stream.stream, client_id: stream.client_id,
+    }, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      setRefresh(!refresh);
+      console.log(`Streams: kickoff ${JSON.stringify(res.data.data)}`);
+    }).catch(handleError);
+  }, [handleError, refresh, setRefresh]);
+
+  return (
+    <Accordion defaultActiveKey={["1"]} alwaysOpen>
+      <Accordion.Item eventKey="1">
+        <Accordion.Header>{t('settings.activeStreams')}</Accordion.Header>
+        <Accordion.Body>
+          {!streams && "No streams"}
+          {streams && <Table striped bordered hover>
+            <thead>
+            <tr>
+              <th>#</th>
+              <th>URL</th>
+              <th>Server</th>
+              <th>Client</th>
+              <th>Updated</th>
+              <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+              {streams && streams.map((stream, index) => {
+                return <tr key={`${stream.app}/${stream.stream}`} className="mb-3">
+                  <td>{index + 1}</td>
+                  <td>{stream.app}/{stream.stream}</td>
+                  <td>{stream.server_id}</td>
+                  <td>{stream.client_id}</td>
+                  <td>{stream.update.format('YYYY-MM-DD HH:mm:ss')}</td>
+                  <td>
+                    <PopoverConfirm placement='top' trigger={ <a href='#!'>{t('helper.kickoff')}</a> } onClick={() => removeStream(stream)}>
+                      <p>{t('settings.kickoff')}</p>
+                    </PopoverConfirm>
+                  </td>
+                </tr>;
+              })}
+            </tbody>
+          </Table>}
+        </Accordion.Body>
+      </Accordion.Item>
+    </Accordion>
+  );
 }
 
 function SettingLimits() {

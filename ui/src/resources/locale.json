@@ -59,6 +59,7 @@
         "secretSubmit": "设置账号"
       },
       "settings": {
+        "kickoff": "断开推流连接，会导致流中断",
         "footer": "设置备案信息成功，请刷新页面",
         "header": "设置网站标题成功，请刷新页面",
         "sshEnable": "授权平台管理员访问成功",
@@ -81,6 +82,7 @@
         "tabLimit": "限流",
         "tabFooter": "网站",
         "tabLimits": "限流",
+        "tabStreams": "流管理",
         "tabCallback": "回调",
         "tabTool": "工具",
         "tabPlatform": "平台",
@@ -104,6 +106,7 @@
         "limitsVLive": "虚拟直播码率",
         "limitsCamera": "摄像头直播码率",
         "limitsTitle": "限流设置",
+        "activeStreams": "活跃流列表",
         "footerTitle": "设置页脚(备案信息)",
         "footerIcp": "ICP备案号",
         "footerHolder": "例如：京ICP备XXXXXXXX号-X",
@@ -217,6 +220,7 @@
         "nofile": "未选择任何文件"
       },
       "helper": {
+        "kickoff": "踢流",
         "manage": "管理",
         "delete": "删除",
         "start": "开始",
@@ -1103,6 +1107,7 @@
         "secretSubmit": "Submit"
       },
       "settings": {
+        "kickoff": "Kickoff active stream, which will cause the stream unavailable.",
         "footer": "Set the footer ok",
         "header": "Set the header ok",
         "sshEnable": "Enable SSH for platform admin ok",
@@ -1125,6 +1130,7 @@
         "tabLimit": "Limit",
         "tabFooter": "Website",
         "tabLimits": "Limits",
+        "tabStreams": "Streams",
         "tabCallback": "Callback",
         "tabTool": "Tools",
         "tabPlatform": "Platform",
@@ -1148,6 +1154,7 @@
         "limitsVLive": "Virtual Live Event Bitrate",
         "limitsCamera": "Camera Streaming Bitrate",
         "limitsTitle": "Set Limits",
+        "activeStreams": "Active Streams",
         "footerTitle": "Set Footer",
         "footerIcp": "Footer",
         "footerHolder": "For example: Welcome to my site",
@@ -1261,6 +1268,7 @@
         "nofile": "No file choosen"
       },
       "helper": {
+        "kickoff": "Kickoff",
         "manage": "Manage",
         "delete": "Delete",
         "start": "Start",

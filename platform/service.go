@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/joho/godotenv"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -277,6 +278,8 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	handleMgmtSsl(ctx, handler)
 	handleMgmtLetsEncrypt(ctx, handler)
 	handleMgmtCertQuery(ctx, handler)
+	handleMgmtStreamsQuery(ctx, handler)
+	handleMgmtStreamsKickoff(ctx, handler)
 	handleMgmtUI(ctx, handler)
 
 	proxy2023, err := httpCreateProxy("http://127.0.0.1:2023")
@@ -1392,6 +1395,164 @@ func handleMgmtCertQuery(ctx context.Context, handler *http.ServeMux) {
 			logger.Tf(ctx, "query cert ok, provider=%v, domain=%v, key=%vB, crt=%vB, token=%vB",
 				provider, domain, len(key), len(crt), len(token),
 			)
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+}
+
+func handleMgmtStreamsQuery(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/streams/query"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token *string `json:"token"`
+			}{
+				Token: &token,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			streams, err := rdb.HGetAll(ctx, SRS_STREAM_ACTIVE).Result()
+			if err != nil {
+				return errors.Wrapf(err, "hgetall %v", SRS_STREAM_ACTIVE)
+			}
+
+			var streamObjects []*SrsStream
+			for _, value := range streams {
+				var stream SrsStream
+				if err := json.Unmarshal([]byte(value), &stream); err != nil {
+					return errors.Wrapf(err, "unmarshal %v", value)
+				}
+
+				streamObjects = append(streamObjects, &stream)
+			}
+
+			ohttp.WriteData(ctx, w, r, &struct {
+				Streams []*SrsStream `json:"streams"`
+			}{
+				streamObjects,
+			})
+			logger.Tf(ctx, "query streams ok, streams=%v, token=%vB", len(streamObjects), len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+}
+
+// See SRS error code ERROR_RTMP_CLIENT_NOT_FOUND
+const ErrorRtmpClientNotFound = 2049
+
+func handleMgmtStreamsKickoff(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/streams/kickoff"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var vhost, app, stream, clientID string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token    *string `json:"token"`
+				Vhost    *string `json:"vhost"`
+				App      *string `json:"app"`
+				Stream   *string `json:"stream"`
+				ClientID *string `json:"client_id"`
+			}{
+				Token: &token, Vhost: &vhost, App: &app, Stream: &stream, ClientID: &clientID,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			if vhost == "" {
+				return errors.New("no vhost")
+			}
+			if app == "" {
+				return errors.New("no app")
+			}
+			if stream == "" {
+				return errors.New("no stream")
+			}
+
+			streamObject := &SrsStream{Vhost: vhost, App: app, Stream: stream}
+			streamURL := streamObject.StreamURL()
+			if target, err := rdb.HGet(ctx, SRS_STREAM_ACTIVE, streamURL).Result(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v %v", SRS_STREAM_ACTIVE, streamURL)
+			} else if target == "" {
+				return errors.Errorf("stream not found %v", streamURL)
+			}
+
+			// Start request and parse the code.
+			requestClient := func(ctx context.Context, clientURL, method string) (int, string, error) {
+				req, err := http.NewRequest(method, clientURL, nil)
+				if err != nil {
+					return 0, "", errors.Wrapf(err, "new request")
+				}
+
+				res, err := http.DefaultClient.Do(req.WithContext(ctx))
+				if err != nil {
+					return 0, "", errors.Wrapf(err, "do request")
+				}
+				defer res.Body.Close()
+
+				b, err := io.ReadAll(res.Body)
+				if err != nil {
+					return 0, "", errors.Wrapf(err, "http read body")
+				}
+
+				if res.StatusCode != http.StatusOK {
+					return 0, "", errors.Errorf("status %v", res.StatusCode)
+				}
+
+				var code int
+				if err := json.Unmarshal(b, &struct {
+					Code *int `json:"code"`
+				}{
+					Code: &code,
+				}); err != nil {
+					return 0, "", errors.Wrapf(err, "unmarshal %v", string(b))
+				}
+				return code, string(b), nil
+			}
+
+			// Whether client exists in SRS server.
+			var code int
+			clientURL := fmt.Sprintf("http://127.0.0.1:1985/api/v1/clients/%v", clientID)
+			if r0, body, err := requestClient(ctx, clientURL, http.MethodGet); err != nil {
+				return errors.Wrapf(err, "http query client %v", clientURL)
+			} else if r0 != 0 && r0 != ErrorRtmpClientNotFound {
+				return errors.Errorf("invalid code=%v, body=%v", r0, body)
+			} else {
+				code = r0
+			}
+
+			// Kickoff if exists, ignore if not.
+			if code == 0 {
+				if r0, body, err := requestClient(ctx, clientURL, http.MethodDelete); err != nil {
+					return errors.Wrapf(err, "kickoff %v, body %v", clientURL, body)
+				} else if r0 != 0 && r0 != ErrorRtmpClientNotFound {
+					return errors.Errorf("invalid code=%v, body=%v", r0, body)
+				}
+			}
+
+			if err := rdb.HDel(ctx, SRS_STREAM_ACTIVE, streamURL).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hdel %v %v", SRS_STREAM_ACTIVE, streamURL)
+			}
+
+			ohttp.WriteData(ctx, w, r, nil)
+			logger.Tf(ctx, "kickoff stream ok, code=%v, token=%vB", code, len(token))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

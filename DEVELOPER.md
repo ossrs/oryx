@@ -897,6 +897,15 @@ API without any authentication:
 * `/terraform/v1/ai/transcript/hls/original/:uuid.m3u8` Generate the preview HLS for original stream without overlay text.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/ai-talk/stage/hello-voices/:file.aac` AI-Talk: Play the example audios.
+* `/.well-known/acme-challenge/` HTTPS verify mount for letsencrypt.
+* For SRS proxy:
+  * `/rtc/` Proxy for SRS: HTTP API for WebRTC of SRS media server.
+  * `/*/*.(flv|m3u8|ts|aac|mp3)` Proxy for SRS: Media stream for HTTP-FLV, HLS, HTTP-TS, HTTP-AAC, HTTP-MP3.
+* For static files:
+  * `/tools/` A set of H5 tools, like simple player, xgplayer, etc, serve by mgmt.
+  * `/console/` The SRS console, serve by mgmt.
+  * `/players/` The SRS player, serve by mgmt.
+  * `/mgmt/` The ui for mgmt, serve by mgmt.
 
 API without token authentication, but with password authentication:
 
@@ -923,6 +932,8 @@ Platform, with token authentication:
 * `/terraform/v1/mgmt/hooks/apply` Update the HTTP callback.
 * `/terraform/v1/mgmt/hooks/query` Query the HTTP callback.
 * `/terraform/v1/mgmt/hooks/example` Example target for HTTP callback.
+* `/terraform/v1/mgmt/streams/query` Query the active streams.
+* `/terraform/v1/mgmt/streams/kickoff` Kickoff the stream by name.
 * `/terraform/v1/hooks/srs/verify` Hooks: Verify the stream request URL of SRS.
 * `/terraform/v1/hooks/srs/secret/query` Hooks: Query the secret to generate stream URL.
 * `/terraform/v1/hooks/srs/secret/update` Hooks: Update the secret to generate stream URL.
@@ -987,19 +998,9 @@ Platform, with token authentication:
 * `/terraform/v1/ai/transcript/fix-queue` Query the fix queue of transcript.
 * `/terraform/v1/ai/transcript/overlay-queue` Query the overlay queue of transcript.
 
-Also provided by platform for market:
+Also provided by platform for SRS proxy:
 
 * `/api/` SRS: HTTP API of SRS media server. With token authentication.
-* `/rtc/` SRS: HTTP API for WebRTC of SRS media server. Without authentication.
-* `/*/*.(flv|m3u8|ts|aac|mp3)` SRS: Media stream for HTTP-FLV, HLS, HTTP-TS, HTTP-AAC, HTTP-MP3. Without authentication.
-* `/.well-known/acme-challenge/` HTTPS verify mount for letsencrypt. Without authentication.
-
-Also provided by platform for static Files:
-
-* `/tools/` A set of H5 tools, like simple player, xgplayer, etc, serve by mgmt. Without authentication.
-* `/console/` The SRS console, serve by mgmt. Without authentication.
-* `/players/` The SRS player, serve by mgmt. Without authentication.
-* `/mgmt/` The ui for mgmt, serve by mgmt. Without authentication.
 
 **Deprecated** API:
 
@@ -1160,6 +1161,7 @@ The following are the update records for the Oryx server.
     * Use port 80/443 by default in README. v5.14.14 
     * Use fastfail for test and utest. v5.14.15
     * Rename project to Oryx.[v5.14.15](https://github.com/ossrs/oryx/releases/tag/v5.14.15)
+    * API: Support kickoff stream by name. v5.14.16
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
