@@ -542,7 +542,8 @@ func (v *StageRequest) asrAudioToText(ctx context.Context, aiConfig openai.Clien
 			strings.Contains(asrText, "支持明鏡與點點欄目") {
 			return errors.Errorf("badcase: %v", asrText)
 		}
-		if strings.Contains(asrText, "字幕由") && strings.Contains(asrText, "社群提供") {
+		if (strings.Contains(asrText, "字幕由") && strings.Contains(asrText, "社群提供")) ||
+			strings.Contains(asrText, "社群提供的字幕") || strings.Contains(asrText, "我是Amara.org") {
 			return errors.Errorf("badcase: %v", asrText)
 		}
 	} else if asrLanguage == "en" {
