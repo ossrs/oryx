@@ -315,7 +315,6 @@ func TestSystem_WithStream_PublishRtmpKickoff(t *testing.T) {
 		Vhost  string `json:"vhost"`
 		App    string `json:"app"`
 		Stream string `json:"stream"`
-		Client string `json:"client_id"`
 	}
 	var streams []StreamQueryResult
 	if err := NewApi().WithAuth(ctx, "/terraform/v1/mgmt/streams/query", nil, &struct {

@@ -440,7 +440,7 @@ function SettingStreams() {
 
   const removeStream = React.useCallback((stream) => {
     axios.post('/terraform/v1/mgmt/streams/kickoff', {
-      vhost: stream.vhost, app: stream.app, stream: stream.stream, client_id: stream.client_id,
+      vhost: stream.vhost, app: stream.app, stream: stream.stream,
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {

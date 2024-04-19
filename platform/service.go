@@ -1458,15 +1458,14 @@ func handleMgmtStreamsKickoff(ctx context.Context, handler *http.ServeMux) {
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
-			var vhost, app, stream, clientID string
+			var vhost, app, stream string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string `json:"token"`
-				Vhost    *string `json:"vhost"`
-				App      *string `json:"app"`
-				Stream   *string `json:"stream"`
-				ClientID *string `json:"client_id"`
+				Token  *string `json:"token"`
+				Vhost  *string `json:"vhost"`
+				App    *string `json:"app"`
+				Stream *string `json:"stream"`
 			}{
-				Token: &token, Vhost: &vhost, App: &app, Stream: &stream, ClientID: &clientID,
+				Token: &token, Vhost: &vhost, App: &app, Stream: &stream,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -1492,6 +1491,12 @@ func handleMgmtStreamsKickoff(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "hget %v %v", SRS_STREAM_ACTIVE, streamURL)
 			} else if target == "" {
 				return errors.Errorf("stream not found %v", streamURL)
+			} else if err := json.Unmarshal([]byte(target), &streamObject); err != nil {
+				return errors.Wrapf(err, "unmarshal %v", target)
+			}
+
+			if streamObject.Client == "" {
+				return errors.Errorf("no client_id for %v", streamURL)
 			}
 
 			// Start request and parse the code.
@@ -1529,7 +1534,7 @@ func handleMgmtStreamsKickoff(ctx context.Context, handler *http.ServeMux) {
 
 			// Whether client exists in SRS server.
 			var code int
-			clientURL := fmt.Sprintf("http://127.0.0.1:1985/api/v1/clients/%v", clientID)
+			clientURL := fmt.Sprintf("http://127.0.0.1:1985/api/v1/clients/%v", streamObject.Client)
 			if r0, body, err := requestClient(ctx, clientURL, http.MethodGet); err != nil {
 				return errors.Wrapf(err, "http query client %v", clientURL)
 			} else if r0 != 0 && r0 != ErrorRtmpClientNotFound {
