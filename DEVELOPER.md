@@ -1162,6 +1162,7 @@ The following are the update records for the Oryx server.
     * Use fastfail for test and utest. v5.14.15
     * Rename project to Oryx.[v5.14.15](https://github.com/ossrs/oryx/releases/tag/v5.14.15)
     * API: Support kickoff stream by name. v5.14.16
+    * AI-Talk: Refine the delay of ASR to 3s. v5.14.17
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2

@@ -14,8 +14,8 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
 
   // The timeout in milliseconds.
   const timeoutForMicrophoneTestToRun = 50;
-  const timeoutWaitForMicrophoneToClose = 900;
-  const timeoutWaitForLastVoice = 700;
+  const timeoutWaitForMicrophoneToClose = 300;
+  const timeoutWaitForLastVoice = 200;
   const durationRequiredUserInput = 600;
 
   // The player ref, to access the audio player.
@@ -68,21 +68,32 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
     setErrorLogs(ref.current.errorLogs);
   }, [setErrorLogs, ref]);
 
-  const traceLog = React.useCallback((role, msg, variant, ignoreMerge) => {
-    setTraceCount(++ref.current.traceCount);
+  const traceLog = React.useCallback((mid, rid, role, msg, variant) => {
+    // Find the last matched log with the same rid.
+    const lastMatched = ref.current.traceLogs.find((log) => log.rid === rid);
 
-    // Merge to last log with the same role.
-    if (ref.current.traceLogs.length > 0 && !ignoreMerge) {
-      const last = ref.current.traceLogs[ref.current.traceLogs.length - 1];
-      if (last.role === role) {
-        last.msg = `${last.msg}${msg}`;
-        setTraceLogs([...ref.current.traceLogs]);
-        return;
+    // Create a new message object.
+    const newMessage = {id: mid, rid, role, msg, variant};
+
+    if (!lastMatched) {
+      // Create a new log if not found.
+      ref.current.traceLogs = [...ref.current.traceLogs, {
+        rid, messages: [newMessage],
+      }];
+    } else {
+      // Find the last matched message with the same role.
+      const lastMessage = lastMatched.messages.find((m) => m.role === role);
+
+      if (!lastMessage) {
+        // Create a new message if not found.
+        lastMatched.messages = [...lastMatched.messages, newMessage];
+      } else {
+        // Merge to last log with the same role.
+        lastMessage.msg = `${lastMessage.msg}${msg}`;
       }
     }
 
-    const rid = `id-${Math.random().toString(16).slice(-4)}${new Date().getTime().toString(16).slice(-4)}`;
-    ref.current.traceLogs = [...ref.current.traceLogs, {id: rid, role, msg, variant}];
+    setTraceCount(++ref.current.traceCount);
     setTraceLogs(ref.current.traceLogs);
   }, [setTraceLogs, ref, setTraceCount]);
 
@@ -317,7 +328,7 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
 
         axios.post('/terraform/v1/ai-talk/stage/upload', {
           room: roomUUID, roomToken, sid: stageUUID, rid: requestUUID, userId: userID,
-          umi: userMayInput, audio: audioBase64Data,
+          umi: userMayInput, audio: audioBase64Data, mergeMessages: 0,
         }, {
           headers: Token.loadBearerHeader(),
         }).then(res => {
@@ -437,7 +448,7 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
       await new Promise((resolve, reject) => {
         axios.post('/terraform/v1/ai-talk/stage/upload', {
           room: roomUUID, roomToken, sid: stageUUID, rid: requestUUID, userId: userID,
-          text: text,
+          text: text, mergeMessages: 0,
         }, {
           headers: Token.loadBearerHeader(),
         }).then(res => {
@@ -526,12 +537,12 @@ export function AITalkAssistantPanel({roomUUID, roomToken, username, userLanguag
         for (let i = 0; i < msgs.length; i++) {
           const msg = msgs[i];
           if (msg.role === 'user') {
-            traceLog(msg.username || 'You', msg.msg, 'primary', msg.sentence);
+            traceLog(msg.mid, msg.rid, msg.username || 'You', msg.msg, 'primary');
             continue;
           }
 
           const audioSegmentUUID = msg.asid;
-          traceLog(msg.username || 'Bot', msg.msg, 'success', msg.sentence);
+          traceLog(msg.mid, msg.rid, msg.username || 'Bot', msg.msg, 'success');
 
           // No audio file, skip it.
           if (!msg.hasAudio) {
@@ -701,21 +712,32 @@ export function AITalkChatOnlyPanel({roomUUID, roomToken}) {
     setErrorLogs(ref.current.errorLogs);
   }, [setErrorLogs, ref]);
 
-  const traceLog = React.useCallback((role, msg, variant, ignoreMerge) => {
-    setTraceCount(++ref.current.traceCount);
+  const traceLog = React.useCallback((mid, rid, role, msg, variant) => {
+    // Find the last matched log with the same rid.
+    const lastMatched = ref.current.traceLogs.find((log) => log.rid === rid);
 
-    // Merge to last log with the same role.
-    if (ref.current.traceLogs.length > 0 && !ignoreMerge) {
-      const last = ref.current.traceLogs[ref.current.traceLogs.length - 1];
-      if (last.role === role) {
-        last.msg = `${last.msg}${msg}`;
-        setTraceLogs([...ref.current.traceLogs]);
-        return;
+    // Create a new message object.
+    const newMessage = {id: mid, rid, role, msg, variant};
+
+    if (!lastMatched) {
+      // Create a new log if not found.
+      ref.current.traceLogs = [...ref.current.traceLogs, {
+        rid, messages: [newMessage],
+      }];
+    } else {
+      // Find the last matched message with the same role.
+      const lastMessage = lastMatched.messages.find((m) => m.role === role);
+
+      if (!lastMessage) {
+        // Create a new message if not found.
+        lastMatched.messages = [...lastMatched.messages, newMessage];
+      } else {
+        // Merge to last log with the same role.
+        lastMessage.msg = `${lastMessage.msg}${msg}`;
       }
     }
 
-    const rid = `id-${Math.random().toString(16).slice(-4)}${new Date().getTime().toString(16).slice(-4)}`;
-    ref.current.traceLogs = [...ref.current.traceLogs, {id: rid, role, msg, variant}];
+    setTraceCount(++ref.current.traceCount);
     setTraceLogs(ref.current.traceLogs);
   }, [setTraceLogs, ref, setTraceCount]);
 
@@ -848,12 +870,12 @@ export function AITalkChatOnlyPanel({roomUUID, roomToken}) {
         for (let i = 0; i < msgs.length; i++) {
           const msg = msgs[i];
           if (msg.role === 'user') {
-            traceLog(msg.username, msg.msg, 'primary', msg.sentence);
+            traceLog(msg.mid, msg.rid, msg.username, msg.msg, 'primary');
             return;
           }
 
           const audioSegmentUUID = msg.asid;
-          traceLog(msg.username, msg.msg, 'success', msg.sentence);
+          traceLog(msg.mid, msg.rid, msg.username, msg.msg, 'success');
 
           // Play the AI generated audio.
           await new Promise(resolve => {
@@ -1197,11 +1219,13 @@ function AITalkTraceLogPC({traceLogs, traceCount, children, roomUUID, roomToken}
           <div className='ai-talk-msgs-pc' ref={logPanelRef}>
             {children}
             {traceLogs.map((log) => {
-              return (
-                <Alert key={log.id} variant={log.variant} className='ai-talk-msgs-card'>
-                  {log.role}: {log.msg}
-                </Alert>
-              );
+              return <>{log.messages.map((msg) => {
+                return (
+                  <Alert key={msg.id} variant={msg.variant} className='ai-talk-msgs-card'>
+                    {msg.role}: {msg.msg}
+                  </Alert>
+                );
+              })}</>;
             })}
           </div>
         </Card.Body>
@@ -1222,11 +1246,13 @@ function AITalkTraceLogMobile({traceLogs, traceCount}) {
   return (
     <div className='ai-talk-msgs-chat-mobile' ref={logPanelRef}>
       {traceLogs.map((log) => {
-        return (
-          <Alert key={log.id} variant={log.variant} className='ai-talk-msgs-card'>
-            {log.role}: {log.msg}
-          </Alert>
-        );
+        return <>{log.messages.map((msg) => {
+          return (
+            <Alert key={msg.id} variant={msg.variant} className='ai-talk-msgs-card'>
+              {msg.role}: {msg.msg}
+            </Alert>
+          );
+        })}</>;
       })}
     </div>
   );
@@ -1244,11 +1270,13 @@ function AITalkTraceLogChatOnly({traceLogs, traceCount}) {
   return (
     <div className='ai-talk-msgs-text-only' ref={logPanelRef}>
       {traceLogs.map((log) => {
-        return (
-          <Alert key={log.id} variant={log.variant}>
-            {log.role}: {log.msg}
-          </Alert>
-        );
+        return <>{log.messages.map((msg) => {
+          return (
+            <Alert key={msg.id} variant={msg.variant}>
+              {msg.role}: {msg.msg}
+            </Alert>
+          );
+        })}</>;
       })}
     </div>
   );

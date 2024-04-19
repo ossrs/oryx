@@ -1367,9 +1367,6 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, sreq *Stage
 	}()
 }
 
-// Merge ASR text of conversations, which is small duration audio segment.
-const mergeConversations = 3
-
 func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 	// TODO: FIXME: Should use relative path, never expose absolute path to client.
 	aiTalkWorkDir = path.Join(conf.Pwd, "containers/data/ai-talk")
@@ -1608,6 +1605,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			var roomUUID, roomToken string
 			var userMayInput float64
 			var audioBase64Data, textMessage string
+			var mergeMessages int
 			if err := ParseBody(ctx, r.Body, &struct {
 				Token        *string  `json:"token"`
 				RoomUUID     *string  `json:"room"`
@@ -1618,10 +1616,12 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				UserMayInput *float64 `json:"umi"`
 				AudioData    *string  `json:"audio"`
 				TextMessage  *string  `json:"text"`
+				// Merge ASR text of conversations, which is small duration audio segment.
+				MergeMessages *int `json:"mergeMessages"`
 			}{
 				Token: &token, StageUUID: &sid, UserID: &userID, RequestUUID: &rid,
 				UserMayInput: &userMayInput, TextMessage: &textMessage, AudioData: &audioBase64Data,
-				RoomUUID: &roomUUID, RoomToken: &roomToken,
+				RoomUUID: &roomUUID, RoomToken: &roomToken, MergeMessages: &mergeMessages,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -1726,7 +1726,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// If merge conversation to next one, we do not submit to chat and post processing.
 			conversations := stage.queryPreviousNotMergedRequests(sreq)
-			mergeToNextConversation := len(conversations) < mergeConversations
+			mergeToNextConversation := mergeMessages > 0 && len(conversations) < mergeMessages
 			if !mergeToNextConversation {
 				sreq.merged, user.previousAsrText = true, ""
 				// Generate the merged text for chat input.
