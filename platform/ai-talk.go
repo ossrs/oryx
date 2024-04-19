@@ -460,6 +460,8 @@ type StageRequest struct {
 	asrText string
 	// Whether the request is finished.
 	finished bool
+	// Whether merged to the next request.
+	merged bool
 
 	// For time cost statistic.
 	lastSentence time.Time
@@ -645,6 +647,7 @@ type StageMessage struct {
 	// Whether it's a new sentence.
 	NewSentence bool `json:"sentence,omitempty"`
 
+	// TODO: FIXME: Support message category, such as asr, chat, post, etc.
 	// For role text.
 	// The message content.
 	Message string `json:"msg"`
@@ -1097,6 +1100,31 @@ func (v *Stage) queryRequest(rid string) *StageRequest {
 	return nil
 }
 
+func (v *Stage) queryPreviousNotMergedRequests(from *StageRequest) []*StageRequest {
+	var requests []*StageRequest
+	var matched bool
+	for i := len(v.requests) - 1; i >= 0; i-- {
+		request := v.requests[i]
+
+		// Ignore requests after the from request.
+		if request == from {
+			matched = true
+		}
+		if !matched {
+			continue
+		}
+
+		// Only return not merged requests.
+		if request.merged {
+			break
+		}
+
+		// Insert request to the head of list.
+		requests = append([]*StageRequest{request}, requests...)
+	}
+	return requests
+}
+
 func (v *Stage) addSubscriber(subscriber *StageSubscriber) {
 	v.subscribers = append(v.subscribers, subscriber)
 }
@@ -1339,6 +1367,9 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, sreq *Stage
 	}()
 }
 
+// Merge ASR text of conversations, which is small duration audio segment.
+const mergeConversations = 3
+
 func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 	// TODO: FIXME: Should use relative path, never expose absolute path to client.
 	aiTalkWorkDir = path.Join(conf.Pwd, "containers/data/ai-talk")
@@ -1549,6 +1580,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			// The rid is the request id, which identify this request, generally a question.
 			sreq := &StageRequest{rid: uuid.NewString(), stage: stage}
 			sreq.lastSentence = time.Now()
+			// TODO: FIMXE: Should cleanup finished requests.
 			stage.addRequest(sreq)
 
 			// Keep alive the stage.
@@ -1692,9 +1724,20 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			// Keep alive the stage.
 			stage.KeepAlive()
 
+			// If merge conversation to next one, we do not submit to chat and post processing.
+			conversations := stage.queryPreviousNotMergedRequests(sreq)
+			mergeToNextConversation := len(conversations) < mergeConversations
+			if !mergeToNextConversation {
+				sreq.merged, user.previousAsrText = true, ""
+				// Generate the merged text for chat input.
+				for _, conversation := range conversations {
+					user.previousAsrText += conversation.asrText
+				}
+			}
+
 			// Do chat, get the response in stream.
 			chatTaskCtx, chatTaskCancel := context.WithCancel(context.Background())
-			if stage.aiChatEnabled {
+			if !mergeToNextConversation && stage.aiChatEnabled {
 				chatService := &openaiChatService{
 					conf: stage.aiConfig,
 					onFirstResponse: func(ctx context.Context, text string) {
@@ -1708,7 +1751,8 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// Do AI post-process ,get the response in stream.
-			if stage.aiChatEnabled && stage.aiPostEnabled {
+			// TODO: FIXME: Should use a goroutine to do post-process.
+			if !mergeToNextConversation && stage.aiChatEnabled && stage.aiPostEnabled {
 				// Wait for chat to be completed.
 				select {
 				case <-ctx.Done():

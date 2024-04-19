@@ -14,9 +14,9 @@ export function AITalkDictationPanel({roomUUID, roomToken, username, userLanguag
 
   // The timeout in milliseconds.
   const timeoutForMicrophoneTestToRun = 50;
-  const timeoutWaitForMicrophoneToClose = 900;
-  const timeoutWaitForLastVoice = 700;
-  const maxSegmentTime = 10 * 1000; // in ms.
+  const timeoutWaitForMicrophoneToClose = 300;
+  const timeoutWaitForLastVoice = 200;
+  const maxSegmentTime = 3 * 1000; // in ms.
 
   // The player ref, to access the audio player.
   const playerRef = React.useRef(null);
