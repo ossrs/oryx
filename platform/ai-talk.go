@@ -89,6 +89,19 @@ func (v *openaiASRService) RequestASR(ctx context.Context, inputFile, language, 
 		return nil, errors.Wrapf(err, "asr")
 	}
 
+	// Silent detect, see https://platform.openai.com/docs/api-reference/audio/verbose-json-object
+	//		no_speech_prob Probability of no speech in the segment. If the value is higher than 1.0 and
+	//			the avg_logprob is below -1, consider this segment silent.
+	for _, segment := range resp.Segments {
+		if segment.NoSpeechProb > 0.8 {
+			return nil, errors.Errorf("silent detect, prob=%v, file=%v, text=%v",
+				segment.NoSpeechProb, outputFile, segment.Text)
+		} else if segment.NoSpeechProb > 0.5 {
+			logger.Wf(ctx, "might silent, prob=%v, file=%v, text=%v",
+				segment.NoSpeechProb, outputFile, segment.Text)
+		}
+	}
+
 	return &ASRResult{Text: resp.Text, Duration: time.Duration(resp.Duration * float64(time.Second))}, nil
 }
 
@@ -462,6 +475,8 @@ type StageRequest struct {
 	finished bool
 	// Whether merged to the next request.
 	merged bool
+	// Processing errors of this request.
+	errs []error
 
 	// For time cost statistic.
 	lastSentence time.Time
@@ -537,16 +552,16 @@ func (v *StageRequest) asrAudioToText(ctx context.Context, aiConfig openai.Clien
 		return errors.Errorf("empty asr")
 	}
 	if asrLanguage == "zh" {
-		if strings.Contains(asrText, "请不吝点赞") ||
-			strings.Contains(asrText, "支持明镜与点点栏目") ||
-			strings.Contains(asrText, "谢谢观看") ||
-			strings.Contains(asrText, "請不吝點贊") ||
-			strings.Contains(asrText, "支持明鏡與點點欄目") {
-			return errors.Errorf("badcase: %v", asrText)
+		blocks := []string{
+			"视频就拍到这里", "視頻就拍到這裡", "社群提供的字幕", "Amara.org社区", "by索兰娅",
+			"请不吝点赞", "谢谢观看", "感谢观看", "订阅我的频道", "多謝您收睇", "多谢您收听",
+			"多謝您的觀看", "多谢您的观看", "明镜与点点", "明鏡與點點", "视频就分享到这里",
+			"关 注 雪 鱼 探 店", "下次见! 再见!",
 		}
-		if (strings.Contains(asrText, "字幕由") && strings.Contains(asrText, "社群提供")) ||
-			strings.Contains(asrText, "社群提供的字幕") || strings.Contains(asrText, "我是Amara.org") {
-			return errors.Errorf("badcase: %v", asrText)
+		for _, block := range blocks {
+			if strings.Contains(asrText, block) {
+				return errors.Errorf("badcase: %v", asrText)
+			}
 		}
 	} else if asrLanguage == "en" {
 		if strings.ToLower(asrText) == "you" ||
@@ -1599,6 +1614,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 	ep = "/terraform/v1/ai-talk/stage/upload"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		var sreq *StageRequest
 		if err := func() error {
 			var token string
 			var sid, rid, userID string
@@ -1666,7 +1682,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			ctx = stage.loggingCtx
 
 			// Query the request.
-			sreq := stage.queryRequest(rid)
+			sreq = stage.queryRequest(rid)
 			if sreq == nil {
 				return errors.Errorf("invalid sid=%v, rid=%v", sid, rid)
 			}
@@ -1731,6 +1747,10 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				sreq.merged, user.previousAsrText = true, ""
 				// Generate the merged text for chat input.
 				for _, conversation := range conversations {
+					// If request has error, such as silent or other error, ignore the text.
+					if conversation.errs != nil {
+						continue
+					}
 					user.previousAsrText += conversation.asrText
 				}
 			}
@@ -1780,6 +1800,9 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				sid, sreq.rid, userID, sreq.asrText)
 			return nil
 		}(); err != nil {
+			if sreq != nil {
+				sreq.errs = append(sreq.errs, err)
+			}
 			ohttp.WriteError(ctx, w, r, err)
 		}
 	})
