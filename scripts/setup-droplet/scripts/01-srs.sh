@@ -13,7 +13,7 @@ SOURCE=/tmp/oryx
 echo "Install oryx at $SOURCE"
 for ((i=0; i<30; i++)); do
   cd $(dirname $SOURCE) && rm -rf oryx &&
-  git clone -b main --depth 1 https://github.com/ossrs/oryx.git &&
+  git clone -b release/5.14 --depth 1 https://github.com/ossrs/oryx.git &&
   GIT_DONE=YES
   if [[ $? -eq 0 ]]; then break; fi
   echo "Ignore error and try later..."; sleep 3;
