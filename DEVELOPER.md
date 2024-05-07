@@ -743,6 +743,34 @@ Be aware that the cache will store the CORS headers as well. This means that if 
 and obtain HLS without CORS, it will remain without CORS even when a request includes an 
 Origin header that necessitates CORS.
 
+## Product the Lightsail Installer
+
+Build the image with docker:
+
+```bash
+docker rm -f script 2>/dev/null &&
+docker rmi srs-script-dev 2>/dev/null || echo OK &&
+docker build -t srs-script-dev -f scripts/setup-ubuntu/Dockerfile.script .
+```
+
+Create a docker container in daemon:
+
+```bash
+docker rm -f script 2>/dev/null &&
+docker run -p 2022:2022 -p 2443:2443 -p 1935:1935 -p 8000:8000/udp -p 10080:10080/udp \
+    --env CANDIDATE=$(ifconfig en0 |grep 'inet ' |awk '{print $2}') \
+    --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host \
+    -d --rm -it -v $(pwd):/g -w /g --name=script srs-script-dev
+```
+
+> Note: For Linux server, please use `--privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro` to start docker.
+
+Install Oryx with script:
+
+```bash
+docker exec -it -w /tmp script bash /g/scripts/lightsail.sh 
+```
+
 ## Use HELM to Install Oryx
 
 Install [HELM](https://helm.sh/docs/intro/install/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/),
@@ -1164,6 +1192,7 @@ The following are the update records for the Oryx server.
     * API: Support kickoff stream by name. v5.14.16
     * AI-Talk: Refine the delay of ASR to 3s. [v5.14.17](https://github.com/ossrs/oryx/releases/tag/v5.14.17)
     * AI-Talk: Ignore silent ASR text. v5.14.18
+    * Refine installer for lightsail. [v5.14.19](https://github.com/ossrs/oryx/releases/tag/v5.14.19)
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
