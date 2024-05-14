@@ -1193,6 +1193,7 @@ The following are the update records for the Oryx server.
     * AI-Talk: Refine the delay of ASR to 3s. [v5.14.17](https://github.com/ossrs/oryx/releases/tag/v5.14.17)
     * AI-Talk: Ignore silent ASR text. v5.14.18
     * Refine installer for lightsail. [v5.14.19](https://github.com/ossrs/oryx/releases/tag/v5.14.19)
+    * Update model to gpt-3.5-turbo, gpt-4-turbo, gpt-4o. v5.14.20
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
