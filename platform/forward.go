@@ -1,8 +1,6 @@
-//
 // Copyright (c) 2022-2023 Winlin
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//
 package main
 
 import (
@@ -80,7 +78,9 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 				if userConf.Platform == "" {
 					return errors.New("no platform")
 				}
-				if !slicesContains(allowedPlatforms, userConf.Platform) {
+
+				// Platform should be specified platforms, or starts with forwarding-.
+				if !slicesContains(allowedPlatforms, userConf.Platform) && !strings.Contains(userConf.Platform, "forwarding-") {
 					return errors.Errorf("invalid platform=%v", userConf.Platform)
 				}
 
