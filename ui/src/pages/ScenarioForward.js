@@ -11,6 +11,7 @@ import moment from "moment";
 import {useErrorHandler} from "react-error-boundary";
 import {useSrsLanguage} from "../components/LanguageSwitch";
 import {useTranslation} from "react-i18next";
+import {SrsEnvContext} from "../components/SrsEnvContext";
 
 export default function ScenarioForward() {
   const [init, setInit] = React.useState();
@@ -54,6 +55,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
   const language = useSrsLanguage();
   const {t} = useTranslation();
   const handleError = useErrorHandler();
+  const env = React.useContext(SrsEnvContext)[0];
 
   const [configs, setConfigs] = React.useState([]);
   const [forwards, setForwards] = React.useState();
@@ -99,7 +101,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
     });
 
     // Generate more forwarding configures.
-    while (confs.length < 10) {
+    while (confs.length < env.forwardLimit) {
       const rindex = index++;
       const rid = Math.random().toString(16).slice(-6);
 

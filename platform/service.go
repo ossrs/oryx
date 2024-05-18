@@ -15,6 +15,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -595,6 +596,15 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "set %v %v", SRS_LOCALE, locale)
 			}
 
+			forwardLimit := 10
+			if os.Getenv("SRS_FORWARD_LIMIT") != "" {
+				if iv, err := strconv.ParseInt(os.Getenv("SRS_FORWARD_LIMIT"), 10, 64); err != nil {
+					return errors.Wrapf(err, "parse env SRS_FORWARD_LIMIT=%v", os.Getenv("SRS_FORWARD_LIMIT"))
+				} else {
+					forwardLimit = int(iv)
+				}
+			}
+
 			platformDocker := os.Getenv("PLATFORM_DOCKER") != "off"
 			candidate := os.Getenv("CANDIDATE") != ""
 			ohttp.WriteData(ctx, w, r, &struct {
@@ -612,19 +622,31 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 				SRTPort string `json:"srtPort"`
 				// The exposed RTC port.
 				RTCPort string `json:"rtcPort"`
+				// The limit of the number of forwarding streams.
+				ForwardLimit int `json:"forwardLimit"`
 			}{
-				MgmtDocker:     true,
+				// Whether in docker.
+				MgmtDocker: true,
+				// Whether platform in docker.
 				PlatformDocker: platformDocker,
-				Candidate:      candidate,
-				RTMPPort:       os.Getenv("RTMP_PORT"),
-				HTTPPort:       os.Getenv("HTTP_PORT"),
-				SRTPort:        os.Getenv("SRT_PORT"),
-				RTCPort:        os.Getenv("RTC_PORT"),
+				// The candidate IP for WebRTC.
+				Candidate: candidate,
+				// The export port for RTMP.
+				RTMPPort: os.Getenv("RTMP_PORT"),
+				// The export port for HTTP.
+				HTTPPort: os.Getenv("HTTP_PORT"),
+				// The export port for SRT.
+				SRTPort: os.Getenv("SRT_PORT"),
+				// The export port for WebRTC.
+				RTCPort: os.Getenv("RTC_PORT"),
+				// The limit of the number of forwarding streams.
+				ForwardLimit: forwardLimit,
 			})
 
-			logger.Tf(ctx, "mgmt envs ok, locale=%v, platformDocker=%v, candidate=%v, rtmpPort=%v, httpPort=%v, srtPort=%v, rtcPort=%v",
+			logger.Tf(ctx, "mgmt envs ok, locale=%v, platformDocker=%v, candidate=%v, rtmpPort=%v, httpPort=%v, srtPort=%v, rtcPort=%v, forwardLimit=%v",
 				locale, platformDocker, candidate, os.Getenv("RTMP_PORT"), os.Getenv("HTTP_PORT"),
-				os.Getenv("SRT_PORT"), os.Getenv("RTC_PORT"))
+				os.Getenv("SRT_PORT"), os.Getenv("RTC_PORT"), forwardLimit,
+			)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

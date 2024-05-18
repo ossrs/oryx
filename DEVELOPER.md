@@ -1103,6 +1103,10 @@ For multiple ports running in multiple containers in one host server:
 * `SRT_PORT`: The listen UDP port for SRT server. Default: `10080`
 * `RTC_PORT`: The listen UDP port for RTC server. Default: `8000`
 
+For limit that you can control:
+
+* `SRS_FORWARD_LIMIT`: The limit for SRS forward. Default: `10`.
+
 For feature control:
 
 * `NAME_LOOKUP`: `on|off`, whether enable the host name lookup, on or off. Default: `on`
