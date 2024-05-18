@@ -1,8 +1,6 @@
-//
 // Copyright (c) 2022-2023 Winlin
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//
 package main
 
 import (
@@ -69,7 +67,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -164,7 +162,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -232,7 +230,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -300,7 +298,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -391,7 +389,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			go func() {
 				// If the temporary file still exists for a long time, remove it
 				duration := 2 * time.Hour
-				if os.Getenv("NODE_ENV") == "development" {
+				if envNodeEnv() == "development" {
 					duration = time.Duration(30) * time.Second
 				}
 				time.Sleep(duration)
@@ -491,7 +489,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}

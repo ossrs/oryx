@@ -1,8 +1,6 @@
-//
 // Copyright (c) 2022-2023 Winlin
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//
 package main
 
 import (
@@ -11,7 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -241,7 +238,7 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 	}
 
 	// Report whether start as develop environment.
-	if os.Getenv("NODE_ENV") == "development" {
+	if envNodeEnv() == "development" {
 		params["dev"] = "1"
 	}
 
@@ -280,7 +277,7 @@ func queryLatestVersion(ctx context.Context) (*Versions, error) {
 		params["version"] = version
 		params["ts"] = fmt.Sprintf("%v", time.Now().UnixNano()/int64(time.Millisecond))
 		releaseServer := "https://api.ossrs.net"
-		if os.Getenv("LOCAL_RELEASE") == "on" {
+		if envLocalRelease() == "on" {
 			releaseServer = "http://localhost:2023"
 		}
 		logger.Tf(ctx, "Query %v with %v", releaseServer, params)

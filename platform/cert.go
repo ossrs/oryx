@@ -1,8 +1,6 @@
-//
 // Copyright (c) 2022-2023 Winlin
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//
 package main
 
 import (
@@ -49,7 +47,7 @@ func NewCertManager() *CertManager {
 }
 
 func (v *CertManager) Initialize(ctx context.Context) error {
-	if os.Getenv("AUTO_SELF_SIGNED_CERTIFICATE") == "on" {
+	if envSelfSignedCertificate() == "on" {
 		if err := v.createSelfSignCertificate(ctx); err != nil {
 			return errors.Wrapf(err, "create self-signed certificate")
 		}

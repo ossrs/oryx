@@ -12,7 +12,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"path"
 	"runtime"
 	"strconv"
@@ -106,7 +105,7 @@ func (v *httpService) Run(ctx context.Context) error {
 
 	var r0 error
 	if true {
-		addr := os.Getenv("PLATFORM_LISTEN")
+		addr := envPlatformListen()
 		if !strings.HasPrefix(addr, ":") {
 			addr = fmt.Sprintf(":%v", addr)
 		}
@@ -136,7 +135,7 @@ func (v *httpService) Run(ctx context.Context) error {
 
 	var r1 error
 	if true {
-		addr := os.Getenv("MGMT_LISTEN")
+		addr := envMgmtListen()
 		if !strings.HasPrefix(addr, ":") {
 			addr = fmt.Sprintf(":%v", addr)
 		}
@@ -166,7 +165,7 @@ func (v *httpService) Run(ctx context.Context) error {
 
 	var r2 error
 	if true {
-		addr := os.Getenv("HTTPS_LISTEN")
+		addr := envHttpListen()
 		if !strings.HasPrefix(addr, ":") {
 			addr = fmt.Sprintf(":%v", addr)
 		}
@@ -376,7 +375,7 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 		// Proxy to SRS HTTP API, for console, by /api/ prefix.
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			token := r.URL.Query().Get("token")
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				ohttp.WriteError(ctx, w, r, err)
@@ -492,13 +491,13 @@ func handleMgmtInit(ctx context.Context, handler *http.ServeMux) {
 				ohttp.WriteData(ctx, w, r, &struct {
 					Init bool `json:"init"`
 				}{
-					Init: os.Getenv("MGMT_PASSWORD") != "",
+					Init: envMgmtPassword() != "",
 				})
 				return nil
 			}
 
 			// If already initialized, never set it again.
-			if os.Getenv("MGMT_PASSWORD") != "" {
+			if envMgmtPassword() != "" {
 				return errors.New("already initialized")
 			}
 
@@ -519,8 +518,8 @@ func handleMgmtInit(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "load %v", envFile)
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
-			expireAt, createAt, token, err := createToken(ctx, os.Getenv("SRS_PLATFORM_SECRET"))
+			apiSecret := envApiSecret()
+			expireAt, createAt, token, err := createToken(ctx, envApiSecret())
 			if err != nil {
 				return errors.Wrapf(err, "build token")
 			}
@@ -597,16 +596,16 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 			}
 
 			forwardLimit := 10
-			if os.Getenv("SRS_FORWARD_LIMIT") != "" {
-				if iv, err := strconv.ParseInt(os.Getenv("SRS_FORWARD_LIMIT"), 10, 64); err != nil {
-					return errors.Wrapf(err, "parse env SRS_FORWARD_LIMIT=%v", os.Getenv("SRS_FORWARD_LIMIT"))
+			if envForwardLimit() != "" {
+				if iv, err := strconv.ParseInt(envForwardLimit(), 10, 64); err != nil {
+					return errors.Wrapf(err, "parse env SRS_FORWARD_LIMIT=%v", envForwardLimit())
 				} else {
 					forwardLimit = int(iv)
 				}
 			}
 
-			platformDocker := os.Getenv("PLATFORM_DOCKER") != "off"
-			candidate := os.Getenv("CANDIDATE") != ""
+			platformDocker := envPlatformDocker() != "off"
+			candidate := envCandidate() != ""
 			ohttp.WriteData(ctx, w, r, &struct {
 				// Whether mgmt run in docker.
 				MgmtDocker bool `json:"mgmtDocker"`
@@ -632,20 +631,20 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 				// The candidate IP for WebRTC.
 				Candidate: candidate,
 				// The export port for RTMP.
-				RTMPPort: os.Getenv("RTMP_PORT"),
+				RTMPPort: envRtmpPort(),
 				// The export port for HTTP.
-				HTTPPort: os.Getenv("HTTP_PORT"),
+				HTTPPort: envHttpPort(),
 				// The export port for SRT.
-				SRTPort: os.Getenv("SRT_PORT"),
+				SRTPort: envSrtListen(),
 				// The export port for WebRTC.
-				RTCPort: os.Getenv("RTC_PORT"),
+				RTCPort: envRtcListen(),
 				// The limit of the number of forwarding streams.
 				ForwardLimit: forwardLimit,
 			})
 
 			logger.Tf(ctx, "mgmt envs ok, locale=%v, platformDocker=%v, candidate=%v, rtmpPort=%v, httpPort=%v, srtPort=%v, rtcPort=%v, forwardLimit=%v",
-				locale, platformDocker, candidate, os.Getenv("RTMP_PORT"), os.Getenv("HTTP_PORT"),
-				os.Getenv("SRT_PORT"), os.Getenv("RTC_PORT"), forwardLimit,
+				locale, platformDocker, candidate, envRtmpPort(), envHttpPort(),
+				envSrtListen(), envRtcListen(), forwardLimit,
 			)
 			return nil
 		}(); err != nil {
@@ -668,12 +667,12 @@ func handleMgmtToken(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			expireAt, createAt, token, err := createToken(ctx, os.Getenv("SRS_PLATFORM_SECRET"))
+			expireAt, createAt, token, err := createToken(ctx, envApiSecret())
 			if err != nil {
 				return errors.Wrapf(err, "build token")
 			}
@@ -704,7 +703,7 @@ func handleMgmtLogin(ctx context.Context, handler *http.ServeMux) {
 			}
 			defer loginLock.Unlock()
 
-			if os.Getenv("MGMT_PASSWORD") == "" {
+			if envMgmtPassword() == "" {
 				return errors.New("not init")
 			}
 
@@ -726,7 +725,7 @@ func handleMgmtLogin(ctx context.Context, handler *http.ServeMux) {
 				return errors.New("no password")
 			}
 
-			if password != os.Getenv("MGMT_PASSWORD") {
+			if password != envMgmtPassword() {
 				wait := time.Duration(10) * time.Second
 				logger.Wf(ctx, "Invalid password, wait for %v", wait)
 
@@ -738,7 +737,7 @@ func handleMgmtLogin(ctx context.Context, handler *http.ServeMux) {
 				return errors.Errorf("invalid password, wait %v", wait)
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			expireAt, createAt, token, err := createToken(ctx, apiSecret)
 			if err != nil {
 				return errors.Wrapf(err, "build token")
@@ -776,7 +775,7 @@ func handleMgmtStatus(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -820,7 +819,7 @@ func handleMgmtBilibili(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -844,7 +843,7 @@ func handleMgmtBilibili(ctx context.Context, handler *http.ServeMux) {
 			var cacheExpired bool
 			if bilibiliObj.Update != "" {
 				duration := time.Duration(24*3600) * time.Second
-				if os.Getenv("NODE_ENV") == "development" {
+				if envNodeEnv() == "development" {
 					duration = time.Duration(300) * time.Second
 				}
 
@@ -912,7 +911,7 @@ func handleMgmtLimitsQuery(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -965,7 +964,7 @@ func handleMgmtLimitsUpdate(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1027,7 +1026,7 @@ func handleMgmtSecretQuery(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1057,7 +1056,7 @@ func handleMgmtBeianUpdate(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1098,7 +1097,7 @@ func handleMgmtNginxHlsUpdate(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1135,7 +1134,7 @@ func handleMgmtNginxHlsQuery(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1176,7 +1175,7 @@ func handleMgmtHlsLowLatencyUpdate(ctx context.Context, handler *http.ServeMux) 
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1213,7 +1212,7 @@ func handleMgmtHlsLowLatencyQuery(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1252,7 +1251,7 @@ func handleMgmtAutoSelfSignedCertificate(ctx context.Context, handler *http.Serv
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1287,7 +1286,7 @@ func handleMgmtSsl(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1336,7 +1335,7 @@ func handleMgmtLetsEncrypt(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1383,7 +1382,7 @@ func handleMgmtCertQuery(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1438,7 +1437,7 @@ func handleMgmtStreamsQuery(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1492,7 +1491,7 @@ func handleMgmtStreamsKickoff(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
@@ -1589,7 +1588,7 @@ func handleMgmtStreamsKickoff(ctx context.Context, handler *http.ServeMux) {
 
 func handleMgmtUI(ctx context.Context, handler *http.ServeMux) {
 	// Serve UI at platform.
-	fileRoot := path.Join(conf.Pwd, "../ui/build", os.Getenv("REACT_APP_LOCALE"))
+	fileRoot := path.Join(conf.Pwd, "../ui/build", envReactAppLocale())
 
 	fileServer := http.FileServer(http.Dir(fileRoot))
 	logger.Tf(ctx, "File server at %v", fileRoot)

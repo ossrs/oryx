@@ -1373,7 +1373,7 @@ func (v *TTSWorker) SubmitSegment(ctx context.Context, stage *Stage, sreq *Stage
 
 			stage.ttsWorker.RemoveSegment(segment.asid)
 
-			if segment.ttsFile != "" && os.Getenv("AIT_KEEP_FILES") != "true" {
+			if segment.ttsFile != "" && envKeepFiles() != "true" {
 				if _, err := os.Stat(segment.ttsFile); err == nil {
 					os.Remove(segment.ttsFile)
 				}
@@ -1445,7 +1445,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// Authenticate by bearer token if no room token
 			if roomToken == "" {
-				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				apiSecret := envApiSecret()
 				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 					return errors.Wrapf(err, "authenticate")
 				}
@@ -1561,7 +1561,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// Authenticate by bearer token if no room token
 			if roomToken == "" {
-				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				apiSecret := envApiSecret()
 				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 					return errors.Wrapf(err, "authenticate")
 				}
@@ -1644,7 +1644,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// Authenticate by bearer token if no room token
 			if roomToken == "" {
-				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				apiSecret := envApiSecret()
 				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 					return errors.Wrapf(err, "authenticate")
 				}
@@ -1829,7 +1829,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// Authenticate by bearer token if no room token
 			if roomToken == "" {
-				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				apiSecret := envApiSecret()
 				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 					return errors.Wrapf(err, "authenticate")
 				}
@@ -1965,7 +1965,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// Authenticate by bearer token if no room token
 			if roomToken == "" {
-				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				apiSecret := envApiSecret()
 				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 					return errors.Wrapf(err, "authenticate")
 				}
@@ -2062,7 +2062,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 
 			// Authenticate by bearer token if no room token
 			if roomToken == "" {
-				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				apiSecret := envApiSecret()
 				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 					return errors.Wrapf(err, "authenticate")
 				}
@@ -2250,7 +2250,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			if roomToken == "" {
-				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				apiSecret := envApiSecret()
 				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 					return errors.Wrapf(err, "authenticate")
 				}
@@ -2330,7 +2330,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			if roomToken == "" {
-				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				apiSecret := envApiSecret()
 				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 					return errors.Wrapf(err, "authenticate")
 				}
@@ -2401,7 +2401,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			if roomToken == "" {
-				apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+				apiSecret := envApiSecret()
 				if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 					return errors.Wrapf(err, "authenticate")
 				}

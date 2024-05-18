@@ -127,14 +127,14 @@ func doMain(ctx context.Context) error {
 		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, HTTP_PORT=%v, "+
 		"REGISTRY=%v, MGMT_LISTEN=%v, HTTPS_LISTEN=%v, AUTO_SELF_SIGNED_CERTIFICATE=%v, "+
 		"NAME_LOOKUP=%v, PLATFORM_DOCKER=%v",
-		len(os.Getenv("MGMT_PASSWORD")), len(os.Getenv("SRS_PLATFORM_SECRET")), os.Getenv("CLOUD"),
-		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("SRT_PORT"), os.Getenv("RTC_PORT"),
-		os.Getenv("NODE_ENV"), os.Getenv("LOCAL_RELEASE"),
-		len(os.Getenv("REDIS_PASSWORD")), os.Getenv("REDIS_PORT"), os.Getenv("RTMP_PORT"), os.Getenv("PUBLIC_URL"),
-		os.Getenv("BUILD_PATH"), os.Getenv("REACT_APP_LOCALE"), os.Getenv("PLATFORM_LISTEN"), os.Getenv("HTTP_PORT"),
-		os.Getenv("REGISTRY"), os.Getenv("MGMT_LISTEN"), os.Getenv("HTTPS_LISTEN"),
-		os.Getenv("AUTO_SELF_SIGNED_CERTIFICATE"), os.Getenv("NAME_LOOKUP"),
-		os.Getenv("PLATFORM_DOCKER"),
+		len(envMgmtPassword()), len(envApiSecret()), envCloud(),
+		envRegion(), envSource(), envSrtListen(), envRtcListen(),
+		envNodeEnv(), envLocalRelease(),
+		len(envRedisPassword()), envRedisPort(), envRtmpPort(), envPublicUrl(),
+		envBuildPath(), envReactAppLocale(), envPlatformListen(), envHttpPort(),
+		envRegistry(), envMgmtListen(), envHttpListen(),
+		envSelfSignedCertificate(), envNameLookup(),
+		envPlatformDocker(),
 	)
 
 	// Setup the base OS for redis, which should never depends on redis.
@@ -264,8 +264,8 @@ func doMain(ctx context.Context) error {
 func initMgmtOS(ctx context.Context) (err error) {
 	// For Darwin, append the search PATH for docker.
 	// Note that we should set the PATH env, not the exec.Cmd.Env.
-	if conf.IsDarwin && !strings.Contains(os.Getenv("PATH"), "/usr/local/bin") {
-		os.Setenv("PATH", fmt.Sprintf("%v:/usr/local/bin", os.Getenv("PATH")))
+	if conf.IsDarwin && !strings.Contains(envPath(), "/usr/local/bin") {
+		os.Setenv("PATH", fmt.Sprintf("%v:/usr/local/bin", envPath()))
 	}
 
 	// The redis is not available when os startup, so we must directly discover from env or network.
@@ -293,7 +293,7 @@ func initOS(ctx context.Context) (err error) {
 	if token, err := rdb.HGet(ctx, SRS_PLATFORM_SECRET, "token").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v token", SRS_PLATFORM_SECRET)
 	} else if token == "" {
-		token = os.Getenv("SRS_PLATFORM_SECRET")
+		token = envApiSecret()
 		if token == "" {
 			token = fmt.Sprintf("srs-v2-%v", strings.ReplaceAll(uuid.NewString(), "-", ""))
 		}
@@ -311,7 +311,7 @@ func initOS(ctx context.Context) (err error) {
 
 	// For platform, we must use the secret to access API of mgmt.
 	// Query the api secret from redis, cache it to env.
-	if os.Getenv("SRS_PLATFORM_SECRET") == "" {
+	if envApiSecret() == "" {
 		if token, err := rdb.HGet(ctx, SRS_PLATFORM_SECRET, "token").Result(); err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "hget %v token", SRS_PLATFORM_SECRET)
 		} else {
@@ -397,8 +397,8 @@ func initPlatform(ctx context.Context) error {
 	// For Darwin, append the search PATH for docker.
 	// Note that we should set the PATH env, not the exec.Cmd.Env.
 	// Note that it depends on conf.IsDarwin, so it's unavailable util initOS.
-	if conf.IsDarwin && !strings.Contains(os.Getenv("PATH"), "/usr/local/bin") {
-		os.Setenv("PATH", fmt.Sprintf("%v:/usr/local/bin", os.Getenv("PATH")))
+	if conf.IsDarwin && !strings.Contains(envPath(), "/usr/local/bin") {
+		os.Setenv("PATH", fmt.Sprintf("%v:/usr/local/bin", envPath()))
 	}
 
 	// Create directories for data, allow user to link it.
@@ -558,8 +558,8 @@ func initMmgt(ctx context.Context) error {
 	envs["REGION"] = conf.Region
 	envs["SOURCE"] = conf.Source
 	envs["REGISTRY"] = conf.Registry
-	if os.Getenv("MGMT_PASSWORD") != "" {
-		envs["MGMT_PASSWORD"] = os.Getenv("MGMT_PASSWORD")
+	if envMgmtPassword() != "" {
+		envs["MGMT_PASSWORD"] = envMgmtPassword()
 	}
 
 	if err := godotenv.Write(envs, envFile); err != nil {

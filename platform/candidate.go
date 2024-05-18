@@ -1,14 +1,11 @@
-//
 // Copyright (c) 2022-2023 Winlin
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//
 package main
 
 import (
 	"context"
 	"net"
-	"os"
 	"strings"
 	"sync"
 	// From ossrs.
@@ -48,7 +45,7 @@ func (v *CandidateWorker) Start(ctx context.Context) error {
 // set env NAME_LOOKUP to false.
 func (v *CandidateWorker) Resolve(host string) (net.IP, error) {
 	// Ignore the resolving.
-	if os.Getenv("NAME_LOOKUP") == "off" {
+	if envNameLookup() == "off" {
 		return nil, nil
 	}
 
@@ -64,12 +61,12 @@ func (v *CandidateWorker) Resolve(host string) (net.IP, error) {
 	// Resolve the localhost to possible IP address.
 	if host == "localhost" {
 		// If directly run in host, like debugging, use the private ipv4.
-		if os.Getenv("PLATFORM_DOCKER") == "off" {
+		if envPlatformDocker() == "off" {
 			return conf.ipv4, nil
 		}
 
 		// If already set CANDIDATE, ignore lo.
-		if os.Getenv("CANDIDATE") != "" {
+		if envCandidate() != "" {
 			return nil, nil
 		}
 

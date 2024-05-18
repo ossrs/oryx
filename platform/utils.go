@@ -89,24 +89,24 @@ func (v *Config) String() string {
 }
 
 func discoverRegion(ctx context.Context) (cloud, region string, err error) {
-	if os.Getenv("CLOUD") == "BT" {
+	if envCloud() == "BT" {
 		return "BT", "ap-beijing", nil
 	}
 
-	if os.Getenv("CLOUD") == "BIN" {
+	if envCloud() == "BIN" {
 		return "BIN", "ap-beijing", nil
 	}
 
-	if os.Getenv("CLOUD") == "AAPANEL" {
+	if envCloud() == "AAPANEL" {
 		return "AAPANEL", "ap-singapore", nil
 	}
 
-	if os.Getenv("CLOUD") == "DOCKER" {
+	if envCloud() == "DOCKER" {
 		return "DOCKER", "ap-beijing", nil
 	}
 
-	if os.Getenv("CLOUD") != "" && os.Getenv("REGION") != "" {
-		return os.Getenv("CLOUD"), os.Getenv("REGION"), nil
+	if envCloud() != "" && envRegion() != "" {
+		return envCloud(), envRegion(), nil
 	}
 
 	if conf.IsDarwin {
@@ -356,6 +356,115 @@ var serverAllowVideoFiles []string = []string{".mp4", ".flv", ".ts"}
 // The audio files allowed to use by Oryx.
 var serverAllowAudioFiles []string = []string{".mp3", ".aac", ".m4a"}
 
+// Get the API secret from env.
+func envApiSecret() string {
+	return os.Getenv("SRS_PLATFORM_SECRET")
+}
+
+func envNodeEnv() string {
+	return os.Getenv("NODE_ENV")
+}
+
+func envMgmtPassword() string {
+	return os.Getenv("MGMT_PASSWORD")
+}
+
+func envSelfSignedCertificate() string {
+	return os.Getenv("AUTO_SELF_SIGNED_CERTIFICATE")
+}
+
+func envPlatformListen() string {
+	return os.Getenv("PLATFORM_LISTEN")
+}
+
+func envCloud() string {
+	return os.Getenv("CLOUD")
+}
+
+func envNameLookup() string {
+	return os.Getenv("NAME_LOOKUP")
+}
+
+func envPlatformDocker() string {
+	return os.Getenv("PLATFORM_DOCKER")
+}
+
+func envCandidate() string {
+	return os.Getenv("CANDIDATE")
+}
+
+func envMgmtListen() string {
+	return os.Getenv("MGMT_LISTEN")
+}
+
+func envRegion() string {
+	return os.Getenv("REGION")
+}
+
+func envSource() string {
+	return os.Getenv("SOURCE")
+}
+
+func envHttpListen() string {
+	return os.Getenv("HTTPS_LISTEN")
+}
+
+func envSrtListen() string {
+	return os.Getenv("SRT_PORT")
+}
+
+func envRtcListen() string {
+	return os.Getenv("RTC_PORT")
+}
+
+func envLocalRelease() string {
+	return os.Getenv("LOCAL_RELEASE")
+}
+
+func envKeepFiles() string {
+	return os.Getenv("AIT_KEEP_FILES")
+}
+
+func envRedisPassword() string {
+	return os.Getenv("REDIS_PASSWORD")
+}
+
+func envRedisPort() string {
+	return os.Getenv("REDIS_PORT")
+}
+
+func envRtmpPort() string {
+	return os.Getenv("RTMP_PORT")
+}
+
+func envPublicUrl() string {
+	return os.Getenv("PUBLIC_URL")
+}
+
+func envBuildPath() string {
+	return os.Getenv("BUILD_PATH")
+}
+
+func envReactAppLocale() string {
+	return os.Getenv("REACT_APP_LOCALE")
+}
+
+func envHttpPort() string {
+	return os.Getenv("HTTP_PORT")
+}
+
+func envRegistry() string {
+	return os.Getenv("REGISTRY")
+}
+
+func envPath() string {
+	return os.Getenv("PATH")
+}
+
+func envForwardLimit() string {
+	return os.Getenv("SRS_FORWARD_LIMIT")
+}
+
 // rdb is a global redis client object.
 var rdb *redis.Client
 
@@ -363,8 +472,8 @@ var rdb *redis.Client
 func InitRdb() error {
 	addr := "localhost"
 	rdb = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%v:%v", addr, os.Getenv("REDIS_PORT")),
-		Password: os.Getenv("REDIS_PASSWORD"),
+		Addr:     fmt.Sprintf("%v:%v", addr, envRedisPort()),
+		Password: envRedisPassword(),
 		DB:       0,
 	})
 	return nil
@@ -1353,7 +1462,7 @@ func (w *whxpResponseModifier) Header() http.Header {
 func (w *whxpResponseModifier) Write(b []byte) (int, error) {
 	// TODO: FIXME: Should pass the rtc port to WHIP/WHEP api, because the port maybe not the same length to 8000,
 	//  for example, 80, 443, 18000, etc, in such case, the sdp length will change.
-	if port := os.Getenv("RTC_PORT"); port != "8000" {
+	if port := envRtcListen(); port != "8000" {
 		// Read line by line, replace " 8000 " with " {port} " if contains "candidate".
 		scan := bufio.NewScanner(strings.NewReader(string(b)))
 
