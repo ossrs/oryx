@@ -119,7 +119,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
 
     setConfigs(confs);
     console.log(`Forward: Init configs ${JSON.stringify(confs)}`);
-  }, [defaultSecrets, setConfigs]);
+  }, [defaultSecrets, setConfigs, env, language, t]);
 
   // Fetch the forwarding streams from server.
   React.useEffect(() => {

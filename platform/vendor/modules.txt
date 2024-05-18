@@ -49,7 +49,7 @@ github.com/mozillazg/go-httpheader
 github.com/ossrs/go-oryx-lib/errors
 github.com/ossrs/go-oryx-lib/http
 github.com/ossrs/go-oryx-lib/logger
-# github.com/sashabaranov/go-openai v1.17.7
+# github.com/sashabaranov/go-openai v1.24.0
 ## explicit; go 1.18
 github.com/sashabaranov/go-openai
 github.com/sashabaranov/go-openai/internal

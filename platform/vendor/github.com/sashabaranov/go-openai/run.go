@@ -24,8 +24,19 @@ type Run struct {
 	Model          string             `json:"model"`
 	Instructions   string             `json:"instructions,omitempty"`
 	Tools          []Tool             `json:"tools"`
-	FileIDS        []string           `json:"file_ids"`
+	FileIDS        []string           `json:"file_ids"` //nolint:revive // backwards-compatibility
 	Metadata       map[string]any     `json:"metadata"`
+	Usage          Usage              `json:"usage,omitempty"`
+
+	Temperature *float32 `json:"temperature,omitempty"`
+	// The maximum number of prompt tokens that may be used over the course of the run.
+	// If the run exceeds the number of prompt tokens specified, the run will end with status 'complete'.
+	MaxPromptTokens int `json:"max_prompt_tokens,omitempty"`
+	// The maximum number of completion tokens that may be used over the course of the run.
+	// If the run exceeds the number of completion tokens specified, the run will end with status 'complete'.
+	MaxCompletionTokens int `json:"max_completion_tokens,omitempty"`
+	// ThreadTruncationStrategy defines the truncation strategy to use for the thread.
+	TruncationStrategy *ThreadTruncationStrategy `json:"truncation_strategy,omitempty"`
 
 	httpHeader
 }
@@ -40,6 +51,7 @@ const (
 	RunStatusFailed         RunStatus = "failed"
 	RunStatusCompleted      RunStatus = "completed"
 	RunStatusExpired        RunStatus = "expired"
+	RunStatusCancelled      RunStatus = "cancelled"
 )
 
 type RunRequiredAction struct {
@@ -70,12 +82,47 @@ const (
 )
 
 type RunRequest struct {
-	AssistantID  string         `json:"assistant_id"`
-	Model        *string        `json:"model,omitempty"`
-	Instructions *string        `json:"instructions,omitempty"`
-	Tools        []Tool         `json:"tools,omitempty"`
-	Metadata     map[string]any `json:"metadata,omitempty"`
+	AssistantID            string         `json:"assistant_id"`
+	Model                  string         `json:"model,omitempty"`
+	Instructions           string         `json:"instructions,omitempty"`
+	AdditionalInstructions string         `json:"additional_instructions,omitempty"`
+	Tools                  []Tool         `json:"tools,omitempty"`
+	Metadata               map[string]any `json:"metadata,omitempty"`
+
+	// Sampling temperature between 0 and 2. Higher values like 0.8 are  more random.
+	// lower values are more focused and deterministic.
+	Temperature *float32 `json:"temperature,omitempty"`
+
+	// The maximum number of prompt tokens that may be used over the course of the run.
+	// If the run exceeds the number of prompt tokens specified, the run will end with status 'complete'.
+	MaxPromptTokens int `json:"max_prompt_tokens,omitempty"`
+
+	// The maximum number of completion tokens that may be used over the course of the run.
+	// If the run exceeds the number of completion tokens specified, the run will end with status 'complete'.
+	MaxCompletionTokens int `json:"max_completion_tokens,omitempty"`
+
+	// ThreadTruncationStrategy defines the truncation strategy to use for the thread.
+	TruncationStrategy *ThreadTruncationStrategy `json:"truncation_strategy,omitempty"`
 }
+
+// ThreadTruncationStrategy defines the truncation strategy to use for the thread.
+// https://platform.openai.com/docs/assistants/how-it-works/truncation-strategy.
+type ThreadTruncationStrategy struct {
+	// default 'auto'.
+	Type TruncationStrategy `json:"type,omitempty"`
+	// this field should be set if the truncation strategy is set to LastMessages.
+	LastMessages *int `json:"last_messages,omitempty"`
+}
+
+// TruncationStrategy defines the existing truncation strategies existing for thread management in an assistant.
+type TruncationStrategy string
+
+const (
+	// TruncationStrategyAuto messages in the middle of the thread will be dropped to fit the context length of the model.
+	TruncationStrategyAuto = TruncationStrategy("auto")
+	// TruncationStrategyLastMessages the thread will be truncated to the n most recent messages in the thread.
+	TruncationStrategyLastMessages = TruncationStrategy("last_messages")
+)
 
 type RunModifyRequest struct {
 	Metadata map[string]any `json:"metadata,omitempty"`
@@ -142,20 +189,20 @@ const (
 type StepDetails struct {
 	Type            RunStepType                 `json:"type"`
 	MessageCreation *StepDetailsMessageCreation `json:"message_creation,omitempty"`
-	ToolCalls       *StepDetailsToolCalls       `json:"tool_calls,omitempty"`
+	ToolCalls       []ToolCall                  `json:"tool_calls,omitempty"`
 }
 
 type StepDetailsMessageCreation struct {
 	MessageID string `json:"message_id"`
 }
 
-type StepDetailsToolCalls struct {
-	ToolCalls []ToolCall `json:"tool_calls"`
-}
-
 // RunStepList is a list of steps.
 type RunStepList struct {
 	RunSteps []RunStep `json:"data"`
+
+	FirstID string `json:"first_id"`
+	LastID  string `json:"last_id"`
+	HasMore bool   `json:"has_more"`
 
 	httpHeader
 }
@@ -179,8 +226,7 @@ func (c *Client) CreateRun(
 		http.MethodPost,
 		c.fullURL(urlSuffix),
 		withBody(request),
-		withBetaAssistantV1(),
-	)
+		withBetaAssistantVersion(c.config.AssistantVersion))
 	if err != nil {
 		return
 	}
@@ -200,8 +246,7 @@ func (c *Client) RetrieveRun(
 		ctx,
 		http.MethodGet,
 		c.fullURL(urlSuffix),
-		withBetaAssistantV1(),
-	)
+		withBetaAssistantVersion(c.config.AssistantVersion))
 	if err != nil {
 		return
 	}
@@ -223,8 +268,7 @@ func (c *Client) ModifyRun(
 		http.MethodPost,
 		c.fullURL(urlSuffix),
 		withBody(request),
-		withBetaAssistantV1(),
-	)
+		withBetaAssistantVersion(c.config.AssistantVersion))
 	if err != nil {
 		return
 	}
@@ -263,8 +307,7 @@ func (c *Client) ListRuns(
 		ctx,
 		http.MethodGet,
 		c.fullURL(urlSuffix),
-		withBetaAssistantV1(),
-	)
+		withBetaAssistantVersion(c.config.AssistantVersion))
 	if err != nil {
 		return
 	}
@@ -285,8 +328,7 @@ func (c *Client) SubmitToolOutputs(
 		http.MethodPost,
 		c.fullURL(urlSuffix),
 		withBody(request),
-		withBetaAssistantV1(),
-	)
+		withBetaAssistantVersion(c.config.AssistantVersion))
 	if err != nil {
 		return
 	}
@@ -305,8 +347,7 @@ func (c *Client) CancelRun(
 		ctx,
 		http.MethodPost,
 		c.fullURL(urlSuffix),
-		withBetaAssistantV1(),
-	)
+		withBetaAssistantVersion(c.config.AssistantVersion))
 	if err != nil {
 		return
 	}
@@ -325,8 +366,7 @@ func (c *Client) CreateThreadAndRun(
 		http.MethodPost,
 		c.fullURL(urlSuffix),
 		withBody(request),
-		withBetaAssistantV1(),
-	)
+		withBetaAssistantVersion(c.config.AssistantVersion))
 	if err != nil {
 		return
 	}
@@ -347,8 +387,7 @@ func (c *Client) RetrieveRunStep(
 		ctx,
 		http.MethodGet,
 		c.fullURL(urlSuffix),
-		withBetaAssistantV1(),
-	)
+		withBetaAssistantVersion(c.config.AssistantVersion))
 	if err != nil {
 		return
 	}
@@ -388,8 +427,7 @@ func (c *Client) ListRunSteps(
 		ctx,
 		http.MethodGet,
 		c.fullURL(urlSuffix),
-		withBetaAssistantV1(),
-	)
+		withBetaAssistantVersion(c.config.AssistantVersion))
 	if err != nil {
 		return
 	}

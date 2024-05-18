@@ -1200,6 +1200,7 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 	return nil
 }
 
+// TODO: FIXME: Use SrsAssistantProvider and SrsAssistantASR instead.
 type TranscriptConfig struct {
 	// Whether transcript all streams.
 	All bool `json:"all"`
@@ -1281,7 +1282,7 @@ type TranscriptSegment struct {
 	Msg *SrsOnHlsMessage `json:"msg,omitempty"`
 	// The original source TS file.
 	TsFile *TsFile `json:"tsfile,omitempty"`
-	// The extraced audio only mp4 file.
+	// The extracted audio only mp4 file.
 	AudioFile *TsFile `json:"audio,omitempty"`
 	// The asr result, by AI service.
 	AsrText *TranscriptAsrResult `json:"asr,omitempty"`
@@ -1800,6 +1801,7 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 	var config openai.ClientConfig
 	config = openai.DefaultConfig(v.config.SecretKey)
 	config.BaseURL = v.config.BaseURL
+	config.OrgID = v.config.Organization
 
 	// TODO: FIXME: Fast retry when failed.
 	// TODO: FIXME: Use smaller timeout.

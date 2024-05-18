@@ -21,6 +21,7 @@ import ScenarioTranscript from "./ScenarioTranscript";
 import ScenarioLiveRoom from "./ScenarioLiveRoom";
 import ScenarioCamera from "./ScenarioCamera";
 import ScenarioDubbing from "./ScenarioDubbing";
+import ScenarioOCR from "./ScenarioOCR";
 
 export default function Scenario() {
   const [searchParams] = useSearchParams();
@@ -85,6 +86,9 @@ function ScenarioImpl({defaultActiveTab}) {
           </Tab>
           <Tab eventKey="dubbing" title={t('dubb.title')}>
             {activeTab === 'dubbing' && <ScenarioDubbing/>}
+          </Tab>
+          <Tab eventKey="ocr" title={t('ocr.title')}>
+            {activeTab === 'ocr' && <ScenarioOCR/>}
           </Tab>
           <Tab eventKey="others" title={t('scenario.others')}>
             {activeTab === 'others' && <ScenarioVxOthers {...{urls}} />}

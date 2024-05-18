@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.4.0
 	github.com/ossrs/go-oryx-lib v0.0.9
-	github.com/sashabaranov/go-openai v1.17.7
+	github.com/sashabaranov/go-openai v1.24.0
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam v1.0.587
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.587
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vod v1.0.587

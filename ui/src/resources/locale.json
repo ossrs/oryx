@@ -651,11 +651,51 @@
           "disabled": "无法下载视频，请确认TTS完成，并调整所有红色背景的片段",
           "link": "https://ossrs.net/lts/zh-cn/blog/dubbing-translating#step-5-start-dubbing-and-download-translated-video"
         }
+      },
+      "ocr": {
+        "title": "OCR识别",
+        "model": "请输入AI模型名称，比如: gpt-4o, gpt-4-turbo",
+        "callback": "回调",
+        "link": "OCR回调设置",
+        "link2": "回调事件为on_ocr",
+        "start": "开始OCR",
+        "stop": "停止OCR",
+        "reset": "重置OCR",
+        "ocr": "OCR队列",
+        "eic": "提取图片耗时",
+        "cbq": "回调队列",
+        "noocr": "暂无OCR任务",
+        "nocb": "暂无回调任务",
+        "clq": "清理队列",
+        "cbc": "回调耗时",
+        "last": "最近结果",
+        "nocl": "暂无清理任务",
+        "nolast": "暂无最近结果"
       }
     }
   },
   "en": {
     "translation": {
+      "ocr": {
+        "nolast": "No last result",
+        "nocl": "No cleanup task",
+        "last": "Last Result",
+        "cbc": "Callback Cost",
+        "clq": "Cleanup Queue",
+        "nocb": "No callback task",
+        "noocr": "No OCR task",
+        "cbq": "Callback Queue",
+        "eic": "Extracting Image Cost",
+        "ocr": "OCR Queue",
+        "reset": "Reset OCR",
+        "stop": "Stop OCR",
+        "start": "Start OCR",
+        "link2": "The callback event is on_ocr",
+        "link": "Setup OCR Callback",
+        "callback": "Callback",
+        "model": "Please input AI model name, e.g. gpt-4o, gpt-4-turbo",
+        "title": "OCR"
+      },
       "dubb": {
         "studio": {
           "link": "https://ossrs.io/lts/en-us/blog/dubbing-translating#step-5-start-dubbing-and-download-translated-video",

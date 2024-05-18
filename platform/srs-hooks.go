@@ -46,6 +46,9 @@ const (
 	SrsActionOnRecordBegin = "on_record_begin"
 	// The on_record_end action.
 	SrsActionOnRecordEnd = "on_record_end"
+
+	// The on_ocr action.
+	SrsActionOnOcr = "on_ocr"
 )
 
 func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
@@ -766,6 +769,14 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 					return errors.Wrapf(err, "feed %v", msg.String())
 				}
 				logger.Tf(ctx, "transcript %v", msg.String())
+			}
+
+			// Handle TS file by OCR task if enabled.
+			if ocrWorker.Enabled() {
+				if err = ocrWorker.OnHlsTsMessage(ctx, &msg); err != nil {
+					return errors.Wrapf(err, "feed %v", msg.String())
+				}
+				logger.Tf(ctx, "ocr %v", msg.String())
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)

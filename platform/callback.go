@@ -520,6 +520,146 @@ func (v *CallbackWorker) OnRecordMessage(ctx context.Context, action SrsAction, 
 	return nil
 }
 
+func (v *CallbackWorker) OnOCR(ctx context.Context, action SrsAction, taskUUID string, message *SrsOnHlsMessage, prompt, result string) error {
+	if action != SrsActionOnOcr {
+		return nil
+	}
+
+	var config CallbackConfig
+	func() {
+		v.lock.Lock()
+		defer v.lock.Unlock()
+		config = v.ephemeralConfig
+	}()
+
+	if !config.All || config.Target == "" {
+		return nil
+	}
+
+	req := &struct {
+		RequestID string `json:"request_id"`
+		// The callback parameters.
+		Action string `json:"action"`
+		Opaque string `json:"opaque"`
+		Vhost  string `json:"vhost,omitempty"`
+		App    string `json:"app,omitempty"`
+		Stream string `json:"stream,omitempty"`
+		// The OCR task UUID.
+		UUID string `json:"uuid,omitempty"`
+		// The OCR prompt.
+		Prompt string `json:"prompt,omitempty"`
+		// The OCR result.
+		Result string `json:"result,omitempty"`
+	}{
+		RequestID: uuid.NewString(),
+		// The callback parameters.
+		Action: string(action),
+		Opaque: config.Opaque,
+		Vhost:  message.Vhost,
+		App:    message.App,
+		Stream: message.Stream,
+		// The OCR task UUID.
+		UUID: taskUUID,
+		// The OCR prompt.
+		Prompt: prompt,
+		// The OCR result.
+		Result: result,
+	}
+
+	pfn4 := func(b, b2 []byte, code int) error {
+		if code != 0 {
+			return errors.Errorf("response code %v", code)
+		}
+
+		logger.Tf(ctx, "callback ok, post %v with %s, response %v", config.String(), string(b), string(b2))
+		return nil
+	}
+
+	pfn3 := func(b, b2 []byte) error {
+		if code, err := strconv.ParseInt(string(b2), 10, 64); err == nil {
+			return pfn4(b, b2, int(code))
+		}
+
+		var code int
+		if err := json.Unmarshal(b2, &struct {
+			Code *int `json:"code"`
+		}{
+			Code: &code,
+		}); err != nil {
+			return errors.Wrapf(err, "unmarshal response")
+		}
+		return pfn4(b, b2, code)
+	}
+
+	pfn2 := func(b []byte) error {
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, config.Target, bytes.NewReader(b))
+		if err != nil {
+			return errors.Wrapf(err, "new request")
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+
+		var res *http.Response
+		if strings.HasPrefix(config.Target, "https://") {
+			client := &http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{
+						InsecureSkipVerify: true,
+					},
+				},
+			}
+			res, err = client.Do(req)
+		} else {
+			res, err = http.DefaultClient.Do(req)
+		}
+		if err != nil {
+			return errors.Wrapf(err, "http post")
+		}
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			return errors.Errorf("response status %v", res.StatusCode)
+		}
+
+		b2, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return errors.Wrapf(err, "read body")
+		}
+
+		if err := rdb.HSet(ctx, SRS_HOOKS, "res", string(b2)).Err(); err != nil && err != redis.Nil {
+			return errors.Wrapf(err, "hset %v res %v", SRS_HOOKS, string(b2))
+		}
+
+		if err := pfn3(b, b2); err != nil {
+			return errors.Wrapf(err, "res body %v", string(b2))
+		}
+
+		return nil
+	}
+
+	pfn := func() error {
+		b, err := json.Marshal(req)
+		if err != nil {
+			return errors.Wrapf(err, "marshal req")
+		}
+
+		if err := rdb.HSet(ctx, SRS_HOOKS, "req", string(b)).Err(); err != nil && err != redis.Nil {
+			return errors.Wrapf(err, "hset %v req %v", SRS_HOOKS, string(b))
+		}
+
+		if err := pfn2(b); err != nil {
+			return errors.Wrapf(err, "post with %s", string(b))
+		}
+
+		return nil
+	}
+
+	if err := pfn(); err != nil {
+		return errors.Wrapf(err, "callback with conf %v, req %v", config.String(), req)
+	}
+	return nil
+}
+
 type CallbackConfig struct {
 	// The callback target.
 	Target string `json:"target"`

@@ -38,6 +38,12 @@ func (h *httpHeader) GetRateLimitHeaders() RateLimitHeaders {
 	return newRateLimitHeaders(h.Header())
 }
 
+type RawResponse struct {
+	io.ReadCloser
+
+	httpHeader
+}
+
 // NewClient creates new OpenAI API client.
 func NewClient(authToken string) *Client {
 	config := DefaultConfig(authToken)
@@ -83,9 +89,9 @@ func withContentType(contentType string) requestOption {
 	}
 }
 
-func withBetaAssistantV1() requestOption {
+func withBetaAssistantVersion(version string) requestOption {
 	return func(args *requestOptions) {
-		args.header.Set("OpenAI-Beta", "assistants=v1")
+		args.header.Set("OpenAI-Beta", fmt.Sprintf("assistants=%s", version))
 	}
 }
 
@@ -107,13 +113,13 @@ func (c *Client) newRequest(ctx context.Context, method, url string, setters ...
 }
 
 func (c *Client) sendRequest(req *http.Request, v Response) error {
-	req.Header.Set("Accept", "application/json; charset=utf-8")
+	req.Header.Set("Accept", "application/json")
 
 	// Check whether Content-Type is already set, Upload Files API requires
 	// Content-Type == multipart/form-data
 	contentType := req.Header.Get("Content-Type")
 	if contentType == "" {
-		req.Header.Set("Content-Type", "application/json; charset=utf-8")
+		req.Header.Set("Content-Type", "application/json")
 	}
 
 	res, err := c.config.HTTPClient.Do(req)
@@ -134,8 +140,8 @@ func (c *Client) sendRequest(req *http.Request, v Response) error {
 	return decodeResponse(res.Body, v)
 }
 
-func (c *Client) sendRequestRaw(req *http.Request) (body io.ReadCloser, err error) {
-	resp, err := c.config.HTTPClient.Do(req)
+func (c *Client) sendRequestRaw(req *http.Request) (response RawResponse, err error) {
+	resp, err := c.config.HTTPClient.Do(req) //nolint:bodyclose // body should be closed by outer function
 	if err != nil {
 		return
 	}
@@ -144,7 +150,10 @@ func (c *Client) sendRequestRaw(req *http.Request) (body io.ReadCloser, err erro
 		err = c.handleErrorResp(resp)
 		return
 	}
-	return resp.Body, nil
+
+	response.SetHeader(resp.Header)
+	response.ReadCloser = resp.Body
+	return
 }
 
 func sendRequestStream[T streamable](client *Client, req *http.Request) (*streamReader[T], error) {
@@ -173,9 +182,9 @@ func sendRequestStream[T streamable](client *Client, req *http.Request) (*stream
 func (c *Client) setCommonHeaders(req *http.Request) {
 	// https://learn.microsoft.com/en-us/azure/cognitive-services/openai/reference#authentication
 	// Azure API Key authentication
-	if c.config.APIType == APITypeAzure {
+	if c.config.APIType == APITypeAzure || c.config.APIType == APITypeCloudflareAzure {
 		req.Header.Set(AzureAPIKeyHeader, c.config.authToken)
-	} else {
+	} else if c.config.authToken != "" {
 		// OpenAI or Azure AD authentication
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.config.authToken))
 	}
@@ -193,10 +202,14 @@ func decodeResponse(body io.Reader, v any) error {
 		return nil
 	}
 
-	if result, ok := v.(*string); ok {
-		return decodeString(body, result)
+	switch o := v.(type) {
+	case *string:
+		return decodeString(body, o)
+	case *audioTextResponse:
+		return decodeString(body, &o.Text)
+	default:
+		return json.NewDecoder(body).Decode(v)
 	}
-	return json.NewDecoder(body).Decode(v)
 }
 
 func decodeString(body io.Reader, output *string) error {
@@ -217,7 +230,7 @@ func (c *Client) fullURL(suffix string, args ...any) string {
 		baseURL = strings.TrimRight(baseURL, "/")
 		// if suffix is /models change to {endpoint}/openai/models?api-version=2022-12-01
 		// https://learn.microsoft.com/en-us/rest/api/cognitiveservices/azureopenaistable/models/list?tabs=HTTP
-		if strings.Contains(suffix, "/models") {
+		if containsSubstr([]string{"/models", "/assistants", "/threads", "/files"}, suffix) {
 			return fmt.Sprintf("%s/%s%s?api-version=%s", baseURL, azureAPIPrefix, suffix, c.config.APIVersion)
 		}
 		azureDeploymentName := "UNKNOWN"
@@ -233,7 +246,13 @@ func (c *Client) fullURL(suffix string, args ...any) string {
 		)
 	}
 
-	// c.config.APIType == APITypeOpenAI || c.config.APIType == ""
+	// https://developers.cloudflare.com/ai-gateway/providers/azureopenai/
+	if c.config.APIType == APITypeCloudflareAzure {
+		baseURL := c.config.BaseURL
+		baseURL = strings.TrimRight(baseURL, "/")
+		return fmt.Sprintf("%s%s?api-version=%s", baseURL, suffix, c.config.APIVersion)
+	}
+
 	return fmt.Sprintf("%s%s", c.config.BaseURL, suffix)
 }
 
@@ -253,4 +272,13 @@ func (c *Client) handleErrorResp(resp *http.Response) error {
 
 	errRes.Error.HTTPStatusCode = resp.StatusCode
 	return errRes.Error
+}
+
+func containsSubstr(s []string, e string) bool {
+	for _, v := range s {
+		if strings.Contains(e, v) {
+			return true
+		}
+	}
+	return false
 }

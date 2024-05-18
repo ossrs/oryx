@@ -2,6 +2,7 @@ package openai
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 )
@@ -20,6 +21,7 @@ const chatCompletionsSuffix = "/chat/completions"
 var (
 	ErrChatCompletionInvalidModel       = errors.New("this model is not supported with this method, please use CreateCompletion client method instead") //nolint:lll
 	ErrChatCompletionStreamNotSupported = errors.New("streaming is not supported with this method, please use CreateChatCompletionStream")              //nolint:lll
+	ErrContentFieldsMisused             = errors.New("can't use both Content and MultiContent properties simultaneously")
 )
 
 type Hate struct {
@@ -51,9 +53,36 @@ type PromptAnnotation struct {
 	ContentFilterResults ContentFilterResults `json:"content_filter_results,omitempty"`
 }
 
+type ImageURLDetail string
+
+const (
+	ImageURLDetailHigh ImageURLDetail = "high"
+	ImageURLDetailLow  ImageURLDetail = "low"
+	ImageURLDetailAuto ImageURLDetail = "auto"
+)
+
+type ChatMessageImageURL struct {
+	URL    string         `json:"url,omitempty"`
+	Detail ImageURLDetail `json:"detail,omitempty"`
+}
+
+type ChatMessagePartType string
+
+const (
+	ChatMessagePartTypeText     ChatMessagePartType = "text"
+	ChatMessagePartTypeImageURL ChatMessagePartType = "image_url"
+)
+
+type ChatMessagePart struct {
+	Type     ChatMessagePartType  `json:"type,omitempty"`
+	Text     string               `json:"text,omitempty"`
+	ImageURL *ChatMessageImageURL `json:"image_url,omitempty"`
+}
+
 type ChatCompletionMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role         string `json:"role"`
+	Content      string `json:"content"`
+	MultiContent []ChatMessagePart
 
 	// This property isn't in the official documentation, but it's in
 	// the documentation for the official library for python:
@@ -68,6 +97,64 @@ type ChatCompletionMessage struct {
 
 	// For Role=tool prompts this should be set to the ID given in the assistant's prior request to call a tool.
 	ToolCallID string `json:"tool_call_id,omitempty"`
+}
+
+func (m ChatCompletionMessage) MarshalJSON() ([]byte, error) {
+	if m.Content != "" && m.MultiContent != nil {
+		return nil, ErrContentFieldsMisused
+	}
+	if len(m.MultiContent) > 0 {
+		msg := struct {
+			Role         string            `json:"role"`
+			Content      string            `json:"-"`
+			MultiContent []ChatMessagePart `json:"content,omitempty"`
+			Name         string            `json:"name,omitempty"`
+			FunctionCall *FunctionCall     `json:"function_call,omitempty"`
+			ToolCalls    []ToolCall        `json:"tool_calls,omitempty"`
+			ToolCallID   string            `json:"tool_call_id,omitempty"`
+		}(m)
+		return json.Marshal(msg)
+	}
+	msg := struct {
+		Role         string            `json:"role"`
+		Content      string            `json:"content"`
+		MultiContent []ChatMessagePart `json:"-"`
+		Name         string            `json:"name,omitempty"`
+		FunctionCall *FunctionCall     `json:"function_call,omitempty"`
+		ToolCalls    []ToolCall        `json:"tool_calls,omitempty"`
+		ToolCallID   string            `json:"tool_call_id,omitempty"`
+	}(m)
+	return json.Marshal(msg)
+}
+
+func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
+	msg := struct {
+		Role         string `json:"role"`
+		Content      string `json:"content"`
+		MultiContent []ChatMessagePart
+		Name         string        `json:"name,omitempty"`
+		FunctionCall *FunctionCall `json:"function_call,omitempty"`
+		ToolCalls    []ToolCall    `json:"tool_calls,omitempty"`
+		ToolCallID   string        `json:"tool_call_id,omitempty"`
+	}{}
+	if err := json.Unmarshal(bs, &msg); err == nil {
+		*m = ChatCompletionMessage(msg)
+		return nil
+	}
+	multiMsg := struct {
+		Role         string `json:"role"`
+		Content      string
+		MultiContent []ChatMessagePart `json:"content"`
+		Name         string            `json:"name,omitempty"`
+		FunctionCall *FunctionCall     `json:"function_call,omitempty"`
+		ToolCalls    []ToolCall        `json:"tool_calls,omitempty"`
+		ToolCallID   string            `json:"tool_call_id,omitempty"`
+	}{}
+	if err := json.Unmarshal(bs, &multiMsg); err != nil {
+		return err
+	}
+	*m = ChatCompletionMessage(multiMsg)
+	return nil
 }
 
 type ToolCall struct {
@@ -113,7 +200,15 @@ type ChatCompletionRequest struct {
 	// incorrect: `"logit_bias":{"You": 6}`, correct: `"logit_bias":{"1639": 6}`
 	// refs: https://platform.openai.com/docs/api-reference/chat/create#chat/create-logit_bias
 	LogitBias map[string]int `json:"logit_bias,omitempty"`
-	User      string         `json:"user,omitempty"`
+	// LogProbs indicates whether to return log probabilities of the output tokens or not.
+	// If true, returns the log probabilities of each output token returned in the content of message.
+	// This option is currently not available on the gpt-4-vision-preview model.
+	LogProbs bool `json:"logprobs,omitempty"`
+	// TopLogProbs is an integer between 0 and 5 specifying the number of most likely tokens to return at each
+	// token position, each with an associated log probability.
+	// logprobs must be set to true if this parameter is used.
+	TopLogProbs int    `json:"top_logprobs,omitempty"`
+	User        string `json:"user,omitempty"`
 	// Deprecated: use Tools instead.
 	Functions []FunctionDefinition `json:"functions,omitempty"`
 	// Deprecated: use ToolChoice instead.
@@ -121,6 +216,16 @@ type ChatCompletionRequest struct {
 	Tools        []Tool `json:"tools,omitempty"`
 	// This can be either a string or an ToolChoice object.
 	ToolChoice any `json:"tool_choice,omitempty"`
+	// Options for streaming response. Only set this when you set stream: true.
+	StreamOptions *StreamOptions `json:"stream_options,omitempty"`
+}
+
+type StreamOptions struct {
+	// If set, an additional chunk will be streamed before the data: [DONE] message.
+	// The usage field on this chunk shows the token usage statistics for the entire request,
+	// and the choices field will always be an empty array.
+	// All other chunks will also include a usage field, but with a null value.
+	IncludeUsage bool `json:"include_usage,omitempty"`
 }
 
 type ToolType string
@@ -130,8 +235,8 @@ const (
 )
 
 type Tool struct {
-	Type     ToolType           `json:"type"`
-	Function FunctionDefinition `json:"function,omitempty"`
+	Type     ToolType            `json:"type"`
+	Function *FunctionDefinition `json:"function,omitempty"`
 }
 
 type ToolChoice struct {
@@ -156,6 +261,28 @@ type FunctionDefinition struct {
 
 // Deprecated: use FunctionDefinition instead.
 type FunctionDefine = FunctionDefinition
+
+type TopLogProbs struct {
+	Token   string  `json:"token"`
+	LogProb float64 `json:"logprob"`
+	Bytes   []byte  `json:"bytes,omitempty"`
+}
+
+// LogProb represents the probability information for a token.
+type LogProb struct {
+	Token   string  `json:"token"`
+	LogProb float64 `json:"logprob"`
+	Bytes   []byte  `json:"bytes,omitempty"` // Omitting the field if it is null
+	// TopLogProbs is a list of the most likely tokens and their log probability, at this token position.
+	// In rare cases, there may be fewer than the number of requested top_logprobs returned.
+	TopLogProbs []TopLogProbs `json:"top_logprobs"`
+}
+
+// LogProbs is the top-level structure containing the log probability information.
+type LogProbs struct {
+	// Content is a list of message content tokens with log probability information.
+	Content []LogProb `json:"content"`
+}
 
 type FinishReason string
 
@@ -186,6 +313,7 @@ type ChatCompletionChoice struct {
 	// content_filter: Omitted content due to a flag from our content filters
 	// null: API response still in progress or incomplete
 	FinishReason FinishReason `json:"finish_reason"`
+	LogProbs     *LogProbs    `json:"logprobs,omitempty"`
 }
 
 // ChatCompletionResponse represents a response structure for chat completion API.

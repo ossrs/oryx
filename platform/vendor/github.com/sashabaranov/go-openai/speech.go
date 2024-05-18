@@ -3,15 +3,15 @@ package openai
 import (
 	"context"
 	"errors"
-	"io"
 	"net/http"
 )
 
 type SpeechModel string
 
 const (
-	TTSModel1   SpeechModel = "tts-1"
-	TTsModel1HD SpeechModel = "tts-1-hd"
+	TTSModel1      SpeechModel = "tts-1"
+	TTSModel1HD    SpeechModel = "tts-1-hd"
+	TTSModelCanary SpeechModel = "canary-tts"
 )
 
 type SpeechVoice string
@@ -32,6 +32,8 @@ const (
 	SpeechResponseFormatOpus SpeechResponseFormat = "opus"
 	SpeechResponseFormatAac  SpeechResponseFormat = "aac"
 	SpeechResponseFormatFlac SpeechResponseFormat = "flac"
+	SpeechResponseFormatWav  SpeechResponseFormat = "wav"
+	SpeechResponseFormatPcm  SpeechResponseFormat = "pcm"
 )
 
 var (
@@ -57,14 +59,14 @@ func contains[T comparable](s []T, e T) bool {
 }
 
 func isValidSpeechModel(model SpeechModel) bool {
-	return contains([]SpeechModel{TTSModel1, TTsModel1HD}, model)
+	return contains([]SpeechModel{TTSModel1, TTSModel1HD, TTSModelCanary}, model)
 }
 
 func isValidVoice(voice SpeechVoice) bool {
 	return contains([]SpeechVoice{VoiceAlloy, VoiceEcho, VoiceFable, VoiceOnyx, VoiceNova, VoiceShimmer}, voice)
 }
 
-func (c *Client) CreateSpeech(ctx context.Context, request CreateSpeechRequest) (response io.ReadCloser, err error) {
+func (c *Client) CreateSpeech(ctx context.Context, request CreateSpeechRequest) (response RawResponse, err error) {
 	if !isValidSpeechModel(request.Model) {
 		err = ErrInvalidSpeechModel
 		return
@@ -73,15 +75,13 @@ func (c *Client) CreateSpeech(ctx context.Context, request CreateSpeechRequest) 
 		err = ErrInvalidVoice
 		return
 	}
-	req, err := c.newRequest(ctx, http.MethodPost, c.fullURL("/audio/speech", request.Model),
+	req, err := c.newRequest(ctx, http.MethodPost, c.fullURL("/audio/speech", string(request.Model)),
 		withBody(request),
-		withContentType("application/json; charset=utf-8"),
+		withContentType("application/json"),
 	)
 	if err != nil {
 		return
 	}
 
-	response, err = c.sendRequestRaw(req)
-
-	return
+	return c.sendRequestRaw(req)
 }

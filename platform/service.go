@@ -221,6 +221,10 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 		return errors.Wrapf(err, "handle transcript")
 	}
 
+	if err := ocrWorker.Handle(ctx, handler); err != nil {
+		return errors.Wrapf(err, "handle ocr")
+	}
+
 	if err := transcodeWorker.Handle(ctx, handler); err != nil {
 		return errors.Wrapf(err, "handle transcode")
 	}

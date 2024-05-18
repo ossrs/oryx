@@ -7,7 +7,7 @@ This library provides unofficial Go clients for [OpenAI API](https://platform.op
 
 * ChatGPT
 * GPT-3, GPT-4
-* DALL·E 2
+* DALL·E 2, DALL·E 3
 * Whisper
 
 ## Installation
@@ -453,7 +453,7 @@ func main() {
 	config := openai.DefaultAzureConfig("your Azure OpenAI Key", "https://your Azure OpenAI Endpoint")
 	// If you use a deployment name different from the model name, you can customize the AzureModelMapperFunc function
 	// config.AzureModelMapperFunc = func(model string) string {
-	// 	azureModelMapping = map[string]string{
+	// 	azureModelMapping := map[string]string{
 	// 		"gpt-3.5-turbo": "your gpt-3.5-turbo deployment name",
 	// 	}
 	// 	return azureModelMapping[model]
@@ -559,7 +559,7 @@ func main() {
 
 	//If you use a deployment name different from the model name, you can customize the AzureModelMapperFunc function
 	//config.AzureModelMapperFunc = func(model string) string {
-	//    azureModelMapping = map[string]string{
+	//    azureModelMapping := map[string]string{
 	//        "gpt-3.5-turbo":"your gpt-3.5-turbo deployment name",
 	//    }
 	//    return azureModelMapping[model]
@@ -636,7 +636,7 @@ FunctionDefinition{
       },
       "unit": {
         Type: jsonschema.String,
-        Enum: []string{"celcius", "fahrenheit"},
+        Enum: []string{"celsius", "fahrenheit"},
       },
     },
     Required: []string{"location"},

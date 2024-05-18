@@ -382,7 +382,8 @@ function SettingCallbackImpl({activeKey, defaultEnabled, defaultConf}) {
               <a href={t('helper.doc')+'#http-callback-on_publish'} target='_blank' rel='noreferrer'>publish,</a> &nbsp;
               <a href={t('helper.doc')+'#http-callback-on_unpublish'} target='_blank' rel='noreferrer'>unpublish,</a> &nbsp;
               <a href={t('helper.doc')+'#http-callback-on_record_begin'} target='_blank' rel='noreferrer'>on_record_begin,</a> &nbsp;
-              <a href={t('helper.doc')+'#http-callback-on_record_end'} target='_blank' rel='noreferrer'>on_record_end</a> &nbsp;
+              <a href={t('helper.doc')+'#http-callback-on_record_end'} target='_blank' rel='noreferrer'>on_record_end,</a> &nbsp;
+              <a href={t('helper.doc')+'#http-callback-on_ocr'} target='_blank' rel='noreferrer'>on_ocr</a> &nbsp;
             </Form.Text>
             <Form.Check type="checkbox" defaultChecked={allEvents} label={t('cb.event3')}
                         onChange={(e) => setAllEvents(!allEvents)} />

@@ -923,6 +923,7 @@ API without any authentication:
   * `/terraform/v1/ai/transcript/hls/webvtt/:uuid/subtitles.m3u8` The HLS subtitles for the HLS.
   * `/terraform/v1/ai/transcript/hls/webvtt/:uuid.m3u8` The HLS stream for the WebVTT.
 * `/terraform/v1/ai/transcript/hls/original/:uuid.m3u8` Generate the preview HLS for original stream without overlay text.
+* `/terraform/v1/ai/ocr/image/:uuid.jpg` Get the image for OCR task.
 * `/terraform/v1/mgmt/beian/query` Query the beian information.
 * `/terraform/v1/ai-talk/stage/hello-voices/:file.aac` AI-Talk: Play the example audios.
 * `/.well-known/acme-challenge/` HTTPS verify mount for letsencrypt.
@@ -1025,6 +1026,13 @@ Platform, with token authentication:
 * `/terraform/v1/ai/transcript/asr-queue` Query the asr queue of transcript.
 * `/terraform/v1/ai/transcript/fix-queue` Query the fix queue of transcript.
 * `/terraform/v1/ai/transcript/overlay-queue` Query the overlay queue of transcript.
+* `/terraform/v1/ai/ocr/apply` Update the settings of OCR.
+* `/terraform/v1/ai/ocr/query` Query the settings of OCR.
+* `/terraform/v1/ai/ocr/check` Check the OpenAI service of OCR.
+* `/terraform/v1/ai/ocr/live-queue` Query the live queue of OCR.
+* `/terraform/v1/ai/ocr/ocr-queue` Query the recognition queue of OCR.
+* `/terraform/v1/ai/ocr/callback-queue` Query the callback queue of OCR.
+* `/terraform/v1/ai/ocr/cleanup-queue` Query the cleanup queue of OCR.
 
 Also provided by platform for SRS proxy:
 
@@ -1175,6 +1183,7 @@ The following are the update records for the Oryx server.
 * v5.15:
     * Forward: Support multiple forwarding servers. v5.15.1
     * ENV: Refine the environment variables. v5.15.2
+    * OCR: Support OCR for image recognition. v5.15.3
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)
