@@ -31,6 +31,11 @@ function useTutorialsEn(mediumRef) {
   const ref = React.useRef({tutorials:[]});
 
   const dict = React.useRef({
+    'e4d575d0ca1f': {
+      author: 'Winlin Yang',
+      link: 'https://blog.ossrs.io/leveraging-openai-for-ocr-and-object-recognition-in-video-streams-using-oryx-e4d575d0ca1f',
+      title: 'Leveraging OpenAI for OCR and Object Recognition in Video Streams using Oryx'
+    },
     '544e1db671c2': {
       author: 'Winlin Yang',
       link: 'https://blog.ossrs.io/expand-your-global-reach-with-srs-stack-effortless-video-translation-and-dubbing-solutions-544e1db671c2',
