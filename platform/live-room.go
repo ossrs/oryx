@@ -393,7 +393,7 @@ func NewAssistant(opts ...func(*SrsAssistant)) *SrsAssistant {
 
 	v.AIASREnabled = true
 	v.AIChatEnabled = true
-	v.AIPostEnabled = true
+	v.AIPostEnabled = false
 	v.AITTSEnabled = true
 
 	for _, opt := range opts {
