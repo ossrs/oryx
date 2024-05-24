@@ -346,7 +346,7 @@ type SrsAssistant struct {
 
 func NewAssistant(opts ...func(*SrsAssistant)) *SrsAssistant {
 	v := &SrsAssistant{
-		AIASREnabled: true, AIChatEnabled: true, AIPostEnabled: true, AITTSEnabled: true,
+		AIASREnabled: true, AIChatEnabled: true, AIPostEnabled: false, AITTSEnabled: true,
 	}
 	for _, opt := range opts {
 		opt(v)
