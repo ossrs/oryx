@@ -2,7 +2,7 @@
   "title": "Oryx",
   "name": "oryx",
   "ps": "Oryx(SRS Stack) is an all-in-one, out-of-the-box, and open-source video solution for creating online video services, including live streaming and WebRTC, on the cloud or through self-hosting. Built with SRS, FFmpeg, and WebRTC, it supports various protocols and offers features like authentication, multi-platform streaming, recording, transcoding, virtual live events, AI transcription, AI assistant, Video Dubbing, automatic HTTPS, and HTTP Open API.",
-  "versions": "5.14.19",
+  "versions": "5.15.5",
   "checks": "/www/server/panel/plugin/oryx",
   "author": "Winlin",
   "home": "https://github.com/ossrs/oryx"
