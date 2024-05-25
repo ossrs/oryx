@@ -13,7 +13,6 @@ import {useSrsLanguage} from "../components/LanguageSwitch";
 import {useTranslation} from "react-i18next";
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import {SrsEnvContext} from "../components/SrsEnvContext";
-import ChooseVideoSource from "../components/VideoSourceSelector";
 
 export default function ScenarioCamera() {
   const [init, setInit] = React.useState();
@@ -121,7 +120,7 @@ function ScenarioCameraImpl({defaultActiveKey, defaultSecrets}) {
 
     setConfigs(confs);
     console.log(`Camera: Init configs ${JSON.stringify(confs)}`);
-  }, [defaultSecrets, setConfigs, language, t]);
+  }, [env, defaultSecrets, setConfigs, language, t]);
 
   React.useEffect(() => {
     const refreshStreams = () => {

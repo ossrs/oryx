@@ -121,7 +121,7 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
 
     setConfigs(confs);
     console.log(`VLive: Init configs ${JSON.stringify(confs)}`);
-  }, [defaultSecrets, setConfigs, language, t]);
+  }, [env, defaultSecrets, setConfigs, language, t]);
 
   React.useEffect(() => {
     const refreshStreams = () => {
