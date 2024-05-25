@@ -599,12 +599,21 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "set %v %v", SRS_LOCALE, locale)
 			}
 
-			forwardLimit := 10
+			var forwardLimit int
 			if envForwardLimit() != "" {
 				if iv, err := strconv.ParseInt(envForwardLimit(), 10, 64); err != nil {
-					return errors.Wrapf(err, "parse env SRS_FORWARD_LIMIT=%v", envForwardLimit())
+					return errors.Wrapf(err, "parse env forward limit %v", envForwardLimit())
 				} else {
 					forwardLimit = int(iv)
+				}
+			}
+
+			var vLiveLimit int
+			if envVLiveLimit() != "" {
+				if iv, err := strconv.ParseInt(envVLiveLimit(), 10, 64); err != nil {
+					return errors.Wrapf(err, "parse env virtual live limit %v", envVLiveLimit())
+				} else {
+					vLiveLimit = int(iv)
 				}
 			}
 
@@ -627,6 +636,8 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 				RTCPort string `json:"rtcPort"`
 				// The limit of the number of forwarding streams.
 				ForwardLimit int `json:"forwardLimit"`
+				// The limit of the number of vLive streams.
+				VLiveLimit int `json:"vLiveLimit"`
 			}{
 				// Whether in docker.
 				MgmtDocker: true,
@@ -644,11 +655,13 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 				RTCPort: envRtcListen(),
 				// The limit of the number of forwarding streams.
 				ForwardLimit: forwardLimit,
+				// The limit of the number of vLive streams.
+				VLiveLimit: vLiveLimit,
 			})
 
-			logger.Tf(ctx, "mgmt envs ok, locale=%v, platformDocker=%v, candidate=%v, rtmpPort=%v, httpPort=%v, srtPort=%v, rtcPort=%v, forwardLimit=%v",
+			logger.Tf(ctx, "mgmt envs ok, locale=%v, platformDocker=%v, candidate=%v, rtmpPort=%v, httpPort=%v, srtPort=%v, rtcPort=%v, forwardLimit=%v, vLiveLimit=%v",
 				locale, platformDocker, candidate, envRtmpPort(), envHttpPort(),
-				envSrtListen(), envRtcListen(), forwardLimit,
+				envSrtListen(), envRtcListen(), forwardLimit, vLiveLimit,
 			)
 			return nil
 		}(); err != nil {

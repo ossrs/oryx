@@ -468,6 +468,10 @@ func envForwardLimit() string {
 	return os.Getenv("SRS_FORWARD_LIMIT")
 }
 
+func envVLiveLimit() string {
+	return os.Getenv("SRS_VLIVE_LIMIT")
+}
+
 // rdb is a global redis client object.
 var rdb *redis.Client
 

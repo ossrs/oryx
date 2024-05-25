@@ -82,7 +82,9 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				if userConf.Platform == "" {
 					return errors.New("no platform")
 				}
-				if !slicesContains(allowedPlatforms, userConf.Platform) {
+
+				// Platform should be specified platforms, or starts with vlive-.
+				if !slicesContains(allowedPlatforms, userConf.Platform) && !strings.Contains(userConf.Platform, "vlive-") {
 					return errors.Errorf("invalid platform=%v", userConf.Platform)
 				}
 
@@ -535,9 +537,9 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}
 			// For virtual live event only.
 			if true {
-				// The platforms limited for vlive.
+				// Platform should be specified platforms, or starts with vlive-.
 				allowedPlatforms := []string{"wx", "bilibili", "kuaishou"}
-				if !slicesContains(allowedPlatforms, platform) {
+				if !slicesContains(allowedPlatforms, platform) && !strings.Contains(platform, "vlive-") {
 					return errors.Errorf("invalid platform %v", platform)
 				}
 			}

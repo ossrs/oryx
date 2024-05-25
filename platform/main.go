@@ -121,6 +121,10 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("SRT_PORT", "10080")
 	setEnvDefault("RTC_PORT", "8000")
 
+	// For system limit.
+	setEnvDefault("SRS_FORWARD_LIMIT", "10")
+	setEnvDefault("SRS_VLIVE_LIMIT", "10")
+
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, "+
 		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, SRT_PORT=%v, RTC_PORT=%v, "+
 		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, RTMP_PORT=%v, "+

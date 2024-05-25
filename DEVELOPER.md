@@ -1114,6 +1114,7 @@ For multiple ports running in multiple containers in one host server:
 For limit that you can control:
 
 * `SRS_FORWARD_LIMIT`: The limit for SRS forward. Default: `10`.
+* `SRS_VLIVE_LIMIT`: The limit for SRS virtual live. Default: `10`.
 
 For feature control:
 
@@ -1184,6 +1185,7 @@ The following are the update records for the Oryx server.
     * Forward: Support multiple forwarding servers. v5.15.1
     * ENV: Refine the environment variables. v5.15.2
     * OCR: Support OCR for image recognition. v5.15.3
+    * VLive: Support multiple virtual live streaming. v5.15.4
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)

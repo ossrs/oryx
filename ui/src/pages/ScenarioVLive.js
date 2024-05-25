@@ -13,6 +13,7 @@ import {useSrsLanguage} from "../components/LanguageSwitch";
 import {useTranslation} from "react-i18next";
 import {SrsErrorBoundary} from "../components/SrsErrorBoundary";
 import ChooseVideoSource, {VLiveFileFormatInfo} from "../components/VideoSourceSelector";
+import {SrsEnvContext} from "../components/SrsEnvContext";
 
 export default function ScenarioVLive() {
   const [init, setInit] = React.useState();
@@ -39,14 +40,12 @@ export default function ScenarioVLive() {
       return setActiveKey('99');
     }
 
-    if (!secrets.wx?.server || !secrets.wx?.secret || !secrets.wx?.enabled) {
-      setActiveKey('1');
-    } else if (!secrets.bilibili?.server || !secrets.bilibili?.secret || !secrets.bilibili?.enabled) {
-      setActiveKey('2');
-    } else if (!secrets.kuaishou?.server || !secrets.kuaishou?.secret || !secrets.kuaishou?.enabled) {
-      setActiveKey('3');
-    } else {
-      setActiveKey('99');
+    setActiveKey('1');
+    for (const key in secrets) {
+      const e = secrets[key];
+      if (e.enabled && e.server && e.secret) {
+        setActiveKey('99');
+      }
     }
   }, [init, secrets]);
 
@@ -58,27 +57,71 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
   const language = useSrsLanguage();
   const {t} = useTranslation();
   const handleError = useErrorHandler();
+  const env = React.useContext(SrsEnvContext)[0];
 
-  const [wxEnabled, setWxEnabled] = React.useState(defaultSecrets?.wx?.enabled);
-  const [wxServer, setWxServer] = React.useState(defaultSecrets?.wx?.server);
-  const [wxSecret, setWxSecret] = React.useState(defaultSecrets?.wx?.secret);
-  const [wxCustom, setWxCustom] = React.useState(defaultSecrets?.wx?.custom);
-  const [wxLabel, setWxLabel] = React.useState(defaultSecrets?.wx?.label);
-  const [wxFiles, setWxFiles] = React.useState(defaultSecrets?.wx?.files);
-  const [bilibiliEnabled, setBilibiliEnabled] = React.useState(defaultSecrets?.bilibili?.enabled);
-  const [bilibiliServer, setBilibiliServer] = React.useState(defaultSecrets?.bilibili?.server);
-  const [bilibiliSecret, setBilibiliSecret] = React.useState(defaultSecrets?.bilibili?.secret);
-  const [bilibiliCustom, setBilibiliCustom] = React.useState(defaultSecrets?.bilibili?.custom);
-  const [bilibiliLabel, setBilibiliLabel] = React.useState(defaultSecrets?.bilibili?.label);
-  const [bilibiliFiles, setBilibiliFiles] = React.useState(defaultSecrets?.bilibili?.files);
-  const [kuaishouEnabled, setKuaishouEnabled] = React.useState(defaultSecrets?.kuaishou?.enabled);
-  const [kuaishouServer, setKuaishouServer] = React.useState(defaultSecrets?.kuaishou?.server);
-  const [kuaishouSecret, setKuaishouSecret] = React.useState(defaultSecrets?.kuaishou?.secret);
-  const [kuaishouCustom, setKuaishouCustom] = React.useState(defaultSecrets?.kuaishou?.custom);
-  const [kuaishouLabel, setKuaishouLabel] = React.useState(defaultSecrets?.kuaishou?.label);
-  const [kuaishouFiles, setKuaishouFiles] = React.useState(defaultSecrets?.kuaishou?.files);
   const [vLives, setVLives] = React.useState();
   const [submiting, setSubmiting] = React.useState();
+  const [configs, setConfigs] = React.useState([]);
+
+  // Convert default config from kv to objects in array.
+  React.useEffect(() => {
+    if (!defaultSecrets) return;
+
+    let index = 1;
+    const confs = [{
+      platform: 'wx', enabled: false, index: String(index++), allowCustom: true,
+      ...defaultSecrets?.wx,
+      locale: {
+        label: null, link: t('plat.wx.link'), link2: t('plat.wx.link2'),
+        generate: (e) => {
+          e.locale.label = e.custom ? t('plat.com.custom') : t('plat.wx.title');
+        },
+      },
+    }, {
+      platform: 'bilibili', enabled: false, index: String(index++), allowCustom: true,
+      ...defaultSecrets?.bilibili,
+      locale: {
+        label: null, link: t('plat.bl.link'), link2: t('plat.bl.link2'),
+        generate: (e) => {
+          e.locale.label = e.custom ? t('plat.com.custom') : t('plat.bl.title');
+        },
+      },
+    }, {
+      platform: 'kuaishou', enabled: false, index: String(index++), allowCustom: true, custom: language === 'zh',
+      ...defaultSecrets?.kuaishou,
+      locale: {
+        label: null, link: t('plat.ks.link'), link2: t('plat.ks.link2'),
+        generate: (e) => {
+          e.locale.label = e.custom ? t('plat.com.custom') : t('plat.ks.title');
+        },
+      },
+    }];
+
+    // Regenerate the locale label, because it may change after created from defaults.
+    confs.forEach((e) => {
+      e?.locale?.generate && e.locale.generate(e);
+    });
+
+    // Generate more virtual live configures.
+    while (confs.length < env.vLiveLimit) {
+      const rindex = index++;
+      const rid = Math.random().toString(16).slice(-6);
+
+      // Load the configured virtual live from defaults.
+      const existsConf = Object.values(defaultSecrets).find(e => e.platform.indexOf(`vlive-${rindex}-`) === 0);
+      if (existsConf) {
+        confs.push(existsConf);
+      } else {
+        confs.push({
+          platform: `vlive-${rindex}-${rid}`, enabled: false, index: String(rindex), allowCustom: false,
+          server: null, secret: null, custom: true, label: `VLive #${rindex}`, files: [],
+        });
+      }
+    }
+
+    setConfigs(confs);
+    console.log(`VLive: Init configs ${JSON.stringify(confs)}`);
+  }, [defaultSecrets, setConfigs, language, t]);
 
   React.useEffect(() => {
     const refreshStreams = () => {
@@ -113,6 +156,18 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
     const timer = setInterval(() => refreshStreams(), 10 * 1000);
     return () => clearInterval(timer);
   }, [t, handleError]);
+
+  // Update config object in array.
+  const updateConfigObject = React.useCallback((conf) => {
+    const confs = configs.map((e) => {
+      if (e.platform === conf.platform) {
+        return conf;
+      }
+      return e;
+    })
+    setConfigs(confs);
+    console.log(`VLive: Update config ${JSON.stringify(conf)} to ${JSON.stringify(confs)}`);
+  }, [configs, setConfigs]);
 
   const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, files, onSuccess) => {
     e.preventDefault();
@@ -177,141 +232,57 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
           </Accordion.Body>
         </Accordion.Item>}
       </React.Fragment>
-      <Accordion.Item eventKey="1">
-        <Accordion.Header>{wxCustom ? t('plat.com.custom') : t('plat.wx.title')} {wxLabel}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('plat.com.name')}</Form.Label>
-              <Form.Text> * {wxCustom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('plat.com.name2')}</Form.Text>
-              <Form.Control as="input" defaultValue={wxLabel} onChange={(e) => setWxLabel(e.target.value)}/>
-            </Form.Group>
-            <SrsErrorBoundary>
-              <ChooseVideoSource platform='wx' vLiveFiles={wxFiles} setVLiveFiles={setWxFiles} endpoint='vlive' />
-            </SrsErrorBoundary>
-            <Form.Group className="mb-3">
-              <Form.Label>{wxCustom ? t('plat.com.server') : t('plat.com.server2')}</Form.Label>
-              {!wxCustom && <Form.Text> * {t('plat.com.server3')} <a href={t('plat.wx.link')} target='_blank' rel='noreferrer'>{t('plat.wx.link2')}</a>, {t('plat.com.server4')}</Form.Text>}
-              <Form.Control as="input" defaultValue={wxServer} onChange={(e) => setWxServer(e.target.value)}/>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('plat.com.key')}</Form.Label>
-              {!wxCustom && <Form.Text> * {t('plat.com.server3')} <a href={t('plat.wx.link')} target='_blank' rel='noreferrer'>{t('plat.wx.link2')}</a>, {t('plat.com.key2')}</Form.Text>}
-              <Form.Control as="input" defaultValue={wxSecret} onChange={(e) => setWxSecret(e.target.value)}/>
-            </Form.Group>
-            <Row>
-              <Col xs='auto'>
-                <Form.Group className="mb-3" controlId="formWxCustomCheckbox">
-                  <Form.Check type="checkbox" label={t('plat.com.custom')} defaultChecked={wxCustom} onClick={() => setWxCustom(!wxCustom)} />
+      {configs.map((conf) => {
+        return (
+          <Accordion.Item eventKey={conf.index} key={conf.platform}>
+            <Accordion.Header>{conf?.locale?.label} {conf.label}</Accordion.Header>
+            <Accordion.Body>
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>{t('plat.com.name')}</Form.Label>
+                  <Form.Text> * {conf.custom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('plat.com.name2')}</Form.Text>
+                  <Form.Control as="input" defaultValue={conf.label} onChange={(e) => updateConfigObject({...conf, label: e.target.value})}/>
                 </Form.Group>
-              </Col>
-            </Row>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={submiting}
-              onClick={(e) => {
-                updateSecrets(e, 'update', 'wx', wxServer, wxSecret, !wxEnabled, wxCustom, wxLabel, wxFiles, () => {
-                  setWxEnabled(!wxEnabled);
-                });
-              }}
-            >
-              {wxEnabled ? t('plat.com.stop') : t('plat.com.start')}
-            </Button> &nbsp;
-            <Form.Text> * {t('vle.tip')}</Form.Text>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="2">
-        <Accordion.Header>{bilibiliCustom ? t('plat.com.custom') : t('plat.bl.title')} {bilibiliLabel}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('plat.com.name')}</Form.Label>
-              <Form.Text> * {bilibiliCustom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('plat.com.name2')}</Form.Text>
-              <Form.Control as="input" defaultValue={bilibiliLabel} onChange={(e) => setBilibiliLabel(e.target.value)}/>
-            </Form.Group>
-            <SrsErrorBoundary>
-              <ChooseVideoSource platform='bilibili' vLiveFiles={bilibiliFiles} setVLiveFiles={setBilibiliFiles} endpoint='vlive' />
-            </SrsErrorBoundary>
-            <Form.Group className="mb-3">
-              <Form.Label>{bilibiliCustom ? t('plat.com.server') : t('plat.com.server2')}</Form.Label>
-              {!bilibiliCustom && <Form.Text> * {t('plat.com.server3')} <a href={t('plat.bl.link')} target='_blank' rel='noreferrer'>{t('plat.bl.link2')}</a>, {t('plat.com.server4')}</Form.Text>}
-              <Form.Control as="input" defaultValue={bilibiliServer} onChange={(e) => setBilibiliServer(e.target.value)}/>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('plat.com.key')}</Form.Label>
-              {!bilibiliCustom && <Form.Text> * {t('plat.com.server3')} <a href={t('plat.bl.link')} target='_blank' rel='noreferrer'>{t('plat.bl.link2')}</a>, {t('plat.com.key2')}</Form.Text>}
-              <Form.Control as="input" defaultValue={bilibiliSecret} onChange={(e) => setBilibiliSecret(e.target.value)}/>
-            </Form.Group>
-            <Row>
-              <Col xs='auto'>
-                <Form.Group className="mb-3" controlId="formBilibiliCustomCheckbox">
-                  <Form.Check type="checkbox" label={t('plat.com.custom')} defaultChecked={bilibiliCustom} onClick={() => setBilibiliCustom(!bilibiliCustom)} />
+                <SrsErrorBoundary>
+                  <ChooseVideoSource platform={conf.platform} vLiveFiles={conf.files} setVLiveFiles={(files) => updateConfigObject({...conf, files: files})} endpoint='vlive' />
+                </SrsErrorBoundary>
+                <Form.Group className="mb-3">
+                  <Form.Label>{conf.custom ? t('plat.com.server') : t('plat.com.server2')}</Form.Label>
+                  {!conf.custom && <Form.Text> * {t('plat.com.server3')} <a href={conf?.locale?.link} target='_blank' rel='noreferrer'>{conf?.locale?.link2}</a>, {t('plat.com.server4')}</Form.Text>}
+                  <Form.Control as="input" defaultValue={conf.server} onChange={(e) => updateConfigObject({...conf, server: e.target.value})}/>
                 </Form.Group>
-              </Col>
-            </Row>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={submiting}
-              onClick={(e) => {
-                updateSecrets(e, 'update', 'bilibili', bilibiliServer, bilibiliSecret, !bilibiliEnabled, bilibiliCustom, bilibiliLabel, bilibiliFiles, () => {
-                  setBilibiliEnabled(!bilibiliEnabled);
-                });
-              }}
-            >
-              {bilibiliEnabled ? t('plat.com.stop') : t('plat.com.start')}
-            </Button> &nbsp;
-            <Form.Text> * {t('vle.tip')}</Form.Text>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="3">
-        <Accordion.Header>{kuaishouCustom ? t('plat.com.custom') : t('plat.ks.title')} {kuaishouLabel}</Accordion.Header>
-        <Accordion.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('plat.com.name')}</Form.Label>
-              <Form.Text> * {kuaishouCustom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('plat.com.name2')}</Form.Text>
-              <Form.Control as="input" defaultValue={kuaishouLabel} onChange={(e) => setKuaishouLabel(e.target.value)}/>
-            </Form.Group>
-            <SrsErrorBoundary>
-              <ChooseVideoSource platform='kuaishou' vLiveFiles={kuaishouFiles} setVLiveFiles={setKuaishouFiles} endpoint='vlive' />
-            </SrsErrorBoundary>
-            <Form.Group className="mb-3">
-              <Form.Label>{kuaishouCustom ? t('plat.com.server') : t('plat.com.server2')}</Form.Label>
-              {!kuaishouCustom && <Form.Text> * {t('plat.com.server3')} <a href={t('plat.ks.link')} target='_blank' rel='noreferrer'>{t('plat.ks.link2')}</a>, {t('plat.com.server4')}</Form.Text>}
-              <Form.Control as="input" defaultValue={kuaishouServer} onChange={(e) => setKuaishouServer(e.target.value)}/>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('plat.com.key')}</Form.Label>
-              {!kuaishouCustom && <Form.Text> * {t('plat.com.server3')} <a href={t('plat.ks.link')} target='_blank' rel='noreferrer'>{t('plat.ks.link2')}</a>, {t('plat.com.key2')}</Form.Text>}
-              <Form.Control as="input" defaultValue={kuaishouSecret} onChange={(e) => setKuaishouSecret(e.target.value)}/>
-            </Form.Group>
-            <Row>
-              <Col xs='auto'>
-                <Form.Group className="mb-3" controlId="formKuaishouCustomCheckbox">
-                  <Form.Check type="checkbox" label={t('plat.com.custom')} defaultChecked={kuaishouCustom} onClick={() => setKuaishouCustom(!kuaishouCustom)} />
+                <Form.Group className="mb-3">
+                  <Form.Label>{t('plat.com.key')}</Form.Label>
+                  {!conf.custom && <Form.Text> * {t('plat.com.server3')} <a href={conf?.locale?.link} target='_blank' rel='noreferrer'>{conf?.locale?.link2}</a>, {t('plat.com.key2')}</Form.Text>}
+                  <Form.Control as="input" defaultValue={conf.secret} onChange={(e) => updateConfigObject({...conf, secret: e.target.value})}/>
                 </Form.Group>
-              </Col>
-            </Row>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={submiting}
-              onClick={(e) => {
-                updateSecrets(e, 'update', 'kuaishou', kuaishouServer, kuaishouSecret, !kuaishouEnabled, kuaishouCustom, kuaishouLabel, kuaishouFiles, () => {
-                  setKuaishouEnabled(!kuaishouEnabled);
-                });
-              }}
-            >
-              {kuaishouEnabled ? t('plat.com.stop') : t('plat.com.start')}
-            </Button> &nbsp;
-            <Form.Text> * {t('vle.tip')}</Form.Text>
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
+                {conf?.allowCustom && (
+                  <Row>
+                    <Col xs='auto'>
+                      <Form.Group className="mb-3" controlId={`formCustomCheckbox-${conf.platform}`}>
+                        <Form.Check type="checkbox" label={t('plat.com.custom')} defaultChecked={conf.custom} onClick={() => updateConfigObject({...conf, custom: !conf.custom})} />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                )}
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={submiting}
+                  onClick={(e) => {
+                    updateSecrets(e, 'update', conf.platform, conf.server, conf.secret, !conf.enabled, conf.custom, conf.label, conf.files, () => {
+                      updateConfigObject({...conf, enabled: !conf.enabled});
+                    });
+                  }}
+                >
+                  {conf.enabled ? t('plat.com.stop') : t('plat.com.start')}
+                </Button> &nbsp;
+                <Form.Text> * {t('forward.tip')}</Form.Text>
+              </Form>
+            </Accordion.Body>
+          </Accordion.Item>
+        );
+      })}
       <Accordion.Item eventKey="99">
         <Accordion.Header>{t('plat.com.status')}</Accordion.Header>
         <Accordion.Body>
