@@ -78,7 +78,9 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				if userConf.Platform == "" {
 					return errors.New("no platform")
 				}
-				if !slicesContains(allowedPlatforms, userConf.Platform) {
+
+				// Platform should be specified platforms, or starts with camera-.
+				if !slicesContains(allowedPlatforms, userConf.Platform) && !strings.Contains(userConf.Platform, "camera-") {
 					return errors.Errorf("invalid platform=%v", userConf.Platform)
 				}
 
@@ -323,12 +325,17 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 			}
 
 			// Check platform.
-			allowedPlatforms := []string{"wx", "bilibili", "kuaishou"}
 			if platform == "" {
 				return errors.New("no platform")
 			}
-			if !slicesContains(allowedPlatforms, platform) {
-				return errors.Errorf("invalid platform %v", platform)
+
+			if true {
+				allowedPlatforms := []string{"wx", "bilibili", "kuaishou"}
+
+				// Platform should be specified platforms, or starts with camera-.
+				if !slicesContains(allowedPlatforms, platform) && !strings.Contains(platform, "camera-") {
+					return errors.Errorf("invalid platform %v", platform)
+				}
 			}
 
 			// Parsed source files.

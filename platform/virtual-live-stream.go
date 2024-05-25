@@ -537,8 +537,9 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}
 			// For virtual live event only.
 			if true {
-				// Platform should be specified platforms, or starts with vlive-.
 				allowedPlatforms := []string{"wx", "bilibili", "kuaishou"}
+
+				// Platform should be specified platforms, or starts with vlive-.
 				if !slicesContains(allowedPlatforms, platform) && !strings.Contains(platform, "vlive-") {
 					return errors.Errorf("invalid platform %v", platform)
 				}

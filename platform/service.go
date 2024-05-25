@@ -617,6 +617,15 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 				}
 			}
 
+			var cameraLimit int
+			if envCameraLimit() != "" {
+				if iv, err := strconv.ParseInt(envCameraLimit(), 10, 64); err != nil {
+					return errors.Wrapf(err, "parse env camera limit %v", envCameraLimit())
+				} else {
+					cameraLimit = int(iv)
+				}
+			}
+
 			platformDocker := envPlatformDocker() != "off"
 			candidate := envCandidate() != ""
 			ohttp.WriteData(ctx, w, r, &struct {
@@ -638,6 +647,8 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 				ForwardLimit int `json:"forwardLimit"`
 				// The limit of the number of vLive streams.
 				VLiveLimit int `json:"vLiveLimit"`
+				// The limit of the number of IP camera streams.
+				CameraLimit int `json:"cameraLimit"`
 			}{
 				// Whether in docker.
 				MgmtDocker: true,
@@ -657,11 +668,13 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 				ForwardLimit: forwardLimit,
 				// The limit of the number of vLive streams.
 				VLiveLimit: vLiveLimit,
+				// The limit of the number of IP camera streams.
+				CameraLimit: cameraLimit,
 			})
 
-			logger.Tf(ctx, "mgmt envs ok, locale=%v, platformDocker=%v, candidate=%v, rtmpPort=%v, httpPort=%v, srtPort=%v, rtcPort=%v, forwardLimit=%v, vLiveLimit=%v",
+			logger.Tf(ctx, "mgmt envs ok, locale=%v, platformDocker=%v, candidate=%v, rtmpPort=%v, httpPort=%v, srtPort=%v, rtcPort=%v, forwardLimit=%v, vLiveLimit=%v, cameraLimit=%v",
 				locale, platformDocker, candidate, envRtmpPort(), envHttpPort(),
-				envSrtListen(), envRtcListen(), forwardLimit, vLiveLimit,
+				envSrtListen(), envRtcListen(), forwardLimit, vLiveLimit, cameraLimit,
 			)
 			return nil
 		}(); err != nil {

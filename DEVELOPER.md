@@ -1186,6 +1186,7 @@ The following are the update records for the Oryx server.
     * ENV: Refine the environment variables. v5.15.2
     * OCR: Support OCR for image recognition. v5.15.3
     * VLive: Support multiple virtual live streaming. v5.15.4
+    * Camera: Support multiple camera streaming. v5.15.5
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)

@@ -472,6 +472,10 @@ func envVLiveLimit() string {
 	return os.Getenv("SRS_VLIVE_LIMIT")
 }
 
+func envCameraLimit() string {
+	return os.Getenv("SRS_CAMERA_LIMIT")
+}
+
 // rdb is a global redis client object.
 var rdb *redis.Client
 

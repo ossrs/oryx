@@ -124,13 +124,15 @@ func doMain(ctx context.Context) error {
 	// For system limit.
 	setEnvDefault("SRS_FORWARD_LIMIT", "10")
 	setEnvDefault("SRS_VLIVE_LIMIT", "10")
+	setEnvDefault("SRS_CAMERA_LIMIT", "10")
 
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, "+
 		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, SRT_PORT=%v, RTC_PORT=%v, "+
 		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, RTMP_PORT=%v, "+
 		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, HTTP_PORT=%v, "+
 		"REGISTRY=%v, MGMT_LISTEN=%v, HTTPS_LISTEN=%v, AUTO_SELF_SIGNED_CERTIFICATE=%v, "+
-		"NAME_LOOKUP=%v, PLATFORM_DOCKER=%v",
+		"NAME_LOOKUP=%v, PLATFORM_DOCKER=%v, SRS_FORWARD_LIMIT=%v, SRS_VLIVE_LIMIT=%v, "+
+		"SRS_CAMERA_LIMIT=%v",
 		len(envMgmtPassword()), len(envApiSecret()), envCloud(),
 		envRegion(), envSource(), envSrtListen(), envRtcListen(),
 		envNodeEnv(), envLocalRelease(),
@@ -138,7 +140,8 @@ func doMain(ctx context.Context) error {
 		envBuildPath(), envReactAppLocale(), envPlatformListen(), envHttpPort(),
 		envRegistry(), envMgmtListen(), envHttpListen(),
 		envSelfSignedCertificate(), envNameLookup(),
-		envPlatformDocker(),
+		envPlatformDocker(), envForwardLimit(), envVLiveLimit(),
+		envCameraLimit(),
 	)
 
 	// Setup the base OS for redis, which should never depends on redis.
