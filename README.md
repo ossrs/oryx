@@ -1,4 +1,4 @@
-# ORYXY
+# ORYX
 
 [![](https://img.shields.io/twitter/follow/srs_server?style=social)](https://twitter.com/srs_server)
 [![](https://badgen.net/discord/members/bQUPDRqy79)](https://discord.gg/bQUPDRqy79)
