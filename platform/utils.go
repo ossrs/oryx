@@ -481,7 +481,7 @@ var rdb *redis.Client
 
 // InitRdb create and init global rdb, which is a redis client.
 func InitRdb() error {
-	addr := "localhost"
+	addr := "127.0.0.1"
 	rdb = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%v:%v", addr, envRedisPort()),
 		Password: envRedisPassword(),
