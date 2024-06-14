@@ -1188,6 +1188,7 @@ The following are the update records for the Oryx server.
     * VLive: Support multiple virtual live streaming. v5.15.4
     * Camera: Support multiple camera streaming. [v5.15.5](https://github.com/ossrs/oryx/releases/tag/v5.15.5)
     * Transcript: Upgrade the hls.js to 1.4 for WebVTT. v5.15.6
+    * Disable version query and check. v5.15.7
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)
@@ -1215,6 +1216,7 @@ The following are the update records for the Oryx server.
     * Refine installer for lightsail. [v5.14.19](https://github.com/ossrs/oryx/releases/tag/v5.14.19)
     * Update model to gpt-3.5-turbo, gpt-4-turbo, gpt-4o. v5.14.20
     * Transcript: Upgrade the hls.js to 1.4 for WebVTT. v5.14.21
+    * Disable version query and check. v5.14.22
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
