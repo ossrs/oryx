@@ -1216,7 +1216,7 @@ The following are the update records for the Oryx server.
     * Refine installer for lightsail. [v5.14.19](https://github.com/ossrs/oryx/releases/tag/v5.14.19)
     * Update model to gpt-3.5-turbo, gpt-4-turbo, gpt-4o. v5.14.20
     * Transcript: Upgrade the hls.js to 1.4 for WebVTT. v5.14.21
-    * Disable version query and check. v5.14.22
+    * Disable version query and check. [v5.14.22](https://github.com/ossrs/oryx/releases/tag/v5.14.22)
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
