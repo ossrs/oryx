@@ -56,8 +56,8 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   const [videoCodecParams, setVideoCodecParams] = React.useState(defaultConf.videoCodecParams || '-c:v libx264 -profile:v main -preset:v medium -tune zerolatency -bf 0');
   const [overlayEnabled, setOverlayEnabled] = React.useState(defaultConf.overlayEnabled);
   const [webvttEnabled, setWebvttEnabled] = React.useState(defaultConf.webvttEnabled);
-  const [webVttCueStyle, setWebvttCueStyle] = React.useState(defaultConf.webVttCueStyle);
-  const [webVttCueSetting, setWebvttCueSetting] = React.useState(defaultConf.webVttCueSetting);
+  const [webVttCueSetting, setWebvttCueSetting] = React.useState(defaultConf.webVttCueSetting || 'line:63% position:22% align:start');
+  const [webVttCueStyle, setWebvttCueStyle] = React.useState(defaultConf.webVttCueStyle || 'STYLE\n::cue { background-color: blue; color: red; font-size: 40px; }');
 
   const [liveQueue, setLiveQueue] = React.useState();
   const [asrQueue, setAsrQueue] = React.useState();
