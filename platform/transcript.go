@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -760,13 +761,21 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 
 			var vttBody strings.Builder
 			vttBody.WriteString(fmt.Sprintf("WEBVTT\n\n"))
+			if v.task.config.WebVttCueStyle != "" {
+				vttBody.WriteString(fmt.Sprintf("%s", v.task.config.WebVttCueStyle))
+				vttBody.WriteString(fmt.Sprintf("\n\n"))
+			}
 			for _, as := range segment.AsrText.Segments {
 				s := segment.StreamStarttime + time.Duration(as.Start*float64(time.Second))
 				e := segment.StreamStarttime + time.Duration(as.End*float64(time.Second))
 				vttBody.WriteString(fmt.Sprintf("%02d:%02d:%02d.%03d --> ",
 					int(s.Hours()), int(s.Minutes())%60, int(s.Seconds())%60, int(s.Milliseconds())%1000))
-				vttBody.WriteString(fmt.Sprintf("%02d:%02d:%02d.%03d\n",
+				vttBody.WriteString(fmt.Sprintf("%02d:%02d:%02d.%03d",
 					int(e.Hours()), int(e.Minutes())%60, int(e.Seconds())%60, int(e.Milliseconds())%1000))
+				if v.task.config.WebVttCueSetting != "" {
+					vttBody.WriteString(fmt.Sprintf(" %s", v.task.config.WebVttCueSetting))
+				}
+				vttBody.WriteString("\n")
 				vttBody.WriteString(fmt.Sprintf("%v\n\n", as.Text))
 			}
 
@@ -809,6 +818,7 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 
 			var tsFiles []*TsFile
 			segments := v.task.overlaySegments()
+			log.Printf("segments: %s", segments)
 			for _, segment := range segments {
 				tsFiles = append(tsFiles, segment.OverlayFile)
 			}
@@ -1219,6 +1229,10 @@ type TranscriptConfig struct {
 	EnableOverlay bool `json:"overlayEnabled"`
 	// Whether enable WebVTT subtitle.
 	EnableWebVTT bool `json:"webvttEnabled"`
+	// WebVTT  CUE style
+	WebVttCueStyle string `json:"webVttCueStyle"`
+	// WebVTT  CUE Setting
+	WebVttCueSetting string `json:"webVttCueSetting"`
 }
 
 func NewTranscriptConfig() *TranscriptConfig {
@@ -1228,9 +1242,9 @@ func NewTranscriptConfig() *TranscriptConfig {
 }
 
 func (v TranscriptConfig) String() string {
-	return fmt.Sprintf("all=%v, key=%vB, organization=%v, base=%v, lang=%v, overlay=%v, forceStyle=%v, videoCodecParams=%v, webvtt=%v",
+	return fmt.Sprintf("all=%v, key=%vB, organization=%v, base=%v, lang=%v, overlay=%v, forceStyle=%v, videoCodecParams=%v, webvtt=%v, webVttCueStyle=%v, webVttCueSetting=%v",
 		v.All, len(v.SecretKey), v.Organization, v.BaseURL, v.Language, v.EnableOverlay, v.ForceStyle,
-		v.VideoCodecParams, v.EnableWebVTT)
+		v.VideoCodecParams, v.EnableWebVTT, v.WebVttCueStyle, v.WebVttCueSetting)
 }
 
 func (v *TranscriptConfig) Load(ctx context.Context) error {
