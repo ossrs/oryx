@@ -1,7 +1,7 @@
 //
-// Copyright (c) 2022-2023 Winlin
+// Copyright (c) 2022-2024 Winlin
 //
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MIT
 //
 import Container from "react-bootstrap/Container";
 import {Button, Form, Spinner} from "react-bootstrap";

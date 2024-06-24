@@ -1,7 +1,7 @@
 //
-// Copyright (c) 2022-2023 Winlin
+// Copyright (c) 2022-2024 Winlin
 //
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MIT
 //
 import React from 'react';
 import {Dropdown, Navbar} from "react-bootstrap";

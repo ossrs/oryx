@@ -160,7 +160,7 @@ The features that we're developing:
 
 ## License
 
-Oryx is an open-source project, licensed under the [AGPL-3.0-or-later](https://spdx.org/licenses/AGPL-3.0-or-later.html) license.
+Oryx is an open-source project, licensed under the [MIT](https://spdx.org/licenses/MIT.html) license.
 
 ## Developer
 
