@@ -1190,6 +1190,7 @@ The following are the update records for the Oryx server.
     * Transcript: Upgrade the hls.js to 1.4 for WebVTT. v5.15.6
     * Disable version query and check. v5.15.7
     * Change LICENSE from AGPL-3.0-or-later to MIT. v5.15.8
+    * Dubbing: Support scrolling card in fullscreen. v5.15.9
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)

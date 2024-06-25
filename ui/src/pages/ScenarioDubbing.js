@@ -200,6 +200,7 @@ function ScenarioDubbingImpl({dubbingId, setDubbingId}) {
   const [project, setProject] = React.useState();
   const [searchParams, setSearchParams] = useSearchParams();
   const [requesting, setRequesting] = React.useState(false);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
 
   React.useEffect(() => {
     axios.post('/terraform/v1/dubbing/query', {
@@ -235,29 +236,33 @@ function ScenarioDubbingImpl({dubbingId, setDubbingId}) {
   if (!project) return <Spinner animation="border" variant="primary" />;
   const activeKeys = project?.asr?.aiProvider ? ['2'] : ['1', '2'];
   return <>
-    <Accordion defaultActiveKey={activeKeys}>
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>{t('lr.room.nav')}</Accordion.Header>
-        <Accordion.Body>
-          <Button variant="link" onClick={() => {
-            setDubbingId(null);
-            searchParams.delete('dubbingId'); setSearchParams(searchParams);
-          }}>Back to Dubbing Projects</Button>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="1">
-        <Accordion.Header>{t('dubb.setting.title')}</Accordion.Header>
-        <Accordion.Body>
-          <DubbingSettings {...{project, requesting, updateProject}} />
-        </Accordion.Body>
-      </Accordion.Item>
-      {project?.asr?.aiProvider && <Accordion.Item eventKey="2">
-        <Accordion.Header>{t('dubb.studio.title')}</Accordion.Header>
-        <Accordion.Body>
-          <DubbingStudioEditor {...{project}} />
-        </Accordion.Body>
-      </Accordion.Item>}
-    </Accordion>
+    {isFullscreen ? <>
+      <DubbingStudioEditor {...{project, isFullscreen, setIsFullscreen}} />
+    </> : <>
+      <Accordion defaultActiveKey={activeKeys}>
+        <Accordion.Item eventKey="0">
+          <Accordion.Header>{t('lr.room.nav')}</Accordion.Header>
+          <Accordion.Body>
+            <Button variant="link" onClick={() => {
+              setDubbingId(null);
+              searchParams.delete('dubbingId'); setSearchParams(searchParams);
+            }}>Back to Dubbing Projects</Button>
+          </Accordion.Body>
+        </Accordion.Item>
+        <Accordion.Item eventKey="1">
+          <Accordion.Header>{t('dubb.setting.title')}</Accordion.Header>
+          <Accordion.Body>
+            <DubbingSettings {...{project, requesting, updateProject}} />
+          </Accordion.Body>
+        </Accordion.Item>
+        {project?.asr?.aiProvider && <Accordion.Item eventKey="2">
+          <Accordion.Header>{t('dubb.studio.title')}</Accordion.Header>
+          <Accordion.Body>
+            <DubbingStudioEditor {...{project, isFullscreen, setIsFullscreen}} />
+          </Accordion.Body>
+        </Accordion.Item>}
+      </Accordion>
+    </>}
   </>;
 }
 
@@ -527,7 +532,235 @@ function DubbingSettings({project, requesting, updateProject}) {
   </>;
 }
 
-function DubbingStudioEditor({project}) {
+function DubbingUISummary({project}) {
+  return <>
+    <p>
+      <b>Title:</b> {project.title} <br/>
+      <b>Created:</b> {project.created_at} <br/>
+      <b>User File:</b> {project.filepath} <br/>
+      <b>Source File:</b> {project.uuid}/{project.source}.{project.filepath.split('.').pop()} <br/>
+      <b>Bitrate:</b> {Number(project.format.bit_rate / 1000.).toFixed(1)} Kbps <br/>
+      <b>Duration:</b> {Number(project.format.duration).toFixed(1)} s <br/>
+    </p>
+    <Row>
+      {project?.video && <>
+        <Col>
+          <p>
+            <b>Video Codec:</b> {project.video.codec_type} {project.video.codec_name} <br/>
+            <b>Video Size:</b> {project.video.width} x {project.video.height} <br/>
+            <b>Video Profile:</b> {project.video.profile} <br/>
+            <b>Video Level:</b> {project.video.level} <br/>
+          </p>
+        </Col>
+      </>}
+      {project?.audio && <>
+        <Col>
+          <p>
+            <b>Audio Codec:</b> {project.audio.codec_type} {project.audio.codec_name} <br/>
+            <b>Profile:</b> {project.audio.profile} <br/>
+            <b>SampleRate:</b> {project.audio.sample_rate} <br/>
+            <b>Channels:</b> {project.audio.channels} <br/>
+          </p>
+        </Col>
+      </>}
+    </Row>
+  </>;
+}
+
+function DubbingUIControls({task, isFullscreen, setIsFullscreen, requesting, processing, startupRequesting, allGroupReady, startDubbingTask, downloadArtifact}) {
+  const {t} = useTranslation();
+  return <>
+    {task?.status !== 'done' && <>
+      <Button variant="primary" type="submit" disabled={requesting || processing} onClick={startDubbingTask}>
+        {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status"
+                                                  aria-hidden="true"/> &nbsp;</>}
+        {t('dubb.studio.start')} {task?.status && task?.status !== 'done' && <>, status: {task?.status || 'init'}</>}
+        {(requesting || processing) && <>&nbsp;...</>}
+      </Button> &nbsp;
+    </>}
+    {isFullscreen && !startupRequesting && task?.status === 'done' && <>
+      <Form.Group className="mb-3">
+        <Form.Group className="mb-3" controlId="formAiTtsEnabledCheckbox">
+          <Form.Check type="checkbox" label={t('lr.room.fse')} defaultChecked={isFullscreen} onClick={() => setIsFullscreen(!isFullscreen)} />
+        </Form.Group>
+      </Form.Group>
+      <Form.Group className='mb-3'>
+        <Button variant='primary' type='submit' disabled={requesting || processing || !allGroupReady}
+                onClick={(e) => downloadArtifact(e, task.uuid)}>
+          {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status"
+                                                    aria-hidden="true"/> &nbsp;</>}
+          {t('dubb.studio.download')}
+        </Button>
+        <Form.Text> * {t('dubb.studio.disabled')}. &nbsp;
+          {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank'
+                               rel='noreferrer'>this article</a>.
+        </Form.Text>
+      </Form.Group>
+    </>}
+    {!isFullscreen && !startupRequesting && task?.status === 'done' && <>
+      <Row>
+        <Form.Group as={Col} className="mb-3" xs={1}>
+          <Form.Group className="mb-3" controlId="formAiTtsEnabledCheckbox">
+            <Form.Check type="checkbox" label={t('lr.room.fse')} defaultChecked={isFullscreen} onClick={() => setIsFullscreen(!isFullscreen)} />
+          </Form.Group>
+        </Form.Group>
+        <Form.Group as={Col} className='mb-3'>
+          <Button variant='primary' type='submit' disabled={requesting || processing || !allGroupReady}
+                  onClick={(e) => downloadArtifact(e, task.uuid)}>
+            {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status"
+                                                      aria-hidden="true"/> &nbsp;</>}
+            {t('dubb.studio.download')}
+          </Button>
+          <Form.Text> * {t('dubb.studio.disabled')}. &nbsp;
+            {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank'
+                                 rel='noreferrer'>this article</a>.
+          </Form.Text>
+        </Form.Group>
+      </Row>
+    </>}
+  </>;
+}
+
+function DubbingUISubtitles({task, playerRef, isFullscreen, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}) {
+  const {t} = useTranslation();
+
+  const selectVariant = (index, g) => {
+    if (g.free_space !== undefined) {
+      if (g.free_space < 0.0) return 'danger';
+      if (g.free_space < 0.3) return 'warning';
+      if (g.free_space < 1.0) return 'primary';
+      return 'success';
+    }
+    return 'secondary';
+  };
+
+  const formatDuration = React.useCallback((duration) => {
+    let hours = Math.floor(duration / 3600);
+    let minutes = Math.floor((duration - (hours * 3600)) / 60);
+    let seconds = duration - (hours * 3600) - (minutes * 60);
+    let milliseconds = Math.round((seconds % 1) * 1000);
+
+    hours = hours < 10 ? "0"+hours : parseInt(hours);
+    minutes = minutes < 10 ? "0"+minutes : parseInt(minutes);
+    seconds = seconds < 10 ? "0"+parseInt(seconds) : parseInt(seconds);
+    milliseconds = milliseconds < 100 ? (milliseconds < 10 ? "00"+parseInt(milliseconds) : "0" + parseInt(milliseconds)) : parseInt(milliseconds);
+
+    return hours+':'+minutes+':'+seconds+'.'+milliseconds;
+  }, []);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      if (!isPlayingAudio) return;
+      if (!isFullscreen) return;
+      if (!playerRef?.current) return;
+      if (!task?.asr_response?.groups?.length) return;
+
+      let group = task?.asr_response?.groups?.find(s => {
+        return s.start <= playerRef.current.currentTime && playerRef.current.currentTime <= s.end;
+      });
+      if (!group) return;
+
+      let index = task?.asr_response?.groups?.indexOf(group);
+      index = Math.max(0, index - 3);
+
+      const divId = `asr-group-${index}`;
+      const target = document.querySelector(`div#${divId}`);
+      if (target) target.scrollIntoView({behavior: 'smooth'});
+      //console.log(`Locate group ${index}, div ${divId}, time ${playerRef.current.currentTime}, group is ${group?.id}, ${group?.start} ~ ${group?.end}`);
+    }, 800);
+    return () => clearInterval(timer);
+  }, [playerRef, task, isPlayingAudio, isFullscreen]);
+
+  return <>
+    {task?.asr_response?.groups?.map((g, index) => {
+      return (
+        <div id={`asr-group-${index}`}>
+          <Card key={g.uuid} className='ai-dubbing-group'>
+            <Card.Header
+              className={g === activeGroup ? 'ai-dubbing-title ai-dubbing-title-playing' : 'ai-dubbing-title'}>
+              <Row>
+                <Col xs={6}>
+                  <small className="text-secondary">
+                    ID.{g.id}: {formatDuration(g.start)} ~ {formatDuration(g.end)}
+                  </small> &nbsp;
+                  {g === activeGroup && isPlayingAudio ?
+                    <Spinner animation="border" as='span' variant="primary" size='sm'
+                             style={{verticalAlign: 'middle'}}/> : ''}
+                </Col>
+                <Col xs={6} className='text-end'>
+                  <>
+                    <Button variant='link' size='sm' className='ai-dubbing-button' disabled={requesting}
+                            onClick={(e) => rephraseGroup(e, task.uuid, g)}>
+                      {t('dubb.studio.rephrase')}
+                    </Button>
+                  </>
+                  <>
+                    <Button variant='link' size='sm' className='ai-dubbing-button' disabled={requesting}
+                            onClick={(e) => mergeToGroup(e, task.uuid, g, 'next')}>
+                      {t('dubb.studio.mpost')}
+                    </Button>
+                  </>
+                  {g.free_space !== undefined && <>
+                    <small className="text-secondary">Free: {Number(g.free_space).toFixed(1)}s</small>
+                  </>}
+                </Col>
+              </Row>
+            </Card.Header>
+            <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
+              {g.segments.map((s) => {
+                return <div key={s.uuid}>
+                  <Row>
+                    <Col xs={isFullscreen ? 2 : 1}>
+                      <label className='ai-dubbing-command' onClick={(e) => playSegment(e, s)}>
+                        <small className="text-secondary">
+                          #{s.id}: {Number(s.end - s.start).toFixed(1)}s
+                        </small> &nbsp;
+                      </label>
+                      <Icon.Soundwave
+                        className='ai-dubbing-command' size={16}
+                        onClick={(e) => replaySegment(e, s)}/>
+                    </Col>
+                    <Col>
+                      {s.text}
+                    </Col>
+                  </Row>
+                </div>;
+              })}
+            </Alert>
+            <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
+              <Row>
+                <Col xs={isFullscreen ? 2 : 1} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'>
+                  <small className="text-secondary">
+                    #{g.id}: {Number(g.tts_duration).toFixed(1)}s
+                  </small> &nbsp;
+                  {g.tts &&
+                    <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
+                </Col>
+                <Col>
+                  {g.translated}
+                </Col>
+              </Row>
+              {g.rephrased && g.rephrased !== g.translated && <Row>
+                <Col xs={1} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'>
+                  <small className="text-secondary">
+                    #{g.id}: {Number(g.tts_duration).toFixed(1)}s
+                  </small> &nbsp;
+                  {g.rephrased &&
+                    <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
+                </Col>
+                <Col>
+                  {g.rephrased}
+                </Col>
+              </Row>}
+            </Alert>
+          </Card>
+        </div>
+      );
+    })}
+  </>;
+}
+
+function DubbingStudioEditor({project, isFullscreen, setIsFullscreen}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
   const [requesting, setRequesting] = React.useState(false);
@@ -647,20 +880,6 @@ function DubbingStudioEditor({project}) {
     }
   }, [setRequesting, handleError, project]);
 
-  const formatDuration = React.useCallback((duration) => {
-    let hours = Math.floor(duration / 3600);
-    let minutes = Math.floor((duration - (hours * 3600)) / 60);
-    let seconds = duration - (hours * 3600) - (minutes * 60);
-    let milliseconds = Math.round((seconds % 1) * 1000);
-
-    hours = hours < 10 ? "0"+hours : parseInt(hours);
-    minutes = minutes < 10 ? "0"+minutes : parseInt(minutes);
-    seconds = seconds < 10 ? "0"+parseInt(seconds) : parseInt(seconds);
-    milliseconds = milliseconds < 100 ? (milliseconds < 10 ? "00"+parseInt(milliseconds) : "0" + parseInt(milliseconds)) : parseInt(milliseconds);
-
-    return hours+':'+minutes+':'+seconds+'.'+milliseconds;
-  }, []);
-
   const rephraseGroup = React.useCallback(async (e, taskUUID, group) => {
     e.preventDefault();
     setRequesting(true);
@@ -776,163 +995,54 @@ function DubbingStudioEditor({project}) {
     pfn();
   }, [project, startDubbingTask, setStartupRequesting]);
 
-  const selectVariant = (index, g) => {
-    if (g.free_space !== undefined) {
-      if (g.free_space < 0.0) return 'danger';
-      if (g.free_space < 0.3) return 'warning';
-      if (g.free_space < 1.0) return 'primary';
-      return 'success';
-    }
-    return 'secondary';
-  };
-
   const hasVideo = project?.format?.has_video;
   return <>
-    <Row>
-      <Col xs={8}>
-        <video controls={true} className={hasVideo? 'ai-dubbing-video' : 'ai-dubbing-audio'} ref={playerRef} autoPlay={false} />
-        <audio ref={ttsPlayer} hidden={true}></audio>
-      </Col>
-      <Col>
-        <p>
-          <b>Title:</b> {project.title} <br/>
-          <b>Created:</b> {project.created_at} <br/>
-          <b>User File:</b> {project.filepath} <br/>
-          <b>Source File:</b> {project.uuid}/{project.source}.{project.filepath.split('.').pop()} <br/>
-          <b>Bitrate:</b> {Number(project.format.bit_rate/1000.).toFixed(1)} Kbps <br/>
-          <b>Duration:</b> {Number(project.format.duration).toFixed(1)} s <br/>
-        </p>
-        <Row>
-          {project?.video && <>
-            <Col>
-              <p>
-                <b>Video Codec:</b> {project.video.codec_type} {project.video.codec_name} <br/>
-                <b>Video Size:</b> {project.video.width} x {project.video.height} <br/>
-                <b>Video Profile:</b> {project.video.profile} <br/>
-                <b>Video Level:</b> {project.video.level} <br/>
-              </p>
-            </Col>
-          </>}
-          {project?.audio && <>
-            <Col>
-              <p>
-                <b>Audio Codec:</b> {project.audio.codec_type} {project.audio.codec_name} <br/>
-                <b>Profile:</b> {project.audio.profile} <br/>
-                <b>SampleRate:</b> {project.audio.sample_rate} <br/>
-                <b>Channels:</b> {project.audio.channels} <br/>
-              </p>
-            </Col>
-          </>}
-        </Row>
-      </Col>
-    </Row>
-    <div>
-      {task?.status !== 'done' && <>
-        <Button variant="primary" type="submit" disabled={requesting || processing} onClick={startDubbingTask}>
-          {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status" aria-hidden="true"/> &nbsp;</>}
-          {t('dubb.studio.start')} {task?.status && task?.status !== 'done' && <>, status: {task?.status || 'init'}</>}
-          {(requesting || processing) && <>&nbsp;...</>}
-        </Button> &nbsp;
-      </>}
-      {!startupRequesting && task?.status === 'done' && <>
-        <Form.Group className='mb-3'>
-          <Button variant='primary' type='submit' disabled={requesting || processing || !allGroupReady} onClick={(e) => downloadArtifact(e, task.uuid)}>
-            {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status" aria-hidden="true"/> &nbsp;</>}
-            {t('dubb.studio.download')}
-          </Button>
-          <Form.Text> * {t('dubb.studio.disabled')}. &nbsp;
-            {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank'
-                                 rel='noreferrer'>this article</a>.
-          </Form.Text>
-        </Form.Group>
-      </>}
-      <p></p>
-    </div>
-    <div>
+    <audio ref={ttsPlayer} hidden={true}></audio>
+    {isFullscreen ? <>
       <Row>
-        <Col xs={11} className='ai-dubbing-workspace'>
-          {task?.asr_response?.groups?.map((g, index) => {
-            return (
-              <Card key={g.uuid} className='ai-dubbing-group'>
-                <Card.Header className={g === activeGroup ? 'ai-dubbing-title ai-dubbing-title-playing' : 'ai-dubbing-title'}>
-                  <Row>
-                    <Col xs={6}>
-                      <small className="text-secondary">
-                        ID.{g.id}: {formatDuration(g.start)} ~ {formatDuration(g.end)}
-                      </small> &nbsp;
-                      {g === activeGroup && isPlayingAudio ?
-                        <Spinner animation="border" as='span' variant="primary" size='sm' style={{verticalAlign: 'middle'}} /> : ''}
-                    </Col>
-                    <Col xs={6} className='text-end'>
-                      <>
-                        <Button variant='link' size='sm' className='ai-dubbing-button' disabled={requesting}
-                                onClick={(e) => rephraseGroup(e, task.uuid, g)}>
-                          {t('dubb.studio.rephrase')}
-                        </Button>
-                      </>
-                      <>
-                        <Button variant='link' size='sm' className='ai-dubbing-button' disabled={requesting}
-                                onClick={(e) => mergeToGroup(e, task.uuid, g, 'next')}>
-                          {t('dubb.studio.mpost')}
-                        </Button>
-                      </>
-                      {g.free_space !== undefined && <>
-                        <small className="text-secondary">Free: {Number(g.free_space).toFixed(1)}s</small>
-                      </>}
-                    </Col>
-                  </Row>
-                </Card.Header>
-                <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
-                  {g.segments.map((s) => {
-                    return <div key={s.uuid}>
-                      <Row>
-                        <Col xs={1}>
-                          <label className='ai-dubbing-command' onClick={(e) => playSegment(e, s)}>
-                            <small className="text-secondary">
-                              #{s.id}: {Number(s.end - s.start).toFixed(1)}s
-                            </small> &nbsp;
-                          </label>
-                          <Icon.Soundwave
-                            className='ai-dubbing-command' size={16}
-                            onClick={(e) => replaySegment(e, s)} />
-                        </Col>
-                        <Col>
-                          {s.text}
-                        </Col>
-                      </Row>
-                    </div>;
-                  })}
-                </Alert>
-                <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
-                  <Row>
-                    <Col xs={1} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'>
-                      <small className="text-secondary">
-                        #{g.id}: {Number(g.tts_duration).toFixed(1)}s
-                      </small> &nbsp;
-                      {g.tts && <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
-                    </Col>
-                    <Col>
-                      {g.translated}
-                    </Col>
-                  </Row>
-                  {g.rephrased && g.rephrased !== g.translated && <Row>
-                    <Col xs={1} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'>
-                      <small className="text-secondary">
-                        #{g.id}: {Number(g.tts_duration).toFixed(1)}s
-                      </small> &nbsp;
-                      {g.rephrased && <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
-                    </Col>
-                    <Col>
-                      {g.rephrased}
-                    </Col>
-                  </Row>}
-                </Alert>
-              </Card>
-            );
-          })}
+        <Col>
+          <video controls={true} className={hasVideo ? 'ai-dubbing-video' : 'ai-dubbing-audio'} ref={playerRef} autoPlay={false}/>
+          <DubbingUIControls {...{
+            task,
+            isFullscreen,
+            setIsFullscreen,
+            requesting,
+            processing,
+            startupRequesting,
+            allGroupReady,
+            startDubbingTask,
+            downloadArtifact
+          }} />
         </Col>
-        <Col></Col>
+        <Col>
+          <Row>
+            <Col className='ai-dubbing-workspace-fs'>
+              <DubbingUISubtitles {...{task, playerRef, isFullscreen, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}} />
+            </Col>
+          </Row>
+        </Col>
       </Row>
-    </div>
+    </> : <>
+      <Row>
+        <Col xs={8}>
+          <video controls={true} className={hasVideo ? 'ai-dubbing-video' : 'ai-dubbing-audio'} ref={playerRef} autoPlay={false}/>
+        </Col>
+        <Col>
+          <DubbingUISummary {...{project}} />
+        </Col>
+      </Row>
+      <div>
+        <DubbingUIControls {...{task, isFullscreen, setIsFullscreen, requesting, processing, startupRequesting, allGroupReady, startDubbingTask, downloadArtifact}} />
+        <p></p>
+      </div>
+      <div>
+        <Row>
+          <Col xs={11} className='ai-dubbing-workspace'>
+            <DubbingUISubtitles {...{task, playerRef, isFullscreen, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}} />
+          </Col>
+          <Col></Col>
+        </Row>
+      </div>
+    </>}
   </>;
 }

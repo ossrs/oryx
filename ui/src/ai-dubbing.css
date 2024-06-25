@@ -19,6 +19,12 @@
   overflow: scroll;
 }
 
+.ai-dubbing-workspace-fs {
+  min-height: 48.8rem;
+  max-height: 48.8rem;
+  overflow: scroll;
+}
+
 .ai-dubbing-title {
   padding-top: 0rem;
   padding-bottom: 0rem;
