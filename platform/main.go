@@ -130,7 +130,7 @@ func doMain(ctx context.Context) error {
 
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, "+
 		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, SRT_PORT=%v, RTC_PORT=%v, "+
-		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, RTMP_PORT=%v, "+
+		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_DATABASE=%v, REDIS_HOST=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, RTMP_PORT=%v, "+
 		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, HTTP_PORT=%v, "+
 		"REGISTRY=%v, MGMT_LISTEN=%v, HTTPS_LISTEN=%v, AUTO_SELF_SIGNED_CERTIFICATE=%v, "+
 		"NAME_LOOKUP=%v, PLATFORM_DOCKER=%v, SRS_FORWARD_LIMIT=%v, SRS_VLIVE_LIMIT=%v, "+
@@ -138,7 +138,8 @@ func doMain(ctx context.Context) error {
 		len(envMgmtPassword()), len(envApiSecret()), envCloud(),
 		envRegion(), envSource(), envSrtListen(), envRtcListen(),
 		envNodeEnv(), envLocalRelease(),
-		len(envRedisPassword()), envRedisPort(), envRtmpPort(), envPublicUrl(),
+		envRedisDatabase(), envRedisHost(), len(envRedisPassword()), envRedisPort(),
+		envRtmpPort(), envPublicUrl(),
 		envBuildPath(), envReactAppLocale(), envPlatformListen(), envHttpPort(),
 		envRegistry(), envMgmtListen(), envHttpListen(),
 		envSelfSignedCertificate(), envNameLookup(),

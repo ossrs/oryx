@@ -491,7 +491,7 @@ var rdb *redis.Client
 func InitRdb() error {
 	redisDatabase, err := strconv.Atoi(envRedisDatabase())
 	if err != nil {
-		return errors.Wrapf(err, "invalid REDIS_DATABASE")
+		return errors.Wrapf(err, "invalid REDIS_DATABASE %v", envRedisDatabase())
 	}
 
 	rdb = redis.NewClient(&redis.Options{
