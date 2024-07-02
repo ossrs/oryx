@@ -104,6 +104,8 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("REACT_APP_LOCALE", "en")
 
 	// Migrate from mgmt.
+	setEnvDefault("REDIS_DATABASE", "0")
+	setEnvDefault("REDIS_HOST", "127.0.0.1")
 	setEnvDefault("REDIS_PORT", "6379")
 	setEnvDefault("MGMT_LISTEN", "2022")
 
