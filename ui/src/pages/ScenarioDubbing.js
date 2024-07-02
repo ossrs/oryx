@@ -761,7 +761,6 @@ function DubbingUISubtitles({task, playerRef, isFullscreen, requesting, activeGr
 }
 
 function DubbingStudioEditor({project, isFullscreen, setIsFullscreen}) {
-  const {t} = useTranslation();
   const handleError = useErrorHandler();
   const [requesting, setRequesting] = React.useState(false);
   const [processing, setProcessing] = React.useState(false);
