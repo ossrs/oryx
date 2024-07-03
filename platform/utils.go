@@ -436,6 +436,14 @@ func envRedisPort() string {
 	return os.Getenv("REDIS_PORT")
 }
 
+func envRedisHost() string {
+	return os.Getenv("REDIS_HOST")
+}
+
+func envRedisDatabase() string {
+	return os.Getenv("REDIS_DATABASE")
+}
+
 func envRtmpPort() string {
 	return os.Getenv("RTMP_PORT")
 }
@@ -481,11 +489,15 @@ var rdb *redis.Client
 
 // InitRdb create and init global rdb, which is a redis client.
 func InitRdb() error {
-	addr := "127.0.0.1"
+	redisDatabase, err := strconv.Atoi(envRedisDatabase())
+	if err != nil {
+		return errors.Wrapf(err, "invalid REDIS_DATABASE %v", envRedisDatabase())
+	}
+
 	rdb = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%v:%v", addr, envRedisPort()),
+		Addr:     fmt.Sprintf("%v:%v", envRedisHost(), envRedisPort()),
 		Password: envRedisPassword(),
-		DB:       0,
+		DB:       redisDatabase,
 	})
 	return nil
 }
