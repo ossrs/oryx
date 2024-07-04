@@ -527,7 +527,7 @@ function SettingLLM() {
       alert(t('helper.setOk'));
       console.log(`Setting: Update open ai ok`);
     }).catch(handleError);
-  }, [handleError, aiSecretKey, aiBaseURL, aiOrganization]);
+  }, [t, handleError, aiSecretKey, aiBaseURL, aiOrganization]);
 
   return <>
     <Accordion defaultActiveKey={["1"]} alwaysOpen>
