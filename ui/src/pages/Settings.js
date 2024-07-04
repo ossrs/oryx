@@ -14,6 +14,7 @@ import {useTranslation} from "react-i18next";
 import {TutorialsButton, useTutorials} from "../components/TutorialsButton";
 import moment from "moment";
 import PopoverConfirm from "../components/PopoverConfirm";
+import {OpenAISecretSettings} from "../components/OpenAISettings";
 
 export default function Systems() {
   return (
@@ -29,7 +30,7 @@ function SystemsImpl() {
 
   React.useEffect(() => {
     const tab = searchParams.get('tab') || 'auth';
-    console.log(`?tab=https|hls|auth|beian|limits|callback|platform, current=${tab}, Select the tab to render`);
+    console.log(`?tab=https|hls|auth|beian|limits|llm|callback|platform, current=${tab}, Select the tab to render`);
     setDefaultActiveTab(tab);
   }, [searchParams]);
 
@@ -80,6 +81,9 @@ function SettingsImpl2({defaultActiveTab}) {
           </Tab>
           <Tab eventKey="limits" title={t('settings.tabLimits')}>
             <SettingLimits />
+          </Tab>
+          <Tab eventKey="llm" title={t('settings.tabLLM')}>
+            <SettingLLM />
           </Tab>
           <Tab eventKey="streams" title={t('settings.tabStreams')}>
             <SettingStreams />
@@ -490,6 +494,61 @@ function SettingStreams() {
       </Accordion.Item>
     </Accordion>
   );
+}
+
+function SettingLLM() {
+  const {t} = useTranslation();
+  const handleError = useErrorHandler();
+
+  const [aiSecretKey, setAiSecretKey] = React.useState();
+  const [aiBaseURL, setAiBaseURL] = React.useState();
+  const [aiOrganization, setAiOrganization] = React.useState();
+
+  React.useEffect(() => {
+    axios.post('/terraform/v1/mgmt/openai/query', null, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      const data = res.data.data;
+      setAiSecretKey(data.aiSecretKey);
+      setAiBaseURL(data.aiBaseURL);
+      setAiOrganization(data.aiOrganization);
+      console.log(`Setting: Query open ai ok, data=${JSON.stringify(data)}`);
+    }).catch(handleError);
+  }, [handleError, setAiSecretKey, setAiBaseURL, setAiOrganization]);
+
+  const updateOpenAI = React.useCallback((e) => {
+    e.preventDefault();
+
+    axios.post('/terraform/v1/mgmt/openai/update', {
+      aiSecretKey, aiBaseURL, aiOrganization,
+    }, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      alert(t('helper.setOk'));
+      console.log(`Setting: Update open ai ok`);
+    }).catch(handleError);
+  }, [handleError, aiSecretKey, aiBaseURL, aiOrganization]);
+
+  return <>
+    <Accordion defaultActiveKey={["1"]} alwaysOpen>
+      <Accordion.Item eventKey="1">
+        <Accordion.Header>{t('settings.openaiTitle')}</Accordion.Header>
+        <Accordion.Body>
+          <Form>
+            <OpenAISecretSettings {...{
+              baseURL: aiBaseURL, setBaseURL: setAiBaseURL,
+              secretKey: aiSecretKey, setSecretKey: setAiSecretKey,
+              organization: aiOrganization, setOrganization: setAiOrganization,
+            }} />
+            <p></p>
+            <Button variant="primary" type="submit" onClick={(e) => updateOpenAI(e)}>
+              {t('helper.submit')}
+            </Button>
+          </Form>
+        </Accordion.Body>
+      </Accordion.Item>
+    </Accordion>
+  </>;
 }
 
 function SettingLimits() {

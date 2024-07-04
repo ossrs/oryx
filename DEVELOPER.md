@@ -949,6 +949,8 @@ Platform, with token authentication:
 * `/terraform/v1/mgmt/beian/update` Update the beian information.
 * `/terraform/v1/mgmt/limits/query` Query the limits information.
 * `/terraform/v1/mgmt/limits/update` Update the limits information.
+* `/terraform/v1/mgmt/openai/query` Query the OpenAI settings.
+* `/terraform/v1/mgmt/openai/update` Update the OpenAI settings.
 * `/terraform/v1/mgmt/secret/query` Query the api secret for OpenAPI.
 * `/terraform/v1/mgmt/hphls/update` HLS delivery in high performance mode.
 * `/terraform/v1/mgmt/hphls/query` Query HLS delivery in high performance mode.
@@ -1192,6 +1194,7 @@ The following are the update records for the Oryx server.
     * Change LICENSE from AGPL-3.0-or-later to MIT. v5.15.8
     * Dubbing: Support scrolling card in fullscreen. v5.15.9
     * Support external redis host and using 127.0.0.1 as default. v5.15.10
+    * Support setup global OpenAI settings. [v5.15.11](https://github.com/ossrs/oryx/releases/tag/v5.15.11)
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)

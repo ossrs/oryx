@@ -271,6 +271,8 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	handleMgmtBilibili(ctx, handler)
 	handleMgmtLimitsQuery(ctx, handler)
 	handleMgmtLimitsUpdate(ctx, handler)
+	handleMgmtOpenAIQuery(ctx, handler)
+	handleMgmtOpenAIUpdate(ctx, handler)
 	handleMgmtBeianQuery(ctx, handler)
 	handleMgmtSecretQuery(ctx, handler)
 	handleMgmtBeianUpdate(ctx, handler)
@@ -920,6 +922,109 @@ func handleMgmtBilibili(ctx context.Context, handler *http.ServeMux) {
 
 			ohttp.WriteData(ctx, w, r, bilibiliObj.Res)
 			logger.Tf(ctx, "bilibili cache bvid=%v, update=%v, token=%vB", bvid, bilibiliObj.Update, len(token))
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+}
+
+func handleMgmtOpenAIQuery(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/openai/query"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token *string `json:"token"`
+			}{
+				Token: &token,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := envApiSecret()
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			aiSecretKey, err := rdb.HGet(ctx, SRS_SYS_OPENAI, "key").Result()
+			if err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v key", SRS_SYS_OPENAI)
+			}
+
+			aiBaseURL, err := rdb.HGet(ctx, SRS_SYS_OPENAI, "url").Result()
+			if err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v url", SRS_SYS_OPENAI)
+			}
+
+			aiOrganization, err := rdb.HGet(ctx, SRS_SYS_OPENAI, "org").Result()
+			if err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hget %v org", SRS_SYS_OPENAI)
+			}
+
+			ohttp.WriteData(ctx, w, r, &struct {
+				// The AI secret key.
+				AISecretKey string `json:"aiSecretKey"`
+				// The AI base url.
+				AIBaseURL string `json:"aiBaseURL"`
+				// The AI organization.
+				AIOrganization string `json:"aiOrganization"`
+			}{
+				AISecretKey: aiSecretKey, AIBaseURL: aiBaseURL, AIOrganization: aiOrganization,
+			})
+
+			logger.Tf(ctx, "settings: query openai ok")
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+}
+
+func handleMgmtOpenAIUpdate(ctx context.Context, handler *http.ServeMux) {
+	ep := "/terraform/v1/mgmt/openai/update"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var aiSecretKey, aiBaseURL, aiOrganization string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token          *string `json:"token"`
+				AISecretKey    *string `json:"aiSecretKey"`
+				AIBaseURL      *string `json:"aiBaseURL"`
+				AIOrganization *string `json:"aiOrganization"`
+			}{
+				Token: &token, AISecretKey: &aiSecretKey, AIBaseURL: &aiBaseURL,
+				AIOrganization: &aiOrganization,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := envApiSecret()
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			if aiSecretKey == "" {
+				return errors.New("no aiSecretKey")
+			}
+			if aiBaseURL == "" {
+				return errors.New("no aiBaseURL")
+			}
+
+			if err := rdb.HSet(ctx, SRS_SYS_OPENAI, "key", aiSecretKey).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v key %v", SRS_SYS_OPENAI, aiSecretKey)
+			}
+			if err := rdb.HSet(ctx, SRS_SYS_OPENAI, "url", aiBaseURL).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v url %v", SRS_SYS_OPENAI, aiBaseURL)
+			}
+			if err := rdb.HSet(ctx, SRS_SYS_OPENAI, "org", aiOrganization).Err(); err != nil && err != redis.Nil {
+				return errors.Wrapf(err, "hset %v org %v", SRS_SYS_OPENAI, aiOrganization)
+			}
+
+			ohttp.WriteData(ctx, w, r, nil)
+			logger.Tf(ctx, "limits: Update ok, key=%vB, url=%v, org=%v", len(aiSecretKey), aiBaseURL, aiOrganization)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)

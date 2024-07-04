@@ -72,6 +72,20 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
 
   const [configItem, setConfigItem] = React.useState('provider');
 
+  React.useEffect(() => {
+    if (secretKey) return;
+
+    axios.post('/terraform/v1/mgmt/openai/query', null, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      const data = res.data.data;
+      setSecretKey(data.aiSecretKey);
+      setBaseURL(data.aiBaseURL);
+      setOrganization(data.aiOrganization);
+      console.log(`Transcript: Query open ai ok, data=${JSON.stringify(data)}`);
+    }).catch(handleError);
+  }, [handleError, secretKey, setSecretKey, setBaseURL, setOrganization]);
+
   const changeConfigItem = React.useCallback((e, t) => {
     e.preventDefault();
     setConfigItem(t);

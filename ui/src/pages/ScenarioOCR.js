@@ -72,6 +72,20 @@ function ScenarioOCRImpl({activeKey, defaultEnabled, defaultConf, defaultUuid}) 
     setConfigItem(t);
   }, [setConfigItem]);
 
+  React.useEffect(() => {
+    if (aiSecretKey) return;
+
+    axios.post('/terraform/v1/mgmt/openai/query', null, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      const data = res.data.data;
+      setAiSecretKey(data.aiSecretKey);
+      setAiBaseURL(data.aiBaseURL);
+      setAiOrganization(data.aiOrganization);
+      console.log(`OCR: Query open ai ok, data=${JSON.stringify(data)}`);
+    }).catch(handleError);
+  }, [handleError, aiSecretKey, setAiSecretKey, setAiBaseURL, setAiOrganization]);
+
   const updateOcrService = React.useCallback((enabled, success) => {
     if (!aiSecretKey) return alert(`Invalid secret key ${aiSecretKey}`);
     if (!aiBaseURL) return alert(`Invalid base url ${aiBaseURL}`);

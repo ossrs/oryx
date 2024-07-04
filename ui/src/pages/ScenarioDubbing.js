@@ -268,9 +268,11 @@ function ScenarioDubbingImpl({dubbingId, setDubbingId}) {
 
 function DubbingSettings({project, requesting, updateProject}) {
   const {t} = useTranslation();
+  const handleError = useErrorHandler();
   const language = useSrsLanguage();
   const [name, setName] = React.useState(project.title);
   const [configItem, setConfigItem] = React.useState('asr');
+  const [loading, setLoading] = React.useState(true);
 
   const [aiSecretKey, setAiSecretKey] = React.useState();
   const [aiBaseURL, setAiBaseURL] = React.useState();
@@ -319,7 +321,23 @@ function DubbingSettings({project, requesting, updateProject}) {
       setAiBaseURL(obj.aiBaseURL || (language === 'zh' ? '' : 'https://api.openai.com/v1'));
       setAiOrganization(obj.aiOrganization);
     }
-  }, [language, project, setAiSecretKey, setAiBaseURL, setAiOrganization]);
+
+    setLoading(false);
+  }, [language, project, setAiSecretKey, setAiBaseURL, setAiOrganization, setLoading]);
+
+  React.useEffect(() => {
+    if (loading || aiSecretKey) return;
+
+    axios.post('/terraform/v1/mgmt/openai/query', null, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      const data = res.data.data;
+      setAiSecretKey(data.aiSecretKey);
+      setAiBaseURL(data.aiBaseURL);
+      setAiOrganization(data.aiOrganization);
+      console.log(`Dubbing: Query open ai ok, data=${JSON.stringify(data)}`);
+    }).catch(handleError);
+  }, [handleError, loading, aiSecretKey, setAiSecretKey, setAiBaseURL, setAiOrganization]);
 
   const changeConfigItem = React.useCallback((e, t) => {
     e.preventDefault();

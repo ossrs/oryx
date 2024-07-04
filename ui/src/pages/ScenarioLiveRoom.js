@@ -413,6 +413,7 @@ function LiveRoomStreamer({room}) {
 
 function LiveRoomAssistant({room, requesting, updateRoom}) {
   const {t} = useTranslation();
+  const handleError = useErrorHandler();
   const language = useSrsLanguage();
 
   const [aiName, setAiName] = React.useState(room.aiName);
@@ -440,6 +441,20 @@ function LiveRoomAssistant({room, requesting, updateRoom}) {
   const [userLanguage, setUserLanguage] = React.useState(room.aiAsrLanguage || language);
   const [aiPattern, setAiPattern] = React.useState('chat');
   const [assistantLink, setAssistantLink] = React.useState();
+
+  React.useEffect(() => {
+    if (aiSecretKey) return;
+
+    axios.post('/terraform/v1/mgmt/openai/query', null, {
+      headers: Token.loadBearerHeader(),
+    }).then(res => {
+      const data = res.data.data;
+      setAiSecretKey(data.aiSecretKey);
+      setAiBaseURL(data.aiBaseURL);
+      setAiOrganization(data.aiOrganization);
+      console.log(`LiveRoom: Query open ai ok, data=${JSON.stringify(data)}`);
+    }).catch(handleError);
+  }, [handleError, aiSecretKey, setAiSecretKey, setAiBaseURL, setAiOrganization]);
 
   const changeConfigItem = React.useCallback((e, t) => {
     e.preventDefault();
