@@ -162,6 +162,17 @@ The features that we're developing:
 
 Oryx is an open-source project, licensed under the [MIT](https://spdx.org/licenses/MIT.html) license.
 
+We also used the following open-source projects:
+
+* [FFmpeg](https://ffmpeg.org/): A complete, cross-platform solution to record, convert and stream audio and video.
+* [Redis](https://redis.io/): Redis is an in-memory data store used by millions of developers as a cache, vector database, document database, streaming engine, and message broker.
+* [youtube-dl](https://github.com/ytdl-org/youtube-dl): Command-line program to download videos from YouTube.com and other video sites.
+
+Other frameworks we used:
+
+* [Reactjs](https://react.dev/): The library for web and native user interfaces.
+* [Go](https://golang.org/): Build simple, secure, scalable systems with Go.
+
 ## Developer
 
 For development, please refer to the [Environments](DEVELOPER.md) about the API and architecture.

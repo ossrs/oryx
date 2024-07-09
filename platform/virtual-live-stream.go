@@ -635,6 +635,15 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					}
 				}
 
+				// Only accept common codec for video and audio.
+				allowedCodec := []string{"h264", "h265", "aac", "mp3"}
+				if matchVideo != nil && !slicesContains(allowedCodec, matchVideo.CodecName) {
+					return errors.Errorf("invalid video codec %v, should be %v", matchVideo.CodecName, allowedCodec)
+				}
+				if matchAudio != nil && !slicesContains(allowedCodec, matchAudio.CodecName) {
+					return errors.Errorf("invalid audio codec %v, should be %v", matchAudio.CodecName, allowedCodec)
+				}
+
 				parsedFile := &FFprobeSource{
 					Name: file.Name, Path: file.Path, Size: uint64(file.Size), UUID: file.UUID,
 					Target: file.Target,
@@ -1033,7 +1042,7 @@ func (v *VLiveTask) Run(ctx context.Context) error {
 
 			select {
 			case <-ctx.Done():
-			case <-time.After(10 * time.Second):
+			case <-time.After(4 * time.Second):
 			}
 			continue
 		}
@@ -1160,5 +1169,5 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 		v.Platform, input.Target, v.PID, err,
 	)
 
-	return nil
+	return err
 }

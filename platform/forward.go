@@ -572,7 +572,7 @@ func (v *ForwardTask) Run(ctx context.Context) error {
 
 			select {
 			case <-ctx.Done():
-			case <-time.After(10 * time.Second):
+			case <-time.After(4 * time.Second):
 			}
 			continue
 		}
@@ -698,5 +698,5 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 		v.Platform, input.StreamURL(), v.PID, err,
 	)
 
-	return nil
+	return err
 }

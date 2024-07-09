@@ -1196,6 +1196,7 @@ The following are the update records for the Oryx server.
     * Support external redis host and using 127.0.0.1 as default. v5.15.10
     * Support setup global OpenAI settings. [v5.15.11](https://github.com/ossrs/oryx/releases/tag/v5.15.11)
     * Add youtube-dl binary. v5.15.12
+    * VLive: Fix bug when source codec is not supported. v5.15.13
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)

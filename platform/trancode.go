@@ -442,7 +442,7 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 
 			select {
 			case <-ctx.Done():
-			case <-time.After(10 * time.Second):
+			case <-time.After(4 * time.Second):
 			}
 			continue
 		}
@@ -573,7 +573,7 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 	logger.Tf(ctx, "transcode done, stream=%v, pid=%v, err=%v",
 		input.StreamURL(), v.PID, err,
 	)
-	return nil
+	return err
 }
 
 func (v *TranscodeTask) updateFrame(frame string) {
