@@ -1211,9 +1211,10 @@ The following are the update records for the Oryx server.
     * Dubbing: Support scrolling card in fullscreen. v5.15.9
     * Support external redis host and using 127.0.0.1 as default. v5.15.10
     * Support setup global OpenAI settings. [v5.15.11](https://github.com/ossrs/oryx/releases/tag/v5.15.11)
-    * Add youtube-dl binary. v5.15.12
+    * Add youtube-dl binary for dubbing etc. v5.15.12
     * VLive: Fix bug when source codec is not supported. v5.15.13
     * Forward: Fix high CPU bug. v5.15.14
+    * Support Go PPROF for CPU profiling. [v5.15.15](https://github.com/ossrs/oryx/releases/tag/v5.15.15)
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)
@@ -1242,7 +1243,9 @@ The following are the update records for the Oryx server.
     * Update model to gpt-3.5-turbo, gpt-4-turbo, gpt-4o. v5.14.20
     * Transcript: Upgrade the hls.js to 1.4 for WebVTT. v5.14.21
     * Disable version query and check. [v5.14.22](https://github.com/ossrs/oryx/releases/tag/v5.14.22)
-    * Forward: Fix high CPU bug. [v5.14.23](https://github.com/ossrs/oryx/releases/tag/v5.14.23)
+    * Support Go PPROF for CPU profiling. v5.14.23
+    * Forward: Fix high CPU bug. v5.14.24
+    * VLive: Refine wait timeout. [v5.14.25](https://github.com/ossrs/oryx/releases/tag/v5.14.25)
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
