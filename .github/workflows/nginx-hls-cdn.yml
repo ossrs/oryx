@@ -44,7 +44,7 @@ jobs:
       - name: Build HTTP docker image
         run: |
           echo "Release ossrs/oryx:$SRS_MAJOR_HTTP-$SRS_VERSION"
-          docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
+          docker buildx build --platform linux/amd64,linux/arm64/v8 \
             --output "type=image,push=true" \
             --tag ossrs/oryx:$SRS_MAJOR_HTTP \
             -f scripts/nginx-hls-cdn/Dockerfile.http \
@@ -60,7 +60,7 @@ jobs:
       - name: Build HTTPS docker image
         run: |
           echo "Release ossrs/oryx:$SRS_MAJOR_HTTPS-$SRS_VERSION"
-          docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
+          docker buildx build --platform linux/amd64,linux/arm64/v8 \
             --output "type=image,push=true" \
             --tag ossrs/oryx:$SRS_MAJOR_HTTPS \
             -f scripts/nginx-hls-cdn/Dockerfile.https \

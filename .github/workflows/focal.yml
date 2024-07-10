@@ -57,7 +57,7 @@ jobs:
       - name: Build SRS docker image
         run: |
           echo "Release ossrs/oryx:$SRS_TAG"
-          docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
+          docker buildx build --platform linux/amd64,linux/arm64/v8 \
             --output "type=image,push=true" \
             --tag ossrs/oryx:$SRS_TAG -f focal/Dockerfile .
       - name: Docker alias images for ossrs/oryx
