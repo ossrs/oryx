@@ -7,6 +7,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"path"
@@ -15,6 +16,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	_ "net/http/pprof"
 
 	"github.com/ossrs/go-oryx-lib/errors"
 	"github.com/ossrs/go-oryx-lib/logger"
@@ -102,6 +104,8 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("PLATFORM_LISTEN", "2024")
 	// Set the default language, en or zh.
 	setEnvDefault("REACT_APP_LOCALE", "en")
+	// Whether enable the Go pprof.
+	setEnvDefault("GO_PPROF", "off")
 
 	// Migrate from mgmt.
 	setEnvDefault("REDIS_DATABASE", "0")
@@ -128,14 +132,14 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("SRS_VLIVE_LIMIT", "10")
 	setEnvDefault("SRS_CAMERA_LIMIT", "10")
 
-	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, "+
+	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, GO_PPROF=%v, "+
 		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, SRT_PORT=%v, RTC_PORT=%v, "+
 		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_DATABASE=%v, REDIS_HOST=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, RTMP_PORT=%v, "+
 		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, HTTP_PORT=%v, "+
 		"REGISTRY=%v, MGMT_LISTEN=%v, HTTPS_LISTEN=%v, AUTO_SELF_SIGNED_CERTIFICATE=%v, "+
 		"NAME_LOOKUP=%v, PLATFORM_DOCKER=%v, SRS_FORWARD_LIMIT=%v, SRS_VLIVE_LIMIT=%v, "+
 		"SRS_CAMERA_LIMIT=%v",
-		len(envMgmtPassword()), len(envApiSecret()), envCloud(),
+		len(envMgmtPassword()), os.Getenv("GO_PPROF"), len(envApiSecret()), envCloud(),
 		envRegion(), envSource(), envSrtListen(), envRtcListen(),
 		envNodeEnv(), envLocalRelease(),
 		envRedisDatabase(), envRedisHost(), len(envRedisPassword()), envRedisPort(),
@@ -146,6 +150,15 @@ func doMain(ctx context.Context) error {
 		envPlatformDocker(), envForwardLimit(), envVLiveLimit(),
 		envCameraLimit(),
 	)
+
+	// Start the Go pprof if enabled.
+	if os.Getenv("GO_PPROF") == "on" {
+		go func() {
+			addr := "localhost:6060"
+			logger.Tf(ctx, "Start Go pprof at %v", addr)
+			http.ListenAndServe(addr, nil)
+		} ()
+	}
 
 	// Setup the base OS for redis, which should never depends on redis.
 	if err := initMgmtOS(ctx); err != nil {

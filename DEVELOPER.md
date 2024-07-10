@@ -1159,6 +1159,22 @@ Deprecated and unused variables:
 
 Please restart service when `.env` changed.
 
+## Go PPROF
+
+To analyze the performance of Oryx, you can enable the Go pprof tool:
+
+```bash
+GO_PPROF=on go run .
+```
+
+Run CPU profile:
+
+```bash
+go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30
+```
+
+Then use `top` to show the hot functions.
+
 ## Coding Guide
 
 For the json field with more than 2 words:
@@ -1197,6 +1213,7 @@ The following are the update records for the Oryx server.
     * Support setup global OpenAI settings. [v5.15.11](https://github.com/ossrs/oryx/releases/tag/v5.15.11)
     * Add youtube-dl binary. v5.15.12
     * VLive: Fix bug when source codec is not supported. v5.15.13
+    * Forward: Fix high CPU bug. v5.15.14
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)
@@ -1225,6 +1242,7 @@ The following are the update records for the Oryx server.
     * Update model to gpt-3.5-turbo, gpt-4-turbo, gpt-4o. v5.14.20
     * Transcript: Upgrade the hls.js to 1.4 for WebVTT. v5.14.21
     * Disable version query and check. [v5.14.22](https://github.com/ossrs/oryx/releases/tag/v5.14.22)
+    * Forward: Fix high CPU bug. [v5.14.23](https://github.com/ossrs/oryx/releases/tag/v5.14.23)
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2
