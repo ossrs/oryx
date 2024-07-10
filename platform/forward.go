@@ -673,12 +673,17 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 	// Pull the latest log frame.
 	heartbeat.Polling(ctx, stderr)
 	go func() {
+		select {
+		case <-ctx.Done():
+			return
+		case <-heartbeat.firstReadyCtx.Done():
+			v.firstReadyTime = &heartbeat.firstReadyTime
+		}
+
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-heartbeat.firstReadyCtx.Done():
-				v.firstReadyTime = &heartbeat.firstReadyTime
 			case frame := <-heartbeat.FrameLogs:
 				v.updateFrame(frame)
 			}

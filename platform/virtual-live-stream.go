@@ -1134,12 +1134,17 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 	// Pull the latest log frame.
 	heartbeat.Polling(ctx, stderr)
 	go func() {
+		select {
+		case <-ctx.Done():
+			return
+		case <-heartbeat.firstReadyCtx.Done():
+			v.firstReadyTime = &heartbeat.firstReadyTime
+		}
+
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-heartbeat.firstReadyCtx.Done():
-				v.firstReadyTime = &heartbeat.firstReadyTime
 			case frame := <-heartbeat.FrameLogs:
 				v.updateFrame(frame)
 			}

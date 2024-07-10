@@ -919,12 +919,17 @@ func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource
 	// Pull the latest log frame.
 	heartbeat.Polling(ctx, stderr)
 	go func() {
+		select {
+		case <-ctx.Done():
+			return
+		case <-heartbeat.firstReadyCtx.Done():
+			v.firstReadyTime = &heartbeat.firstReadyTime
+		}
+
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-heartbeat.firstReadyCtx.Done():
-				v.firstReadyTime = &heartbeat.firstReadyTime
 			case frame := <-heartbeat.FrameLogs:
 				v.updateFrame(frame)
 			}
