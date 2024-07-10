@@ -1212,7 +1212,9 @@ The following are the update records for the Oryx server.
     * Update model to gpt-3.5-turbo, gpt-4-turbo, gpt-4o. v5.14.20
     * Transcript: Upgrade the hls.js to 1.4 for WebVTT. v5.14.21
     * Disable version query and check. v5.14.22
-    * Forward: Fix high CPU bug. [v5.14.23](https://github.com/ossrs/oryx/releases/tag/v5.14.23)
+    * Support Go PPORF. v5.14.23
+    * Forward: Fix high CPU bug. v5.14.24
+    * VLive: Refine wait timeout. [v5.14.25](https://github.com/ossrs/oryx/releases/tag/v5.14.25)
 * v5.13:
     * Fix bug for vlive and transcript. v5.13.1
     * Support AWS Lightsail install script. v5.13.2

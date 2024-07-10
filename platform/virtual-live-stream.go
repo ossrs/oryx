@@ -1032,7 +1032,7 @@ func (v *VLiveTask) Run(ctx context.Context) error {
 
 			select {
 			case <-ctx.Done():
-			case <-time.After(10 * time.Second):
+			case <-time.After(4 * time.Second):
 			}
 			continue
 		}
@@ -1164,5 +1164,5 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 		v.Platform, input.Target, v.PID, err,
 	)
 
-	return nil
+	return err
 }
