@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -285,6 +286,135 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, streamUrlHandler)
 
+	ep = "/terraform/v1/ffmpeg/vlive/ytdl"
+	logger.Tf(ctx, "Handle %v", ep)
+	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			var token string
+			var qFile string
+			if err := ParseBody(ctx, r.Body, &struct {
+				Token   *string `json:"token"`
+				YtdlURL *string `json:"url"`
+			}{
+				Token: &token, YtdlURL: &qFile,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			apiSecret := envApiSecret()
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			if !strings.HasPrefix(qFile, "http") && !strings.HasPrefix(qFile, "https") {
+				return errors.Errorf("invalid url %v", qFile)
+			}
+
+			// If upload directory is symlink, eval it.
+			targetDir := dirUploadPath
+			if info, err := os.Lstat(targetDir); err == nil && info.Mode()&os.ModeSymlink != 0 {
+				if realPath, err := filepath.EvalSymlinks(targetDir); err != nil {
+					return errors.Wrapf(err, "eval symlink %v", targetDir)
+				} else {
+					targetDir = realPath
+				}
+			}
+
+			// The prefix for target files.
+			targetUUID := uuid.NewString()
+
+			// Cleanup all temporary files created by youtube-dl.
+			requestDone, requestDoneCancel := context.WithCancel(context.Background())
+			defer requestDoneCancel()
+			go func() {
+				// If the temporary file still exists for a long time, remove it
+				duration := 2 * time.Hour
+				if envNodeEnv() == "development" {
+					duration = time.Duration(30) * time.Second
+				}
+
+				select {
+				case <-ctx.Done():
+					logger.Tf(ctx, "ytdl: do cleanup immediately when quit")
+				case <-requestDone.Done():
+					time.Sleep(duration)
+				}
+
+				filepath.WalkDir(targetDir, func(p string, info fs.DirEntry, err error) error {
+					if err != nil {
+						return errors.Wrapf(err, "walk %v", p)
+					}
+
+					if !info.IsDir() && strings.HasPrefix(info.Name(), targetUUID) {
+						tempFile := path.Join(dirUploadPath, info.Name())
+						if _, err := os.Stat(tempFile); err == nil {
+							os.Remove(tempFile)
+							logger.Wf(ctx, "remove %v, duration=%v", tempFile, duration)
+						}
+					}
+
+					return nil
+				})
+			}()
+
+			// Use youtube-dl to download the file.
+			ytdlOutput := path.Join(targetDir, targetUUID)
+			args := []string{
+				"--output", ytdlOutput,
+			}
+			if proxy := envYtdlProxy(); proxy != "" {
+				args = append(args, "--proxy", proxy)
+			}
+			args = append(args, qFile)
+			if err := exec.CommandContext(ctx, "youtube-dl", args...).Run(); err != nil {
+				return errors.Wrapf(err, "run youtube-dl %v", args)
+			}
+
+			// Find out the downloaded target file.
+			var targetFile string
+			if err := filepath.WalkDir(targetDir, func(p string, info fs.DirEntry, err error) error {
+				if err != nil {
+					return errors.Wrapf(err, "walk %v", p)
+				}
+
+				if !info.IsDir() && strings.HasPrefix(info.Name(), targetUUID) {
+					targetFile = path.Join(dirUploadPath, info.Name())
+					return filepath.SkipDir
+				}
+
+				return nil
+			}); err != nil {
+				return errors.Wrapf(err, "walk %v", targetDir)
+			}
+
+			if targetFile == "" {
+				return errors.Errorf("no target file %v", targetUUID)
+			}
+
+			// Get the file information.
+			targetFileInfo, err := os.Lstat(targetFile)
+			if err != nil {
+				return errors.Wrapf(err, "lstat %v", targetFile)
+			}
+
+			ohttp.WriteData(ctx, w, r, &struct {
+				Name   string `json:"name"`
+				UUID   string `json:"uuid"`
+				Target string `json:"target"`
+				Size   int    `json:"size"`
+			}{
+				Name:   targetFileInfo.Name(),
+				UUID:   targetUUID,
+				Target: targetFile,
+				Size:   int(targetFileInfo.Size()),
+			})
+			logger.Tf(ctx, "vLive: Got vlive ytdl file target=%v, size=%v", targetFileInfo.Name(), targetFileInfo.Size())
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+	})
+
 	ep = "/terraform/v1/ffmpeg/vlive/server"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
@@ -388,13 +518,22 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					logger.Wf(ctx, "remove %v, done=%v, created=%v", targetFileName, uploadDone, created)
 				}
 			}()
+
+			requestDone, requestDoneCancel := context.WithCancel(context.Background())
+			defer requestDoneCancel()
 			go func() {
 				// If the temporary file still exists for a long time, remove it
 				duration := 2 * time.Hour
 				if envNodeEnv() == "development" {
 					duration = time.Duration(30) * time.Second
 				}
-				time.Sleep(duration)
+
+				select {
+				case <-ctx.Done():
+					logger.Tf(ctx, "upload: do cleanup immediately when quit")
+				case <-requestDone.Done():
+					time.Sleep(duration)
+				}
 
 				if _, err := os.Stat(targetFileName); err == nil {
 					os.Remove(targetFileName)
@@ -1081,7 +1220,7 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 
 	// Start FFmpeg process.
 	args := []string{}
-	if input.Type == FFprobeSourceTypeFile || input.Type == FFprobeSourceTypeUpload {
+	if input.Type == FFprobeSourceTypeFile || input.Type == FFprobeSourceTypeUpload || input.Type == FFprobeSourceTypeYTDL {
 		args = append(args, "-stream_loop", "-1")
 		args = append(args, "-re")
 	}

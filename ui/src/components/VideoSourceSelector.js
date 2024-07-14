@@ -5,7 +5,7 @@
 //
 import React from "react";
 import {useTranslation} from "react-i18next";
-import {Button, Col, Form, InputGroup, ListGroup, Row} from "react-bootstrap";
+import {Button, Col, Form, InputGroup, ListGroup, Row, Spinner} from "react-bootstrap";
 import {SrsErrorBoundary} from "./SrsErrorBoundary";
 import {useErrorHandler} from "react-error-boundary";
 import axios from "axios";
@@ -19,7 +19,7 @@ export default function ChooseVideoSource({platform, endpoint, vLiveFiles, setVL
   React.useEffect(() => {
     if (vLiveFiles?.length) {
       const type = vLiveFiles[0].type;
-      if (type === 'upload' || type === 'file' || type === 'stream') {
+      if (type === 'upload' || type === 'file' || type === 'stream' || type === 'ytdl') {
         setCheckType(type);
       }
     }
@@ -47,6 +47,21 @@ export default function ChooseVideoSource({platform, endpoint, vLiveFiles, setVL
       {checkType === 'file' &&
         <SrsErrorBoundary>
           <VLiveFileSelector {...{platform, endpoint, vLiveFiles, setVLiveFiles}} />
+        </SrsErrorBoundary>
+      }
+    </Form.Group>
+    <Form.Group className="mb-3">
+      <InputGroup>
+        <Form.Check type="radio" label={t('plat.tool.ytdl')} id={'ytdl-' + platform} checked={checkType === 'ytdl'}
+                    name={'chooseSource' + platform} onChange={e => setCheckType('ytdl')}
+        /> &nbsp;
+        <Form.Text> * {t('plat.tool.ytdl20')}. &nbsp;
+          {t('helper.see')} <a href={t('plat.tool.ytdl21')} target='_blank' rel='noreferrer'>link</a>.
+        </Form.Text>
+      </InputGroup>
+      {checkType === 'ytdl' &&
+        <SrsErrorBoundary>
+          <YtdlFileSelector {...{platform, endpoint, vLiveFiles, setVLiveFiles}} />
         </SrsErrorBoundary>
       }
     </Form.Group>
@@ -183,31 +198,107 @@ function VLiveFileSelector({platform, endpoint, vLiveFiles, setVLiveFiles}) {
   </>);
 }
 
+function YtdlFileSelector({platform, endpoint, vLiveFiles, setVLiveFiles}) {
+  const {t} = useTranslation();
+  const handleError = useErrorHandler();
+  // TODO: FIXME: As the file path is changed after used, so we can not use te target.
+  const [ytdlUrl, setYtdlUrl] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  const CheckYtdlUrl = React.useCallback(async () => {
+    if (!ytdlUrl) return alert(t('plat.tool.ytdl3'));
+    if (!ytdlUrl.startsWith('http://') && !ytdlUrl.startsWith('https://')) {
+      return alert(t('plat.tool.ytdl22'));
+    }
+
+    try {
+      setLoading(true);
+      await new Promise((resolve, reject) => {
+        axios.post(`/terraform/v1/ffmpeg/vlive/ytdl`, {
+          url: ytdlUrl,
+        }, {
+          headers: Token.loadBearerHeader(),
+        }).then(res => {
+          let apiUrl = '/terraform/v1/ffmpeg/vlive/source';
+          if (endpoint === 'dubbing') apiUrl = '/terraform/v1/dubbing/source';
+
+          console.log(`${t('plat.tool.ytdl5')}，${JSON.stringify(res.data.data)}`);
+          const localFileObj = res.data.data;
+          const files = [{name: localFileObj.name, path: ytdlUrl, size: localFileObj.size, uuid: localFileObj.uuid, target: localFileObj.target, type: "ytdl"}];
+          axios.post(apiUrl, {
+            platform, files,
+          }, {
+            headers: Token.loadBearerHeader(),
+          }).then(res => {
+            console.log(`${t('plat.tool.ytdl6')}，${JSON.stringify(res.data.data)}`);
+            setVLiveFiles(res.data.data.files);
+            resolve();
+          }).catch(reject);
+        }).catch(reject);
+      });
+    } catch (e) {
+      handleError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [t, ytdlUrl, handleError, platform, setVLiveFiles, endpoint, setLoading]);
+
+  return (<>
+    <Form.Control as="div">
+      {!vLiveFiles?.length ? <>
+        <Row>
+          <Col>
+            <Form.Control type="text" defaultValue={ytdlUrl} placeholder={t('plat.tool.ytdl3')} onChange={e => setYtdlUrl(e.target.value)} />
+          </Col>
+          <Col xs="auto">
+            <Button variant="primary" disabled={loading} onClick={CheckYtdlUrl}>{t('helper.submit')}</Button>
+            {loading && <>&nbsp; <Spinner as="span" animation="grow" size="sm" role="status" aria-hidden="true"/></>}
+          </Col>
+        </Row></> : <></>
+      }
+      {vLiveFiles?.length ? <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/> : <></>}
+    </Form.Control>
+  </>);
+}
+
 function VLiveFileUploader({platform, endpoint, vLiveFiles, setVLiveFiles}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
-  const updateSources = React.useCallback((platform, files, setFiles) => {
+  const [loading, setLoading] = React.useState(false);
+
+  const updateSources = React.useCallback(async (platform, files, setFiles) => {
     if (!files?.length) return alert(t('plat.tool.upload2'));
 
-    let apiUrl = '/terraform/v1/ffmpeg/vlive/source';
-    if (endpoint === 'dubbing') apiUrl = '/terraform/v1/dubbing/source';
+    try {
+      setLoading(true);
+      await new Promise((resolve, reject) => {
+        let apiUrl = '/terraform/v1/ffmpeg/vlive/source';
+        if (endpoint === 'dubbing') apiUrl = '/terraform/v1/dubbing/source';
 
-    axios.post(apiUrl, {
-      platform, files: files.map(f => {
-        return {name: f.name, path: f.name, size: f.size, uuid: f.uuid, target: f.target, type: "upload"};
-      }),
-    }, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      console.log(`${t('plat.tool.upload3')}, ${JSON.stringify(res.data.data)}`);
-      setFiles(res.data.data.files);
-    }).catch(handleError);
-  }, [t, handleError, endpoint]);
+        axios.post(apiUrl, {
+          platform, files: files.map(f => {
+            return {name: f.name, path: f.name, size: f.size, uuid: f.uuid, target: f.target, type: "upload"};
+          }),
+        }, {
+          headers: Token.loadBearerHeader(),
+        }).then(res => {
+          console.log(`${t('plat.tool.upload3')}, ${JSON.stringify(res.data.data)}`);
+          setFiles(res.data.data.files);
+          resolve();
+        }).catch(reject);
+      });
+    } catch (e) {
+      handleError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [t, handleError, endpoint, setLoading]);
 
   return (<>
     <Form.Control as='div'>
       {!vLiveFiles?.length ? <FileUploader onFilesUploaded={(files) => updateSources(platform, files, setVLiveFiles)}/> : <></>}
       {vLiveFiles?.length ? <VLiveFileList files={vLiveFiles} onChangeFiles={(e) => setVLiveFiles(null)}/> : <></>}
+      {loading && <>&nbsp; <Spinner as="span" animation="grow" size="sm" role="status" aria-hidden="true"/></>}
     </Form.Control>
   </>);
 }

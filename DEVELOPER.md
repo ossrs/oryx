@@ -875,6 +875,49 @@ docker run --rm -it -p 2022:2022 -p 2443:2443 -p 1935:1935 \
 Note that the logs should be written to file, there is no log `write log to console`, instead there
 should be a log like `you can check log by`.
 
+## Go PPROF
+
+To analyze the performance of Oryx, you can enable the Go pprof tool:
+
+```bash
+GO_PPROF=localhost:6060 go run .
+```
+
+Run CPU profile:
+
+```bash
+go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30
+```
+
+Then use `top` to show the hot functions.
+
+## Setup for youtube-dl
+
+Install pyinstaller:
+
+```bash
+brew install pyinstaller
+```
+
+Clone and build the youtube-dl:
+
+```bash
+cd ~/git && git clone git@github.com:ytdl-org/youtube-dl.git &&
+cd ~/git/youtube-dl && pyinstaller --onefile --clean --noconfirm --name youtube-dl youtube_dl/__main__.py &&
+ln -sf ~/git/youtube-dl/dist/youtube-dl /opt/homebrew/bin/
+```
+
+Use socks5 proxy for macOS to download:
+
+```bash
+youtube-dl --proxy socks5://127.0.0.1:10000 --output srs 'https://youtu.be/SqrazCPWcV0?si=axNvjynVb7Tf4Bfe'
+```
+
+> Note: Setup the `--proxy socks5://127.0.0.1:10000` or `YTDL_PROXY=socks5://127.0.0.1:10000` if wants to
+> use proxy, use `ssh -D 127.0.0.1:10000 root@x.y.z.m dstat 30` to start the proxy server.
+
+> Note: Setup the `--output TEMPLATE` when wants to define the filename.
+
 ## WebRTC Candidate
 
 Oryx follows the rules for WebRTC candidate, see [CANDIDATE](https://ossrs.io/lts/en-us/docs/v5/doc/webrtc#config-candidate),
@@ -1012,6 +1055,7 @@ Platform, with token authentication:
 * `/terraform/v1/ffmpeg/vlive/source` Setup Virtual Live source file.
 * `/terraform/v1/ffmpeg/vlive/upload/` Source: Upload Virtual Live or Dubbing source file.
 * `/terraform/v1/ffmpeg/vlive/server` Source: Use server file as Virtual Live or Dubbing source.
+* `/terraform/v1/ffmpeg/vlive/ytdl` Source: Download URL by [youtube-dl](https://github.com/ytdl-org/youtube-dl) as Virtual Live or Dubbing source.
 * `/terraform/v1/ffmpeg/vlive/stream-url` Source: Use stream URL as Virtual Live source.
 * `/terraform/v1/ffmpeg/camera/secret` Setup the IP camera streaming secret.
 * `/terraform/v1/ffmpeg/camera/streams` Query the IP camera streaming streams.
@@ -1157,23 +1201,12 @@ Deprecated and unused variables:
 * `SRS_UTEST`: `on|off`, if on, running in utest mode.
 * `SOURCE`: `github|gitee`, The source code for upgrading.
 
+Other variables:
+
+* `YTDL_PROXY`: Setup the proxy for youtube-dl, for example, `socks5://127.0.0.1:10000`
+* `GO_PPROF`: Setup the listen addr for Go PPROF tool, for example, `localhost:6060`
+
 Please restart service when `.env` changed.
-
-## Go PPROF
-
-To analyze the performance of Oryx, you can enable the Go pprof tool:
-
-```bash
-GO_PPROF=on go run .
-```
-
-Run CPU profile:
-
-```bash
-go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30
-```
-
-Then use `top` to show the hot functions.
 
 ## Coding Guide
 
@@ -1215,6 +1248,7 @@ The following are the update records for the Oryx server.
     * VLive: Fix bug when source codec is not supported. v5.15.13
     * Forward: Fix high CPU bug. v5.15.14
     * Support Go PPROF for CPU profiling. [v5.15.15](https://github.com/ossrs/oryx/releases/tag/v5.15.15)
+    * VLive: Support download by youtube-dl. v5.15.16
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)

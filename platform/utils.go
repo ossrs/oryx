@@ -344,6 +344,7 @@ type FFprobeSourceType string
 
 const FFprobeSourceTypeUpload FFprobeSourceType = "upload"
 const FFprobeSourceTypeFile FFprobeSourceType = "file"
+const FFprobeSourceTypeYTDL FFprobeSourceType = "ytdl"
 const FFprobeSourceTypeStream FFprobeSourceType = "stream"
 
 // For vLive upload directory.
@@ -355,7 +356,7 @@ var dirDubbingPath = path.Join(".", "dub")
 const serverDataDirectory = "/data"
 
 // The video files allowed to use by Oryx.
-var serverAllowVideoFiles []string = []string{".mp4", ".flv", ".ts"}
+var serverAllowVideoFiles []string = []string{".mp4", ".flv", ".ts", ".mkv", ".mov"}
 
 // The audio files allowed to use by Oryx.
 var serverAllowAudioFiles []string = []string{".mp3", ".aac", ".m4a"}
@@ -483,6 +484,14 @@ func envVLiveLimit() string {
 
 func envCameraLimit() string {
 	return os.Getenv("SRS_CAMERA_LIMIT")
+}
+
+func envGoPprof() string {
+	return os.Getenv("GO_PPROF")
+}
+
+func envYtdlProxy() string {
+	return os.Getenv("YTDL_PROXY")
 }
 
 // rdb is a global redis client object.

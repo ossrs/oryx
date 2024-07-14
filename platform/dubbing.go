@@ -73,7 +73,7 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 			if targetFile == nil {
 				return errors.Errorf("invalid file")
 			}
-			if targetFile.Type != FFprobeSourceTypeFile && targetFile.Type != FFprobeSourceTypeUpload {
+			if targetFile.Type != FFprobeSourceTypeFile && targetFile.Type != FFprobeSourceTypeUpload && targetFile.Type != FFprobeSourceTypeYTDL {
 				return errors.Errorf("invalid file type %v", targetFile.Type)
 			}
 			if targetFile.Target == "" {
@@ -2230,7 +2230,7 @@ func (v *SrsDubbingProject) Save(ctx context.Context) error {
 }
 
 func (v *SrsDubbingProject) CheckSource(ctx context.Context, target string) error {
-	if v.FileType != FFprobeSourceTypeFile && v.FileType != FFprobeSourceTypeUpload {
+	if v.FileType != FFprobeSourceTypeFile && v.FileType != FFprobeSourceTypeUpload && v.FileType != FFprobeSourceTypeYTDL {
 		return errors.Errorf("unsupported file type %v", v.FileType)
 	}
 

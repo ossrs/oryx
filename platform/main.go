@@ -105,7 +105,7 @@ func doMain(ctx context.Context) error {
 	// Set the default language, en or zh.
 	setEnvDefault("REACT_APP_LOCALE", "en")
 	// Whether enable the Go pprof.
-	setEnvDefault("GO_PPROF", "off")
+	setEnvDefault("GO_PPROF", "")
 
 	// Migrate from mgmt.
 	setEnvDefault("REDIS_DATABASE", "0")
@@ -138,8 +138,8 @@ func doMain(ctx context.Context) error {
 		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, HTTP_PORT=%v, "+
 		"REGISTRY=%v, MGMT_LISTEN=%v, HTTPS_LISTEN=%v, AUTO_SELF_SIGNED_CERTIFICATE=%v, "+
 		"NAME_LOOKUP=%v, PLATFORM_DOCKER=%v, SRS_FORWARD_LIMIT=%v, SRS_VLIVE_LIMIT=%v, "+
-		"SRS_CAMERA_LIMIT=%v",
-		len(envMgmtPassword()), os.Getenv("GO_PPROF"), len(envApiSecret()), envCloud(),
+		"SRS_CAMERA_LIMIT=%v, YTDL_PROXY=%v",
+		len(envMgmtPassword()), envGoPprof(), len(envApiSecret()), envCloud(),
 		envRegion(), envSource(), envSrtListen(), envRtcListen(),
 		envNodeEnv(), envLocalRelease(),
 		envRedisDatabase(), envRedisHost(), len(envRedisPassword()), envRedisPort(),
@@ -148,16 +148,15 @@ func doMain(ctx context.Context) error {
 		envRegistry(), envMgmtListen(), envHttpListen(),
 		envSelfSignedCertificate(), envNameLookup(),
 		envPlatformDocker(), envForwardLimit(), envVLiveLimit(),
-		envCameraLimit(),
+		envCameraLimit(), envYtdlProxy(),
 	)
 
 	// Start the Go pprof if enabled.
-	if os.Getenv("GO_PPROF") == "on" {
+	if addr := envGoPprof(); addr != "" {
 		go func() {
-			addr := "localhost:6060"
 			logger.Tf(ctx, "Start Go pprof at %v", addr)
 			http.ListenAndServe(addr, nil)
-		} ()
+		}()
 	}
 
 	// Setup the base OS for redis, which should never depends on redis.
