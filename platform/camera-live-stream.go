@@ -812,7 +812,7 @@ func (v *CameraTask) Run(ctx context.Context) error {
 
 			select {
 			case <-ctx.Done():
-			case <-time.After(4 * time.Second):
+			case <-time.After(3500 * time.Millisecond):
 			}
 			continue
 		}
