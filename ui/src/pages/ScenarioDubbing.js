@@ -284,12 +284,12 @@ function DubbingSettings({project, requesting, updateProject}) {
 
   const [aiChatEnabled, setAiChatEnabled] = React.useState(project?.trans?.aiChatEnabled);
   const [aiTransProvider, setAiTransProvider] = React.useState(project?.trans?.aiProvider || 'openai');
-  const [aiChatModel, setAiChatModel] = React.useState(project?.trans?.aiChatModel || 'gpt-4-turbo');
+  const [aiChatModel, setAiChatModel] = React.useState(project?.trans?.aiChatModel || 'gpt-4o');
   const [aiChatPrompt, setAiChatPrompt] = React.useState(project?.trans?.aiChatPrompt || (aiAsrLanguage === 'en' ? 'Translate all user input text into Chinese.' : 'Translate all user input text into English.'));
 
   const [aiRephraseEnabled, setAiRephraseEnabled] = React.useState(project?.rephrase?.aiChatEnabled);
   const [aiRephraseProvider, setAiRephraseProvider] = React.useState(project?.rephrase?.aiProvider || 'openai');
-  const [aiRephraseModel, setAiRephraseModel] = React.useState(project?.rephrase?.aiChatModel || 'gpt-4-turbo');
+  const [aiRephraseModel, setAiRephraseModel] = React.useState(project?.rephrase?.aiChatModel || 'gpt-4o');
   const [aiRephrasePrompt, setAiRephrasePrompt] = React.useState(project?.rephrase?.aiChatPrompt || 'Use the same language and do not translate. Remember to maintain original meanings. Rephrase the text shorter.');
 
   const [aiTtsEnabled, setAiTtsEnabled] = React.useState(project?.tts?.aiTtsEnabled);

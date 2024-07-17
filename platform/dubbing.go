@@ -1793,7 +1793,7 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 
 		// Split the audio to segments, because each ASR is limited to 25MB by OpenAI,
 		// see https://platform.openai.com/docs/guides/speech-to-text
-		limitDuration := int(25*1024*1024*8/float64(bitrate)) / 5
+		limitDuration := int(25*1024*1024*8/float64(bitrate)) / 10
 		for starttime := float64(0); starttime < duration; starttime += float64(limitDuration) {
 			// For debugging, only the first segment.
 			if starttime > 0 && onlyRegenerateFirstSegment {

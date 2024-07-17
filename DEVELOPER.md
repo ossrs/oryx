@@ -1249,6 +1249,7 @@ The following are the update records for the Oryx server.
     * Forward: Fix high CPU bug. v5.15.14
     * Support Go PPROF for CPU profiling. [v5.15.15](https://github.com/ossrs/oryx/releases/tag/v5.15.15)
     * VLive: Support download by youtube-dl. v5.15.16
+    * Dubbing: Use gpt-4o and smaller ASR segment. v5.15.17
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)
