@@ -899,12 +899,31 @@ Install pyinstaller:
 brew install pyinstaller
 ```
 
-Clone and build the youtube-dl:
+Clone and build the [youtube-dl](https://github.com/ytdl-org/youtube-dl):
 
 ```bash
-cd ~/git && git clone git@github.com:ytdl-org/youtube-dl.git &&
+cd ~/git && git clone https://github.com/ytdl-org/youtube-dl.git &&
 cd ~/git/youtube-dl && pyinstaller --onefile --clean --noconfirm --name youtube-dl youtube_dl/__main__.py &&
 ln -sf ~/git/youtube-dl/dist/youtube-dl /opt/homebrew/bin/
+```
+
+For linux server, to download the latest youtube-dl:
+
+```bash
+curl -L -o /usr/local/bin/youtube-dl 'https://github.com/ytdl-org/ytdl-nightly/releases/latest/download/youtube-dl' &&
+rm -f /usr/bin/python && ln -sf /usr/bin/python3 /usr/bin/python &&
+chmod +x /usr/local/bin/youtube-dl
+```
+
+An alternative project is [yt-dlp](https://github.com/yt-dlp/yt-dlp) which is a fork of youtube-dl:
+
+```bash
+cd ~/git && git clone https://github.com/yt-dlp/yt-dlp.git &&
+cd ~/git/yt-dlp && python3 -m venv venv && source venv/bin/activate &&
+python3 devscripts/install_deps.py --include pyinstaller &&
+python3 devscripts/make_lazy_extractors.py
+python3 -m bundle.pyinstaller --onefile --clean --noconfirm --name youtube-dl yt_dlp/__main__.py &&
+ln -sf ~/git/yt-dlp/dist/youtube-dl /opt/homebrew/bin/
 ```
 
 Use socks5 proxy for macOS to download:
