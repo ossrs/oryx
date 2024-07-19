@@ -32,6 +32,9 @@ var aiDubbingWorkDir = "containers/data/dubbing"
 // MergeSegmentBetweenGroups is used for detect the gap for automatically merging.
 const MergeSegmentBetweenGroups = 10 * time.Millisecond
 
+// MergeSegmentForSmallWords is used for merging the group if less than this words.
+const MergeSegmentForSmallWords = 30
+
 // For production, all should be false.
 const (
 	alwaysForceRegenerateASRResponse = false
@@ -1904,9 +1907,9 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 
 				// Whether the next segment is very few words.
 				if isEnglish(nextText) {
-					nextFewWords = strings.Count(nextText, " ") < 5
+					nextFewWords = strings.Count(nextText, " ") < MergeSegmentForSmallWords
 				} else {
-					nextFewWords = utf8.RuneCount([]byte(nextText)) < 5
+					nextFewWords = utf8.RuneCount([]byte(nextText)) < MergeSegmentForSmallWords
 				}
 			}
 
