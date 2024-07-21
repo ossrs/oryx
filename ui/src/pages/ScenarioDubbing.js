@@ -585,14 +585,15 @@ function DubbingUISummary({project}) {
   </>;
 }
 
-function DubbingUIControls({task, isFullscreen, setIsFullscreen, requesting, processing, startupRequesting, allGroupReady, startDubbingTask, downloadArtifact}) {
+function DubbingUIControls({task, isFullscreen, setIsFullscreen, showHeader, setShowHeader, showASR, setShowASR, showTranslation, setShowTranslation,requesting, processing, startupRequesting, allGroupReady, startDubbingTask, downloadArtifact}) {
   const {t} = useTranslation();
   return <>
     {task?.status !== 'done' && <>
       <Form.Group className="mb-3">
-        <Form.Group className="mb-3" controlId="formAiTtsEnabledCheckbox">
-          <Form.Check type="checkbox" label={t('lr.room.fse')} defaultChecked={isFullscreen} onClick={() => setIsFullscreen(!isFullscreen)} />
-        </Form.Group>
+        <Form.Check type="checkbox" inline id="cbFse" label={t('lr.room.fse')} defaultChecked={isFullscreen} onClick={() => setIsFullscreen(!isFullscreen)} />
+        <Form.Check type="checkbox" inline id="cbShdr" label={t('lr.room.shdr')} defaultChecked={showHeader} onClick={() => setShowHeader(!showHeader)} />
+        <Form.Check type="checkbox" inline id="cbSasr" label={t('lr.room.sasr')} defaultChecked={showASR} onClick={() => setShowASR(!showASR)} />
+        <Form.Check type="checkbox" inline id="cbStrans" label={t('lr.room.strans')} defaultChecked={showTranslation} onClick={() => setShowTranslation(!showTranslation)} />
       </Form.Group>
       <Form.Group className="mb-3">
         <Button variant="primary" type="submit" disabled={requesting || processing} onClick={startDubbingTask}>
@@ -605,9 +606,10 @@ function DubbingUIControls({task, isFullscreen, setIsFullscreen, requesting, pro
     </>}
     {isFullscreen && !startupRequesting && task?.status === 'done' && <>
       <Form.Group className="mb-3">
-        <Form.Group className="mb-3" controlId="formAiTtsEnabledCheckbox">
-          <Form.Check type="checkbox" label={t('lr.room.fse')} defaultChecked={isFullscreen} onClick={() => setIsFullscreen(!isFullscreen)} />
-        </Form.Group>
+        <Form.Check type="checkbox" inline id="cbFse" label={t('lr.room.fse')} defaultChecked={isFullscreen} onClick={() => setIsFullscreen(!isFullscreen)} />
+        <Form.Check type="checkbox" inline id="cbShdr" label={t('lr.room.shdr')} defaultChecked={showHeader} onClick={() => setShowHeader(!showHeader)} />
+        <Form.Check type="checkbox" inline id="cbSasr" label={t('lr.room.sasr')} defaultChecked={showASR} onClick={() => setShowASR(!showASR)} />
+        <Form.Check type="checkbox" inline id="cbStrans" label={t('lr.room.strans')} defaultChecked={showTranslation} onClick={() => setShowTranslation(!showTranslation)} />
       </Form.Group>
       <Form.Group className='mb-3'>
         <Button variant='primary' type='submit' disabled={requesting || processing || !allGroupReady}
@@ -623,30 +625,29 @@ function DubbingUIControls({task, isFullscreen, setIsFullscreen, requesting, pro
       </Form.Group>
     </>}
     {!isFullscreen && !startupRequesting && task?.status === 'done' && <>
-      <Row>
-        <Form.Group as={Col} className="mb-3" xs={1}>
-          <Form.Group className="mb-3" controlId="formAiTtsEnabledCheckbox">
-            <Form.Check type="checkbox" label={t('lr.room.fse')} defaultChecked={isFullscreen} onClick={() => setIsFullscreen(!isFullscreen)} />
-          </Form.Group>
-        </Form.Group>
-        <Form.Group as={Col} className='mb-3'>
-          <Button variant='primary' type='submit' disabled={requesting || processing || !allGroupReady}
-                  onClick={(e) => downloadArtifact(e, task.uuid)}>
-            {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status"
-                                                      aria-hidden="true"/> &nbsp;</>}
-            {t('dubb.studio.download')}
-          </Button>
-          <Form.Text> * {t('dubb.studio.disabled')}. &nbsp;
-            {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank'
-                                 rel='noreferrer'>this article</a>.
-          </Form.Text>
-        </Form.Group>
-      </Row>
+      <Form.Group className="mb-3">
+        <Form.Check type="checkbox" inline id="cbFse" label={t('lr.room.fse')} defaultChecked={isFullscreen} onClick={() => setIsFullscreen(!isFullscreen)} />
+        <Form.Check type="checkbox" inline id="cbShdr" label={t('lr.room.shdr')} defaultChecked={showHeader} onClick={() => setShowHeader(!showHeader)} />
+        <Form.Check type="checkbox" inline id="cbSasr" label={t('lr.room.sasr')} defaultChecked={showASR} onClick={() => setShowASR(!showASR)} />
+        <Form.Check type="checkbox" inline id="cbStrans" label={t('lr.room.strans')} defaultChecked={showTranslation} onClick={() => setShowTranslation(!showTranslation)} />
+      </Form.Group>
+      <Form.Group className='mb-3'>
+        <Button variant='primary' type='submit' disabled={requesting || processing || !allGroupReady}
+                onClick={(e) => downloadArtifact(e, task.uuid)}>
+          {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status"
+                                                    aria-hidden="true"/> &nbsp;</>}
+          {t('dubb.studio.download')}
+        </Button>
+        <Form.Text> * {t('dubb.studio.disabled')}. &nbsp;
+          {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank'
+                               rel='noreferrer'>this article</a>.
+        </Form.Text>
+      </Form.Group>
     </>}
   </>;
 }
 
-function DubbingUISubtitles({task, playerRef, isFullscreen, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}) {
+function DubbingUISubtitles({task, playerRef, isFullscreen, showHeader, showASR, showTranslation, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}) {
   const {t} = useTranslation();
 
   const selectVariant = (index, g) => {
@@ -701,83 +702,91 @@ function DubbingUISubtitles({task, playerRef, isFullscreen, requesting, activeGr
       return (
         <div id={`asr-group-${index}`}>
           <Card key={g.uuid} className='ai-dubbing-group'>
-            <Card.Header
-              className={g === activeGroup ? 'ai-dubbing-title ai-dubbing-title-playing' : 'ai-dubbing-title'}>
-              <Row>
-                <Col xs={6}>
-                  <small className="text-secondary">
-                    ID.{g.id}: {formatDuration(g.start)} ~ {formatDuration(g.end)}
-                  </small> &nbsp;
-                  {g === activeGroup && isPlayingAudio ?
-                    <Spinner animation="border" as='span' variant="primary" size='sm'
-                             style={{verticalAlign: 'middle'}}/> : ''}
-                </Col>
-                <Col xs={6} className='text-end'>
-                  <>
-                    <Button variant='link' size='sm' className='ai-dubbing-button' disabled={requesting}
-                            onClick={(e) => rephraseGroup(e, task.uuid, g)}>
-                      {t('dubb.studio.rephrase')}
-                    </Button>
-                  </>
-                  <>
-                    <Button variant='link' size='sm' className='ai-dubbing-button' disabled={requesting}
-                            onClick={(e) => mergeToGroup(e, task.uuid, g, 'next')}>
-                      {t('dubb.studio.mpost')}
-                    </Button>
-                  </>
-                  {g.free_space !== undefined && <>
-                    <small className="text-secondary">Free: {Number(g.free_space).toFixed(1)}s</small>
-                  </>}
-                </Col>
-              </Row>
-            </Card.Header>
-            <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
-              {g.segments.map((s) => {
-                return <div key={s.uuid}>
-                  <Row>
-                    <Col xs={isFullscreen ? 2 : 1}>
-                      <label className='ai-dubbing-command' onClick={(e) => playSegment(e, s)}>
-                        <small className="text-secondary">
-                          #{s.id}: {Number(s.end - s.start).toFixed(1)}s
-                        </small> &nbsp;
-                      </label>
-                      <Icon.Soundwave
-                        className='ai-dubbing-command' size={16}
-                        onClick={(e) => replaySegment(e, s)}/>
-                    </Col>
-                    <Col>
-                      {s.text}
-                    </Col>
-                  </Row>
-                </div>;
-              })}
-            </Alert>
-            <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
-              <Row>
-                <Col xs={isFullscreen ? 2 : 1} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'>
-                  <small className="text-secondary">
-                    #{g.id}: {Number(g.tts_duration).toFixed(1)}s
-                  </small> &nbsp;
-                  {g.tts &&
-                    <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
-                </Col>
-                <Col>
-                  {g.translated}
-                </Col>
-              </Row>
-              {g.rephrased && g.rephrased !== g.translated && <Row>
-                <Col xs={1} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'>
-                  <small className="text-secondary">
-                    #{g.id}: {Number(g.tts_duration).toFixed(1)}s
-                  </small> &nbsp;
-                  {g.rephrased &&
-                    <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
-                </Col>
-                <Col>
-                  {g.rephrased}
-                </Col>
-              </Row>}
-            </Alert>
+            {showHeader && <>
+              <Card.Header
+                className={g === activeGroup ? 'ai-dubbing-title ai-dubbing-playing' : 'ai-dubbing-title'}>
+                <Row>
+                  <Col xs={6}>
+                    <small className="text-secondary">
+                      ID.{g.id}: {formatDuration(g.start)} ~ {formatDuration(g.end)}
+                    </small> &nbsp;
+                    {g === activeGroup && isPlayingAudio ?
+                      <Spinner animation="border" as='span' variant="primary" size='sm'
+                               style={{verticalAlign: 'middle'}}/> : ''}
+                  </Col>
+                  <Col xs={6} className='text-end'>
+                    <>
+                      <Button variant='link' size='sm' className='ai-dubbing-button' disabled={requesting}
+                              onClick={(e) => rephraseGroup(e, task.uuid, g)}>
+                        {t('dubb.studio.rephrase')}
+                      </Button>
+                    </>
+                    <>
+                      <Button variant='link' size='sm' className='ai-dubbing-button' disabled={requesting}
+                              onClick={(e) => mergeToGroup(e, task.uuid, g, 'next')}>
+                        {t('dubb.studio.mpost')}
+                      </Button>
+                    </>
+                    {g.free_space !== undefined && <>
+                      <small className="text-secondary">Free: {Number(g.free_space).toFixed(1)}s</small>
+                    </>}
+                  </Col>
+                </Row>
+              </Card.Header>
+            </>}
+            {showASR && <>
+              <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
+                {g.segments.map((s) => {
+                  return <div key={s.uuid}>
+                    <Row>
+                      <Col xs={isFullscreen ? 2 : 1} className={g === activeGroup ? 'ai-dubbing-playing' : ''}>
+                        <label className='ai-dubbing-command' onClick={(e) => playSegment(e, s)}>
+                          <small className="text-secondary">
+                            #{s.id}: {Number(s.end - s.start).toFixed(1)}s
+                          </small> &nbsp;
+                        </label>
+                        <Icon.Soundwave
+                          className='ai-dubbing-command' size={16}
+                          onClick={(e) => replaySegment(e, s)}/>
+                      </Col>
+                      <Col>
+                        {s.text}
+                      </Col>
+                    </Row>
+                  </div>;
+                })}
+              </Alert>
+            </>}
+            {showTranslation && <>
+              <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
+                <Row>
+                  <Col xs={isFullscreen ? 2 : 1} onClick={(e) => playGroup(e, g)} xs={isFullscreen ? 2 : 1}
+                       className={g === activeGroup ? 'ai-dubbing-command ai-dubbing-playing' : 'ai-dubbing-command'}>
+                    <small className="text-secondary">
+                      #{g.id}: {Number(g.tts_duration).toFixed(1)}s
+                    </small> &nbsp;
+                    {g.tts &&
+                      <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
+                  </Col>
+                  <Col>
+                    {g.translated}
+                  </Col>
+                </Row>
+                {g.rephrased && g.rephrased !== g.translated && <Row>
+                  <Col xs={1} onClick={(e) => playGroup(e, g)}
+                       className={g === activeGroup ? 'ai-dubbing-command ai-dubbing-playing' : 'ai-dubbing-command'}>
+                    <small className="text-secondary">
+                      #{g.id}: {Number(g.tts_duration).toFixed(1)}s
+                    </small> &nbsp;
+                    {g.rephrased &&
+                      <Icon.Soundwave size={16} onClick={(e) => playGroup(e, g)} className='ai-dubbing-command'/>}
+                  </Col>
+                  <Col>
+                    {g.rephrased}
+                  </Col>
+                </Row>}
+              </Alert>
+            </>}
           </Card>
         </div>
       );
@@ -794,6 +803,9 @@ function DubbingStudioEditor({project, isFullscreen, setIsFullscreen}) {
   const [task, setTask] = React.useState();
   const [activeGroup, setActiveGroup] = React.useState();
   const [isPlayingAudio, setIsPlayingAudio] = React.useState(false);
+  const [showHeader, setShowHeader] = React.useState(true);
+  const [showASR, setShowASR] = React.useState(true);
+  const [showTranslation, setShowTranslation] = React.useState(true);
   const playerRef = React.useRef(null);
   const ttsPlayer = React.useRef(null);
 
@@ -1030,6 +1042,12 @@ function DubbingStudioEditor({project, isFullscreen, setIsFullscreen}) {
             task,
             isFullscreen,
             setIsFullscreen,
+            showHeader,
+            setShowHeader,
+            showASR,
+            setShowASR,
+            showTranslation,
+            setShowTranslation,
             requesting,
             processing,
             startupRequesting,
@@ -1041,7 +1059,7 @@ function DubbingStudioEditor({project, isFullscreen, setIsFullscreen}) {
         <Col>
           <Row>
             <Col className='ai-dubbing-workspace-fs'>
-              <DubbingUISubtitles {...{task, playerRef, isFullscreen, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}} />
+              <DubbingUISubtitles {...{task, playerRef, isFullscreen, showHeader, showASR, showTranslation, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}} />
             </Col>
           </Row>
         </Col>
@@ -1056,13 +1074,29 @@ function DubbingStudioEditor({project, isFullscreen, setIsFullscreen}) {
         </Col>
       </Row>
       <div>
-        <DubbingUIControls {...{task, isFullscreen, setIsFullscreen, requesting, processing, startupRequesting, allGroupReady, startDubbingTask, downloadArtifact}} />
+        <DubbingUIControls {...{
+          task,
+          isFullscreen,
+          setIsFullscreen,
+          showHeader,
+          setShowHeader,
+          showASR,
+          setShowASR,
+          showTranslation,
+          setShowTranslation,
+          requesting,
+          processing,
+          startupRequesting,
+          allGroupReady,
+          startDubbingTask,
+          downloadArtifact,
+        }} />
         <p></p>
       </div>
       <div>
         <Row>
           <Col xs={11} className='ai-dubbing-workspace'>
-            <DubbingUISubtitles {...{task, playerRef, isFullscreen, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}} />
+            <DubbingUISubtitles {...{task, playerRef, isFullscreen, showHeader, showASR, showTranslation, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}} />
           </Col>
           <Col></Col>
         </Row>
