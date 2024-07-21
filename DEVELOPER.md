@@ -1270,6 +1270,7 @@ The following are the update records for the Oryx server.
     * VLive: Support download by youtube-dl. v5.15.16
     * Dubbing: Use gpt-4o and smaller ASR segment. v5.15.17
     * Dubbing: Merge more words if in small duration. v5.15.17
+    * Dubbing: Allow fullscreen when ASR. v5.15.18
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)

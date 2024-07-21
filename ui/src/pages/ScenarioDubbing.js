@@ -589,12 +589,19 @@ function DubbingUIControls({task, isFullscreen, setIsFullscreen, requesting, pro
   const {t} = useTranslation();
   return <>
     {task?.status !== 'done' && <>
-      <Button variant="primary" type="submit" disabled={requesting || processing} onClick={startDubbingTask}>
-        {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status"
-                                                  aria-hidden="true"/> &nbsp;</>}
-        {t('dubb.studio.start')} {task?.status && task?.status !== 'done' && <>, status: {task?.status || 'init'}</>}
-        {(requesting || processing) && <>&nbsp;...</>}
-      </Button> &nbsp;
+      <Form.Group className="mb-3">
+        <Form.Group className="mb-3" controlId="formAiTtsEnabledCheckbox">
+          <Form.Check type="checkbox" label={t('lr.room.fse')} defaultChecked={isFullscreen} onClick={() => setIsFullscreen(!isFullscreen)} />
+        </Form.Group>
+      </Form.Group>
+      <Form.Group className="mb-3">
+        <Button variant="primary" type="submit" disabled={requesting || processing} onClick={startDubbingTask}>
+          {(requesting || processing) && <><Spinner as="span" animation="grow" size="sm" role="status"
+                                                    aria-hidden="true"/> &nbsp;</>}
+          {t('dubb.studio.start')} {task?.status && task?.status !== 'done' && <>, status: {task?.status || 'init'}</>}
+          {(requesting || processing) && <>&nbsp;...</>}
+        </Button> &nbsp;
+      </Form.Group>
     </>}
     {isFullscreen && !startupRequesting && task?.status === 'done' && <>
       <Form.Group className="mb-3">
