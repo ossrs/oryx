@@ -760,7 +760,7 @@ function DubbingUISubtitles({task, playerRef, isFullscreen, showHeader, showASR,
             {showTranslation && <>
               <Alert variant={selectVariant(index, g)} className='ai-dubbing-alert'>
                 <Row>
-                  <Col xs={isFullscreen ? 2 : 1} onClick={(e) => playGroup(e, g)} xs={isFullscreen ? 2 : 1}
+                  <Col xs={isFullscreen ? 2 : 1} onClick={(e) => playGroup(e, g)}
                        className={g === activeGroup ? 'ai-dubbing-command ai-dubbing-playing' : 'ai-dubbing-command'}>
                     <small className="text-secondary">
                       #{g.id}: {Number(g.tts_duration).toFixed(1)}s
