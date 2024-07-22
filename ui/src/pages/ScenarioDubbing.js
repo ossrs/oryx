@@ -650,6 +650,16 @@ function DubbingUIControls({task, isFullscreen, setIsFullscreen, showHeader, set
 function DubbingUISubtitles({task, playerRef, isFullscreen, showHeader, showASR, showTranslation, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}) {
   const {t} = useTranslation();
 
+  // How many groups to show when in the fullscreen.
+  const [historyGroups, setHistoryGroups] = React.useState(3);
+  React.useEffect(() => {
+    let v = 4;
+    if (!showHeader) v += 2;
+    if (!showASR) v += 3;
+    if (!showTranslation) v += 3;
+    setHistoryGroups(v);
+  }, [showHeader, showASR, showTranslation, setHistoryGroups]);
+
   const selectVariant = (index, g) => {
     if (g.free_space !== undefined) {
       if (g.free_space < 0.0) return 'danger';
@@ -681,13 +691,11 @@ function DubbingUISubtitles({task, playerRef, isFullscreen, showHeader, showASR,
       if (!playerRef?.current) return;
       if (!task?.asr_response?.groups?.length) return;
 
-      let group = task?.asr_response?.groups?.find(s => {
+      let index = task?.asr_response?.groups?.findIndex(s => {
         return s.start <= playerRef.current.currentTime && playerRef.current.currentTime <= s.end;
       });
-      if (!group) return;
-
-      let index = task?.asr_response?.groups?.indexOf(group);
-      index = Math.max(0, index - 3);
+      if (index === -1) return;
+      index = Math.max(0, index - historyGroups);
 
       const divId = `asr-group-${index}`;
       const target = document.querySelector(`div#${divId}`);
@@ -695,7 +703,7 @@ function DubbingUISubtitles({task, playerRef, isFullscreen, showHeader, showASR,
       //console.log(`Locate group ${index}, div ${divId}, time ${playerRef.current.currentTime}, group is ${group?.id}, ${group?.start} ~ ${group?.end}`);
     }, 800);
     return () => clearInterval(timer);
-  }, [playerRef, task, isPlayingAudio, isFullscreen]);
+  }, [playerRef, task, isPlayingAudio, isFullscreen, historyGroups]);
 
   return <>
     {task?.asr_response?.groups?.map((g, index) => {
