@@ -700,8 +700,8 @@ function DubbingUISubtitles({task, playerRef, isFullscreen, showHeader, showASR,
   return <>
     {task?.asr_response?.groups?.map((g, index) => {
       return (
-        <div id={`asr-group-${index}`}>
-          <Card key={g.uuid} className='ai-dubbing-group'>
+        <div id={`asr-group-${index}`} key={g.uuid}>
+          <Card className='ai-dubbing-group'>
             {showHeader && <>
               <Card.Header
                 className={g === activeGroup ? 'ai-dubbing-title ai-dubbing-playing' : 'ai-dubbing-title'}>
@@ -1059,7 +1059,10 @@ function DubbingStudioEditor({project, isFullscreen, setIsFullscreen}) {
         <Col>
           <Row>
             <Col className='ai-dubbing-workspace-fs'>
-              <DubbingUISubtitles {...{task, playerRef, isFullscreen, showHeader, showASR, showTranslation, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}} />
+              <DubbingUISubtitles {...{
+                task, playerRef, isFullscreen, showHeader, showASR, showTranslation, requesting, activeGroup,
+                isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup
+              }} />
             </Col>
           </Row>
         </Col>
@@ -1096,7 +1099,10 @@ function DubbingStudioEditor({project, isFullscreen, setIsFullscreen}) {
       <div>
         <Row>
           <Col xs={11} className='ai-dubbing-workspace'>
-            <DubbingUISubtitles {...{task, playerRef, isFullscreen, showHeader, showASR, showTranslation, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}} />
+            <DubbingUISubtitles {...{
+              task, playerRef, isFullscreen, showHeader, showASR, showTranslation, requesting, activeGroup,
+              isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup
+            }} />
           </Col>
           <Col></Col>
         </Row>

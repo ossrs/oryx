@@ -1550,12 +1550,24 @@ func (v *AudioResponse) QueryGroup(uuid string) *AudioGroup {
 	return nil
 }
 
-func (v *AudioResponse) ContainsAnySegmentByStarttime(starttime float64) *AudioSegment {
-	for _, g := range v.Groups {
-		for _, s := range g.Segments {
-			if s.OriginalStart == starttime {
-				return s
-			}
+func (v *AudioResponse) FindAnySegmentMatchStarttime(starttime float64) *AudioSegment {
+	for i, g := range v.Groups {
+		var nextGroup *AudioGroup
+		if i < len(v.Groups)-1 {
+			nextGroup = v.Groups[i+1]
+		}
+
+		firstSegment, lastSegment := g.FirstSegment(), g.LastSegment()
+		if nextGroup != nil {
+			lastSegment = nextGroup.LastSegment()
+		}
+
+		if firstSegment == nil || lastSegment == nil {
+			continue
+		}
+
+		if firstSegment.OriginalStart <= starttime && starttime <= lastSegment.OriginalStart {
+			return firstSegment
 		}
 	}
 	return nil
@@ -1803,7 +1815,7 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 				break
 			}
 
-			if v.AsrResponse.ContainsAnySegmentByStarttime(starttime) != nil {
+			if v.AsrResponse.FindAnySegmentMatchStarttime(starttime) != nil {
 				continue
 			}
 
