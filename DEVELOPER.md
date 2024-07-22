@@ -937,6 +937,16 @@ youtube-dl --proxy socks5://127.0.0.1:10000 --output srs 'https://youtu.be/Sqraz
 
 > Note: Setup the `--output TEMPLATE` when wants to define the filename.
 
+## Regenrate ASR for Dubbing
+
+Create a `regenerate.txt` under the project file, then restart Oryx and refresh the page:
+
+```bash
+touch ./platform/containers/data/dubbing/4830675a-7945-48fe-bed9-72e6fa904a19/regenerate.txt
+```
+
+Oryx will regenerate the ASR and translation, then delete the `regenerate.txt` to make sure it executes one time.
+
 ## WebRTC Candidate
 
 Oryx follows the rules for WebRTC candidate, see [CANDIDATE](https://ossrs.io/lts/en-us/docs/v5/doc/webrtc#config-candidate),
@@ -1272,8 +1282,8 @@ The following are the update records for the Oryx server.
     * Dubbing: Merge more words if in small duration. v5.15.17
     * Dubbing: Allow fullscreen when ASR. v5.15.18
     * Dubbing: Support disable asr or translation. v5.15.19
-    * Dubbing: Fix bug when changing ASR segment size. [v5.15.20](https://github.com/ossrs/oryx/releases/tag/v5.15.20)
-    * Dubbing: Refine the window of text. v5.15.21
+    * Dubbing: Fix bug when changing ASR segment size. v5.15.20
+    * Dubbing: Refine the window of text. [v5.15.20](https://github.com/ossrs/oryx/releases/tag/v5.15.20)
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)

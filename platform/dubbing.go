@@ -1550,27 +1550,18 @@ func (v *AudioResponse) QueryGroup(uuid string) *AudioGroup {
 	return nil
 }
 
-func (v *AudioResponse) FindAnySegmentMatchStarttime(starttime float64) *AudioSegment {
-	for i, g := range v.Groups {
-		var nextGroup *AudioGroup
-		if i < len(v.Groups)-1 {
-			nextGroup = v.Groups[i+1]
+func (v *AudioResponse) MatchGroups(starttime float64, max int) []*AudioGroup {
+	var matched []*AudioGroup
+	for _, g := range v.Groups {
+		if first := g.FirstSegment(); first != nil && starttime <= first.Start {
+			matched = append(matched, g)
 		}
 
-		firstSegment, lastSegment := g.FirstSegment(), g.LastSegment()
-		if nextGroup != nil {
-			lastSegment = nextGroup.LastSegment()
-		}
-
-		if firstSegment == nil || lastSegment == nil {
-			continue
-		}
-
-		if firstSegment.OriginalStart <= starttime && starttime <= lastSegment.OriginalStart {
-			return firstSegment
+		if len(matched) >= max {
+			break
 		}
 	}
-	return nil
+	return matched
 }
 
 func (v *AudioResponse) AppendSegment(resp openai.AudioResponse, starttime float64) {
@@ -1798,7 +1789,14 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 
 		// Whether force to generate ASR response.
 		if alwaysForceRegenerateASRResponse {
-			v.AsrResponse = NewAudioResponse()
+			v.AsrResponse = nil
+		}
+
+		// Whether exists command file to regenerate ASR.
+		regenerateASR := path.Join(conf.Pwd, aiDubbingWorkDir, v.project.UUID, "regenerate.txt")
+		if _, err := os.Stat(regenerateASR); err == nil {
+			os.Remove(regenerateASR)
+			v.AsrResponse = nil
 		}
 
 		if v.AsrResponse == nil {
@@ -1815,7 +1813,9 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 				break
 			}
 
-			if v.AsrResponse.FindAnySegmentMatchStarttime(starttime) != nil {
+			// If there are some matched groups about start time, do not generate the ASR for it.
+			ignoreIfMatched := 3
+			if matches := v.AsrResponse.MatchGroups(starttime, ignoreIfMatched*2); len(matches) > ignoreIfMatched {
 				continue
 			}
 
