@@ -651,14 +651,14 @@ function DubbingUISubtitles({task, playerRef, isFullscreen, showHeader, showASR,
   const {t} = useTranslation();
 
   // How many groups to show when in the fullscreen.
-  const [historyGroups, setHistoryGroups] = React.useState(3);
+  const [historySegments, setHistorySegments] = React.useState(4);
   React.useEffect(() => {
     let v = 4;
     if (!showHeader) v += 2;
     if (!showASR) v += 3;
     if (!showTranslation) v += 3;
-    setHistoryGroups(v);
-  }, [showHeader, showASR, showTranslation, setHistoryGroups]);
+    setHistorySegments(v);
+  }, [showHeader, showASR, showTranslation, setHistorySegments]);
 
   const selectVariant = (index, g) => {
     if (g.free_space !== undefined) {
@@ -695,7 +695,13 @@ function DubbingUISubtitles({task, playerRef, isFullscreen, showHeader, showASR,
         return s.start <= playerRef.current.currentTime && playerRef.current.currentTime <= s.end;
       });
       if (index === -1) return;
-      index = Math.max(0, index - historyGroups);
+
+      let availableSegments = historySegments;
+      for (let i = index - 1; i >= 0 && availableSegments > 0; i--) {
+        availableSegments -= task?.asr_response?.groups[i]?.segments?.length;
+        if (availableSegments >= 0) index--;
+      }
+      index = Math.max(0, index);
 
       const divId = `asr-group-${index}`;
       const target = document.querySelector(`div#${divId}`);
@@ -703,7 +709,7 @@ function DubbingUISubtitles({task, playerRef, isFullscreen, showHeader, showASR,
       //console.log(`Locate group ${index}, div ${divId}, time ${playerRef.current.currentTime}, group is ${group?.id}, ${group?.start} ~ ${group?.end}`);
     }, 800);
     return () => clearInterval(timer);
-  }, [playerRef, task, isPlayingAudio, isFullscreen, historyGroups]);
+  }, [playerRef, task, isPlayingAudio, isFullscreen, historySegments]);
 
   return <>
     {task?.asr_response?.groups?.map((g, index) => {
