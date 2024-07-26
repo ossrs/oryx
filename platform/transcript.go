@@ -760,13 +760,23 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 
 			var vttBody strings.Builder
 			vttBody.WriteString(fmt.Sprintf("WEBVTT\n\n"))
+			// Insert the CSS rules into the WebVTT file to set the cue style
+			// But the color setting only takes effect in Safari browser
+			if v.task.config.WebVTTCueStyle != "" {
+				vttBody.WriteString(fmt.Sprintf("%s", v.task.config.WebVTTCueStyle))
+				vttBody.WriteString(fmt.Sprintf("\n\n"))
+			}
 			for _, as := range segment.AsrText.Segments {
 				s := segment.StreamStarttime + time.Duration(as.Start*float64(time.Second))
 				e := segment.StreamStarttime + time.Duration(as.End*float64(time.Second))
 				vttBody.WriteString(fmt.Sprintf("%02d:%02d:%02d.%03d --> ",
 					int(s.Hours()), int(s.Minutes())%60, int(s.Seconds())%60, int(s.Milliseconds())%1000))
-				vttBody.WriteString(fmt.Sprintf("%02d:%02d:%02d.%03d\n",
+				vttBody.WriteString(fmt.Sprintf("%02d:%02d:%02d.%03d",
 					int(e.Hours()), int(e.Minutes())%60, int(e.Seconds())%60, int(e.Milliseconds())%1000))
+				if v.task.config.WebVTTCueSetting != "" {
+					vttBody.WriteString(fmt.Sprintf(" %s", v.task.config.WebVTTCueSetting))
+				}
+				vttBody.WriteString("\n")
 				vttBody.WriteString(fmt.Sprintf("%v\n\n", as.Text))
 			}
 
@@ -1219,6 +1229,10 @@ type TranscriptConfig struct {
 	EnableOverlay bool `json:"overlayEnabled"`
 	// Whether enable WebVTT subtitle.
 	EnableWebVTT bool `json:"webvttEnabled"`
+	// WebVTT CUE style
+	WebVTTCueStyle string `json:"webvttCueStyle"`
+	// WebVTT CUE Setting
+	WebVTTCueSetting string `json:"webvttCueSetting"`
 }
 
 func NewTranscriptConfig() *TranscriptConfig {
@@ -1228,9 +1242,9 @@ func NewTranscriptConfig() *TranscriptConfig {
 }
 
 func (v TranscriptConfig) String() string {
-	return fmt.Sprintf("all=%v, key=%vB, organization=%v, base=%v, lang=%v, overlay=%v, forceStyle=%v, videoCodecParams=%v, webvtt=%v",
+	return fmt.Sprintf("all=%v, key=%vB, organization=%v, base=%v, lang=%v, overlay=%v, forceStyle=%v, videoCodecParams=%v, webvtt=%v, webvttCueStyle=%v, webvttCueSetting=%v",
 		v.All, len(v.SecretKey), v.Organization, v.BaseURL, v.Language, v.EnableOverlay, v.ForceStyle,
-		v.VideoCodecParams, v.EnableWebVTT)
+		v.VideoCodecParams, v.EnableWebVTT, v.WebVTTCueStyle, v.WebVTTCueSetting)
 }
 
 func (v *TranscriptConfig) Load(ctx context.Context) error {

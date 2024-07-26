@@ -56,6 +56,8 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
   const [videoCodecParams, setVideoCodecParams] = React.useState(defaultConf.videoCodecParams || '-c:v libx264 -profile:v main -preset:v medium -tune zerolatency -bf 0');
   const [overlayEnabled, setOverlayEnabled] = React.useState(defaultConf.overlayEnabled);
   const [webvttEnabled, setWebvttEnabled] = React.useState(defaultConf.webvttEnabled);
+  const [webvttCueSetting, setWebvttCueSetting] = React.useState(defaultConf.webvttCueSetting || 'line:80% align:start');
+  const [webvttCueStyle, setWebvttCueStyle] = React.useState(defaultConf.webvttCueStyle || 'STYLE\n::cue { background-color: blue; color: red; font-size: 18px; }');
 
   const [liveQueue, setLiveQueue] = React.useState();
   const [asrQueue, setAsrQueue] = React.useState();
@@ -100,6 +102,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
       uuid, all: !!enabled, secretKey, organization, baseURL, lang: targetLanguage,
       overlayEnabled: !!overlayEnabled, forceStyle, videoCodecParams,
       webvttEnabled: !!webvttEnabled,
+      webvttCueStyle, webvttCueSetting
     }, {
       headers: Token.loadBearerHeader(),
     }).then(res => {
@@ -107,7 +110,7 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
       console.log(`Transcript: Apply config ok, uuid=${uuid}.`);
       success && success();
     }).catch(handleError);
-  }, [t, handleError, secretKey, baseURL, targetLanguage, overlayEnabled, forceStyle, videoCodecParams, webvttEnabled, uuid, organization]);
+  }, [t, handleError, secretKey, baseURL, targetLanguage, overlayEnabled, forceStyle, videoCodecParams, webvttEnabled, uuid, organization, webvttCueStyle, webvttCueSetting]);
 
   const resetTask = React.useCallback(() => {
     setOperating(true);
@@ -364,6 +367,20 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
                   <Form.Group className="mb-3" controlId="formWebvttEnabledCheckbox">
                     <Form.Check type="checkbox" label={t('transcript.vtt2')} defaultChecked={webvttEnabled} onClick={() => setWebvttEnabled(!webvttEnabled)} />
                   </Form.Group>
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>{t('transcript.vttcuesettings')}</Form.Label>
+                  <Form.Text> * {t('transcript.vttcuesettings1')}. &nbsp;
+                    {t('helper.see')} <a href={t('transcript.vtthref2')} target='_blank' rel='noreferrer'>WebVTT Cues Settings</a>.
+                  </Form.Text>
+                  <Form.Control as="input" defaultValue={webvttCueSetting} onChange={(e) => setWebvttCueSetting(e.target.value)} />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>{t('transcript.vttstyle')}</Form.Label>
+                  <Form.Text> * {t('transcript.vttstyle1')}. &nbsp;
+                    {t('helper.see')} <a href={t('transcript.vtthref1')} target='_blank' rel='noreferrer'>WebVTT Cues Style</a>.
+                  </Form.Text>
+                  <Form.Control as="textarea" defaultValue={webvttCueStyle} onChange={(e) => setWebvttCueStyle(e.target.value)} />
                 </Form.Group>
               </Card.Body>}
             </Card>
