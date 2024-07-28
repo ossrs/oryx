@@ -1284,6 +1284,7 @@ The following are the update records for the Oryx server.
     * Dubbing: Support disable asr or translation. v5.15.19
     * Dubbing: Fix bug when changing ASR segment size. v5.15.20
     * Dubbing: Refine the window of text. [v5.15.20](https://github.com/ossrs/oryx/releases/tag/v5.15.20)
+    * Dubbing: Support space key to play/pause. v5.15.21
 * v5.14:
     * Merge features and bugfix from releases. v5.14.1
     * Dubbing: Support VoD dubbing for multiple languages. [v5.14.2](https://github.com/ossrs/oryx/releases/tag/v5.14.2)
