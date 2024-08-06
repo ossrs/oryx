@@ -1,6 +1,9 @@
 // Copyright (c) 2022-2024 Winlin
 //
 // SPDX-License-Identifier: MIT
+
+//go:build linux
+
 package main
 
 import "context"
