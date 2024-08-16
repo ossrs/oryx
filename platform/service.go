@@ -1576,7 +1576,7 @@ func handleMgmtStreamsQuery(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			apiSecret := os.Getenv("SRS_PLATFORM_SECRET")
+			apiSecret := envApiSecret()
 			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
 				return errors.Wrapf(err, "authenticate")
 			}
