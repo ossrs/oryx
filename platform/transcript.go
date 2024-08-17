@@ -27,8 +27,39 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
-// The total segments in overlay HLS.
-const maxOverlaySegments = 9
+// The default total segments in overlay HLS.
+const defaultMaxOverlaySegments = 9
+
+// Get the total segments in overlay HLS.
+func GetMaxOverlaySegments() (int, error) {
+	var maxOverlaySegments int
+	if envTranscriptOverlayQueueLimit() != "" {
+		if iv, err := strconv.ParseInt(envTranscriptOverlayQueueLimit(), 10, 64); err != nil {
+			return defaultMaxOverlaySegments, errors.Wrapf(err, "parse env transcript overlay queue limit %v", envTranscriptOverlayQueueLimit())
+		} else {
+			maxOverlaySegments = int(iv)
+		}
+	}
+
+	return maxOverlaySegments, nil
+}
+
+// The default max fix queue limits.
+const defaultMaxFixQueueLimit = 2
+
+// Get the manually fix queue limit.
+func GetMaxFixQueueLimit() (int, error) {
+	var maxFixQueueLimit int
+	if envTranscriptFixQueueLimit() != "" {
+		if iv, err := strconv.ParseInt(envTranscriptFixQueueLimit(), 10, 64); err != nil {
+			return defaultMaxFixQueueLimit, errors.Wrapf(err, "parse env transcript manually fix queue limit %v", envTranscriptFixQueueLimit())
+		} else {
+			maxFixQueueLimit = int(iv)
+		}
+	}
+
+	return maxFixQueueLimit, nil
+}
 
 var transcriptWorker *TranscriptWorker
 
@@ -1717,6 +1748,12 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 		return nil
 	}
 
+	// Get the maxOverlaySegments value
+	maxOverlaySegments, err := GetMaxOverlaySegments()
+	if err != nil {
+		logger.Wf(ctx, "transcript: ignore get maxOverlaySegments err %+v, use default value %v", err, defaultMaxOverlaySegments)
+	}
+
 	// Wait if ASR queue is full.
 	if v.AsrQueue.count() >= maxOverlaySegments+1 {
 		return nil
@@ -1790,6 +1827,12 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 		segment.Dispose()
 		logger.Tf(ctx, "transcript: remove not exist audio segment %v", segment.String())
 		return nil
+	}
+
+	// Get the maxOverlaySegments value
+	maxOverlaySegments, err := GetMaxOverlaySegments()
+	if err != nil {
+		logger.Wf(ctx, "transcript: ignore get maxOverlaySegments err %+v, use default value %v", err, defaultMaxOverlaySegments)
 	}
 
 	// Wait if Fix queue is full.
@@ -1917,8 +1960,14 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		return nil
 	}
 
+	// Get the maxFixQueueLimit value
+	maxFixQueueLimit, err := GetMaxFixQueueLimit()
+	if err != nil {
+		logger.Wf(ctx, "transcript: ignore get maxFixQueueLimit err %+v, use default value %v", err, defaultMaxFixQueueLimit)
+	}
+
 	// Ignore if not enough segments.
-	if v.FixQueue.count() <= 2 {
+	if v.FixQueue.count() <= maxFixQueueLimit {
 		return nil
 	}
 
@@ -1935,6 +1984,12 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		segment.Dispose()
 		logger.Tf(ctx, "transcript: remove not exist fix segment %v", segment.String())
 		return nil
+	}
+
+	// Get the maxOverlaySegments value
+	maxOverlaySegments, err := GetMaxOverlaySegments()
+	if err != nil {
+		logger.Wf(ctx, "transcript: ignore get maxOverlaySegments err %+v, use default value %v", err, defaultMaxOverlaySegments)
 	}
 
 	// Wait if Overlay queue is full.
@@ -2026,6 +2081,12 @@ func (v *TranscriptTask) DriveOverlayQueue(ctx context.Context) error {
 	// Ignore if not enabled.
 	if !v.config.All {
 		return nil
+	}
+
+	// Get the maxOverlaySegments value
+	maxOverlaySegments, err := GetMaxOverlaySegments()
+	if err != nil {
+		logger.Wf(ctx, "transcript: ignore get maxOverlaySegments err %+v, use default value %v", err, defaultMaxOverlaySegments)
 	}
 
 	// Ignore if not enough segments.

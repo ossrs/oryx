@@ -132,13 +132,18 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("SRS_VLIVE_LIMIT", "10")
 	setEnvDefault("SRS_CAMERA_LIMIT", "10")
 
+	// For transcript queue limit.
+	setEnvDefault("SRS_TRANSCRIPT_FIX_QUEUE_LIMIT", "2")
+	setEnvDefault("SRS_TRANSCRIPT_OVERLAY_QUEUE_LIMIT", "9")
+
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, GO_PPROF=%v, "+
 		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, SRT_PORT=%v, RTC_PORT=%v, "+
 		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_DATABASE=%v, REDIS_HOST=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, RTMP_PORT=%v, "+
 		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, HTTP_PORT=%v, "+
 		"REGISTRY=%v, MGMT_LISTEN=%v, HTTPS_LISTEN=%v, AUTO_SELF_SIGNED_CERTIFICATE=%v, "+
 		"NAME_LOOKUP=%v, PLATFORM_DOCKER=%v, SRS_FORWARD_LIMIT=%v, SRS_VLIVE_LIMIT=%v, "+
-		"SRS_CAMERA_LIMIT=%v, YTDL_PROXY=%v",
+		"SRS_CAMERA_LIMIT=%v, YTDL_PROXY=%v"+
+		"SRS_TRANSCRIPT_FIX_QUEUE_LIMIT=%v, SRS_TRANSCRIPT_OVERLAY_QUEUE_LIMIT=%v",
 		len(envMgmtPassword()), envGoPprof(), len(envApiSecret()), envCloud(),
 		envRegion(), envSource(), envSrtListen(), envRtcListen(),
 		envNodeEnv(), envLocalRelease(),
@@ -149,6 +154,7 @@ func doMain(ctx context.Context) error {
 		envSelfSignedCertificate(), envNameLookup(),
 		envPlatformDocker(), envForwardLimit(), envVLiveLimit(),
 		envCameraLimit(), envYtdlProxy(),
+		envTranscriptFixQueueLimit(), envTranscriptOverlayQueueLimit(),
 	)
 
 	// Start the Go pprof if enabled.
