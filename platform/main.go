@@ -14,6 +14,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -134,7 +135,13 @@ func doMain(ctx context.Context) error {
 
 	// For transcript queue limit.
 	setEnvDefault("SRS_TRANSCRIPT_FIX_QUEUE_LIMIT", "2")
+	if _, err := strconv.ParseInt(envTranscriptFixQueueLimit(), 10, 64); err != nil {
+		return errors.Wrapf(err, "parse env transcript fix queue limit %v", envTranscriptFixQueueLimit())
+	}
 	setEnvDefault("SRS_TRANSCRIPT_OVERLAY_QUEUE_LIMIT", "9")
+	if _, err := strconv.ParseInt(envTranscriptOverlayQueueLimit(), 10, 64); err != nil {
+		return errors.Wrapf(err, "parse env transcript overlay queue limit %v", envTranscriptOverlayQueueLimit())
+	}
 
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, GO_PPROF=%v, "+
 		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, SRT_PORT=%v, RTC_PORT=%v, "+
