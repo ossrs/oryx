@@ -140,3 +140,4 @@ __pycache__
 /.*.txt
 /*.txt
 .tmp
+__debug_bin*
