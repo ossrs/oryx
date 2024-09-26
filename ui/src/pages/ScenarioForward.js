@@ -162,7 +162,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
   }, [configs, setConfigs]);
 
   // Update the forward config to server.
-  const updateSecrets = React.useCallback((e, action, platform, server, secret, enabled, custom, label, onSuccess) => {
+  const updateSecrets = React.useCallback((e, action, platform, stream, server, secret, enabled, custom, label, onSuccess) => {
     e.preventDefault();
     if (!server) return alert(t('plat.com.addr'));
     if (custom && !label) return alert(t('plat.com.label'));
@@ -171,7 +171,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
       setSubmiting(true);
 
       axios.post('/terraform/v1/ffmpeg/forward/secret', {
-        action, platform, server, secret, enabled: !!enabled, custom: !!custom, label,
+        action, platform, stream, server, secret, enabled: !!enabled, custom: !!custom, label,
       }, {
         headers: Token.loadBearerHeader(),
       }).then(res => {
@@ -236,6 +236,11 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
                   <Form.Control as="input" defaultValue={conf.label} onChange={(e) => updateConfigObject({...conf, label: e.target.value})}/>
                 </Form.Group>
                 <Form.Group className="mb-3">
+                  <Form.Label>{t('plat.com.source')}</Form.Label>
+                  {!conf.custom && <Form.Text> * {t('plat.com.source')} check System-{'>'}Streams tab</Form.Text>}
+                  <Form.Control as="input" defaultValue={conf.stream} onChange={(e) => updateConfigObject({...conf, stream: e.target.value})}/>
+                </Form.Group>
+                <Form.Group className="mb-3">
                   <Form.Label>{conf.custom ? t('plat.com.server') : t('plat.com.server2')}</Form.Label>
                   {!conf.custom && <Form.Text> * {t('plat.com.server3')} <a href={conf?.locale?.link} target='_blank' rel='noreferrer'>{conf?.locale?.link2}</a>, {t('plat.com.server4')}</Form.Text>}
                   <Form.Control as="input" defaultValue={conf.server} onChange={(e) => updateConfigObject({...conf, server: e.target.value})}/>
@@ -259,7 +264,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
                   type="submit"
                   disabled={submiting}
                   onClick={(e) => {
-                    updateSecrets(e, 'update', conf.platform, conf.server, conf.secret, !conf.enabled, conf.custom, conf.label, () => {
+                    updateSecrets(e, 'update', conf.platform, conf.stream, conf.server, conf.secret, !conf.enabled, conf.custom, conf.label, () => {
                       updateConfigObject({...conf, enabled: !conf.enabled});
                     });
                   }}
