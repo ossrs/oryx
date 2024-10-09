@@ -101,7 +101,7 @@ jobs:
           docker run --rm -v /usr/bin:/g ossrs/srs:tools \
             cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: platform-cache
       - name: Run test for platform image
@@ -173,7 +173,7 @@ jobs:
           docker run --rm -v /usr/bin:/g ossrs/srs:tools \
             cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: platform-cache
       - name: Run test for platform image
@@ -254,7 +254,7 @@ jobs:
         run: |
           sudo systemctl start nginx
           sudo systemctl status nginx
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: platform-cache
       - name: Load platform image
@@ -343,7 +343,7 @@ jobs:
         run: |
           sudo systemctl start nginx
           sudo systemctl status nginx
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: platform-cache
       - name: Load platform image
