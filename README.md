@@ -17,6 +17,9 @@ FFmpeg, and WebRTC. It supports protocols like RTMP, WebRTC, HLS, HTTP-FLV, and 
 like authentication, streaming on multiple platforms, recording, transcoding, virtual live events, 
 automatic HTTPS, and an easy-to-use HTTP Open API.
 
+Oryx is built on SRS, FFmpeg, React.js, and Go, with Redis included, and integrates OpenAI services. 
+It is a media solution designed for various useful scenarios.
+
 [![](https://ossrs.io/lts/en-us/img/Oryx-5-sd.png?v=1)](https://ossrs.io/lts/en-us/img/Oryx-5-hd.png)
 
 > Note: For more details on the Oryx, please visit the following [link](https://www.figma.com/file/Ju5h2DZeJMzUtx5k7D0Oak/Oryx).
