@@ -758,7 +758,7 @@ func srsGenerateConfig(ctx context.Context) error {
 
 	// Reload SRS to apply the new config.
 	if true {
-		api := "http://127.0.0.1:1985/api/v1/raw?rpc=reload"
+		api := "http://" + os.Getenv("SRS_HOST") + ":1985/api/v1/raw?rpc=reload"
 		res, err := http.DefaultClient.Get(api)
 		if err != nil {
 			return errors.Wrapf(err, "reload srs %v", api)
