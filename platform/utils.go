@@ -28,6 +28,7 @@ import (
 
 	"github.com/ossrs/go-oryx-lib/errors"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/golang-jwt/jwt/v4"
@@ -361,7 +362,7 @@ var rdb *redis.Client
 
 // InitRdb create and init global rdb, which is a redis client.
 func InitRdb() error {
-	addr := "127.0.0.1"
+	addr := os.Getenv("REDIS_HOST")
 	rdb = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%v:%v", addr, os.Getenv("REDIS_PORT")),
 		Password: os.Getenv("REDIS_PASSWORD"),
@@ -615,7 +616,7 @@ func srsGenerateConfig(ctx context.Context) error {
 
 	// Reload SRS to apply the new config.
 	if true {
-		api := "http://127.0.0.1:1985/api/v1/raw?rpc=reload"
+		api := "http://" + os.Getenv("SRS_HOST") + ":1985/api/v1/raw?rpc=reload"
 		res, err := http.DefaultClient.Get(api)
 		if err != nil {
 			return errors.Wrapf(err, "reload srs %v", api)

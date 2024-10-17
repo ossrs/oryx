@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"path"
@@ -16,10 +17,10 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	_ "net/http/pprof"
 
 	"github.com/ossrs/go-oryx-lib/errors"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
@@ -108,8 +109,12 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("GO_PPROF", "off")
 
 	// Migrate from mgmt.
+	setEnvDefault("REDIS_HOST", "127.0.0.1")
 	setEnvDefault("REDIS_PORT", "6379")
 	setEnvDefault("MGMT_LISTEN", "2022")
+
+	// SRS HOST
+	setEnvDefault("SRS_HOST", "127.0.0.1")
 
 	// For HTTPS.
 	setEnvDefault("HTTPS_LISTEN", "2443")
@@ -127,7 +132,7 @@ func doMain(ctx context.Context) error {
 
 	logger.Tf(ctx, "load .env as MGMT_PASSWORD=%vB, GO_PPROF=%v, "+
 		"SRS_PLATFORM_SECRET=%vB, CLOUD=%v, REGION=%v, SOURCE=%v, SRT_PORT=%v, RTC_PORT=%v, "+
-		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_PASSWORD=%vB, REDIS_PORT=%v, RTMP_PORT=%v, "+
+		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_PASSWORD=%vB, REDIS_HOST=%v, REDIS_PORT=%v, SRS_HOST=%v, RTMP_PORT=%v, "+
 		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, HTTP_PORT=%v, "+
 		"REGISTRY=%v, MGMT_LISTEN=%v, HTTPS_LISTEN=%v, AUTO_SELF_SIGNED_CERTIFICATE=%v, "+
 		"NAME_LOOKUP=%v, PLATFORM_DOCKER=%v",
@@ -135,7 +140,7 @@ func doMain(ctx context.Context) error {
 		len(os.Getenv("SRS_PLATFORM_SECRET")), os.Getenv("CLOUD"),
 		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("SRT_PORT"), os.Getenv("RTC_PORT"),
 		os.Getenv("NODE_ENV"), os.Getenv("LOCAL_RELEASE"),
-		len(os.Getenv("REDIS_PASSWORD")), os.Getenv("REDIS_PORT"), os.Getenv("RTMP_PORT"), os.Getenv("PUBLIC_URL"),
+		len(os.Getenv("REDIS_PASSWORD")), os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"), os.Getenv("SRS_HOST"), os.Getenv("RTMP_PORT"), os.Getenv("PUBLIC_URL"),
 		os.Getenv("BUILD_PATH"), os.Getenv("REACT_APP_LOCALE"), os.Getenv("PLATFORM_LISTEN"), os.Getenv("HTTP_PORT"),
 		os.Getenv("REGISTRY"), os.Getenv("MGMT_LISTEN"), os.Getenv("HTTPS_LISTEN"),
 		os.Getenv("AUTO_SELF_SIGNED_CERTIFICATE"), os.Getenv("NAME_LOOKUP"),
@@ -148,7 +153,7 @@ func doMain(ctx context.Context) error {
 			addr := "localhost:6060"
 			logger.Tf(ctx, "Start Go pprof at %v", addr)
 			http.ListenAndServe(addr, nil)
-		} ()
+		}()
 	}
 
 	// Setup the base OS for redis, which should never depends on redis.
