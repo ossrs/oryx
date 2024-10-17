@@ -20,6 +20,7 @@ import (
 
 	"github.com/ossrs/go-oryx-lib/errors"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
@@ -112,6 +113,9 @@ func doMain(ctx context.Context) error {
 	setEnvDefault("REDIS_HOST", "127.0.0.1")
 	setEnvDefault("REDIS_PORT", "6379")
 	setEnvDefault("MGMT_LISTEN", "2022")
+
+	// SRS HOST
+	setEnvDefault("SRS_HOST", "127.0.0.1")
 
 	// For HTTPS.
 	setEnvDefault("HTTPS_LISTEN", "2443")
