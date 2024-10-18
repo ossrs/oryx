@@ -1564,10 +1564,14 @@ func handleMgmtStreamsQuery(ctx context.Context, handler *http.ServeMux) {
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			var token string
+			var vhost, app, stream string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
+				Token  *string `json:"token"`
+				Vhost  *string `json:"vhost"`
+				App    *string `json:"app"`
+				Stream *string `json:"stream"`
 			}{
-				Token: &token,
+				Token: &token, Vhost: &vhost, App: &app, Stream: &stream,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
 			}
@@ -1577,19 +1581,36 @@ func handleMgmtStreamsQuery(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			streams, err := rdb.HGetAll(ctx, SRS_STREAM_ACTIVE).Result()
-			if err != nil {
-				return errors.Wrapf(err, "hgetall %v", SRS_STREAM_ACTIVE)
-			}
-
 			var streamObjects []*SrsStream
-			for _, value := range streams {
-				var stream SrsStream
-				if err := json.Unmarshal([]byte(value), &stream); err != nil {
-					return errors.Wrapf(err, "unmarshal %v", value)
+			if vhost == "" || app == "" || stream == "" {
+				// get all streams
+				streams, err := rdb.HGetAll(ctx, SRS_STREAM_ACTIVE).Result()
+				if err != nil {
+					return errors.Wrapf(err, "hgetall %v", SRS_STREAM_ACTIVE)
 				}
 
-				streamObjects = append(streamObjects, &stream)
+				for _, value := range streams {
+					var stream SrsStream
+					if err := json.Unmarshal([]byte(value), &stream); err != nil {
+						return errors.Wrapf(err, "unmarshal %v", value)
+					}
+
+					streamObjects = append(streamObjects, &stream)
+				}
+			} else {
+				// get one stream
+				streamObject := &SrsStream{Vhost: vhost, App: app, Stream: stream}
+				streamURL := streamObject.StreamURL()
+				if target, err := rdb.HGet(ctx, SRS_STREAM_ACTIVE, streamURL).Result(); err != nil && err != redis.Nil {
+					return errors.Wrapf(err, "hget %v %v", SRS_STREAM_ACTIVE, streamURL)
+				} else if target != "" {
+					var stream SrsStream
+					if err := json.Unmarshal([]byte(target), &stream); err != nil {
+						return errors.Wrapf(err, "unmarshal %v", target)
+					}
+
+					streamObjects = append(streamObjects, &stream)
+				}
 			}
 
 			ohttp.WriteData(ctx, w, r, &struct {
