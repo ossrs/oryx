@@ -116,6 +116,8 @@ func doMain(ctx context.Context) error {
 
 	// SRS HOST
 	setEnvDefault("SRS_HOST", "127.0.0.1")
+	setEnvDefault("SRS_PROXY_HOST", "127.0.0.1")
+	setEnvDefault("SRS_PROXY_HTTP_PORT", "8080")
 
 	// For HTTPS.
 	setEnvDefault("HTTPS_LISTEN", "2443")
