@@ -1,19 +1,19 @@
-//
 // Copyright (c) 2022-2023 Winlin
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//
 package main
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +21,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
@@ -725,8 +726,39 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 			if msg.Action != SrsActionOnHls {
 				return errors.Errorf("invalid action=%v", msg.Action)
 			}
+
 			if _, err := os.Stat(msg.File); err != nil {
-				return errors.Wrapf(err, "invalid ts file %v", msg.File)
+				logger.Tf(ctx, "invalid ts file %v", msg.File)
+
+				if err := os.MkdirAll(filepath.Dir(msg.File), 0755); err != nil {
+					return errors.Wrapf(err, "failed to create ts file directory %v", filepath.Dir(msg.File))
+				}
+
+				if tsFile, err := os.Create(msg.File); err != nil {
+					return errors.Wrapf(err, "failed to create ts file %v", msg.File)
+				} else {
+					tsUrl := "http://" + os.Getenv("SRS_PROXY_HOST") + ":" + os.Getenv("SRS_PROXY_HTTP_PORT") + "/" + msg.URL
+					logger.Tf(ctx, "download ts from %v", tsUrl)
+					client := http.Client{
+						CheckRedirect: func(req *http.Request, via []*http.Request) error {
+							r.URL.Opaque = r.URL.Path
+							return nil
+						},
+					}
+
+					resp, err := client.Get(tsUrl)
+					if err != nil {
+						return errors.Wrapf(err, "http error to get url %v", tsUrl)
+					}
+					defer resp.Body.Close()
+
+					size, err := io.Copy(tsFile, resp.Body)
+					if err != nil {
+						return errors.Wrapf(err, "copy http resp to file %v", tsFile)
+					}
+					defer tsFile.Close()
+					logger.Tf(ctx, "Download ts file %s with size %d", tsUrl, size)
+				}
 			}
 			logger.Tf(ctx, "on_hls ok, %v", string(b))
 
