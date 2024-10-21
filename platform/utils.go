@@ -619,7 +619,8 @@ func srsGenerateConfig(ctx context.Context) error {
 		api := "http://" + os.Getenv("SRS_HOST") + ":1985/api/v1/raw?rpc=reload"
 		res, err := http.DefaultClient.Get(api)
 		if err != nil {
-			return errors.Wrapf(err, "reload srs %v", api)
+			logger.Tf(ctx, "srs api reload error %v", err)
+			return nil
 		}
 		defer res.Body.Close()
 
@@ -629,7 +630,8 @@ func srsGenerateConfig(ctx context.Context) error {
 		}
 
 		if res.StatusCode != http.StatusOK {
-			return errors.Errorf("reload srs %v, code=%v, body=%v", api, res.StatusCode, string(b))
+			logger.Tf(ctx, "reload srs %v, code=%v, body=%v", api, res.StatusCode, string(b))
+			return nil
 		}
 		logger.Tf(ctx, "reload submit srs ok")
 	}

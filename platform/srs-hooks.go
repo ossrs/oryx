@@ -737,7 +737,7 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 				if tsFile, err := os.Create(msg.File); err != nil {
 					return errors.Wrapf(err, "failed to create ts file %v", msg.File)
 				} else {
-					tsUrl := "http://" + os.Getenv("SRS_PROXY_HOST") + ":" + os.Getenv("SRS_PROXY_HTTP_PORT") + "/" + msg.URL
+					tsUrl := "http://" + os.Getenv("SRS_HOST") + ":" + os.Getenv("SRS_HTTP_STREAM_PORT") + "/" + msg.URL
 					logger.Tf(ctx, "download ts from %v", tsUrl)
 					client := http.Client{
 						CheckRedirect: func(req *http.Request, via []*http.Request) error {

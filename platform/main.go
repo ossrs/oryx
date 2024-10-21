@@ -115,8 +115,7 @@ func doMain(ctx context.Context) error {
 
 	// SRS HOST
 	setEnvDefault("SRS_HOST", "127.0.0.1")
-	setEnvDefault("SRS_PROXY_HOST", "127.0.0.1")
-	setEnvDefault("SRS_PROXY_HTTP_PORT", "8080")
+	setEnvDefault("SRS_HTTP_STREAM_PORT", "8080")
 
 	// For HTTPS.
 	setEnvDefault("HTTPS_LISTEN", "2443")
@@ -137,7 +136,7 @@ func doMain(ctx context.Context) error {
 		"NODE_ENV=%v, LOCAL_RELEASE=%v, REDIS_PASSWORD=%vB, REDIS_HOST=%v, REDIS_PORT=%v, SRS_HOST=%v, RTMP_PORT=%v, "+
 		"PUBLIC_URL=%v, BUILD_PATH=%v, REACT_APP_LOCALE=%v, PLATFORM_LISTEN=%v, HTTP_PORT=%v, "+
 		"REGISTRY=%v, MGMT_LISTEN=%v, HTTPS_LISTEN=%v, AUTO_SELF_SIGNED_CERTIFICATE=%v, "+
-		"NAME_LOOKUP=%v, PLATFORM_DOCKER=%v, SRS_PROXY_HOST=%v, SRS_PROXY_HTTP_PORT=%v",
+		"NAME_LOOKUP=%v, PLATFORM_DOCKER=%v",
 		len(os.Getenv("MGMT_PASSWORD")), os.Getenv("GO_PPROF"),
 		len(os.Getenv("SRS_PLATFORM_SECRET")), os.Getenv("CLOUD"),
 		os.Getenv("REGION"), os.Getenv("SOURCE"), os.Getenv("SRT_PORT"), os.Getenv("RTC_PORT"),
@@ -146,7 +145,7 @@ func doMain(ctx context.Context) error {
 		os.Getenv("BUILD_PATH"), os.Getenv("REACT_APP_LOCALE"), os.Getenv("PLATFORM_LISTEN"), os.Getenv("HTTP_PORT"),
 		os.Getenv("REGISTRY"), os.Getenv("MGMT_LISTEN"), os.Getenv("HTTPS_LISTEN"),
 		os.Getenv("AUTO_SELF_SIGNED_CERTIFICATE"), os.Getenv("NAME_LOOKUP"),
-		os.Getenv("PLATFORM_DOCKER"), os.Getenv("SRS_PROXY_HOST"), os.Getenv("SRS_PROXY_HTTP_PORT"),
+		os.Getenv("PLATFORM_DOCKER"),
 	)
 
 	// Start the Go pprof if enabled.
