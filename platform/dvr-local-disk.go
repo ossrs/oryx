@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -535,21 +536,16 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 	return nil
 }
 
-func (v *RecordWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage) error {
+func (v *RecordWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage, data []byte) error {
 	// Copy the ts file to temporary cache dir.
 	tsid := uuid.NewString()
 	tsfile := path.Join("record", fmt.Sprintf("%v.ts", tsid))
 
-	// Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
-	// Note that should never use fs.copyFileSync(file, tsfile, fs.constants.COPYFILE_FICLONE_FORCE) which fails in macOS.
-	if err := exec.CommandContext(ctx, "cp", "-f", msg.File, tsfile).Run(); err != nil {
-		return errors.Wrapf(err, "copy file %v to %v", msg.File, tsfile)
-	}
-
-	// Get the file size.
-	stats, err := os.Stat(msg.File)
-	if err != nil {
-		return errors.Wrapf(err, "stat file %v", msg.File)
+	if file, err := os.Create(tsfile); err != nil {
+		return errors.Wrapf(err, "create file %v error", tsfile)
+	} else {
+		defer file.Close()
+		io.Copy(file, bytes.NewReader(data))
 	}
 
 	// Create a local ts file object.
@@ -558,7 +554,7 @@ func (v *RecordWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage)
 		URL:      msg.URL,
 		SeqNo:    msg.SeqNo,
 		Duration: msg.Duration,
-		Size:     uint64(stats.Size()),
+		Size:     uint64(len(data)),
 		File:     tsfile,
 	}
 
