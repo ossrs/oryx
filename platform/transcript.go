@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -21,6 +22,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
@@ -38,18 +40,12 @@ type TranscriptWorker struct {
 
 	// The global transcript task, only support one transcript task.
 	task *TranscriptTask
-
-	// Use async goroutine to process on_hls messages.
-	msgs chan *SrsOnHlsMessage
-
 	// Got message from SRS, a new TS segment file is generated.
 	tsfiles chan *SrsOnHlsObject
 }
 
 func NewTranscriptWorker() *TranscriptWorker {
 	v := &TranscriptWorker{
-		// Message on_hls.
-		msgs: make(chan *SrsOnHlsMessage, 1024),
 		// TS files.
 		tsfiles: make(chan *SrsOnHlsObject, 1024),
 	}
@@ -942,16 +938,7 @@ func (v *TranscriptWorker) Enabled() bool {
 	return v.task.enabled()
 }
 
-func (v *TranscriptWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage) error {
-	select {
-	case <-ctx.Done():
-	case v.msgs <- msg:
-	}
-
-	return nil
-}
-
-func (v *TranscriptWorker) OnHlsTsMessageImpl(ctx context.Context, msg *SrsOnHlsMessage) error {
+func (v *TranscriptWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage, data []byte) error {
 	// Ignore if not natch the task config.
 	if !v.task.match(msg) {
 		return nil
@@ -961,16 +948,11 @@ func (v *TranscriptWorker) OnHlsTsMessageImpl(ctx context.Context, msg *SrsOnHls
 	tsid := fmt.Sprintf("%v-org-%v", msg.SeqNo, uuid.NewString())
 	tsfile := path.Join("transcript", fmt.Sprintf("%v.ts", tsid))
 
-	// Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
-	// Note that should never use fs.copyFileSync(file, tsfile, fs.constants.COPYFILE_FICLONE_FORCE) which fails in macOS.
-	if err := exec.CommandContext(ctx, "cp", "-f", msg.File, tsfile).Run(); err != nil {
-		return errors.Wrapf(err, "copy file %v to %v", msg.File, tsfile)
-	}
-
-	// Get the file size.
-	stats, err := os.Stat(msg.File)
-	if err != nil {
-		return errors.Wrapf(err, "stat file %v", msg.File)
+	if file, err := os.Create(tsfile); err != nil {
+		return errors.Wrapf(err, "create file %v error", tsfile)
+	} else {
+		defer file.Close()
+		io.Copy(file, bytes.NewReader(data))
 	}
 
 	// Create a local ts file object.
@@ -979,7 +961,7 @@ func (v *TranscriptWorker) OnHlsTsMessageImpl(ctx context.Context, msg *SrsOnHls
 		URL:      msg.URL,
 		SeqNo:    msg.SeqNo,
 		Duration: msg.Duration,
-		Size:     uint64(stats.Size()),
+		Size:     uint64(len(data)),
 		File:     tsfile,
 	}
 
@@ -1050,22 +1032,6 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 			select {
 			case <-ctx.Done():
 			case <-time.After(duration):
-			}
-		}
-	}()
-
-	// Consume all on_hls messages.
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		for ctx.Err() == nil {
-			select {
-			case <-ctx.Done():
-			case msg := <-v.msgs:
-				if err := v.OnHlsTsMessageImpl(ctx, msg); err != nil {
-					logger.Wf(ctx, "transcript: handle on hls message %v err %+v", msg.String(), err)
-				}
 			}
 		}
 	}()
