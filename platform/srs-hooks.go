@@ -1,19 +1,19 @@
-//
 // Copyright (c) 2022-2024 Winlin
 //
 // SPDX-License-Identifier: MIT
-//
 package main
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +21,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
@@ -728,8 +729,53 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 			if msg.Action != SrsActionOnHls {
 				return errors.Errorf("invalid action=%v", msg.Action)
 			}
-			if _, err := os.Stat(msg.File); err != nil {
-				return errors.Wrapf(err, "invalid ts file %v", msg.File)
+
+			// below stupied code is used to resolve the code scanning error:
+			// Uncontrolled data used in path expression
+			allowedDir, err := os.Getwd()
+			if err != nil {
+				return errors.Wrapf(err, "can not get current working directory")
+			}
+
+			safePath := filepath.Join(allowedDir, filepath.Clean(msg.File))
+			logger.Tf(ctx, "safePath is %v", safePath)
+			absPath, err := filepath.Abs(safePath)
+			if err != nil {
+				return errors.Wrapf(err, "can not get absolute path from %v", safePath)
+			}
+
+			if !strings.HasPrefix(absPath, allowedDir) {
+				return errors.Errorf("Access denied, %v is outside allowed directory", absPath)
+			}
+
+			var data []byte
+			if _, err := os.Stat(absPath); err != nil {
+				logger.Tf(ctx, "invalid ts file %v", absPath)
+				tsUrl := "http://" + os.Getenv("SRS_HOST") + ":" + os.Getenv("SRS_HTTP_STREAM_PORT") + "/" + msg.URL
+				logger.Tf(ctx, "download ts from %v", tsUrl)
+				client := http.Client{
+					CheckRedirect: func(req *http.Request, via []*http.Request) error {
+						r.URL.Opaque = r.URL.Path
+						return nil
+					},
+				}
+
+				res, err := client.Get(tsUrl)
+				if err != nil {
+					return errors.Wrapf(err, "http error to get url %v", tsUrl)
+				}
+				defer res.Body.Close()
+
+				if b, err := io.ReadAll(res.Body); err != nil {
+					return errors.Wrapf(err, "read http response error")
+				} else {
+					data = b
+				}
+				logger.Tf(ctx, "Download ts file %s with size %d", tsUrl, len(data))
+			} else if b, err := os.ReadFile(absPath); err != nil {
+				return errors.Wrapf(err, "read %v error", absPath)
+			} else {
+				data = b
 			}
 			logger.Tf(ctx, "on_hls ok, %v", string(b))
 
@@ -737,7 +783,7 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 			if recordAll, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "all").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v all", SRS_RECORD_PATTERNS)
 			} else if recordAll == "true" {
-				if err = recordWorker.OnHlsTsMessage(ctx, &msg); err != nil {
+				if err = recordWorker.OnHlsTsMessage(ctx, &msg, data); err != nil {
 					return errors.Wrapf(err, "feed %v", msg.String())
 				}
 				logger.Tf(ctx, "record %v", msg.String())
@@ -747,7 +793,7 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 			if dvrAll, err := rdb.HGet(ctx, SRS_DVR_PATTERNS, "all").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v all", SRS_DVR_PATTERNS)
 			} else if dvrAll == "true" {
-				if err = dvrWorker.OnHlsTsMessage(ctx, &msg); err != nil {
+				if err = dvrWorker.OnHlsTsMessage(ctx, &msg, data); err != nil {
 					return errors.Wrapf(err, "feed %v", msg.String())
 				}
 				logger.Tf(ctx, "dvr %v", msg.String())
@@ -757,7 +803,7 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 			if vodAll, err := rdb.HGet(ctx, SRS_VOD_PATTERNS, "all").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v all", SRS_VOD_PATTERNS)
 			} else if vodAll == "true" {
-				if err = vodWorker.OnHlsTsMessage(ctx, &msg); err != nil {
+				if err = vodWorker.OnHlsTsMessage(ctx, &msg, data); err != nil {
 					return errors.Wrapf(err, "feed %v", msg.String())
 				}
 				logger.Tf(ctx, "vod %v", msg.String())
@@ -765,7 +811,7 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 
 			// Handle TS file by Transcript task if enabled.
 			if transcriptWorker.Enabled() {
-				if err = transcriptWorker.OnHlsTsMessage(ctx, &msg); err != nil {
+				if err = transcriptWorker.OnHlsTsMessage(ctx, &msg, data); err != nil {
 					return errors.Wrapf(err, "feed %v", msg.String())
 				}
 				logger.Tf(ctx, "transcript %v", msg.String())
@@ -773,7 +819,7 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 
 			// Handle TS file by OCR task if enabled.
 			if ocrWorker.Enabled() {
-				if err = ocrWorker.OnHlsTsMessage(ctx, &msg); err != nil {
+				if err = ocrWorker.OnHlsTsMessage(ctx, &msg, data); err != nil {
 					return errors.Wrapf(err, "feed %v", msg.String())
 				}
 				logger.Tf(ctx, "ocr %v", msg.String())
