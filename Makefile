@@ -36,6 +36,7 @@ else
 	cp -rf ui/build $(__REAL_INSTALL)/ui/build
 	cp -f platform/platform $(__REAL_INSTALL)/platform/platform
 	cp -f platform/bootstrap $(__REAL_INSTALL)/platform/bootstrap
+	cp -f platform/bootstrap.origin.cluster $(__REAL_INSTALL)/platform/bootstrap.origin.cluster
 	cp -rf platform/auto $(__REAL_INSTALL)/platform/auto
 	cp -rf platform/containers $(__REAL_INSTALL)/platform/containers
 	(cd platform && cp -P dvr objs record upload vlive vod transcript dub $(__REAL_INSTALL)/platform)
