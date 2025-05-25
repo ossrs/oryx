@@ -14,7 +14,7 @@ jobs:
       ##################################################################################################################
       # Git checkout
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       # The github.ref is, for example, refs/tags/v5.0.145 or refs/tags/v5.0-r8
       # Generate variables like:
       #   SRS_TAG=v1.0.52
@@ -42,13 +42,13 @@ jobs:
       - envs
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build image for platform
         run: |
           docker build -t platform:latest -f Dockerfile .
           docker images
           docker save -o platform.tar platform:latest
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: platform-cache
           path: platform.tar
@@ -103,7 +103,7 @@ jobs:
           echo "Never dispose:"
           echo "  for((;;)); do ssh root@$SRS_DROPLET_EIP touch ctrl-debugging ctrl-reset; sleep 3; done"
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download test file
         run: |
           curl --location --output test/source.200kbps.768x320.flv \
@@ -203,8 +203,8 @@ jobs:
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
       - name: Checkout repository
-        uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+        uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           name: platform-cache
       - name: Setup the Go

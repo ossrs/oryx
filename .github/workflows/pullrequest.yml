@@ -14,7 +14,7 @@ jobs:
       ##################################################################################################################
       # Git checkout
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       # The github.ref is, for example, refs/tags/v5.0.145 or refs/tags/v5.0-r8
       # Generate variables like:
       #   SRS_TAG=v1.0.52
@@ -40,7 +40,7 @@ jobs:
       - envs
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download test file
         run: |
           curl --location --output test/source.200kbps.768x320.flv \
@@ -72,13 +72,13 @@ jobs:
       - envs
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build image for platform
         run: |
           docker build -t platform:latest -f Dockerfile .
           docker images
           docker save -o platform.tar platform:latest
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: platform-cache
           path: platform.tar
@@ -91,7 +91,7 @@ jobs:
       - build-platform-image
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download test file
         run: |
           curl --location --output test/source.200kbps.768x320.flv \
@@ -101,7 +101,7 @@ jobs:
           docker run --rm -v /usr/bin:/g ossrs/srs:tools \
             cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: platform-cache
       - name: Run test for platform image
@@ -163,7 +163,7 @@ jobs:
       - build-platform-image
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download test file
         run: |
           curl --location --output test/source.200kbps.768x320.flv \
@@ -173,7 +173,7 @@ jobs:
           docker run --rm -v /usr/bin:/g ossrs/srs:tools \
             cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: platform-cache
       - name: Run test for platform image
@@ -240,7 +240,7 @@ jobs:
           echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download test file
         run: |
           curl --location --output test/source.200kbps.768x320.flv \
@@ -254,7 +254,7 @@ jobs:
         run: |
           sudo systemctl start nginx
           sudo systemctl status nginx
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: platform-cache
       - name: Load platform image
@@ -329,7 +329,7 @@ jobs:
           echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download test file
         run: |
           curl --location --output test/source.200kbps.768x320.flv \
@@ -343,7 +343,7 @@ jobs:
         run: |
           sudo systemctl start nginx
           sudo systemctl status nginx
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: platform-cache
       - name: Load platform image
