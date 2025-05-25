@@ -28,7 +28,7 @@ jobs:
     outputs:
       SRS_TAG: ${{ env.SRS_TAG }}
       SRS_MAJOR: ${{ env.SRS_MAJOR }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   docker:
     needs:
@@ -66,7 +66,7 @@ jobs:
           src: ossrs/oryx:${{ env.SRS_TAG }}
           dst: |
             ossrs/oryx:${{ env.SRS_MAJOR }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   aliyun:
     needs:
@@ -91,4 +91,4 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_TAG }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_MAJOR }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04

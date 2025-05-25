@@ -77,7 +77,7 @@ jobs:
           dst: |
             ossrs/ubuntu:focal
             ossrs/ubuntu
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/node/images
   aliyun-node:
@@ -97,7 +97,7 @@ jobs:
             registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim
             registry.cn-hangzhou.aliyuncs.com/ossrs/node:hydrogen-slim
             registry.cn-hangzhou.aliyuncs.com/ossrs/node:18
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/prometheus/images
   aliyun-prom:
@@ -116,7 +116,7 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus:v2.40.7
             registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/pushgateway/images
   aliyun-pushgateway:
@@ -135,7 +135,7 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/pushgateway:v1.4.3
             registry.cn-hangzhou.aliyuncs.com/ossrs/pushgateway
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/redis_exporter/images
   aliyun-redis-exporter:
@@ -153,7 +153,7 @@ jobs:
           src: oliver006/redis_exporter
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/redis_exporter
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/node-exporter/images
   aliyun-node-exporter:
@@ -172,7 +172,7 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter
             registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter:v1.4.1
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/redis/images
   # TODO: FIXME: Only amd64.
@@ -192,7 +192,7 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/redis:5.0
             registry.cn-hangzhou.aliyuncs.com/ossrs/redis
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/grafana/images
   aliyun-grafana:
@@ -211,7 +211,7 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/grafana:9.3.1
             registry.cn-hangzhou.aliyuncs.com/ossrs/grafana
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/ubuntu/images
   aliyun-ubuntu:
@@ -230,5 +230,5 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/ubuntu:focal
             registry.cn-hangzhou.aliyuncs.com/ossrs/ubuntu
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 

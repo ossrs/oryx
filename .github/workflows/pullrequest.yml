@@ -31,11 +31,11 @@ jobs:
     outputs:
       SRS_TAG: ${{ env.SRS_TAG }}
       SRS_MAJOR: ${{ env.SRS_MAJOR }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   run-test:
     name: Run UTest
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - envs
     steps:
@@ -67,7 +67,7 @@ jobs:
 
   build-platform-image:
     name: Build platform image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - envs
     steps:
@@ -154,7 +154,7 @@ jobs:
           echo "Log of docker.log" && cat docker.log
           
           exit $ret
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   test-en-image:
     name: Test EN image
@@ -226,11 +226,11 @@ jobs:
           echo "Log of docker.log" && cat docker.log
           
           exit $ret
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   test-zh-installer:
     name: Test ZH installer
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - envs
       - build-platform-image
@@ -319,7 +319,7 @@ jobs:
 
   test-en-installer:
     name: Test EN installer
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - envs
       - build-platform-image
@@ -408,7 +408,7 @@ jobs:
 
   test-pr-final:
     name: test-pr-final
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - run-test
       - test-zh-image

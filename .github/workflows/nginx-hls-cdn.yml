@@ -19,7 +19,7 @@ jobs:
       SRS_VERSION: ${{ env.SRS_VERSION }}
       SRS_MAJOR_HTTP: ${{ env.SRS_MAJOR_HTTP }}
       SRS_MAJOR_HTTPS: ${{ env.SRS_MAJOR_HTTPS }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   docker:
     needs:
@@ -71,7 +71,7 @@ jobs:
           src: ossrs/oryx:${{ env.SRS_MAJOR_HTTPS }}
           dst: |
             ossrs/oryx:${{ env.SRS_MAJOR_HTTPS }}-${{ env.SRS_VERSION }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   aliyun:
     needs:
@@ -105,4 +105,4 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_MAJOR_HTTPS }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_MAJOR_HTTPS }}-${{ env.SRS_VERSION }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04

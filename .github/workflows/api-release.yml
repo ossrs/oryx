@@ -28,7 +28,7 @@ jobs:
     outputs:
       SRS_TAG: ${{ env.SRS_TAG }}
       SRS_MAJOR: ${{ env.SRS_MAJOR }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   docker:
     needs:
@@ -56,7 +56,7 @@ jobs:
         run: |
           docker tag ossrs/oryx:$SRS_TAG ossrs/oryx:$SRS_MAJOR
           docker push --all-tags ossrs/oryx
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   aliyun:
     needs:
@@ -81,7 +81,7 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_TAG }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_MAJOR }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   deploy:
     needs:
@@ -137,4 +137,4 @@ jobs:
               docker rmi -f $image
               echo "Remove image $image, r0=$?"
             done
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04

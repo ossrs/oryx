@@ -34,7 +34,7 @@ jobs:
       SRS_TAG: ${{ env.SRS_TAG }}
       SRS_MAJOR: ${{ env.SRS_MAJOR }}
       SRS_DOMAIN: ${{ env.SRS_DOMAIN }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   build-image:
     name: Build Image
@@ -53,7 +53,7 @@ jobs:
           name: platform-cache
           path: platform.tar
           retention-days: 1
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   create-vm-domain:
     name: Create VM Domain
@@ -175,7 +175,7 @@ jobs:
     # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
     outputs:
       SRS_DROPLET_EIP: ${{ env.SRS_DROPLET_EIP }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   run-test:
     name: Run Test
@@ -352,7 +352,7 @@ jobs:
     # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
     outputs:
       SRS_DROPLET_EIP: ${{ env.SRS_DROPLET_EIP }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   dispose-waiting:
     name: Dispose Waiting
@@ -416,7 +416,7 @@ jobs:
     # Map a step output to a job output, see https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
     outputs:
       SRS_DROPLET_EIP: ${{ env.SRS_DROPLET_EIP }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   dispose-final:
     name: Dispose Final
@@ -453,7 +453,7 @@ jobs:
             doctl compute domain records delete ossrs.io $DOMAIN_ID -f
           fi
       - run: echo OK
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   # Final test result, fail if any jobs failed.
   test-online-final:
@@ -464,4 +464,4 @@ jobs:
       - dispose-final
     steps:
       - run: echo OK
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
