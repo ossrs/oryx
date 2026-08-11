@@ -1190,6 +1190,8 @@ For limit that you can control:
 
 * `SRS_FORWARD_LIMIT`: The limit for SRS forward. Default: `10`.
 * `SRS_VLIVE_LIMIT`: The limit for SRS virtual live. Default: `10`.
+* `SRS_TRANSCRIPT_FIX_QUEUE_LIMIT`: The limit for SRS transcript manually fix queue. Default: `2`.
+* `SRS_TRANSCRIPT_OVERLAY_QUEUE_LIMIT`: The limit for SRS transcript overlay queue. Default: `9`.
 
 For feature control:
 
