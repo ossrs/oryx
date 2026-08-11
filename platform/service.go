@@ -4,11 +4,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/joho/godotenv"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -19,9 +19,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/joho/godotenv"
+
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 )
@@ -82,6 +85,7 @@ func (v *httpService) Run(ctx context.Context) error {
 	if true {
 		serviceHandler := http.NewServeMux()
 		if err := handleHTTPService(ctx, serviceHandler); err != nil {
+			cancel()
 			return errors.Wrapf(err, "handle service")
 		}
 
@@ -204,10 +208,72 @@ func (v *httpService) Run(ctx context.Context) error {
 	wg.Wait()
 	for _, r := range []error{r0, r1, r2} {
 		if r != nil {
+			cancel()
 			return r
 		}
 	}
+
+	cancel()
 	return nil
+}
+
+func middlewareAuthTokenInURL(ctx context.Context, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			q := r.URL.Query()
+			token := q.Get("token")
+			if token == "" {
+				return errors.Errorf("empty token")
+			}
+			// Convert the token in query to header Bearer token.
+			r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+
+			apiSecret := envApiSecret()
+
+			if err := Authenticate(ctx, apiSecret, "", r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func middlewareAuthTokenInBody(ctx context.Context, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := func() error {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				return errors.Wrapf(err, "read http request body")
+			}
+			// set a new io.ReadCloser to r.Body
+			r.Body = io.NopCloser(bytes.NewReader(body))
+			bodyReader := io.NopCloser(bytes.NewReader(body))
+
+			apiSecret := envApiSecret()
+			var token string
+			if err := ParseBody(ctx, bodyReader, &struct {
+				Token *string `json:"token"`
+			}{
+				Token: &token,
+			}); err != nil {
+				return errors.Wrapf(err, "parse body")
+			}
+
+			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
+				return errors.Wrapf(err, "authenticate")
+			}
+			return nil
+		}(); err != nil {
+			ohttp.WriteError(ctx, w, r, err)
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
@@ -525,7 +591,7 @@ func handleMgmtInit(ctx context.Context, handler *http.ServeMux) {
 			}
 
 			apiSecret := envApiSecret()
-			expireAt, createAt, token, err := createToken(ctx, envApiSecret())
+			expireAt, createAt, token, err := createToken(apiSecret)
 			if err != nil {
 				return errors.Wrapf(err, "build token")
 			}
@@ -688,23 +754,9 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 func handleMgmtToken(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/token"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
-			expireAt, createAt, token, err := createToken(ctx, envApiSecret())
+			expireAt, createAt, token, err := createToken(envApiSecret())
 			if err != nil {
 				return errors.Wrapf(err, "build token")
 			}
@@ -721,7 +773,7 @@ func handleMgmtToken(ctx context.Context, handler *http.ServeMux) {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtLogin(ctx context.Context, handler *http.ServeMux) {
@@ -770,7 +822,7 @@ func handleMgmtLogin(ctx context.Context, handler *http.ServeMux) {
 			}
 
 			apiSecret := envApiSecret()
-			expireAt, createAt, token, err := createToken(ctx, apiSecret)
+			expireAt, createAt, token, err := createToken(apiSecret)
 			if err != nil {
 				return errors.Wrapf(err, "build token")
 			}
@@ -796,22 +848,8 @@ func handleMgmtLogin(ctx context.Context, handler *http.ServeMux) {
 func handleMgmtStatus(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/status"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			upgrading, err := rdb.HGet(ctx, SRS_UPGRADING, "upgrading").Result()
 			if err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v upgrading", SRS_UPGRADING)
@@ -828,32 +866,26 @@ func handleMgmtStatus(ctx context.Context, handler *http.ServeMux) {
 				Upgrading: upgrading == "1",
 				Strategy:  "manual",
 			})
-			logger.Tf(ctx, "status ok, versions=%v, upgrading=%v, token=%vB", conf.Versions.String(), upgrading, len(token))
+			logger.Tf(ctx, "status ok, versions=%v, upgrading=%v", conf.Versions.String(), upgrading)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtBilibili(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/bilibili"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, bvid string
+			var bvid string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-				BVID  *string `json:"bvid"`
+				BVID *string `json:"bvid"`
 			}{
-				Token: &token, BVID: &bvid,
+				BVID: &bvid,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if bvid == "" {
@@ -921,33 +953,19 @@ func handleMgmtBilibili(ctx context.Context, handler *http.ServeMux) {
 			}
 
 			ohttp.WriteData(ctx, w, r, bilibiliObj.Res)
-			logger.Tf(ctx, "bilibili cache bvid=%v, update=%v, token=%vB", bvid, bilibiliObj.Update, len(token))
+			logger.Tf(ctx, "bilibili cache bvid=%v, update=%v", bvid, bilibiliObj.Update)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtOpenAIQuery(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/openai/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			aiSecretKey, err := rdb.HGet(ctx, SRS_SYS_OPENAI, "key").Result()
 			if err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v key", SRS_SYS_OPENAI)
@@ -979,31 +997,24 @@ func handleMgmtOpenAIQuery(ctx context.Context, handler *http.ServeMux) {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtOpenAIUpdate(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/openai/update"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var aiSecretKey, aiBaseURL, aiOrganization string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token          *string `json:"token"`
 				AISecretKey    *string `json:"aiSecretKey"`
 				AIBaseURL      *string `json:"aiBaseURL"`
 				AIOrganization *string `json:"aiOrganization"`
 			}{
-				Token: &token, AISecretKey: &aiSecretKey, AIBaseURL: &aiBaseURL,
+				AISecretKey: &aiSecretKey, AIBaseURL: &aiBaseURL,
 				AIOrganization: &aiOrganization,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if aiSecretKey == "" {
@@ -1029,28 +1040,14 @@ func handleMgmtOpenAIUpdate(ctx context.Context, handler *http.ServeMux) {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtLimitsQuery(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/limits/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			vLiveLimits, err := rdb.HGet(ctx, SRS_SYS_LIMITS, "vlive").Int64()
 			if err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v vlive", SRS_SYS_LIMITS)
@@ -1079,29 +1076,22 @@ func handleMgmtLimitsQuery(ctx context.Context, handler *http.ServeMux) {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtLimitsUpdate(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/limits/update"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var vlive, camera int64
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string `json:"token"`
-				VLive    *int64  `json:"vlive"`
-				IPCamera *int64  `json:"camera"`
+				VLive    *int64 `json:"vlive"`
+				IPCamera *int64 `json:"camera"`
 			}{
-				Token: &token, VLive: &vlive, IPCamera: &camera,
+				VLive: &vlive, IPCamera: &camera,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if vlive <= 0 {
@@ -1124,7 +1114,7 @@ func handleMgmtLimitsUpdate(ctx context.Context, handler *http.ServeMux) {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 // Note that this API is not verified by token.
@@ -1150,50 +1140,31 @@ func handleMgmtBeianQuery(ctx context.Context, handler *http.ServeMux) {
 func handleMgmtSecretQuery(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/secret/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
 			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			ohttp.WriteData(ctx, w, r, apiSecret)
-			logger.Tf(ctx, "query apiSecret ok, versions=%v, token=%vB", conf.Versions.String(), len(token))
+			logger.Tf(ctx, "query apiSecret ok, versions=%v", conf.Versions.String())
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtBeianUpdate(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/beian/update"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, beian, text string
+			var beian, text string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
 				Beian *string `json:"beian"`
 				Text  *string `json:"text"`
 			}{
-				Token: &token, Beian: &beian, Text: &text,
+				Beian: &beian, Text: &text,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if beian == "" {
@@ -1208,33 +1179,26 @@ func handleMgmtBeianUpdate(ctx context.Context, handler *http.ServeMux) {
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "beian: update ok, beian=%v, text=%v, token=%vB", beian, text, len(token))
+			logger.Tf(ctx, "beian: update ok, beian=%v, text=%v", beian, text)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtNginxHlsUpdate(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/hphls/update"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var noHlsCtx bool
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string `json:"token"`
-				NoHlsCtx *bool   `json:"noHlsCtx"`
+				NoHlsCtx *bool `json:"noHlsCtx"`
 			}{
-				Token: &token, NoHlsCtx: &noHlsCtx,
+				NoHlsCtx: &noHlsCtx,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			noHlsCtxValue := fmt.Sprintf("%v", noHlsCtx)
@@ -1247,33 +1211,19 @@ func handleMgmtNginxHlsUpdate(ctx context.Context, handler *http.ServeMux) {
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "nginx hls update ok, enabled=%v, token=%vB", noHlsCtx, len(token))
+			logger.Tf(ctx, "nginx hls update ok, enabled=%v", noHlsCtx)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtNginxHlsQuery(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/hphls/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			var enabled bool
 			if v, err := rdb.HGet(ctx, SRS_HP_HLS, "noHlsCtx").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v %v", SRS_HP_HLS, "noHlsCtx")
@@ -1286,33 +1236,26 @@ func handleMgmtNginxHlsQuery(ctx context.Context, handler *http.ServeMux) {
 			}{
 				NoHlsCtx: enabled,
 			})
-			logger.Tf(ctx, "nginx hls query ok, enabled=%v, token=%vB", enabled, len(token))
+			logger.Tf(ctx, "nginx hls query ok, enabled=%v", enabled)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtHlsLowLatencyUpdate(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/hlsll/update"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var hlsLowLatency bool
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token         *string `json:"token"`
-				HlsLowLatency *bool   `json:"hlsLowLatency"`
+				HlsLowLatency *bool `json:"hlsLowLatency"`
 			}{
-				Token: &token, HlsLowLatency: &hlsLowLatency,
+				HlsLowLatency: &hlsLowLatency,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			hlsLowLatencyValue := fmt.Sprintf("%v", hlsLowLatency)
@@ -1325,33 +1268,19 @@ func handleMgmtHlsLowLatencyUpdate(ctx context.Context, handler *http.ServeMux) 
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "hls low latency update ok, enabled=%v, token=%vB", hlsLowLatency, len(token))
+			logger.Tf(ctx, "hls low latency update ok, enabled=%v", hlsLowLatency)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtHlsLowLatencyQuery(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/hlsll/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			var enabled bool
 			if v, err := rdb.HGet(ctx, SRS_LL_HLS, "hlsLowLatency").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v %v", SRS_LL_HLS, "hlsLowLatency")
@@ -1364,66 +1293,45 @@ func handleMgmtHlsLowLatencyQuery(ctx context.Context, handler *http.ServeMux) {
 			}{
 				HlsLowLatency: enabled,
 			})
-			logger.Tf(ctx, "hls low latency query ok, enabled=%v, token=%vB", enabled, len(token))
+			logger.Tf(ctx, "hls low latency query ok, enabled=%v", enabled)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtAutoSelfSignedCertificate(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/auto-self-signed-certificate"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			if err := certManager.createSelfSignCertificate(ctx); err != nil {
 				return errors.Wrapf(err, "create self sign certificate")
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "create self-signed cert ok, token=%vB", len(token))
+			logger.Tf(ctx, "create self-signed cert ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtSsl(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/ssl"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var key, crt string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-				Key   *string `json:"key"`
-				Crt   *string `json:"crt"`
+				Key *string `json:"key"`
+				Crt *string `json:"crt"`
 			}{
-				Token: &token, Key: &key, Crt: &crt,
+				Key: &key, Crt: &crt,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if key = strings.TrimSpace(key); key == "" {
@@ -1446,33 +1354,26 @@ func handleMgmtSsl(ctx context.Context, handler *http.ServeMux) {
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "nginx ssl file ok, key=%vB, crt=%vB, token=%vB", len(key), len(crt), len(token))
+			logger.Tf(ctx, "nginx ssl file ok, key=%vB, crt=%vB", len(key), len(crt))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtLetsEncrypt(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/letsencrypt"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var domain string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token  *string `json:"token"`
 				Domain *string `json:"domain"`
 			}{
-				Token: &token, Domain: &domain,
+				Domain: &domain,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if domain = strings.TrimSpace(domain); domain == "" {
@@ -1495,33 +1396,19 @@ func handleMgmtLetsEncrypt(ctx context.Context, handler *http.ServeMux) {
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "nginx letsencrypt ok, domain=%v, token=%vB", domain, len(token))
+			logger.Tf(ctx, "nginx letsencrypt ok, domain=%v", domain)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtCertQuery(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/cert/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			provider, err := rdb.Get(ctx, SRS_HTTPS).Result()
 			if err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "get %v", SRS_HTTPS)
@@ -1548,35 +1435,21 @@ func handleMgmtCertQuery(ctx context.Context, handler *http.ServeMux) {
 			}{
 				Provider: provider, Domain: domain, Key: key, Crt: crt,
 			})
-			logger.Tf(ctx, "query cert ok, provider=%v, domain=%v, key=%vB, crt=%vB, token=%vB",
-				provider, domain, len(key), len(crt), len(token),
+			logger.Tf(ctx, "query cert ok, provider=%v, domain=%v, key=%vB, crt=%vB",
+				provider, domain, len(key), len(crt),
 			)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtStreamsQuery(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/streams/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			streams, err := rdb.HGetAll(ctx, SRS_STREAM_ACTIVE).Result()
 			if err != nil {
 				return errors.Wrapf(err, "hgetall %v", SRS_STREAM_ACTIVE)
@@ -1597,12 +1470,12 @@ func handleMgmtStreamsQuery(ctx context.Context, handler *http.ServeMux) {
 			}{
 				streamObjects,
 			})
-			logger.Tf(ctx, "query streams ok, streams=%v, token=%vB", len(streamObjects), len(token))
+			logger.Tf(ctx, "query streams ok, streams=%v", len(streamObjects))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 // See SRS error code ERROR_RTMP_CLIENT_NOT_FOUND
@@ -1611,24 +1484,17 @@ const ErrorRtmpClientNotFound = 2049
 func handleMgmtStreamsKickoff(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/streams/kickoff"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var vhost, app, stream string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token  *string `json:"token"`
 				Vhost  *string `json:"vhost"`
 				App    *string `json:"app"`
 				Stream *string `json:"stream"`
 			}{
-				Token: &token, Vhost: &vhost, App: &app, Stream: &stream,
+				Vhost: &vhost, App: &app, Stream: &stream,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if vhost == "" {
@@ -1713,12 +1579,12 @@ func handleMgmtStreamsKickoff(ctx context.Context, handler *http.ServeMux) {
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "kickoff stream ok, code=%v, token=%vB", code, len(token))
+			logger.Tf(ctx, "kickoff stream ok, code=%v", code)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 }
 
 func handleMgmtUI(ctx context.Context, handler *http.ServeMux) {

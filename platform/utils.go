@@ -514,7 +514,7 @@ func InitRdb() error {
 }
 
 // For platform to build token by jwt.
-func createToken(ctx context.Context, apiSecret string) (expireAt, createAt time.Time, token string, err error) {
+func createToken(apiSecret string) (expireAt, createAt time.Time, token string, err error) {
 	createAt, expireAt = time.Now(), time.Now().Add(365*24*time.Hour)
 
 	claims := struct {

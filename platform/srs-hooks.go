@@ -1,8 +1,6 @@
-//
 // Copyright (c) 2022-2024 Winlin
 //
 // SPDX-License-Identifier: MIT
-//
 package main
 
 import (
@@ -21,6 +19,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
@@ -200,20 +199,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 
 	secretQueryHandler := func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			publish, err := rdb.HGet(ctx, SRS_AUTH_SECRET, "pubSecret").Result()
 			if err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v pubSecret", SRS_AUTH_SECRET)
@@ -227,7 +212,7 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 			}{
 				Publish: publish,
 			})
-			logger.Tf(ctx, "srs secret ok ok, token=%vB", len(token))
+			logger.Tf(ctx, "srs secret ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
@@ -236,29 +221,23 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 
 	ep = "/terraform/v1/hooks/srs/secret"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, secretQueryHandler)
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(secretQueryHandler)))
 
 	ep = "/terraform/v1/hooks/srs/secret/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, secretQueryHandler)
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(secretQueryHandler)))
 
 	ep = "/terraform/v1/hooks/srs/secret/update"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, secret string
+			var secret string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token  *string `json:"token"`
 				Secret *string `json:"secret"`
 			}{
-				Token: &token, Secret: &secret,
+				Secret: &secret,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if secret == "" {
@@ -273,31 +252,24 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "hooks update secret, secret=%vB, token=%vB", len(secret), len(token))
+			logger.Tf(ctx, "hooks update secret, secret=%vB", len(secret))
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/hooks/srs/secret/disable"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var pubNoAuth bool
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token     *string `json:"token"`
-				PubNoAuth *bool   `json:"pubNoAuth"`
+				PubNoAuth *bool `json:"pubNoAuth"`
 			}{
-				Token: &token, PubNoAuth: &pubNoAuth,
+				PubNoAuth: &pubNoAuth,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if err := rdb.HSet(ctx, SRS_AUTH_SECRET, "pubNoAuth", fmt.Sprintf("%v", pubNoAuth)).Err(); err != nil {
@@ -305,32 +277,26 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "hooks disable secret, pubNoAuth=%v, token=%vB", pubNoAuth, len(token))
+			logger.Tf(ctx, "hooks disable secret, pubNoAuth=%v", pubNoAuth)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	// See https://console.cloud.tencent.com/cam
 	ep = "/terraform/v1/tencent/cam/secret"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, secretId, secretKey string
+			var secretId, secretKey string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token     *string `json:"token"`
 				SecretID  *string `json:"secretId"`
 				SecretKey *string `json:"secretKey"`
 			}{
-				Token: &token, SecretID: &secretId, SecretKey: &secretKey,
+				SecretID: &secretId, SecretKey: &secretKey,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if secretId == "" {
@@ -695,12 +661,12 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "CAM: Update ok, %v, token=%vB", sb.String(), len(token))
+			logger.Tf(ctx, "CAM: Update ok, %v", sb.String())
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	if err := handleOnHls(ctx, handler); err != nil {
 		return errors.Wrapf(err, "handle hooks")

@@ -49,23 +49,17 @@ func (v *ForwardWorker) GetTask(platform string) *ForwardTask {
 func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 	ep := "/terraform/v1/ffmpeg/forward/secret"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, action string
+			var action string
 			var userConf ForwardConfigure
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token  *string `json:"token"`
 				Action *string `json:"action"`
 				*ForwardConfigure
 			}{
-				Token: &token, Action: &action, ForwardConfigure: &userConf,
+				Action: &action, ForwardConfigure: &userConf,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			allowedActions := []string{"update"}
@@ -119,7 +113,7 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 				}
 
 				ohttp.WriteData(ctx, w, r, nil)
-				logger.Tf(ctx, "Forward update secret ok, token=%vB", len(token))
+				logger.Tf(ctx, "Forward update secret ok")
 				return nil
 			} else {
 				confObjs := make(map[string]*ForwardConfigure)
@@ -136,32 +130,18 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 				}
 
 				ohttp.WriteData(ctx, w, r, confObjs)
-				logger.Tf(ctx, "forward query configures ok, token=%vB", len(token))
+				logger.Tf(ctx, "forward query configures ok")
 				return nil
 			}
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ffmpeg/forward/streams"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			res := make([]map[string]interface{}, 0)
 			if configItems, err := rdb.HGetAll(ctx, SRS_FORWARD_CONFIG).Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hgetall %v", SRS_FORWARD_CONFIG)
@@ -204,12 +184,12 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 			})
 
 			ohttp.WriteData(ctx, w, r, res)
-			logger.Tf(ctx, "Query forward streams ok, token=%vB", len(token))
+			logger.Tf(ctx, "Query forward streams ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	return nil
 }

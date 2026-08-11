@@ -1,6 +1,7 @@
 // Copyright (c) 2022-2024 Winlin
 //
 // SPDX-License-Identifier: MIT
+// TODO: rename this file trancode.go -> transcode.go
 package main
 
 import (
@@ -20,6 +21,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
@@ -45,22 +47,8 @@ func NewTranscodeWorker() *TranscodeWorker {
 func (v *TranscodeWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 	ep := "/terraform/v1/ffmpeg/transcode/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			var config TranscodeConfig
 			if b, err := rdb.HGet(ctx, SRS_TRANSCODE_CONFIG, "global").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v global", SRS_TRANSCODE_CONFIG)
@@ -71,32 +59,24 @@ func (v *TranscodeWorker) Handle(ctx context.Context, handler *http.ServeMux) er
 			}
 
 			ohttp.WriteData(ctx, w, r, &config)
-			logger.Tf(ctx, "transcode query ok, %v, token=%vB", config, len(token))
+			logger.Tf(ctx, "transcode query ok, %v", config)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ffmpeg/transcode/apply"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var config TranscodeConfig
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
 				*TranscodeConfig
 			}{
-				Token:           &token,
 				TranscodeConfig: &config,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if b, err := json.Marshal(config); err != nil {
@@ -110,31 +90,17 @@ func (v *TranscodeWorker) Handle(ctx context.Context, handler *http.ServeMux) er
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "transcode apply ok, %v, token=%vB", config, len(token))
+			logger.Tf(ctx, "transcode apply ok, %v", config)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ffmpeg/transcode/task"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			var config TranscodeConfig
 			if b, err := rdb.HGet(ctx, SRS_TRANSCODE_CONFIG, "global").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v global", SRS_TRANSCODE_CONFIG)
@@ -173,13 +139,13 @@ func (v *TranscodeWorker) Handle(ctx context.Context, handler *http.ServeMux) er
 			}
 
 			ohttp.WriteData(ctx, w, r, &res)
-			logger.Tf(ctx, "transcode task ok, %v, pid=%v, input=%v, output=%v, frame=%v, update=%v, token=%vB",
-				config, pid, input, output, frame, update, len(token))
+			logger.Tf(ctx, "transcode task ok, %v, pid=%v, input=%v, output=%v, frame=%v, update=%v",
+				config, pid, input, output, frame, update)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	return nil
 }

@@ -9,13 +9,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 
 	// From ossrs.
 	"github.com/ossrs/go-oryx-lib/errors"
@@ -49,23 +50,9 @@ func NewCallbackWorker() *CallbackWorker {
 func (v *CallbackWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 	ep := "/terraform/v1/mgmt/hooks/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-				All   *bool   `json:"all"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			var config CallbackConfig
 			if err := config.Load(ctx); err != nil {
 				return errors.Wrapf(err, "load")
@@ -91,32 +78,24 @@ func (v *CallbackWorker) Handle(ctx context.Context, handler *http.ServeMux) err
 				Response:       res,
 				CallbackConfig: &config,
 			})
-			logger.Tf(ctx, "hooks apply ok, %v, token=%vB", config.String(), len(token))
+			logger.Tf(ctx, "hooks apply ok, %v", config.String())
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/mgmt/hooks/apply"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var config CallbackConfig
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
 				*CallbackConfig
 			}{
-				Token:          &token,
 				CallbackConfig: &config,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if err := rdb.HSet(ctx, SRS_HOOKS, "target", config.Target).Err(); err != nil && err != redis.Nil {
@@ -148,12 +127,12 @@ func (v *CallbackWorker) Handle(ctx context.Context, handler *http.ServeMux) err
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "hooks apply ok, %v, token=%vB", config.String(), len(token))
+			logger.Tf(ctx, "hooks apply ok, %v", config.String())
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/mgmt/hooks/example"
 	logger.Tf(ctx, "Handle %v", ep)

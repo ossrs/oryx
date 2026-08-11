@@ -20,6 +20,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
@@ -49,23 +50,17 @@ func (v *CameraWorker) GetTask(platform string) *CameraTask {
 func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 	ep := "/terraform/v1/ffmpeg/camera/secret"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, action string
+			var action string
 			var userConf CameraConfigure
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token  *string `json:"token"`
 				Action *string `json:"action"`
 				*CameraConfigure
 			}{
-				Token: &token, Action: &action, CameraConfigure: &userConf,
+				Action: &action, CameraConfigure: &userConf,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			allowedActions := []string{"update"}
@@ -122,7 +117,7 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				}
 
 				ohttp.WriteData(ctx, w, r, nil)
-				logger.Tf(ctx, "Camera: update secret ok, token=%vB", len(token))
+				logger.Tf(ctx, "Camera: update secret ok")
 				return nil
 			} else {
 				confObjs := make(map[string]*CameraConfigure)
@@ -139,32 +134,18 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				}
 
 				ohttp.WriteData(ctx, w, r, confObjs)
-				logger.Tf(ctx, "Camera: query configures ok, token=%vB", len(token))
+				logger.Tf(ctx, "Camera: query configures ok")
 				return nil
 			}
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ffmpeg/camera/streams"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			res := make([]map[string]interface{}, 0)
 			if configs, err := rdb.HGetAll(ctx, SRS_CAMERA_CONFIG).Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hgetall %v", SRS_CAMERA_CONFIG)
@@ -209,31 +190,24 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 			})
 
 			ohttp.WriteData(ctx, w, r, res)
-			logger.Tf(ctx, "Camera: Query streams ok, token=%vB", len(token))
+			logger.Tf(ctx, "Camera: Query streams ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ffmpeg/camera/stream-url"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var qUrl string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token     *string `json:"token"`
 				StreamURL *string `json:"url"`
 			}{
-				Token: &token, StreamURL: &qUrl,
+				StreamURL: &qUrl,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			// Parse URL to object.
@@ -274,11 +248,11 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ffmpeg/camera/source"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			type CameraTempFile struct {
 				// The file name.
@@ -293,21 +267,15 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				Type FFprobeSourceType `json:"type"`
 			}
 
-			var token, platform string
+			var platform string
 			var streams []*CameraTempFile
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string            `json:"token"`
 				Platform *string            `json:"platform"`
 				Streams  *[]*CameraTempFile `json:"files"`
 			}{
-				Token: &token, Platform: &platform, Streams: &streams,
+				Platform: &platform, Streams: &streams,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if len(streams) == 0 {
@@ -469,12 +437,12 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 			}{
 				Platform: platform, Files: parsedStreams,
 			})
-			logger.Tf(ctx, "Camera:: Update ok, token=%vB", len(token))
+			logger.Tf(ctx, "Camera:: Update ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	return nil
 }

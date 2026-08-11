@@ -21,6 +21,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
@@ -61,22 +62,8 @@ func NewTranscriptWorker() *TranscriptWorker {
 func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 	ep := "/terraform/v1/ai/transcript/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			config := NewTranscriptConfig()
 			if err := config.Load(ctx); err != nil {
 				return errors.Wrapf(err, "load config")
@@ -95,35 +82,27 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			resp.Task.UUID = v.task.UUID
 
 			ohttp.WriteData(ctx, w, r, resp)
-			logger.Tf(ctx, "transcript query ok, config=<%v>, uuid=%v, token=%vB",
-				config, v.task.UUID, len(token))
+			logger.Tf(ctx, "transcript query ok, config=<%v>, uuid=%v",
+				config, v.task.UUID)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/transcript/apply"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var uuid string
 			var config TranscriptConfig
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-				UUID  *string `json:"uuid"`
+				UUID *string `json:"uuid"`
 				*TranscriptConfig
 			}{
-				Token: &token,
-				UUID:  &uuid, TranscriptConfig: &config,
+				UUID: &uuid, TranscriptConfig: &config,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			// Not required yet.
@@ -145,33 +124,25 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			ohttp.WriteData(ctx, w, r, &ApplyResponse{
 				UUID: v.task.UUID,
 			})
-			logger.Tf(ctx, "transcript apply ok, config=<%v>, uuid=%v, token=%vB",
-				config, v.task.UUID, len(token))
+			logger.Tf(ctx, "transcript apply ok, config=<%v>, uuid=%v",
+				config, v.task.UUID)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/transcript/check"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var transcriptConfig TranscriptConfig
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
 				*TranscriptConfig
 			}{
-				Token:            &token,
 				TranscriptConfig: &transcriptConfig,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			// Query whisper-1 model detail.
@@ -206,34 +177,26 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "transcript check ok, config=<%v>, model=<%v>, msg=<%v>, token=%vB",
-				transcriptConfig, model.ID, resp.Choices[0].Message.Content, len(token))
+			logger.Tf(ctx, "transcript check ok, config=<%v>, model=<%v>, msg=<%v>",
+				transcriptConfig, model.ID, resp.Choices[0].Message.Content)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/transcript/clear-subtitle"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var uuid, tsid string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-				UUID  *string `json:"uuid"`
-				TSID  *string `json:"tsid"`
+				UUID *string `json:"uuid"`
+				TSID *string `json:"tsid"`
 			}{
-				Token: &token,
-				UUID:  &uuid, TSID: &tsid,
+				UUID: &uuid, TSID: &tsid,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if uuid != v.task.UUID {
@@ -249,32 +212,24 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			}
 
 			ohttp.WriteData(ctx, w, r, &ClearSubtitleResponse{uuid})
-			logger.Tf(ctx, "transcript clear subtitle ok, uuid=%v, token=%vB", uuid, len(token))
+			logger.Tf(ctx, "transcript clear subtitle ok, uuid=%v", uuid)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/transcript/reset"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var uuid string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-				UUID  *string `json:"uuid"`
+				UUID *string `json:"uuid"`
 			}{
-				Token: &token,
-				UUID:  &uuid,
+				UUID: &uuid,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if uuid != v.task.UUID {
@@ -291,31 +246,17 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			ohttp.WriteData(ctx, w, r, &ResetResponse{
 				UUID: v.task.UUID,
 			})
-			logger.Tf(ctx, "transcript reset ok, uuid=%v, new=%v, token=%vB", uuid, v.task.UUID, len(token))
+			logger.Tf(ctx, "transcript reset ok, uuid=%v, new=%v", uuid, v.task.UUID)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/transcript/live-queue"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			type Segment struct {
 				TsID     string  `json:"tsid"`
 				SeqNo    uint64  `json:"seqno"`
@@ -343,31 +284,17 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			res.Count = len(res.Segments)
 
 			ohttp.WriteData(ctx, w, r, res)
-			logger.Tf(ctx, "transcript query live ok, token=%vB", len(token))
+			logger.Tf(ctx, "transcript query live ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/transcript/asr-queue"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			type Segment struct {
 				TsID     string  `json:"tsid"`
 				SeqNo    uint64  `json:"seqno"`
@@ -403,31 +330,17 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			res.Count = len(res.Segments)
 
 			ohttp.WriteData(ctx, w, r, res)
-			logger.Tf(ctx, "transcript query asr ok, token=%vB", len(token))
+			logger.Tf(ctx, "transcript query asr ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/transcript/fix-queue"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			type AsrSegment struct {
 				Start float64 `json:"start"`
 				End   float64 `json:"end"`
@@ -470,7 +383,7 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 					})
 				}
 
-				res.Segments = append(res.Segments, []*Segment{&Segment{
+				res.Segments = append(res.Segments, []*Segment{{
 					TsID:     segment.AudioFile.TsID,
 					SeqNo:    segment.AudioFile.SeqNo,
 					URL:      segment.AudioFile.File,
@@ -494,31 +407,17 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			res.Count = len(res.Segments)
 
 			ohttp.WriteData(ctx, w, r, res)
-			logger.Tf(ctx, "transcript query fix ok, token=%vB", len(token))
+			logger.Tf(ctx, "transcript query fix ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/transcript/overlay-queue"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			type AsrSegment struct {
 				Start float64 `json:"start"`
 				End   float64 `json:"end"`
@@ -593,12 +492,12 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			res.Count = len(res.Segments)
 
 			ohttp.WriteData(ctx, w, r, res)
-			logger.Tf(ctx, "transcript query overlay ok, token=%vB", len(token))
+			logger.Tf(ctx, "transcript query overlay ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/transcript/hls/webvtt/"
 	logger.Tf(ctx, "Handle %v", ep)

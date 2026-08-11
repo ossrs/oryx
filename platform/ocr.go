@@ -21,6 +21,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
@@ -61,22 +62,8 @@ func NewOCRWorker() *OCRWorker {
 func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 	ep := "/terraform/v1/ai/ocr/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			config := NewOCRConfig()
 			if err := config.Load(ctx); err != nil {
 				return errors.Wrapf(err, "load config")
@@ -95,35 +82,27 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			resp.Task.UUID = v.task.UUID
 
 			ohttp.WriteData(ctx, w, r, resp)
-			logger.Tf(ctx, "ocr query ok, config=<%v>, uuid=%v, token=%vB",
-				config, v.task.UUID, len(token))
+			logger.Tf(ctx, "ocr query ok, config=<%v>, uuid=%v",
+				config, v.task.UUID)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/ocr/apply"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var uuid string
 			var config OCRConfig
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-				UUID  *string `json:"uuid"`
+				UUID *string `json:"uuid"`
 				*OCRConfig
 			}{
-				Token: &token,
-				UUID:  &uuid, OCRConfig: &config,
+				UUID: &uuid, OCRConfig: &config,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			// Not required yet.
@@ -145,33 +124,25 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			ohttp.WriteData(ctx, w, r, &ApplyResponse{
 				UUID: v.task.UUID,
 			})
-			logger.Tf(ctx, "ocr apply ok, config=<%v>, uuid=%v, token=%vB",
-				config, v.task.UUID, len(token))
+			logger.Tf(ctx, "ocr apply ok, config=<%v>, uuid=%v",
+				config, v.task.UUID)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/ocr/check"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var ocrConfig OCRConfig
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
 				*OCRConfig
 			}{
-				Token:     &token,
 				OCRConfig: &ocrConfig,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			// Query whisper-1 model detail.
@@ -206,33 +177,25 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			ohttp.WriteData(ctx, w, r, nil)
-			logger.Tf(ctx, "ocr check ok, config=<%v>, model=<%v>, msg=<%v>, token=%vB",
-				ocrConfig, model.ID, resp.Choices[0].Message.Content, len(token))
+			logger.Tf(ctx, "ocr check ok, config=<%v>, model=<%v>, msg=<%v>",
+				ocrConfig, model.ID, resp.Choices[0].Message.Content)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/ocr/reset"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var uuid string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-				UUID  *string `json:"uuid"`
+				UUID *string `json:"uuid"`
 			}{
-				Token: &token,
-				UUID:  &uuid,
+				UUID: &uuid,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if uuid != v.task.UUID {
@@ -249,31 +212,17 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			ohttp.WriteData(ctx, w, r, &ResetResponse{
 				UUID: v.task.UUID,
 			})
-			logger.Tf(ctx, "ocr reset ok, uuid=%v, new=%v, token=%vB", uuid, v.task.UUID, len(token))
+			logger.Tf(ctx, "ocr reset ok, uuid=%v, new=%v", uuid, v.task.UUID)
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/ocr/live-queue"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			type Segment struct {
 				TsID     string  `json:"tsid"`
 				SeqNo    uint64  `json:"seqno"`
@@ -289,7 +238,7 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 
 			segments := v.task.liveSegments()
 			for _, segment := range segments {
-				res.Segments = append(res.Segments, []*Segment{&Segment{
+				res.Segments = append(res.Segments, []*Segment{{
 					TsID:     segment.TsFile.TsID,
 					SeqNo:    segment.TsFile.SeqNo,
 					URL:      segment.TsFile.URL,
@@ -301,31 +250,17 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			res.Count = len(res.Segments)
 
 			ohttp.WriteData(ctx, w, r, res)
-			logger.Tf(ctx, "ocr query live ok, token=%vB", len(token))
+			logger.Tf(ctx, "ocr query live ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/ocr/ocr-queue"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			type Segment struct {
 				TsID     string  `json:"tsid"`
 				SeqNo    uint64  `json:"seqno"`
@@ -361,31 +296,17 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			res.Count = len(res.Segments)
 
 			ohttp.WriteData(ctx, w, r, res)
-			logger.Tf(ctx, "ocr query ocr ok, token=%vB", len(token))
+			logger.Tf(ctx, "ocr query ocr ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/ocr/callback-queue"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			type Segment struct {
 				TsID     string  `json:"tsid"`
 				SeqNo    uint64  `json:"seqno"`
@@ -409,7 +330,7 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 
 			segments := v.task.callbackSegments()
 			for _, segment := range segments {
-				res.Segments = append(res.Segments, []*Segment{&Segment{
+				res.Segments = append(res.Segments, []*Segment{{
 					TsID:     segment.ImageFile.TsID,
 					SeqNo:    segment.ImageFile.SeqNo,
 					URL:      segment.ImageFile.File,
@@ -429,31 +350,17 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			res.Count = len(res.Segments)
 
 			ohttp.WriteData(ctx, w, r, res)
-			logger.Tf(ctx, "ocr query callback ok, token=%vB", len(token))
+			logger.Tf(ctx, "ocr query callback ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/ocr/cleanup-queue"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			type Segment struct {
 				TsID     string  `json:"tsid"`
 				SeqNo    uint64  `json:"seqno"`
@@ -479,7 +386,7 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 
 			segments := v.task.cleanupSegments()
 			for _, segment := range segments {
-				res.Segments = append(res.Segments, []*Segment{&Segment{
+				res.Segments = append(res.Segments, []*Segment{{
 					TsID:     segment.ImageFile.TsID,
 					SeqNo:    segment.ImageFile.SeqNo,
 					URL:      segment.ImageFile.File,
@@ -501,12 +408,12 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			res.Count = len(res.Segments)
 
 			ohttp.WriteData(ctx, w, r, res)
-			logger.Tf(ctx, "ocr query cleanup ok, token=%vB", len(token))
+			logger.Tf(ctx, "ocr query cleanup ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ai/ocr/image/"
 	logger.Tf(ctx, "Handle %v", ep)

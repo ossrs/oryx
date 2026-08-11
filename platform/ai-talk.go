@@ -1523,6 +1523,7 @@ func handleAITalkService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "parse body")
 			}
 
+			// TODO: why do token Authentication only roomToken is empty?
 			// Authenticate by bearer token if no room token
 			if roomToken == "" {
 				apiSecret := envApiSecret()

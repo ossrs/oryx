@@ -12,6 +12,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 )
@@ -19,21 +20,15 @@ import (
 func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 	ep := "/terraform/v1/live/room/create"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, title string
+			var title string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
 				Title *string `json:"title"`
 			}{
-				Token: &token, Title: &title,
+				Title: &title,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			room := NewLiveRoom(func(room *SrsLiveRoom) {
@@ -59,25 +54,19 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/live/room/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, rid string
+			var rid string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string `json:"token"`
 				RoomUUID *string `json:"uuid"`
 			}{
-				Token: &token, RoomUUID: &rid,
+				RoomUUID: &rid,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			var room SrsLiveRoom
@@ -95,26 +84,19 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/live/room/update"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var room SrsLiveRoom
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
 				*SrsLiveRoom
 			}{
-				Token: &token, SrsLiveRoom: &room,
+				SrsLiveRoom: &room,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			// As room is a template config, to create active stage. So if we update the template, we
@@ -148,26 +130,12 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/live/room/list"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			var rooms []*SrsLiveRoom
 			if configs, err := rdb.HGetAll(ctx, SRS_LIVE_ROOM).Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hgetall %v", SRS_LIVE_ROOM)
@@ -191,25 +159,19 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/live/room/remove"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, roomUUID string
+			var roomUUID string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string `json:"token"`
 				RoomUUID *string `json:"uuid"`
 			}{
-				Token: &token, RoomUUID: &roomUUID,
+				RoomUUID: &roomUUID,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			var room SrsLiveRoom
@@ -237,7 +199,7 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	return nil
 }

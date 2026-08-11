@@ -47,25 +47,19 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 
 	ep := "/terraform/v1/dubbing/create"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, title string
+			var title string
 			var files []*FFprobeSource
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
 				// Project title.
 				Title *string `json:"title"`
 				// File type and path.
 				Files *[]*FFprobeSource `json:"files"`
 			}{
-				Token: &token, Title: &title, Files: &files,
+				Title: &title, Files: &files,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if len(files) != 1 {
@@ -137,26 +131,12 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/dubbing/list"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			var projects []*SrsDubbingProject
 			if configs, err := rdb.HGetAll(ctx, SRS_DUBBING_PROJECTS).Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hgetall %v", SRS_DUBBING_PROJECTS)
@@ -180,25 +160,19 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/dubbing/remove"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, dubbingUUID string
+			var dubbingUUID string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token       *string `json:"token"`
 				DubbingUUID *string `json:"uuid"`
 			}{
-				Token: &token, DubbingUUID: &dubbingUUID,
+				DubbingUUID: &dubbingUUID,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			dubbing := &SrsDubbingProject{UUID: dubbingUUID}
@@ -226,25 +200,19 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/dubbing/query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, dubbingUUID string
+			var dubbingUUID string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token       *string `json:"token"`
 				DubbingUUID *string `json:"uuid"`
 			}{
-				Token: &token, DubbingUUID: &dubbingUUID,
+				DubbingUUID: &dubbingUUID,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			dubbing := &SrsDubbingProject{UUID: dubbingUUID}
@@ -264,26 +232,19 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/dubbing/update"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var dubbing SrsDubbingProject
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
 				*SrsDubbingProject
 			}{
-				Token: &token, SrsDubbingProject: &dubbing,
+				SrsDubbingProject: &dubbing,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			// TODO: FIXME: Should load dubbing from redis and merge the fields.
@@ -311,29 +272,17 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/dubbing/play"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInURL(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			q := r.URL.Query()
 
-			token := q.Get("token")
-			if token == "" {
-				return errors.Errorf("empty token")
-			}
 			dubbingUUID := q.Get("uuid")
 			if dubbingUUID == "" {
 				return errors.Errorf("empty uuid")
-			}
-
-			// Convert the token in query to header Bearer token.
-			r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, "", r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			dubbing := &SrsDubbingProject{UUID: dubbingUUID}
@@ -363,27 +312,20 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/dubbing/export"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var dubbingUUID, taskUUID string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string `json:"token"`
 				UUID     *string `json:"uuid"`
 				TaskUUID *string `json:"task"`
 			}{
-				Token: &token, UUID: &dubbingUUID, TaskUUID: &taskUUID,
+				UUID: &dubbingUUID, TaskUUID: &taskUUID,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			dubbing := &SrsDubbingProject{UUID: dubbingUUID}
@@ -561,26 +503,19 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/dubbing/task-start"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var dubbingUUID string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-				UUID  *string `json:"uuid"`
+				UUID *string `json:"uuid"`
 			}{
-				Token: &token, UUID: &dubbingUUID,
+				UUID: &dubbingUUID,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			dubbing := &SrsDubbingProject{UUID: dubbingUUID}
@@ -649,29 +584,22 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/dubbing/task-rephrase"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var dubbingUUID, taskUUID, groupUUID string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token     *string `json:"token"`
 				UUID      *string `json:"uuid"`
 				TaskUUID  *string `json:"task"`
 				GroupUUID *string `json:"group"`
 			}{
-				Token: &token, UUID: &dubbingUUID, TaskUUID: &taskUUID,
+				UUID: &dubbingUUID, TaskUUID: &taskUUID,
 				GroupUUID: &groupUUID,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			dubbing := NewSrsDubbingProject(func(dubbing *SrsDubbingProject) {
@@ -765,30 +693,23 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/dubbing/task-merge"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var dubbingUUID, taskUUID, groupUUID, direction string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token     *string `json:"token"`
 				UUID      *string `json:"uuid"`
 				TaskUUID  *string `json:"task"`
 				GroupUUID *string `json:"group"`
 				Direction *string `json:"direction"`
 			}{
-				Token: &token, UUID: &dubbingUUID, TaskUUID: &taskUUID,
+				UUID: &dubbingUUID, TaskUUID: &taskUUID,
 				GroupUUID: &groupUUID, Direction: &direction,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			dubbing := NewSrsDubbingProject(func(dubbing *SrsDubbingProject) {
@@ -844,27 +765,20 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/dubbing/task-query"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var dubbingUUID, taskUUID string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string `json:"token"`
 				UUID     *string `json:"uuid"`
 				TaskUUID *string `json:"task"`
 			}{
-				Token: &token, UUID: &dubbingUUID, TaskUUID: &taskUUID,
+				UUID: &dubbingUUID, TaskUUID: &taskUUID,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			dubbing := NewSrsDubbingProject(func(dubbing *SrsDubbingProject) {
@@ -896,18 +810,14 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/dubbing/task-tts"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInURL(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			q := r.URL.Query()
 
-			token := q.Get("token")
-			if token == "" {
-				return errors.Errorf("empty token")
-			}
 			dubbingUUID := q.Get("uuid")
 			if dubbingUUID == "" {
 				return errors.Errorf("empty uuid")
@@ -915,14 +825,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 			groupUUID := q.Get("group")
 			if groupUUID == "" {
 				return errors.Errorf("empty group")
-			}
-
-			// Convert the token in query to header Bearer token.
-			r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, "", r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			dubbing := &SrsDubbingProject{UUID: dubbingUUID}
@@ -961,11 +863,11 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/dubbing/source"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			type DubbingTempFile struct {
 				// The file name.
@@ -982,20 +884,13 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				Type FFprobeSourceType `json:"type"`
 			}
 
-			var token string
 			var files []*DubbingTempFile
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string             `json:"token"`
 				Files *[]*DubbingTempFile `json:"files"`
 			}{
-				Token: &token, Files: &files,
+				Files: &files,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if len(files) == 0 {
@@ -1125,12 +1020,12 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 			}{
 				Files: parsedFiles,
 			})
-			logger.Tf(ctx, "Dubbing: Update dubbing ok, token=%vB", len(token))
+			logger.Tf(ctx, "Dubbing: Update dubbing ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	return nil
 }

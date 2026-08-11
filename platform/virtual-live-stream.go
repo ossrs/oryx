@@ -54,23 +54,17 @@ func (v *VLiveWorker) GetTask(platform string) *VLiveTask {
 func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 	ep := "/terraform/v1/ffmpeg/vlive/secret"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token, action string
+			var action string
 			var userConf VLiveConfigure
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token  *string `json:"token"`
 				Action *string `json:"action"`
 				*VLiveConfigure
 			}{
-				Token: &token, Action: &action, VLiveConfigure: &userConf,
+				Action: &action, VLiveConfigure: &userConf,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			allowedActions := []string{"update"}
@@ -127,7 +121,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				}
 
 				ohttp.WriteData(ctx, w, r, nil)
-				logger.Tf(ctx, "vLive: Update secret ok, token=%vB", len(token))
+				logger.Tf(ctx, "vLive: Update secret ok")
 				return nil
 			} else {
 				confObjs := make(map[string]*VLiveConfigure)
@@ -144,32 +138,18 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				}
 
 				ohttp.WriteData(ctx, w, r, confObjs)
-				logger.Tf(ctx, "vLive: Query configures ok, token=%vB", len(token))
+				logger.Tf(ctx, "vLive: Query configures ok")
 				return nil
 			}
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ffmpeg/vlive/streams"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
-			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-			}{
-				Token: &token,
-			}); err != nil {
-				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
-			}
-
 			res := make([]map[string]interface{}, 0)
 			if configs, err := rdb.HGetAll(ctx, SRS_VLIVE_CONFIG).Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hgetall %v", SRS_VLIVE_CONFIG)
@@ -213,29 +193,22 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			})
 
 			ohttp.WriteData(ctx, w, r, res)
-			logger.Tf(ctx, "vLive: Query vLive streams ok, token=%vB", len(token))
+			logger.Tf(ctx, "vLive: Query vLive streams ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	streamUrlHandler := func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var qUrl string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token     *string `json:"token"`
 				StreamURL *string `json:"url"`
 			}{
-				Token: &token, StreamURL: &qUrl,
+				StreamURL: &qUrl,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			// Parse URL to object.
@@ -280,30 +253,23 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 
 	ep = "/terraform/v1/ffmpeg/vlive/streamUrl"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, streamUrlHandler)
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(streamUrlHandler)))
 
 	ep = "/terraform/v1/ffmpeg/vlive/stream-url"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, streamUrlHandler)
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(streamUrlHandler)))
 
 	ep = "/terraform/v1/ffmpeg/vlive/ytdl"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var qFile string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token   *string `json:"token"`
 				YtdlURL *string `json:"url"`
 			}{
-				Token: &token, YtdlURL: &qFile,
+				YtdlURL: &qFile,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if !strings.HasPrefix(qFile, "http") && !strings.HasPrefix(qFile, "https") {
@@ -413,26 +379,19 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ffmpeg/vlive/server"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			var token string
 			var qFile string
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token      *string `json:"token"`
 				StreamFile *string `json:"file"`
 			}{
-				Token: &token, StreamFile: &qFile,
+				StreamFile: &qFile,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			fileAbsPath, err := filepath.Abs(qFile)
@@ -497,7 +456,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	ep = "/terraform/v1/ffmpeg/vlive/upload/"
 	logger.Tf(ctx, "Handle %v", ep)
@@ -601,7 +560,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 
 	ep = "/terraform/v1/ffmpeg/vlive/source"
 	logger.Tf(ctx, "Handle %v", ep)
-	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
+	handler.Handle(ep, middlewareAuthTokenInBody(ctx, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			type VLiveTempFile struct {
 				// The file name.
@@ -618,21 +577,15 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				Type FFprobeSourceType `json:"type"`
 			}
 
-			var token, platform string
+			var platform string
 			var files []*VLiveTempFile
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token    *string           `json:"token"`
 				Platform *string           `json:"platform"`
 				Files    *[]*VLiveTempFile `json:"files"`
 			}{
-				Token: &token, Platform: &platform, Files: &files,
+				Platform: &platform, Files: &files,
 			}); err != nil {
 				return errors.Wrapf(err, "parse body")
-			}
-
-			apiSecret := envApiSecret()
-			if err := Authenticate(ctx, apiSecret, token, r.Header); err != nil {
-				return errors.Wrapf(err, "authenticate")
 			}
 
 			if len(files) == 0 {
@@ -842,12 +795,12 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			}{
 				Platform: platform, Files: parsedFiles,
 			})
-			logger.Tf(ctx, "vLive: Update vLive ok, token=%vB", len(token))
+			logger.Tf(ctx, "vLive: Update vLive ok")
 			return nil
 		}(); err != nil {
 			ohttp.WriteError(ctx, w, r, err)
 		}
-	})
+	})))
 
 	return nil
 }
