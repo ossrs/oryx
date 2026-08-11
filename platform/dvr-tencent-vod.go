@@ -4,13 +4,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
 	"strconv"
 	"strings"
@@ -321,7 +322,7 @@ func (v *VodWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 	return nil
 }
 
-func (v *VodWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage) error {
+func (v *VodWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage, data []byte) error {
 	// Ignore for Tencent Cloud credentials not ready.
 	if !v.ready() {
 		return nil
@@ -331,16 +332,11 @@ func (v *VodWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage) er
 	tsid := uuid.NewString()
 	tsfile := path.Join("vod", fmt.Sprintf("%v.ts", tsid))
 
-	// Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
-	// Note that should never use fs.copyFileSync(file, tsfile, fs.constants.COPYFILE_FICLONE_FORCE) which fails in macOS.
-	if err := exec.CommandContext(ctx, "cp", "-f", msg.File, tsfile).Run(); err != nil {
-		return errors.Wrapf(err, "copy file %v to %v", msg.File, tsfile)
-	}
-
-	// Get the file size.
-	stats, err := os.Stat(msg.File)
-	if err != nil {
-		return errors.Wrapf(err, "stat file %v", msg.File)
+	if file, err := os.Create(tsfile); err != nil {
+		return errors.Wrapf(err, "create file %v error", tsfile)
+	} else {
+		defer file.Close()
+		io.Copy(file, bytes.NewReader(data))
 	}
 
 	// Create a local ts file object.
@@ -349,7 +345,7 @@ func (v *VodWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage) er
 		URL:      msg.URL,
 		SeqNo:    msg.SeqNo,
 		Duration: msg.Duration,
-		Size:     uint64(stats.Size()),
+		Size:     uint64(len(data)),
 		File:     tsfile,
 	}
 
