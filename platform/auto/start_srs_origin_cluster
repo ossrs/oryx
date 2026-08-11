@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+
+# Execute by: bash xxx.sh or bash zzz/yyy/xxx.sh or ./xxx.sh or ./zzz/yyy/xxx.sh source xxx.sh
+REALPATH=$(realpath ${BASH_SOURCE[0]})
+SCRIPT_DIR=$(cd $(dirname ${REALPATH}) && pwd)
+WORK_DIR=$(cd $(dirname ${REALPATH})/.. && pwd)
+echo "BASH_SOURCE=${BASH_SOURCE}, REALPATH=${REALPATH}, SCRIPT_DIR=${SCRIPT_DIR}, WORK_DIR=${WORK_DIR}"
+cd ${WORK_DIR}
+
+echo "Start SRS origin cluster, WORK_DIR:${WORK_DIR}"
+
+# Load the environment variables for SRS server.
+if [[ -f ${WORK_DIR}/containers/data/config/.srs.env ]]; then
+    echo "Load variables for SRS from ${WORK_DIR}/containers/data/config/.srs.env"
+    echo "export $(grep -v '^#' ${WORK_DIR}/containers/data/config/.srs.env | xargs)"
+    export $(grep -v '^#' ${WORK_DIR}/containers/data/config/.srs.env | xargs)
+fi
+
+# Get the metadata of machine.
+if [[ -f ${WORK_DIR}/containers/data/config/.env ]]; then source ${WORK_DIR}/containers/data/config/.env; fi
+echo "LoadEnv CLOUD=$CLOUD REGION=$REGION, SOURCE=$SOURCE"
+
+# run srs-proxy
+export PROXY_STATIC_FILES="/usr/local/proxy/static"
+export PROXY_LOAD_BALANCER_TYPE="redis"
+export PROXY_RTMP_SERVER=1935
+export PROXY_HTTP_SERVER=8080
+export PROXY_HTTP_API=1985
+export PROXY_WEBRTC_SERVER=8000
+export PROXY_SRT_SERVER=10080
+export PROXY_SYSTEM_API=12025
+
+/usr/local/proxy/srs-proxy &
+if [[ $? -ne 0 ]]; then
+    echo "Warning: srs proxy start with none zero."
+fi 
+
+if [[ $(ps aux | grep srs-proxy | grep -q '\/usr\/local\/proxy' || echo no) == no ]]; then
+    echo "srs proxy stopped, exit"
+    exit 1
+fi
+
+# Make sure the config file exists.
+mkdir -p ${WORK_DIR}/containers/data/config &&
+touch ${WORK_DIR}/containers/data/config/srs.server.conf ${WORK_DIR}/containers/data/config/srs.vhost.conf
+if [[ $? -ne 0 ]]; then echo "Make sure the config file exists failed"; exit 1; fi
+
+# TODO: FIXME: Remove it after SRS supports empty config file.
+# See https://github.com/ossrs/srs/pull/3768
+if [[ ! -s ${WORK_DIR}/containers/data/config/srs.server.conf ]]; then
+    echo '# OK' > ${WORK_DIR}/containers/data/config/srs.server.conf
+fi
+if [[ ! -s ${WORK_DIR}/containers/data/config/srs.vhost.conf ]]; then
+    echo '# OK' > ${WORK_DIR}/containers/data/config/srs.vhost.conf
+fi
+
+if [[ -z $ORIGIN_SRS_NUMBER ]]; then
+    ORIGIN_SRS_NUMBER=2
+fi
+
+echo "Origin SRS instance number is ${ORIGIN_SRS_NUMBER}"
+
+for ((i=1; i<=$ORIGIN_SRS_NUMBER; i++))
+do
+    echo "Start Origin SRS instance $i"
+    cat ${WORK_DIR}/containers/conf/srs.origin.conf                  |
+        sed 's/listen *1935;/listen 1935'$i';/g'                     |
+        sed 's/listen *8080;/listen 808'$i';/g'                      |
+        sed 's/listen *127.0.0.1:1985;/listen 127.0.0.1:1985'$i';/g' |
+        sed 's/listen *8000;/listen 800'$i';/g'                      |
+        sed 's/listen *10080;/listen 1008'$i';/g'                    |
+        sed 's/pid *\.\/objs\/origin.pid;/pid \.\/objs\/origin'$i'\.pid;/g' |
+        sed 's/device_id *origin;/device_id origin'$i';/g' > ${WORK_DIR}/containers/conf/srs.origin${i}.conf
+    /usr/local/srs/objs/srs -c ${WORK_DIR}/containers/conf/srs.origin${i}.conf
+    if [[ $? -ne 0 ]]; then echo "Warning: SRS start with none zero, but might be ok, see #3757."; fi
+
+    SRS_PID_FILE="./objs/origin${i}.pid"
+
+    for ((m=0; m<10; m++)); do
+        if [[ -f $SRS_PID_FILE ]]; then
+            ps -p `cat $SRS_PID_FILE` 1>/dev/null 2>/dev/null &&
+            echo "SRS origin server started, pid=`cat $SRS_PID_FILE`" &&
+            break
+        fi
+        sleep 0.3
+    done
+
+    ps -p `cat $SRS_PID_FILE` 1>/dev/null 2>/dev/null
+    if [[ $? -ne 0 ]]; then echo "Check SRS ${i} failed"; exit 1; fi
+done
+
+
