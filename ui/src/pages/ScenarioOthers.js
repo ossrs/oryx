@@ -12,6 +12,9 @@ import {Clipboard} from "../utils";
 import ScenarioSrt from "./ScenarioSrt";
 import ScenarioRecordCos from "./ScenarioRecordCos";
 import ScenarioRecordVod from "./ScenarioRecordVod";
+import ScenarioTranscript from "./ScenarioTranscript";
+import ScenarioDubbing from "./ScenarioDubbing";
+import ScenarioOCR from "./ScenarioOCR";
 
 export function ScenarioVxOthers({urls}) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -78,6 +81,24 @@ function ScenarioOther({urls}) {
           <ScenarioSrt {...{copyToClipboard, urls}} />
         </Accordion.Body>
       </Accordion.Item>
+      <Accordion.Item eventKey="2">
+        <Accordion.Header>{t('transcript.title')}</Accordion.Header>
+        <Accordion.Body>
+          <ScenarioTranscript/>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="3">
+        <Accordion.Header>{t('dubb.title')}</Accordion.Header>
+        <Accordion.Body>
+          <ScenarioDubbing/>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="4">
+        <Accordion.Header>{t('ocr.title')}</Accordion.Header>
+        <Accordion.Body>
+          <ScenarioOCR/>
+        </Accordion.Body>
+      </Accordion.Item>
     </Accordion>
   </>;
 }
@@ -113,4 +134,3 @@ function ScenarioDeprecated() {
     </Accordion>
   </>;
 }
-
