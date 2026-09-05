@@ -19,7 +19,7 @@ jobs:
       SRS_VERSION: ${{ env.SRS_VERSION }}
       SRS_MAJOR_HTTP: ${{ env.SRS_MAJOR_HTTP }}
       SRS_MAJOR_HTTPS: ${{ env.SRS_MAJOR_HTTPS }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   docker:
     needs:
@@ -31,7 +31,7 @@ jobs:
           echo "SRS_MAJOR_HTTP=${{ needs.envs.outputs.SRS_MAJOR_HTTP }}" >> $GITHUB_ENV
           echo "SRS_MAJOR_HTTPS=${{ needs.envs.outputs.SRS_MAJOR_HTTPS }}" >> $GITHUB_ENV
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -71,7 +71,7 @@ jobs:
           src: ossrs/oryx:${{ env.SRS_MAJOR_HTTPS }}
           dst: |
             ossrs/oryx:${{ env.SRS_MAJOR_HTTPS }}-${{ env.SRS_VERSION }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   aliyun:
     needs:
@@ -105,4 +105,4 @@ jobs:
           dst: |
             registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_MAJOR_HTTPS }}
             registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_MAJOR_HTTPS }}-${{ env.SRS_VERSION }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04

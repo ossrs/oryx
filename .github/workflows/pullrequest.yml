@@ -14,7 +14,7 @@ jobs:
       ##################################################################################################################
       # Git checkout
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       # The github.ref is, for example, refs/tags/v5.0.145 or refs/tags/v5.0-r8
       # Generate variables like:
       #   SRS_TAG=v1.0.52
@@ -31,16 +31,16 @@ jobs:
     outputs:
       SRS_TAG: ${{ env.SRS_TAG }}
       SRS_MAJOR: ${{ env.SRS_MAJOR }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   run-test:
     name: Run UTest
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - envs
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download test file
         run: |
           curl --location --output test/source.200kbps.768x320.flv \
@@ -67,18 +67,18 @@ jobs:
 
   build-platform-image:
     name: Build platform image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - envs
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build image for platform
         run: |
           docker build -t platform:latest -f Dockerfile .
           docker images
           docker save -o platform.tar platform:latest
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: platform-cache
           path: platform.tar
@@ -91,7 +91,7 @@ jobs:
       - build-platform-image
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download test file
         run: |
           curl --location --output test/source.200kbps.768x320.flv \
@@ -101,7 +101,7 @@ jobs:
           docker run --rm -v /usr/bin:/g ossrs/srs:tools \
             cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: platform-cache
       - name: Run test for platform image
@@ -154,7 +154,7 @@ jobs:
           echo "Log of docker.log" && cat docker.log
           
           exit $ret
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   test-en-image:
     name: Test EN image
@@ -163,7 +163,7 @@ jobs:
       - build-platform-image
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download test file
         run: |
           curl --location --output test/source.200kbps.768x320.flv \
@@ -173,7 +173,7 @@ jobs:
           docker run --rm -v /usr/bin:/g ossrs/srs:tools \
             cp /usr/local/bin/ffmpeg /usr/local/bin/ffprobe /g/
           ffmpeg -version
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: platform-cache
       - name: Run test for platform image
@@ -226,11 +226,11 @@ jobs:
           echo "Log of docker.log" && cat docker.log
           
           exit $ret
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   test-zh-installer:
     name: Test ZH installer
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - envs
       - build-platform-image
@@ -240,7 +240,7 @@ jobs:
           echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download test file
         run: |
           curl --location --output test/source.200kbps.768x320.flv \
@@ -254,7 +254,7 @@ jobs:
         run: |
           sudo systemctl start nginx
           sudo systemctl status nginx
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: platform-cache
       - name: Load platform image
@@ -319,7 +319,7 @@ jobs:
 
   test-en-installer:
     name: Test EN installer
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - envs
       - build-platform-image
@@ -329,7 +329,7 @@ jobs:
           echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
           echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download test file
         run: |
           curl --location --output test/source.200kbps.768x320.flv \
@@ -343,7 +343,7 @@ jobs:
         run: |
           sudo systemctl start nginx
           sudo systemctl status nginx
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: platform-cache
       - name: Load platform image
@@ -408,7 +408,7 @@ jobs:
 
   test-pr-final:
     name: test-pr-final
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - run-test
       - test-zh-image

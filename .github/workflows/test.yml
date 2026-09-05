@@ -13,7 +13,7 @@ jobs:
       ##################################################################################################################
       # Git checkout
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       # The github.ref is, for example, refs/tags/v5.0.145 or refs/tags/v5.0-r8
       # Generate variables like:
       #   SRS_TAG=v1.0.52
@@ -30,7 +30,7 @@ jobs:
     outputs:
       SRS_TAG: ${{ env.SRS_TAG }}
       SRS_MAJOR: ${{ env.SRS_MAJOR }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   test-en-image:
     name: Test EN image
@@ -38,7 +38,7 @@ jobs:
       - envs
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build image for platform
         run: |
           docker build -t platform:latest -f Dockerfile .
@@ -103,7 +103,7 @@ jobs:
           echo "Log of docker.log" && cat docker.log
           
           exit $ret
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   check-pr-test:
     steps:
@@ -119,11 +119,11 @@ jobs:
         if: steps.wait-for-test.outputs.conclusion != 'success'
         run: |
           echo "Test Workflow failed, aborting release" && exit 1
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
   test-final:
     name: test-final
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - check-pr-test
       - test-en-image
