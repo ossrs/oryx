@@ -8,14 +8,13 @@ import {useSrsLanguage} from "../components/LanguageSwitch";
 import {Accordion, Button, Card, Form, Nav, Spinner, Table} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import axios from "axios";
-import {Clipboard, Locale, Token} from "../utils";
+import {Clipboard, Token} from "../utils";
 import {useErrorHandler} from "react-error-boundary";
 import {useSearchParams} from "react-router-dom";
 import {buildUrls} from "../components/UrlGenerator";
 import {SrsEnvContext} from "../components/SrsEnvContext";
 import * as Icon from "react-bootstrap-icons";
 import PopoverConfirm from "../components/PopoverConfirm";
-import {OpenAISecretSettings} from "../components/OpenAISettings";
 
 export default function ScenarioLiveRoom() {
   const [searchParams] = useSearchParams();
@@ -92,11 +91,8 @@ function ScenarioLiveRoomList({setRoomId}) {
     await new Promise(resolve => {
       axios.post('/terraform/v1/live/room/update', {
         ...roomCopy,
-        // Do not copy the stream, secret, and token.
         uuid: room.uuid, title: room.title, stream: room.stream, secret: room.secret,
         roomToken: room.roomToken, created_at: room.created_at,
-        // Avoid copying the stage uuid, as there should be no stage for the new room.
-        stage_uuid: '',
       }, {
         headers: Token.loadBearerHeader(),
       }).then(res => {
@@ -265,7 +261,7 @@ function ScenarioLiveRoomImpl({roomId, setRoomId}) {
 
   if (!room) return <Spinner animation="border" variant="primary" />;
   return <>
-    <Accordion defaultActiveKey={['2', '3']}>
+    <Accordion defaultActiveKey={['2']}>
       <Accordion.Item eventKey="0">
         <Accordion.Header>{t('lr.room.nav')}</Accordion.Header>
         <Accordion.Body>
@@ -287,12 +283,6 @@ function ScenarioLiveRoomImpl({roomId, setRoomId}) {
           {room ? <LiveRoomStreamer {...{room}}/> : ''}
         </Accordion.Body>
       </Accordion.Item>
-      {room ? <Accordion.Item eventKey="3">
-        <Accordion.Header>{t('lr.room.aiw')}</Accordion.Header>
-        <Accordion.Body>
-          <LiveRoomAssistant {...{room, requesting, updateRoom}}/>
-        </Accordion.Body>
-      </Accordion.Item> : ''}
     </Accordion>
   </>;
 }
@@ -409,313 +399,4 @@ function LiveRoomStreamer({room}) {
         </Card.Body>}
     </Card>
   );
-}
-
-function LiveRoomAssistant({room, requesting, updateRoom}) {
-  const {t} = useTranslation();
-  const handleError = useErrorHandler();
-  const language = useSrsLanguage();
-
-  const [aiName, setAiName] = React.useState(room.aiName);
-  const [aiProvider, setAiProvider] = React.useState(room.aiProvider || 'openai');
-  const [aiSecretKey, setAiSecretKey] = React.useState(room.aiSecretKey);
-  const [aiOrganization, setAiOrganization] = React.useState(room.aiOrganization);
-  const [aiBaseURL, setAiBaseURL] = React.useState(room.aiBaseURL || (language === 'zh' ? '' : 'https://api.openai.com/v1'));
-  const [aiAsrEnabled, setAiAsrEnabled] = React.useState(room.aiAsrEnabled);
-  const [aiChatEnabled, setAiChatEnabled] = React.useState(room.aiChatEnabled);
-  const [aiPostEnabled, setAiPostEnabled] = React.useState(room.aiPostEnabled);
-  const [aiTtsEnabled, setAiTtsEnabled] = React.useState(room.aiTtsEnabled);
-  const [aiAsrLanguage, setAiAsrLanguage] = React.useState(room.aiAsrLanguage || language || 'en');
-  const [aiAsrPrompt, setAiAsrPrompt] = React.useState(room.aiAsrPrompt || 'user-ai');
-  const [aiChatModel, setAiChatModel] = React.useState(room.aiChatModel || 'gpt-3.5-turbo');
-  const [aiChatPrompt, setAiChatPrompt] = React.useState(room.aiChatPrompt || 'You are a helpful assistant.');
-  const [aiChatMaxWindow, setAiChatMaxWindow] = React.useState(room.aiChatMaxWindow || 5);
-  const [aiChatMaxWords, setAiChatMaxWords] = React.useState(room.aiChatMaxWords || 300);
-  const [aiPostModel, setAiPostModel] = React.useState(room.aiPostModel || 'gpt-3.5-turbo');
-  const [aiPostPrompt, setAiPostPrompt] = React.useState(room.aiPostPrompt || 'You are a helpful assistant.');
-  const [aiPostMaxWindow, setAiPostMaxWindow] = React.useState(room.aiPostMaxWindow || 5);
-  const [aiPostMaxWords, setAiPostMaxWords] = React.useState(room.aiPostMaxWords || 300);
-
-  const [configItem, setConfigItem] = React.useState('basic');
-  const [userName, setUserName] = React.useState('You');
-  const [userLanguage, setUserLanguage] = React.useState(room.aiAsrLanguage || language);
-  const [aiPattern, setAiPattern] = React.useState('chat');
-  const [assistantLink, setAssistantLink] = React.useState();
-
-  React.useEffect(() => {
-    if (aiSecretKey) return;
-
-    axios.post('/terraform/v1/mgmt/openai/query', null, {
-      headers: Token.loadBearerHeader(),
-    }).then(res => {
-      const data = res.data.data;
-      setAiSecretKey(data.aiSecretKey);
-      setAiBaseURL(data.aiBaseURL);
-      setAiOrganization(data.aiOrganization);
-      console.log(`LiveRoom: Query open ai ok, data=${JSON.stringify(data)}`);
-    }).catch(handleError);
-  }, [handleError, aiSecretKey, setAiSecretKey, setAiBaseURL, setAiOrganization]);
-
-  const changeConfigItem = React.useCallback((e, t) => {
-    e.preventDefault();
-    setConfigItem(t);
-  }, [setConfigItem]);
-
-  const onUpdateRoom = React.useCallback((e) => {
-    e.preventDefault();
-    updateRoom({
-      ...room, assistant: true,
-      aiName, aiProvider, aiSecretKey, aiOrganization, aiBaseURL, aiAsrLanguage, aiChatModel,
-      aiChatPrompt, aiChatMaxWindow: parseInt(aiChatMaxWindow),
-      aiChatMaxWords: parseInt(aiChatMaxWords), aiAsrEnabled: !!aiAsrEnabled,
-      aiChatEnabled: !!aiChatEnabled, aiTtsEnabled: !!aiTtsEnabled,
-      aiAsrPrompt,
-      aiPostEnabled: !!aiPostEnabled, aiPostModel, aiPostPrompt,
-      aiPostMaxWindow: parseInt(aiPostMaxWindow), aiPostMaxWords: parseInt(aiPostMaxWords),
-    })
-  }, [
-    updateRoom, room, aiName, aiProvider, aiSecretKey, aiBaseURL, aiAsrLanguage, aiChatModel, aiChatPrompt,
-    aiChatMaxWindow, aiChatMaxWords, aiAsrEnabled, aiChatEnabled, aiTtsEnabled, aiAsrPrompt, aiOrganization,
-    aiPostEnabled, aiPostModel, aiPostPrompt, aiPostMaxWindow, aiPostMaxWords,
-  ]);
-
-  const onDisableRoom = React.useCallback((e) => {
-    e.preventDefault();
-    updateRoom({...room, assistant: false});
-  }, [updateRoom, room]);
-
-  const generateAssistantLink = React.useCallback((e) => {
-    e && e.preventDefault();
-
-    const roomUUID = room.uuid;
-    const roomToken = room.roomToken;
-    if (!roomUUID) return;
-
-    // For assistant link, we must set expire date.
-    const params = [
-      'app=ai-talk',
-      'popout=1',
-      'assistant=1',
-      `created=${new Date().toISOString()}`,
-      `random=${Math.random().toString(16).slice(-8)}`,
-      ...(userName ? [`username=${userName}`] : []),
-      ...(userLanguage ? [`language=${userLanguage}`] : []),
-      ...(aiPattern ? [`pattern=${aiPattern}`] : []),
-      `room=${roomUUID}`,
-      `roomToken=${roomToken}`,
-    ];
-    const url = `${window.PUBLIC_URL}/${Locale.current()}/routers-popout?${params.join('&')}`;
-    setAssistantLink(url);
-    console.log(`Generated assistant URL: ${url}`);
-  }, [setAssistantLink, room, userName, userLanguage, aiPattern]);
-
-  // If data updated, update link.
-  React.useEffect(() => {
-    generateAssistantLink();
-  }, [generateAssistantLink, userName, userLanguage, aiPattern]);
-
-  if (!room.assistant) {
-    return (
-      <Button variant="primary" type="button" disabled={requesting}
-              onClick={(e) => updateRoom({...room, assistant: true})}>
-        {t('lr.room.enable')}
-      </Button>
-    );
-  }
-  return (
-    <Form>
-      <Card>
-        <Card.Header>
-          <Nav variant="tabs" defaultActiveKey="#basic">
-            <Nav.Item>
-              <Nav.Link href="#basic" onClick={(e) => changeConfigItem(e, 'basic')}>{t('lr.room.basic')}</Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link href="#provider" onClick={(e) => changeConfigItem(e, 'provider')}>{t('lr.room.provider')}</Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link href="#asr" onClick={(e) => changeConfigItem(e, 'asr')}>{t('lr.room.asr')}</Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link href="#chat" onClick={(e) => changeConfigItem(e, 'chat')}>{t('lr.room.chat')}</Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link href="#post" onClick={(e) => changeConfigItem(e, 'post')}>{t('lr.room.post')}</Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link href="#tts" onClick={(e) => changeConfigItem(e, 'tts')}>{t('lr.room.tts')}</Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link href="#assistant" onClick={(e) => changeConfigItem(e, 'assistant')}>{t('lr.room.assistant')}</Nav.Link>
-            </Nav.Item>
-          </Nav>
-        </Card.Header>
-        {configItem === 'basic' && <Card.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.name')}</Form.Label>
-            <Form.Text> * {t('lr.room.name2')}</Form.Text>
-            <Form.Control as="input" type='input' defaultValue={aiName} onChange={(e) => setAiName(e.target.value)} />
-          </Form.Group>
-          <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
-        </Card.Body>}
-        {configItem === 'provider' && <Card.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.provider')}</Form.Label>
-            <Form.Text> * {t('lr.room.provider2')}</Form.Text>
-            <Form.Select defaultValue={aiProvider} onChange={(e) => setAiProvider(e.target.value)}>
-              <option value="">--{t('helper.noSelect')}--</option>
-              <option value="openai">OpenAI</option>
-            </Form.Select>
-          </Form.Group>
-          <OpenAISecretSettings {...{
-            baseURL: aiBaseURL, setBaseURL: setAiBaseURL,
-            secretKey: aiSecretKey, setSecretKey: setAiSecretKey,
-            organization: aiOrganization, setOrganization: setAiOrganization,
-          }} />
-          <p></p>
-          <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
-        </Card.Body>}
-        {configItem === 'asr' && <Card.Body>
-          <Form.Group className="mb-3">
-            <Form.Group className="mb-3" controlId="formAiAsrEnabledCheckbox">
-              <Form.Check type="checkbox" label={t('lr.room.asre')} defaultChecked={aiAsrEnabled} onClick={() => setAiAsrEnabled(!aiAsrEnabled)} />
-            </Form.Group>
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('transcript.lang')}</Form.Label>
-            <Form.Text> * {t('transcript.lang2')}. &nbsp;
-              {t('helper.eg')} <code>en, zh, fr, de, ja, ru </code>, ... &nbsp;
-              {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank'
-                                   rel='noreferrer'>ISO-639-1</a>.
-            </Form.Text>
-            <Form.Control as="input" defaultValue={aiAsrLanguage} onChange={(e) => setAiAsrLanguage(e.target.value)}/>
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.asrp')}</Form.Label>
-            <Form.Text> * {t('lr.room.asrp2')}.</Form.Text>
-            <Form.Select defaultValue={aiAsrPrompt} onChange={(e) => setAiAsrPrompt(e.target.value)}>
-              <option value="">--{t('helper.noSelect')}--</option>
-              <option value="user-only">User Input</option>
-              <option value="user-ai">User Input + AI Output</option>
-            </Form.Select>
-          </Form.Group>
-          <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
-        </Card.Body>}
-        {configItem === 'chat' && <Card.Body>
-          <Form.Group className="mb-3">
-            <Form.Group className="mb-3" controlId="formAiChatEnabledCheckbox">
-              <Form.Check type="checkbox" label={t('lr.room.chate')} defaultChecked={aiChatEnabled} onClick={() => setAiChatEnabled(!aiChatEnabled)} />
-            </Form.Group>
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.model')}</Form.Label>
-            <Form.Text> * {t('lr.room.model2')}</Form.Text>
-            <Form.Control as="input" type='input' defaultValue={aiChatModel} onChange={(e) => setAiChatModel(e.target.value)} />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.prompt')}</Form.Label>
-            <Form.Text> * {t('lr.room.prompt2')}</Form.Text>
-            <Form.Control as="textarea" type='text' rows={7}  defaultValue={aiChatPrompt} onChange={(e) => setAiChatPrompt(e.target.value)} />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.window')}</Form.Label>
-            <Form.Text> * {t('lr.room.window2')}</Form.Text>
-            <Form.Control as="input" type='input' defaultValue={aiChatMaxWindow} onChange={(e) => setAiChatMaxWindow(e.target.value)} />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.words')}</Form.Label>
-            <Form.Text> * {t('lr.room.words2')}</Form.Text>
-            <Form.Control as="input" type='input' defaultValue={aiChatMaxWords} onChange={(e) => setAiChatMaxWords(e.target.value)} />
-          </Form.Group>
-          <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
-        </Card.Body>}
-        {configItem === 'post' && <Card.Body>
-          <Form.Group className="mb-3">
-            <Form.Group className="mb-3" controlId="formAiChatEnabledCheckbox">
-              <Form.Check type="checkbox" label={t('lr.room.chate')} defaultChecked={aiPostEnabled} onClick={() => setAiPostEnabled(!aiPostEnabled)} />
-            </Form.Group>
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.model')}</Form.Label>
-            <Form.Text> * {t('lr.room.model2')}</Form.Text>
-            <Form.Control as="input" type='input' defaultValue={aiPostModel} onChange={(e) => setAiPostModel(e.target.value)} />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.prompt')}</Form.Label>
-            <Form.Text> * {t('lr.room.prompt2')}</Form.Text>
-            <Form.Control as="textarea" type='text' rows={7}  defaultValue={aiPostPrompt} onChange={(e) => setAiPostPrompt(e.target.value)} />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.window')}</Form.Label>
-            <Form.Text> * {t('lr.room.window2')}</Form.Text>
-            <Form.Control as="input" type='input' defaultValue={aiPostMaxWindow} onChange={(e) => setAiPostMaxWindow(e.target.value)} />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.words')}</Form.Label>
-            <Form.Text> * {t('lr.room.words2')}</Form.Text>
-            <Form.Control as="input" type='input' defaultValue={aiPostMaxWords} onChange={(e) => setAiPostMaxWords(e.target.value)} />
-          </Form.Group>
-          <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
-        </Card.Body>}
-        {configItem === 'tts' && <Card.Body>
-          <Form.Group className="mb-3">
-            <Form.Group className="mb-3" controlId="formAiTtsEnabledCheckbox">
-              <Form.Check type="checkbox" label={t('lr.room.ttse')} defaultChecked={aiTtsEnabled} onClick={() => setAiTtsEnabled(!aiTtsEnabled)} />
-            </Form.Group>
-          </Form.Group>
-          <LiveRoomAssistantUpdateButtons {...{requesting, onUpdateRoom, onDisableRoom}} />
-        </Card.Body>}
-        {configItem === 'assistant' && <Card.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.uname')}</Form.Label>
-            <Form.Text> * {t('lr.room.uname2')}</Form.Text>
-            <Form.Control as="input" type='input' defaultValue={userName} onChange={(e) => {
-              e.preventDefault();
-              setUserName(e.target.value);
-            }} />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('transcript.lang')}</Form.Label>
-            <Form.Text> * {t('transcript.lang3')}. &nbsp;
-              {t('helper.eg')} <code>en, zh, fr, de, ja, ru </code>, ... &nbsp;
-              {t('helper.see')} <a href='https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes' target='_blank' rel='noreferrer'>ISO-639-1</a>.
-            </Form.Text>
-            <Form.Control as="input" defaultValue={userLanguage} onChange={(e) => {
-              e.preventDefault();
-              setUserLanguage(e.target.value);
-            }} />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>{t('lr.room.pattern')}</Form.Label>
-            <Form.Text> * {t('lr.room.pattern2')}.</Form.Text>
-            <Form.Select defaultValue={aiPattern} onChange={(e) => setAiPattern(e.target.value)}>
-              <option value="">--{t('helper.noSelect')}--</option>
-              <option value="chat">Chat ({t('lr.room.patternChat')})</option>
-              <option value="dictation">Dictation ({t('lr.room.patternListen')})</option>
-            </Form.Select>
-          </Form.Group>
-          <Button variant="primary" type="button" onClick={generateAssistantLink}>
-            {t('helper.generate')}
-          </Button>
-          <p></p>
-          {assistantLink && <p>
-            Assistant: <a href={assistantLink} target='_blank' rel='noreferrer'>{userName} {userLanguage} {aiPattern}</a>
-          </p>}
-        </Card.Body>}
-      </Card>
-    </Form>
-  );
-}
-
-function LiveRoomAssistantUpdateButtons({requesting, onUpdateRoom, onDisableRoom}) {
-  const {t} = useTranslation();
-
-  return <>
-    <Button variant="primary" type="button" disabled={requesting} onClick={onUpdateRoom}>
-      {t('lr.room.update')}
-    </Button> &nbsp;
-    <Button variant="primary" type="button" disabled={requesting} onClick={onDisableRoom}>
-      {t('lr.room.disable')}
-    </Button>
-  </>;
 }
