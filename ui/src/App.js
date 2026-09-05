@@ -6,7 +6,6 @@
 import React from 'react';
 import axios from "axios";
 import './App.css';
-import './ai-talk.css';
 import './ai-dubbing.css';
 import './ai-ocr.css';
 import {Container} from "react-bootstrap";
@@ -17,8 +16,7 @@ import {
   useParams,
   Outlet,
   useNavigate,
-  useLocation,
-  useSearchParams
+  useLocation
 } from "react-router-dom";
 import Footer from './pages/Footer';
 import Login from './pages/Login';
@@ -34,7 +32,6 @@ import {ErrorBoundary, useErrorHandler} from 'react-error-boundary';
 import {SrsErrorBoundary} from "./components/SrsErrorBoundary";
 import resources from "./resources/locale.json";
 import {SrsEnvContext} from "./components/SrsEnvContext";
-import Popouts from "./pages/Popouts";
 
 function App() {
   const [env, setEnv] = React.useState(null);
@@ -104,14 +101,6 @@ function AppImpl() {
 function AppRoute({initialized, setInitialized}) {
   const [tokenUpdated, setTokenUpdated] = React.useState();
   const [token, setToken] = React.useState();
-  const [searchParams] = useSearchParams();
-  // Possible value is 1: yes, -1: no, 0: undefined.
-  const [isPopout, setIsPopout] = React.useState(0);
-
-  React.useEffect(() => {
-    if (!searchParams) return;
-    setIsPopout(searchParams.get('popout') === '1' ? 1 : -1);
-  }, [searchParams]);
 
   React.useEffect(() => {
     setToken(Token.load());
@@ -124,7 +113,7 @@ function AppRoute({initialized, setInitialized}) {
 
   return (
     <>
-      {isPopout === -1 && <Navigator {...{initialized, token}} />}
+      <Navigator {...{initialized, token}} />
       <Routes>
         {initialized === 0 ?
           <React.Fragment>
@@ -149,11 +138,10 @@ function AppRoute({initialized, setInitialized}) {
                 <Route path="routers-components" element={<Components/>}/>
                 <Route path="routers-logout" element={<Logout onLogout={() => setTokenUpdated(!tokenUpdated)}/>}/>
               </>}
-              {initialized === 1 && <Route path="routers-popout" element={<Popouts/>}/>}
             </Route>
           </React.Fragment>}
       </Routes>
-      {isPopout === -1 && <Footer/> }
+      <Footer/>
     </>
   );
 }

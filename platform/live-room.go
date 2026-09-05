@@ -38,8 +38,6 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 
 			room := NewLiveRoom(func(room *SrsLiveRoom) {
 				room.Title = title
-				// By default, we always enable the AI assistant for user.
-				room.Assistant = true
 			})
 			if b, err := json.Marshal(room); err != nil {
 				return errors.Wrapf(err, "marshal room")
@@ -117,12 +115,6 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			// As room is a template config, to create active stage. So if we update the template, we
-			// need to update the active stage object.
-			if err := room.UpdateStage(ctx); err != nil {
-				return errors.Wrapf(err, "update stage")
-			}
-
 			// TODO: FIXME: Should load room from redis and merge the fields.
 			if b, err := json.Marshal(room); err != nil {
 				return errors.Wrapf(err, "marshal room")
@@ -134,12 +126,6 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 			roomPublishAuthKey := GenerateRoomPublishKey(room.StreamName)
 			if err := rdb.HSet(ctx, SRS_AUTH_SECRET, roomPublishAuthKey, room.Secret).Err(); err != nil {
 				return errors.Wrapf(err, "hset %v %v %v", SRS_AUTH_SECRET, roomPublishAuthKey, room.Secret)
-			}
-
-			// Limit the changing rate for AI Assistant.
-			select {
-			case <-ctx.Done():
-			case <-time.After(300 * time.Millisecond):
 			}
 
 			ohttp.WriteData(ctx, w, r, &room)
@@ -250,14 +236,7 @@ type SrsLiveRoom struct {
 	// The stream name, should never use roomUUID because it's secret.
 	StreamName string `json:"stream"`
 	// Live room secret.
-	Secret string `json:"secret"`
-	// The AI assistant settings.
-	SrsAssistant
-	// The current AI assistant stage, might change to others.
-	// TODO: FIXME: Should not return to the client.
-	StageUUID string `json:"stage_uuid"`
-	// The room level authentication token, for example, popout application with this token to verify
-	// the room, to prevent leaking of the bearer token.
+	Secret    string `json:"secret"`
 	RoomToken string `json:"roomToken"`
 	// Create time.
 	CreatedAt string `json:"created_at"`
@@ -272,10 +251,7 @@ func NewLiveRoom(opts ...func(room *SrsLiveRoom)) *SrsLiveRoom {
 		Secret: strings.ToUpper(strings.ReplaceAll(uuid.NewString(), "-", ""))[:16],
 		// Create time.
 		CreatedAt: time.Now().Format(time.RFC3339),
-		// The stage level token for popout.
 		RoomToken: uuid.NewString(),
-		// Create a default assistant.
-		SrsAssistant: *NewAssistant(),
 	}
 	for _, opt := range opts {
 		opt(v)
@@ -284,128 +260,6 @@ func NewLiveRoom(opts ...func(room *SrsLiveRoom)) *SrsLiveRoom {
 }
 
 func (v *SrsLiveRoom) String() string {
-	return fmt.Sprintf("uuid=%v, title=%v, stream=%v, secret=%vB, roomToken=%vB, stage=%v, assistant=<%v>",
-		v.UUID, v.Title, v.StreamName, len(v.Secret), len(v.RoomToken), v.StageUUID, v.SrsAssistant.String())
-}
-
-func (v *SrsLiveRoom) UpdateStage(ctx context.Context) error {
-	if stage := talkServer.QueryStageOfRoom(v.UUID); stage != nil {
-		stage.UpdateFromRoom(v)
-	}
-
-	return nil
-}
-
-type SrsAssistantProvider struct {
-	// The AI provider.
-	AIProvider string `json:"aiProvider"`
-	// The AI secret key.
-	AISecretKey string `json:"aiSecretKey"`
-	// The AI organization.
-	AIOrganization string `json:"aiOrganization"`
-	// The AI base URL.
-	AIBaseURL string `json:"aiBaseURL"`
-}
-
-func (v *SrsAssistantProvider) String() string {
-	return fmt.Sprintf("provider=%v, secretKey=%vB, baseURL=%v",
-		v.AIProvider, len(v.AISecretKey), v.AIBaseURL)
-}
-
-type SrsAssistantASR struct {
-	// Whether enable the AI ASR.
-	AIASREnabled bool `json:"aiAsrEnabled"`
-	// The AI asr language.
-	AIASRLanguage string `json:"aiAsrLanguage"`
-	// The AI asr prompt type. user or user-ai.
-	AIASRPrompt string `json:"aiAsrPrompt"`
-}
-
-func (v *SrsAssistantASR) String() string {
-	return fmt.Sprintf("enabled=%v,language=%v,prompt=%v",
-		v.AIASREnabled, v.AIASRLanguage, v.AIASRPrompt)
-}
-
-type SrsAssistantChat struct {
-	// Whether enable the AI processing.
-	AIChatEnabled bool `json:"aiChatEnabled"`
-	// The AI model name.
-	AIChatModel string `json:"aiChatModel"`
-	// The AI chat system prompt.
-	AIChatPrompt string `json:"aiChatPrompt"`
-	// The AI chat max window.
-	AIChatMaxWindow int `json:"aiChatMaxWindow"`
-	// The AI chat max words.
-	AIChatMaxWords int `json:"aiChatMaxWords"`
-}
-
-func (v *SrsAssistantChat) String() string {
-	return fmt.Sprintf("enabled=%v,model=%v,prompt=%v,window=%v,words=%v",
-		v.AIChatEnabled, v.AIChatModel, v.AIChatPrompt, v.AIChatMaxWindow, v.AIChatMaxWords)
-}
-
-type SrsAssistantPost struct {
-	// Whether enable the AI post processing.
-	AIPostEnabled bool `json:"aiPostEnabled"`
-	// The AI model name.
-	AIPostModel string `json:"aiPostModel"`
-	// The AI chat system prompt.
-	AIPostPrompt string `json:"aiPostPrompt"`
-	// The AI chat max window.
-	AIPostMaxWindow int `json:"aiPostMaxWindow"`
-	// The AI chat max words.
-	AIPostMaxWords int `json:"aiPostMaxWords"`
-}
-
-func (v *SrsAssistantPost) String() string {
-	return fmt.Sprintf("enabled=%v,model=%v,prompt=%v,window=%v,words=%v",
-		v.AIPostEnabled, v.AIPostModel, v.AIPostPrompt, v.AIPostMaxWindow, v.AIPostMaxWords)
-}
-
-type SrsAssistantTTS struct {
-	// Whether enable the AI TTS.
-	AITTSEnabled bool `json:"aiTtsEnabled"`
-}
-
-func (v *SrsAssistantTTS) String() string {
-	return fmt.Sprintf("enabled=%v", v.AITTSEnabled)
-}
-
-type SrsAssistant struct {
-	// Whether enable the AI assistant.
-	Assistant bool `json:"assistant"`
-	// The AI name.
-	AIName string `json:"aiName"`
-	// The AI assistant provider.
-	SrsAssistantProvider
-	// The AI assistant ASR.
-	SrsAssistantASR
-	// The AI assistant chat.
-	SrsAssistantChat
-	// The AI assistant post.
-	SrsAssistantPost
-	// The AI assistant TTS.
-	SrsAssistantTTS
-}
-
-func NewAssistant(opts ...func(*SrsAssistant)) *SrsAssistant {
-	v := &SrsAssistant{}
-
-	v.AIASREnabled = true
-	v.AIChatEnabled = true
-	v.AIPostEnabled = false
-	v.AITTSEnabled = true
-
-	for _, opt := range opts {
-		opt(v)
-	}
-
-	return v
-}
-
-func (v *SrsAssistant) String() string {
-	return fmt.Sprintf("assistant=%v, name=%v, provider=<%v>, asr=<%v>, chat=<%v>, post=<%v>, tts=<%v>",
-		v.Assistant, v.AIName, v.SrsAssistantProvider.String(), v.SrsAssistantASR.String(), v.SrsAssistantChat.String(),
-		v.SrsAssistantPost.String(), v.SrsAssistantTTS.String(),
-	)
+	return fmt.Sprintf("uuid=%v, title=%v, stream=%v, secret=%vB, roomToken=%vB",
+		v.UUID, v.Title, v.StreamName, len(v.Secret), len(v.RoomToken))
 }
