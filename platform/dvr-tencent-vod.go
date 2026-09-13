@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2024 Winlin
+// Copyright (c) 2022-2026 Winlin
 //
 // SPDX-License-Identifier: MIT
 package main
