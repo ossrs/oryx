@@ -13,7 +13,7 @@ jobs:
       ##################################################################################################################
       # Git checkout
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       # The github.ref is, for example, refs/tags/v5.0.145 or refs/tags/v5.0-r8
       # Generate variables like:
       #   SRS_TAG=v1.0.52
@@ -38,7 +38,7 @@ jobs:
       - envs
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Build image for platform
         run: |
           docker build -t platform:latest -f Dockerfile .
@@ -108,13 +108,29 @@ jobs:
   check-pr-test:
     steps:
       - name: Wait for PR Test Workflow
-        uses: fountainhead/action-wait-for-check@v1.1.0
         id: wait-for-test
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: test-pr-final
-          ref: ${{ github.sha }}
-          timeoutSeconds: 3600
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          deadline=$(($(date +%s) + 3600))
+          while [ "$(date +%s)" -lt "$deadline" ]; do
+            response=$(gh api --method GET \
+              "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/check-runs" \
+              -f check_name=test-pr-final)
+            status=$(echo "$response" | jq -r \
+              '[.check_runs[] | select(.name == "test-pr-final")] | max_by(.id) | .status // "missing"')
+            conclusion=$(echo "$response" | jq -r \
+              '[.check_runs[] | select(.name == "test-pr-final")] | max_by(.id) | .conclusion // ""')
+
+            echo "test-pr-final status=${status}, conclusion=${conclusion}"
+            if [ "$status" = completed ]; then
+              echo "conclusion=$conclusion" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "conclusion=timed_out" >> "$GITHUB_OUTPUT"
       - name: Check Test Workflow result
         if: steps.wait-for-test.outputs.conclusion != 'success'
         run: |

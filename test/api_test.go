@@ -590,7 +590,7 @@ func TestApi_SrsApiWithAuth(t *testing.T) {
 	}{}
 	if err := NewApi().WithAuth(ctx, "/api/v1/versions", nil, &ver); err != nil {
 		r0 = errors.Wrapf(err, "request failed")
-	} else if ver.Major != 5 {
+	} else if ver.Major != 7 {
 		r0 = errors.Errorf("invalid response %v", ver)
 	}
 

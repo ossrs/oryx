@@ -9,13 +9,13 @@ jobs:
     steps:
       # Docker hub for global user
       - name: Login docker hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v4
         with:
           username: "${{ secrets.DOCKER_USERNAME }}"
           password: "${{ secrets.DOCKER_PASSWORD }}"
       # See https://hub.docker.com/r/ossrs/node/tags
       - name: Mirror for node 18
-        uses: akhilerm/tag-push-action@v2.1.0
+        uses: akhilerm/tag-push-action@v2.3.0
         with:
           src: node:hydrogen-slim
           dst: |
@@ -24,7 +24,7 @@ jobs:
             ossrs/node:18
       # See https://hub.docker.com/r/ossrs/prometheus/tags
       - name: Mirror for prom/prometheus:v2.40.7
-        uses: akhilerm/tag-push-action@v2.1.0
+        uses: akhilerm/tag-push-action@v2.3.0
         with:
           src: prom/prometheus:v2.40.7
           dst: |
@@ -32,7 +32,7 @@ jobs:
             ossrs/prometheus
       # See https://hub.docker.com/r/ossrs/pushgateway/tags
       - name: Mirror for prom/pushgateway:v1.4.3
-        uses: akhilerm/tag-push-action@v2.1.0
+        uses: akhilerm/tag-push-action@v2.3.0
         with:
           src: prom/pushgateway:v1.4.3
           dst: |
@@ -40,14 +40,14 @@ jobs:
             ossrs/pushgateway
       # See https://hub.docker.com/r/ossrs/redis_exporter/tags
       - name: Mirror for oliver006/redis_exporter
-        uses: akhilerm/tag-push-action@v2.1.0
+        uses: akhilerm/tag-push-action@v2.3.0
         with:
           src: oliver006/redis_exporter
           dst: |
             ossrs/redis_exporter
       # See https://hub.docker.com/r/ossrs/node-exporter/tags
       - name: Mirror for prom/node-exporter v1.4.1
-        uses: akhilerm/tag-push-action@v2.1.0
+        uses: akhilerm/tag-push-action@v2.3.0
         with:
           src: prom/node-exporter:v1.4.1
           dst: |
@@ -55,7 +55,7 @@ jobs:
             ossrs/node-exporter:v1.4.1
       # See https://hub.docker.com/r/ossrs/redis/tags
       - name: Mirror for redis:5.0
-        uses: akhilerm/tag-push-action@v2.1.0
+        uses: akhilerm/tag-push-action@v2.3.0
         with:
           src: redis:5.0
           dst: |
@@ -63,7 +63,7 @@ jobs:
             ossrs/redis
       # See https://hub.docker.com/r/ossrs/grafana/tags
       - name: Mirror for grafana:9.3.1
-        uses: akhilerm/tag-push-action@v2.1.0
+        uses: akhilerm/tag-push-action@v2.3.0
         with:
           src: grafana/grafana:9.3.1
           dst: |
@@ -71,164 +71,10 @@ jobs:
             ossrs/grafana
       # See https://hub.docker.com/r/ossrs/ubuntu/tags
       - name: Mirror for ubuntu:focal
-        uses: akhilerm/tag-push-action@v2.1.0
+        uses: akhilerm/tag-push-action@v2.3.0
         with:
           src: ubuntu:focal
           dst: |
             ossrs/ubuntu:focal
             ossrs/ubuntu
     runs-on: ubuntu-22.04
-
-  # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/node/images
-  aliyun-node:
-    needs: docker
-    steps:
-      - name: Login Aliyun docker hub
-        uses: docker/login-action@v2
-        with:
-          registry: registry.cn-hangzhou.aliyuncs.com
-          username: "${{ secrets.ACR_USERNAME }}"
-          password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Mirror for node 18
-        uses: akhilerm/tag-push-action@v2.1.0
-        with:
-          src: node:hydrogen-slim
-          dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/node:slim
-            registry.cn-hangzhou.aliyuncs.com/ossrs/node:hydrogen-slim
-            registry.cn-hangzhou.aliyuncs.com/ossrs/node:18
-    runs-on: ubuntu-22.04
-
-  # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/prometheus/images
-  aliyun-prom:
-    needs: aliyun-node
-    steps:
-      - name: Login Aliyun docker hub
-        uses: docker/login-action@v2
-        with:
-          registry: registry.cn-hangzhou.aliyuncs.com
-          username: "${{ secrets.ACR_USERNAME }}"
-          password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Mirror for prometheus:v2.40.7
-        uses: akhilerm/tag-push-action@v2.1.0
-        with:
-          src: prom/prometheus:v2.40.7
-          dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus:v2.40.7
-            registry.cn-hangzhou.aliyuncs.com/ossrs/prometheus
-    runs-on: ubuntu-22.04
-
-  # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/pushgateway/images
-  aliyun-pushgateway:
-    needs: aliyun-prom
-    steps:
-      - name: Login Aliyun docker hub
-        uses: docker/login-action@v2
-        with:
-          registry: registry.cn-hangzhou.aliyuncs.com
-          username: "${{ secrets.ACR_USERNAME }}"
-          password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Mirror for prom/pushgateway:v1.4.3
-        uses: akhilerm/tag-push-action@v2.1.0
-        with:
-          src: prom/pushgateway:v1.4.3
-          dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/pushgateway:v1.4.3
-            registry.cn-hangzhou.aliyuncs.com/ossrs/pushgateway
-    runs-on: ubuntu-22.04
-
-  # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/redis_exporter/images
-  aliyun-redis-exporter:
-    needs: aliyun-pushgateway
-    steps:
-      - name: Login Aliyun docker hub
-        uses: docker/login-action@v2
-        with:
-          registry: registry.cn-hangzhou.aliyuncs.com
-          username: "${{ secrets.ACR_USERNAME }}"
-          password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Mirror for redis_exporter
-        uses: akhilerm/tag-push-action@v2.1.0
-        with:
-          src: oliver006/redis_exporter
-          dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/redis_exporter
-    runs-on: ubuntu-22.04
-
-  # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/node-exporter/images
-  aliyun-node-exporter:
-    needs: aliyun-redis-exporter
-    steps:
-      - name: Login Aliyun docker hub
-        uses: docker/login-action@v2
-        with:
-          registry: registry.cn-hangzhou.aliyuncs.com
-          username: "${{ secrets.ACR_USERNAME }}"
-          password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Mirror for node-exporter v1.4.1
-        uses: akhilerm/tag-push-action@v2.1.0
-        with:
-          src: prom/node-exporter:v1.4.1
-          dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter
-            registry.cn-hangzhou.aliyuncs.com/ossrs/node-exporter:v1.4.1
-    runs-on: ubuntu-22.04
-
-  # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/redis/images
-  # TODO: FIXME: Only amd64.
-  aliyun-redis-server:
-    needs: aliyun-node-exporter
-    steps:
-      - name: Login Aliyun docker hub
-        uses: docker/login-action@v2
-        with:
-          registry: registry.cn-hangzhou.aliyuncs.com
-          username: "${{ secrets.ACR_USERNAME }}"
-          password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Mirror for redis:5.0
-        uses: akhilerm/tag-push-action@v2.1.0
-        with:
-          src: redis:5.0
-          dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/redis:5.0
-            registry.cn-hangzhou.aliyuncs.com/ossrs/redis
-    runs-on: ubuntu-22.04
-
-  # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/grafana/images
-  aliyun-grafana:
-    needs: aliyun-redis-server
-    steps:
-      - name: Login Aliyun docker hub
-        uses: docker/login-action@v2
-        with:
-          registry: registry.cn-hangzhou.aliyuncs.com
-          username: "${{ secrets.ACR_USERNAME }}"
-          password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Mirror for grafana:9.3.1
-        uses: akhilerm/tag-push-action@v2.1.0
-        with:
-          src: grafana/grafana:9.3.1
-          dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/grafana:9.3.1
-            registry.cn-hangzhou.aliyuncs.com/ossrs/grafana
-    runs-on: ubuntu-22.04
-
-  # See https://cr.console.aliyun.com/repository/cn-hangzhou/ossrs/ubuntu/images
-  aliyun-ubuntu:
-    needs: aliyun-grafana
-    steps:
-      - name: Login Aliyun docker hub
-        uses: docker/login-action@v2
-        with:
-          registry: registry.cn-hangzhou.aliyuncs.com
-          username: "${{ secrets.ACR_USERNAME }}"
-          password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Mirror for ubuntu:focal
-        uses: akhilerm/tag-push-action@v2.1.0
-        with:
-          src: ubuntu:focal
-          dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/ubuntu:focal
-            registry.cn-hangzhou.aliyuncs.com/ossrs/ubuntu
-    runs-on: ubuntu-22.04
-

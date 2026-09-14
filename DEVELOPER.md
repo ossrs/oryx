@@ -1263,6 +1263,7 @@ The following are the update records for the Oryx server.
 
 * v7.15:
     * Docker: Upgrade the build and runtime toolchain and use SRS 7. v7.15.25
+    * HTTP-FLV: Always declare audio and video in the FLV header. v7.15.26
 * v5.15:
     * Forward: Support multiple forwarding servers. v5.15.1
     * ENV: Refine the environment variables. v5.15.2

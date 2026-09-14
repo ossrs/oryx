@@ -23,7 +23,7 @@ RUN echo "BUILDPLATFORM: $BUILDPLATFORM, TARGETPLATFORM: $TARGETPLATFORM, TARGET
 ENV PATH="/usr/local/go/bin:${PATH}"
 COPY --from=golang /usr/local/go /usr/local/go
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends ca-certificates gcc g++ git make upx-ucl && \
+    apt-get install -y --no-install-recommends ca-certificates gcc g++ git make && \
     rm -rf /var/lib/apt/lists/*
 
 # For ui build.
@@ -49,13 +49,6 @@ WORKDIR /g
 # We define SRS_NO_LINT to disable the lint check.
 RUN export SRS_NO_LINT=1 && \
     make clean && make -j ${MAKEARGS} && make install
-
-RUN echo "Before UPX for $TARGETARCH" && \
-    ls -lh /usr/local/srs/objs/srs /usr/local/oryx/platform/platform && \
-    upx --best --lzma /usr/local/srs/objs/srs && \
-    upx --best --lzma /usr/local/oryx/platform/platform && \
-    echo "After UPX for $TARGETARCH" && \
-    ls -lh /usr/local/srs/objs/srs /usr/local/oryx/platform/platform
 
 # For youtube-dl, see https://github.com/ytdl-org/ytdl-nightly
 FROM ${ARCH}python:3.11-slim-bookworm AS ytdl

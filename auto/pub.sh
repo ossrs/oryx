@@ -46,8 +46,9 @@ if [[ $refresh == yes ]]; then
 fi
 echo "Last release is $RELEASE, revision is $REVISION, next is $NEXT"
 
+MAJOR=$(echo $RELEASE |awk -F '.' '{print $1}' |sed 's/v//g')
 MINOR=$(echo $RELEASE |awk -F '.' '{print $2}')
-VERSION="5.$MINOR.$NEXT" &&
+VERSION="$MAJOR.$MINOR.$NEXT" &&
 TAG="v$VERSION" &&
 BRANCH=$(git branch |grep '*' |awk '{print $2}') &&
 echo "publish version $VERSION as tag $TAG, BRANCH=${BRANCH}"
@@ -94,19 +95,11 @@ if [[ $(git status |grep -q 'Your branch is up to date' || echo 'no') == no ]]; 
 fi
 echo "Sync OK"
 
-git fetch gitee
-if [[ $(git diff origin/${BRANCH} gitee/${BRANCH} |grep -q diff && echo no) == no ]]; then
-  git diff origin/${BRANCH} gitee/${BRANCH} |grep diff
-  echo "Failed: Please sync gitee ${BRANCH} before release";
-  exit 1
-fi
-echo "Sync gitee OK"
-
 ######################################################################
-git tag -d $TAG 2>/dev/null; git push origin :$TAG 2>/dev/null; git push gitee :$TAG 2>/dev/null
+git tag -d $TAG 2>/dev/null; git push origin :$TAG 2>/dev/null
 echo "Delete tag OK: $TAG"
 
-git tag $TAG && git push origin $TAG && git push gitee $TAG
+git tag $TAG && git push origin $TAG
 echo "Publish OK: $TAG"
 
 echo -e "\n\n"
@@ -114,4 +107,3 @@ echo "Publication ok, please visit"
 echo "    Please test it after https://github.com/ossrs/oryx/actions/workflows/release.yml done"
 echo "    Download bt-oryx.zip from https://github.com/ossrs/oryx/releases"
 echo "    Then submit it to https://www.bt.cn/developer/details.html?id=600801805"
-echo "    Finally, update release at https://gitee.com/ossrs/oryx/releases/new"

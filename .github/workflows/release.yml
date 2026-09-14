@@ -10,7 +10,7 @@ jobs:
   check-test-dev:
     steps:
       - name: Wait for Test Workflow
-        uses: fountainhead/action-wait-for-check@v1.1.0
+        uses: fountainhead/action-wait-for-check@v1.2.0
         id: wait-for-test
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -23,31 +23,14 @@ jobs:
           echo "Test Workflow failed, aborting release" && exit 1
     runs-on: ubuntu-22.04
 
-  check-test-online:
-    steps:
-      - name: Wait for Test Online Workflow
-        uses: fountainhead/action-wait-for-check@v1.1.0
-        id: wait-for-test
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: test-online-final
-          ref: ${{ github.sha }}
-          timeoutSeconds: 3600
-      - name: Check Test Workflow result
-        if: steps.wait-for-test.outputs.conclusion != 'success'
-        run: |
-          echo "Test Workflow failed, aborting release" && exit 1
-    runs-on: ubuntu-22.04
-
   envs:
     needs:
       - check-test-dev
-      - check-test-online
     name: envs
     steps:
       # Git checkout
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       # The github.ref is, for example, refs/tags/v5.0.145 or refs/tags/v5.0-r8
       # Generate variables like:
       #   SRS_TAG=v5.8.20
@@ -81,17 +64,17 @@ jobs:
           echo "SRS_XYZ=${{ needs.envs.outputs.SRS_XYZ }}" >> $GITHUB_ENV
       # Git checkout
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       # See https://github.com/crazy-max/ghaction-docker-buildx#moved-to-docker-organization
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v4
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v4
       # Create main images for Docker
       - name: Login to docker hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v4
         with:
           username: "${{ secrets.DOCKER_USERNAME }}"
           password: "${{ secrets.DOCKER_PASSWORD }}"
@@ -106,7 +89,7 @@ jobs:
             --output "type=image,push=true" --build-arg MAKEARGS=build-no-ui \
             --tag ossrs/oryx:$SRS_TAG -f Dockerfile .
       - name: Docker alias images for ossrs/oryx
-        uses: akhilerm/tag-push-action@v2.1.0
+        uses: akhilerm/tag-push-action@v2.3.0
         with:
           src: ossrs/oryx:${{ env.SRS_TAG }}
           dst: |
@@ -116,40 +99,11 @@ jobs:
         #ossrs/oryx:v${{ env.SRS_MAJOR }}
     runs-on: ubuntu-22.04
 
-  aliyun:
-    needs:
-      - envs
-      - docker
-    steps:
-      - name: Covert output to env
-        run: |
-          echo "SRS_TAG=${{ needs.envs.outputs.SRS_TAG }}" >> $GITHUB_ENV
-          echo "SRS_MAJOR=${{ needs.envs.outputs.SRS_MAJOR }}" >> $GITHUB_ENV
-          echo "SRS_XYZ=${{ needs.envs.outputs.SRS_XYZ }}" >> $GITHUB_ENV
-      # Aliyun ACR
-      - name: Login Aliyun docker hub
-        uses: docker/login-action@v2
-        with:
-          registry: registry.cn-hangzhou.aliyuncs.com
-          username: "${{ secrets.ACR_USERNAME }}"
-          password: "${{ secrets.ACR_PASSWORD }}"
-      - name: Docker alias images for ossrs/oryx
-        uses: akhilerm/tag-push-action@v2.1.0
-        with:
-          src: ossrs/oryx:${{ env.SRS_TAG }}
-          dst: |
-            registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_TAG }}
-            registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_XYZ }}
-        # TODO: FIXME: If stable release, update it.
-        #registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_MAJOR }}
-        #registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:v${{ env.SRS_MAJOR }}
-    runs-on: ubuntu-22.04
-
   draft:
     name: draft
     needs:
       - envs
-      - aliyun
+      - docker
     steps:
       - name: Create release draft
         id: create_draft
@@ -176,7 +130,7 @@ jobs:
     steps:
       ##################################################################################################################
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       ##################################################################################################################
       - name: Covert output to env
         run: |
@@ -224,7 +178,7 @@ jobs:
       # Upload release source files
       - name: Upload Release Assets Source
         id: upload-release-assets-source
-        uses: dwenegar/upload-release-assets@v1
+        uses: dwenegar/upload-release-assets@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -253,18 +207,18 @@ jobs:
             * [Features](https://ossrs.io/lts/en-us/faq-oryx#features)
 
             ## Chinese
-            * [docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:${{ env.SRS_TAG }}](https://ossrs.net/lts/zh-cn/docs/v5/doc/getting-started-stack#docker)
+            * [docker pull ossrs/oryx:${{ env.SRS_TAG }}](https://ossrs.net/lts/zh-cn/docs/v5/doc/getting-started-stack#docker)
             * [Lighthouse](https://mp.weixin.qq.com/s/fWmdkw-2AoFD_pEmE_EIkA): [Tutorial](https://www.bilibili.com/video/BV1844y1L7dL)
-            * Ubuntu Script: ${{ env.SRS_UBUNTU_ZH_SOURCE_FILE_MD5 }} [${{ env.SRS_UBUNTU_ZH_SOURCE_FILE }}](https://gitee.com/ossrs/oryx/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_UBUNTU_ZH_SOURCE_FILE }})
-            * [BT](https://bt.cn) Plugin: ${{ env.SRS_BT_SOURCE_MD5 }} [${{ env.SRS_BT_SOURCE_FILE }}](https://gitee.com/ossrs/oryx/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_BT_SOURCE_FILE }})
-            * [aaPanel](https://aapanel.com) Plugin: ${{ env.SRS_AAPANEL_SOURCE_MD5 }} [${{ env.SRS_AAPANEL_SOURCE_FILE }}](https://gitee.com/ossrs/oryx/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_AAPANEL_SOURCE_FILE }})
+            * Ubuntu Script: ${{ env.SRS_UBUNTU_ZH_SOURCE_FILE_MD5 }} [${{ env.SRS_UBUNTU_ZH_SOURCE_FILE }}](https://github.com/ossrs/oryx/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_UBUNTU_ZH_SOURCE_FILE }})
+            * [BT](https://bt.cn) Plugin: ${{ env.SRS_BT_SOURCE_MD5 }} [${{ env.SRS_BT_SOURCE_FILE }}](https://github.com/ossrs/oryx/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_BT_SOURCE_FILE }})
+            * [aaPanel](https://aapanel.com) Plugin: ${{ env.SRS_AAPANEL_SOURCE_MD5 }} [${{ env.SRS_AAPANEL_SOURCE_FILE }}](https://github.com/ossrs/oryx/releases/download/${{ env.SRS_TAG }}/${{ env.SRS_AAPANEL_SOURCE_FILE }})
             * [Changelog](https://ossrs.net/lts/zh-cn/faq-oryx#changelog)
             * [Features](https://ossrs.net/lts/zh-cn/faq-oryx#features)
           # TODO: FIXME: If stable release, update it.
           ## English
           #* [docker pull ossrs/oryx:5](https://ossrs.io/lts/en-us/docs/v5/doc/getting-started-stack#docker)
           ## Chinese
-          #* [docker pull registry.cn-hangzhou.aliyuncs.com/ossrs/oryx:5](https://ossrs.net/lts/zh-cn/docs/v5/doc/getting-started-stack#docker)
+          #* [docker pull ossrs/oryx:5](https://ossrs.net/lts/zh-cn/docs/v5/doc/getting-started-stack#docker)
           draft: false
           # TODO: FIXME: If stable release, update it.
           prerelease: true
