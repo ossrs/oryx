@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+# Execute by: bash xxx.sh or bash zzz/yyy/xxx.sh or ./xxx.sh or ./zzz/yyy/xxx.sh source xxx.sh
+REALPATH=$(realpath ${BASH_SOURCE[0]})
+SCRIPT_DIR=$(cd $(dirname ${REALPATH}) && pwd)
+WORK_DIR=$(cd $(dirname ${REALPATH}) && pwd)
+echo "BASH_SOURCE=${BASH_SOURCE}, REALPATH=${REALPATH}, SCRIPT_DIR=${SCRIPT_DIR}, WORK_DIR=${WORK_DIR}"
+cd ${WORK_DIR}
+
+APP_ARGS=$@
+echo "Run oryx with args: ${APP_ARGS}, WORK_DIR:${WORK_DIR}"
+
+# Start redis.
+bash auto/start_redis
+if [[ $? -ne 0 ]]; then echo "Start redis failed"; exit 1; fi
+
+# Start SRS.
+bash auto/start_srs_origin_cluster
+if [[ $? -ne 0 ]]; then echo "Start SRS origin cluster failed"; exit 1; fi
+
+# Start the platform.
+./platform $APP_ARGS &
+if [[ $? -ne 0 ]]; then echo "Start platform failed"; exit 1; fi
+
+stop_services() {
+    # Quickly save data before stopping, as the process termination may
+    # potentially result in a timeout.
+    bash auto/before_stop
+
+    if [[ $(ps aux |grep platform |grep -v grep |grep -v usr |grep -q platform && echo yes) == yes ]]; then
+        kill -s SIGTERM $(pidof platform)
+    fi
+    bash auto/stop_redis
+    bash auto/stop_srs_origin_cluster
+}
+
+handle_signals() {
+    echo "Signal $1 received. Cleaning up and exiting..."
+    stop_services
+    exit 0
+}
+
+trap 'handle_signals SIGTERM' SIGTERM
+trap 'handle_signals SIGINT' SIGINT
+
+while true; do
+    sleep 3
+
+    if [[ $(ps aux |grep redis |grep -q server || echo no) == no ]]; then
+        echo "Redis server stopped, exit."
+        break
+    fi
+    if [[ $(ps aux |grep proxy | grep -q srs || echo no) == no ]]; then
+        echo "SRS proxy server stopped, exit."
+        break
+    fi
+    if [[ $(ps aux |grep srs |grep -q conf || echo no) == no ]]; then
+        echo "SRS server stopped, exit."
+        break
+    fi
+    if [[ $(ps aux |grep platform |grep -v grep |grep -v usr |grep -q platform || echo no) == no ]]; then
+        echo "Platform stopped, exit."
+        break
+    fi
+done
+
+# Quit by itself.
+stop_services
+exit 1
