@@ -3,15 +3,15 @@
 //
 // SPDX-License-Identifier: MIT
 //
-import {Accordion, Badge, Button, Col, Form, Row, Table} from "react-bootstrap";
+import { Accordion, Badge, Button, Col, Form, Row, Table } from "react-bootstrap";
 import React from "react";
-import {Token} from "../utils";
+import { Token } from "../utils";
 import axios from "axios";
 import moment from "moment";
-import {useErrorHandler} from "react-error-boundary";
-import {useSrsLanguage} from "../components/LanguageSwitch";
-import {useTranslation} from "react-i18next";
-import {SrsEnvContext} from "../components/SrsEnvContext";
+import { useErrorHandler } from "react-error-boundary";
+import { useSrsLanguage } from "../components/LanguageSwitch";
+import { useTranslation } from "react-i18next";
+import { SrsEnvContext } from "../components/SrsEnvContext";
 
 export default function ScenarioForward() {
   const [init, setInit] = React.useState();
@@ -48,12 +48,12 @@ export default function ScenarioForward() {
   }, [init, secrets]);
 
   if (!activeKey) return <></>;
-  return <ScenarioForwardImpl defaultActiveKey={activeKey} defaultSecrets={secrets}/>;
+  return <ScenarioForwardImpl defaultActiveKey={activeKey} defaultSecrets={secrets} />;
 }
 
-function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
+function ScenarioForwardImpl({ defaultActiveKey, defaultSecrets }) {
   const language = useSrsLanguage();
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const handleError = useErrorHandler();
   const env = React.useContext(SrsEnvContext)[0];
 
@@ -108,7 +108,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
       // Load the configured forwarding from defaults.
       const existsConf = Object.values(defaultSecrets).find(e => e.platform.indexOf(`forwarding-${rindex}-`) === 0);
       if (existsConf) {
-        confs.push(existsConf);
+        confs.push({ ...existsConf, index: String(rindex) });
       } else {
         confs.push({
           platform: `forwarding-${rindex}-${rid}`, enabled: false, index: String(rindex), allowCustom: false,
@@ -233,28 +233,28 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
                 <Form.Group className="mb-3">
                   <Form.Label>{t('plat.com.name')}</Form.Label>
                   <Form.Text> * {conf.custom ? `(${t('helper.required')})` : `(${t('helper.optional')})`} {t('plat.com.name2')}</Form.Text>
-                  <Form.Control as="input" defaultValue={conf.label} onChange={(e) => updateConfigObject({...conf, label: e.target.value})}/>
+                  <Form.Control as="input" defaultValue={conf.label} onChange={(e) => updateConfigObject({ ...conf, label: e.target.value })} />
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>{t('plat.com.source')}</Form.Label>
                   {!conf.custom && <Form.Text> * {t('plat.com.source')} check System-{'>'}Streams tab</Form.Text>}
-                  <Form.Control as="input" defaultValue={conf.stream} onChange={(e) => updateConfigObject({...conf, stream: e.target.value})}/>
+                  <Form.Control as="input" defaultValue={conf.stream} onChange={(e) => updateConfigObject({ ...conf, stream: e.target.value })} />
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>{conf.custom ? t('plat.com.server') : t('plat.com.server2')}</Form.Label>
                   {!conf.custom && <Form.Text> * {t('plat.com.server3')} <a href={conf?.locale?.link} target='_blank' rel='noreferrer'>{conf?.locale?.link2}</a>, {t('plat.com.server4')}</Form.Text>}
-                  <Form.Control as="input" defaultValue={conf.server} onChange={(e) => updateConfigObject({...conf, server: e.target.value})}/>
+                  <Form.Control as="input" defaultValue={conf.server} onChange={(e) => updateConfigObject({ ...conf, server: e.target.value })} />
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>{t('plat.com.key')}</Form.Label>
                   {!conf.custom && <Form.Text> * {t('plat.com.server3')} <a href={conf?.locale?.link} target='_blank' rel='noreferrer'>{conf?.locale?.link2}</a>, {t('plat.com.key2')}</Form.Text>}
-                  <Form.Control as="input" defaultValue={conf.secret} onChange={(e) => updateConfigObject({...conf, secret: e.target.value})}/>
+                  <Form.Control as="input" defaultValue={conf.secret} onChange={(e) => updateConfigObject({ ...conf, secret: e.target.value })} />
                 </Form.Group>
                 {conf?.allowCustom && (
                   <Row>
                     <Col xs='auto'>
                       <Form.Group className="mb-3" controlId={`formCustomCheckbox-${conf.platform}`}>
-                        <Form.Check type="checkbox" label={t('plat.com.custom')} defaultChecked={conf.custom} onClick={() => updateConfigObject({...conf, custom: !conf.custom})} />
+                        <Form.Check type="checkbox" label={t('plat.com.custom')} defaultChecked={conf.custom} onClick={() => updateConfigObject({ ...conf, custom: !conf.custom })} />
                       </Form.Group>
                     </Col>
                   </Row>
@@ -265,7 +265,7 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
                   disabled={submiting}
                   onClick={(e) => {
                     updateSecrets(e, 'update', conf.platform, conf.stream, conf.server, conf.secret, !conf.enabled, conf.custom, conf.label, () => {
-                      updateConfigObject({...conf, enabled: !conf.enabled});
+                      updateConfigObject({ ...conf, enabled: !conf.enabled });
                     });
                   }}
                 >
@@ -284,36 +284,36 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
             forwards?.length ? (
               <Table striped bordered hover>
                 <thead>
-                <tr>
-                  <th>#</th>
-                  <th>{t('plat.com.platform')}</th>
-                  <th>{t('plat.com.status2')}</th>
-                  <th>Start</th>
-                  <th>Ready</th>
-                  <th>{t('plat.com.update')}</th>
-                  <th>{t('plat.com.source')}</th>
-                  <th>{t('plat.com.log')}</th>
-                </tr>
+                  <tr>
+                    <th>#</th>
+                    <th>{t('plat.com.platform')}</th>
+                    <th>{t('plat.com.status2')}</th>
+                    <th>Start</th>
+                    <th>Ready</th>
+                    <th>{t('plat.com.update')}</th>
+                    <th>{t('plat.com.source')}</th>
+                    <th>{t('plat.com.log')}</th>
+                  </tr>
                 </thead>
                 <tbody>
-                {
-                  forwards?.map(file => {
-                    return <tr key={file.platform} style={{verticalAlign: 'middle'}}>
-                      <td>{file.i}</td>
-                      <td>{file.custom ? (file.label ? '' : t('plat.com.custom')) : file.name} {file.label}</td>
-                      <td>
-                        <Badge bg={file.enabled ? (file.frame ? 'success' : 'primary') : 'secondary'}>
-                          {file.enabled ? (file.frame ? t('plat.com.s0') : t('plat.com.s1')) : t('plat.com.s2')}
-                        </Badge>
-                      </td>
-                      <td>{file.start && `${file.start?.format('YYYY-MM-DD HH:mm:ss')}`}</td>
-                      <td>{file.ready && `${file.ready?.format('YYYY-MM-DD HH:mm:ss')}`}</td>
-                      <td>{file.update && `${file.update?.format('YYYY-MM-DD HH:mm:ss')}`}</td>
-                      <td>{file.stream}</td>
-                      <td>{file.frame?.log}</td>
-                    </tr>;
-                  })
-                }
+                  {
+                    forwards?.map(file => {
+                      return <tr key={file.platform} style={{ verticalAlign: 'middle' }}>
+                        <td>{file.i}</td>
+                        <td>{file.custom ? (file.label ? '' : t('plat.com.custom')) : file.name} {file.label}</td>
+                        <td>
+                          <Badge bg={file.enabled ? (file.frame ? 'success' : 'primary') : 'secondary'}>
+                            {file.enabled ? (file.frame ? t('plat.com.s0') : t('plat.com.s1')) : t('plat.com.s2')}
+                          </Badge>
+                        </td>
+                        <td>{file.start && `${file.start?.format('YYYY-MM-DD HH:mm:ss')}`}</td>
+                        <td>{file.ready && `${file.ready?.format('YYYY-MM-DD HH:mm:ss')}`}</td>
+                        <td>{file.update && `${file.update?.format('YYYY-MM-DD HH:mm:ss')}`}</td>
+                        <td>{file.stream}</td>
+                        <td>{file.frame?.log}</td>
+                      </tr>;
+                    })
+                  }
                 </tbody>
               </Table>
             ) : ''
