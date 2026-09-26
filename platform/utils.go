@@ -495,6 +495,14 @@ func envYtdlProxy() string {
 	return os.Getenv("YTDL_PROXY")
 }
 
+func envTranscriptFixQueueLimit() string {
+	return os.Getenv("SRS_TRANSCRIPT_FIX_QUEUE_LIMIT")
+}
+
+func envTranscriptOverlayQueueLimit() string {
+	return os.Getenv("SRS_TRANSCRIPT_OVERLAY_QUEUE_LIMIT")
+}
+
 // rdb is a global redis client object.
 var rdb *redis.Client
 

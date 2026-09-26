@@ -27,9 +27,6 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
-// The total segments in overlay HLS.
-const maxOverlaySegments = 9
-
 var transcriptWorker *TranscriptWorker
 
 type TranscriptWorker struct {
@@ -1717,6 +1714,9 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 		return nil
 	}
 
+	// Get total segments in overlay HLS.
+	maxOverlaySegments, _ := strconv.Atoi(envTranscriptOverlayQueueLimit())
+
 	// Wait if ASR queue is full.
 	if v.AsrQueue.count() >= maxOverlaySegments+1 {
 		return nil
@@ -1791,6 +1791,9 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 		logger.Tf(ctx, "transcript: remove not exist audio segment %v", segment.String())
 		return nil
 	}
+
+	// Get total segments in overlay HLS.
+	maxOverlaySegments, _ := strconv.Atoi(envTranscriptOverlayQueueLimit())
 
 	// Wait if Fix queue is full.
 	if v.FixQueue.count() >= maxOverlaySegments+1 {
@@ -1917,8 +1920,11 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		return nil
 	}
 
+	// Get total segments in manually fix queue.
+	maxFixQueueLimit, _ := strconv.Atoi(envTranscriptFixQueueLimit())
+
 	// Ignore if not enough segments.
-	if v.FixQueue.count() <= 2 {
+	if v.FixQueue.count() <= maxFixQueueLimit {
 		return nil
 	}
 
@@ -1936,6 +1942,9 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		logger.Tf(ctx, "transcript: remove not exist fix segment %v", segment.String())
 		return nil
 	}
+
+	// Get total segments in overlay HLS.
+	maxOverlaySegments, _ := strconv.Atoi(envTranscriptOverlayQueueLimit())
 
 	// Wait if Overlay queue is full.
 	if v.OverlayQueue.count() >= maxOverlaySegments+1 {
@@ -2027,6 +2036,9 @@ func (v *TranscriptTask) DriveOverlayQueue(ctx context.Context) error {
 	if !v.config.All {
 		return nil
 	}
+
+	// Get total segments in overlay HLS.
+	maxOverlaySegments, _ := strconv.Atoi(envTranscriptOverlayQueueLimit())
 
 	// Ignore if not enough segments.
 	if v.OverlayQueue.count() <= maxOverlaySegments {
