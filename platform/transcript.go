@@ -21,6 +21,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
+
 	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
@@ -1295,6 +1296,9 @@ type TranscriptSegment struct {
 	// Whether user clear the ASR text of this segment.
 	UserClearASR bool `json:"uca,omitempty"`
 
+	// The map that host the pid -> last cc
+	OverlayTSLastCC map[uint16]uint8 `json:"overlay_ts_last_cc,omitempty"`
+
 	// The cost to transcode the TS file to audio file.
 	CostExtractAudio time.Duration `json:"eac,omitempty"`
 	// The cost to do ASR, converting speech to text.
@@ -1400,6 +1404,16 @@ func (v *TranscriptQueue) first() *TranscriptSegment {
 	}
 
 	return v.Segments[0]
+}
+
+func (v *TranscriptQueue) findBy(seqNo uint64) *TranscriptSegment {
+	for i := len(v.Segments) - 1; i >= 0; i-- {
+		if v.Segments[i].OverlayFile.SeqNo == seqNo {
+			return v.Segments[i]
+		}
+	}
+
+	return nil
 }
 
 func (v *TranscriptQueue) clearSubtitle(tsid string) error {
@@ -1594,7 +1608,7 @@ func (v *TranscriptTask) OnTsSegment(ctx context.Context, msg *SrsOnHlsObject) e
 	func() {
 		// We must not update the queue, when persistence goroutine is working.
 		v.lock.Lock()
-		v.lock.Unlock()
+		defer v.lock.Unlock()
 
 		v.LiveQueue.enqueue(&TranscriptSegment{
 			Msg:    msg.Msg,
@@ -1978,7 +1992,7 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		args = append(args, strings.Fields(videoCodecParams)...)
 		// Generate other parameters for FFmpeg.
 		args = append(args, []string{
-			"-c:a", "aac",
+			"-c:a", "copy",
 			"-copyts", // To keep the pts not changed.
 			"-y", overlayFile.File,
 		}...)
@@ -2003,6 +2017,21 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		return errors.Wrapf(err, "stat file %v", overlayFile.File)
 	}
 	overlayFile.Size = uint64(stats.Size())
+
+	// recaculate the continuity_counter of overlayFile
+	// 1. get previous segment in overlayQueue
+	// 2. adjust current ts segment's continuity_counter
+	// 2. change segment.OverlayTSLastCC
+	previousTSCC := map[uint16]uint8{}
+	if previousSegment := v.OverlayQueue.findBy(overlayFile.SeqNo - 1); previousSegment != nil {
+		previousTSCC = previousSegment.OverlayTSLastCC
+	}
+
+	if cc, err := overlayFile.AdjustCC(previousTSCC); err != nil {
+		logger.Wf(ctx, "Error when Adjust Overlay TS file %v", overlayFile.File)
+	} else {
+		segment.OverlayTSLastCC = cc
+	}
 
 	// Dequeue the segment from live queue and attach to asr queue.
 	func() {
