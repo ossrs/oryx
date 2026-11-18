@@ -15,12 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	// From ossrs.
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
 
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 )
@@ -31,7 +29,7 @@ type ForwardWorker struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	// The tasks we have started to forward streams,, key is platform in string, value is *ForwardTask.
+	// Key is the platform, value is *ForwardTask.
 	tasks sync.Map
 }
 
@@ -79,7 +77,6 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 					return errors.New("no platform")
 				}
 
-				// Platform should be specified platforms, or starts with forwarding-.
 				if !slicesContains(allowedPlatforms, userConf.Platform) && !strings.Contains(userConf.Platform, "forwarding-") {
 					return errors.Errorf("invalid platform=%v", userConf.Platform)
 				}
@@ -111,7 +108,6 @@ func (v *ForwardWorker) Handle(ctx context.Context, handler *http.ServeMux) erro
 					}
 				}
 
-				// Restart the forwarding if exists.
 				if task := v.GetTask(userConf.Platform); task != nil {
 					if err := task.Restart(ctx); err != nil {
 						return errors.Wrapf(err, "restart task %v", userConf.String())
@@ -231,7 +227,6 @@ func (v *ForwardWorker) Start(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	logger.Tf(ctx, "forward start a worker")
 
-	// Load tasks from redis and force to kill all.
 	if objs, err := rdb.HGetAll(ctx, SRS_FORWARD_TASK).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hgetall %v", SRS_FORWARD_TASK)
 	} else if len(objs) > 0 {
@@ -253,7 +248,6 @@ func (v *ForwardWorker) Start(ctx context.Context) error {
 		}
 	}
 
-	// Load all configurations from redis.
 	loadTasks := func() error {
 		configItems, err := rdb.HGetAll(ctx, SRS_FORWARD_CONFIG).Result()
 		if err != nil && err != redis.Nil {
@@ -275,19 +269,16 @@ func (v *ForwardWorker) Start(ctx context.Context) error {
 				Platform: config.Platform,
 				config:   &config,
 			}); loaded {
-				// Ignore if exists.
 				continue
 			} else {
 				task = tv.(*ForwardTask)
 				logger.Tf(ctx, "Forward create platform=%v task is %v", platform, task.String())
 			}
 
-			// Initialize object.
 			if err := task.Initialize(ctx, v); err != nil {
 				return errors.Wrapf(err, "init %v", task.String())
 			}
 
-			// Store in memory object.
 			v.tasks.Store(platform, task)
 
 			wg.Add(1)
@@ -307,7 +298,7 @@ func (v *ForwardWorker) Start(ctx context.Context) error {
 	go func() {
 		defer wg.Done()
 
-		// When startup, we try to wait for client to publish streams.
+		// At startup, wait for clients to publish streams.
 		select {
 		case <-ctx.Done():
 		case <-time.After(3 * time.Second):
@@ -331,22 +322,19 @@ func (v *ForwardWorker) Start(ctx context.Context) error {
 	return nil
 }
 
-// ForwardConfigure is the configure for forwarding.
 type ForwardConfigure struct {
-	// The platform name, for example, wx
+	// For example, wx.
 	Platform string `json:"platform"`
-	// the source stream in oryx.
+	// The source stream in Oryx.
 	Stream string `json:"stream"`
-	// The RTMP server url, for example, rtmp://localhost/live
+	// For example, rtmp://localhost/live.
 	Server string `json:"server"`
-	// The RTMP stream and secret, for example, livestream
-	Secret string `json:"secret"`
-	// Whether enabled.
-	Enabled bool `json:"enabled"`
-	// Whether custom platform.
-	Customed bool `json:"custom"`
-	// The label for this configure.
-	Label string `json:"label"`
+	// The stream and secret, for example, livestream.
+	Secret  string `json:"secret"`
+	Enabled bool   `json:"enabled"`
+	// Whether it is a custom platform.
+	Customed bool   `json:"custom"`
+	Label    string `json:"label"`
 }
 
 func (v *ForwardConfigure) String() string {
@@ -366,40 +354,26 @@ func (v *ForwardConfigure) Update(u *ForwardConfigure) error {
 	return nil
 }
 
-// ForwardTask is a task for FFmpeg to forward stream, with a configure.
 type ForwardTask struct {
-	// The ID for task.
-	UUID string `json:"uuid"`
-	// The platform for task.
+	UUID     string `json:"uuid"`
 	Platform string `json:"platform"`
 
-	// The input url.
-	Input string `json:"input"`
-	// The input stream URL.
+	Input          string `json:"input"`
 	inputStreamURL string
-	// The output url
-	Output string `json:"output"`
+	Output         string `json:"output"`
 
-	// FFmpeg pid.
 	PID int32 `json:"pid"`
-	// FFmpeg last frame.
-	frame string
-	// The last update time.
-	update *time.Time
-	// The task start time.
-	starttime *time.Time
-	// The first ready time.
+	// The last frame log of FFmpeg.
+	frame          string
+	update         *time.Time
+	starttime      *time.Time
 	firstReadyTime *time.Time
 
-	// The context for current task.
 	cancel context.CancelFunc
 
-	// The configure for forwarding task.
-	config *ForwardConfigure
-	// The forward worker.
+	config        *ForwardConfigure
 	forwardWorker *ForwardWorker
 
-	// To protect the fields.
 	lock sync.Mutex
 }
 
@@ -447,7 +421,6 @@ func (v *ForwardTask) Restart(ctx context.Context) error {
 		v.cancel()
 	}
 
-	// Reload config from redis.
 	if b, err := rdb.HGet(ctx, SRS_FORWARD_CONFIG, v.Platform).Result(); err != nil {
 		return errors.Wrapf(err, "hget %v %v", SRS_FORWARD_CONFIG, v.Platform)
 	} else if err = json.Unmarshal([]byte(b), v.config); err != nil {
@@ -504,7 +477,7 @@ func (v *ForwardTask) Run(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	logger.Tf(ctx, "forward run task %v", v.String())
 
-	// select active stream by stream name or random select one when stream name is empty.
+	// Without a stream name, use the active stream updated last.
 	selectActiveStream := func() (*SrsStream, error) {
 		streams, err := rdb.HGetAll(ctx, SRS_STREAM_ACTIVE).Result()
 		if err != nil {
@@ -547,7 +520,6 @@ func (v *ForwardTask) Run(ctx context.Context) error {
 			}
 		}
 
-		// Ignore if no active stream.
 		if best == nil {
 			return nil, nil
 		}
@@ -557,12 +529,10 @@ func (v *ForwardTask) Run(ctx context.Context) error {
 	}
 
 	pfn := func(ctx context.Context) error {
-		// Ignore when not enabled.
 		if !v.config.Enabled {
 			return nil
 		}
 
-		// Use a active stream as input.
 		input, err := selectActiveStream()
 		if err != nil {
 			return errors.Wrapf(err, "select input")
@@ -572,7 +542,6 @@ func (v *ForwardTask) Run(ctx context.Context) error {
 			return nil
 		}
 
-		// Start forward task.
 		if err := v.doForward(ctx, input); err != nil {
 			return errors.Wrapf(err, "do forward")
 		}
@@ -601,37 +570,31 @@ func (v *ForwardTask) Run(ctx context.Context) error {
 }
 
 func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
-	// Create context for current task.
 	parentCtx := ctx
 	ctx, cancel := context.WithCancel(ctx)
 	v.cancel = cancel
 
-	// Build input URL.
 	host := "localhost"
 	inputURL := fmt.Sprintf("rtmp://%v/%v/%v", host, input.App, input.Stream)
 
-	// Build output URL.
 	outputServer := strings.ReplaceAll(v.config.Server, "localhost", host)
 	if !strings.HasSuffix(outputServer, "/") && !strings.HasPrefix(v.config.Secret, "/") && v.config.Secret != "" {
 		outputServer += "/"
 	}
 	outputURL := fmt.Sprintf("%v%v", outputServer, v.config.Secret)
 
-	// Create a heartbeat to poll and manage the status of FFmpeg process.
 	heartbeat := NewFFmpegHeartbeat(cancel)
 	v.starttime, v.firstReadyTime = &heartbeat.starttime, nil
 	defer func() {
 		v.starttime = nil
 	}()
 
-	// Start FFmpeg process.
 	args := []string{}
 	args = append(args, "-re")
-	// For RTSP stream source, always use TCP transport.
 	if strings.HasPrefix(inputURL, "rtsp://") {
 		args = append(args, "-rtsp_transport", "tcp")
 	}
-	// Rebuild the stream url, because it may contain special characters.
+	// The URL may contain special characters.
 	if strings.Contains(inputURL, "://") {
 		if u, err := RebuildStreamURL(inputURL); err != nil {
 			return errors.Wrapf(err, "rebuild %v", inputURL)
@@ -643,14 +606,12 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 		args = append(args, "-i", inputURL)
 	}
 	args = append(args, "-c", "copy")
-	// If RTMP use flv, if SRT use mpegts, otherwise do not set.
 	if strings.HasPrefix(outputURL, "rtmp://") || strings.HasPrefix(outputURL, "rtmps://") {
 		args = append(args, "-f", "flv")
 	} else if strings.HasPrefix(outputURL, "srt://") {
 		args = append(args, "-pes_payload_size", "0", "-f", "mpegts")
 	}
 	args = append(args, outputURL)
-	// Create the command object.
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
 	stderr, err := cmd.StderrPipe()
@@ -665,7 +626,7 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 	v.PID = int32(cmd.Process.Pid)
 	v.Input, v.inputStreamURL, v.Output = inputURL, input.StreamURL(), outputURL
 	defer func() {
-		// If we got a PID, sleep for a while, to avoid too fast restart.
+		// Avoid restarting too fast.
 		if v.PID > 0 {
 			select {
 			case <-ctx.Done():
@@ -673,7 +634,7 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 			}
 		}
 
-		// When canceled, we should still write to redis, so we must not use ctx(which is cancelled).
+		// Redis must still be written when ctx is canceled, so use parentCtx.
 		v.cleanup(parentCtx)
 		v.saveTask(parentCtx)
 	}()
@@ -683,7 +644,6 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 		return errors.Wrapf(err, "save task %v", v.String())
 	}
 
-	// Pull the latest log frame.
 	heartbeat.Polling(ctx, stderr)
 	go func() {
 		select {
@@ -703,7 +663,7 @@ func (v *ForwardTask) doForward(ctx context.Context, input *SrsStream) error {
 		}
 	}()
 
-	// Process terminated, or user cancel the process.
+	// The process terminated, or the user canceled it.
 	select {
 	case <-parentCtx.Done():
 	case <-ctx.Done():

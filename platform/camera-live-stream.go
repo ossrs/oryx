@@ -20,7 +20,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 )
@@ -31,7 +31,7 @@ type CameraWorker struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	// The tasks we have started to IP camera streams,, key is platform in string, value is *CameraTask.
+	// Key is the platform, value is *CameraTask.
 	tasks sync.Map
 }
 
@@ -79,7 +79,6 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 					return errors.New("no platform")
 				}
 
-				// Platform should be specified platforms, or starts with camera-.
 				if !slicesContains(allowedPlatforms, userConf.Platform) && !strings.Contains(userConf.Platform, "camera-") {
 					return errors.Errorf("invalid platform=%v", userConf.Platform)
 				}
@@ -114,7 +113,6 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 					}
 				}
 
-				// Restart the IP camera if exists.
 				if task := cameraWorker.GetTask(userConf.Platform); task != nil {
 					if err := task.Restart(ctx); err != nil {
 						return errors.Wrapf(err, "restart task %v", userConf.String())
@@ -236,13 +234,11 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			// Parse URL to object.
 			u, err := RebuildStreamURL(qUrl)
 			if err != nil {
 				return errors.Wrapf(err, "parse %v", qUrl)
 			}
 
-			// Check url if valid rtmp or rtsp or http-flv or https-flv or hls live url
 			if u.Scheme != "rtmp" && u.Scheme != "srt" && u.Scheme != "rtsp" && u.Scheme != "http" && u.Scheme != "https" {
 				return errors.Errorf("invalid url scheme %v", u.Scheme)
 			}
@@ -257,11 +253,8 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 
 			targetUUID := uuid.NewString()
 			ohttp.WriteData(ctx, w, r, &struct {
-				// The file name.
-				Name string `json:"name"`
-				// The file UUID.
-				UUID string `json:"uuid"`
-				// The file target name.
+				Name   string `json:"name"`
+				UUID   string `json:"uuid"`
 				Target string `json:"target"`
 			}{
 				Name:   path.Base(u.Path),
@@ -281,16 +274,12 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			type CameraTempFile struct {
-				// The file name.
 				Name string `json:"name"`
-				// The file size in bytes.
-				Size int64 `json:"size"`
-				// The UUID for file.
-				UUID string `json:"uuid"`
-				// The target file name.
-				Target string `json:"target"`
-				// The source type.
-				Type FFprobeSourceType `json:"type"`
+				// In bytes.
+				Size   int64             `json:"size"`
+				UUID   string            `json:"uuid"`
+				Target string            `json:"target"`
+				Type   FFprobeSourceType `json:"type"`
 			}
 
 			var token, platform string
@@ -314,7 +303,6 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				return errors.New("no files")
 			}
 
-			// Check files.
 			for _, stream := range streams {
 				if stream.Target == "" {
 					return errors.New("no target")
@@ -324,7 +312,6 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				}
 			}
 
-			// Check platform.
 			if platform == "" {
 				return errors.New("no platform")
 			}
@@ -332,18 +319,14 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 			if true {
 				allowedPlatforms := []string{"wx", "bilibili", "kuaishou"}
 
-				// Platform should be specified platforms, or starts with camera-.
 				if !slicesContains(allowedPlatforms, platform) && !strings.Contains(platform, "camera-") {
 					return errors.Errorf("invalid platform %v", platform)
 				}
 			}
 
-			// Parsed source files.
 			var parsedStreams []*FFprobeSource
 
-			// Parse file information and move file from camera stream URL.
 			for _, stream := range streams {
-				// Probe file information.
 				toCtx, toCancelFunc := context.WithTimeout(ctx, 15*time.Second)
 				defer toCancelFunc()
 
@@ -351,11 +334,10 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 					"-show_error", "-show_private_data", "-v", "quiet", "-find_stream_info", "-print_format", "json",
 					"-show_format", "-show_streams",
 				}
-				// For RTSP stream source, always use TCP transport.
 				if strings.HasPrefix(stream.Target, "rtsp://") {
 					args = append(args, "-rtsp_transport", "tcp")
 				}
-				// Rebuild the stream url, because it may contain special characters.
+				// The URL may contain special characters.
 				if strings.Contains(stream.Target, "://") {
 					if u, err := RebuildStreamURL(stream.Target); err != nil {
 						return errors.Wrapf(err, "rebuild %v", stream.Target)
@@ -378,9 +360,9 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 					return errors.Wrapf(err, "parse format %v", stdout)
 				}
 
-				// Typically, AWS Lightsail and DigitalOcean Droplets provide 1TB of monthly traffic,
-				// permitting a 3Mbps continuous live stream for 7x24 hours. Therefore, it's crucial
-				// to restrict the input bitrate to prevent exceeding the traffic limit.
+				// AWS Lightsail and DigitalOcean Droplets typically provide 1TB of monthly traffic,
+				// enough for a 3Mbps live stream around the clock, so the input bitrate is limited
+				// to stay within the traffic limit.
 				if format.Format.Bitrate != "" {
 					if limits, err := rdb.HGet(ctx, SRS_SYS_LIMITS, "camera").Int64(); err != nil && err != redis.Nil {
 						return errors.Wrapf(err, "hget %v camera", SRS_SYS_LIMITS)
@@ -438,7 +420,6 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				logger.Tf(ctx, "Camera: process stream %v", parsedStream.String())
 			}
 
-			// Update redis object.
 			confObj := CameraConfigure{Platform: platform}
 			if conf, err := rdb.HGet(ctx, SRS_CAMERA_CONFIG, platform).Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v %v", SRS_CAMERA_CONFIG, platform)
@@ -456,7 +437,6 @@ func (v *CameraWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				return errors.Wrapf(err, "hset %v %v %v", SRS_CAMERA_CONFIG, platform, string(b))
 			}
 
-			// Restart the IP camera if exists.
 			if task := cameraWorker.GetTask(platform); task != nil {
 				if err := task.Restart(ctx); err != nil {
 					return errors.Wrapf(err, "restart task %v", platform)
@@ -496,7 +476,6 @@ func (v *CameraWorker) Start(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	logger.Tf(ctx, "Camera: start a worker")
 
-	// Load tasks from redis and force to kill all.
 	if objs, err := rdb.HGetAll(ctx, SRS_CAMERA_TASK).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hgetall %v", SRS_CAMERA_TASK)
 	} else if len(objs) > 0 {
@@ -518,7 +497,6 @@ func (v *CameraWorker) Start(ctx context.Context) error {
 		}
 	}
 
-	// Load all configurations from redis.
 	loadTasks := func() error {
 		configItems, err := rdb.HGetAll(ctx, SRS_CAMERA_CONFIG).Result()
 		if err != nil && err != redis.Nil {
@@ -540,19 +518,16 @@ func (v *CameraWorker) Start(ctx context.Context) error {
 				Platform: config.Platform,
 				config:   &config,
 			}); loaded {
-				// Ignore if exists.
 				continue
 			} else {
 				task = tv.(*CameraTask)
 				logger.Tf(ctx, "Camera: create platform=%v task is %v", platform, task.String())
 			}
 
-			// Initialize object.
 			if err := task.Initialize(ctx, v); err != nil {
 				return errors.Wrapf(err, "init %v", task.String())
 			}
 
-			// Store in memory object.
 			v.tasks.Store(platform, task)
 
 			wg.Add(1)
@@ -572,7 +547,7 @@ func (v *CameraWorker) Start(ctx context.Context) error {
 	go func() {
 		defer wg.Done()
 
-		// When startup, we try to wait for client to publish streams.
+		// At startup, wait for clients to publish streams.
 		select {
 		case <-ctx.Done():
 		case <-time.After(3 * time.Second):
@@ -596,24 +571,19 @@ func (v *CameraWorker) Start(ctx context.Context) error {
 	return nil
 }
 
-// CameraConfigure is the configure for IP camera.
 type CameraConfigure struct {
-	// The platform name, for example, wx
+	// For example, wx.
 	Platform string `json:"platform"`
-	// The RTMP server url, for example, rtmp://localhost/live
+	// For example, rtmp://localhost/live.
 	Server string `json:"server"`
-	// The RTMP stream and secret, for example, livestream
-	Secret string `json:"secret"`
-	// Whether enabled.
-	Enabled bool `json:"enabled"`
-	// Whether custom platform.
-	Customed bool `json:"custom"`
-	// The label for this configure.
-	Label string `json:"label"`
-	// The extra audio stream strategy.
+	// The stream and secret, for example, livestream.
+	Secret  string `json:"secret"`
+	Enabled bool   `json:"enabled"`
+	// Whether it is a custom platform.
+	Customed   bool   `json:"custom"`
+	Label      string `json:"label"`
 	ExtraAudio string `json:"extraAudio"`
 
-	// The input files for IP camera.
 	Streams []*FFprobeSource `json:"files"`
 }
 
@@ -635,40 +605,26 @@ func (v *CameraConfigure) Update(u *CameraConfigure) error {
 	return nil
 }
 
-// CameraTask is a task for FFmpeg to IP camera stream, with a configure.
 type CameraTask struct {
-	// The ID for task.
-	UUID string `json:"uuid"`
-	// The platform for task.
+	UUID     string `json:"uuid"`
 	Platform string `json:"platform"`
 
-	// The input file path.
-	Input string `json:"input"`
-	// The input file UUID.
+	Input     string `json:"input"`
 	inputUUID string
-	// The output url
-	Output string `json:"output"`
+	Output    string `json:"output"`
 
-	// FFmpeg pid.
 	PID int32 `json:"pid"`
-	// FFmpeg last frame.
-	frame string
-	// The last update time.
-	update *time.Time
-	// The task start time.
-	starttime *time.Time
-	// The first ready time.
+	// The last frame log of FFmpeg.
+	frame          string
+	update         *time.Time
+	starttime      *time.Time
 	firstReadyTime *time.Time
 
-	// The context for current task.
 	cancel context.CancelFunc
 
-	// The configure for IP camera task.
-	config *CameraConfigure
-	// The IP camera worker.
+	config       *CameraConfigure
 	cameraWorker *CameraWorker
 
-	// To protect the fields.
 	lock sync.Mutex
 }
 
@@ -716,7 +672,6 @@ func (v *CameraTask) Restart(ctx context.Context) error {
 		v.cancel()
 	}
 
-	// Reload config from redis.
 	if b, err := rdb.HGet(ctx, SRS_CAMERA_CONFIG, v.Platform).Result(); err != nil {
 		return errors.Wrapf(err, "hget %v %v", SRS_CAMERA_CONFIG, v.Platform)
 	} else if err = json.Unmarshal([]byte(b), v.config); err != nil {
@@ -787,18 +742,15 @@ func (v *CameraTask) Run(ctx context.Context) error {
 	}
 
 	pfn := func(ctx context.Context) error {
-		// Ignore when not enabled.
 		if !v.config.Enabled {
 			return nil
 		}
 
-		// Use a active stream as input.
 		input := selectInputFile()
 		if input == nil {
 			return nil
 		}
 
-		// Start IP camera task.
 		if err := v.doCameraStreaming(ctx, input); err != nil {
 			return errors.Wrapf(err, "do IP camera")
 		}
@@ -827,38 +779,32 @@ func (v *CameraTask) Run(ctx context.Context) error {
 }
 
 func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource) error {
-	// Create context for current task.
 	parentCtx := ctx
 	ctx, cancel := context.WithCancel(ctx)
 	v.cancel = cancel
 
-	// Build input URL.
 	host := "localhost"
 
-	// Build output URL.
 	outputServer := strings.ReplaceAll(v.config.Server, "localhost", host)
 	if !strings.HasSuffix(outputServer, "/") && !strings.HasPrefix(v.config.Secret, "/") && v.config.Secret != "" {
 		outputServer += "/"
 	}
 	outputURL := fmt.Sprintf("%v%v", outputServer, v.config.Secret)
 
-	// Create a heartbeat to poll and manage the status of FFmpeg process.
 	heartbeat := NewFFmpegHeartbeat(cancel)
 	v.starttime, v.firstReadyTime = &heartbeat.starttime, nil
 	defer func() {
 		v.starttime = nil
 	}()
 
-	// Start FFmpeg process.
 	args := []string{}
 	args = append(args, "-re",
 		"-fflags", "nobuffer", // Reduce the latency introduced by optional buffering.
 	)
-	// For RTSP stream source, always use TCP transport.
 	if strings.HasPrefix(input.Target, "rtsp://") {
 		args = append(args, "-rtsp_transport", "tcp")
 	}
-	// Rebuild the stream url, because it may contain special characters.
+	// The URL may contain special characters.
 	if strings.Contains(input.Target, "://") {
 		if u, err := RebuildStreamURL(input.Target); err != nil {
 			return errors.Wrapf(err, "rebuild %v", input.Target)
@@ -869,25 +815,22 @@ func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource
 	} else {
 		args = append(args, "-i", input.Target)
 	}
-	// Whether insert extra audio stream.
 	if v.config.ExtraAudio == "silent" {
 		args = append(args,
 			"-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100", // Silent audio stream.
 			"-map", "0:v", "-map", "1:a", // Ignore the original audio stream.
-			"-c:a", "aac", "-ac", "2", "-ar", "44100", "-b:a", "20k", // Encode audio stream.
-			"-c:v", "copy", // Copy video stream.
+			"-c:a", "aac", "-ac", "2", "-ar", "44100", "-b:a", "20k",
+			"-c:v", "copy",
 		)
 	} else {
 		args = append(args, "-c", "copy")
 	}
-	// If RTMP use flv, if SRT use mpegts, otherwise do not set.
 	if strings.HasPrefix(outputURL, "rtmp://") || strings.HasPrefix(outputURL, "rtmps://") {
 		args = append(args, "-f", "flv")
 	} else if strings.HasPrefix(outputURL, "srt://") {
 		args = append(args, "-pes_payload_size", "0", "-f", "mpegts")
 	}
 	args = append(args, outputURL)
-	// Create the command object.
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
 	stderr, err := cmd.StderrPipe()
@@ -902,7 +845,7 @@ func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource
 	v.PID = int32(cmd.Process.Pid)
 	v.Input, v.inputUUID, v.Output = input.Target, input.UUID, outputURL
 	defer func() {
-		// If we got a PID, sleep for a while, to avoid too fast restart.
+		// Avoid restarting too fast.
 		if v.PID > 0 {
 			select {
 			case <-ctx.Done():
@@ -910,7 +853,7 @@ func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource
 			}
 		}
 
-		// When canceled, we should still write to redis, so we must not use ctx(which is cancelled).
+		// Redis must still be written when ctx is canceled, so use parentCtx.
 		v.cleanup(parentCtx)
 		v.saveTask(parentCtx)
 	}()
@@ -920,7 +863,6 @@ func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource
 		return errors.Wrapf(err, "save task %v", v.String())
 	}
 
-	// Pull the latest log frame.
 	heartbeat.Polling(ctx, stderr)
 	go func() {
 		select {
@@ -940,7 +882,7 @@ func (v *CameraTask) doCameraStreaming(ctx context.Context, input *FFprobeSource
 		}
 	}()
 
-	// Process terminated, or user cancel the process.
+	// The process terminated, or the user canceled it.
 	select {
 	case <-parentCtx.Done():
 	case <-ctx.Done():

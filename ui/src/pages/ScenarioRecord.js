@@ -23,7 +23,7 @@ export default function ScenarioRecord() {
   const [postProcess, setPostProcess] = React.useState();
   const [postProcessValue, setPostProcessValue] = React.useState();
 
-  // We must init the activeKey, because the defaultActiveKey only apply when init for Accordion.
+  // Accordion reads defaultActiveKey only when it mounts, so the key is set before it renders.
   // See https://stackoverflow.com/q/61324259/17679565
   React.useEffect(() => {
     if (!recordStatus) return;

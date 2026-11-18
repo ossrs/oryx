@@ -61,7 +61,6 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
   const [forwards, setForwards] = React.useState();
   const [submiting, setSubmiting] = React.useState();
 
-  // Convert default config from kv to objects in array.
   React.useEffect(() => {
     if (!defaultSecrets) return;
 
@@ -95,17 +94,15 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
       },
     }];
 
-    // Regenerate the locale label, because it may change after created from defaults.
+    // The defaults may set custom, which changes the label.
     confs.forEach((e) => {
       e?.locale?.generate && e.locale.generate(e);
     });
 
-    // Generate more forwarding configures.
     while (confs.length < env.forwardLimit) {
       const rindex = index++;
       const rid = Math.random().toString(16).slice(-6);
 
-      // Load the configured forwarding from defaults.
       const existsConf = Object.values(defaultSecrets).find(e => e.platform.indexOf(`forwarding-${rindex}-`) === 0);
       if (existsConf) {
         confs.push(existsConf);
@@ -121,7 +118,6 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
     console.log(`Forward: Init configs ${JSON.stringify(confs)}`);
   }, [defaultSecrets, setConfigs, env, language, t]);
 
-  // Fetch the forwarding streams from server.
   React.useEffect(() => {
     const refreshStreams = () => {
       axios.post('/terraform/v1/ffmpeg/forward/streams', {
@@ -149,7 +145,6 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
     return () => clearInterval(timer);
   }, [t, handleError, setForwards]);
 
-  // Update config object in array.
   const updateConfigObject = React.useCallback((conf) => {
     const confs = configs.map((e) => {
       if (e.platform === conf.platform) {
@@ -161,7 +156,6 @@ function ScenarioForwardImpl({defaultActiveKey, defaultSecrets}) {
     console.log(`Forward: Update config ${JSON.stringify(conf)} to ${JSON.stringify(confs)}`);
   }, [configs, setConfigs]);
 
-  // Update the forward config to server.
   const updateSecrets = React.useCallback((e, action, platform, stream, server, secret, enabled, custom, label, onSuccess) => {
     e.preventDefault();
     if (!server) return alert(t('plat.com.addr'));

@@ -63,7 +63,6 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
   const [submiting, setSubmiting] = React.useState();
   const [configs, setConfigs] = React.useState([]);
 
-  // Convert default config from kv to objects in array.
   React.useEffect(() => {
     if (!defaultSecrets) return;
 
@@ -97,17 +96,15 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
       },
     }];
 
-    // Regenerate the locale label, because it may change after created from defaults.
+    // The defaults may set custom, which changes the label.
     confs.forEach((e) => {
       e?.locale?.generate && e.locale.generate(e);
     });
 
-    // Generate more virtual live configures.
     while (confs.length < env.vLiveLimit) {
       const rindex = index++;
       const rid = Math.random().toString(16).slice(-6);
 
-      // Load the configured virtual live from defaults.
       const existsConf = Object.values(defaultSecrets).find(e => e.platform.indexOf(`vlive-${rindex}-`) === 0);
       if (existsConf) {
         confs.push(existsConf);
@@ -143,7 +140,6 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
             i,
           };
 
-          // Find file source object by uuid(item.source).
           const sources = item.files?.filter(e => e?.uuid === item?.source);
           item.sourceObj = sources?.length ? sources[0] : null;
           return item;
@@ -157,7 +153,6 @@ function ScenarioVLiveImpl({defaultActiveKey, defaultSecrets}) {
     return () => clearInterval(timer);
   }, [t, handleError]);
 
-  // Update config object in array.
   const updateConfigObject = React.useCallback((conf) => {
     const confs = configs.map((e) => {
       if (e.platform === conf.platform) {

@@ -5,15 +5,12 @@
 //
 package main
 
-// Note that we don't use the version from API anymore.
-// The latest version of Oryx.
+// The versions from this API are no longer used.
 const latest = "v1.0.307"
 
-// Note that we don't use the version from API anymore.
-// The api service version of Oryx.
+// The versions from this API are no longer used.
 const api = "v1.0.374"
 
-// Note that we don't use the version from API anymore.
-// We should keep the stable version as 193, because for new architecture, we don't support automatically upgrade, so
-// this feature is actually not used, but we should keep a specified version for compatibility.
+// The versions from this API are no longer used. The new architecture does not upgrade automatically, but
+// the stable version stays at 193 for compatibility.
 const stable = "v1.0.193"

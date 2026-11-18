@@ -29,12 +29,10 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	"github.com/ossrs/go-oryx-lib/logger"
 
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/golang-jwt/jwt/v4"
 )
 
-// Versions is latest and stable version from Oryx API.
 type Versions struct {
 	Version string `json:"version"`
 	Stable  string `json:"stable"`
@@ -45,11 +43,10 @@ func (v Versions) String() string {
 	return fmt.Sprintf("version=%v, latest=%v, stable=%v", v.Version, v.Latest, v.Stable)
 }
 
-// Config is for configuration.
 // TODO: FIXME: Should be merged to mgmt.
 type Config struct {
 	IsDarwin bool
-	// Current working directory, at xxx/oryx/platform.
+	// The working directory, at xxx/oryx/platform.
 	Pwd string
 
 	Cloud    string
@@ -57,11 +54,9 @@ type Config struct {
 	Source   string
 	Registry string
 
-	// Discover by iface.
 	ipv4  net.IP
 	Iface string
 
-	// The latest and stable version from Oryx API.
 	Versions Versions
 }
 
@@ -220,7 +215,6 @@ func discoverPlatform(ctx context.Context, cloud string) (platform string, err e
 		return "docker", nil
 	}
 
-	// Discover CVM or lighthouse.
 	res, err := http.Get("http://metadata.tencentyun.com/latest/meta-data/instance-name")
 	if err != nil {
 		logger.Tf(ctx, "Ignore tencent platform err %v", err)
@@ -240,107 +234,82 @@ func discoverPlatform(ctx context.Context, cloud string) (platform string, err e
 	return "cvm", nil
 }
 
-// Docker container names.
 // TODO: FIXME: Remove it.
 const srsDockerName = "srs-server"
 
-// Note that we only enable srs-server, never enable srs-dev.
 // TODO: FIXME: Remove it.
 const srsDevDockerName = "srs-dev"
 
-// Redis keys.
 const (
-	// For LightHouse information, like region or source.
-	SRS_TENCENT_LH = "SRS_TENCENT_LH"
-	// For SRS stream status.
-	SRS_HP_HLS = "SRS_HP_HLS"
-	SRS_LL_HLS = "SRS_LL_HLS"
-	// For tencent cloud products.
-	SRS_TENCENT_CAM = "SRS_TENCENT_CAM"
-	SRS_TENCENT_COS = "SRS_TENCENT_COS"
-	SRS_TENCENT_VOD = "SRS_TENCENT_VOD"
-	// For local record.
+	// Host information, such as the cloud, region and source.
+	SRS_TENCENT_LH           = "SRS_TENCENT_LH"
+	SRS_HP_HLS               = "SRS_HP_HLS"
+	SRS_LL_HLS               = "SRS_LL_HLS"
+	SRS_TENCENT_CAM          = "SRS_TENCENT_CAM"
+	SRS_TENCENT_COS          = "SRS_TENCENT_COS"
+	SRS_TENCENT_VOD          = "SRS_TENCENT_VOD"
 	SRS_RECORD_PATTERNS      = "SRS_RECORD_PATTERNS"
 	SRS_RECORD_M3U8_WORKING  = "SRS_RECORD_M3U8_WORKING"
 	SRS_RECORD_M3U8_ARTIFACT = "SRS_RECORD_M3U8_ARTIFACT"
-	// For cloud storage.
-	SRS_DVR_PATTERNS      = "SRS_DVR_PATTERNS"
-	SRS_DVR_M3U8_WORKING  = "SRS_DVR_M3U8_WORKING"
-	SRS_DVR_M3U8_ARTIFACT = "SRS_DVR_M3U8_ARTIFACT"
-	// For cloud VoD.
-	SRS_VOD_PATTERNS      = "SRS_VOD_PATTERNS"
-	SRS_VOD_M3U8_WORKING  = "SRS_VOD_M3U8_WORKING"
-	SRS_VOD_M3U8_ARTIFACT = "SRS_VOD_M3U8_ARTIFACT"
-	// The cos token and file information for cloud VoD, to upload files.
-	SRS_VOD_COS_TOKEN = "SRS_VOD_COS_TOKEN"
-	// For stream forwarding by FFmpeg.
-	SRS_FORWARD_CONFIG = "SRS_FORWARD_CONFIG"
-	SRS_FORWARD_TASK   = "SRS_FORWARD_TASK"
-	// For virtual live channel/stream.
-	SRS_VLIVE_CONFIG = "SRS_VLIVE_CONFIG"
-	SRS_VLIVE_TASK   = "SRS_VLIVE_TASK"
-	// For IP camera live channel/stream.
-	SRS_CAMERA_CONFIG = "SRS_CAMERA_CONFIG"
-	SRS_CAMERA_TASK   = "SRS_CAMERA_TASK"
-	// For transcoding.
-	SRS_TRANSCODE_CONFIG = "SRS_TRANSCODE_CONFIG"
-	SRS_TRANSCODE_TASK   = "SRS_TRANSCODE_TASK"
-	// For transcription.
-	SRS_TRANSCRIPT_CONFIG = "SRS_TRANSCRIPT_CONFIG"
-	SRS_TRANSCRIPT_TASK   = "SRS_TRANSCRIPT_TASK"
-	// For OCR.
-	SRS_OCR_CONFIG = "SRS_OCR_CONFIG"
-	SRS_OCR_TASK   = "SRS_OCR_TASK"
-	// For SRS stream status.
-	SRS_STREAM_ACTIVE     = "SRS_STREAM_ACTIVE"
-	SRS_STREAM_SRT_ACTIVE = "SRS_STREAM_SRT_ACTIVE"
-	SRS_STREAM_RTC_ACTIVE = "SRS_STREAM_RTC_ACTIVE"
-	// For feature statistics.
-	SRS_STAT_COUNTER = "SRS_STAT_COUNTER"
-	// For container and images.
+	SRS_DVR_PATTERNS         = "SRS_DVR_PATTERNS"
+	SRS_DVR_M3U8_WORKING     = "SRS_DVR_M3U8_WORKING"
+	SRS_DVR_M3U8_ARTIFACT    = "SRS_DVR_M3U8_ARTIFACT"
+	SRS_VOD_PATTERNS         = "SRS_VOD_PATTERNS"
+	SRS_VOD_M3U8_WORKING     = "SRS_VOD_M3U8_WORKING"
+	SRS_VOD_M3U8_ARTIFACT    = "SRS_VOD_M3U8_ARTIFACT"
+	// The COS token and target of each VoD upload.
+	SRS_VOD_COS_TOKEN      = "SRS_VOD_COS_TOKEN"
+	SRS_FORWARD_CONFIG     = "SRS_FORWARD_CONFIG"
+	SRS_FORWARD_TASK       = "SRS_FORWARD_TASK"
+	SRS_VLIVE_CONFIG       = "SRS_VLIVE_CONFIG"
+	SRS_VLIVE_TASK         = "SRS_VLIVE_TASK"
+	SRS_CAMERA_CONFIG      = "SRS_CAMERA_CONFIG"
+	SRS_CAMERA_TASK        = "SRS_CAMERA_TASK"
+	SRS_TRANSCODE_CONFIG   = "SRS_TRANSCODE_CONFIG"
+	SRS_TRANSCODE_TASK     = "SRS_TRANSCODE_TASK"
+	SRS_TRANSCRIPT_CONFIG  = "SRS_TRANSCRIPT_CONFIG"
+	SRS_TRANSCRIPT_TASK    = "SRS_TRANSCRIPT_TASK"
+	SRS_OCR_CONFIG         = "SRS_OCR_CONFIG"
+	SRS_OCR_TASK           = "SRS_OCR_TASK"
+	SRS_STREAM_ACTIVE      = "SRS_STREAM_ACTIVE"
+	SRS_STREAM_SRT_ACTIVE  = "SRS_STREAM_SRT_ACTIVE"
+	SRS_STREAM_RTC_ACTIVE  = "SRS_STREAM_RTC_ACTIVE"
+	SRS_STAT_COUNTER       = "SRS_STAT_COUNTER"
 	SRS_CONTAINER_DISABLED = "SRS_CONTAINER_DISABLED"
-	// For live stream and rooms.
-	SRS_LIVE_ROOM = "SRS_LIVE_ROOM"
-	// For dubbing service.
-	SRS_DUBBING_PROJECTS = "SRS_DUBBING_PROJECTS"
-	SRS_DUBBING_TASKS    = "SRS_DUBBING_TASKS"
-	// About authentication.
-	SRS_AUTH_SECRET    = "SRS_AUTH_SECRET"
-	SRS_SECRET_PUBLISH = "SRS_SECRET_PUBLISH"
-	// For system settings.
-	SRS_LOCALE          = "SRS_LOCALE"
-	SRS_FIRST_BOOT      = "SRS_FIRST_BOOT"
-	SRS_UPGRADING       = "SRS_UPGRADING"
-	SRS_UPGRADE_WINDOW  = "SRS_UPGRADE_WINDOW"
-	SRS_PLATFORM_SECRET = "SRS_PLATFORM_SECRET"
-	SRS_CACHE_BILIBILI  = "SRS_CACHE_BILIBILI"
-	SRS_BEIAN           = "SRS_BEIAN"
-	SRS_HTTPS           = "SRS_HTTPS"
-	SRS_HTTPS_DOMAIN    = "SRS_HTTPS_DOMAIN"
-	SRS_HOOKS           = "SRS_HOOKS"
-	SRS_SYS_LIMITS      = "SRS_SYS_LIMITS"
-	SRS_SYS_OPENAI      = "SRS_SYS_OPENAI"
+	SRS_LIVE_ROOM          = "SRS_LIVE_ROOM"
+	SRS_DUBBING_PROJECTS   = "SRS_DUBBING_PROJECTS"
+	SRS_DUBBING_TASKS      = "SRS_DUBBING_TASKS"
+	SRS_AUTH_SECRET        = "SRS_AUTH_SECRET"
+	SRS_SECRET_PUBLISH     = "SRS_SECRET_PUBLISH"
+	SRS_LOCALE             = "SRS_LOCALE"
+	SRS_FIRST_BOOT         = "SRS_FIRST_BOOT"
+	SRS_UPGRADING          = "SRS_UPGRADING"
+	SRS_UPGRADE_WINDOW     = "SRS_UPGRADE_WINDOW"
+	SRS_PLATFORM_SECRET    = "SRS_PLATFORM_SECRET"
+	SRS_CACHE_BILIBILI     = "SRS_CACHE_BILIBILI"
+	SRS_BEIAN              = "SRS_BEIAN"
+	SRS_HTTPS              = "SRS_HTTPS"
+	SRS_HTTPS_DOMAIN       = "SRS_HTTPS_DOMAIN"
+	SRS_HOOKS              = "SRS_HOOKS"
+	SRS_SYS_LIMITS         = "SRS_SYS_LIMITS"
+	SRS_SYS_OPENAI         = "SRS_SYS_OPENAI"
 )
 
-// GenerateRoomPublishKey to build the redis hashset key from room stream name.
 func GenerateRoomPublishKey(roomStreamName string) string {
 	return fmt.Sprintf("room-pub-%v", roomStreamName)
 }
 
-// Default limit to 5Mbps for virtual live streaming.
+// The default, in kbps.
 const SrsSysLimitsVLive = 5 * 1000
 
-// Default limit to 5Mbps for IP camera streaming.
+// The default, in kbps.
 const SrsSysLimitsCamera = 5 * 1000
 
-// Tencent cloud consts.
 const (
 	TENCENT_CLOUD_CAM_ENDPOINT = "cam.tencentcloudapi.com"
 	TENCENT_CLOUD_VOD_ENDPOINT = "vod.tencentcloudapi.com"
 )
 
-// FFprobeSourceType defines the source type of virtual live or camera live,
-// which use ffprobe to retrieve information.
 type FFprobeSourceType string
 
 const FFprobeSourceTypeUpload FFprobeSourceType = "upload"
@@ -348,21 +317,17 @@ const FFprobeSourceTypeFile FFprobeSourceType = "file"
 const FFprobeSourceTypeYTDL FFprobeSourceType = "ytdl"
 const FFprobeSourceTypeStream FFprobeSourceType = "stream"
 
-// For vLive upload directory.
 var dirUploadPath = path.Join(".", "upload")
 var dirVLivePath = path.Join(".", "vlive")
 var dirDubbingPath = path.Join(".", "dub")
 
-// For Oryx to use the files.
+// Oryx may use the files in this directory.
 const serverDataDirectory = "/data"
 
-// The video files allowed to use by Oryx.
 var serverAllowVideoFiles []string = []string{".mp4", ".flv", ".ts", ".mkv", ".mov"}
 
-// The audio files allowed to use by Oryx.
 var serverAllowAudioFiles []string = []string{".mp3", ".aac", ".m4a"}
 
-// Get the API secret from env.
 func envApiSecret() string {
 	return os.Getenv("SRS_PLATFORM_SECRET")
 }
@@ -495,10 +460,8 @@ func envYtdlProxy() string {
 	return os.Getenv("YTDL_PROXY")
 }
 
-// rdb is a global redis client object.
 var rdb *redis.Client
 
-// InitRdb create and init global rdb, which is a redis client.
 func InitRdb() error {
 	redisDatabase, err := strconv.Atoi(envRedisDatabase())
 	if err != nil {
@@ -513,7 +476,6 @@ func InitRdb() error {
 	return nil
 }
 
-// For platform to build token by jwt.
 func createToken(ctx context.Context, apiSecret string) (expireAt, createAt time.Time, token string, err error) {
 	createAt, expireAt = time.Now(), time.Now().Add(365*24*time.Hour)
 
@@ -540,7 +502,6 @@ func createToken(ctx context.Context, apiSecret string) (expireAt, createAt time
 	return expireAt, createAt, token, nil
 }
 
-// Refresh the ipv4 address.
 func refreshIPv4(ctx context.Context) error {
 	discoverPrivateIPv4 := func(ctx context.Context) (string, net.IP, error) {
 		candidates := make(map[string]net.IP)
@@ -602,7 +563,7 @@ func refreshIPv4(ctx context.Context) error {
 				ipv4Cancel()
 			}
 
-			// The ip address might change, so we should always resolve it.
+			// The IP address might change.
 			time.Sleep(time.Duration(60) * time.Second)
 		}
 	}()
@@ -615,17 +576,13 @@ func refreshIPv4(ctx context.Context) error {
 	return nil
 }
 
-// setEnvDefault set env key=value if not set.
 func setEnvDefault(key, value string) {
 	if os.Getenv(key) == "" {
 		os.Setenv(key, value)
 	}
 }
 
-// srsGenerateConfig is to build SRS configuration and reload SRS.
 func srsGenerateConfig(ctx context.Context) error {
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Build the High Performance HLS config.
 	hlsConf := []string{
 		"",
 		"hls {",
@@ -664,8 +621,6 @@ func srsGenerateConfig(ctx context.Context) error {
 	}
 	hlsConf = append(hlsConf, "}")
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Build the config for SRS.
 	if true {
 		confLines := []string{
 			"# !!! Important: This file is produced and maintained by the Oryx, please never modify it.",
@@ -702,8 +657,7 @@ func srsGenerateConfig(ctx context.Context) error {
 		}
 	}
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Fetch the reload result, the ID which represents the reload transaction.
+	// The ID of the SRS reload transaction.
 	fetchReload := func(ctx context.Context) (string, error) {
 		// TODO: FIXME: Remove it after SRS merged https://github.com/ossrs/srs/pull/3768
 		return time.Now().String(), nil
@@ -756,7 +710,6 @@ func srsGenerateConfig(ctx context.Context) error {
 		return errors.Wrapf(err, "fetch reload id")
 	}
 
-	// Reload SRS to apply the new config.
 	if true {
 		api := "http://127.0.0.1:1985/api/v1/raw?rpc=reload"
 		res, err := http.DefaultClient.Get(api)
@@ -776,7 +729,6 @@ func srsGenerateConfig(ctx context.Context) error {
 		logger.Tf(ctx, "reload submit srs ok")
 	}
 
-	// Check reload result.
 	for i := 0; i < 10; i++ {
 		if newReloadID, err := fetchReload(ctx); err != nil {
 			return errors.Wrapf(err, "fetch reload id")
@@ -794,10 +746,7 @@ func srsGenerateConfig(ctx context.Context) error {
 	return errors.New("reload srs timeout")
 }
 
-// nginxGenerateConfig is to build NGINX configuration and reload NGINX.
 func nginxGenerateConfig(ctx context.Context) error {
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Build the SSL/TLS config.
 	sslConf := []string{}
 	if ssl, err := rdb.Get(ctx, SRS_HTTPS).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "get %v", SRS_HTTPS)
@@ -817,20 +766,12 @@ func nginxGenerateConfig(ctx context.Context) error {
 		}
 	}
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Build the default root.
-	// Note that it's been removed, see SRS_HTTP_PROXY.
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Build the upload limit for uploader(vLive).
 	uploadLimit := []string{
 		"",
 		"# Limit for upload file size",
 		"client_max_body_size 100g;",
 	}
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Build the config for NGINX.
 	if true {
 		confLines := []string{
 			"# !!! Important: This file is produced and maintained by the Oryx, please never modify it.",
@@ -868,8 +809,6 @@ func nginxGenerateConfig(ctx context.Context) error {
 		}
 	}
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Reload NGINX to apply the new config.
 	reloadNginx := func(ctx context.Context) error {
 		defer certManager.ReloadCertificate(ctx)
 
@@ -901,7 +840,6 @@ func nginxGenerateConfig(ctx context.Context) error {
 	return nil
 }
 
-// buildVodM3u8 go generate dynamic m3u8.
 func buildVodM3u8(
 	ctx context.Context, metadata *M3u8VoDArtifact, absUrl bool, domain string, useKey bool, prefix string,
 ) (
@@ -974,7 +912,6 @@ func buildVodM3u8(
 	return
 }
 
-// buildVodM3u8ForLocal go generate dynamic m3u8.
 func buildVodM3u8ForLocal(
 	ctx context.Context, tsFiles []*TsFile, useKey bool, prefix string,
 ) (
@@ -1023,7 +960,6 @@ func buildVodM3u8ForLocal(
 	return
 }
 
-// buildLiveM3u8ForLocal go generate dynamic m3u8.
 func buildLiveM3u8ForLocal(
 	ctx context.Context, tsFiles []*TsFile, useKey bool, prefix string,
 ) (
@@ -1071,7 +1007,6 @@ func buildLiveM3u8ForLocal(
 	return
 }
 
-// buildLiveM3u8ForVariantCC go generate variant m3u8 with CC(Closed Caption).
 func buildLiveM3u8ForVariantCC(
 	ctx context.Context, bitrate int64, lang, stream, subtitles string,
 ) (contentType, m3u8Body string, err error) {
@@ -1090,7 +1025,6 @@ func buildLiveM3u8ForVariantCC(
 	return
 }
 
-// slicesContains is a function to check whether elem in arr.
 func slicesContains(arr []string, elem string) bool {
 	for _, e := range arr {
 		if e == elem {
@@ -1100,26 +1034,24 @@ func slicesContains(arr []string, elem string) bool {
 	return false
 }
 
-// TsFile is a ts file object.
 type TsFile struct {
-	// The identify key of TS file, renamed local ts path or COS key, format is record/{m3u8UUID}/{tsID}.ts
-	// For example, record/3ECF0239-708C-42E4-96E1-5AE935C6E6A9/5B7B5C03-8DB4-4ABA-AAF3-CB55902CF177.ts
-	// For example, 3ECF0239-708C-42E4-96E1-5AE935C6E6A9/5B7B5C03-8DB4-4ABA-AAF3-CB55902CF177.ts
-	// Note that for DVR and VoD, the key is key of COS bucket object.
-	// Note that for RECORD, the key is the final ts file path.
-	// Note that for Transcript, the key is not used.
+	// For the record, the final ts file path, such as
+	// record/3ECF0239-708C-42E4-96E1-5AE935C6E6A9/5B7B5C03-8DB4-4ABA-AAF3-CB55902CF177.ts.
+	// For DVR and VoD, the COS object key, such as
+	// 3ECF0239-708C-42E4-96E1-5AE935C6E6A9/5B7B5C03-8DB4-4ABA-AAF3-CB55902CF177.ts.
+	// Not used by the transcript.
 	Key string `json:"key,omitempty"`
-	// The TS local ID, a uuid string, such as 5B7B5C03-8DB4-4ABA-AAF3-CB55902CF177
+	// A UUID, such as 5B7B5C03-8DB4-4ABA-AAF3-CB55902CF177.
 	TsID string `json:"tsid,omitempty"`
-	// The TS local file, format is record/:uuid.ts, such as record/5B7B5C03-8DB4-4ABA-AAF3-CB55902CF177.ts
+	// The local file, such as record/5B7B5C03-8DB4-4ABA-AAF3-CB55902CF177.ts.
 	File string `json:"tsfile,omitempty"`
-	// The TS url, generated by SRS, such as live/livestream/2015-04-23/01/476584165.ts
+	// Generated by SRS, such as live/livestream/2015-04-23/01/476584165.ts.
 	URL string `json:"url,omitempty"`
-	// The seqno of TS, generated by SRS, such as 100
+	// Generated by SRS.
 	SeqNo uint64 `json:"seqno,omitempty"`
-	// The duration of TS in seconds, generated by SRS, such as 9.36
+	// In seconds, generated by SRS.
 	Duration float64 `json:"duration,omitempty"`
-	// The size of TS file in bytes, such as 1934897
+	// In bytes.
 	Size uint64 `json:"size,omitempty"`
 }
 
@@ -1129,50 +1061,39 @@ func (v *TsFile) String() string {
 	)
 }
 
-// M3u8VoDArtifact is a HLS VoD object. Because each Dvr/Vod/RecordM3u8Stream might be DVR to many VoD file,
-// each is an M3u8VoDArtifact. For example, when user publish live/livestream, there is a Dvr/Vod/RecordM3u8Stream and
-// M3u8VoDArtifact, then user unpublish stream and after some seconds a VoD file is generated by M3u8VoDArtifact. Then
-// if user republish the stream, there will be a new M3u8VoDArtifact to DVR the stream.
+// A Dvr, Vod or RecordM3u8Stream may make many VoD files, one artifact each. The VoD file is made
+// some seconds after the stream is unpublished, and a republish makes a new artifact.
 type M3u8VoDArtifact struct {
-	// Number of ts files.
-	NN int `json:"nn"`
-	// The last update time.
+	// The number of ts files.
+	NN     int    `json:"nn"`
 	Update string `json:"update"`
-	// The uuid of M3u8VoDArtifact, generated by worker, such as 3ECF0239-708C-42E4-96E1-5AE935C6E6A9
+	// Generated by the worker.
 	UUID string `json:"uuid"`
-	// The url of m3u8, generated by SRS, such as live/livestream/live.m3u8
+	// Generated by SRS, such as live/livestream/live.m3u8.
 	M3u8URL string `json:"m3u8_url"`
 
-	// The vhost of stream, generated by SRS, such as video.test.com
-	Vhost string `json:"vhost"`
-	// The app of stream, generated by SRS, such as live
-	App string `json:"app"`
-	// The name of stream, generated by SRS, such as livestream
+	Vhost  string `json:"vhost"`
+	App    string `json:"app"`
 	Stream string `json:"stream"`
 
 	// TODO: FIXME: It's a typo progress.
-	// The Record is processing, use local m3u8 address to preview or download.
-	Processing bool `json:"progress"`
-	// The done time.
-	Done string `json:"done"`
-	// The ts files of this m3u8.
-	Files []*TsFile `json:"files"`
+	// While processing, the local m3u8 is used to preview or download.
+	Processing bool      `json:"progress"`
+	Done       string    `json:"done"`
+	Files      []*TsFile `json:"files"`
 
 	// For DVR only.
-	// The COS bucket name.
 	Bucket string `json:"bucket"`
-	// The COS bucket region.
 	Region string `json:"region"`
 
 	// For VoD only.
-	// The file ID generated by VoD commit.
+	// From the VoD commit.
 	FileID   string `json:"fileId"`
 	MediaURL string `json:"mediaUrl"`
-	// The remux task of VoD.
-	Definition uint64 `json:"definition"`
-	TaskID     string `json:"taskId"`
-	// The remux task result.
-	Task *VodTaskArtifact `json:"taskObj"`
+	// The remux template and task.
+	Definition uint64           `json:"definition"`
+	TaskID     string           `json:"taskId"`
+	Task       *VodTaskArtifact `json:"taskObj"`
 }
 
 func (v *M3u8VoDArtifact) String() string {
@@ -1204,7 +1125,7 @@ func (v *M3u8VoDArtifact) String() string {
 	return sb.String()
 }
 
-// VodTaskArtifact is the final artifact for remux task.
+// The output file of the VoD remux task.
 type VodTaskArtifact struct {
 	URL      string  `json:"url"`
 	Bitrate  int64   `json:"bitrate"`
@@ -1219,27 +1140,22 @@ func (v *VodTaskArtifact) String() string {
 	return fmt.Sprintf("url=%v", v.URL)
 }
 
-// SrsOnHlsMessage is the SRS on_hls callback message.
 type SrsOnHlsMessage struct {
-	// Must be on_hls
+	// Must be on_hls.
 	Action SrsAction `json:"action,omitempty"`
-	// The ts file path, such as ./objs/nginx/html/live/livestream/2015-04-23/01/476584165.ts
+	// Such as ./objs/nginx/html/live/livestream/2015-04-23/01/476584165.ts.
 	File string `json:"file,omitempty"`
-	// The duration of ts file, in seconds, such as 9.36
+	// In seconds.
 	Duration float64 `json:"duration,omitempty"`
-	// The url of m3u8, such as live/livestream/live.m3u8
+	// Such as live/livestream/live.m3u8.
 	M3u8URL string `json:"m3u8_url,omitempty"`
-	// The sequence number of ts, such as 100
-	SeqNo uint64 `json:"seq_no,omitempty"`
+	SeqNo   uint64 `json:"seq_no,omitempty"`
 
-	// The vhost of stream, generated by SRS, such as video.test.com
-	Vhost string `json:"vhost,omitempty"`
-	// The app of stream, generated by SRS, such as live
-	App string `json:"app,omitempty"`
-	// The name of stream, generated by SRS, such as livestream
+	Vhost  string `json:"vhost,omitempty"`
+	App    string `json:"app,omitempty"`
 	Stream string `json:"stream,omitempty"`
 
-	// The TS url, generated by SRS, such as live/livestream/2015-04-23/01/476584165.ts
+	// Such as live/livestream/2015-04-23/01/476584165.ts.
 	URL string `json:"url,omitempty"`
 }
 
@@ -1250,7 +1166,6 @@ func (v *SrsOnHlsMessage) String() string {
 	)
 }
 
-// SrsOnHlsObject contains a SrsOnHlsMessage and a local TsFile.
 type SrsOnHlsObject struct {
 	Msg    *SrsOnHlsMessage `json:"msg"`
 	TsFile *TsFile          `json:"tsfile"`
@@ -1260,10 +1175,9 @@ func (v *SrsOnHlsObject) String() string {
 	return fmt.Sprintf("msg(%v), ts(%v)", v.Msg.String(), v.TsFile.String())
 }
 
-// VodTranscodeTemplate is the transcode template for VoD.
 type VodTranscodeTemplate struct {
-	// In query template API, it's string. See https://cloud.tencent.com/document/product/266/33769
-	// In remux task API, it's integer. See https://cloud.tencent.com/document/product/266/33427
+	// A string in the query template API, see https://cloud.tencent.com/document/product/266/33769
+	// An integer in the remux task API, see https://cloud.tencent.com/document/product/266/33427
 	Definition string `json:"definition"`
 	Name       string `json:"name"`
 	Comment    string `json:"comment"`
@@ -1277,7 +1191,6 @@ func (v *VodTranscodeTemplate) String() string {
 	)
 }
 
-// SrsStream is a stream in SRS.
 type SrsStream struct {
 	Vhost  string `json:"vhost,omitempty"`
 	App    string `json:"app,omitempty"`
@@ -1312,7 +1225,6 @@ func (v *SrsStream) IsRTC() bool {
 	return strings.Contains(v.Param, "upstream=rtc")
 }
 
-// ParseBody read the body from r, and unmarshal JSON to v.
 func ParseBody(ctx context.Context, r io.ReadCloser, v interface{}) error {
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
@@ -1331,22 +1243,16 @@ func ParseBody(ctx context.Context, r io.ReadCloser, v interface{}) error {
 	return nil
 }
 
-// Authenticate check by Bearer or token.
-// If use bearer secret, there is the header Authorization: Bearer {apiSecret}.
-// If use token, there is a JWT token which is signed by apiSecret.
 func Authenticate(ctx context.Context, apiSecret, token string, header http.Header) error {
-	// Check system api secret.
 	if apiSecret == "" {
 		return errors.New("no api secret")
 	}
 
-	// Should use bearer secret or token.
 	authorization := header.Get("Authorization")
 	if authorization == "" && token == "" {
 		return errors.New("no Authorization or token")
 	}
 
-	// Verify bearer secret first.
 	if authorization != "" {
 		parseBearerToken := func(authorization string) (string, error) {
 			authParts := strings.Split(authorization, " ")
@@ -1368,7 +1274,7 @@ func Authenticate(ctx context.Context, apiSecret, token string, header http.Head
 		return nil
 	}
 
-	// Verify token first, @see https://www.npmjs.com/package/jsonwebtoken#errors--codes
+	// See https://www.npmjs.com/package/jsonwebtoken#errors--codes
 	// See https://pkg.go.dev/github.com/golang-jwt/jwt/v4#example-Parse-Hmac
 	if _, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		return []byte(apiSecret), nil
@@ -1379,7 +1285,6 @@ func Authenticate(ctx context.Context, apiSecret, token string, header http.Head
 	return nil
 }
 
-// ChooseNotEmpty choose the first not empty string.
 func ChooseNotEmpty(strings ...string) string {
 	for _, str := range strings {
 		if str != "" {
@@ -1389,10 +1294,8 @@ func ChooseNotEmpty(strings ...string) string {
 	return ""
 }
 
-// RebuildStreamURL rebuild the stream URL, escape username and password in URL.
 func RebuildStreamURL(rawURL string) (*url.URL, error) {
-	// If parse success, for example, no special chars in username and password, return the URL.
-	// If host not parsed, we also try to rebuild the stream URL then parse it.
+	// Special characters in the username or password may fail the parse, or leave no host.
 	if r0, err := url.Parse(rawURL); err == nil {
 		isSRT := r0.Scheme == "srt"
 		hostIsInvalid := r0.Host == ""
@@ -1416,15 +1319,12 @@ func RebuildStreamURL(rawURL string) (*url.URL, error) {
 	userInfo := url.UserPassword(username, password)
 
 	var sb strings.Builder
-	// Always has schema.
 	sb.WriteString(schema)
 	sb.WriteString("://")
-	// Escape the user information.
 	if ui := userInfo.String(); ui != "" {
 		sb.WriteString(ui)
 		sb.WriteString("@")
 	}
-	// Raw host port and parameters.
 	sb.WriteString(hostport)
 	if pathQueryFragment != "" {
 		sb.WriteString("/")
@@ -1435,15 +1335,12 @@ func RebuildStreamURL(rawURL string) (*url.URL, error) {
 		return r0, err
 	}
 
-	// Fallback to system URL parser.
 	return url.Parse(rawURL)
 }
 
-// httpAllowCORS allow CORS for HTTP request.
-// Note that we always enable CROS because we enable HTTP cache.
+// CORS is always enabled, because HTTP cache is enabled.
 func httpAllowCORS(w http.ResponseWriter, r *http.Request) {
-	// SRS does not need cookie or credentials, so we disable CORS credentials, and use * for CORS origin,
-	// headers, expose headers and methods.
+	// SRS needs no cookie or credentials, so * is used for the origin, headers, expose headers and methods.
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	// See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers
 	w.Header().Set("Access-Control-Allow-Headers", "*")
@@ -1456,7 +1353,6 @@ func httpAllowCORS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 }
 
-// httpCreateProxy create a reverse proxy for target URL.
 func httpCreateProxy(targetURL string) (*httputil.ReverseProxy, error) {
 	target, err := url.Parse(targetURL)
 	if err != nil {
@@ -1465,10 +1361,10 @@ func httpCreateProxy(targetURL string) (*httputil.ReverseProxy, error) {
 
 	proxy := httputil.NewSingleHostReverseProxy(target)
 	proxy.ModifyResponse = func(resp *http.Response) error {
-		// We will set the server field.
+		// The platform sets its own Server header.
 		resp.Header.Del("Server")
 
-		// We will set the CORS headers.
+		// The platform sets its own CORS headers.
 		resp.Header.Del("Access-Control-Allow-Origin")
 		resp.Header.Del("Access-Control-Allow-Headers")
 		resp.Header.Del("Access-Control-Allow-Methods")
@@ -1484,7 +1380,6 @@ func httpCreateProxy(targetURL string) (*httputil.ReverseProxy, error) {
 	return proxy, nil
 }
 
-// whxpResponseModifier is the response modifier for WHIP or WHEP proxy.
 type whxpResponseModifier struct {
 	w http.ResponseWriter
 }
@@ -1497,7 +1392,6 @@ func (w *whxpResponseModifier) Write(b []byte) (int, error) {
 	// TODO: FIXME: Should pass the rtc port to WHIP/WHEP api, because the port maybe not the same length to 8000,
 	//  for example, 80, 443, 18000, etc, in such case, the sdp length will change.
 	if port := envRtcListen(); port != "8000" {
-		// Read line by line, replace " 8000 " with " {port} " if contains "candidate".
 		scan := bufio.NewScanner(strings.NewReader(string(b)))
 
 		var lines []string
@@ -1509,7 +1403,6 @@ func (w *whxpResponseModifier) Write(b []byte) (int, error) {
 			lines = append(lines, line)
 		}
 
-		// Join lines with "\r\n"
 		sdp := strings.Join(lines, "\r\n") + "\r\n"
 
 		return w.w.Write([]byte(sdp))
@@ -1521,23 +1414,19 @@ func (w *whxpResponseModifier) WriteHeader(statusCode int) {
 	w.w.WriteHeader(statusCode)
 }
 
-// FFprobeFormat is the format object in ffprobe response.
 type FFprobeFormat struct {
-	// The start time in seconds.
+	// In seconds.
 	Starttime string `json:"start_time"`
-	// The duration in seconds.
+	// In seconds.
 	Duration string `json:"duration"`
-	// The bitrate in bps.
+	// In bps.
 	Bitrate string `json:"bit_rate"`
-	// The number of streams in file. Note that there might be audio, video, and data stream,
-	// so if the streams is 2, it may indicate audio+video, video+data, or audio+data.
+	// Data streams count too, so 2 streams may be audio and video, video and data, or audio and data.
 	Streams int32 `json:"nb_streams"`
-	// The probe score, which indicates the confidence of the format detection.
-	Score int32 `json:"probe_score"`
-	// Whether has video stream.
-	HasVideo bool `json:"has_video"`
-	// Whether has audio stream.
-	HasAudio bool `json:"has_audio"`
+	// The confidence of the format detection.
+	Score    int32 `json:"probe_score"`
+	HasVideo bool  `json:"has_video"`
+	HasAudio bool  `json:"has_audio"`
 }
 
 func (v *FFprobeFormat) String() string {
@@ -1546,27 +1435,22 @@ func (v *FFprobeFormat) String() string {
 	)
 }
 
-// FFprobeVideo is the video object in ffprobe response.
 type FFprobeVideo struct {
-	// The codec type, should be video.
 	CodecType string `json:"codec_type"`
-	// The codec name, for example, h264, h265, vp6f, vp8, vp9, av1, or avs3.
+	// For example, h264, h265, vp6f, vp8, vp9, av1, or avs3.
 	CodecName string `json:"codec_name"`
-	// The codec profile, for example, High, Main, Baseline, or Constrained Baseline.
+	// For example, High, Main, Baseline, or Constrained Baseline.
 	Profile string `json:"profile"`
-	// The width of video.
-	Width int32 `json:"width"`
-	// The height of video.
-	Height int32 `json:"height"`
-	// The pixel format, for example, yuv420p, yuv422p, yuv444p, yuv410p, yuv411p, yuvj420p,
+	Width   int32  `json:"width"`
+	Height  int32  `json:"height"`
+	// For example, yuv420p, yuv422p, yuv444p, yuv410p, yuv411p, or yuvj420p.
 	PixFormat string `json:"pix_fmt"`
-	// The level of video.
-	Level int32 `json:"level"`
-	// The bitrate in bps.
+	Level     int32  `json:"level"`
+	// In bps.
 	Bitrate string `json:"bit_rate"`
-	// The start time in seconds.
+	// In seconds.
 	Starttime string `json:"start_time"`
-	// The duration in seconds.
+	// In seconds.
 	Duration string `json:"duration"`
 }
 
@@ -1576,27 +1460,24 @@ func (v *FFprobeVideo) String() string {
 	)
 }
 
-// FFprobeAudio is the audio object in ffprobe response.
 type FFprobeAudio struct {
-	// The codec type, should be audio.
 	CodecType string `json:"codec_type"`
-	// The codec name, for example, aac, mp3, opus, vorbis, or flac.
+	// For example, aac, mp3, opus, vorbis, or flac.
 	CodecName string `json:"codec_name"`
-	// The codec profile, for example, AAC LC, AAC HE, AAC HEv2, or AAC LD.
+	// For example, AAC LC, AAC HE, AAC HEv2, or AAC LD.
 	Profile string `json:"profile"`
-	// The sample format, for example, fltp, s16p, s32p, s64p, or dbl.
+	// For example, fltp, s16p, s32p, s64p, or dbl.
 	SampleFormat string `json:"sample_fmt"`
-	// The sample rate in Hz.
+	// In Hz.
 	SampleRate string `json:"sample_rate"`
-	// The number of channels.
-	Channels int32 `json:"channels"`
-	// The channel layout, for example, mono, stereo, 5.1, or 7.1.
+	Channels   int32  `json:"channels"`
+	// For example, mono, stereo, 5.1, or 7.1.
 	ChannelLayout string `json:"channel_layout"`
-	// The bitrate in bps.
+	// In bps.
 	Bitrate string `json:"bit_rate"`
-	// The start time in seconds.
+	// In seconds.
 	Starttime string `json:"start_time"`
-	// The duration in seconds.
+	// In seconds.
 	Duration string `json:"duration"`
 }
 
@@ -1606,26 +1487,17 @@ func (v *FFprobeAudio) String() string {
 	)
 }
 
-// FFprobeSource is the source of virtual live, can be file or stream object.
 type FFprobeSource struct {
-	// The file name.
 	Name string `json:"name"`
-	// The file path.
 	Path string `json:"path"`
-	// The size in bytes.
-	Size uint64 `json:"size"`
-	// The file UUID.
-	UUID string `json:"uuid"`
-	// The target file name.
-	Target string `json:"target"`
-	// The source type.
-	Type FFprobeSourceType `json:"type"`
-	// The file format by ffprobe.
-	Format *FFprobeFormat `json:"format"`
-	// The video information by ffprobe.
-	Video *FFprobeVideo `json:"video"`
-	// The audio information by ffprobe.
-	Audio *FFprobeAudio `json:"audio"`
+	// In bytes.
+	Size   uint64            `json:"size"`
+	UUID   string            `json:"uuid"`
+	Target string            `json:"target"`
+	Type   FFprobeSourceType `json:"type"`
+	Format *FFprobeFormat    `json:"format"`
+	Video  *FFprobeVideo     `json:"video"`
+	Audio  *FFprobeAudio     `json:"audio"`
 }
 
 func (v *FFprobeSource) String() string {
@@ -1634,71 +1506,49 @@ func (v *FFprobeSource) String() string {
 	)
 }
 
-// The FFmpegHeartbeat is used to manage the heartbeat of FFmpeg, the status of FFmpeg, by detecting the
-// log message from FFmpeg output.
 type FFmpegHeartbeat struct {
-	// The starttime.
 	starttime time.Time
-	// The last update time.
-	update time.Time
+	update    time.Time
 
-	// The first ready time.
 	firstReadyTime time.Time
-	// The last ready context.
-	firstReadyCtx context.Context
+	firstReadyCtx  context.Context
 
-	// Whether exit normally, the log is like:
+	// Set by the FFmpeg log, such as:
 	//		Exiting normally, received signal 2.
 	exitingNormally bool
-	// Successful parsed log count.
-	parsedCount uint64
-	// FFmpeg's standard cycle logs every 1 second. Additional logs, such as FFmpeg error logs, are stored
-	// separately as extra logs.
+	parsedCount     uint64
+	// FFmpeg prints a cycle log every second. Other logs, such as errors, are kept here.
 	extraLogs []string
-	// Last line of FFmpeg log.
+	// The last cycle log whose time changed, with its time and speed.
 	line, timestamp, speed string
-	// Total count of failed to parsed logs.
-	failedParsedCount uint64
-	// Last line of log which is not parsed successfully.
-	lastFailedParsed string
-	// Total count of not changing log.
-	notChangedCount uint64
-	// Last line of log which is not changing.
-	lastNotChanged string
-	// Total count of log parsing the speed.
-	failedSpeedCount uint64
-	// Last failed parsing the speed log.
-	lastFailedSpeed string
-	// The most recent continuous high speed, such as 1.5x.
-	veryFastSpeedCount uint64
-	// The most recent continuous low speed, such as 0.5x.
-	verySlowSpeedCount uint64
+	failedParsedCount      uint64
+	lastFailedParsed       string
+	notChangedCount        uint64
+	lastNotChanged         string
+	failedSpeedCount       uint64
+	lastFailedSpeed        string
+	veryFastSpeedCount     uint64
+	verySlowSpeedCount     uint64
 
-	// FFmpeg frame logs.
 	FrameLogs chan string
-	// Whether FFmpeg is EOF polling.
-	PollingCtx context.Context
-	// To cancel the FFmpeg.
+	// Canceled when reading the FFmpeg stderr ends.
+	PollingCtx   context.Context
 	cancelFFmpeg context.CancelFunc
 
-	// Exit when published for a duration.
+	// Exit after streaming for this duration.
 	MaxStreamDuration time.Duration
-	// The abnormal slow speed, such as 0.5x.
 	AbnormalFastSpeed float64
 }
 
-// NewFFmpegHeartbeat create a new FFmpeg heartbeat manager, with cancelFFmpeg to cancel the FFmpeg
-// process. Please note that the cancelFFmpeg is crucial because when timeout we need to directly
-// cancel the execute of FFmpeg, or it will be blocked and endless waiting.
+// On a timeout, cancelFFmpeg must stop FFmpeg, or the caller waits for it forever.
 func NewFFmpegHeartbeat(cancelFFmpeg context.CancelFunc, opts ...func(*FFmpegHeartbeat)) *FFmpegHeartbeat {
 	v := &FFmpegHeartbeat{
 		starttime:    time.Now(),
 		update:       time.Now(),
 		FrameLogs:    make(chan string, 1),
 		cancelFFmpeg: cancelFFmpeg,
-		// Set the default duration to 0, no timeout duration.
+		// No limit.
 		MaxStreamDuration: time.Duration(0),
-		// Set the default abnormal fast speed to the global const.
 		AbnormalFastSpeed: FFmpegAbnormalFastSpeed,
 	}
 	for _, opt := range opts {
@@ -1707,8 +1557,7 @@ func NewFFmpegHeartbeat(cancelFFmpeg context.CancelFunc, opts ...func(*FFmpegHea
 	return v
 }
 
-// Parse the input URL u and update the configuration from query string. Note that it only works for
-// URL based input, not for file.
+// Works only for a URL input, not a file.
 func (v *FFmpegHeartbeat) Parse(u *url.URL) {
 	q := u.Query()
 	if qv := q.Get("max-stream-duration"); qv != "" {
@@ -1719,13 +1568,11 @@ func (v *FFmpegHeartbeat) Parse(u *url.URL) {
 	}
 }
 
-// Polling the FFmpeg stderr and detect the error.
 func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 	pollingReadyCtx, cancelPollingReady := context.WithCancel(ctx)
 	logger.Tf(ctx, "FFmpeg: Start to polling heartbeat, start=%v, msd=%v, afs=%v",
 		v.starttime, v.MaxStreamDuration, v.AbnormalFastSpeed)
 
-	// Print the extra logs when quit.
 	go func() {
 		<-pollingReadyCtx.Done()
 
@@ -1739,7 +1586,6 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 			strings.Join(v.extraLogs, " "))
 	}()
 
-	// Monitor FFmpeg update, restart if not update for a while.
 	go func() {
 		<-pollingReadyCtx.Done()
 
@@ -1760,12 +1606,10 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 		}
 	}()
 
-	// Handle the FFmpeg log, detect the error and update the heartbeat.
 	var firstNormalFrame bool
 	var firstReadyCancel context.CancelFunc
 	v.firstReadyCtx, firstReadyCancel = context.WithCancel(context.Background())
 	handleOutputOfFFmpeg := func(ffmpegLog string) {
-		// Filter the line of log.
 		line := strings.TrimSpace(ffmpegLog)
 		for strings.Contains(line, "= ") {
 			line = strings.ReplaceAll(line, "= ", "=")
@@ -1773,12 +1617,10 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 		line = strings.ReplaceAll(line, "\n", " ")
 		line = strings.ReplaceAll(line, "\r", " ")
 
-		// Whether exit normally.
 		if strings.Contains(line, "Exiting normally") {
 			v.exitingNormally = true
 		}
 
-		// Handle the extra logs.
 		if !strings.Contains(line, "size=") && !strings.Contains(line, "time=") {
 			v.extraLogs = append(v.extraLogs, line)
 			return
@@ -1788,39 +1630,35 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 			return
 		}
 
-		// Scanf the log line, get the time and speed.
 		timestamp, speed, err := ParseFFmpegCycleLog(line)
 		if err != nil {
 			v.failedParsedCount, v.lastFailedParsed = v.failedParsedCount+1, line
 			return
 		}
 
-		// The FFmpeg is alive, only if time is changing.
+		// FFmpeg is alive only while the time changes.
 		if v.timestamp == timestamp {
 			v.notChangedCount, v.lastNotChanged = v.notChangedCount+1, line
 			return
 		}
 
-		// During live streaming, the speed should typically be approximately 1x. At times, particularly
-		// during initialization, it might exceed 1x, but the mean rate should remain at 1x.
+		// During live streaming, the speed is typically about 1x. It may exceed 1x, mostly during
+		// startup, but the mean stays at 1x.
 		if speedv, err := strconv.ParseFloat(strings.Trim(speed, "x"), 64); err != nil || speedv <= 0 {
 			v.failedSpeedCount, v.lastFailedSpeed = v.failedSpeedCount+1, line
 		} else {
-			// The number of consecutive instances of high speed, like 1.5x.
 			if speedv > v.AbnormalFastSpeed {
 				v.veryFastSpeedCount++
 			} else {
 				v.veryFastSpeedCount = 0
 			}
 
-			// The number of continuous instances of low speed, like 0.5x.
 			if speedv < FFmpegAbnormalSlowSpeed {
 				v.verySlowSpeedCount++
 			} else {
 				v.verySlowSpeedCount = 0
 			}
 
-			// Whether exit for timeout.
 			var exitForTimeout bool
 			if v.MaxStreamDuration > 0 && time.Now().After(v.starttime.Add(v.MaxStreamDuration)) {
 				logger.Tf(ctx, "FFmpeg: exit after duration=%v, start=%v, now=%v",
@@ -1828,7 +1666,6 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 				exitForTimeout = true
 			}
 
-			// If the speed is very fast or slow, restart FFmpeg.
 			if mv := RestartFFmpegCountAbnormalSpeed; v.veryFastSpeedCount > mv || v.verySlowSpeedCount > mv || exitForTimeout {
 				logger.Wf(ctx, "FFmpeg: abnormal speed=%v, fast=%v, slow=%v, mv=%v, timeout=%v,%v, restart it",
 					speed, v.veryFastSpeedCount, v.verySlowSpeedCount, mv, exitForTimeout, v.MaxStreamDuration)
@@ -1849,14 +1686,12 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 				v.line)
 		}
 
-		// Handle the routine heartbeat logs.
 		select {
 		case <-ctx.Done():
 		case v.FrameLogs <- line:
 		}
 	}
 
-	// Read stderr to update status and output of FFmpeg.
 	go func() {
 		defer v.cancelFFmpeg()
 
@@ -1864,7 +1699,7 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 		v.PollingCtx, pollingCancel = context.WithCancel(ctx)
 		defer pollingCancel()
 
-		// Let other goroutines to run, which depends on v.PollingCtx.
+		// The other goroutines use v.PollingCtx, so they start only now.
 		cancelPollingReady()
 
 		buf := make([]byte, 4096)
@@ -1887,7 +1722,6 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 		}
 	}()
 
-	// Print the log every 30s.
 	go func() {
 		<-pollingReadyCtx.Done()
 
@@ -1906,20 +1740,17 @@ func (v *FFmpegHeartbeat) Polling(ctx context.Context, stderr io.Reader) {
 		}
 	}()
 
-	// Must wait for v.PollingCtx to be ready, because user depends on it.
+	// The caller uses v.PollingCtx after Polling returns.
 	<-pollingReadyCtx.Done()
 }
 
-// If the speed of FFmpeg exceed this value, it's abnormal.
 const FFmpegAbnormalFastSpeed = 1.5
 
-// If the speed of FFmpeg lower than this value, it's abnormal.
 const FFmpegAbnormalSlowSpeed = 0.5
 
-// If the speed of FFmpeg exceed this value for a long time, restart FFmpeg.
 const RestartFFmpegCountAbnormalSpeed = uint64(30)
 
-// ParseFFmpegCycleLog parse the FFmpeg cycle log, return the timestamp and speed. The log is mostly like:
+// The log is mostly like:
 //
 //	size=18859kB time=00:10:09.38 bitrate=253.5kbits/s speed=1x
 //	frame=184 fps=9.7 q=28.0 size=364kB time=00:00:19.41 bitrate=153.7kbits/s dup=0 drop=235 speed=1.03x
@@ -1934,7 +1765,6 @@ func ParseFFmpegCycleLog(line string) (timestamp, speed string, err error) {
 	return
 }
 
-// MediaFormat is the format object in ffprobe response.
 type MediaFormat struct {
 	Starttime string  `json:"start_time"`
 	Duration  float64 `json:"duration"`
@@ -1973,7 +1803,6 @@ func (v *MediaFormat) String() string {
 	)
 }
 
-// FFprobeFileFormat use ffprobe to probe the file, return the format of file.
 func FFprobeFileFormat(ctx context.Context, filename string) (format *MediaFormat, video *FFprobeVideo, audio *FFprobeAudio, err error) {
 	args := []string{
 		"-show_error", "-show_private_data", "-v", "quiet", "-find_stream_info", "-print_format", "json",
@@ -1988,7 +1817,6 @@ func FFprobeFileFormat(ctx context.Context, filename string) (format *MediaForma
 		return
 	}
 
-	// Parse the format.
 	ffprobeFormat := struct {
 		Format FFprobeFormat `json:"format"`
 	}{}
@@ -1997,7 +1825,6 @@ func FFprobeFileFormat(ctx context.Context, filename string) (format *MediaForma
 		return
 	}
 
-	// Parse video streams.
 	videos := struct {
 		Streams []FFprobeVideo `json:"streams"`
 	}{}
@@ -2014,7 +1841,6 @@ func FFprobeFileFormat(ctx context.Context, filename string) (format *MediaForma
 		}
 	}
 
-	// Parse audio streams.
 	audios := struct {
 		Streams []FFprobeAudio `json:"streams"`
 	}{}
@@ -2031,7 +1857,6 @@ func FFprobeFileFormat(ctx context.Context, filename string) (format *MediaForma
 		}
 	}
 
-	// Parse to the format.
 	format = &MediaFormat{}
 	if err = format.FromFFprobeFormat(&ffprobeFormat.Format); err != nil {
 		err = errors.Wrapf(err, "from ffprobe format %v", ffprobeFormat.Format)

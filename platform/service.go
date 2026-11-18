@@ -22,11 +22,10 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
+
 	"github.com/go-redis/redis/v8"
 )
 
-// HttpService is a HTTP server for platform.
 type HttpService interface {
 	Close() error
 	Run(ctx context.Context) error
@@ -68,7 +67,6 @@ func (v *httpService) Run(ctx context.Context) error {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	// For debugging server, listen at 127.0.0.1:22022
 	go func() {
 		dh := http.NewServeMux()
 		handleDebuggingGoroutines(context.Background(), dh)
@@ -86,19 +84,15 @@ func (v *httpService) Run(ctx context.Context) error {
 		}
 
 		handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			// Set common header.
 			ohttp.SetHeader(w)
 
-			// Always allow CORS.
 			httpAllowCORS(w, r)
 
-			// Allow OPTIONS for CORS.
 			if r.Method == http.MethodOptions {
 				w.Write(nil)
 				return
 			}
 
-			// Handle by service handler.
 			serviceHandler.ServeHTTP(w, r)
 		})
 	}
@@ -311,7 +305,6 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 	ep = "/"
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
-		// For version management.
 		if strings.HasPrefix(r.URL.Path, "/terraform/v1/releases") {
 			logger.Tf(ctx, "Proxy %v to backend 2023", r.URL.Path)
 			proxy2023.ServeHTTP(w, r)
@@ -325,7 +318,7 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 			return
 		}
 
-		// We directly serve the static files, because we overwrite the www for DVR.
+		// Serve these static files directly, because the www directory is overwritten for DVR.
 		if strings.HasPrefix(r.URL.Path, "/console/") || strings.HasPrefix(r.URL.Path, "/players/") ||
 			strings.HasPrefix(r.URL.Path, "/tools/") {
 			if r.URL.Path != "/tools/player.html" && r.URL.Path != "/tools/xgplayer.html" {
@@ -335,20 +328,18 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 			return
 		}
 
-		// Proxy to SRS RTC API, by /rtc/ prefix.
 		if strings.HasPrefix(r.URL.Path, "/rtc/") {
 			q := r.URL.Query()
 			if eip := q.Get("eip"); eip != "" {
 				logger.Tf(ctx, "Proxy %v to backend 1985, eip=%v, query is %v",
 					r.URL.Path, eip, r.URL.RawQuery)
 			} else {
-				// Allow test to mock and overwrite the host.
+				// Allows a test to mock the host.
 				host := r.Header.Get("X-Real-Host")
 				if host == "" {
 					host = r.Host
 				}
 
-				// Resolve the host to ip.
 				starttime := time.Now()
 				if ip, err := candidateWorker.Resolve(host); err != nil {
 					logger.Ef(ctx, "Proxy %v to backend 1985, resolve %v/%v failed, cost=%v, err is %v",
@@ -367,14 +358,14 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 			return
 		}
 
-		// Use versions API as health check API, no auth.
+		// The health check API, so no auth.
 		if r.URL.Path == "/api/v1/versions" {
 			logger.Tf(ctx, "Proxy %v to backend 1985", r.URL.Path)
 			proxy1985.ServeHTTP(w, r)
 			return
 		}
 
-		// Proxy to SRS HTTP API, for console, by /api/ prefix.
+		// For the SRS console.
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			token := r.URL.Query().Get("token")
 			apiSecret := envApiSecret()
@@ -389,11 +380,10 @@ func handleHTTPService(ctx context.Context, handler *http.ServeMux) error {
 			return
 		}
 
-		// Always directly serve the HLS ts files.
 		if fastCache.HLSHighPerformance && strings.HasSuffix(r.URL.Path, ".m3u8") {
 			var m3u8ExpireInSeconds int = 10
 			if fastCache.HLSLowLatency {
-				m3u8ExpireInSeconds = 1 // Note that we use smaller expire time that fragment duration.
+				m3u8ExpireInSeconds = 1 // Shorter than the fragment duration.
 			}
 
 			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", m3u8ExpireInSeconds))
@@ -488,7 +478,6 @@ func handleMgmtInit(ctx context.Context, handler *http.ServeMux) {
 				}
 			}
 
-			// If no password, query the system init status.
 			if password == "" {
 				ohttp.WriteData(ctx, w, r, &struct {
 					Init bool `json:"init"`
@@ -498,12 +487,10 @@ func handleMgmtInit(ctx context.Context, handler *http.ServeMux) {
 				return nil
 			}
 
-			// If already initialized, never set it again.
 			if envMgmtPassword() != "" {
 				return errors.New("already initialized")
 			}
 
-			// Initialize the system password, save to env.
 			envFile := path.Join(conf.Pwd, "containers/data/config/.env")
 			if envs, err := godotenv.Read(envFile); err != nil {
 				return errors.Wrapf(err, "load envs from %v", envFile)
@@ -515,7 +502,6 @@ func handleMgmtInit(ctx context.Context, handler *http.ServeMux) {
 			}
 			logger.Tf(ctx, "init mgmt password %vB ok, file=%v", len(password), envFile)
 
-			// Refresh the local token.
 			if err := godotenv.Overload(envFile); err != nil {
 				return errors.Wrapf(err, "load %v", envFile)
 			}
@@ -530,7 +516,7 @@ func handleMgmtInit(ctx context.Context, handler *http.ServeMux) {
 				Token    string `json:"token"`
 				CreateAt string `json:"createAt"`
 				ExpireAt string `json:"expireAt"`
-				// Allow user to directly use Bearer token.
+				// The API secret, which the user can use directly as the Bearer token.
 				Bearer string `json:"bearer"`
 			}{
 				Token: token, CreateAt: createAt.Format(time.RFC3339), ExpireAt: expireAt.Format(time.RFC3339),
@@ -549,7 +535,6 @@ func handleMgmtCheck(ctx context.Context, handler *http.ServeMux) {
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			// Check whether redis is ok.
 			if r0, err := rdb.HGet(ctx, SRS_AUTH_SECRET, "pubSecret").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v pubSecret", SRS_AUTH_SECRET)
 			} else if r1, err := rdb.HLen(ctx, SRS_FIRST_BOOT).Result(); err != nil && err != redis.Nil {
@@ -588,7 +573,6 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 				return errors.Wrapf(err, "parse body")
 			}
 
-			// Filter the locale.
 			if locale != "en" && locale != "zh" {
 				locale = "un"
 			}
@@ -627,47 +611,27 @@ func handleMgmtEnvs(ctx context.Context, handler *http.ServeMux) {
 			platformDocker := envPlatformDocker() != "off"
 			candidate := envCandidate() != ""
 			ohttp.WriteData(ctx, w, r, &struct {
-				// Whether mgmt run in docker.
-				MgmtDocker bool `json:"mgmtDocker"`
-				// Whether platform run in docker.
-				PlatformDocker bool `json:"platformDocker"`
-				// Whether set the env CANDIDATE for WebRTC.
-				Candidate bool `json:"candidate"`
-				// The exposed RTMP port.
-				RTMPPort string `json:"rtmpPort"`
-				// The exposed HTTP port.
-				HTTPPort string `json:"httpPort"`
-				// The exposed SRT port.
-				SRTPort string `json:"srtPort"`
-				// The exposed RTC port.
-				RTCPort string `json:"rtcPort"`
-				// The limit of the number of forwarding streams.
-				ForwardLimit int `json:"forwardLimit"`
-				// The limit of the number of vLive streams.
-				VLiveLimit int `json:"vLiveLimit"`
-				// The limit of the number of IP camera streams.
-				CameraLimit int `json:"cameraLimit"`
+				MgmtDocker     bool   `json:"mgmtDocker"`
+				PlatformDocker bool   `json:"platformDocker"`
+				Candidate      bool   `json:"candidate"`
+				RTMPPort       string `json:"rtmpPort"`
+				HTTPPort       string `json:"httpPort"`
+				SRTPort        string `json:"srtPort"`
+				RTCPort        string `json:"rtcPort"`
+				ForwardLimit   int    `json:"forwardLimit"`
+				VLiveLimit     int    `json:"vLiveLimit"`
+				CameraLimit    int    `json:"cameraLimit"`
 			}{
-				// Whether in docker.
-				MgmtDocker: true,
-				// Whether platform in docker.
+				MgmtDocker:     true,
 				PlatformDocker: platformDocker,
-				// The candidate IP for WebRTC.
-				Candidate: candidate,
-				// The export port for RTMP.
-				RTMPPort: envRtmpPort(),
-				// The export port for HTTP.
-				HTTPPort: envHttpPort(),
-				// The export port for SRT.
-				SRTPort: envSrtListen(),
-				// The export port for WebRTC.
-				RTCPort: envRtcListen(),
-				// The limit of the number of forwarding streams.
-				ForwardLimit: forwardLimit,
-				// The limit of the number of vLive streams.
-				VLiveLimit: vLiveLimit,
-				// The limit of the number of IP camera streams.
-				CameraLimit: cameraLimit,
+				Candidate:      candidate,
+				RTMPPort:       envRtmpPort(),
+				HTTPPort:       envHttpPort(),
+				SRTPort:        envSrtListen(),
+				RTCPort:        envRtcListen(),
+				ForwardLimit:   forwardLimit,
+				VLiveLimit:     vLiveLimit,
+				CameraLimit:    cameraLimit,
 			})
 
 			logger.Tf(ctx, "mgmt envs ok, locale=%v, platformDocker=%v, candidate=%v, rtmpPort=%v, httpPort=%v, srtPort=%v, rtcPort=%v, forwardLimit=%v, vLiveLimit=%v, cameraLimit=%v",
@@ -775,7 +739,7 @@ func handleMgmtLogin(ctx context.Context, handler *http.ServeMux) {
 				Token    string `json:"token"`
 				CreateAt string `json:"createAt"`
 				ExpireAt string `json:"expireAt"`
-				// Allow user to directly use Bearer token.
+				// The API secret, which the user can use directly as the Bearer token.
 				Bearer string `json:"bearer"`
 			}{
 				Token: token, CreateAt: createAt.Format(time.RFC3339), ExpireAt: expireAt.Format(time.RFC3339),
@@ -960,11 +924,8 @@ func handleMgmtOpenAIQuery(ctx context.Context, handler *http.ServeMux) {
 			}
 
 			ohttp.WriteData(ctx, w, r, &struct {
-				// The AI secret key.
-				AISecretKey string `json:"aiSecretKey"`
-				// The AI base url.
-				AIBaseURL string `json:"aiBaseURL"`
-				// The AI organization.
+				AISecretKey    string `json:"aiSecretKey"`
+				AIBaseURL      string `json:"aiBaseURL"`
 				AIOrganization string `json:"aiOrganization"`
 			}{
 				AISecretKey: aiSecretKey, AIBaseURL: aiBaseURL, AIOrganization: aiOrganization,
@@ -1062,9 +1023,7 @@ func handleMgmtLimitsQuery(ctx context.Context, handler *http.ServeMux) {
 			}
 
 			ohttp.WriteData(ctx, w, r, &struct {
-				// The limits for virtual live streaming.
-				VLive int64 `json:"vlive"`
-				// The limits for IP camera streaming.
+				VLive    int64 `json:"vlive"`
 				IPCamera int64 `json:"camera"`
 			}{
 				VLive: vLiveLimits, IPCamera: ipCameraLimits,
@@ -1123,7 +1082,7 @@ func handleMgmtLimitsUpdate(ctx context.Context, handler *http.ServeMux) {
 	})
 }
 
-// Note that this API is not verified by token.
+// This API needs no token.
 func handleMgmtBeianQuery(ctx context.Context, handler *http.ServeMux) {
 	ep := "/terraform/v1/mgmt/beian/query"
 	logger.Tf(ctx, "Handle %v", ep)
@@ -1651,7 +1610,6 @@ func handleMgmtStreamsKickoff(ctx context.Context, handler *http.ServeMux) {
 				return errors.Errorf("no client_id for %v", streamURL)
 			}
 
-			// Start request and parse the code.
 			requestClient := func(ctx context.Context, clientURL, method string) (int, string, error) {
 				req, err := http.NewRequest(method, clientURL, nil)
 				if err != nil {
@@ -1684,7 +1642,6 @@ func handleMgmtStreamsKickoff(ctx context.Context, handler *http.ServeMux) {
 				return code, string(b), nil
 			}
 
-			// Whether client exists in SRS server.
 			var code int
 			clientURL := fmt.Sprintf("http://127.0.0.1:1985/api/v1/clients/%v", streamObject.Client)
 			if r0, body, err := requestClient(ctx, clientURL, http.MethodGet); err != nil {
@@ -1695,7 +1652,6 @@ func handleMgmtStreamsKickoff(ctx context.Context, handler *http.ServeMux) {
 				code = r0
 			}
 
-			// Kickoff if exists, ignore if not.
 			if code == 0 {
 				if r0, body, err := requestClient(ctx, clientURL, http.MethodDelete); err != nil {
 					return errors.Wrapf(err, "kickoff %v, body %v", clientURL, body)
@@ -1718,27 +1674,24 @@ func handleMgmtStreamsKickoff(ctx context.Context, handler *http.ServeMux) {
 }
 
 func handleMgmtUI(ctx context.Context, handler *http.ServeMux) {
-	// Serve UI at platform.
 	fileRoot := path.Join(conf.Pwd, "../ui/build", envReactAppLocale())
 
 	fileServer := http.FileServer(http.Dir(fileRoot))
 	logger.Tf(ctx, "File server at %v", fileRoot)
 
 	mgmtHandler := func(w http.ResponseWriter, r *http.Request) {
-		// Trim the start prefix.
 		r.URL.Path = r.URL.Path[len("/mgmt"):]
 
-		// If home or route page, always use virtual main page to serve it.
+		// Serve the main page for the home and the React router pages.
 		serveAsMainPage := r.URL.Path == "/index.html" || r.URL.Path == "/" || r.URL.Path == ""
 		if strings.Contains(r.URL.Path, "/routers-") {
 			serveAsMainPage = true
 		}
-		// Should never use /index.html, which will be redirect to /.
+		// http.FileServer redirects /index.html to /.
 		if serveAsMainPage {
 			r.URL.Path = "/"
 		}
 
-		// We should never cache the main page for react.
 		if !serveAsMainPage {
 			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", 365*24*3600))
 		}

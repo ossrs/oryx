@@ -17,17 +17,15 @@ import (
 	"sync"
 	"time"
 
-	// From ossrs.
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"github.com/sashabaranov/go-openai"
 )
 
-// The total segments in callback HLS.
 const maxCallbackSegments = 9
 
 var ocrWorker *OCRWorker
@@ -36,21 +34,14 @@ type OCRWorker struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	// The global OCR task, only support one OCR task.
-	task *OCRTask
-
-	// Use async goroutine to process on_hls messages.
-	msgs chan *SrsOnHlsMessage
-
-	// Got message from SRS, a new TS segment file is generated.
+	task    *OCRTask
+	msgs    chan *SrsOnHlsMessage
 	tsfiles chan *SrsOnHlsObject
 }
 
 func NewOCRWorker() *OCRWorker {
 	v := &OCRWorker{
-		// Message on_hls.
-		msgs: make(chan *SrsOnHlsMessage, 1024),
-		// TS files.
+		msgs:    make(chan *SrsOnHlsMessage, 1024),
 		tsfiles: make(chan *SrsOnHlsObject, 1024),
 	}
 	v.task = NewOCRTask()
@@ -126,7 +117,6 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			// Not required yet.
 			if uuid != v.task.UUID {
 				logger.Wf(ctx, "ocr ignore uuid mismatch, query=%v, task=%v", uuid, v.task.UUID)
 			}
@@ -174,7 +164,6 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			// Query whisper-1 model detail.
 			var config openai.ClientConfig
 			config = openai.DefaultConfig(ocrConfig.AISecretKey)
 			config.BaseURL = ocrConfig.AIBaseURL
@@ -188,7 +177,7 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "query model whisper-1")
 			}
 
-			// Start a chat, to check whether the billing is expired.
+			// A chat checks whether the billing is expired.
 			resp, err := client.CreateChatCompletion(
 				ctx, openai.ChatCompletionRequest{
 					Model: openai.GPT4o,
@@ -327,14 +316,13 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			type Segment struct {
-				TsID     string  `json:"tsid"`
-				SeqNo    uint64  `json:"seqno"`
-				URL      string  `json:"url"`
-				Duration float64 `json:"duration"`
-				Size     uint64  `json:"size"`
-				// The source ts file.
-				SourceTsID string `json:"stsid"`
-				// The cost in ms to extract image.
+				TsID       string  `json:"tsid"`
+				SeqNo      uint64  `json:"seqno"`
+				URL        string  `json:"url"`
+				Duration   float64 `json:"duration"`
+				Size       uint64  `json:"size"`
+				SourceTsID string  `json:"stsid"`
+				// In ms.
 				ExtractImageCost int32 `json:"eic"`
 			}
 			type OCRQueueResponse struct {
@@ -346,14 +334,12 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			segments := v.task.ocrSegments()
 			for _, segment := range segments {
 				res.Segments = append(res.Segments, []*Segment{&Segment{
-					TsID:     segment.ImageFile.TsID,
-					SeqNo:    segment.ImageFile.SeqNo,
-					URL:      segment.ImageFile.File,
-					Duration: segment.ImageFile.Duration,
-					Size:     segment.ImageFile.Size,
-					// The source ts file.
-					SourceTsID: segment.TsFile.TsID,
-					// The cost in ms to extract image.
+					TsID:             segment.ImageFile.TsID,
+					SeqNo:            segment.ImageFile.SeqNo,
+					URL:              segment.ImageFile.File,
+					Duration:         segment.ImageFile.Duration,
+					Size:             segment.ImageFile.Size,
+					SourceTsID:       segment.TsFile.TsID,
 					ExtractImageCost: int32(segment.CostExtractImage.Milliseconds()),
 				}}...)
 			}
@@ -387,18 +373,16 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			type Segment struct {
-				TsID     string  `json:"tsid"`
-				SeqNo    uint64  `json:"seqno"`
-				URL      string  `json:"url"`
-				Duration float64 `json:"duration"`
-				Size     uint64  `json:"size"`
-				// The source ts file.
-				SourceTsID string `json:"stsid"`
-				// The cost in ms to extract image.
-				ExtractImageCost int32 `json:"eic"`
-				// The OCR text result.
-				OCRText string `json:"ocr"`
-				// The cost in ms to do OCR.
+				TsID       string  `json:"tsid"`
+				SeqNo      uint64  `json:"seqno"`
+				URL        string  `json:"url"`
+				Duration   float64 `json:"duration"`
+				Size       uint64  `json:"size"`
+				SourceTsID string  `json:"stsid"`
+				// In ms.
+				ExtractImageCost int32  `json:"eic"`
+				OCRText          string `json:"ocr"`
+				// In ms.
 				OCRCost int32 `json:"ocrc"`
 			}
 			type OCRQueueResponse struct {
@@ -410,19 +394,15 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			segments := v.task.callbackSegments()
 			for _, segment := range segments {
 				res.Segments = append(res.Segments, []*Segment{&Segment{
-					TsID:     segment.ImageFile.TsID,
-					SeqNo:    segment.ImageFile.SeqNo,
-					URL:      segment.ImageFile.File,
-					Duration: segment.ImageFile.Duration,
-					Size:     segment.ImageFile.Size,
-					// The source ts file.
-					SourceTsID: segment.TsFile.TsID,
-					// The cost in ms to extract image.
+					TsID:             segment.ImageFile.TsID,
+					SeqNo:            segment.ImageFile.SeqNo,
+					URL:              segment.ImageFile.File,
+					Duration:         segment.ImageFile.Duration,
+					Size:             segment.ImageFile.Size,
+					SourceTsID:       segment.TsFile.TsID,
 					ExtractImageCost: int32(segment.CostExtractImage.Milliseconds()),
-					// The OCR text result.
-					OCRText: segment.OCRText,
-					// The cost in ms to do OCR.
-					OCRCost: int32(segment.CostOCR.Milliseconds()),
+					OCRText:          segment.OCRText,
+					OCRCost:          int32(segment.CostOCR.Milliseconds()),
 				}}...)
 			}
 
@@ -455,20 +435,18 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			type Segment struct {
-				TsID     string  `json:"tsid"`
-				SeqNo    uint64  `json:"seqno"`
-				URL      string  `json:"url"`
-				Duration float64 `json:"duration"`
-				Size     uint64  `json:"size"`
-				// The source ts file.
-				SourceTsID string `json:"stsid"`
-				// The cost in ms to extract image.
-				ExtractImageCost int32 `json:"eic"`
-				// The OCR text result.
-				OCRText string `json:"ocr"`
-				// The cost in ms to do OCR.
+				TsID       string  `json:"tsid"`
+				SeqNo      uint64  `json:"seqno"`
+				URL        string  `json:"url"`
+				Duration   float64 `json:"duration"`
+				Size       uint64  `json:"size"`
+				SourceTsID string  `json:"stsid"`
+				// In ms.
+				ExtractImageCost int32  `json:"eic"`
+				OCRText          string `json:"ocr"`
+				// In ms.
 				OCRCost int32 `json:"ocrc"`
-				// The cost in ms to do callback.
+				// In ms.
 				CallbackCost int32 `json:"cbc"`
 			}
 			type OCRQueueResponse struct {
@@ -480,21 +458,16 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			segments := v.task.cleanupSegments()
 			for _, segment := range segments {
 				res.Segments = append(res.Segments, []*Segment{&Segment{
-					TsID:     segment.ImageFile.TsID,
-					SeqNo:    segment.ImageFile.SeqNo,
-					URL:      segment.ImageFile.File,
-					Duration: segment.ImageFile.Duration,
-					Size:     segment.ImageFile.Size,
-					// The source ts file.
-					SourceTsID: segment.TsFile.TsID,
-					// The cost in ms to extract image.
+					TsID:             segment.ImageFile.TsID,
+					SeqNo:            segment.ImageFile.SeqNo,
+					URL:              segment.ImageFile.File,
+					Duration:         segment.ImageFile.Duration,
+					Size:             segment.ImageFile.Size,
+					SourceTsID:       segment.TsFile.TsID,
 					ExtractImageCost: int32(segment.CostExtractImage.Milliseconds()),
-					// The OCR text result.
-					OCRText: segment.OCRText,
-					// The cost in ms to do OCR.
-					OCRCost: int32(segment.CostOCR.Milliseconds()),
-					// The cost in msg to do callback.
-					CallbackCost: int32(segment.CostCallback.Milliseconds()),
+					OCRText:          segment.OCRText,
+					OCRCost:          int32(segment.CostOCR.Milliseconds()),
+					CallbackCost:     int32(segment.CostCallback.Milliseconds()),
 				}}...)
 			}
 
@@ -512,9 +485,8 @@ func (v *OCRWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 	logger.Tf(ctx, "Handle %v", ep)
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
-			// Format is /image/:uuid.jpg
+			// Format is /image/:tsid.jpg, with the TsID of the image file.
 			filename := r.URL.Path[len("/terraform/v1/ai/ocr/image/"):]
-			// Format is :uuid.jpg
 			uuid := filename[:len(filename)-len(path.Ext(filename))]
 			if len(uuid) == 0 {
 				return errors.Errorf("invalid uuid %v from %v of %v", uuid, filename, r.URL.Path)
@@ -557,28 +529,23 @@ func (v *OCRWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage) er
 }
 
 func (v *OCRWorker) OnHlsTsMessageImpl(ctx context.Context, msg *SrsOnHlsMessage) error {
-	// Ignore if not natch the task config.
 	if !v.task.match(msg) {
 		return nil
 	}
 
-	// Copy the ts file to temporary cache dir.
 	tsid := fmt.Sprintf("%v-org-%v", msg.SeqNo, uuid.NewString())
 	tsfile := path.Join("ocr", fmt.Sprintf("%v.ts", tsid))
 
-	// Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
-	// Note that should never use fs.copyFileSync(file, tsfile, fs.constants.COPYFILE_FICLONE_FORCE) which fails in macOS.
+	// Pass user input as command arguments, never through a shell, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
 	if err := exec.CommandContext(ctx, "cp", "-f", msg.File, tsfile).Run(); err != nil {
 		return errors.Wrapf(err, "copy file %v to %v", msg.File, tsfile)
 	}
 
-	// Get the file size.
 	stats, err := os.Stat(msg.File)
 	if err != nil {
 		return errors.Wrapf(err, "stat file %v", msg.File)
 	}
 
-	// Create a local ts file object.
 	tsFile := &TsFile{
 		TsID:     tsid,
 		URL:      msg.URL,
@@ -588,7 +555,6 @@ func (v *OCRWorker) OnHlsTsMessageImpl(ctx context.Context, msg *SrsOnHlsMessage
 		File:     tsfile,
 	}
 
-	// Notify worker asynchronously.
 	// TODO: FIXME: Should cleanup the temporary file when restart.
 	go func() {
 		select {
@@ -617,11 +583,10 @@ func (v *OCRWorker) Start(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	logger.Tf(ctx, "ocr start a worker")
 
-	// Load task from redis and continue to run the task.
 	if objs, err := rdb.HGetAll(ctx, SRS_OCR_TASK).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hgetall %v", SRS_OCR_TASK)
 	} else if len(objs) != 1 {
-		// Only support one task right now.
+		// Only one task is supported.
 		if err = rdb.Del(ctx, SRS_OCR_TASK).Err(); err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "del %v", SRS_OCR_TASK)
 		}
@@ -637,7 +602,6 @@ func (v *OCRWorker) Start(ctx context.Context) error {
 		}
 	}
 
-	// Start global ocr task.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -659,7 +623,6 @@ func (v *OCRWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Consume all on_hls messages.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -675,7 +638,6 @@ func (v *OCRWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Consume all ts files by task.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -692,7 +654,6 @@ func (v *OCRWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Watch for new stream.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -714,7 +675,6 @@ func (v *OCRWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Drive the live queue to OCR.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -736,7 +696,6 @@ func (v *OCRWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Drive the OCR queue to correct queue.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -758,7 +717,6 @@ func (v *OCRWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Drive the callback queue, notify user's service.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -780,7 +738,6 @@ func (v *OCRWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Drive the cleanup queue, remove old files.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -806,11 +763,9 @@ func (v *OCRWorker) Start(ctx context.Context) error {
 }
 
 type OCRConfig struct {
-	// Whether ocr all streams.
+	// Enables OCR of the active stream updated last, not of all streams.
 	All bool `json:"all"`
-	// The AI service provider.
 	SrsAssistantProvider
-	// The AI chat configuration.
 	SrsAssistantChat
 }
 
@@ -848,23 +803,15 @@ func (v *OCRConfig) Save(ctx context.Context) error {
 }
 
 type OCRSegment struct {
-	// The SRS callback message msg.
-	Msg *SrsOnHlsMessage `json:"msg,omitempty"`
-	// The original source TS file.
-	TsFile *TsFile `json:"tsfile,omitempty"`
-	// The extracted image file.
-	ImageFile *TsFile `json:"image,omitempty"`
-	// The ocr result, by AI service.
-	OCRText string `json:"ocr,omitempty"`
-	// The callback video file.
-	CallbackFile *TsFile `json:"callback,omitempty"`
+	Msg          *SrsOnHlsMessage `json:"msg,omitempty"`
+	TsFile       *TsFile          `json:"tsfile,omitempty"`
+	ImageFile    *TsFile          `json:"image,omitempty"`
+	OCRText      string           `json:"ocr,omitempty"`
+	CallbackFile *TsFile          `json:"callback,omitempty"`
 
-	// The cost to transcode the TS file to image file.
 	CostExtractImage time.Duration `json:"eic,omitempty"`
-	// The cost to do OCR, converting speech to text.
-	CostOCR time.Duration `json:"ocrc,omitempty"`
-	// The cost to callback the OCR result.
-	CostCallback time.Duration `json:"olc,omitempty"`
+	CostOCR          time.Duration `json:"ocrc,omitempty"`
+	CostCallback     time.Duration `json:"olc,omitempty"`
 }
 
 func (v OCRSegment) String() string {
@@ -891,21 +838,18 @@ func (v OCRSegment) String() string {
 }
 
 func (v *OCRSegment) Dispose() error {
-	// Remove the original ts file.
 	if v.TsFile != nil {
 		if _, err := os.Stat(v.TsFile.File); err == nil {
 			os.Remove(v.TsFile.File)
 		}
 	}
 
-	// Remove the extracted image file.
 	if v.ImageFile != nil {
 		if _, err := os.Stat(v.ImageFile.File); err == nil {
 			os.Remove(v.ImageFile.File)
 		}
 	}
 
-	// Remove the callback video file.
 	if v.CallbackFile != nil {
 		if _, err := os.Stat(v.CallbackFile.File); err == nil {
 			os.Remove(v.CallbackFile.File)
@@ -916,10 +860,8 @@ func (v *OCRSegment) Dispose() error {
 }
 
 type OCRQueue struct {
-	// The ocr segments in the queue.
 	Segments []*OCRSegment `json:"segments,omitempty"`
 
-	// To protect the queue.
 	lock sync.Mutex
 }
 
@@ -987,64 +929,38 @@ func (v *OCRQueue) reset(ctx context.Context) error {
 }
 
 type OCRTask struct {
-	// The ID for task.
 	UUID string `json:"uuid,omitempty"`
 
-	// The input url.
-	Input string `json:"input,omitempty"`
-	// The input stream object, select the active stream.
+	Input       string `json:"input,omitempty"`
 	inputStream *SrsStream
 
-	// The chat history, to use as prompt for next chat.
 	histories []openai.ChatCompletionMessage
 
-	// The live queue for the current task. HLS TS segments are copied to the ocr
-	// directory, then a segment is created and added to the live queue for the ocr
-	// task to process, to convert to image file.
-	LiveQueue *OCRQueue `json:"live,omitempty"`
-	// The OCR (Optical Character Recognition) queue for the current task. When an image
-	// file is generated, the segment is added to the OCR queue, which then requests the
-	// AI server to convert the image file into text.
-	OCRQueue *OCRQueue `json:"ocr,omitempty"`
-	// The callback queue for the current task. It involves drawing OCR (Optical Character
-	// Recognition) text onto the video and encoding it into a new video file.
+	LiveQueue     *OCRQueue `json:"live,omitempty"`
+	OCRQueue      *OCRQueue `json:"ocr,omitempty"`
 	CallbackQueue *OCRQueue `json:"callback,omitempty"`
-	// The cleanup queue for the current task.
-	CleanupQueue *OCRQueue `json:"cleanup,omitempty"`
+	CleanupQueue  *OCRQueue `json:"cleanup,omitempty"`
 
-	// The signal to persistence task.
 	signalPersistence chan bool
-	// The signal to change the active stream for task.
-	signalNewStream chan *SrsStream
+	signalNewStream   chan *SrsStream
 
-	// The configure for ocr task.
-	config OCRConfig
-	// The ocr worker.
+	config    OCRConfig
 	ocrWorker *OCRWorker
 
-	// The context for current task.
 	cancel context.CancelFunc
 
-	// To protect the common fields.
 	lock sync.Mutex
 }
 
 func NewOCRTask() *OCRTask {
 	return &OCRTask{
-		// Generate a UUID for task.
-		UUID: uuid.NewString(),
-		// The live queue for current task.
-		LiveQueue: NewOCRQueue(),
-		// The OCR queue for current task.
-		OCRQueue: NewOCRQueue(),
-		// The callback queue for current task.
-		CallbackQueue: NewOCRQueue(),
-		// The cleanup queue for current task.
-		CleanupQueue: NewOCRQueue(),
-		// Create persistence signal.
+		UUID:              uuid.NewString(),
+		LiveQueue:         NewOCRQueue(),
+		OCRQueue:          NewOCRQueue(),
+		CallbackQueue:     NewOCRQueue(),
+		CleanupQueue:      NewOCRQueue(),
 		signalPersistence: make(chan bool, 1),
-		// Create new stream signal.
-		signalNewStream: make(chan *SrsStream, 1),
+		signalNewStream:   make(chan *SrsStream, 1),
 	}
 }
 
@@ -1060,17 +976,14 @@ func (v *OCRTask) Run(ctx context.Context) error {
 	logger.Tf(ctx, "ocr run task %v", v.String())
 
 	pfn := func(ctx context.Context) error {
-		// Load config from redis.
 		if err := v.config.Load(ctx); err != nil {
 			return errors.Wrapf(err, "load config")
 		}
 
-		// Ignore if not enabled.
 		if !v.config.All {
 			return nil
 		}
 
-		// Start ocr task.
 		if err := v.doOCR(ctx); err != nil {
 			return errors.Wrapf(err, "do ocr")
 		}
@@ -1099,11 +1012,9 @@ func (v *OCRTask) Run(ctx context.Context) error {
 }
 
 func (v *OCRTask) doOCR(ctx context.Context) error {
-	// Create context for current task.
 	parentCtx := ctx
 	ctx, v.cancel = context.WithCancel(ctx)
 
-	// Main loop, process signals from user or system.
 	for ctx.Err() == nil {
 		select {
 		case <-parentCtx.Done():
@@ -1129,7 +1040,7 @@ func (v *OCRTask) OnTsSegment(ctx context.Context, msg *SrsOnHlsObject) error {
 	}
 
 	func() {
-		// We must not update the queue, when persistence goroutine is working.
+		// The queue must not change while the task is being saved.
 		v.lock.Lock()
 		v.lock.Unlock()
 
@@ -1139,14 +1050,12 @@ func (v *OCRTask) OnTsSegment(ctx context.Context, msg *SrsOnHlsObject) error {
 		})
 	}()
 
-	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
 	return nil
 }
 
 // TODO: FIXME: Should reset the stream when republish.
 func (v *OCRTask) WatchNewStream(ctx context.Context) error {
-	// If not enabled, wait.
 	if !v.config.All {
 		return nil
 	}
@@ -1184,7 +1093,6 @@ func (v *OCRTask) WatchNewStream(ctx context.Context) error {
 			}
 		}
 
-		// Ignore if no active stream.
 		if best == nil {
 			return nil, nil
 		}
@@ -1195,19 +1103,16 @@ func (v *OCRTask) WatchNewStream(ctx context.Context) error {
 		return best, nil
 	}
 
-	// Use an active stream as input.
 	input, err := selectActiveStream()
 	if err != nil {
 		return errors.Wrapf(err, "select input")
 	}
 
-	// Whether stream exists and changed.
 	var streamNotChanged bool
 	if v.inputStream != nil && input != nil && v.inputStream.StreamURL() == input.StreamURL() {
 		streamNotChanged = true
 	}
 
-	// No stream, or stream not changed, wait.
 	if input == nil || streamNotChanged {
 		select {
 		case <-ctx.Done():
@@ -1217,7 +1122,6 @@ func (v *OCRTask) WatchNewStream(ctx context.Context) error {
 	}
 	logger.Tf(ctx, "ocr: Got new stream %v", input.String())
 
-	// Notify the main loop to change the active stream.
 	select {
 	case <-ctx.Done():
 	case v.signalNewStream <- input:
@@ -1228,12 +1132,10 @@ func (v *OCRTask) WatchNewStream(ctx context.Context) error {
 }
 
 func (v *OCRTask) DriveLiveQueue(ctx context.Context) error {
-	// Ignore if not enabled.
 	if !v.config.All {
 		return nil
 	}
 
-	// Ignore if not enough segments.
 	if v.LiveQueue.count() <= 0 {
 		return nil
 	}
@@ -1241,7 +1143,6 @@ func (v *OCRTask) DriveLiveQueue(ctx context.Context) error {
 	segment := v.LiveQueue.first()
 	starttime := time.Now()
 
-	// Remove segment if file not exists.
 	if _, err := os.Stat(segment.TsFile.File); err != nil && os.IsNotExist(err) {
 		func() {
 			v.lock.Lock()
@@ -1254,12 +1155,10 @@ func (v *OCRTask) DriveLiveQueue(ctx context.Context) error {
 		return nil
 	}
 
-	// Wait if OCR queue is full.
 	if v.OCRQueue.count() >= maxCallbackSegments+1 {
 		return nil
 	}
 
-	// Transcode to image file, such as jpg.
 	imageFile := &TsFile{
 		TsID:     fmt.Sprintf("%v-image-%v", segment.TsFile.SeqNo, uuid.NewString()),
 		URL:      segment.TsFile.URL,
@@ -1278,7 +1177,6 @@ func (v *OCRTask) DriveLiveQueue(ctx context.Context) error {
 		return errors.Wrapf(err, "transcode %v", args)
 	}
 
-	// Update the size of image file.
 	stats, err := os.Stat(imageFile.File)
 	if err != nil {
 		// TODO: FIXME: Cleanup the failed file.
@@ -1286,7 +1184,6 @@ func (v *OCRTask) DriveLiveQueue(ctx context.Context) error {
 	}
 	imageFile.Size = uint64(stats.Size())
 
-	// Dequeue the segment from live queue and attach to OCR queue.
 	func() {
 		v.lock.Lock()
 		defer v.lock.Unlock()
@@ -1299,18 +1196,15 @@ func (v *OCRTask) DriveLiveQueue(ctx context.Context) error {
 	logger.Tf(ctx, "ocr: extract image %v to %v, size=%v, cost=%v",
 		segment.TsFile.File, imageFile.File, imageFile.Size, segment.CostExtractImage)
 
-	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
 	return nil
 }
 
 func (v *OCRTask) DriveOCRQueue(ctx context.Context) error {
-	// Ignore if not enabled.
 	if !v.config.All {
 		return nil
 	}
 
-	// Ignore if not enough segments.
 	if v.OCRQueue.count() <= 0 {
 		return nil
 	}
@@ -1318,7 +1212,6 @@ func (v *OCRTask) DriveOCRQueue(ctx context.Context) error {
 	segment := v.OCRQueue.first()
 	starttime := time.Now()
 
-	// Remove segment if file not exists.
 	if _, err := os.Stat(segment.ImageFile.File); err != nil && os.IsNotExist(err) {
 		func() {
 			v.lock.Lock()
@@ -1330,12 +1223,10 @@ func (v *OCRTask) DriveOCRQueue(ctx context.Context) error {
 		return nil
 	}
 
-	// Wait if callback queue is full.
 	if v.CallbackQueue.count() >= maxCallbackSegments+1 {
 		return nil
 	}
 
-	// Read the image file and convert to base64.
 	var imageData string
 	if data, err := os.ReadFile(segment.ImageFile.File); err != nil {
 		return errors.Wrapf(err, "read image from %v", segment.ImageFile.File)
@@ -1343,7 +1234,6 @@ func (v *OCRTask) DriveOCRQueue(ctx context.Context) error {
 		imageData = base64.StdEncoding.EncodeToString(data)
 	}
 
-	// Convert the image file to text by AI.
 	var config openai.ClientConfig
 	config = openai.DefaultConfig(v.config.AISecretKey)
 	config.BaseURL = v.config.AIBaseURL
@@ -1383,7 +1273,6 @@ func (v *OCRTask) DriveOCRQueue(ctx context.Context) error {
 	segment.OCRText = resp.Choices[0].Message.Content
 	segment.CostOCR = time.Since(starttime)
 
-	// Build the historical messages.
 	if segment.OCRText != "" {
 		v.histories = append(v.histories, openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleUser,
@@ -1398,7 +1287,6 @@ func (v *OCRTask) DriveOCRQueue(ctx context.Context) error {
 		}
 	}
 
-	// Dequeue the segment from OCR queue and attach to correct queue.
 	func() {
 		v.lock.Lock()
 		defer v.lock.Unlock()
@@ -1412,23 +1300,19 @@ func (v *OCRTask) DriveOCRQueue(ctx context.Context) error {
 	logger.Tf(ctx, "ocr: recognize image=%v, model=%v, prompt=%v, text=%v, cost=%v",
 		segment.ImageFile.File, v.config.AIChatModel, prompt, segment.OCRText, segment.CostOCR)
 
-	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
 	return nil
 }
 
 func (v *OCRTask) DriveCallbackQueue(ctx context.Context) error {
-	// Ignore if not enabled.
 	if !v.config.All {
 		return nil
 	}
 
-	// Ignore if not enough segments.
 	if v.CallbackQueue.count() <= 0 {
 		return nil
 	}
 
-	// Wait if cleanup queue is full.
 	if v.CleanupQueue.count() >= maxCallbackSegments+1 {
 		return nil
 	}
@@ -1436,7 +1320,6 @@ func (v *OCRTask) DriveCallbackQueue(ctx context.Context) error {
 	segment := v.CallbackQueue.first()
 	starttime := time.Now()
 
-	// Do callback to notify user's service.
 	if err := callbackWorker.OnOCR(ctx, SrsActionOnOcr, v.UUID, segment.Msg, v.config.AIChatPrompt, segment.OCRText); err != nil {
 		logger.Wf(ctx, "ocr: ignore callback %v err %+v", segment.String(), err)
 	}
@@ -1444,7 +1327,6 @@ func (v *OCRTask) DriveCallbackQueue(ctx context.Context) error {
 	segment.CostCallback = time.Since(starttime)
 	logger.Tf(ctx, "ocr: callback %v, cost=%v", segment.String(), segment.CostCallback)
 
-	// Dequeue the segment from callback queue and attach to cleanup queue.
 	func() {
 		v.lock.Lock()
 		defer v.lock.Unlock()
@@ -1458,18 +1340,15 @@ func (v *OCRTask) DriveCallbackQueue(ctx context.Context) error {
 	logger.Tf(ctx, "ocr: callback image=%v, ocr=%v, cost=%v",
 		segment.ImageFile.File, segment.OCRText, segment.CostCallback)
 
-	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
 	return nil
 }
 
 func (v *OCRTask) DriveCleanupQueue(ctx context.Context) error {
-	// Ignore if not enabled.
 	if !v.config.All {
 		return nil
 	}
 
-	// Ignore if not enough segments.
 	if v.CallbackQueue.count() <= maxCallbackSegments {
 		select {
 		case <-ctx.Done():
@@ -1478,7 +1357,6 @@ func (v *OCRTask) DriveCleanupQueue(ctx context.Context) error {
 		return nil
 	}
 
-	// Cleanup the old segments.
 	segment := v.CallbackQueue.first()
 	func() {
 		v.lock.Lock()
@@ -1487,7 +1365,6 @@ func (v *OCRTask) DriveCleanupQueue(ctx context.Context) error {
 	}()
 	defer segment.Dispose()
 
-	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
 	return nil
 }
@@ -1506,7 +1383,7 @@ func (v *OCRTask) restart(ctx context.Context) error {
 
 func (v *OCRTask) reset(ctx context.Context) error {
 	if v.config.All {
-		// Retry to wait for the task to apply the changed config.
+		// Give the task time to load a config that disables it.
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -1521,21 +1398,17 @@ func (v *OCRTask) reset(ctx context.Context) error {
 		v.lock.Lock()
 		defer v.lock.Unlock()
 
-		// Reset all queues.
 		v.LiveQueue.reset(ctx)
 		v.OCRQueue.reset(ctx)
 		v.CallbackQueue.reset(ctx)
 		v.CleanupQueue.reset(ctx)
 
-		// Reset all states.
 		v.Input = ""
 
-		// Remove previous task from redis.
 		if err := rdb.HDel(ctx, SRS_OCR_TASK, v.UUID).Err(); err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "hdel %v %v", SRS_OCR_TASK, v.UUID)
 		}
 
-		// Regenerate new UUID.
 		v.UUID = uuid.NewString()
 
 		return nil
@@ -1543,10 +1416,9 @@ func (v *OCRTask) reset(ctx context.Context) error {
 		return errors.Wrapf(err, "reset task")
 	}
 
-	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
 
-	// Wait for task to persistence and avoid to reset very fast.
+	// Limit the rate of resets.
 	select {
 	case <-ctx.Done():
 	case <-time.After(1 * time.Second):

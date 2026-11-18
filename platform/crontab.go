@@ -49,7 +49,6 @@ func (v *CrontabWorker) Start(ctx context.Context) error {
 	go func() {
 		defer v.wg.Done()
 
-		// Start the crontab when system startup for a while.
 		select {
 		case <-ctx.Done():
 			return

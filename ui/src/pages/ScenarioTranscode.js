@@ -66,7 +66,6 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
       }).then(res => {
         const task = res.data.data;
 
-        // Mask the secret.
         if (task?.input?.indexOf(urls?.secret?.publish) > 0) {
           task.input_ = task.input;
           task.input = task.input.replaceAll(urls.secret.publish, '******');
@@ -76,7 +75,6 @@ function ScenarioTranscodeImpl({activeKey, urls, defaultEnabled, defaultConf}) {
           task.output = task.output.replaceAll(urls.secret.publish, '******');
         }
 
-        // Convert to moment.
         if (task?.frame) {
           task.frame.update = task?.frame?.update ? moment(task.frame.update) : null;
         }

@@ -21,12 +21,10 @@ export default function LanguageSwitch() {
   React.useEffect(() => {
     const lang = location.pathname.split('/')[1];
 
-    // Ignore if invalid language.
     if (!lang || !Object.keys(resources).includes(lang)) {
       return;
     }
 
-    // Change to language in url.
     if (Locale.current() !== lang) {
       i18n.changeLanguage(lang);
       Locale.save({lang});

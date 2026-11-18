@@ -77,10 +77,7 @@ export const Tools = {
     });
   },
 
-  // Copy object, with optional extras fields, for example:
-  //    copy({id: 0}, ['msg': 'hi'])
-  // Return an object:
-  //    {id: 0, msg: 'hi'}
+  // For example, copy({id: 0}, ['msg', 'hi']) returns {id: 0, msg: 'hi'}.
   copy(from, extras) {
     let cp = Tools.merge({}, from);
 
@@ -95,7 +92,6 @@ export const Tools = {
     }
     return cp;
   },
-  // Merge two object, rewrite dst by src fields.
   merge(dst, src) {
     if (typeof dst !== 'object') return src;
     if (typeof src !== 'object') return src;
@@ -144,7 +140,7 @@ export const Clipboard = {
 
 export const Errors = {
   redis: 1007, // Redis is not ready.
-  auth: 2001, // Verify token failed.
+  auth: 2001, // Token verification failed.
   btHttps: 3001, // Please use BT to configure HTTPS.
 };
 

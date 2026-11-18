@@ -368,15 +368,10 @@ function DubbingSettings({project, requesting, updateProject}) {
     });
   }, [
     updateProject, project,
-    // For OpenAI settings.
     aiSecretKey, aiOrganization, aiBaseURL,
-    // For ASR.
     aiAsrProvider, aiAsrLanguage, aiAsrEnabled,
-    // For Translation.
     aiTransProvider, aiChatModel, aiChatPrompt, aiChatEnabled,
-    // For Rephrase.
     aiRephraseProvider, aiRephraseModel, aiRephrasePrompt, aiRephraseEnabled,
-    // For TTS.
     aiTtsProvider, aiTtsEnabled,
   ]);
 
@@ -650,7 +645,6 @@ function DubbingUIControls({task, isFullscreen, setIsFullscreen, showHeader, set
 function DubbingUISubtitles({task, playerRef, isFullscreen, showHeader, showASR, showTranslation, requesting, activeGroup, isPlayingAudio, playSegment, replaySegment, playGroup, rephraseGroup, mergeToGroup}) {
   const {t} = useTranslation();
 
-  // Handle keydown event.
   const userEventRef = React.useRef(null);
   React.useEffect(() => {
     const handleKeyDown = (e) => {
@@ -671,7 +665,7 @@ function DubbingUISubtitles({task, playerRef, isFullscreen, showHeader, showASR,
     };
   }, [userEventRef, task, playSegment]);
 
-  // How many groups to show when in the fullscreen.
+  // How many segments to show above the playing group in fullscreen.
   const [historySegments, setHistorySegments] = React.useState(4);
   React.useEffect(() => {
     let v = 4;
@@ -718,14 +712,12 @@ function DubbingUISubtitles({task, playerRef, isFullscreen, showHeader, showASR,
       });
       if (index === -1) return;
 
-      // Focus on the current playing group.
       if (true) {
         const divId = `asr-group-${index}`;
         const target = document.querySelector(`div#${divId}`);
         if (target) target.focus();
       }
 
-      // Scroll to the appropriate group view.
       let availableSegments = historySegments;
       for (let i = index - 1; i >= 0 && availableSegments > 0; i--) {
         availableSegments -= task?.asr_response?.groups[i]?.segments?.length;
@@ -862,10 +854,8 @@ function DubbingStudioEditor({project, isFullscreen, setIsFullscreen}) {
   React.useEffect(() => {
     if (!task) return;
 
-    // Whether task is done.
     setProcessing(task?.status !== 'done');
 
-    // Whether all groups are ready to generate the artifact.
     let isAllGroupsReady = true;
     if (task?.asr_response?.groups?.length) {
       task.asr_response.groups.forEach(g => {
@@ -1026,8 +1016,7 @@ function DubbingStudioEditor({project, isFullscreen, setIsFullscreen}) {
     e.preventDefault();
     if (segment.start === null || segment.start === undefined) return alert('Segment start is null');
 
-    // Include a very brief duration, as occasionally the prior end time is equal to the start time. By adding
-    // this duration, it ensures distinct playback from the current segment rather than the previous one.
+    // The previous segment may end at this start time, so start just after it.
     playerRef.current.currentTime = segment.start + 0.001;
     playerRef.current.play();
   }, [playerRef]);
@@ -1061,7 +1050,6 @@ function DubbingStudioEditor({project, isFullscreen, setIsFullscreen}) {
     return () => clearInterval(timer);
   }, [playerRef, task, setActiveGroup, setIsPlayingAudio]);
 
-  // Automatically start dubbing task.
   React.useEffect(() => {
     if (!project?.task) return;
 

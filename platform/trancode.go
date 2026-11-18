@@ -16,11 +16,10 @@ import (
 	"syscall"
 	"time"
 
-	// From ossrs.
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 )
@@ -31,7 +30,6 @@ type TranscodeWorker struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	// The global transcode task, only support one transcode task.
 	task *TranscodeTask
 }
 
@@ -147,19 +145,12 @@ func (v *TranscodeWorker) Handle(ctx context.Context, handler *http.ServeMux) er
 			pid, input, output, frame, update := v.task.queryFrame()
 
 			res := struct {
-				// The task uuid.
-				UUID string `json:"uuid"`
-				// Whether task is enabled.
-				Enabled bool `json:"enabled"`
-				// The input stream URL.
-				InputStream string `json:"input"`
-				// The output stream URL.
+				UUID         string `json:"uuid"`
+				Enabled      bool   `json:"enabled"`
+				InputStream  string `json:"input"`
 				OutputStream string `json:"output"`
-				// The FFmpeg log.
-				Frame struct {
-					// The FFmpeg log lines.
-					Log string `json:"log"`
-					// The last update time.
+				Frame        struct {
+					Log    string `json:"log"`
 					Update string `json:"update"`
 				} `json:"frame"`
 			}{}
@@ -201,7 +192,6 @@ func (v *TranscodeWorker) Start(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	logger.Tf(ctx, "transcode start a worker")
 
-	// Load tasks from redis and force to kill all.
 	if objs, err := rdb.HGetAll(ctx, SRS_TRANSCODE_TASK).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hgetall %v", SRS_TRANSCODE_TASK)
 	} else if len(objs) > 0 {
@@ -223,7 +213,6 @@ func (v *TranscodeWorker) Start(ctx context.Context) error {
 		}
 	}
 
-	// Start global transcode task.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -249,25 +238,22 @@ func (v *TranscodeWorker) Start(ctx context.Context) error {
 }
 
 type TranscodeConfig struct {
-	// Whether transcode all streams.
-	All bool `json:"all"`
-	// The video codec name.
+	// Enables transcoding of the active stream updated last, not of all streams.
+	All        bool   `json:"all"`
 	VideoCodec string `json:"vcodec"`
-	// The audio codec name.
 	AudioCodec string `json:"acodec"`
-	// The video bitrate in kbps.
+	// In kbps.
 	VideoBitrate int `json:"vbitrate"`
-	// The audio bitrate in kbps.
+	// In kbps.
 	AudioBitrate int `json:"abitrate"`
-	// The video profile, for example, baseline.
+	// For example, baseline.
 	VideoProfile string `json:"vprofile"`
-	// The video preset, for example, veryfast.
-	VideoPreset string `json:"vpreset"`
-	// The audio channels.
-	AudioChannels int `json:"achannels"`
-	// The RTMP server url, for example, rtmp://localhost/live
+	// For example, veryfast.
+	VideoPreset   string `json:"vpreset"`
+	AudioChannels int    `json:"achannels"`
+	// For example, rtmp://localhost/live.
 	Server string `json:"server"`
-	// The RTMP stream and secret, for example, livestream
+	// The stream and secret, for example, livestream.
 	Secret string `json:"secret"`
 }
 
@@ -279,32 +265,22 @@ func (v TranscodeConfig) String() string {
 }
 
 type TranscodeTask struct {
-	// The ID for task.
 	UUID string `json:"uuid"`
 
-	// The input url.
-	Input string `json:"input"`
-	// The input stream URL.
+	Input          string `json:"input"`
 	inputStreamURL string
-	// The output url
-	Output string `json:"output"`
+	Output         string `json:"output"`
 
-	// FFmpeg pid.
 	PID int32 `json:"pid"`
-	// FFmpeg last frame.
-	frame string
-	// The last update time.
+	// The last frame log of FFmpeg.
+	frame  string
 	update time.Time
 
-	// The context for current task.
 	cancel context.CancelFunc
 
-	// The configure for transcode task.
-	config TranscodeConfig
-	// The transcode worker.
+	config          TranscodeConfig
 	transcodeWorker *TranscodeWorker
 
-	// To protect the fields.
 	lock sync.Mutex
 }
 
@@ -365,7 +341,7 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 				return nil, errors.Wrapf(err, "unmarshal %v", value)
 			}
 
-			// Ignore the transcode stream itself.
+			// The transcode output is also an active stream.
 			if isSameStream(fmt.Sprintf("%v/%v", v.config.Server, v.config.Secret),
 				fmt.Sprintf("rtmp://%v/%v/%v", stream.Vhost, stream.App, stream.Stream)) {
 				continue
@@ -391,7 +367,6 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 			}
 		}
 
-		// Ignore if no active stream.
 		if best == nil {
 			return nil, nil
 		}
@@ -409,7 +384,6 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 			}
 		}
 
-		// Ignore if not enabled.
 		if !v.config.All {
 			return nil
 		}
@@ -418,7 +392,6 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 			return errors.Wrapf(err, "save task")
 		}
 
-		// Use a active stream as input.
 		input, err := selectActiveStream()
 		if err != nil {
 			return errors.Wrapf(err, "select input")
@@ -428,7 +401,6 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 			return nil
 		}
 
-		// Start transcode task.
 		if err := v.doTranscode(ctx, input); err != nil {
 			return errors.Wrapf(err, "do transcode")
 		}
@@ -457,33 +429,27 @@ func (v *TranscodeTask) Run(ctx context.Context) error {
 }
 
 func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error {
-	// Create context for current task.
 	parentCtx := ctx
 	ctx, cancel := context.WithCancel(ctx)
 	v.cancel = cancel
 
-	// Build input URL.
 	host := "localhost"
 	inputURL := fmt.Sprintf("rtmp://%v/%v/%v", host, input.App, input.Stream)
 
-	// Build output URL.
 	outputServer := strings.ReplaceAll(v.config.Server, "localhost", host)
 	if !strings.HasSuffix(outputServer, "/") && !strings.HasPrefix(v.config.Secret, "/") && v.config.Secret != "" {
 		outputServer += "/"
 	}
 	outputURL := fmt.Sprintf("%v%v", outputServer, v.config.Secret)
 
-	// Create a heartbeat to poll and manage the status of FFmpeg process.
 	heartbeat := NewFFmpegHeartbeat(cancel)
 
-	// Start FFmpeg process.
 	args := []string{}
 	args = append(args, "-re")
-	// For RTSP stream source, always use TCP transport.
 	if strings.HasPrefix(inputURL, "rtsp://") {
 		args = append(args, "-rtsp_transport", "tcp")
 	}
-	// Rebuild the stream url, because it may contain special characters.
+	// The URL may contain special characters.
 	if strings.Contains(inputURL, "://") {
 		if u, err := RebuildStreamURL(inputURL); err != nil {
 			return errors.Wrapf(err, "rebuild %v", inputURL)
@@ -498,24 +464,22 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 		"-vcodec", v.config.VideoCodec,
 		"-profile:v", v.config.VideoProfile,
 		"-preset:v", v.config.VideoPreset,
-		"-tune", "zerolatency", // Low latency mode.
+		"-tune", "zerolatency",
 		"-b:v", fmt.Sprintf("%vk", v.config.VideoBitrate),
-		"-r", "25", "-g", "50", // Set gop to 2s.
-		"-bf", "0", // Disable B frame for WebRTC.
+		"-r", "25", "-g", "50", // A GOP of 2s.
+		"-bf", "0", // For WebRTC.
 		"-acodec", v.config.AudioCodec,
 		"-b:a", fmt.Sprintf("%vk", v.config.AudioBitrate),
 	)
 	if v.config.AudioChannels > 0 {
 		args = append(args, "-ac", fmt.Sprintf("%v", v.config.AudioChannels))
 	}
-	// If RTMP use flv, if SRT use mpegts, otherwise do not set.
 	if strings.HasPrefix(outputURL, "rtmp://") || strings.HasPrefix(outputURL, "rtmps://") {
 		args = append(args, "-f", "flv")
 	} else if strings.HasPrefix(outputURL, "srt://") {
 		args = append(args, "-pes_payload_size", "0", "-f", "mpegts")
 	}
 	args = append(args, outputURL)
-	// Create the command object.
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
 	stderr, err := cmd.StderrPipe()
@@ -530,7 +494,7 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 	v.PID = int32(cmd.Process.Pid)
 	v.Input, v.inputStreamURL, v.Output = inputURL, input.StreamURL(), outputURL
 	defer func() {
-		// If we got a PID, sleep for a while, to avoid too fast restart.
+		// Avoid restarting too fast.
 		if v.PID > 0 {
 			select {
 			case <-ctx.Done():
@@ -538,7 +502,7 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 			}
 		}
 
-		// When canceled, we should still write to redis, so we must not use ctx(which is cancelled).
+		// Redis must still be written when ctx is canceled, so use parentCtx.
 		v.cleanup(parentCtx)
 		v.saveTask(parentCtx)
 	}()
@@ -548,7 +512,6 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 		return errors.Wrapf(err, "save task %v", v.String())
 	}
 
-	// Pull the latest log frame.
 	heartbeat.Polling(ctx, stderr)
 	go func() {
 		for {
@@ -561,7 +524,7 @@ func (v *TranscodeTask) doTranscode(ctx context.Context, input *SrsStream) error
 		}
 	}()
 
-	// Process terminated, or user cancel the process.
+	// The process terminated, or the user canceled it.
 	select {
 	case <-parentCtx.Done():
 	case <-ctx.Done():

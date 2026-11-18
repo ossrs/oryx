@@ -21,8 +21,7 @@ export default function FileUploader({onFilesUploaded}) {
   const [filesToUpload, setFilesToUpload] = React.useState([]);
   const [filesUploading, setFilesUploading] = React.useState({});
 
-  // For callback to update state, because in callback we can only get the copy, so we need a ref to point to the latest
-  // copy of state of variant objects.
+  // A callback sees the state of its render, so it reads the latest state from this ref.
   const ref = React.useRef({});
   React.useEffect(() => {
     ref.current.filesProgressing = filesUploading;
@@ -56,8 +55,8 @@ export default function FileUploader({onFilesUploaded}) {
           onUploadProgress: (progressData) => {
             //{loaded: 112967680, total: 169659461, timeStamp:257985, type:"progress"};
             progressData.cost = moment() - starttime;
-            if (progressData.cost) progressData.speed = progressData.loaded * 1000.0 / progressData.cost; // In Kbps
-            if (progressData.total) progressData.percent = progressData.loaded * 1.0 / progressData.total; // [0, 1];
+            if (progressData.cost) progressData.speed = progressData.loaded * 1000.0 / progressData.cost; // In bytes per second.
+            if (progressData.total) progressData.percent = progressData.loaded * 1.0 / progressData.total;
             fileInfo = Tools.merge(fileInfo, {...progressData, cost: (moment() - starttime) || 1});
             setFilesUploading(Tools.copy(ref.current.filesProgressing, [file.name, fileInfo]));
           },
@@ -66,7 +65,6 @@ export default function FileUploader({onFilesUploaded}) {
           fileInfo.cost = moment() - starttime;
           if (fileInfo.cost) fileInfo.speed = file.size * 1000.0 / fileInfo.cost;
 
-          // Merge the server information.
           fileInfo.uuid = res.data.data.uuid;
           fileInfo.target = res.data.data.target;
 

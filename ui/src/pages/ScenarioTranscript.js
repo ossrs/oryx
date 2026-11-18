@@ -216,14 +216,10 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
             size: Number(segment.size / 1024.0),
             eac: Number(segment.eac),
             asrc: Number(segment.asrc),
-            // The max length of the subtitle text in asrs array.
             asrsMaxLength: Math.max(...segment.asrs.map(asr => asr.text.length)),
             asrsMaxWords: Math.max(...segment.asrs.map(asr => asr.text.split(' ').length)),
-            // Rules:
-            // 1. Always allow to clear the first segment, that is only one segment in the queue.
-            // 2. Prevent the first segment from clearing subtitles, as it may have already been added
-            //    to the overlay queue and not be able to modify it.
-            // 3. If already cleared, the uca(User Clear ASR) is set to true.
+            // The first segment may already be going to the overlay queue, so it is cleared only when it is the only one.
+            // uca (User Clear ASR) is set once cleared.
             allowClearSubtitle: (queue.segments.length <= 1 || index !== 0) && !segment.uca,
           };
         });
@@ -252,7 +248,6 @@ function ScenarioTranscriptImpl({activeKey, defaultEnabled, defaultConf, default
             eac: Number(segment.eac),
             asrc: Number(segment.asrc),
             olc: Number(segment.olc),
-            // The max length of the subtitle text in asrs array.
             asrsMaxLength: Math.max(...segment.asrs.map(asr => asr.text.length)),
             asrsMaxWords: Math.max(...segment.asrs.map(asr => asr.text.split(' ').length)),
           };

@@ -25,7 +25,6 @@ import (
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
 
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 )
@@ -36,7 +35,7 @@ type VLiveWorker struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	// The tasks we have started to vLive streams,, key is platform in string, value is *VLiveTask.
+	// Key is the platform, value is *VLiveTask.
 	tasks sync.Map
 }
 
@@ -84,7 +83,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					return errors.New("no platform")
 				}
 
-				// Platform should be specified platforms, or starts with vlive-.
 				if !slicesContains(allowedPlatforms, userConf.Platform) && !strings.Contains(userConf.Platform, "vlive-") {
 					return errors.Errorf("invalid platform=%v", userConf.Platform)
 				}
@@ -119,7 +117,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					}
 				}
 
-				// Restart the vLive if exists.
 				if task := vLiveWorker.GetTask(userConf.Platform); task != nil {
 					if err := task.Restart(ctx); err != nil {
 						return errors.Wrapf(err, "restart task %v", userConf.String())
@@ -238,13 +235,11 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			// Parse URL to object.
 			u, err := RebuildStreamURL(qUrl)
 			if err != nil {
 				return errors.Wrapf(err, "parse %v", qUrl)
 			}
 
-			// Check url if valid rtmp or rtsp or http-flv or https-flv or hls live url
 			if u.Scheme != "rtmp" && u.Scheme != "srt" && u.Scheme != "rtsp" && u.Scheme != "http" && u.Scheme != "https" {
 				return errors.Errorf("invalid url scheme %v", u.Scheme)
 			}
@@ -259,11 +254,8 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 
 			targetUUID := uuid.NewString()
 			ohttp.WriteData(ctx, w, r, &struct {
-				// The file name.
-				Name string `json:"name"`
-				// The file UUID.
-				UUID string `json:"uuid"`
-				// The file target name.
+				Name   string `json:"name"`
+				UUID   string `json:"uuid"`
 				Target string `json:"target"`
 			}{
 				Name:   path.Base(u.Path),
@@ -310,7 +302,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Errorf("invalid url %v", qFile)
 			}
 
-			// If upload directory is symlink, eval it.
 			targetDir := dirUploadPath
 			if info, err := os.Lstat(targetDir); err == nil && info.Mode()&os.ModeSymlink != 0 {
 				if realPath, err := filepath.EvalSymlinks(targetDir); err != nil {
@@ -320,14 +311,13 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				}
 			}
 
-			// The prefix for target files.
+			// The prefix of the files youtube-dl writes.
 			targetUUID := uuid.NewString()
 
-			// Cleanup all temporary files created by youtube-dl.
+			// Clean up the temporary files created by youtube-dl.
 			requestDone, requestDoneCancel := context.WithCancel(context.Background())
 			defer requestDoneCancel()
 			go func() {
-				// If the temporary file still exists for a long time, remove it
 				duration := 2 * time.Hour
 				if envNodeEnv() == "development" {
 					duration = time.Duration(30) * time.Second
@@ -357,7 +347,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				})
 			}()
 
-			// Use youtube-dl to download the file.
 			ytdlOutput := path.Join(targetDir, targetUUID)
 			args := []string{
 				"--output", ytdlOutput,
@@ -370,7 +359,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Wrapf(err, "run youtube-dl %v", args)
 			}
 
-			// Find out the downloaded target file.
 			var targetFile string
 			if err := filepath.WalkDir(targetDir, func(p string, info fs.DirEntry, err error) error {
 				if err != nil {
@@ -391,7 +379,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				return errors.Errorf("no target file %v", targetUUID)
 			}
 
-			// Get the file information.
 			targetFileInfo, err := os.Lstat(targetFile)
 			if err != nil {
 				return errors.Wrapf(err, "lstat %v", targetFile)
@@ -512,7 +499,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			var uploadDone bool
 			created := time.Now()
 			defer func() {
-				// If upload is not done, remove the target file
 				if !uploadDone {
 					os.Remove(targetFileName)
 					logger.Wf(ctx, "remove %v, done=%v, created=%v", targetFileName, uploadDone, created)
@@ -522,7 +508,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 			requestDone, requestDoneCancel := context.WithCancel(context.Background())
 			defer requestDoneCancel()
 			go func() {
-				// If the temporary file still exists for a long time, remove it
 				duration := 2 * time.Hour
 				if envNodeEnv() == "development" {
 					duration = time.Duration(30) * time.Second
@@ -581,13 +566,10 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				}
 			}
 
-			// After write file success, set the upload done to keep the file.
 			uploadDone = true
 
 			ohttp.WriteData(ctx, w, r, &struct {
-				// The file UUID.
-				UUID string `json:"uuid"`
-				// The target file name.
+				UUID   string `json:"uuid"`
 				Target string `json:"target"`
 			}{
 				UUID: targetUUID, Target: targetFileName,
@@ -604,18 +586,13 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			type VLiveTempFile struct {
-				// The file name.
 				Name string `json:"name"`
-				// The file path.
 				Path string `json:"path"`
-				// The file size in bytes.
-				Size int64 `json:"size"`
-				// The UUID for file.
-				UUID string `json:"uuid"`
-				// The target file name.
-				Target string `json:"target"`
-				// The source type.
-				Type FFprobeSourceType `json:"type"`
+				// In bytes.
+				Size   int64             `json:"size"`
+				UUID   string            `json:"uuid"`
+				Target string            `json:"target"`
+				Type   FFprobeSourceType `json:"type"`
 			}
 
 			var token, platform string
@@ -639,7 +616,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				return errors.New("no files")
 			}
 
-			// Always cleanup the files in upload.
 			var tempFiles []string
 			for _, f := range files {
 				if f.Type != FFprobeSourceTypeStream {
@@ -655,7 +631,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				}
 			}()
 
-			// Check files.
 			for _, f := range files {
 				if f.Target == "" {
 					return errors.New("no target")
@@ -670,26 +645,20 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				}
 			}
 
-			// Check platform.
 			if platform == "" {
 				return errors.New("no platform")
 			}
-			// For virtual live event only.
 			if true {
 				allowedPlatforms := []string{"wx", "bilibili", "kuaishou"}
 
-				// Platform should be specified platforms, or starts with vlive-.
 				if !slicesContains(allowedPlatforms, platform) && !strings.Contains(platform, "vlive-") {
 					return errors.Errorf("invalid platform %v", platform)
 				}
 			}
 
-			// Parsed source files.
 			var parsedFiles []*FFprobeSource
 
-			// Parse file information and move file from dirUploadPath to dirVLivePath.
 			for _, file := range files {
-				// Probe file information.
 				toCtx, toCancelFunc := context.WithTimeout(ctx, 15*time.Second)
 				defer toCancelFunc()
 
@@ -697,11 +666,10 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					"-show_error", "-show_private_data", "-v", "quiet", "-find_stream_info", "-print_format", "json",
 					"-show_format", "-show_streams",
 				}
-				// For RTSP stream source, always use TCP transport.
 				if strings.HasPrefix(file.Target, "rtsp://") {
 					args = append(args, "-rtsp_transport", "tcp")
 				}
-				// Rebuild the stream url, because it may contain special characters.
+				// The URL may contain special characters.
 				if strings.Contains(file.Target, "://") {
 					if u, err := RebuildStreamURL(file.Target); err != nil {
 						return errors.Wrapf(err, "rebuild %v", file.Target)
@@ -725,9 +693,9 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					return errors.Wrapf(err, "parse format %v", stdout)
 				}
 
-				// Typically, AWS Lightsail and DigitalOcean Droplets provide 1TB of monthly traffic,
-				// permitting a 3Mbps continuous live stream for 7x24 hours. Therefore, it's crucial
-				// to restrict the input bitrate to prevent exceeding the traffic limit.
+				// AWS Lightsail and DigitalOcean Droplets typically provide 1TB of monthly traffic,
+				// enough for a 3Mbps live stream around the clock, so the input bitrate is limited
+				// to stay within the traffic limit.
 				if format.Format.Bitrate != "" {
 					if limits, err := rdb.HGet(ctx, SRS_SYS_LIMITS, "vlive").Int64(); err != nil && err != redis.Nil {
 						return errors.Wrapf(err, "hget %v vlive", SRS_SYS_LIMITS)
@@ -774,7 +742,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					}
 				}
 
-				// Only accept common codec for video and audio.
 				allowedCodec := []string{"h264", "h265", "aac", "mp3"}
 				if matchVideo != nil && !slicesContains(allowedCodec, matchVideo.CodecName) {
 					return errors.Errorf("invalid video codec %v, should be %v", matchVideo.CodecName, allowedCodec)
@@ -800,9 +767,7 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 				logger.Tf(ctx, "vLive: Process file %v", parsedFile.String())
 			}
 
-			// For virtual live stream only.
 			if true {
-				// Update redis object.
 				confObj := VLiveConfigure{Platform: platform}
 				if conf, err := rdb.HGet(ctx, SRS_VLIVE_CONFIG, platform).Result(); err != nil && err != redis.Nil {
 					return errors.Wrapf(err, "hget %v %v", SRS_VLIVE_CONFIG, platform)
@@ -812,7 +777,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					}
 				}
 
-				// Remove old files.
 				for _, f := range confObj.Files {
 					if f.Type != FFprobeSourceTypeStream {
 						if _, err := os.Stat(f.Target); err == nil {
@@ -828,7 +792,6 @@ func (v *VLiveWorker) Handle(ctx context.Context, handler *http.ServeMux) error 
 					return errors.Wrapf(err, "hset %v %v %v", SRS_VLIVE_CONFIG, platform, string(b))
 				}
 
-				// Restart the vLive if exists.
 				if task := vLiveWorker.GetTask(platform); task != nil {
 					if err := task.Restart(ctx); err != nil {
 						return errors.Wrapf(err, "restart task %v", platform)
@@ -869,7 +832,6 @@ func (v *VLiveWorker) Start(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	logger.Tf(ctx, "vLive: Start a worker")
 
-	// Load tasks from redis and force to kill all.
 	if objs, err := rdb.HGetAll(ctx, SRS_VLIVE_TASK).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hgetall %v", SRS_VLIVE_TASK)
 	} else if len(objs) > 0 {
@@ -891,7 +853,6 @@ func (v *VLiveWorker) Start(ctx context.Context) error {
 		}
 	}
 
-	// Load all configurations from redis.
 	loadTasks := func() error {
 		configItems, err := rdb.HGetAll(ctx, SRS_VLIVE_CONFIG).Result()
 		if err != nil && err != redis.Nil {
@@ -913,19 +874,16 @@ func (v *VLiveWorker) Start(ctx context.Context) error {
 				Platform: config.Platform,
 				config:   &config,
 			}); loaded {
-				// Ignore if exists.
 				continue
 			} else {
 				task = tv.(*VLiveTask)
 				logger.Tf(ctx, "vLive: Create platform=%v task is %v", platform, task.String())
 			}
 
-			// Initialize object.
 			if err := task.Initialize(ctx, v); err != nil {
 				return errors.Wrapf(err, "init %v", task.String())
 			}
 
-			// Store in memory object.
 			v.tasks.Store(platform, task)
 
 			wg.Add(1)
@@ -945,7 +903,7 @@ func (v *VLiveWorker) Start(ctx context.Context) error {
 	go func() {
 		defer wg.Done()
 
-		// When startup, we try to wait for client to publish streams.
+		// At startup, wait for clients to publish streams.
 		select {
 		case <-ctx.Done():
 		case <-time.After(3 * time.Second):
@@ -969,22 +927,18 @@ func (v *VLiveWorker) Start(ctx context.Context) error {
 	return nil
 }
 
-// VLiveConfigure is the configure for vLive.
 type VLiveConfigure struct {
-	// The platform name, for example, wx
+	// For example, wx.
 	Platform string `json:"platform"`
-	// The RTMP server url, for example, rtmp://localhost/live
+	// For example, rtmp://localhost/live.
 	Server string `json:"server"`
-	// The RTMP stream and secret, for example, livestream
-	Secret string `json:"secret"`
-	// Whether enabled.
-	Enabled bool `json:"enabled"`
-	// Whether custom platform.
-	Customed bool `json:"custom"`
-	// The label for this configure.
-	Label string `json:"label"`
+	// The stream and secret, for example, livestream.
+	Secret  string `json:"secret"`
+	Enabled bool   `json:"enabled"`
+	// Whether it is a custom platform.
+	Customed bool   `json:"custom"`
+	Label    string `json:"label"`
 
-	// The input files for vLive.
 	Files []*FFprobeSource `json:"files"`
 }
 
@@ -1005,40 +959,26 @@ func (v *VLiveConfigure) Update(u *VLiveConfigure) error {
 	return nil
 }
 
-// VLiveTask is a task for FFmpeg to vLive stream, with a configure.
 type VLiveTask struct {
-	// The ID for task.
-	UUID string `json:"uuid"`
-	// The platform for task.
+	UUID     string `json:"uuid"`
 	Platform string `json:"platform"`
 
-	// The input file path.
-	Input string `json:"input"`
-	// The input file UUID.
+	Input     string `json:"input"`
 	inputUUID string
-	// The output url
-	Output string `json:"output"`
+	Output    string `json:"output"`
 
-	// FFmpeg pid.
 	PID int32 `json:"pid"`
-	// FFmpeg last frame.
-	frame string
-	// The last update time.
-	update *time.Time
-	// The task start time.
-	starttime *time.Time
-	// The first ready time.
+	// The last frame log of FFmpeg.
+	frame          string
+	update         *time.Time
+	starttime      *time.Time
 	firstReadyTime *time.Time
 
-	// The context for current task.
 	cancel context.CancelFunc
 
-	// The configure for vLive task.
-	config *VLiveConfigure
-	// The vLive worker.
+	config      *VLiveConfigure
 	vLiveWorker *VLiveWorker
 
-	// To protect the fields.
 	lock sync.Mutex
 }
 
@@ -1086,7 +1026,6 @@ func (v *VLiveTask) Restart(ctx context.Context) error {
 		v.cancel()
 	}
 
-	// Reload config from redis.
 	if b, err := rdb.HGet(ctx, SRS_VLIVE_CONFIG, v.Platform).Result(); err != nil {
 		return errors.Wrapf(err, "hget %v %v", SRS_VLIVE_CONFIG, v.Platform)
 	} else if err = json.Unmarshal([]byte(b), v.config); err != nil {
@@ -1156,18 +1095,15 @@ func (v *VLiveTask) Run(ctx context.Context) error {
 	}
 
 	pfn := func(ctx context.Context) error {
-		// Ignore when not enabled.
 		if !v.config.Enabled {
 			return nil
 		}
 
-		// Use a active stream as input.
 		input := selectInputFile()
 		if input == nil {
 			return nil
 		}
 
-		// Start vLive task.
 		if err := v.doVirtualLiveStream(ctx, input); err != nil {
 			return errors.Wrapf(err, "do vLive")
 		}
@@ -1196,39 +1132,33 @@ func (v *VLiveTask) Run(ctx context.Context) error {
 }
 
 func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSource) error {
-	// Create context for current task.
 	parentCtx := ctx
 	ctx, cancel := context.WithCancel(ctx)
 	v.cancel = cancel
 
-	// Build input URL.
 	host := "localhost"
 
-	// Build output URL.
 	outputServer := strings.ReplaceAll(v.config.Server, "localhost", host)
 	if !strings.HasSuffix(outputServer, "/") && !strings.HasPrefix(v.config.Secret, "/") && v.config.Secret != "" {
 		outputServer += "/"
 	}
 	outputURL := fmt.Sprintf("%v%v", outputServer, v.config.Secret)
 
-	// Create a heartbeat to poll and manage the status of FFmpeg process.
 	heartbeat := NewFFmpegHeartbeat(cancel)
 	v.starttime, v.firstReadyTime = &heartbeat.starttime, nil
 	defer func() {
 		v.starttime = nil
 	}()
 
-	// Start FFmpeg process.
 	args := []string{}
 	if input.Type == FFprobeSourceTypeFile || input.Type == FFprobeSourceTypeUpload || input.Type == FFprobeSourceTypeYTDL {
 		args = append(args, "-stream_loop", "-1")
 		args = append(args, "-re")
 	}
-	// For RTSP stream source, always use TCP transport.
 	if strings.HasPrefix(input.Target, "rtsp://") {
 		args = append(args, "-rtsp_transport", "tcp")
 	}
-	// Rebuild the stream url, because it may contain special characters.
+	// The URL may contain special characters.
 	if strings.Contains(input.Target, "://") {
 		if u, err := RebuildStreamURL(input.Target); err != nil {
 			return errors.Wrapf(err, "rebuild %v", input.Target)
@@ -1240,14 +1170,12 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 		args = append(args, "-i", input.Target)
 	}
 	args = append(args, "-c", "copy")
-	// If RTMP use flv, if SRT use mpegts, otherwise do not set.
 	if strings.HasPrefix(outputURL, "rtmp://") || strings.HasPrefix(outputURL, "rtmps://") {
 		args = append(args, "-f", "flv")
 	} else if strings.HasPrefix(outputURL, "srt://") {
 		args = append(args, "-pes_payload_size", "0", "-f", "mpegts")
 	}
 	args = append(args, outputURL)
-	// Create the command object.
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
 	stderr, err := cmd.StderrPipe()
@@ -1262,7 +1190,7 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 	v.PID = int32(cmd.Process.Pid)
 	v.Input, v.inputUUID, v.Output = input.Target, input.UUID, outputURL
 	defer func() {
-		// If we got a PID, sleep for a while, to avoid too fast restart.
+		// Avoid restarting too fast.
 		if v.PID > 0 {
 			select {
 			case <-ctx.Done():
@@ -1270,7 +1198,7 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 			}
 		}
 
-		// When canceled, we should still write to redis, so we must not use ctx(which is cancelled).
+		// Redis must still be written when ctx is canceled, so use parentCtx.
 		v.cleanup(parentCtx)
 		v.saveTask(parentCtx)
 	}()
@@ -1280,7 +1208,6 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 		return errors.Wrapf(err, "save task %v", v.String())
 	}
 
-	// Pull the latest log frame.
 	heartbeat.Polling(ctx, stderr)
 	go func() {
 		select {
@@ -1300,7 +1227,7 @@ func (v *VLiveTask) doVirtualLiveStream(ctx context.Context, input *FFprobeSourc
 		}
 	}()
 
-	// Process terminated, or user cancel the process.
+	// The process terminated, or the user canceled it.
 	select {
 	case <-parentCtx.Done():
 	case <-ctx.Done():

@@ -21,7 +21,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
+
 	"github.com/go-redis/redis/v8"
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -33,21 +33,15 @@ import (
 type SrsAction string
 
 const (
-	// The actions for SRS server and Oryx.
-	// The publish action.
-	SrsActionOnPublish SrsAction = "on_publish"
-	// The unpublish action.
-	SrsActionOnUnpublish = "on_unpublish"
+	SrsActionOnPublish   SrsAction = "on_publish"
+	SrsActionOnUnpublish           = "on_unpublish"
 
-	// The hls action, for SRS server only.
+	// Sent by SRS only, not in Oryx callbacks.
 	SrsActionOnHls = "on_hls"
 
-	// The on_record_begin action.
 	SrsActionOnRecordBegin = "on_record_begin"
-	// The on_record_end action.
-	SrsActionOnRecordEnd = "on_record_end"
+	SrsActionOnRecordEnd   = "on_record_end"
 
-	// The on_ocr action.
 	SrsActionOnOcr = "on_ocr"
 )
 
@@ -100,24 +94,19 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 
 			verifiedBy := "noVerify"
 			if action == SrsActionOnPublish {
-				// Note that we allow pass secret by params or in stream name, for example, some encoder does not support params
-				// with ?secret=xxx, so it will fail when url is:
+				// Some encoders do not support params, so a URL such as
 				//      rtmp://ip/live/livestream?secret=xxx
-				// so user could change the url to bellow to get around of it:
+				// fails, and the secret may be part of the stream name instead:
 				//      rtmp://ip/live/livestreamxxx
-				// or simply use secret as stream:
 				//      rtmp://ip/live/xxx
-				// in this situation, the secret is part of stream name.
 				isSecretOK := func(publish, stream, param string) bool {
 					return publish == "" || strings.Contains(param, publish) || strings.Contains(stream, publish)
 				}
 
-				// Use live room secret to verify if stream name matches.
 				roomPublishAuthKey := GenerateRoomPublishKey(streamObj.Stream)
 				publish, err := rdb.HGet(ctx, SRS_AUTH_SECRET, roomPublishAuthKey).Result()
 				verifiedBy = "room"
 				if publish == "" {
-					// Use global publish secret to verify
 					publish, err = rdb.HGet(ctx, SRS_AUTH_SECRET, "pubSecret").Result()
 					verifiedBy = "global"
 				}
@@ -129,7 +118,7 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}
 
-			// Verify some actions, before all other hooks.
+			// The callback can reject on_publish, so it runs before the other hooks.
 			preAllHook := action == SrsActionOnPublish
 			if preAllHook {
 				if err := callbackWorker.OnStreamMessage(ctx, action, &streamObj); err != nil {
@@ -137,7 +126,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}
 
-			// Automatically add by SRS.
 			streamURL := streamObj.StreamURL()
 			if action == SrsActionOnPublish {
 				streamObj.Update = time.Now().Format(time.RFC3339)
@@ -182,7 +170,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}
 
-			// For some events, hook after all other hooks are done.
 			if !preAllHook {
 				if err := callbackWorker.OnStreamMessage(ctx, action, &streamObj); err != nil {
 					return errors.Wrapf(err, "callback action=%v", action)
@@ -340,7 +327,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.New("no secretKey")
 			}
 
-			// Query, verify and setup the secret ID and key.
 			var appID, ownerUIN string
 			if true {
 				cpf := profile.NewClientProfile()
@@ -374,15 +360,13 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "hset %v uin %v", SRS_TENCENT_CAM, ownerUIN)
 			}
 
-			// Create COS bucket if not exists.
-			// Note that should never use headBucket to query it, because it cause always fail if bucket not found, even though
-			// the bucket is created.
+			// Never query the bucket with HeadBucket: it fails for a bucket not found, even after the bucket is created.
 			var bucketName string
 			var createBucket bool
 			if bucket, err := rdb.HGet(ctx, SRS_TENCENT_COS, "bucket").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v bucket", SRS_TENCENT_COS)
 			} else if bucketName = bucket; bucketName == "" {
-				// Add nonce to bucket name, to avoid conflict on different region as bellow:
+				// The nonce avoids a name taken in another region, which COS refuses with:
 				//    The requested bucket has already existed in other region.
 				nonce := fmt.Sprintf("%x", rand.Int63())[:4]
 				bucketName = fmt.Sprintf("srs-lighthouse-%v-%v", nonce, appID)
@@ -397,7 +381,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 					return errors.Wrapf(err, "parse %v", fmt.Sprintf("https://%v", location))
 				}
 
-				// Create the bucket with private ACL.
 				// See https://cloud.tencent.com/document/product/436/36118
 				cosClient = cos.NewClient(&cos.BaseURL{BucketURL: u}, &http.Client{
 					Transport: &cos.AuthorizationTransport{SecretID: secretId, SecretKey: secretKey},
@@ -410,7 +393,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 					return errors.Wrapf(err, "create bucket %v", bucketName)
 				}
 
-				// Save information to redis.
 				if err := rdb.HSet(ctx, SRS_TENCENT_COS, "bucket", bucketName).Err(); err != nil && err != redis.Nil {
 					return errors.Wrapf(err, "hset %v bucket %v", SRS_TENCENT_COS, bucketName)
 				}
@@ -421,14 +403,11 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				sb.WriteString(", createBucket=true")
 			}
 
-			// Setup COS bucket if no policy.
 			if policy, err := rdb.HGet(ctx, SRS_TENCENT_COS, "policy").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v policy", SRS_TENCENT_COS)
 			} else if policy == "" {
-				// Allow read without list files actions:
-				//    cos:GetBucket
-				//    cos:GetBucketObjectVersions
-				// See https://cloud.tencent.com/document/product/436/43812
+				// Anyone may read, but not list the files, so cos:GetBucket and cos:GetBucketObjectVersions are left out,
+				// see https://cloud.tencent.com/document/product/436/43812
 				opt := cos.BucketPutPolicyOptions{
 					Version: "2.0",
 					Statement: []cos.BucketStatement{
@@ -455,7 +434,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 					return errors.Wrapf(err, "put cos policy")
 				}
 
-				// Save information to redis.
 				if err := rdb.HSet(ctx, SRS_TENCENT_COS, "policy", "read-without-list-files").Err(); err != nil && err != redis.Nil {
 					return errors.Wrapf(err, "hset %v policy %v", SRS_TENCENT_COS, "read-without-list-files")
 				}
@@ -463,7 +441,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				sb.WriteString(", createPolicy=true")
 			}
 
-			// Setup the CORS of bucket.
 			if cors, err := rdb.HGet(ctx, SRS_TENCENT_COS, "cors").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v cors", SRS_TENCENT_COS)
 			} else if cors == "" {
@@ -483,7 +460,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 					return errors.Wrapf(err, "put cos policy")
 				}
 
-				// Save information to redis.
 				if err := rdb.HSet(ctx, SRS_TENCENT_COS, "cors", "true").Err(); err != nil && err != redis.Nil {
 					return errors.Wrapf(err, "hset %v cors %v", SRS_TENCENT_COS, "true")
 				}
@@ -491,17 +467,14 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				sb.WriteString(", createCORS=true")
 			}
 
-			// Create cloud VoD service and application if not exists.
 			var vodAppID, vodAppName string
 			var createVodApp bool
 			if service, err := rdb.HGet(ctx, SRS_TENCENT_VOD, "service").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v service", SRS_TENCENT_VOD)
 			} else if vodAppID = service; vodAppID == "" || vodAppID == "ok" {
-				// Add nonce to bucket name, to avoid conflict on different region as bellow:
-				//    The requested bucket has already existed in other region.
 				nonce := fmt.Sprintf("%x", rand.Int63())[:4]
 				vodAppName = fmt.Sprintf("srs-lighthouse-%v", nonce)
-				// For previous platform, the service is set to string ok, so we also create an application.
+				// Older versions stored ok as the service, with no application ID.
 				vodAppID = ""
 				createVodApp = true
 			}
@@ -530,7 +503,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 					vodAppID = fmt.Sprintf("%v", *response.Response.SubAppId)
 				}
 
-				// Save information to redis.
 				if err := rdb.HSet(ctx, SRS_TENCENT_VOD, "service", vodAppID).Err(); err != nil && err != redis.Nil {
 					return errors.Wrapf(err, "hset %v service %v", SRS_TENCENT_VOD, vodAppID)
 				}
@@ -545,7 +517,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 			}
 			sb.WriteString(fmt.Sprintf(", vodAppIDParsed=%v", vodAppIDParsed))
 
-			// Create tencent vod storage region.
 			if storage, err := rdb.HGet(ctx, SRS_TENCENT_VOD, "storage").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v storage", SRS_TENCENT_VOD)
 			} else if storage == "" {
@@ -573,7 +544,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 					}
 				}
 
-				// Save information to redis.
 				if err := rdb.HSet(ctx, SRS_TENCENT_VOD, "storage", conf.Region).Err(); err != nil && err != redis.Nil {
 					return errors.Wrapf(err, "hset %v storage %v", SRS_TENCENT_VOD, conf.Region)
 				}
@@ -581,7 +551,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				sb.WriteString(fmt.Sprintf(", createVodStorage=true, vodRegion=%v", conf.Region))
 			}
 
-			// Query templates.
 			if transcode, err := rdb.HGet(ctx, SRS_TENCENT_VOD, "transcode").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v transcode", SRS_TENCENT_VOD)
 			} else if transcode == "" {
@@ -625,7 +594,7 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				sb.WriteString(fmt.Sprintf(", createVodTranscode=true, templates=%v", len(templates)))
 			}
 
-			// Filter the remux template, covert to MP4.
+			// The remux template converts the HLS to MP4.
 			if remux, err := rdb.HGet(ctx, SRS_TENCENT_VOD, "remux").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v remux", SRS_TENCENT_VOD)
 			} else if remux == "" {
@@ -664,7 +633,6 @@ func handleHooksService(ctx context.Context, handler *http.ServeMux) error {
 				sb.WriteString(fmt.Sprintf(", createVodRemux=true, remux=%v", target.Name))
 			}
 
-			// Query the global vod domain.
 			if domain, err := rdb.HGet(ctx, SRS_TENCENT_VOD, "domain").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v domain", SRS_TENCENT_VOD)
 			} else if domain == "" {
@@ -733,7 +701,6 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 			}
 			logger.Tf(ctx, "on_hls ok, %v", string(b))
 
-			// Handle TS file by Record task if enabled.
 			if recordAll, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "all").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v all", SRS_RECORD_PATTERNS)
 			} else if recordAll == "true" {
@@ -743,7 +710,6 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 				logger.Tf(ctx, "record %v", msg.String())
 			}
 
-			// Handle TS file by DVR task if enabled.
 			if dvrAll, err := rdb.HGet(ctx, SRS_DVR_PATTERNS, "all").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v all", SRS_DVR_PATTERNS)
 			} else if dvrAll == "true" {
@@ -753,7 +719,6 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 				logger.Tf(ctx, "dvr %v", msg.String())
 			}
 
-			// Handle TS file by VOD task if enabled.
 			if vodAll, err := rdb.HGet(ctx, SRS_VOD_PATTERNS, "all").Result(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hget %v all", SRS_VOD_PATTERNS)
 			} else if vodAll == "true" {
@@ -763,7 +728,6 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 				logger.Tf(ctx, "vod %v", msg.String())
 			}
 
-			// Handle TS file by Transcript task if enabled.
 			if transcriptWorker.Enabled() {
 				if err = transcriptWorker.OnHlsTsMessage(ctx, &msg); err != nil {
 					return errors.Wrapf(err, "feed %v", msg.String())
@@ -771,7 +735,6 @@ func handleOnHls(ctx context.Context, handler *http.ServeMux) error {
 				logger.Tf(ctx, "transcript %v", msg.String())
 			}
 
-			// Handle TS file by OCR task if enabled.
 			if ocrWorker.Enabled() {
 				if err = ocrWorker.OnHlsTsMessage(ctx, &msg); err != nil {
 					return errors.Wrapf(err, "feed %v", msg.String())

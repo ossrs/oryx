@@ -7,7 +7,6 @@ import (
 	"context"
 )
 
-// queryLatestVersion is to query the latest and stable version from Oryx API.
 func queryLatestVersion(ctx context.Context) (*Versions, error) {
 	return &Versions{
 		Version: version,

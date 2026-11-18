@@ -52,7 +52,7 @@ function ScenarioLiveImpl({copyToClipboard, urls}) {
   const ffplayWindows = `ffplay -fflags nobuffer -flags low_delay -i "${srtPlayUrl}"`;
   const ffplayMac = `ffplay -fflags nobuffer -flags low_delay -i '${srtPlayUrl}'`;
 
-  // Shortcodes of WordPress.
+  // WordPress shortcodes.
   const flvUrlShortCode = `[srs_player url="${flvUrl}"]`;
   const m3u8UrlShortCode = `[srs_player url="${m3u8Url}"]`;
   const rtcUrlShortCode = `[srs_player url="${rtcUrl}"]`;
@@ -67,22 +67,16 @@ function ScenarioLiveImpl({copyToClipboard, urls}) {
     ])
   });
 
-  // Whether the hostname is localhost.
   const isLo = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  // Whether the protocol is https.
   const isHttps = window.location.protocol === 'https:';
-  // If set candidate or not in docker, we are able to discover the IP even access by localhost.
+  // With a candidate set, or not in Docker, the server finds its IP even when the page is on localhost.
   const hasCandidate = !env.platformDocker || env.candidate;
-  // For test only, allow publish WHIP by localhost even no candidate.
+  // For testing only: allows WHIP on localhost with no candidate.
   const allowLoRtc = searchParams.get('allow-lo-rtc') === 'true';
 
-  // Whether WHEP is available.
   const enableWhep = !isLo || hasCandidate || allowLoRtc;
-  // Whether WHIP is available.
   const enableWhip = isHttps || (isLo && hasCandidate) || allowLoRtc;
-  // Whether WHIP is disabled for HTTPS.
   const disableWhip4Https = !allowLoRtc && !isLo && !isHttps;
-  // Whether WHIP is disabled for localhost.
   const disableWhip4Lo = !allowLoRtc && isLo && !hasCandidate;
 
   return (

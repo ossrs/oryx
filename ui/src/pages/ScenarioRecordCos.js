@@ -24,7 +24,7 @@ function ScenarioRecordCosCn() {
   const [dvrStatus, vodStatus] = useDvrVodStatus();
   const [activeKey, setActiveKey] = React.useState();
 
-  // We must init the activeKey, because the defaultActiveKey only apply when init for Accordion.
+  // Accordion reads defaultActiveKey only when it mounts, so the key is set before it renders.
   // See https://stackoverflow.com/q/61324259/17679565
   React.useEffect(() => {
     if (!vodStatus || !dvrStatus) return;

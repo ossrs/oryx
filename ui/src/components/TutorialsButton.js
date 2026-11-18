@@ -13,11 +13,7 @@ import Container from "react-bootstrap/Container";
 import {useTranslation} from "react-i18next";
 import {useSrsLanguage} from "./LanguageSwitch";
 
-/**
- * Fetch the video tutorials from bilibili, for example:
- * @param bilibili The ref for video id of bilibili, must be a ref to avoid duplicated loading.
- * @returns A state of tutorials.
- */
+// The bilibili and medium video IDs must be refs, to avoid loading them again.
 function useTutorials({bilibili, medium}) {
   const language = useSrsLanguage();
   const cn = useTutorialsCn(bilibili);
@@ -151,7 +147,6 @@ function useTutorialsCn(bvidsRef) {
     if (!bvids || !bvids.length) return;
     if (language !== 'zh') return;
 
-    // Allow cancel up the requests.
     const source = axios.CancelToken.source();
 
     bvids.map(tutorial => {
@@ -170,7 +165,6 @@ function useTutorialsCn(bvidsRef) {
         tutorial.view = parseInt(data.stat.view);
         tutorial.like = parseInt(data.stat.like);
         tutorial.share = parseInt(data.stat.share);
-        // Order by view desc.
         ref.current.tutorials.push(tutorial);
         setTutorials([...ref.current.tutorials].sort((a, b) => b.view - a.view));
       }).catch((e) => {
@@ -181,9 +175,8 @@ function useTutorialsCn(bvidsRef) {
     });
 
     return () => {
-      // When cleanup, cancel all requests to avoid update the unmounted components, like error message as:
+      // A request done after unmount makes React warn:
       //    Can't perform a React state update on an unmounted component.
-      //    This is a no-op, but it indicates a memory leak in your application.
       source.cancel();
     };
   }, [bvids, language]);
@@ -191,7 +184,6 @@ function useTutorialsCn(bvidsRef) {
   return tutorials;
 }
 
-// A toast list for tutorials.
 function TutorialsToast({tutorials, onClose}) {
   const {t} = useTranslation();
 
@@ -223,7 +215,7 @@ function TutorialsToast({tutorials, onClose}) {
   </>);
 }
 
-// The tutorials button, the props tutorials is a array, create by useTutorials.
+// The tutorials prop comes from useTutorials.
 function TutorialsButton({tutorials, prefixLine}) {
   const [show, setShow] = React.useState(false);
 

@@ -621,7 +621,7 @@ function SettingBeian() {
       }).catch(handleError);
   }, [handleError]);
 
-  // Update the footer for beian.
+  // The beian text shows in the footer.
   const updateBeian = React.useCallback((e) => {
     e.preventDefault();
 
@@ -634,7 +634,6 @@ function SettingBeian() {
     }).catch(handleError);
   }, [handleError, beian, t]);
 
-  // Update the title for site.
   const updateSiteTitle = React.useCallback((e) => {
     e.preventDefault();
 

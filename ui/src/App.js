@@ -71,7 +71,6 @@ function AppPreImpl() {
 
 function AppImpl() {
   const [loading, setLoading] = React.useState(true);
-  // Possible value is 1: yes, -1: no, 0: undefined.
   const [initialized, setInitialized] = React.useState(0);
   const handleError = useErrorHandler();
 
@@ -151,7 +150,6 @@ function AppLocale() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Prefix with default language.
   React.useEffect(() => {
     if (Object.keys(resources).includes(params.locale)) {
       return;

@@ -20,7 +20,6 @@ import (
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
 
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"github.com/tencentyun/cos-go-sdk-v5"
@@ -32,15 +31,13 @@ type DvrWorker struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	// Tencent Cloud credentials.
 	secretId   string
 	secretKey  string
 	bucketName string
 	cosClient  *cos.Client
 
-	// Got message from SRS, a new TS segment file is generated.
 	msgs chan *SrsOnHlsObject
-	// The streams we're dvring, key is m3u8 URL in string, value is m3u8 object *DvrM3u8Stream.
+	// Key is the m3u8 URL, value is *DvrM3u8Stream.
 	streams sync.Map
 }
 
@@ -176,9 +173,8 @@ func (v *DvrWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 					"nn":       len(metadata.Files),
 					"duration": duration,
 					"size":     size,
-					// For DVR only.
-					"bucket": metadata.Bucket,
-					"region": metadata.Region,
+					"bucket":   metadata.Bucket,
+					"region":   metadata.Region,
 				})
 			}
 
@@ -196,7 +192,6 @@ func (v *DvrWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 		if err := func() error {
 			// Format is :uuid.m3u8 or :uuid/index.m3u8
 			filename := r.URL.Path[len("/terraform/v1/hooks/dvr/hls/"):]
-			// Format is :uuid.m3u8
 			filename = strings.ReplaceAll(filename, "/index.m3u8", ".m3u8")
 			uuid := filename[:len(filename)-len(path.Ext(filename))]
 			if len(uuid) == 0 {
@@ -232,28 +227,23 @@ func (v *DvrWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 }
 
 func (v *DvrWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage) error {
-	// Ignore for Tencent Cloud credentials not ready.
 	if !v.ready() {
 		return nil
 	}
 
-	// Copy the ts file to temporary cache dir.
 	tsid := uuid.NewString()
 	tsfile := path.Join("dvr", fmt.Sprintf("%v.ts", tsid))
 
-	// Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
-	// Note that should never use fs.copyFileSync(file, tsfile, fs.constants.COPYFILE_FICLONE_FORCE) which fails in macOS.
+	// Pass user input as command arguments, never through a shell, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
 	if err := exec.CommandContext(ctx, "cp", "-f", msg.File, tsfile).Run(); err != nil {
 		return errors.Wrapf(err, "copy file %v to %v", msg.File, tsfile)
 	}
 
-	// Get the file size.
 	stats, err := os.Stat(msg.File)
 	if err != nil {
 		return errors.Wrapf(err, "stat file %v", msg.File)
 	}
 
-	// Create a local ts file object.
 	tsFile := &TsFile{
 		TsID:     tsid,
 		URL:      msg.URL,
@@ -263,7 +253,6 @@ func (v *DvrWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage) er
 		File:     tsfile,
 	}
 
-	// Notify worker asynchronously.
 	go func() {
 		select {
 		case <-ctx.Done():
@@ -290,12 +279,10 @@ func (v *DvrWorker) Start(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	logger.Tf(ctx, "Dvr: start a worker")
 
-	// When system startup, we initialize the credentials, for worker to use it.
 	if err := v.updateCredential(ctx); err != nil {
 		return errors.Wrapf(err, "update credential")
 	}
 
-	// Load all objects from redis.
 	if objs, err := rdb.HGetAll(ctx, SRS_DVR_M3U8_WORKING).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hgetall %v", SRS_DVR_M3U8_WORKING)
 	} else if len(objs) > 0 {
@@ -307,12 +294,10 @@ func (v *DvrWorker) Start(ctx context.Context) error {
 				return errors.Wrapf(err, "load %v", value)
 			}
 
-			// Initialize object.
 			if err := m3u8LocalObj.Initialize(ctx, v); err != nil {
 				return errors.Wrapf(err, "init %v", m3u8LocalObj.String())
 			}
 
-			// Save in memory object.
 			v.streams.Store(m3u8URL, &m3u8LocalObj)
 
 			wg.Add(1)
@@ -325,11 +310,9 @@ func (v *DvrWorker) Start(ctx context.Context) error {
 		}
 	}
 
-	// Create M3u8 object from message.
 	buildM3u8Object := func(ctx context.Context, msg *SrsOnHlsObject) error {
 		logger.Tf(ctx, "Dvr: Got message %v", msg.String())
 
-		// Load stream local object.
 		var m3u8LocalObj *DvrM3u8Stream
 		var freshObject bool
 		if obj, loaded := v.streams.LoadOrStore(msg.Msg.M3u8URL, &DvrM3u8Stream{
@@ -338,9 +321,7 @@ func (v *DvrWorker) Start(ctx context.Context) error {
 			m3u8LocalObj, freshObject = obj.(*DvrM3u8Stream), !loaded
 		}
 
-		// Serve object if fresh one.
 		if freshObject {
-			// Initialize object.
 			if err := m3u8LocalObj.Initialize(ctx, v); err != nil {
 				return errors.Wrapf(err, "init %v", m3u8LocalObj.String())
 			}
@@ -354,10 +335,9 @@ func (v *DvrWorker) Start(ctx context.Context) error {
 			}()
 		}
 
-		// Append new ts file to object.
 		m3u8LocalObj.addMessage(ctx, msg)
 
-		// Always save the object to redis, for reloading it when restart.
+		// Start reloads the saved objects after a restart.
 		if err := m3u8LocalObj.saveObject(ctx); err != nil {
 			return errors.Wrapf(err, "save %v", m3u8LocalObj.String())
 		}
@@ -365,7 +345,6 @@ func (v *DvrWorker) Start(ctx context.Context) error {
 		return nil
 	}
 
-	// Process all messages about HLS ts segments.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -382,7 +361,6 @@ func (v *DvrWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Load tencent cloud credentials.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -416,7 +394,7 @@ func (v *DvrWorker) updateCredential(ctx context.Context) error {
 		SecretId: v.secretId, SecretKey: v.secretKey, BucketName: v.bucketName,
 	}
 
-	// The credential might not be ready, so we ignore error.
+	// The credentials may not be set yet.
 	if secretId, err := rdb.HGet(ctx, SRS_TENCENT_CAM, "secretId").Result(); err == nil {
 		v.secretId = secretId
 	}
@@ -439,8 +417,7 @@ func (v *DvrWorker) updateCredential(ctx context.Context) error {
 			return errors.Wrapf(err, "parse %v", fmt.Sprintf("https://%v", location))
 		}
 
-		// Create the bucket with private ACL.
-		// See https://cloud.tencent.com/document/product/436/65639
+		// COS client, see https://cloud.tencent.com/document/product/436/65639
 		v.cosClient = cos.NewClient(&cos.BaseURL{BucketURL: u}, &http.Client{
 			Transport: &cos.AuthorizationTransport{SecretID: v.secretId, SecretKey: v.secretKey},
 		})
@@ -449,30 +426,22 @@ func (v *DvrWorker) updateCredential(ctx context.Context) error {
 	return nil
 }
 
-// DvrM3u8Stream is the current active local object for a HLS stream.
-// When dvring done, it will generate a M3u8VoDArtifact, which is a HLS VoD object.
 type DvrM3u8Stream struct {
-	// The url of m3u8, generated by SRS, such as live/livestream/live.m3u8
+	// Generated by SRS, such as live/livestream/live.m3u8.
 	M3u8URL string `json:"m3u8_url"`
-	// The uuid of M3u8VoDObject, generated by worker, such as 3ECF0239-708C-42E4-96E1-5AE935C6E6A9
+	// Also the UUID of the artifact.
 	UUID string `json:"uuid"`
 
-	// Number of local files.
-	NN int `json:"nn"`
-	// The last update time.
+	NN     int    `json:"nn"`
 	Update string `json:"update"`
-	// The done time.
-	Done string `json:"done"`
+	Done   string `json:"done"`
 
-	// The ts files of this m3u8.
+	// The ts files not yet uploaded to COS.
 	Messages []*SrsOnHlsObject `json:"msgs"`
 
-	// The worker which owns this object.
 	dvrWorker *DvrWorker
-	// The artifact we're working for.
-	artifact *M3u8VoDArtifact
-	// To protect the fields.
-	lock sync.Mutex
+	artifact  *M3u8VoDArtifact
+	lock      sync.Mutex
 }
 
 func (v DvrM3u8Stream) String() string {
@@ -568,7 +537,6 @@ func (v *DvrM3u8Stream) removeMessage(ctx context.Context, msg *SrsOnHlsObject) 
 	v.NN = len(v.Messages)
 	v.Update = time.Now().Format(time.RFC3339)
 
-	// Remove the tsfile.
 	if err := os.Remove(msg.TsFile.File); err != nil {
 		logger.Wf(ctx, "ignore remove file %v err %+v", msg.TsFile.File, err)
 	}
@@ -595,12 +563,11 @@ func (v *DvrM3u8Stream) expired() bool {
 	return false
 }
 
-// Initialize to load artifact. There is no simultaneously access, so no certFileLock is needed.
+// It runs before Run, with no other access, so it sets the fields without the lock.
 func (v *DvrM3u8Stream) Initialize(ctx context.Context, r *DvrWorker) error {
 	v.dvrWorker = r
 	logger.Tf(ctx, "dvr initialize url=%v, uuid=%v", v.M3u8URL, v.UUID)
 
-	// Try to load artifact from redis. The final artifact is VoD HLS object.
 	if value, err := rdb.HGet(ctx, SRS_DVR_M3U8_ARTIFACT, v.UUID).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v %v", SRS_DVR_M3U8_ARTIFACT, v.UUID)
 	} else if value != "" {
@@ -612,7 +579,6 @@ func (v *DvrM3u8Stream) Initialize(ctx context.Context, r *DvrWorker) error {
 		}
 	}
 
-	// Create a artifact if new.
 	if v.artifact == nil {
 		v.artifact = &M3u8VoDArtifact{
 			UUID:       v.UUID,
@@ -621,7 +587,6 @@ func (v *DvrM3u8Stream) Initialize(ctx context.Context, r *DvrWorker) error {
 			Update:     time.Now().Format(time.RFC3339),
 		}
 
-		// For DVR required parameters.
 		v.artifact.Bucket = r.bucketName
 		v.artifact.Region = conf.Region
 
@@ -633,13 +598,11 @@ func (v *DvrM3u8Stream) Initialize(ctx context.Context, r *DvrWorker) error {
 	return nil
 }
 
-// Run to serve the current dvring object.
 func (v *DvrM3u8Stream) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(logger.WithContext(ctx))
 	logger.Tf(ctx, "dvr run task %v", v.String())
 
 	pfn := func() error {
-		// Process message and remove it.
 		msgs := v.copyMessages()
 		for _, msg := range msgs {
 			if err := v.serveMessage(ctx, msg); err != nil {
@@ -647,29 +610,24 @@ func (v *DvrM3u8Stream) Run(ctx context.Context) error {
 			}
 		}
 
-		// Refresh redis if got messages to serve.
 		if len(msgs) > 0 {
 			if err := v.saveObject(ctx); err != nil {
 				return errors.Wrapf(err, "save object %v", v.String())
 			}
 		}
 
-		// Ignore if still has messages to process.
 		if len(v.Messages) > 0 {
 			return nil
 		}
 
-		// Check whether expired.
 		if !v.expired() {
 			return nil
 		}
 
-		// Try to finish the object.
 		if err := v.finishM3u8(ctx); err != nil {
 			return errors.Wrapf(err, "finish m3u8")
 		}
 
-		// Now HLS is done
 		logger.Tf(ctx, "Dvr is done, hls is %v, artifact is %v", v.String(), v.artifact.String())
 		cancel()
 
@@ -697,15 +655,12 @@ func (v *DvrM3u8Stream) Run(ctx context.Context) error {
 }
 
 func (v *DvrM3u8Stream) serveMessage(ctx context.Context, msg *SrsOnHlsObject) error {
-	// We always remove the msg from current object.
 	defer v.removeMessage(ctx, msg)
 
-	// Ignore file if credential is not ready.
 	if !v.dvrWorker.ready() {
 		return nil
 	}
 
-	// Ignore file if not exists.
 	if _, err := os.Stat(msg.TsFile.File); err != nil {
 		return err
 	}
@@ -718,8 +673,7 @@ func (v *DvrM3u8Stream) serveMessage(ctx context.Context, msg *SrsOnHlsObject) e
 		return errors.Wrapf(err, "open file %v", msg.TsFile.File)
 	}
 
-	// Upload to COS bucket.
-	// See https://cloud.tencent.com/document/product/436/64980
+	// Upload to the COS bucket, see https://cloud.tencent.com/document/product/436/64980
 	opt := cos.ObjectPutOptions{
 		ObjectPutHeaderOptions: &cos.ObjectPutHeaderOptions{
 			ContentType:   "video/MP2T",
@@ -730,7 +684,6 @@ func (v *DvrM3u8Stream) serveMessage(ctx context.Context, msg *SrsOnHlsObject) e
 		return errors.Wrapf(err, "cos put object %v", key)
 	}
 
-	// Update the metadata for m3u8.
 	v.updateArtifact(ctx, v.artifact, msg)
 	if err := v.saveArtifact(ctx, v.artifact); err != nil {
 		return errors.Wrapf(err, "save artifact %v", v.artifact.String())
@@ -746,11 +699,9 @@ func (v *DvrM3u8Stream) finishM3u8(ctx context.Context) error {
 		return errors.Wrapf(err, "build vod")
 	}
 
-	// Upload the ts file to COS.
 	key := fmt.Sprintf("%v/index.m3u8", v.UUID)
 
-	// Upload to COS bucket.
-	// See https://cloud.tencent.com/document/product/436/64980
+	// Upload to the COS bucket, see https://cloud.tencent.com/document/product/436/64980
 	opt := cos.ObjectPutOptions{
 		ObjectPutHeaderOptions: &cos.ObjectPutHeaderOptions{
 			ContentType:   contentType,
@@ -762,16 +713,14 @@ func (v *DvrM3u8Stream) finishM3u8(ctx context.Context) error {
 	}
 	logger.Tf(ctx, "dvr to %v, duration=%v ok", key, duration)
 
-	// Remove object from worker.
 	v.dvrWorker.streams.Delete(v.M3u8URL)
 
-	// Update artifact after finally.
 	v.finishArtifact(ctx, v.artifact)
 	r0 := v.saveArtifact(ctx, v.artifact)
 	r1 := v.deleteObject(ctx)
 	logger.Tf(ctx, "dvr cleanup ok, r0=%v, r1=%v", r0, r1)
 
-	// Do final cleanup, because new messages might arrive while converting to mp4, which takes a long time.
+	// New messages may arrive while the m3u8 is built and uploaded.
 	files := v.copyMessages()
 	for _, file := range files {
 		r2 := os.Remove(file.TsFile.File)

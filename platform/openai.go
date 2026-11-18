@@ -37,14 +37,10 @@ func gptModelSupportTemperature(model string, temperature float32) float32 {
 }
 
 type SrsAssistantProvider struct {
-	// The AI provider.
-	AIProvider string `json:"aiProvider"`
-	// The AI secret key.
-	AISecretKey string `json:"aiSecretKey"`
-	// The AI organization.
+	AIProvider     string `json:"aiProvider"`
+	AISecretKey    string `json:"aiSecretKey"`
 	AIOrganization string `json:"aiOrganization"`
-	// The AI base URL.
-	AIBaseURL string `json:"aiBaseURL"`
+	AIBaseURL      string `json:"aiBaseURL"`
 }
 
 func (v *SrsAssistantProvider) String() string {
@@ -53,12 +49,9 @@ func (v *SrsAssistantProvider) String() string {
 }
 
 type SrsAssistantASR struct {
-	// Whether enable the AI ASR.
-	AIASREnabled bool `json:"aiAsrEnabled"`
-	// The AI asr language.
+	AIASREnabled  bool   `json:"aiAsrEnabled"`
 	AIASRLanguage string `json:"aiAsrLanguage"`
-	// The AI asr prompt type. user or user-ai.
-	AIASRPrompt string `json:"aiAsrPrompt"`
+	AIASRPrompt   string `json:"aiAsrPrompt"`
 }
 
 func (v *SrsAssistantASR) String() string {
@@ -67,16 +60,11 @@ func (v *SrsAssistantASR) String() string {
 }
 
 type SrsAssistantChat struct {
-	// Whether enable the AI processing.
-	AIChatEnabled bool `json:"aiChatEnabled"`
-	// The AI model name.
-	AIChatModel string `json:"aiChatModel"`
-	// The AI chat system prompt.
-	AIChatPrompt string `json:"aiChatPrompt"`
-	// The AI chat max window.
-	AIChatMaxWindow int `json:"aiChatMaxWindow"`
-	// The AI chat max words.
-	AIChatMaxWords int `json:"aiChatMaxWords"`
+	AIChatEnabled   bool   `json:"aiChatEnabled"`
+	AIChatModel     string `json:"aiChatModel"`
+	AIChatPrompt    string `json:"aiChatPrompt"`
+	AIChatMaxWindow int    `json:"aiChatMaxWindow"`
+	AIChatMaxWords  int    `json:"aiChatMaxWords"`
 }
 
 func (v *SrsAssistantChat) String() string {
@@ -85,16 +73,11 @@ func (v *SrsAssistantChat) String() string {
 }
 
 type SrsAssistantPost struct {
-	// Whether enable the AI post processing.
-	AIPostEnabled bool `json:"aiPostEnabled"`
-	// The AI model name.
-	AIPostModel string `json:"aiPostModel"`
-	// The AI chat system prompt.
-	AIPostPrompt string `json:"aiPostPrompt"`
-	// The AI chat max window.
-	AIPostMaxWindow int `json:"aiPostMaxWindow"`
-	// The AI chat max words.
-	AIPostMaxWords int `json:"aiPostMaxWords"`
+	AIPostEnabled   bool   `json:"aiPostEnabled"`
+	AIPostModel     string `json:"aiPostModel"`
+	AIPostPrompt    string `json:"aiPostPrompt"`
+	AIPostMaxWindow int    `json:"aiPostMaxWindow"`
+	AIPostMaxWords  int    `json:"aiPostMaxWords"`
 }
 
 func (v *SrsAssistantPost) String() string {
@@ -103,7 +86,6 @@ func (v *SrsAssistantPost) String() string {
 }
 
 type SrsAssistantTTS struct {
-	// Whether enable the AI TTS.
 	AITTSEnabled bool `json:"aiTtsEnabled"`
 }
 
@@ -112,19 +94,12 @@ func (v *SrsAssistantTTS) String() string {
 }
 
 type SrsAssistant struct {
-	// Whether enable the AI assistant.
-	Assistant bool `json:"assistant"`
-	// The AI name.
-	AIName string `json:"aiName"`
-	// The AI assistant provider.
+	Assistant bool   `json:"assistant"`
+	AIName    string `json:"aiName"`
 	SrsAssistantProvider
-	// The AI assistant ASR.
 	SrsAssistantASR
-	// The AI assistant chat.
 	SrsAssistantChat
-	// The AI assistant post.
 	SrsAssistantPost
-	// The AI assistant TTS.
 	SrsAssistantTTS
 }
 

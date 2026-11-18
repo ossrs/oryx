@@ -30,12 +30,10 @@ function SetupImpl({onInit}) {
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
-  // Generate password if not initialized.
   React.useEffect(() => {
     setPassword(uuidv4().replace(/-/g, '').slice(-16));
   }, []);
 
-  // User click login button.
   const handleLogin = React.useCallback((e) => {
     e.preventDefault();
 

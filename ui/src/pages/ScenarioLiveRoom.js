@@ -18,7 +18,6 @@ import PopoverConfirm from "../components/PopoverConfirm";
 
 export default function ScenarioLiveRoom() {
   const [searchParams] = useSearchParams();
-  // The room id, to maintain a specified room.
   const [roomId, setRoomId] = React.useState();
 
   React.useEffect(() => {

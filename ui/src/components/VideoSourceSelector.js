@@ -147,7 +147,7 @@ function VLiveStreamSelector({platform, endpoint, vLiveFiles, setVLiveFiles}) {
 function VLiveFileSelector({platform, endpoint, vLiveFiles, setVLiveFiles}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
-  // TODO: FIXME: As the file path is changed after used, so we can not use te target.
+  // TODO: FIXME: The file path changes after it is used, so we cannot use the target.
   const [inputFile, setInputFile] = React.useState('');
 
   const CheckLocalFile = React.useCallback(() => {
@@ -201,7 +201,7 @@ function VLiveFileSelector({platform, endpoint, vLiveFiles, setVLiveFiles}) {
 function YtdlFileSelector({platform, endpoint, vLiveFiles, setVLiveFiles}) {
   const {t} = useTranslation();
   const handleError = useErrorHandler();
-  // TODO: FIXME: As the file path is changed after used, so we can not use te target.
+  // TODO: FIXME: The file path changes after it is used, so we cannot use the target.
   const [ytdlUrl, setYtdlUrl] = React.useState('');
   const [loading, setLoading] = React.useState(false);
 

@@ -30,13 +30,10 @@ import (
 var certManager *CertManager
 
 type CertManager struct {
-	// httpsCertificate is the certificate for the server.
 	httpsCertificate *tls.Certificate
 
-	// httpCertificateReload is used to reload the certificate.
 	httpCertificateReload chan bool
 
-	// certFileLock is used to lock the cert file nginx.key and nginx.crt.
 	certFileLock sync.Mutex
 }
 
@@ -197,7 +194,6 @@ func (v *CertManager) QueryCertificate() (string, string, error) {
 	return string(key), string(crt), nil
 }
 
-// updateSslFiles update the ssl files.
 func (v *CertManager) updateSslFiles(ctx context.Context, key, crt string) error {
 	v.certFileLock.Lock()
 	defer v.certFileLock.Unlock()
@@ -220,7 +216,6 @@ func (v *CertManager) updateSslFiles(ctx context.Context, key, crt string) error
 	return nil
 }
 
-// updateLetsEncrypt request letsencrypt and update the ssl files.
 func (v *CertManager) updateLetsEncrypt(ctx context.Context, domain string) error {
 	v.certFileLock.Lock()
 	defer v.certFileLock.Unlock()
@@ -286,7 +281,6 @@ func (v *CertManager) updateLetsEncrypt(ctx context.Context, domain string) erro
 	return nil
 }
 
-// renewLetsEncrypt request letsencrypt and update the ssl files.
 func (v *CertManager) renewLetsEncrypt(ctx context.Context, domain string) error {
 	defer v.ReloadCertificate(ctx)
 

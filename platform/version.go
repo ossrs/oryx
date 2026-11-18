@@ -5,5 +5,4 @@
 //
 package main
 
-// The version for platform.
 const version = "v7.15.26"

@@ -31,18 +31,16 @@ function LoginImpl({onLogin}) {
   const handleError = useErrorHandler();
   const {t} = useTranslation();
 
-  // Verify the token if exists.
   React.useEffect(() => {
     const token = Token.load();
     if (!token || !token.token) return;
 
     console.log(`Login: Verify, token is ${Tools.mask(token)}`);
 
-    // Both JWT token or Bearer token are OK. Here we use JWT token.
+    // The token API accepts a JWT token or a Bearer token.
     axios.post('/terraform/v1/mgmt/token', {
       ...token,
     }).then(res => {
-      // Here we use the Bearer token to verify again.
       axios.post('/terraform/v1/mgmt/token', {
       }, {
         headers: Token.loadBearerHeader(),
@@ -53,15 +51,12 @@ function LoginImpl({onLogin}) {
     }).catch(handleError);
   }, [navigate, handleError]);
 
-  // Focus to password input.
   React.useEffect(() => {
     plaintext ? plaintextRef.current?.focus() : passwordRef.current?.focus();
   }, [plaintext]);
 
-  // User click login button.
-  // Note that we use callback, because when we use it in other hooks, it might be null, for example, to use handleLogin
-  // in useEffect, which should depends on the hooks, but should never depends on RAW function, because it always
-  // changes its value. See https://stackoverflow.com/a/55854902/17679565
+  // A plain function changes on every render, so a hook such as useEffect must not depend on it.
+  // See https://stackoverflow.com/a/55854902/17679565
   const handleLogin = React.useCallback((e) => {
     e.preventDefault();
     setOperating(true);

@@ -17,11 +17,10 @@ import (
 	"sync"
 	"time"
 
-	// From ossrs.
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"github.com/sashabaranov/go-openai"
@@ -36,21 +35,14 @@ type TranscriptWorker struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	// The global transcript task, only support one transcript task.
-	task *TranscriptTask
-
-	// Use async goroutine to process on_hls messages.
-	msgs chan *SrsOnHlsMessage
-
-	// Got message from SRS, a new TS segment file is generated.
+	task    *TranscriptTask
+	msgs    chan *SrsOnHlsMessage
 	tsfiles chan *SrsOnHlsObject
 }
 
 func NewTranscriptWorker() *TranscriptWorker {
 	v := &TranscriptWorker{
-		// Message on_hls.
-		msgs: make(chan *SrsOnHlsMessage, 1024),
-		// TS files.
+		msgs:    make(chan *SrsOnHlsMessage, 1024),
 		tsfiles: make(chan *SrsOnHlsObject, 1024),
 	}
 	v.task = NewTranscriptTask()
@@ -126,7 +118,6 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			// Not required yet.
 			if uuid != v.task.UUID {
 				logger.Wf(ctx, "transcript ignore uuid mismatch, query=%v, task=%v", uuid, v.task.UUID)
 			}
@@ -174,7 +165,6 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 				return errors.Wrapf(err, "authenticate")
 			}
 
-			// Query whisper-1 model detail.
 			var config openai.ClientConfig
 			config = openai.DefaultConfig(transcriptConfig.SecretKey)
 			config.BaseURL = transcriptConfig.BaseURL
@@ -188,7 +178,7 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 				return errors.Wrapf(err, "query model whisper-1")
 			}
 
-			// Start a chat, to check whether the billing is expired.
+			// A chat checks whether the billing is expired.
 			resp, err := client.CreateChatCompletion(
 				ctx, openai.ChatCompletionRequest{
 					Model: openai.GPT3Dot5Turbo,
@@ -369,14 +359,13 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			}
 
 			type Segment struct {
-				TsID     string  `json:"tsid"`
-				SeqNo    uint64  `json:"seqno"`
-				URL      string  `json:"url"`
-				Duration float64 `json:"duration"`
-				Size     uint64  `json:"size"`
-				// The source ts file.
-				SourceTsID string `json:"stsid"`
-				// The cost in ms to extract audio.
+				TsID       string  `json:"tsid"`
+				SeqNo      uint64  `json:"seqno"`
+				URL        string  `json:"url"`
+				Duration   float64 `json:"duration"`
+				Size       uint64  `json:"size"`
+				SourceTsID string  `json:"stsid"`
+				// In ms.
 				ExtractAudioCost int32 `json:"eac"`
 			}
 			type AsrQueueResponse struct {
@@ -388,14 +377,12 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			segments := v.task.asrSegments()
 			for _, segment := range segments {
 				res.Segments = append(res.Segments, []*Segment{&Segment{
-					TsID:     segment.AudioFile.TsID,
-					SeqNo:    segment.AudioFile.SeqNo,
-					URL:      segment.AudioFile.File,
-					Duration: segment.AudioFile.Duration,
-					Size:     segment.AudioFile.Size,
-					// The source ts file.
-					SourceTsID: segment.TsFile.TsID,
-					// The cost in ms to extract audio.
+					TsID:             segment.AudioFile.TsID,
+					SeqNo:            segment.AudioFile.SeqNo,
+					URL:              segment.AudioFile.File,
+					Duration:         segment.AudioFile.Duration,
+					Size:             segment.AudioFile.Size,
+					SourceTsID:       segment.TsFile.TsID,
 					ExtractAudioCost: int32(segment.CostExtractAudio.Milliseconds()),
 				}}...)
 			}
@@ -435,22 +422,18 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			}
 
 			type Segment struct {
-				TsID     string  `json:"tsid"`
-				SeqNo    uint64  `json:"seqno"`
-				URL      string  `json:"url"`
-				Duration float64 `json:"duration"`
-				Size     uint64  `json:"size"`
-				// The source ts file.
-				SourceTsID string `json:"stsid"`
-				// The cost in ms to extract audio.
-				ExtractAudioCost int32 `json:"eac"`
-				// The final ASR text.
-				ASRText string `json:"asr"`
-				// The ASR segments.
-				ASRSegments []AsrSegment `json:"asrs"`
-				// Whether user clear the ASR text.
-				UserClearASR bool `json:"uca"`
-				// The cost in msg to do ASR.
+				TsID       string  `json:"tsid"`
+				SeqNo      uint64  `json:"seqno"`
+				URL        string  `json:"url"`
+				Duration   float64 `json:"duration"`
+				Size       uint64  `json:"size"`
+				SourceTsID string  `json:"stsid"`
+				// In ms.
+				ExtractAudioCost int32        `json:"eac"`
+				ASRText          string       `json:"asr"`
+				ASRSegments      []AsrSegment `json:"asrs"`
+				UserClearASR     bool         `json:"uca"`
+				// In ms.
 				ASRCost int32 `json:"asrc"`
 			}
 			type FixQueueResponse struct {
@@ -471,23 +454,17 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 				}
 
 				res.Segments = append(res.Segments, []*Segment{&Segment{
-					TsID:     segment.AudioFile.TsID,
-					SeqNo:    segment.AudioFile.SeqNo,
-					URL:      segment.AudioFile.File,
-					Duration: segment.AudioFile.Duration,
-					Size:     segment.AudioFile.Size,
-					// The source ts file.
-					SourceTsID: segment.TsFile.TsID,
-					// The cost in ms to extract audio.
+					TsID:             segment.AudioFile.TsID,
+					SeqNo:            segment.AudioFile.SeqNo,
+					URL:              segment.AudioFile.File,
+					Duration:         segment.AudioFile.Duration,
+					Size:             segment.AudioFile.Size,
+					SourceTsID:       segment.TsFile.TsID,
 					ExtractAudioCost: int32(segment.CostExtractAudio.Milliseconds()),
-					// The final ASR text.
-					ASRText: segment.AsrText.Text,
-					// The ASR segments.
-					ASRSegments: asrSegments,
-					// User clear the ASR text.
-					UserClearASR: segment.UserClearASR,
-					// The cost in msg to do ASR.
-					ASRCost: int32(segment.CostASR.Milliseconds()),
+					ASRText:          segment.AsrText.Text,
+					ASRSegments:      asrSegments,
+					UserClearASR:     segment.UserClearASR,
+					ASRCost:          int32(segment.CostASR.Milliseconds()),
 				}}...)
 			}
 
@@ -526,26 +503,22 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			}
 
 			type Segment struct {
-				TsID     string  `json:"tsid"`
-				SeqNo    uint64  `json:"seqno"`
-				URL      string  `json:"url"`
-				Duration float64 `json:"duration"`
-				Size     uint64  `json:"size"`
-				// The source ts file.
-				SourceTsID string `json:"stsid"`
-				// The cost in ms to extract audio.
+				TsID       string  `json:"tsid"`
+				SeqNo      uint64  `json:"seqno"`
+				URL        string  `json:"url"`
+				Duration   float64 `json:"duration"`
+				Size       uint64  `json:"size"`
+				SourceTsID string  `json:"stsid"`
+				// In ms.
 				ExtractAudioCost int32 `json:"eac"`
-				// The ASR source mp4 file.
-				AudioFile string `json:"audio"`
-				// The final ASR text.
-				ASRText string `json:"asr"`
-				// The ASR segments.
-				ASRSegments []AsrSegment `json:"asrs"`
-				// Whether user clear the ASR text.
-				UserClearASR bool `json:"uca"`
-				// The cost in msg to do ASR.
+				// The TsID of the ASR audio file.
+				AudioFile    string       `json:"audio"`
+				ASRText      string       `json:"asr"`
+				ASRSegments  []AsrSegment `json:"asrs"`
+				UserClearASR bool         `json:"uca"`
+				// In ms.
 				ASRCost int32 `json:"asrc"`
-				// The cost for overlay ASR text onto video.
+				// In ms.
 				OverlayCost int32 `json:"olc"`
 			}
 			type OverlayQueueResonse struct {
@@ -566,27 +539,19 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 				}
 
 				res.Segments = append(res.Segments, []*Segment{&Segment{
-					TsID:     segment.OverlayFile.TsID,
-					SeqNo:    segment.OverlayFile.SeqNo,
-					URL:      segment.OverlayFile.File,
-					Duration: segment.OverlayFile.Duration,
-					Size:     segment.OverlayFile.Size,
-					// The source ts file.
-					SourceTsID: segment.TsFile.TsID,
-					// The cost in ms to extract audio.
+					TsID:             segment.OverlayFile.TsID,
+					SeqNo:            segment.OverlayFile.SeqNo,
+					URL:              segment.OverlayFile.File,
+					Duration:         segment.OverlayFile.Duration,
+					Size:             segment.OverlayFile.Size,
+					SourceTsID:       segment.TsFile.TsID,
 					ExtractAudioCost: int32(segment.CostExtractAudio.Milliseconds()),
-					// The ASR source mp4 file.
-					AudioFile: segment.AudioFile.TsID,
-					// The final ASR text.
-					ASRText: segment.AsrText.Text,
-					// The ASR segments.
-					ASRSegments: asrSegments,
-					// User clear the ASR text.
-					UserClearASR: segment.UserClearASR,
-					// The cost in msg to do ASR.
-					ASRCost: int32(segment.CostASR.Milliseconds()),
-					// The cost for overlay ASR text onto video.
-					OverlayCost: int32(segment.CostOverlay.Milliseconds()),
+					AudioFile:        segment.AudioFile.TsID,
+					ASRText:          segment.AsrText.Text,
+					ASRSegments:      asrSegments,
+					UserClearASR:     segment.UserClearASR,
+					ASRCost:          int32(segment.CostASR.Milliseconds()),
+					OverlayCost:      int32(segment.CostOverlay.Milliseconds()),
 				}}...)
 			}
 
@@ -607,7 +572,6 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			// Format is webvtt/:uuid/index.m3u8
 			webvttPrefix := "/terraform/v1/ai/transcript/hls/webvtt/"
 			filename := r.URL.Path[len(webvttPrefix):]
-			// Format is :uuid/index.m3u8
 			uuid := filename[:len(filename)-len("/index.m3u8")]
 			if len(uuid) == 0 {
 				return errors.Errorf("invalid uuid %v from %v of %v", uuid, filename, r.URL.Path)
@@ -648,7 +612,6 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 		hlsM3u8Handler := func(w http.ResponseWriter, r *http.Request) error {
 			// Format is /webvtt/:uuid.m3u8
 			filename := r.URL.Path[len("/terraform/v1/ai/transcript/hls/webvtt/"):]
-			// Format is :uuid.m3u8
 			uuid := filename[:len(filename)-len(path.Ext(filename))]
 			if len(uuid) == 0 {
 				return errors.Errorf("invalid uuid %v from %v of %v", uuid, filename, r.URL.Path)
@@ -674,7 +637,7 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 		}
 
 		hlsTsHandler := func(w http.ResponseWriter, r *http.Request) error {
-			// Format is :uuid.ts
+			// Format is :tsid.ts, with the TsID of the ts file.
 			filename := r.URL.Path[len("/terraform/v1/ai/transcript/hls/webvtt/"):]
 			fileBase := path.Base(filename)
 			uuid := fileBase[:len(fileBase)-len(path.Ext(fileBase))]
@@ -703,7 +666,6 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 			// Format is webvtt/:uuid/subtitles.m3u8
 			webvttPrefix := "/terraform/v1/ai/transcript/hls/webvtt/"
 			filename := r.URL.Path[len(webvttPrefix):]
-			// Format is :uuid/index.m3u8
 			uuid := filename[:len(filename)-len("/subtitles.m3u8")]
 			if len(uuid) == 0 {
 				return errors.Errorf("invalid uuid %v from %v of %v", uuid, filename, r.URL.Path)
@@ -731,7 +693,7 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 		}
 
 		hlsVttHandler := func(w http.ResponseWriter, r *http.Request) error {
-			// Format is :uuid.ts
+			// Format is :tsid.vtt, with the TsID of the overlay file.
 			filename := r.URL.Path[len("/terraform/v1/ai/transcript/hls/webvtt/"):]
 			fileBase := path.Base(filename)
 			uuid := fileBase[:len(fileBase)-len(path.Ext(fileBase))]
@@ -739,7 +701,6 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 				return errors.Errorf("invalid uuid %v from %v of %v", uuid, fileBase, r.URL.Path)
 			}
 
-			// Find out the segment by overlay vtt ID.
 			var segment *TranscriptSegment
 			for _, s := range v.task.overlaySegments() {
 				if s.OverlayFile != nil && s.OverlayFile.TsID == uuid {
@@ -801,7 +762,6 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 		overlayM3u8Handler := func(w http.ResponseWriter, r *http.Request) error {
 			// Format is /overlay/:uuid.m3u8
 			filename := r.URL.Path[len("/terraform/v1/ai/transcript/hls/overlay/"):]
-			// Format is :uuid.m3u8
 			uuid := filename[:len(filename)-len(path.Ext(filename))]
 			if len(uuid) == 0 {
 				return errors.Errorf("invalid uuid %v from %v of %v", uuid, filename, r.URL.Path)
@@ -827,7 +787,7 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 		}
 
 		overlayTsHandler := func(w http.ResponseWriter, r *http.Request) error {
-			// Format is :uuid.ts
+			// Format is :tsid.ts, with the TsID of the overlay file.
 			filename := r.URL.Path[len("/terraform/v1/ai/transcript/hls/overlay/"):]
 			fileBase := path.Base(filename)
 			uuid := fileBase[:len(fileBase)-len(path.Ext(fileBase))]
@@ -871,7 +831,6 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 		originalM3u8Handler := func(w http.ResponseWriter, r *http.Request) error {
 			// Format is /original/:uuid.m3u8
 			filename := r.URL.Path[len("/terraform/v1/ai/transcript/hls/original/"):]
-			// Format is :uuid.m3u8
 			uuid := filename[:len(filename)-len(path.Ext(filename))]
 			if len(uuid) == 0 {
 				return errors.Errorf("invalid uuid %v from %v of %v", uuid, filename, r.URL.Path)
@@ -897,7 +856,7 @@ func (v *TranscriptWorker) Handle(ctx context.Context, handler *http.ServeMux) e
 		}
 
 		originalTsHandler := func(w http.ResponseWriter, r *http.Request) error {
-			// Format is :uuid.ts
+			// Format is :tsid.ts, with the TsID of the ts file.
 			filename := r.URL.Path[len("/terraform/v1/ai/transcript/hls/original/"):]
 			fileBase := path.Base(filename)
 			uuid := fileBase[:len(fileBase)-len(path.Ext(fileBase))]
@@ -952,28 +911,23 @@ func (v *TranscriptWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMess
 }
 
 func (v *TranscriptWorker) OnHlsTsMessageImpl(ctx context.Context, msg *SrsOnHlsMessage) error {
-	// Ignore if not natch the task config.
 	if !v.task.match(msg) {
 		return nil
 	}
 
-	// Copy the ts file to temporary cache dir.
 	tsid := fmt.Sprintf("%v-org-%v", msg.SeqNo, uuid.NewString())
 	tsfile := path.Join("transcript", fmt.Sprintf("%v.ts", tsid))
 
-	// Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
-	// Note that should never use fs.copyFileSync(file, tsfile, fs.constants.COPYFILE_FICLONE_FORCE) which fails in macOS.
+	// Pass user input as command arguments, never through a shell, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
 	if err := exec.CommandContext(ctx, "cp", "-f", msg.File, tsfile).Run(); err != nil {
 		return errors.Wrapf(err, "copy file %v to %v", msg.File, tsfile)
 	}
 
-	// Get the file size.
 	stats, err := os.Stat(msg.File)
 	if err != nil {
 		return errors.Wrapf(err, "stat file %v", msg.File)
 	}
 
-	// Create a local ts file object.
 	tsFile := &TsFile{
 		TsID:     tsid,
 		URL:      msg.URL,
@@ -983,7 +937,6 @@ func (v *TranscriptWorker) OnHlsTsMessageImpl(ctx context.Context, msg *SrsOnHls
 		File:     tsfile,
 	}
 
-	// Notify worker asynchronously.
 	// TODO: FIXME: Should cleanup the temporary file when restart.
 	go func() {
 		select {
@@ -1012,11 +965,10 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	logger.Tf(ctx, "transcript start a worker")
 
-	// Load task from redis and continue to run the task.
 	if objs, err := rdb.HGetAll(ctx, SRS_TRANSCRIPT_TASK).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hgetall %v", SRS_TRANSCRIPT_TASK)
 	} else if len(objs) != 1 {
-		// Only support one task right now.
+		// Only one task is supported.
 		if err = rdb.Del(ctx, SRS_TRANSCRIPT_TASK).Err(); err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "del %v", SRS_TRANSCRIPT_TASK)
 		}
@@ -1032,7 +984,6 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 		}
 	}
 
-	// Start global transcript task.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -1054,7 +1005,6 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Consume all on_hls messages.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -1070,7 +1020,6 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Consume all ts files by task.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -1087,7 +1036,6 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Watch for new stream.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -1109,7 +1057,6 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Drive the live queue to ASR.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -1131,7 +1078,6 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Drive the asr queue to correct queue.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -1153,7 +1099,6 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Drive the fix queue to overlay queue.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -1175,7 +1120,6 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Drive the overlay queue, remove old files.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -1202,24 +1146,19 @@ func (v *TranscriptWorker) Start(ctx context.Context) error {
 
 // TODO: FIXME: Use SrsAssistantProvider and SrsAssistantASR instead.
 type TranscriptConfig struct {
-	// Whether transcript all streams.
-	All bool `json:"all"`
-	// The secret key for AI service.
-	SecretKey string `json:"secretKey"`
-	// The base URL for AI service.
-	BaseURL string `json:"baseURL"`
-	// The AI organization.
+	// Enables transcription of the active stream updated last, not of all streams.
+	All          bool   `json:"all"`
+	SecretKey    string `json:"secretKey"`
+	BaseURL      string `json:"baseURL"`
 	Organization string `json:"organization"`
 	// The language of the stream.
 	Language string `json:"lang"`
-	// The force_style for overlay subtitle.
+	// The force_style of the FFmpeg subtitles filter.
 	ForceStyle string `json:"forceStyle"`
-	// The video codec parameters.
+	// FFmpeg arguments of the overlay video encoder.
 	VideoCodecParams string `json:"videoCodecParams"`
-	// Whether enable overlay subtitle.
-	EnableOverlay bool `json:"overlayEnabled"`
-	// Whether enable WebVTT subtitle.
-	EnableWebVTT bool `json:"webvttEnabled"`
+	EnableOverlay    bool   `json:"overlayEnabled"`
+	EnableWebVTT     bool   `json:"webvttEnabled"`
 }
 
 func NewTranscriptConfig() *TranscriptConfig {
@@ -1263,11 +1202,10 @@ type TranscriptAsrSegment struct {
 }
 
 type TranscriptAsrResult struct {
-	Task     string  `json:"task,omitempty"`
-	Language string  `json:"language,omitempty"`
-	Duration float64 `json:"duration,omitempty"`
-	Text     string  `json:"text,omitempty"`
-	// The segments of the text.
+	Task     string                 `json:"task,omitempty"`
+	Language string                 `json:"language,omitempty"`
+	Duration float64                `json:"duration,omitempty"`
+	Text     string                 `json:"text,omitempty"`
 	Segments []TranscriptAsrSegment `json:"segments,omitempty"`
 }
 
@@ -1278,29 +1216,20 @@ func (v TranscriptAsrResult) String() string {
 }
 
 type TranscriptSegment struct {
-	// The SRS callback message msg.
-	Msg *SrsOnHlsMessage `json:"msg,omitempty"`
-	// The original source TS file.
-	TsFile *TsFile `json:"tsfile,omitempty"`
-	// The extracted audio only mp4 file.
-	AudioFile *TsFile `json:"audio,omitempty"`
-	// The asr result, by AI service.
-	AsrText *TranscriptAsrResult `json:"asr,omitempty"`
-	// The overlay video file.
-	OverlayFile *TsFile `json:"overlay,omitempty"`
-	// The starttime for live stream to adjust the srt.
+	Msg         *SrsOnHlsMessage     `json:"msg,omitempty"`
+	TsFile      *TsFile              `json:"tsfile,omitempty"`
+	AudioFile   *TsFile              `json:"audio,omitempty"`
+	AsrText     *TranscriptAsrResult `json:"asr,omitempty"`
+	OverlayFile *TsFile              `json:"overlay,omitempty"`
+	// The start time of the ts file, added to the ASR times in the SRT and WebVTT files,
+	// since the ASR times start at 0.
 	StreamStarttime time.Duration `json:"sst,omitempty"`
-	// The generated SRT file from ASR result.
-	SrtFile string `json:"srt,omitempty"`
-	// Whether user clear the ASR text of this segment.
-	UserClearASR bool `json:"uca,omitempty"`
+	SrtFile         string        `json:"srt,omitempty"`
+	UserClearASR    bool          `json:"uca,omitempty"`
 
-	// The cost to transcode the TS file to audio file.
 	CostExtractAudio time.Duration `json:"eac,omitempty"`
-	// The cost to do ASR, converting speech to text.
-	CostASR time.Duration `json:"asrc,omitempty"`
-	// The cost to overlay the ASR text onto the video.
-	CostOverlay time.Duration `json:"olc,omitempty"`
+	CostASR          time.Duration `json:"asrc,omitempty"`
+	CostOverlay      time.Duration `json:"olc,omitempty"`
 }
 
 func (v TranscriptSegment) String() string {
@@ -1330,28 +1259,24 @@ func (v TranscriptSegment) String() string {
 }
 
 func (v *TranscriptSegment) Dispose() error {
-	// Remove the original ts file.
 	if v.TsFile != nil {
 		if _, err := os.Stat(v.TsFile.File); err == nil {
 			os.Remove(v.TsFile.File)
 		}
 	}
 
-	// Remove the pure audio mp4 file.
 	if v.AudioFile != nil {
 		if _, err := os.Stat(v.AudioFile.File); err == nil {
 			os.Remove(v.AudioFile.File)
 		}
 	}
 
-	// Remove the SRT file.
 	if v.SrtFile != "" {
 		if _, err := os.Stat(v.SrtFile); err == nil {
 			os.Remove(v.SrtFile)
 		}
 	}
 
-	// Remove the overlay video file.
 	if v.OverlayFile != nil {
 		if _, err := os.Stat(v.OverlayFile.File); err == nil {
 			os.Remove(v.OverlayFile.File)
@@ -1362,10 +1287,8 @@ func (v *TranscriptSegment) Dispose() error {
 }
 
 type TranscriptQueue struct {
-	// The transcript segments in the queue.
 	Segments []*TranscriptSegment `json:"segments,omitempty"`
 
-	// To protect the queue.
 	lock sync.Mutex
 }
 
@@ -1447,67 +1370,40 @@ func (v *TranscriptQueue) reset(ctx context.Context) error {
 }
 
 type TranscriptTask struct {
-	// The ID for task.
 	UUID string `json:"uuid,omitempty"`
 
-	// The input url.
-	Input string `json:"input,omitempty"`
-	// The input stream object, select the active stream.
+	Input       string `json:"input,omitempty"`
 	inputStream *SrsStream
 
-	// The live queue for the current task. HLS TS segments are copied to the transcript
-	// directory, then a segment is created and added to the live queue for the transcript
-	// task to process, to convert to pure audio mp4 file.
-	LiveQueue *TranscriptQueue `json:"live,omitempty"`
-	// The ASR (Automatic Speech Recognition) queue for the current task. When a pure audio
-	// MP4 file is generated, the segment is added to the ASR queue, which then requests the
-	// AI server to convert the audio from the MP4 file into text.
-	AsrQueue *TranscriptQueue `json:"asr,omitempty"`
-	// The fix queue for the current task. It allows users to manually fix and correct the
-	// ASR-generated text. The overlay task won't start util user fix the ASR text.
-	FixQueue *TranscriptQueue `json:"fix,omitempty"`
-	// The overlay queue for the current task. It involves drawing ASR (Automatic Speech
-	// Recognition) text onto the video and encoding it into a new video file.
+	LiveQueue    *TranscriptQueue `json:"live,omitempty"`
+	AsrQueue     *TranscriptQueue `json:"asr,omitempty"`
+	FixQueue     *TranscriptQueue `json:"fix,omitempty"`
 	OverlayQueue *TranscriptQueue `json:"overlay,omitempty"`
 
-	// The previous ASR (Automatic Speech Recognition) text, which serves as a prompt for
-	// generating the next one. AI services may use this previous ASR text as a prompt to
-	// produce more accurate and robust subsequent ASR text.
+	// Sent as the prompt of the next ASR request, which the AI service may use for a more
+	// accurate text.
 	PreviousAsrText string `json:"pat,omitempty"`
 
-	// The signal to persistence task.
 	signalPersistence chan bool
-	// The signal to change the active stream for task.
-	signalNewStream chan *SrsStream
+	signalNewStream   chan *SrsStream
 
-	// The configure for transcript task.
-	config TranscriptConfig
-	// The transcript worker.
+	config           TranscriptConfig
 	transcriptWorker *TranscriptWorker
 
-	// The context for current task.
 	cancel context.CancelFunc
 
-	// To protect the common fields.
 	lock sync.Mutex
 }
 
 func NewTranscriptTask() *TranscriptTask {
 	return &TranscriptTask{
-		// Generate a UUID for task.
-		UUID: uuid.NewString(),
-		// The live queue for current task.
-		LiveQueue: NewTranscriptQueue(),
-		// The asr queue for current task.
-		AsrQueue: NewTranscriptQueue(),
-		// The fix queue for current task.
-		FixQueue: NewTranscriptQueue(),
-		// The overlay queue for current task.
-		OverlayQueue: NewTranscriptQueue(),
-		// Create persistence signal.
+		UUID:              uuid.NewString(),
+		LiveQueue:         NewTranscriptQueue(),
+		AsrQueue:          NewTranscriptQueue(),
+		FixQueue:          NewTranscriptQueue(),
+		OverlayQueue:      NewTranscriptQueue(),
 		signalPersistence: make(chan bool, 1),
-		// Create new stream signal.
-		signalNewStream: make(chan *SrsStream, 1),
+		signalNewStream:   make(chan *SrsStream, 1),
 	}
 }
 
@@ -1523,17 +1419,14 @@ func (v *TranscriptTask) Run(ctx context.Context) error {
 	logger.Tf(ctx, "transcript run task %v", v.String())
 
 	pfn := func(ctx context.Context) error {
-		// Load config from redis.
 		if err := v.config.Load(ctx); err != nil {
 			return errors.Wrapf(err, "load config")
 		}
 
-		// Ignore if not enabled.
 		if !v.config.All {
 			return nil
 		}
 
-		// Start transcript task.
 		if err := v.doTranscript(ctx); err != nil {
 			return errors.Wrapf(err, "do transcript")
 		}
@@ -1562,11 +1455,9 @@ func (v *TranscriptTask) Run(ctx context.Context) error {
 }
 
 func (v *TranscriptTask) doTranscript(ctx context.Context) error {
-	// Create context for current task.
 	parentCtx := ctx
 	ctx, v.cancel = context.WithCancel(ctx)
 
-	// Main loop, process signals from user or system.
 	for ctx.Err() == nil {
 		select {
 		case <-parentCtx.Done():
@@ -1592,7 +1483,7 @@ func (v *TranscriptTask) OnTsSegment(ctx context.Context, msg *SrsOnHlsObject) e
 	}
 
 	func() {
-		// We must not update the queue, when persistence goroutine is working.
+		// The queue must not change while the task is being saved.
 		v.lock.Lock()
 		v.lock.Unlock()
 
@@ -1602,14 +1493,12 @@ func (v *TranscriptTask) OnTsSegment(ctx context.Context, msg *SrsOnHlsObject) e
 		})
 	}()
 
-	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
 	return nil
 }
 
 // TODO: FIXME: Should reset the stream when republish.
 func (v *TranscriptTask) WatchNewStream(ctx context.Context) error {
-	// If not enabled, wait.
 	if !v.config.All {
 		return nil
 	}
@@ -1647,7 +1536,6 @@ func (v *TranscriptTask) WatchNewStream(ctx context.Context) error {
 			}
 		}
 
-		// Ignore if no active stream.
 		if best == nil {
 			return nil, nil
 		}
@@ -1658,19 +1546,16 @@ func (v *TranscriptTask) WatchNewStream(ctx context.Context) error {
 		return best, nil
 	}
 
-	// Use an active stream as input.
 	input, err := selectActiveStream()
 	if err != nil {
 		return errors.Wrapf(err, "select input")
 	}
 
-	// Whether stream exists and changed.
 	var streamNotChanged bool
 	if v.inputStream != nil && input != nil && v.inputStream.StreamURL() == input.StreamURL() {
 		streamNotChanged = true
 	}
 
-	// No stream, or stream not changed, wait.
 	if input == nil || streamNotChanged {
 		select {
 		case <-ctx.Done():
@@ -1680,7 +1565,6 @@ func (v *TranscriptTask) WatchNewStream(ctx context.Context) error {
 	}
 	logger.Tf(ctx, "transcript: Got new stream %v", input.String())
 
-	// Notify the main loop to change the active stream.
 	select {
 	case <-ctx.Done():
 	case v.signalNewStream <- input:
@@ -1691,12 +1575,10 @@ func (v *TranscriptTask) WatchNewStream(ctx context.Context) error {
 }
 
 func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
-	// Ignore if not enabled.
 	if !v.config.All {
 		return nil
 	}
 
-	// Ignore if not enough segments.
 	if v.LiveQueue.count() <= 0 {
 		return nil
 	}
@@ -1704,7 +1586,6 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 	segment := v.LiveQueue.first()
 	starttime := time.Now()
 
-	// Remove segment if file not exists.
 	if _, err := os.Stat(segment.TsFile.File); err != nil && os.IsNotExist(err) {
 		func() {
 			v.lock.Lock()
@@ -1717,12 +1598,10 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 		return nil
 	}
 
-	// Wait if ASR queue is full.
 	if v.AsrQueue.count() >= maxOverlaySegments+1 {
 		return nil
 	}
 
-	// Transcode to audio only mp4, mono, 16000HZ, 32kbps.
 	audioFile := &TsFile{
 		TsID:     fmt.Sprintf("%v-audio-%v", segment.TsFile.SeqNo, uuid.NewString()),
 		URL:      segment.TsFile.URL,
@@ -1740,7 +1619,6 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 		return errors.Wrapf(err, "transcode %v", args)
 	}
 
-	// Update the size of audio file.
 	stats, err := os.Stat(audioFile.File)
 	if err != nil {
 		// TODO: FIXME: Cleanup the failed file.
@@ -1748,7 +1626,6 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 	}
 	audioFile.Size = uint64(stats.Size())
 
-	// Dequeue the segment from live queue and attach to asr queue.
 	func() {
 		v.lock.Lock()
 		defer v.lock.Unlock()
@@ -1761,18 +1638,15 @@ func (v *TranscriptTask) DriveLiveQueue(ctx context.Context) error {
 	logger.Tf(ctx, "transcript: extract audio %v to %v, size=%v, cost=%v",
 		segment.TsFile.File, audioFile.File, audioFile.Size, segment.CostExtractAudio)
 
-	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
 	return nil
 }
 
 func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
-	// Ignore if not enabled.
 	if !v.config.All {
 		return nil
 	}
 
-	// Ignore if not enough segments.
 	if v.AsrQueue.count() <= 0 {
 		return nil
 	}
@@ -1780,7 +1654,6 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 	segment := v.AsrQueue.first()
 	starttime := time.Now()
 
-	// Remove segment if file not exists.
 	if _, err := os.Stat(segment.AudioFile.File); err != nil && os.IsNotExist(err) {
 		func() {
 			v.lock.Lock()
@@ -1792,12 +1665,10 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 		return nil
 	}
 
-	// Wait if Fix queue is full.
 	if v.FixQueue.count() >= maxOverlaySegments+1 {
 		return nil
 	}
 
-	// Convert the audio file to text by AI.
 	var config openai.ClientConfig
 	config = openai.DefaultConfig(v.config.SecretKey)
 	config.BaseURL = v.config.BaseURL
@@ -1822,7 +1693,6 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 		return errors.Wrapf(err, "transcription %v", segment.String())
 	}
 
-	// Discover the starttime of the segment.
 	stdout, err := exec.CommandContext(ctx, "ffprobe",
 		"-show_error", "-show_private_data", "-v", "quiet", "-find_stream_info", "-print_format", "json",
 		"-show_format", "-show_streams", segment.TsFile.File,
@@ -1842,13 +1712,10 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 		segment.StreamStarttime = time.Duration(stv * float64(time.Second))
 	}
 
-	// Build SRT file from ASR result.
 	var srt strings.Builder
 	for index, srtSegment := range resp.Segments {
-		// Write the index.
 		srt.WriteString(fmt.Sprintf("%v\n", index))
 
-		// Write the start and end time.
 		s := segment.StreamStarttime + time.Duration(srtSegment.Start*float64(time.Second))
 		e := segment.StreamStarttime + time.Duration(srtSegment.End*float64(time.Second))
 		srt.WriteString(fmt.Sprintf("%02d:%02d:%02d,%03d --> ",
@@ -1856,10 +1723,7 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 		srt.WriteString(fmt.Sprintf("%02d:%02d:%02d,%03d\n",
 			int(e.Hours()), int(e.Minutes())%60, int(e.Seconds())%60, int(e.Milliseconds())%1000))
 
-		// Write the subtitle text.
 		srt.WriteString(fmt.Sprintf("%v\n", srtSegment.Text))
-
-		// Insert a new line.
 		srt.WriteString("\n")
 	}
 
@@ -1875,7 +1739,6 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 
 	segment.SrtFile = fileName
 
-	// Dequeue the segment from asr queue and attach to correct queue.
 	func() {
 		v.lock.Lock()
 		defer v.lock.Unlock()
@@ -1906,18 +1769,15 @@ func (v *TranscriptTask) DriveAsrQueue(ctx context.Context) error {
 	logger.Tf(ctx, "transcript: asr audio=%v, prompt=%v, text=%v, cost=%v",
 		segment.AudioFile.File, prompt, resp.Text, segment.CostASR)
 
-	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
 	return nil
 }
 
 func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
-	// Ignore if not enabled.
 	if !v.config.All {
 		return nil
 	}
 
-	// Ignore if not enough segments.
 	if v.FixQueue.count() <= 2 {
 		return nil
 	}
@@ -1925,7 +1785,6 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 	segment := v.FixQueue.first()
 	starttime := time.Now()
 
-	// Remove segment if file not exists.
 	if _, err := os.Stat(segment.TsFile.File); err != nil && os.IsNotExist(err) {
 		func() {
 			v.lock.Lock()
@@ -1937,12 +1796,10 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		return nil
 	}
 
-	// Wait if Overlay queue is full.
 	if v.OverlayQueue.count() >= maxOverlaySegments+1 {
 		return nil
 	}
 
-	// Overlay the ASR text onto the video.
 	overlayFile := &TsFile{
 		TsID:     fmt.Sprintf("%v-overlay-%v", segment.TsFile.SeqNo, uuid.NewString()),
 		URL:      segment.TsFile.URL,
@@ -1956,10 +1813,9 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		args := []string{
 			"-i", segment.TsFile.File,
 		}
-		// Ignore subtitle if user clear it.
 		if !segment.UserClearASR {
 			if stats, err := os.Stat(segment.SrtFile); err == nil && stats.Size() > 0 {
-				// Note that the Alignment=2 means bottom center.
+				// Alignment=2 is bottom center.
 				forceStyle := "Alignment=2,MarginV=20"
 				if v.config.ForceStyle != "" {
 					forceStyle = v.config.ForceStyle
@@ -1970,16 +1826,14 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 				}...)
 			}
 		}
-		// Generate the video parameters.
 		videoCodecParams := "-c:v libx264 -profile:v main -preset:v medium -tune zerolatency -bf 0"
 		if v.config.VideoCodecParams != "" {
 			videoCodecParams = v.config.VideoCodecParams
 		}
 		args = append(args, strings.Fields(videoCodecParams)...)
-		// Generate other parameters for FFmpeg.
 		args = append(args, []string{
 			"-c:a", "aac",
-			"-copyts", // To keep the pts not changed.
+			"-copyts", // To keep the pts unchanged.
 			"-y", overlayFile.File,
 		}...)
 		if err := exec.CommandContext(ctx, "ffmpeg", args...).Run(); err != nil {
@@ -1996,7 +1850,6 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 		processCmd = fmt.Sprintf("cp %v", strings.Join(args, " "))
 	}
 
-	// Update the size of audio file.
 	stats, err := os.Stat(overlayFile.File)
 	if err != nil {
 		// TODO: FIXME: Cleanup the failed file.
@@ -2004,7 +1857,6 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 	}
 	overlayFile.Size = uint64(stats.Size())
 
-	// Dequeue the segment from live queue and attach to asr queue.
 	func() {
 		v.lock.Lock()
 		defer v.lock.Unlock()
@@ -2017,18 +1869,15 @@ func (v *TranscriptTask) DriveFixQueue(ctx context.Context) error {
 	logger.Tf(ctx, "transcript: overlay %v to %v, size=%v, cmd=<%v>, cost=%v",
 		segment.TsFile.File, overlayFile.File, overlayFile.Size, processCmd, segment.CostOverlay)
 
-	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
 	return nil
 }
 
 func (v *TranscriptTask) DriveOverlayQueue(ctx context.Context) error {
-	// Ignore if not enabled.
 	if !v.config.All {
 		return nil
 	}
 
-	// Ignore if not enough segments.
 	if v.OverlayQueue.count() <= maxOverlaySegments {
 		select {
 		case <-ctx.Done():
@@ -2037,7 +1886,6 @@ func (v *TranscriptTask) DriveOverlayQueue(ctx context.Context) error {
 		return nil
 	}
 
-	// Cleanup the old segments.
 	segment := v.OverlayQueue.first()
 	func() {
 		v.lock.Lock()
@@ -2046,7 +1894,6 @@ func (v *TranscriptTask) DriveOverlayQueue(ctx context.Context) error {
 	}()
 	defer segment.Dispose()
 
-	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
 	return nil
 }
@@ -2072,7 +1919,7 @@ func (v *TranscriptTask) clearSubtitle(ctx context.Context, tsid string) error {
 
 func (v *TranscriptTask) reset(ctx context.Context) error {
 	if v.config.All {
-		// Retry to wait for the task to apply the changed config.
+		// Give the task time to load a config that disables it.
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -2087,22 +1934,18 @@ func (v *TranscriptTask) reset(ctx context.Context) error {
 		v.lock.Lock()
 		defer v.lock.Unlock()
 
-		// Reset all queues.
 		v.LiveQueue.reset(ctx)
 		v.AsrQueue.reset(ctx)
 		v.FixQueue.reset(ctx)
 		v.OverlayQueue.reset(ctx)
 
-		// Reset all states.
 		v.Input = ""
 		v.PreviousAsrText = ""
 
-		// Remove previous task from redis.
 		if err := rdb.HDel(ctx, SRS_TRANSCRIPT_TASK, v.UUID).Err(); err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "hdel %v %v", SRS_TRANSCRIPT_TASK, v.UUID)
 		}
 
-		// Regenerate new UUID.
 		v.UUID = uuid.NewString()
 
 		return nil
@@ -2110,10 +1953,9 @@ func (v *TranscriptTask) reset(ctx context.Context) error {
 		return errors.Wrapf(err, "reset task")
 	}
 
-	// Notify the main loop to persistent current task.
 	v.notifyPersistence(ctx)
 
-	// Wait for task to persistence and avoid to reset very fast.
+	// Limit the rate of resets.
 	select {
 	case <-ctx.Done():
 	case <-time.After(1 * time.Second):

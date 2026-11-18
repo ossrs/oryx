@@ -34,7 +34,6 @@ function ComponentsImpl() {
       }).then(res => {
         const status = res.data.data;
 
-        // Normally state.
         setStatus(status);
 
         console.log(`${moment().format()}: Status: Query ok, status=${JSON.stringify(status)}`);

@@ -29,10 +29,8 @@ import (
 var dubbingServer *SrsDubbingServer
 var aiDubbingWorkDir = "containers/data/dubbing"
 
-// MergeSegmentBetweenGroups is used for detect the gap for automatically merging.
 const MergeSegmentBetweenGroups = 10 * time.Millisecond
 
-// MergeSegmentForSmallWords is used for merging the group if less than this words.
 const MergeSegmentForSmallWords = 30
 
 // For production, all should be false.
@@ -52,10 +50,8 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 			var token, title string
 			var files []*FFprobeSource
 			if err := ParseBody(ctx, r.Body, &struct {
-				Token *string `json:"token"`
-				// Project title.
-				Title *string `json:"title"`
-				// File type and path.
+				Token *string           `json:"token"`
+				Title *string           `json:"title"`
 				Files *[]*FFprobeSource `json:"files"`
 			}{
 				Token: &token, Title: &title, Files: &files,
@@ -92,7 +88,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "check source type=%v, %v", targetFile.Type, targetFile.Target)
 			}
 
-			// Create the project home directory.
 			if projectDir := path.Join(conf.Pwd, aiDubbingWorkDir, dubbing.UUID); true {
 				if err := os.MkdirAll(projectDir, 0755); err != nil {
 					return errors.Wrapf(err, "mkdir %v for dubbing project %v", projectDir, dubbing.String())
@@ -210,7 +205,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "hdel %v %v", SRS_DUBBING_PROJECTS, dubbingUUID)
 			}
 
-			// Remove the project files.
 			if dubbing.UUID != "" {
 				projectDir := path.Join(conf.Pwd, aiDubbingWorkDir, dubbing.UUID)
 				if _, err := os.Stat(projectDir); err == nil {
@@ -252,7 +246,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "load dubbing project %v", dubbingUUID)
 			}
 
-			// If source file does not exists, reset the project.
 			absSourcePath := path.Join(conf.Pwd, aiDubbingWorkDir, dubbing.SourcePath)
 			if _, err := os.Stat(absSourcePath); err != nil {
 				dubbing.SourceUUID, dubbing.SourcePath = "", ""
@@ -293,13 +286,12 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "hset %v %v %v", SRS_DUBBING_PROJECTS, dubbing.UUID, string(b))
 			}
 
-			// Update the task if exists.
 			task := dubbingServer.QueryTask(dubbing.TaskUUID)
 			if task != nil {
 				task.UpdateProject(&dubbing)
 			}
 
-			// Limit the changing rate for dubbing.
+			// Limit the rate of changes.
 			select {
 			case <-ctx.Done():
 			case <-time.After(300 * time.Millisecond):
@@ -328,7 +320,7 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("empty uuid")
 			}
 
-			// Convert the token in query to header Bearer token.
+			// The UI uses this URL as a media src, which cannot set a header.
 			r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
 
 			apiSecret := envApiSecret()
@@ -341,7 +333,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "load dubbing project %v", dubbingUUID)
 			}
 
-			// The source file to play.
 			filename := path.Join(conf.Pwd, aiDubbingWorkDir, dubbing.SourcePath)
 			if dubbing.SourceFormat == nil {
 				return errors.Errorf("no format of source %v", filename)
@@ -396,13 +387,11 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("invalid task %v, should be %v", taskUUID, dubbing.TaskUUID)
 			}
 
-			// User should started the task.
 			task := dubbingServer.QueryTask(taskUUID)
 			if task == nil {
 				return errors.Errorf("task %v not exists", taskUUID)
 			}
 
-			// Fail if task not finished.
 			if task.status != SrsDubbingTaskStatusDone {
 				return errors.Errorf("task %v not finished, status=%v", taskUUID, task.status)
 			}
@@ -412,7 +401,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("task %v not asr response", task.UUID)
 			}
 
-			// Fail if group exceed its duration.
 			for _, g := range asrResponse.Groups {
 				if g.TTSDuration == 0 {
 					return errors.Errorf("task %v group %v not tts", task.UUID, g.UUID)
@@ -430,7 +418,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}
 
-			// Download if file already exists.
 			dubbingAudioFile := path.Join(dubbing.UUID, fmt.Sprintf("audio-%v.wav", task.UUID))
 			absDubbingAudioFile := path.Join(conf.Pwd, aiDubbingWorkDir, dubbingAudioFile)
 
@@ -449,7 +436,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 			}
 			defer f.Close()
 
-			// 100KHZ, each frame is 10ms.
 			buf := &audio.IntBuffer{Data: make([]int, 100000*48), Format: &audio.Format{SampleRate: 100000, NumChannels: 1}}
 			enc := wav.NewEncoder(f, buf.Format.SampleRate, 16, buf.Format.NumChannels, 1)
 			defer enc.Close()
@@ -526,7 +512,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 			enc.Close()
 			logger.Tf(ctx, "Dubbing artifact all segments are converted")
 
-			// Merge original source file and dubbing audio file to a new file.
 			if dubbing.SourceFormat != nil && dubbing.SourceFormat.HasVideo {
 				absSourcePath := path.Join(conf.Pwd, aiDubbingWorkDir, dubbing.SourcePath)
 				if err := exec.CommandContext(ctx, "ffmpeg",
@@ -601,46 +586,39 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 					task.status = SrsDubbingTaskStatusInit
 				})
 
-				// Add task to server, memory object in this server.
+				// The task lives in this process only.
 				dubbingServer.AddTask(task)
 
-				// Load the task from redis if exists.
 				if dubbing.TaskUUID != "" {
 					if err := task.Load(ctx); err != nil {
 						logger.Wf(ctx, "ignore load dubbing task %v, err %+v", task.String(), err)
 					}
 				}
 
-				// Save task to redis.
 				if err := task.Save(ctx); err != nil {
 					return errors.Wrapf(err, "save dubbing task %v", task.String())
 				}
 
-				// Set task to project and save project.
 				dubbing.TaskUUID = task.UUID
 				if err := dubbing.Save(ctx); err != nil {
 					return errors.Wrapf(err, "save dubbing project %v", dubbing.String())
 				}
 
-				// Start the task for dubbing project.
 				if err := task.Start(ctx); err != nil {
 					return errors.Wrapf(err, "start dubbing task %v", task.String())
 				}
 			}
 
-			// Wait for a very short time for starting task.
+			// Give the task a short time to start.
 			select {
 			case <-ctx.Done():
 			case <-time.After(300 * time.Millisecond):
 			}
 
 			ohttp.WriteData(ctx, w, r, &struct {
-				// Dubbing task UUID, equals to the dubbing project UUID.
-				UUID string `json:"uuid"`
-				// The task session UUID.
-				SessionUUID string `json:"session"`
-				// The task status, indicates the task is running or not.
-				Status SrsDubbingTaskStatus `json:"status"`
+				UUID        string               `json:"uuid"`
+				SessionUUID string               `json:"session"`
+				Status      SrsDubbingTaskStatus `json:"status"`
 			}{
 				UUID: task.UUID, SessionUUID: task.SessionUUID, Status: task.status,
 			})
@@ -686,7 +664,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("invalid task %v, should be %v", taskUUID, dubbing.TaskUUID)
 			}
 
-			// User should started the task.
 			task := dubbingServer.QueryTask(taskUUID)
 			if task == nil {
 				return errors.Errorf("task %v not exists", taskUUID)
@@ -695,21 +672,17 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("task %v not asr response", task.UUID)
 			}
 
-			// Query audio group.
 			group := task.AsrResponse.QueryGroup(groupUUID)
 			if group == nil {
 				return errors.Errorf("group %v not exists", groupUUID)
 			}
 			previous := task.AsrResponse.PreviousGroup(group)
 
-			// Setup the length of output. Note that for the first time, we translate again so we do not
-			// use shorter length.
+			// The first manual rephrase translates again, so it does not use a shorter length.
 			maxOutputLength := len(group.Translated) / (1 << group.manuallyRephrasedCount)
 			group.manuallyRephrasedCount++
 
-			// Translate the group for the first manually rephrasing.
 			if group.manuallyRephrasedCount == 1 {
-				// Reset the translated and rephrased text.
 				group.Translated, group.Rephrased = "", ""
 
 				if dubbing.Translation.AIChatEnabled && group.Text() != "" {
@@ -729,7 +702,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}
 
-			// Rephrase and regenerate TTS of group.
 			if group.manuallyRephrasedCount > 1 {
 				if dubbing.Rephrase.AIChatEnabled && group.Translated != "" {
 					if err := group.RephraseGroup(ctx, dubbing.Rephrase, previous, maxOutputLength); err != nil {
@@ -748,7 +720,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}
 
-			// Save the task.
 			if err := task.Save(ctx); err != nil {
 				return errors.Wrapf(err, "save")
 			}
@@ -803,7 +774,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("invalid task %v, should be %v", taskUUID, dubbing.TaskUUID)
 			}
 
-			// User should started the task.
 			task := dubbingServer.QueryTask(taskUUID)
 			if task == nil {
 				return errors.Errorf("task %v not exists", taskUUID)
@@ -812,7 +782,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("task %v not asr response", task.UUID)
 			}
 
-			// Query audio group.
 			group := task.AsrResponse.QueryGroup(groupUUID)
 			if group == nil {
 				return errors.Errorf("group %v not exists", groupUUID)
@@ -827,7 +796,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "merge group %v to %v", next, group)
 			}
 
-			// Save the task.
 			if err := task.Save(ctx); err != nil {
 				return errors.Wrapf(err, "save")
 			}
@@ -879,7 +847,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("invalid task %v, should be %v", taskUUID, dubbing.TaskUUID)
 			}
 
-			// User should started the task.
 			task := dubbingServer.QueryTask(taskUUID)
 			if task == nil {
 				return errors.Errorf("task %v not exists", taskUUID)
@@ -917,7 +884,7 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("empty group")
 			}
 
-			// Convert the token in query to header Bearer token.
+			// The UI uses this URL as a media src, which cannot set a header.
 			r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
 
 			apiSecret := envApiSecret()
@@ -930,7 +897,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "load dubbing project %v", dubbingUUID)
 			}
 
-			// User should started the task.
 			task := dubbingServer.QueryTask(dubbing.TaskUUID)
 			if task == nil {
 				return errors.Errorf("task %v not exists", dubbing.TaskUUID)
@@ -939,13 +905,11 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Errorf("task %v not asr response", task.UUID)
 			}
 
-			// Query audio group.
 			group := task.AsrResponse.QueryGroup(groupUUID)
 			if group == nil {
 				return errors.Errorf("group %v not exists", groupUUID)
 			}
 
-			// The source file to play.
 			filename := path.Join(conf.Pwd, aiDubbingWorkDir, group.TTS)
 			ext := strings.Trim(path.Ext(filename), ".")
 			contentType := fmt.Sprintf("audio/%v", ext)
@@ -968,18 +932,13 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 	handler.HandleFunc(ep, func(w http.ResponseWriter, r *http.Request) {
 		if err := func() error {
 			type DubbingTempFile struct {
-				// The file name.
 				Name string `json:"name"`
-				// The file path.
 				Path string `json:"path"`
-				// The file size in bytes.
-				Size int64 `json:"size"`
-				// The UUID for file.
-				UUID string `json:"uuid"`
-				// The target file name.
-				Target string `json:"target"`
-				// The source type.
-				Type FFprobeSourceType `json:"type"`
+				// In bytes.
+				Size   int64             `json:"size"`
+				UUID   string            `json:"uuid"`
+				Target string            `json:"target"`
+				Type   FFprobeSourceType `json:"type"`
 			}
 
 			var token string
@@ -1002,7 +961,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.New("no files")
 			}
 
-			// Always cleanup the files in upload.
 			var tempFiles []string
 			for _, f := range files {
 				if f.Type != FFprobeSourceTypeStream {
@@ -1018,7 +976,6 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}()
 
-			// Check files.
 			for _, f := range files {
 				if f.Target == "" {
 					return errors.New("no target")
@@ -1033,12 +990,9 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}
 
-			// Parsed source files.
 			var parsedFiles []*FFprobeSource
 
-			// Parse file information and move file from dirUploadPath to dirDubbingPath.
 			for _, file := range files {
-				// Probe file information.
 				toCtx, toCancelFunc := context.WithTimeout(ctx, 15*time.Second)
 				defer toCancelFunc()
 
@@ -1046,11 +1000,10 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 					"-show_error", "-show_private_data", "-v", "quiet", "-find_stream_info", "-print_format", "json",
 					"-show_format", "-show_streams",
 				}
-				// For RTSP stream source, always use TCP transport.
 				if strings.HasPrefix(file.Target, "rtsp://") {
 					args = append(args, "-rtsp_transport", "tcp")
 				}
-				// Rebuild the stream url, because it may contain special characters.
+				// The stream URL may contain special characters.
 				if strings.Contains(file.Target, "://") {
 					if u, err := RebuildStreamURL(file.Target); err != nil {
 						return errors.Wrapf(err, "rebuild %v", file.Target)
@@ -1136,10 +1089,8 @@ func handleDubbingService(ctx context.Context, handler *http.ServeMux) error {
 }
 
 type SrsDubbingServer struct {
-	// All dubbing tasks.
 	tasks []*SrsDubbingTask
-	// The lock to protect the tasks.
-	lock sync.Mutex
+	lock  sync.Mutex
 }
 
 func NewDubbingServer() *SrsDubbingServer {
@@ -1147,7 +1098,6 @@ func NewDubbingServer() *SrsDubbingServer {
 }
 
 func (v *SrsDubbingServer) Close() error {
-	// Copy tasks.
 	var tasks []*SrsDubbingTask
 	func() {
 		v.lock.Lock()
@@ -1157,7 +1107,6 @@ func (v *SrsDubbingServer) Close() error {
 		v.tasks = nil
 	}()
 
-	// Cleanup all tasks.
 	for _, task := range tasks {
 		_ = task.Close()
 	}
@@ -1217,33 +1166,23 @@ func (v *AITime) UnmarshalJSON(b []byte) error {
 }
 
 type AudioSegment struct {
-	// The id of whisper response.
-	ID int `json:"id"`
-	// The seek of whisper response.
+	// From the Whisper response.
+	ID   int `json:"id"`
 	Seek int `json:"seek"`
-	// The start time of whisper response, in seconds.
+	// In seconds, from the start of the source.
 	Start float64 `json:"start"`
-	// The end time of whisper response, in seconds.
-	End float64 `json:"end"`
-	// The text of whisper response.
-	Text string `json:"text"`
-	// The tokens of whisper response.
-	Tokens []int `json:"tokens"`
-	// The temperature of whisper response.
-	Temperature float64 `json:"temperature"`
-	// The average logprob of whisper response.
-	AvgLogprob float64 `json:"avg_logprob"`
-	// The compression ratio of whisper response.
+	// In seconds, from the start of the source.
+	End              float64 `json:"end"`
+	Text             string  `json:"text"`
+	Tokens           []int   `json:"tokens"`
+	Temperature      float64 `json:"temperature"`
+	AvgLogprob       float64 `json:"avg_logprob"`
 	CompressionRatio float64 `json:"compression_ratio"`
-	// The no speech prob of whisper response.
-	NoSpeechProb float64 `json:"no_speech_prob"`
-	// The transient of whisper response.
-	Transient bool `json:"transient"`
+	NoSpeechProb     float64 `json:"no_speech_prob"`
+	Transient        bool    `json:"transient"`
 
-	// Original starttime, allow recover and skip exists segments.
 	OriginalStart float64 `json:"original_start"`
-	// The UUID generated by system.
-	UUID string `json:"uuid"`
+	UUID          string  `json:"uuid"`
 }
 
 func (v *AudioSegment) Duration() time.Duration {
@@ -1259,31 +1198,22 @@ func (v *AudioSegment) Diff(to *AudioSegment) time.Duration {
 }
 
 type AudioGroup struct {
-	// The group UUID.
-	UUID string `json:"uuid"`
-	// The id of group index.
-	ID int `json:"id"`
-	// The audio segments in the same group.
+	UUID     string          `json:"uuid"`
+	ID       int             `json:"id"`
 	Segments []*AudioSegment `json:"segments"`
 
-	// Translated text.
-	Translated string `json:"translated"`
-	// Translate time.
+	Translated   string `json:"translated"`
 	TranslatedAt AITime `json:"translated_at"`
 
-	// Rephrased text.
-	Rephrased string `json:"rephrased"`
-	// Rephrased time.
+	Rephrased   string `json:"rephrased"`
 	RephrasedAt AITime `json:"rephrased_at"`
 
-	// TTS filename, without the main dir.
-	TTS string `json:"tts"`
-	// Convert TTS time.
+	// Relative to aiDubbingWorkDir.
+	TTS   string `json:"tts"`
 	TTSAt AITime `json:"tts_at"`
-	// The TTS audio duration, in seconds.
+	// In seconds.
 	TTSDuration float64 `json:"tts_duration"`
 
-	// How many times the group rephrased manually.
 	manuallyRephrasedCount uint32
 }
 
@@ -1306,7 +1236,6 @@ func (v *AudioGroup) Translate(ctx context.Context, trans *SrsAssistant, previou
 		Role: openai.ChatMessageRoleUser, Content: v.Text(),
 	})
 
-	// Initialize the AI services.
 	aiConfig := openai.DefaultConfig(trans.AISecretKey)
 	aiConfig.OrgID = trans.AIOrganization
 	aiConfig.BaseURL = trans.AIBaseURL
@@ -1329,7 +1258,6 @@ func (v *AudioGroup) Translate(ctx context.Context, trans *SrsAssistant, previou
 
 func (v *AudioGroup) GenerateTTS(ctx context.Context, tts *SrsAssistant, projectUUID string) error {
 	if err := func() error {
-		// Initialize the AI services.
 		aiConfig := openai.DefaultConfig(tts.AISecretKey)
 		aiConfig.OrgID = tts.AIOrganization
 		aiConfig.BaseURL = tts.AIBaseURL
@@ -1366,7 +1294,6 @@ func (v *AudioGroup) GenerateTTS(ctx context.Context, tts *SrsAssistant, project
 		return errors.Wrapf(err, "generate tts")
 	}
 
-	// Detect the TTS duration.
 	if format, _, _, err := FFprobeFileFormat(ctx, path.Join(conf.Pwd, aiDubbingWorkDir, v.TTS)); err != nil {
 		return errors.Wrapf(err, "ffprobe %v", v.TTS)
 	} else {
@@ -1395,7 +1322,6 @@ func (v *AudioGroup) RephraseGroup(ctx context.Context, rephrase *SrsAssistant, 
 		Role: openai.ChatMessageRoleUser, Content: v.Translated,
 	})
 
-	// Initialize the AI services.
 	aiConfig := openai.DefaultConfig(rephrase.AISecretKey)
 	aiConfig.OrgID = rephrase.AIOrganization
 	aiConfig.BaseURL = rephrase.AIBaseURL
@@ -1489,7 +1415,6 @@ func (v *AudioResponse) MergeGroup(ctx context.Context, dubbing *SrsDubbingProje
 	to.Rephrased += from.Rephrased
 	to.Segments = append(to.Segments, from.Segments...)
 
-	// Remove the source from group.
 	for i, g := range v.Groups {
 		if g == from {
 			v.Groups = append(v.Groups[:i], v.Groups[i+1:]...)
@@ -1497,12 +1422,10 @@ func (v *AudioResponse) MergeGroup(ctx context.Context, dubbing *SrsDubbingProje
 		}
 	}
 
-	// Regenerate the group id.
 	for i, g := range v.Groups {
 		g.ID = i
 	}
 
-	// Rephrase the merged group.
 	if dubbing.Rephrase.AIChatEnabled && to.Translated != "" {
 		if err := to.RephraseGroup(ctx, dubbing.Rephrase, v.PreviousGroup(to), len(to.Translated)/3); err != nil {
 			return errors.Wrapf(err, "rephrase group")
@@ -1511,7 +1434,6 @@ func (v *AudioResponse) MergeGroup(ctx context.Context, dubbing *SrsDubbingProje
 		logger.Tf(ctx, "Dubbing: Ignore rephrase for group %v", to)
 	}
 
-	// Regenerate TTS for the group.
 	if dubbing.TTS.AITTSEnabled && to.SourceTextForTTS() != "" {
 		if err := to.GenerateTTS(ctx, dubbing.TTS, dubbing.UUID); err != nil {
 			return errors.Wrapf(err, "generate tts")
@@ -1576,16 +1498,11 @@ func (v *AudioResponse) AppendSegment(resp openai.AudioResponse, starttime float
 
 	for _, s := range resp.Segments {
 		v.Groups = append(v.Groups, &AudioGroup{
-			// The group index.
-			ID: len(v.Groups),
-			// The uuid of group.
+			ID:   len(v.Groups),
 			UUID: uuid.NewString(),
-			// The segments in the group.
 			Segments: []*AudioSegment{
 				&AudioSegment{
-					// To identify the segments.
-					OriginalStart: starttime,
-					// ASR Segment.
+					OriginalStart:    starttime,
 					ID:               s.ID,
 					Seek:             s.Seek,
 					Start:            starttime + s.Start,
@@ -1597,8 +1514,7 @@ func (v *AudioResponse) AppendSegment(resp openai.AudioResponse, starttime float
 					CompressionRatio: s.CompressionRatio,
 					NoSpeechProb:     s.NoSpeechProb,
 					Transient:        s.Transient,
-					// UUID.
-					UUID: uuid.NewString(),
+					UUID:             uuid.NewString(),
 				},
 			},
 		})
@@ -1608,59 +1524,39 @@ func (v *AudioResponse) AppendSegment(resp openai.AudioResponse, starttime float
 type SrsDubbingTaskStatus string
 
 const (
-	// SrsDubbingTaskStatusInit is the init status.
-	SrsDubbingTaskStatusInit SrsDubbingTaskStatus = "init"
-	// SrsDubbingTaskStatusRunning means User start the task.
-	SrsDubbingTaskStatusRunning SrsDubbingTaskStatus = "running"
-	// SrsDubbingTaskStatusExtractAudio means the task is extract audio from source input.
-	SrsDubbingTaskStatusExtractAudio SrsDubbingTaskStatus = "extract"
-	// SrsDubbingTaskStatusAsrGenerating means the task is doing ASR, convert audio to text.
+	SrsDubbingTaskStatusInit          SrsDubbingTaskStatus = "init"
+	SrsDubbingTaskStatusRunning       SrsDubbingTaskStatus = "running"
+	SrsDubbingTaskStatusExtractAudio  SrsDubbingTaskStatus = "extract"
 	SrsDubbingTaskStatusAsrGenerating SrsDubbingTaskStatus = "asr"
-	// SrsDubbingTaskStatusTranslating means the task is translating the ASR text.
-	SrsDubbingTaskStatusTranslating SrsDubbingTaskStatus = "translating"
-	// SrsDubbingTaskStatusTTSGenerating means the task is generating TTS audio, the first pass.
+	SrsDubbingTaskStatusTranslating   SrsDubbingTaskStatus = "translating"
+	// The first TTS pass.
 	SrsDubbingTaskStatusTTSGenerating SrsDubbingTaskStatus = "tts"
-	// SrsDubbingTaskStatusRephrasing means the task is rephrasing the translated text.
-	SrsDubbingTaskStatusRephrasing SrsDubbingTaskStatus = "rephrasing"
-	// SrsDubbingTaskStatusMerging means the task is merging small groups.
-	SrsDubbingTaskStatusMerging SrsDubbingTaskStatus = "merging"
-	// SrsDubbingTaskStatusDone means the task is done.
-	SrsDubbingTaskStatusDone SrsDubbingTaskStatus = "done"
+	SrsDubbingTaskStatusRephrasing    SrsDubbingTaskStatus = "rephrasing"
+	SrsDubbingTaskStatusMerging       SrsDubbingTaskStatus = "merging"
+	SrsDubbingTaskStatusDone          SrsDubbingTaskStatus = "done"
 )
 
 type SrsDubbingTask struct {
-	// Dubbing task UUID, equals to the dubbing project UUID.
-	UUID string `json:"uuid"`
-	// The task session UUID.
-	SessionUUID string `json:"session"`
-	// The ASR input audio file.
+	// Normally equals the project UUID.
+	UUID          string `json:"uuid"`
+	SessionUUID   string `json:"session"`
 	AsrInputAudio string `json:"asr_input_audio"`
-	// The ASR input bitrate in bps.
-	AsrInputBitrate int `json:"asr_input_bitrate"`
-	// The ASR response object, text and segemnts.
-	AsrResponse *AudioResponse `json:"asr_response"`
+	// In bps.
+	AsrInputBitrate int            `json:"asr_input_bitrate"`
+	AsrResponse     *AudioResponse `json:"asr_response"`
 
-	// Whether running the task.
 	running bool
-	// The task status, indicates the task is running or not.
-	status SrsDubbingTaskStatus
-	// The owner dubbing project.
+	status  SrsDubbingTaskStatus
 	project *SrsDubbingProject
-	// The context to control the task.
-	ctx context.Context
-	// The cancel function to stop the task.
-	cancel context.CancelFunc
-	// The cleanup wait group.
-	wg sync.WaitGroup
-	// The lock to protect the task.
-	lock sync.Mutex
+	ctx     context.Context
+	cancel  context.CancelFunc
+	wg      sync.WaitGroup
+	lock    sync.Mutex
 }
 
 func NewSrsDubbingTask(opts ...func(task *SrsDubbingTask)) *SrsDubbingTask {
 	v := &SrsDubbingTask{
-		// The uuid, normally equals to the project.
-		UUID: uuid.NewString(),
-		// The session uuid, created for eachtime.
+		UUID:        uuid.NewString(),
 		SessionUUID: uuid.NewString(),
 	}
 	for _, opt := range opts {
@@ -1728,10 +1624,8 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 	v.ctx, v.cancel = ctx, cancel
 	logger.Tf(ctx, "start dubbing worker for task %v", v.UUID)
 
-	// Always set the constant fields.
-	v.AsrInputBitrate = 30 * 1000 // in N * kbps.
+	v.AsrInputBitrate = 30 * 1000 // 30 kbps.
 
-	// Extract audio from source file.
 	extractAudio := func() error {
 		if v.AsrInputAudio != "" {
 			if _, err := os.Stat(path.Join(conf.Pwd, aiDubbingWorkDir, v.AsrInputAudio)); err != nil {
@@ -1743,10 +1637,8 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 			}
 		}
 
-		// We are extracting the audio from source file.
 		v.status = SrsDubbingTaskStatusExtractAudio
 
-		// Regenerate the ASR response if input changed.
 		asrInputAudio := path.Join(v.project.UUID, fmt.Sprintf("asr-%v.m4a", v.SessionUUID))
 		absSourcePath := path.Join(conf.Pwd, aiDubbingWorkDir, v.project.SourcePath)
 		if err := exec.CommandContext(ctx, "ffmpeg",
@@ -1766,7 +1658,6 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 		return nil
 	}
 
-	// Generate ASR response by AI service.
 	generateAsrResponse := func() error {
 		if v.project == nil || v.project.SourceFormat == nil {
 			return errors.Errorf("invalid project or source format")
@@ -1778,21 +1669,18 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 			return errors.Errorf("invalid source duration %v", v.project.SourceFormat.Duration)
 		}
 
-		// We are generating the ASR response.
 		v.status = SrsDubbingTaskStatusAsrGenerating
 
-		// Ignore if disabled.
 		if !v.project.ASR.AIASREnabled {
 			logger.Tf(ctx, "Dubbing: ignore for ASR disabled, task=%v, project=%v", v.UUID, v.project.UUID)
 			return nil
 		}
 
-		// Whether force to generate ASR response.
 		if alwaysForceRegenerateASRResponse {
 			v.AsrResponse = nil
 		}
 
-		// Whether exists command file to regenerate ASR.
+		// A command file: create it to run ASR again.
 		regenerateASR := path.Join(conf.Pwd, aiDubbingWorkDir, v.project.UUID, "regenerate.txt")
 		if _, err := os.Stat(regenerateASR); err == nil {
 			os.Remove(regenerateASR)
@@ -1804,16 +1692,14 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 		}
 		bitrate, duration := v.AsrInputBitrate, v.project.SourceFormat.Duration
 
-		// Split the audio to segments, because each ASR is limited to 25MB by OpenAI,
-		// see https://platform.openai.com/docs/guides/speech-to-text
+		// OpenAI limits each ASR file to 25MB, see https://platform.openai.com/docs/guides/speech-to-text
 		limitDuration := int(25*1024*1024*8/float64(bitrate)) / 10
 		for starttime := float64(0); starttime < duration; starttime += float64(limitDuration) {
-			// For debugging, only the first segment.
 			if starttime > 0 && onlyRegenerateFirstSegment {
 				break
 			}
 
-			// If there are some matched groups about start time, do not generate the ASR for it.
+			// Skip a part that already has ASR groups, such as one saved before the task restarted.
 			ignoreIfMatched := 3
 			if matches := v.AsrResponse.MatchGroups(starttime, ignoreIfMatched*2); len(matches) > ignoreIfMatched {
 				continue
@@ -1833,12 +1719,10 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 				}
 				logger.Tf(ctx, "Convert %v to segment %v ok, starttime=%v", absAsrInputAudio, tmpAsrInputAudio, starttime)
 
-				// Initialize the AI services.
 				aiConfig := openai.DefaultConfig(v.project.ASR.AISecretKey)
 				aiConfig.OrgID = v.project.ASR.AIOrganization
 				aiConfig.BaseURL = v.project.ASR.AIBaseURL
 
-				// Do ASR, convert to text.
 				client := openai.NewClientWithConfig(aiConfig)
 				resp, err := client.CreateTranscription(
 					ctx,
@@ -1855,7 +1739,6 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 				logger.Tf(ctx, "ASR ok, project=%v, resp is <%v>B, group=%v",
 					v.project.UUID, len(resp.Text), len(v.AsrResponse.Groups))
 
-				// Append the segment to ASR output object.
 				v.AsrResponse.AppendSegment(resp, starttime)
 				logger.Tf(ctx, "Save ASR output ok")
 
@@ -1872,7 +1755,6 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 		return nil
 	}
 
-	// Always try to merge very small segments to previous groups.
 	mergeSegmentsBetweenGroups := func() error {
 		if v.AsrResponse == nil {
 			logger.Tf(ctx, "Dubbing: ignore merge for no ASR response, task=%v, project=%v", v.UUID, v.project.UUID)
@@ -1888,10 +1770,8 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 			return true
 		}
 
-		// Merge the segments between groups.
 		var anythingChanged bool
 		for gIndex, g := range v.AsrResponse.Groups {
-			// Find next group, ignore if no next.
 			var nextGroup *AudioGroup
 			if gIndex+1 < len(v.AsrResponse.Groups) {
 				nextGroup = v.AsrResponse.Groups[gIndex+1]
@@ -1900,24 +1780,19 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 				continue
 			}
 
-			// Ignore if already translated.
 			if g.Translated != "" || g.Rephrased != "" || g.TTS != "" {
 				continue
 			}
 
-			// Find first segment of next group, ignore if no segment.
 			lastSegment, nextFirstSegment := g.LastSegment(), nextGroup.FirstSegment()
 			if lastSegment == nil || nextGroup == nil || nextFirstSegment == nil {
 				continue
 			}
 
-			// If last segment is very close to the next group, and first segment of next group
-			// has very few words, merge next segment to this group.
 			var nextFewWords bool
 			if nextFirstSegment.Diff(lastSegment) < MergeSegmentBetweenGroups {
 				nextText := strings.TrimSpace(nextFirstSegment.Text)
 
-				// Whether the next segment is very few words.
 				if isEnglish(nextText) {
 					nextFewWords = strings.Count(nextText, " ") < MergeSegmentForSmallWords
 				} else {
@@ -1929,7 +1804,6 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 				continue
 			}
 
-			// Merge first segment of next group to this group.
 			if s := nextGroup.RemoveSegment(nextFirstSegment); s != nil {
 				anythingChanged = true
 				g.Segments = append(g.Segments, s)
@@ -1940,7 +1814,6 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 			return nil
 		}
 
-		// Eliminate the empty group.
 		var groups []*AudioGroup
 		for _, g := range v.AsrResponse.Groups {
 			if len(g.Segments) == 0 {
@@ -1961,7 +1834,6 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 		return nil
 	}
 
-	// Translate all groups to target language.
 	translateGroups := func() error {
 		v.status = SrsDubbingTaskStatusTranslating
 
@@ -1970,7 +1842,6 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 			return nil
 		}
 
-		// Ignore if disabled.
 		if !v.project.Translation.AIChatEnabled {
 			logger.Tf(ctx, "Dubbing: ignore for translate disabled, task=%v, project=%v", v.UUID, v.project.UUID)
 			return nil
@@ -1995,7 +1866,6 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 		return nil
 	}
 
-	// Generate TTS audio for each group.
 	generateTTS := func() error {
 		v.status = SrsDubbingTaskStatusTTSGenerating
 
@@ -2004,7 +1874,6 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 			return nil
 		}
 
-		// Ignore if disabled.
 		if !v.project.TTS.AITTSEnabled {
 			logger.Tf(ctx, "Dubbing: ignore for TTS disabled, task=%v, project=%v", v.UUID, v.project.UUID)
 			return nil
@@ -2039,7 +1908,6 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 			return nil
 		}
 
-		// Ignore if disabled.
 		if !v.project.Rephrase.AIChatEnabled {
 			logger.Tf(ctx, "Dubbing: ignore for rephrase disabled, task=%v, project=%v", v.UUID, v.project.UUID)
 			return nil
@@ -2050,7 +1918,6 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 				continue
 			}
 
-			// If TTS duration not exceed the group duration, or already rephrased, use translated text directly.
 			if g.TTSDuration <= 0 || g.TTSDuration <= g.ASRDuration() {
 				continue
 			}
@@ -2073,37 +1940,29 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 		return nil
 	}
 
-	// The main cycle for worker.
 	cycle := func() error {
-		// Now, task is running.
 		v.status = SrsDubbingTaskStatusRunning
 
-		// Extract audio from source file.
 		if err := extractAudio(); err != nil {
 			return errors.Wrapf(err, "extract audio")
 		}
 
-		// Generate ASR response by AI service.
 		if err := generateAsrResponse(); err != nil {
 			return errors.Wrapf(err, "generate asr response")
 		}
 
-		// Always try to merge segments to groups.
 		if err := mergeSegmentsBetweenGroups(); err != nil {
 			return errors.Wrapf(err, "merge groups")
 		}
 
-		// Translate all groups to target language.
 		if err := translateGroups(); err != nil {
 			return errors.Wrapf(err, "translate groups")
 		}
 
-		// Generate TTS audio for each group, first pass.
 		if err := generateTTS(); err != nil {
 			return errors.Wrapf(err, "generate tts 1pass")
 		}
 
-		// Rephrase all groups to shorter text.
 		if err := rephraseAsShorterTranslations(); err != nil {
 			return errors.Wrapf(err, "rephrase groups")
 		}
@@ -2128,7 +1987,6 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 			}
 		}()
 
-		// Ignore if already running.
 		if running {
 			logger.Tf(ctx, "ignore start dubbing worker for task %v", v.UUID)
 			return
@@ -2158,54 +2016,34 @@ func (v *SrsDubbingTask) Start(ctx context.Context) error {
 }
 
 type SrsDubbingProject struct {
-	// Dubbing project UUID.
-	UUID string `json:"uuid"`
-	// Live room title.
-	Title string `json:"title"`
-	// File source type.
-	FileType FFprobeSourceType `json:"filetype"`
-	// File source path.
-	FilePath string `json:"filepath"`
-	// Create time.
-	CreatedAt string `json:"created_at"`
+	UUID      string            `json:"uuid"`
+	Title     string            `json:"title"`
+	FileType  FFprobeSourceType `json:"filetype"`
+	FilePath  string            `json:"filepath"`
+	CreatedAt string            `json:"created_at"`
 
-	// The AI assistant settings for ASR.
-	ASR *SrsAssistant `json:"asr"`
-	// The AI assistant settings for Translation.
+	ASR         *SrsAssistant `json:"asr"`
 	Translation *SrsAssistant `json:"trans"`
-	// The AI assistant settings for rephrase text to shorter.
-	Rephrase *SrsAssistant `json:"rephrase"`
-	// The AI assistant settings for TTS.
-	TTS *SrsAssistant `json:"tts"`
+	Rephrase    *SrsAssistant `json:"rephrase"`
+	TTS         *SrsAssistant `json:"tts"`
 
-	// Cached source file UUID.
-	SourceUUID string `json:"source"`
-	// Cached source filepath.
-	SourcePath string `json:"source_path"`
-	// Source file format.
-	SourceFormat *MediaFormat `json:"format"`
-	// Source file video format.
-	SourceVideo *FFprobeVideo `json:"video"`
-	// Source file audio format.
-	SourceAudio *FFprobeAudio `json:"audio"`
+	SourceUUID   string        `json:"source"`
+	SourcePath   string        `json:"source_path"`
+	SourceFormat *MediaFormat  `json:"format"`
+	SourceVideo  *FFprobeVideo `json:"video"`
+	SourceAudio  *FFprobeAudio `json:"audio"`
 
-	// The dubbing task uuid, should equals to the project uuid, if task exists.
 	TaskUUID string `json:"task"`
 }
 
 func NewSrsDubbingProject(opts ...func(dubbing *SrsDubbingProject)) *SrsDubbingProject {
 	v := &SrsDubbingProject{
-		UUID: uuid.NewString(),
-		// Create time.
-		CreatedAt: time.Now().Format(time.RFC3339),
-		// Create a default ASR assistant.
-		ASR: NewAssistant(),
-		// Create a default Translation assistant.
+		UUID:        uuid.NewString(),
+		CreatedAt:   time.Now().Format(time.RFC3339),
+		ASR:         NewAssistant(),
 		Translation: NewAssistant(),
-		// Create a default rephrase assistant.
-		Rephrase: NewAssistant(),
-		// Create a default TTS assistant.
-		TTS: NewAssistant(),
+		Rephrase:    NewAssistant(),
+		TTS:         NewAssistant(),
 	}
 	for _, opt := range opts {
 		opt(v)

@@ -18,7 +18,7 @@ export function buildUrls(defaultUrl, secret, env) {
     defaultUrl = a0.pathname.substring(1);
   }
 
-  // Parse the default url to vhost, app, and stream.
+  // An anchor element parses the URL without redirecting the page.
   // @see: http://stackoverflow.com/questions/10469575/how-to-use-location-object-to-parse-url-without-redirecting-the-page-in-javascri
   const a = document.createElement("a");
   a.href = `${window.location.protocol}//${window.location.host}/${defaultUrl}`;
@@ -34,14 +34,12 @@ export function buildUrls(defaultUrl, secret, env) {
 
   const urls = {};
 
-  // Build RTMP url.
   if (true) {
     const rtmpPort = isDefaultPort(env.rtmpPort) ? '' : `:${env.rtmpPort}`;
     urls.rtmpServer = `rtmp://${defaultHostname}${rtmpPort}/${defaultApp}/`;
     urls.rtmpStreamKey = secret ? `${defaultStream}?secret=${secret.publish}` : defaultStream;
   }
 
-  // Build SRT url.
   if (true) {
     const secretQuery = secret ? `?secret=${secret.publish}` : '';
     const srtPort = env.srtPort ? `:${env.srtPort}` : '';
@@ -49,14 +47,12 @@ export function buildUrls(defaultUrl, secret, env) {
     urls.srtPlayUrl = `srt://${defaultHostname}${srtPort}?streamid=#!::r=${defaultApp}/${defaultStream},latency=20,m=request`;
   }
 
-  // Build console url.
   if (true) {
     const httpPort = env.httpPort ? env.httpPort : defaultPort;
     urls.cnConsole = `/console/ng_index.html#/summaries?port=${httpPort}&http=${httpPort}`;
     urls.enConsole = `/console/en_index.html#/summaries?port=${httpPort}&http=${httpPort}`;
   }
 
-  // The player url.
   if (true) {
     const secretQuery = secret ? `?secret=${secret.publish}` : '';
     const schema = defaultSchema;
@@ -72,7 +68,6 @@ export function buildUrls(defaultUrl, secret, env) {
     urls.rtcPlayer = `/players/whep.html?schema=${schema}&port=${httpPort}&api=${httpPort}&autostart=true&stream=${defaultStream}`;
   }
 
-  // For WebRTC url.
   if (true) {
     const secretQuery = secret ? `&secret=${secret.publish}` : '';
     const httpPort = env.httpPort ? env.httpPort : defaultPort;
@@ -82,7 +77,6 @@ export function buildUrls(defaultUrl, secret, env) {
     urls.whepUrl = `${defaultSchema}://${defaultHostname}${httpUrlPort}/rtc/v1/whep/?app=${defaultApp}&stream=${defaultStream}`;
   }
 
-  // For transcode stream and urls.
   if (true) {
     const transcodeStreamName = `${defaultStream}-trans`;
     urls.transcodeStreamName = transcodeStreamName;
@@ -119,7 +113,6 @@ export default function useUrls() {
   const [transcodeStreamKey, setTranscodeStreamKey] = React.useState();
   const [transcodeFlvPlayer, setTranscodeFlvPlayer] = React.useState();
 
-  // Whether urls are ready.
   const [ready, setReady] = React.useState(false);
 
   const [loading, setLoading] = React.useState(true);
@@ -151,49 +144,41 @@ export default function useUrls() {
   }, [handleError, setSecret, setLoading]);
 
   React.useEffect(() => {
-    // Ignore if not loaded the secret.
     if (loading) return;
 
     const urls = buildUrls(`live/${rtmpStreamName}`, secret, env);
 
-    // Build RTMP url.
     if (true) {
       setRtmpServer(urls.rtmpServer);
       setRtmpStreamKey(urls.rtmpStreamKey);
     }
 
-    // Build SRT url.
     if (true) {
       setSrtPublishUrl(urls.srtPublishUrl);
       setSrtPlayUrl(urls.srtPlayUrl);
     }
 
-    // Build console url.
     if (true) {
       setCnConsole(urls.cnConsole);
       setEnConsole(urls.enConsole);
     }
 
-    // The player url.
     if (true) {
       setFlvUrl(urls.flvUrl);
       setM3u8Url(urls.m3u8Url);
       setRtcUrl(urls.rtcUrl);
       setRtcPublishUrl(urls.rtcPublishUrl);
-      // /tools/player.html?url=http://localhost:3000/live/livestream.m3u8
       setFlvPlayer(urls.flvPlayer);
       setHlsPlayer(urls.hlsPlayer);
       setRtcPlayer(urls.rtcPlayer);
     }
 
-    // For WebRTC url.
     if (true) {
       setRtcPublisher(urls.rtcPublisher);
       setWhipUrl(urls.whipUrl);
       setWhepUrl(urls.whepUrl);
     }
 
-    // For transcode stream and urls.
     if (true) {
       setTranscodeStreamName(urls.transcodeStreamName);
       setTranscodeStreamKey(urls.transcodeStreamKey);
@@ -205,19 +190,16 @@ export default function useUrls() {
 
   return {
     ready,
-    // For basic stream.
     rtmpServer,
     rtmpStreamName,
     rtmpStreamKey,
     secret,
-    // Basic URLs.
     srtPublishUrl,
     srtPlayUrl,
     flvUrl,
     m3u8Url,
     rtcUrl,
     rtcPublishUrl,
-    // Web URLs.
     cnConsole,
     enConsole,
     flvPlayer,
@@ -226,11 +208,9 @@ export default function useUrls() {
     rtcPublisher,
     whipUrl,
     whepUrl,
-    // For transcode.
     transcodeStreamName,
     transcodeStreamKey,
     transcodeFlvPlayer,
-    // For update stream name.
     updateStreamName,
   };
 }

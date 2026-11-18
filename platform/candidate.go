@@ -8,7 +8,7 @@ import (
 	"net"
 	"strings"
 	"sync"
-	// From ossrs.
+
 	"github.com/ossrs/go-oryx-lib/logger"
 )
 
@@ -41,15 +41,12 @@ func (v *CandidateWorker) Start(ctx context.Context) error {
 	return nil
 }
 
-// Resolve host to ip. Return nil if ignore the host resolving, for example, user disable resolving by
-// set env NAME_LOOKUP to false.
+// Returns a nil IP when resolving is skipped, such as with NAME_LOOKUP set to off.
 func (v *CandidateWorker) Resolve(host string) (net.IP, error) {
-	// Ignore the resolving.
 	if envNameLookup() == "off" {
 		return nil, nil
 	}
 
-	// Ignore the port.
 	if strings.Contains(host, ":") {
 		if hostname, _, err := net.SplitHostPort(host); err != nil {
 			return nil, err
@@ -58,28 +55,24 @@ func (v *CandidateWorker) Resolve(host string) (net.IP, error) {
 		}
 	}
 
-	// Resolve the localhost to possible IP address.
 	if host == "localhost" {
-		// If directly run in host, like debugging, use the private ipv4.
+		// Not in Docker, such as when debugging, so use the private IPv4.
 		if envPlatformDocker() == "off" {
 			return conf.ipv4, nil
 		}
 
-		// If already set CANDIDATE, ignore lo.
 		if envCandidate() != "" {
 			return nil, nil
 		}
 
-		// Return lo for OBS WHIP or native client to access it.
+		// So OBS WHIP or a native client can reach it by loopback.
 		return net.IPv4(127, 0, 0, 1), nil
 	}
 
-	// Directly use the ip if not name.
 	if ip := net.ParseIP(host); ip != nil {
 		return ip, nil
 	}
 
-	// Lookup the name to parse to ip.
 	if ips, err := net.LookupIP(host); err != nil {
 		return nil, err
 	} else if len(ips) > 0 {

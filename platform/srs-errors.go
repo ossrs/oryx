@@ -5,11 +5,10 @@
 //
 package main
 
-// General error code for Oryx, it uses 100~999 for all errors.
+// Oryx uses 100 to 999 for its error codes.
 type SrsStackError int
 
-// Error code for callback, 100 ~ 200.
+// The callback errors use 100 to 200.
 const (
-	// Error for callback module, about the record events.
 	SrsStackErrorCallbackRecord SrsStackError = 100
 )

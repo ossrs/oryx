@@ -21,7 +21,6 @@ import (
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
 
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -36,15 +35,13 @@ type VodWorker struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	// Tencent Cloud credentials.
 	secretId  string
 	secretKey string
 	vodAppID  uint64
 	vodClient *vod.Client
 
-	// Got message from SRS, a new TS segment file is generated.
 	msgs chan *SrsOnHlsObject
-	// The streams we're voding, key is m3u8 URL in string, value is m3u8 object *VodM3u8Stream.
+	// Key is the m3u8 URL, value is *VodM3u8Stream.
 	streams sync.Map
 }
 
@@ -86,7 +83,6 @@ func (v *VodWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			secretId, _ := rdb.HGet(ctx, SRS_TENCENT_CAM, "secretId").Result()
 			secretKey, _ := rdb.HGet(ctx, SRS_TENCENT_CAM, "secretKey").Result()
 
-			// VoD service status.
 			service, _ := rdb.HGet(ctx, SRS_TENCENT_VOD, "service").Result()
 			storage, _ := rdb.HGet(ctx, SRS_TENCENT_VOD, "storage").Result()
 
@@ -98,7 +94,7 @@ func (v *VodWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			}{
 				All:    all == "true",
 				Secret: appId != "" && secretId != "" && secretKey != "",
-				// For previous platform, the service is set to string ok, so we also create an application.
+				// Older versions stored ok as the service, with no application ID, so the setup creates an application.
 				Service: service != "" && service != "ok",
 				Storage: storage != "",
 			})
@@ -165,7 +161,6 @@ func (v *VodWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "hscan %v 0 * 100", SRS_VOD_M3U8_ARTIFACT)
 			}
 
-			// Unmarshal artifacts from redis.
 			artifacts, pendingArtifacts := []*M3u8VoDArtifact{}, []*M3u8VoDArtifact{}
 			for i := 0; i < len(keys); i += 2 {
 				var metadata M3u8VoDArtifact
@@ -181,7 +176,6 @@ func (v *VodWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 			}
 
 			// TODO: FIXME: Query in worker thread.
-			// Query media information for artifacts.
 			// See https://cloud.tencent.com/document/product/266/31763
 			if len(pendingArtifacts) > 0 {
 				var fileIDs []string
@@ -245,7 +239,6 @@ func (v *VodWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 				}
 			}
 
-			// Build response from artifacts.
 			files := []map[string]interface{}{}
 			for _, metadata := range artifacts {
 				var duration float64
@@ -265,10 +258,9 @@ func (v *VodWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 					"nn":       len(metadata.Files),
 					"duration": duration,
 					"size":     size,
-					// For VoD only.
-					"file":  metadata.FileID,
-					"media": metadata.MediaURL,
-					"task":  metadata.Task,
+					"file":     metadata.FileID,
+					"media":    metadata.MediaURL,
+					"task":     metadata.Task,
 				})
 			}
 
@@ -286,7 +278,6 @@ func (v *VodWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 		if err := func() error {
 			// Format is :uuid.m3u8 or :uuid/index.m3u8
 			filename := r.URL.Path[len("/terraform/v1/hooks/vod/hls/"):]
-			// Format is :uuid.m3u8
 			filename = strings.ReplaceAll(filename, "/index.m3u8", ".m3u8")
 			uuid := filename[:len(filename)-len(path.Ext(filename))]
 			if len(uuid) == 0 {
@@ -322,28 +313,23 @@ func (v *VodWorker) Handle(ctx context.Context, handler *http.ServeMux) error {
 }
 
 func (v *VodWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage) error {
-	// Ignore for Tencent Cloud credentials not ready.
 	if !v.ready() {
 		return nil
 	}
 
-	// Copy the ts file to temporary cache dir.
 	tsid := uuid.NewString()
 	tsfile := path.Join("vod", fmt.Sprintf("%v.ts", tsid))
 
-	// Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
-	// Note that should never use fs.copyFileSync(file, tsfile, fs.constants.COPYFILE_FICLONE_FORCE) which fails in macOS.
+	// Pass user input as command arguments, never through a shell, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
 	if err := exec.CommandContext(ctx, "cp", "-f", msg.File, tsfile).Run(); err != nil {
 		return errors.Wrapf(err, "copy file %v to %v", msg.File, tsfile)
 	}
 
-	// Get the file size.
 	stats, err := os.Stat(msg.File)
 	if err != nil {
 		return errors.Wrapf(err, "stat file %v", msg.File)
 	}
 
-	// Create a local ts file object.
 	tsFile := &TsFile{
 		TsID:     tsid,
 		URL:      msg.URL,
@@ -353,7 +339,6 @@ func (v *VodWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage) er
 		File:     tsfile,
 	}
 
-	// Notify worker asynchronously.
 	go func() {
 		select {
 		case <-ctx.Done():
@@ -380,12 +365,10 @@ func (v *VodWorker) Start(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	logger.Tf(ctx, "Vod: start a worker")
 
-	// When system startup, we initialize the credentials, for worker to use it.
 	if err := v.updateCredential(ctx); err != nil {
 		return errors.Wrapf(err, "update credential")
 	}
 
-	// Load all objects from redis.
 	if objs, err := rdb.HGetAll(ctx, SRS_VOD_M3U8_WORKING).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hgetall %v", SRS_VOD_M3U8_WORKING)
 	} else if len(objs) > 0 {
@@ -397,12 +380,10 @@ func (v *VodWorker) Start(ctx context.Context) error {
 				return errors.Wrapf(err, "load %v", value)
 			}
 
-			// Initialize object.
 			if err := m3u8LocalObj.Initialize(ctx, v); err != nil {
 				return errors.Wrapf(err, "init %v", m3u8LocalObj.String())
 			}
 
-			// Save in memory object.
 			v.streams.Store(m3u8URL, &m3u8LocalObj)
 
 			wg.Add(1)
@@ -415,11 +396,9 @@ func (v *VodWorker) Start(ctx context.Context) error {
 		}
 	}
 
-	// Create M3u8 object from message.
 	buildM3u8Object := func(ctx context.Context, msg *SrsOnHlsObject) error {
 		logger.Tf(ctx, "Vod: Got message %v", msg.String())
 
-		// Load stream local object.
 		var m3u8LocalObj *VodM3u8Stream
 		var freshObject bool
 		if obj, loaded := v.streams.LoadOrStore(msg.Msg.M3u8URL, &VodM3u8Stream{
@@ -428,9 +407,7 @@ func (v *VodWorker) Start(ctx context.Context) error {
 			m3u8LocalObj, freshObject = obj.(*VodM3u8Stream), !loaded
 		}
 
-		// Serve object if fresh one.
 		if freshObject {
-			// Initialize object.
 			if err := m3u8LocalObj.Initialize(ctx, v); err != nil {
 				return errors.Wrapf(err, "init %v", m3u8LocalObj.String())
 			}
@@ -444,10 +421,9 @@ func (v *VodWorker) Start(ctx context.Context) error {
 			}()
 		}
 
-		// Append new ts file to object.
 		m3u8LocalObj.addMessage(ctx, msg)
 
-		// Always save the object to redis, for reloading it when restart.
+		// Start reloads the saved objects after a restart.
 		if err := m3u8LocalObj.saveObject(ctx); err != nil {
 			return errors.Wrapf(err, "save %v", m3u8LocalObj.String())
 		}
@@ -455,7 +431,6 @@ func (v *VodWorker) Start(ctx context.Context) error {
 		return nil
 	}
 
-	// Process all messages about HLS ts segments.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -472,7 +447,6 @@ func (v *VodWorker) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Load tencent cloud credentials.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -507,7 +481,7 @@ func (v *VodWorker) updateCredential(ctx context.Context) error {
 		SecretId: v.secretId, SecretKey: v.secretKey, VodAppID: v.vodAppID,
 	}
 
-	// The credential might not be ready, so we ignore error.
+	// The credentials may not be set yet.
 	if secretId, err := rdb.HGet(ctx, SRS_TENCENT_CAM, "secretId").Result(); err == nil {
 		v.secretId = secretId
 	}
@@ -540,7 +514,6 @@ func (v *VodWorker) updateCredential(ctx context.Context) error {
 	return nil
 }
 
-// VodCosToken is the token of COS for VoD.
 type VodCosToken struct {
 	M3u8URL string               `json:"m3u8_url"`
 	UUID    string               `json:"uuid"`
@@ -562,30 +535,22 @@ func (v *VodCosToken) String() string {
 	)
 }
 
-// VodM3u8Stream is the current active local object for a HLS stream.
-// When voding done, it will generate a M3u8VoDArtifact, which is a HLS VoD object.
 type VodM3u8Stream struct {
-	// The url of m3u8, generated by SRS, such as live/livestream/live.m3u8
+	// Generated by SRS, such as live/livestream/live.m3u8.
 	M3u8URL string `json:"m3u8_url"`
-	// The uuid of M3u8VoDObject, generated by worker, such as 3ECF0239-708C-42E4-96E1-5AE935C6E6A9
+	// Also the UUID of the artifact.
 	UUID string `json:"uuid"`
 
-	// Number of local files.
-	NN int `json:"nn"`
-	// The last update time.
+	NN     int    `json:"nn"`
 	Update string `json:"update"`
-	// The done time.
-	Done string `json:"done"`
+	Done   string `json:"done"`
 
-	// The ts files of this m3u8.
+	// The ts files not yet uploaded to COS.
 	Messages []*SrsOnHlsObject `json:"msgs"`
 
-	// The worker which owns this object.
 	vodWorker *VodWorker
-	// The artifact we're working for.
-	artifact *M3u8VoDArtifact
-	// To protect the fields.
-	lock sync.Mutex
+	artifact  *M3u8VoDArtifact
+	lock      sync.Mutex
 }
 
 func (v VodM3u8Stream) String() string {
@@ -697,7 +662,6 @@ func (v *VodM3u8Stream) removeMessage(ctx context.Context, msg *SrsOnHlsObject) 
 	v.NN = len(v.Messages)
 	v.Update = time.Now().Format(time.RFC3339)
 
-	// Remove the tsfile.
 	if err := os.Remove(msg.TsFile.File); err != nil {
 		logger.Wf(ctx, "ignore remove file %v err %+v", msg.TsFile.File, err)
 	}
@@ -724,12 +688,11 @@ func (v *VodM3u8Stream) expired() bool {
 	return false
 }
 
-// Initialize to load artifact. There is no simultaneously access, so no certFileLock is needed.
+// It runs before Run, with no other access, so it sets the fields without the lock.
 func (v *VodM3u8Stream) Initialize(ctx context.Context, r *VodWorker) error {
 	v.vodWorker = r
 	logger.Tf(ctx, "vod initialize url=%v, uuid=%v", v.M3u8URL, v.UUID)
 
-	// Try to load artifact from redis. The final artifact is VoD HLS object.
 	if value, err := rdb.HGet(ctx, SRS_VOD_M3U8_ARTIFACT, v.UUID).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v %v", SRS_VOD_M3U8_ARTIFACT, v.UUID)
 	} else if value != "" {
@@ -741,7 +704,6 @@ func (v *VodM3u8Stream) Initialize(ctx context.Context, r *VodWorker) error {
 		}
 	}
 
-	// Create a artifact if new.
 	if v.artifact == nil {
 		v.artifact = &M3u8VoDArtifact{
 			Update:     time.Now().Format(time.RFC3339),
@@ -757,7 +719,6 @@ func (v *VodM3u8Stream) Initialize(ctx context.Context, r *VodWorker) error {
 	return nil
 }
 
-// Run to serve the current voding object.
 func (v *VodM3u8Stream) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(logger.WithContext(ctx))
 	logger.Tf(ctx, "vod run task %v", v.String())
@@ -766,14 +727,12 @@ func (v *VodM3u8Stream) Run(ctx context.Context) error {
 	var cosToken *VodCosToken
 
 	pfn := func() error {
-		// Refresh cos client.
 		if tc, tt, err := v.refreshCosClient(ctx, cosClient, cosToken); err != nil {
 			return errors.Wrapf(err, "refresh cos client")
 		} else {
 			cosClient, cosToken = tc, tt
 		}
 
-		// Process message and remove it.
 		msgs := v.copyMessages()
 		for _, msg := range msgs {
 			if err := v.serveMessage(ctx, msg, cosClient, cosToken); err != nil {
@@ -781,29 +740,24 @@ func (v *VodM3u8Stream) Run(ctx context.Context) error {
 			}
 		}
 
-		// Refresh redis if got messages to serve.
 		if len(msgs) > 0 {
 			if err := v.saveObject(ctx); err != nil {
 				return errors.Wrapf(err, "save object %v", v.String())
 			}
 		}
 
-		// Ignore if still has messages to process.
 		if len(v.Messages) > 0 {
 			return nil
 		}
 
-		// Check whether expired.
 		if !v.expired() {
 			return nil
 		}
 
-		// Try to finish the object.
 		if err := v.finishM3u8(ctx, cosClient, cosToken); err != nil {
 			return errors.Wrapf(err, "finish m3u8")
 		}
 
-		// Now HLS is done
 		logger.Tf(ctx, "Vod is done, hls is %v, artifact is %v", v.String(), v.artifact.String())
 		cancel()
 
@@ -848,7 +802,6 @@ func (v *VodM3u8Stream) refreshCosClient(ctx context.Context, oldClient *cos.Cli
 			}
 		}
 
-		// If not expired, reuse the session.
 		if cosToken != nil && cosToken.Update != "" {
 			duration := 1800 * time.Second
 			if envNodeEnv() == "development" {
@@ -867,7 +820,7 @@ func (v *VodM3u8Stream) refreshCosClient(ctx context.Context, oldClient *cos.Cli
 		if true {
 			type ExtendedApplyUploadRequest struct {
 				*vod.ApplyUploadRequest
-				// To use the same session, to extend the expire time.
+				// Reusing the session extends its expire time.
 				VodSessionKey string `json:"VodSessionKey,omitempty"`
 			}
 
@@ -877,7 +830,6 @@ func (v *VodM3u8Stream) refreshCosClient(ctx context.Context, oldClient *cos.Cli
 			request.SubAppId = common.Uint64Ptr(v.vodWorker.vodAppID)
 			request.SetContext(ctx)
 
-			// To reuse the same session.
 			if cosToken != nil {
 				request.VodSessionKey = cosToken.Session
 			}
@@ -902,7 +854,6 @@ func (v *VodM3u8Stream) refreshCosClient(ctx context.Context, oldClient *cos.Cli
 			}
 		}
 
-		// Save token to redis.
 		if b, err := json.Marshal(cosToken); err != nil {
 			return nil, errors.Wrapf(err, "marshal %v", cosToken.String())
 		} else if err := rdb.HSet(ctx, SRS_VOD_COS_TOKEN, v.UUID, string(b)).Err(); err != nil && err != redis.Nil {
@@ -912,26 +863,22 @@ func (v *VodM3u8Stream) refreshCosClient(ctx context.Context, oldClient *cos.Cli
 		return cosToken, nil
 	}
 
-	// Refresh the COS token to upload file.
 	cosToken, err := refreshCosToken(ctx, oldToken)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "refresh cos token")
 	}
 
-	// No changed, reuse previous one.
 	if update == cosToken.Update && oldClient != nil {
 		return oldClient, cosToken, nil
 	}
 
-	// Create new COS client.
 	location := fmt.Sprintf("%v.cos.%v.myqcloud.com", cosToken.Bucket, cosToken.Region)
 	u, err := url.Parse(fmt.Sprintf("https://%v", location))
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "parse %v", fmt.Sprintf("https://%v", location))
 	}
 
-	// Create the bucket with private ACL.
-	// See https://cloud.tencent.com/document/product/436/65639
+	// COS client, see https://cloud.tencent.com/document/product/436/65639
 	expire := time.Duration(*cosToken.Cert.ExpiredTime-uint64(time.Now().Unix())) * time.Second
 	client := cos.NewClient(&cos.BaseURL{BucketURL: u}, &http.Client{
 		Transport: &cos.AuthorizationTransport{
@@ -945,20 +892,16 @@ func (v *VodM3u8Stream) refreshCosClient(ctx context.Context, oldClient *cos.Cli
 }
 
 func (v *VodM3u8Stream) serveMessage(ctx context.Context, msg *SrsOnHlsObject, cosClient *cos.Client, cosToken *VodCosToken) error {
-	// We always remove the msg from current object.
 	defer v.removeMessage(ctx, msg)
 
-	// Ignore file if credential is not ready.
 	if !v.vodWorker.ready() {
 		return nil
 	}
 
-	// Ignore file if not exists.
 	if _, err := os.Stat(msg.TsFile.File); err != nil {
 		return err
 	}
 
-	// Upload file to COS of VoD.
 	tsDir := path.Dir(cosToken.Key)
 	key := fmt.Sprintf("%v/%v.ts", tsDir, msg.TsFile.TsID)
 	msg.TsFile.Key = key
@@ -968,8 +911,7 @@ func (v *VodM3u8Stream) serveMessage(ctx context.Context, msg *SrsOnHlsObject, c
 		return errors.Wrapf(err, "open file %v", msg.TsFile.File)
 	}
 
-	// Upload to COS bucket.
-	// See https://cloud.tencent.com/document/product/436/64980
+	// Upload to the COS bucket, see https://cloud.tencent.com/document/product/436/64980
 	opt := cos.ObjectPutOptions{
 		ObjectPutHeaderOptions: &cos.ObjectPutHeaderOptions{
 			ContentType:   "video/MP2T",
@@ -980,7 +922,6 @@ func (v *VodM3u8Stream) serveMessage(ctx context.Context, msg *SrsOnHlsObject, c
 		return errors.Wrapf(err, "cos put object %v", key)
 	}
 
-	// Update the metadata for m3u8.
 	v.updateArtifact(ctx, v.artifact, msg)
 	if err := v.saveArtifact(ctx, v.artifact); err != nil {
 		return errors.Wrapf(err, "save artifact %v", v.artifact.String())
@@ -996,8 +937,7 @@ func (v *VodM3u8Stream) finishM3u8(ctx context.Context, cosClient *cos.Client, c
 		return errors.Wrapf(err, "build vod")
 	}
 
-	// Upload to COS bucket.
-	// See https://cloud.tencent.com/document/product/436/64980
+	// Upload to the COS bucket, see https://cloud.tencent.com/document/product/436/64980
 	opt := cos.ObjectPutOptions{
 		ObjectPutHeaderOptions: &cos.ObjectPutHeaderOptions{
 			ContentType:   contentType,
@@ -1009,7 +949,6 @@ func (v *VodM3u8Stream) finishM3u8(ctx context.Context, cosClient *cos.Client, c
 	}
 	logger.Tf(ctx, "vod to %v, duration=%v ok", cosToken.Key, duration)
 
-	// Commit the upload for cloud VOD.
 	// See https://cloud.tencent.com/document/product/266/31766
 	if true {
 		request := vod.NewCommitUploadRequest()
@@ -1024,8 +963,7 @@ func (v *VodM3u8Stream) finishM3u8(ctx context.Context, cosClient *cos.Client, c
 		}
 	}
 
-	// Start a remux task to covert HLS to MP4.
-	// See https://cloud.tencent.com/document/product/266/33427
+	// The remux template converts the HLS to MP4, see https://cloud.tencent.com/document/product/266/33427
 	var definition int64
 	if remux, err := rdb.HGet(ctx, SRS_TENCENT_VOD, "remux").Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v remux", SRS_TENCENT_VOD)
@@ -1067,16 +1005,14 @@ func (v *VodM3u8Stream) finishM3u8(ctx context.Context, cosClient *cos.Client, c
 		logger.Tf(ctx, "vod remux ok, definition=%v, taskID=%v", definition, taskID)
 	}
 
-	// Remove object from worker.
 	v.vodWorker.streams.Delete(v.M3u8URL)
 
-	// Update artifact after finally.
 	v.finishArtifact(ctx, v.artifact)
 	r0 := v.saveArtifact(ctx, v.artifact)
 	r1 := v.deleteObject(ctx)
 	logger.Tf(ctx, "vod cleanup ok, r0=%v, r1=%v", r0, r1)
 
-	// Do final cleanup, because new messages might arrive while converting to mp4, which takes a long time.
+	// New messages may arrive while the m3u8 is uploaded and committed to VoD.
 	files := v.copyMessages()
 	for _, file := range files {
 		r2 := os.Remove(file.TsFile.File)

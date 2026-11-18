@@ -12,7 +12,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
+
 	"github.com/go-redis/redis/v8"
 )
 
@@ -45,7 +45,6 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
 			}
 
-			// Note that we need to update the auth secret, because we do not use room uuid as stream name.
 			roomPublishAuthKey := GenerateRoomPublishKey(room.StreamName)
 			if err := rdb.HSet(ctx, SRS_AUTH_SECRET, roomPublishAuthKey, room.Secret).Err(); err != nil {
 				return errors.Wrapf(err, "hset %v %v %v", SRS_AUTH_SECRET, roomPublishAuthKey, room.Secret)
@@ -122,7 +121,6 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "hset %v %v %v", SRS_LIVE_ROOM, room.UUID, string(b))
 			}
 
-			// Note that we need to update the auth secret, because we do not use room uuid as stream name.
 			roomPublishAuthKey := GenerateRoomPublishKey(room.StreamName)
 			if err := rdb.HSet(ctx, SRS_AUTH_SECRET, roomPublishAuthKey, room.Secret).Err(); err != nil {
 				return errors.Wrapf(err, "hset %v %v %v", SRS_AUTH_SECRET, roomPublishAuthKey, room.Secret)
@@ -211,7 +209,6 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 				return errors.Wrapf(err, "hdel %v %v", SRS_LIVE_ROOM, roomUUID)
 			}
 
-			// Note that we need to update the auth secret, because we do not use room uuid as stream name.
 			roomPublishAuthKey := GenerateRoomPublishKey(room.StreamName)
 			if err := rdb.HDel(ctx, SRS_AUTH_SECRET, roomPublishAuthKey).Err(); err != nil {
 				return errors.Wrapf(err, "hdel %v %v", SRS_AUTH_SECRET, roomPublishAuthKey)
@@ -229,29 +226,22 @@ func handleLiveRoomService(ctx context.Context, handler *http.ServeMux) error {
 }
 
 type SrsLiveRoom struct {
-	// Live room UUID.
-	UUID string `json:"uuid"`
-	// Live room title.
+	UUID  string `json:"uuid"`
 	Title string `json:"title"`
-	// The stream name, should never use roomUUID because it's secret.
+	// Not the room UUID, which is secret.
 	StreamName string `json:"stream"`
-	// Live room secret.
-	Secret    string `json:"secret"`
-	RoomToken string `json:"roomToken"`
-	// Create time.
-	CreatedAt string `json:"created_at"`
+	Secret     string `json:"secret"`
+	RoomToken  string `json:"roomToken"`
+	CreatedAt  string `json:"created_at"`
 }
 
 func NewLiveRoom(opts ...func(room *SrsLiveRoom)) *SrsLiveRoom {
 	v := &SrsLiveRoom{
-		UUID: uuid.NewString(),
-		// The stream name of room.
+		UUID:       uuid.NewString(),
 		StreamName: strings.ToLower(strings.ReplaceAll(uuid.NewString(), "-", ""))[:12],
-		// The secret of live room.
-		Secret: strings.ToUpper(strings.ReplaceAll(uuid.NewString(), "-", ""))[:16],
-		// Create time.
-		CreatedAt: time.Now().Format(time.RFC3339),
-		RoomToken: uuid.NewString(),
+		Secret:     strings.ToUpper(strings.ReplaceAll(uuid.NewString(), "-", ""))[:16],
+		CreatedAt:  time.Now().Format(time.RFC3339),
+		RoomToken:  uuid.NewString(),
 	}
 	for _, opt := range opts {
 		opt(v)

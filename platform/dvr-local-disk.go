@@ -19,7 +19,7 @@ import (
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
+
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 )
@@ -36,9 +36,8 @@ type RecordWorker struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	// Got message from SRS, a new TS segment file is generated.
 	msgs chan *SrsOnHlsObject
-	// The streams we're recording, key is m3u8 URL in string, value is m3u8 object *RecordM3u8Stream.
+	// Key is the m3u8 URL, value is *RecordM3u8Stream.
 	streams sync.Map
 }
 
@@ -82,14 +81,10 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				}
 
 				type RecordQueryResult struct {
-					// Whether enable record.
-					All bool `json:"all"`
-					// The home directory of record.
-					Home string `json:"home"`
-					// The glob filters for record.
-					Globs []string `json:"globs"`
-					// The post process to copy file to dir for record.
-					ProcessCpDir string `json:"processCpDir"`
+					All          bool     `json:"all"`
+					Home         string   `json:"home"`
+					Globs        []string `json:"globs"`
+					ProcessCpDir string   `json:"processCpDir"`
 				}
 
 				ohttp.WriteData(ctx, w, r, &RecordQueryResult{
@@ -253,32 +248,27 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				return errors.Wrapf(err, "parse %v", M3u8VoDMetadata)
 			}
 
-			// Remove all ts files.
 			for _, file := range metadata.Files {
 				if _, err := os.Stat(file.Key); err == nil {
 					os.Remove(file.Key)
 				}
 			}
 
-			// Remove m3u8 file.
 			m3u8File := path.Join("record", uuid, "index.m3u8")
 			if _, err := os.Stat(m3u8File); err == nil {
 				os.Remove(m3u8File)
 			}
 
-			// Remove mp4 file.
 			mp4File := path.Join("record", uuid, "index.mp4")
 			if _, err := os.Stat(mp4File); err == nil {
 				os.Remove(mp4File)
 			}
 
-			// Remove ts directory.
 			m3u8Directory := path.Join("record", uuid)
 			if _, err := os.Stat(m3u8Directory); err == nil {
 				os.RemoveAll(m3u8Directory)
 			}
 
-			// Remove HLS from list.
 			if err := rdb.HDel(ctx, SRS_RECORD_M3U8_ARTIFACT, uuid).Err(); err != nil && err != redis.Nil {
 				return errors.Wrapf(err, "hdel %v %v", SRS_RECORD_M3U8_ARTIFACT, uuid)
 			}
@@ -319,7 +309,6 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 				return errors.Errorf("no record task for uuid=%v", uuid)
 			}
 
-			// Make the task to expire, to end it ASAP.
 			task.Expired = true
 
 			ohttp.WriteData(ctx, w, r, nil)
@@ -391,7 +380,6 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 	m3u8Handler := func(w http.ResponseWriter, r *http.Request) error {
 		// Format is :uuid.m3u8 or :uuid/index.m3u8
 		filename := r.URL.Path[len("/terraform/v1/hooks/record/hls/"):]
-		// Format is :uuid.m3u8
 		filename = strings.ReplaceAll(filename, "/index.m3u8", ".m3u8")
 		uuid := filename[:len(filename)-len(path.Ext(filename))]
 		if len(uuid) == 0 {
@@ -420,7 +408,7 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 	}
 
 	tsHandler := func(w http.ResponseWriter, r *http.Request) error {
-		// Format is :dir/:m3u8/:uuid.ts
+		// Format is record/:uuid/:tsid.ts, the file Key in the m3u8.
 		filename := r.URL.Path[len("/terraform/v1/hooks/record/hls/"):]
 		fileDir, fileBase := path.Dir(filename), path.Base(filename)
 		uuid := fileBase[:len(fileBase)-len(path.Ext(fileBase))]
@@ -481,7 +469,6 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 		}
 		defer mp4File.Close()
 
-		// No range request.
 		rangeHeader := r.Header.Get("Range")
 		if rangeHeader == "" {
 			w.Header().Set("Content-Type", "video/mp4")
@@ -490,7 +477,6 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 			return nil
 		}
 
-		// Support range request.
 		var start, end int64
 		fmt.Sscanf(rangeHeader, "bytes=%u-%u", &start, &end)
 		if end == 0 {
@@ -535,23 +521,19 @@ func (v *RecordWorker) Handle(ctx context.Context, handler *http.ServeMux) error
 }
 
 func (v *RecordWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage) error {
-	// Copy the ts file to temporary cache dir.
 	tsid := uuid.NewString()
 	tsfile := path.Join("record", fmt.Sprintf("%v.ts", tsid))
 
-	// Always use execFile when params contains user inputs, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
-	// Note that should never use fs.copyFileSync(file, tsfile, fs.constants.COPYFILE_FICLONE_FORCE) which fails in macOS.
+	// Pass user input as command arguments, never through a shell, see https://auth0.com/blog/preventing-command-injection-attacks-in-node-js-apps/
 	if err := exec.CommandContext(ctx, "cp", "-f", msg.File, tsfile).Run(); err != nil {
 		return errors.Wrapf(err, "copy file %v to %v", msg.File, tsfile)
 	}
 
-	// Get the file size.
 	stats, err := os.Stat(msg.File)
 	if err != nil {
 		return errors.Wrapf(err, "stat file %v", msg.File)
 	}
 
-	// Create a local ts file object.
 	tsFile := &TsFile{
 		TsID:     tsid,
 		URL:      msg.URL,
@@ -561,7 +543,6 @@ func (v *RecordWorker) OnHlsTsMessage(ctx context.Context, msg *SrsOnHlsMessage)
 		File:     tsfile,
 	}
 
-	// Notify worker asynchronously.
 	go func() {
 		select {
 		case <-ctx.Done():
@@ -600,7 +581,6 @@ func (v *RecordWorker) Start(ctx context.Context) error {
 	ctx = logger.WithContext(ctx)
 	logger.Tf(ctx, "Record: start a worker")
 
-	// Load all objects from redis.
 	if objs, err := rdb.HGetAll(ctx, SRS_RECORD_M3U8_WORKING).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hgetall %v", SRS_RECORD_M3U8_WORKING)
 	} else if len(objs) > 0 {
@@ -612,12 +592,10 @@ func (v *RecordWorker) Start(ctx context.Context) error {
 				return errors.Wrapf(err, "load %v", value)
 			}
 
-			// Initialize object.
 			if err := m3u8LocalObj.Initialize(ctx, v); err != nil {
 				return errors.Wrapf(err, "init %v", m3u8LocalObj.String())
 			}
 
-			// Save in memory object.
 			v.streams.Store(m3u8URL, &m3u8LocalObj)
 
 			wg.Add(1)
@@ -630,11 +608,9 @@ func (v *RecordWorker) Start(ctx context.Context) error {
 		}
 	}
 
-	// Create M3u8 object from message.
 	buildM3u8Object := func(ctx context.Context, msg *SrsOnHlsObject) error {
 		logger.Tf(ctx, "Record: Got message %v", msg.String())
 
-		// Filter the stream by glob filters.
 		var globFilters []string
 		if globs, err := rdb.HGet(ctx, SRS_RECORD_PATTERNS, "globs").Result(); err != nil && err != redis.Nil {
 			return errors.Wrapf(err, "hget %v globs", SRS_RECORD_PATTERNS)
@@ -644,7 +620,6 @@ func (v *RecordWorker) Start(ctx context.Context) error {
 			}
 		}
 
-		// If glob filters are empty, ignore it, and record all streams.
 		if len(globFilters) > 0 {
 			var globMatched bool
 			streamURL := fmt.Sprintf("/%v/%v", msg.Msg.App, msg.Msg.Stream)
@@ -663,7 +638,6 @@ func (v *RecordWorker) Start(ctx context.Context) error {
 			}
 		}
 
-		// Load stream local object.
 		var m3u8LocalObj *RecordM3u8Stream
 		var freshObject bool
 		if obj, loaded := v.streams.LoadOrStore(msg.Msg.M3u8URL, &RecordM3u8Stream{
@@ -672,22 +646,19 @@ func (v *RecordWorker) Start(ctx context.Context) error {
 			m3u8LocalObj, freshObject = obj.(*RecordM3u8Stream), !loaded
 		}
 
-		// Initialize the fresh object.
 		if freshObject {
 			if err := m3u8LocalObj.Initialize(ctx, v); err != nil {
 				return errors.Wrapf(err, "init %v", m3u8LocalObj.String())
 			}
 		}
 
-		// Append new ts file to object.
 		m3u8LocalObj.addMessage(ctx, msg)
 
-		// Always save the object to redis, for reloading it when restart.
+		// Start reloads the saved objects after a restart.
 		if err := m3u8LocalObj.saveObject(ctx); err != nil {
 			return errors.Wrapf(err, "save %v", m3u8LocalObj.String())
 		}
 
-		// Serve object if fresh one.
 		if freshObject {
 			wg.Add(1)
 			go func() {
@@ -701,7 +672,6 @@ func (v *RecordWorker) Start(ctx context.Context) error {
 		return nil
 	}
 
-	// Process all messages about HLS ts segments.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -721,32 +691,24 @@ func (v *RecordWorker) Start(ctx context.Context) error {
 	return nil
 }
 
-// RecordM3u8Stream is the current active local object for a HLS stream.
-// When recording done, it will generate a M3u8VoDArtifact, which is a HLS VoD object.
 type RecordM3u8Stream struct {
-	// The url of m3u8, generated by SRS, such as live/livestream/live.m3u8
+	// Generated by SRS, such as live/livestream/live.m3u8.
 	M3u8URL string `json:"m3u8_url"`
-	// The uuid of M3u8VoDObject, generated by worker, such as 3ECF0239-708C-42E4-96E1-5AE935C6E6A9
+	// Also the UUID of the artifact.
 	UUID string `json:"uuid"`
 
-	// Number of local files.
-	NN int `json:"nn"`
-	// The last update time.
+	NN     int    `json:"nn"`
 	Update string `json:"update"`
-	// The done time.
-	Done string `json:"done"`
-	// Whether task is set to expire by user.
+	Done   string `json:"done"`
+	// Set by the user to end the record.
 	Expired bool `json:"expired"`
 
-	// The ts files of this m3u8.
+	// The ts files not yet moved into the record directory.
 	Messages []*SrsOnHlsObject `json:"msgs"`
 
-	// The worker which owns this object.
 	recordWorker *RecordWorker
-	// The artifact we're working for.
-	artifact *M3u8VoDArtifact
-	// To protect the fields.
-	lock sync.Mutex
+	artifact     *M3u8VoDArtifact
+	lock         sync.Mutex
 }
 
 func (v RecordM3u8Stream) String() string {
@@ -873,12 +835,11 @@ func (v *RecordM3u8Stream) expired(ctx context.Context) bool {
 	return false
 }
 
-// Initialize to load artifact. There is no simultaneously access, so no certFileLock is needed.
+// It runs before Run, with no other access, so it sets the fields without the lock.
 func (v *RecordM3u8Stream) Initialize(ctx context.Context, r *RecordWorker) error {
 	v.recordWorker = r
 	logger.Tf(ctx, "record initialize url=%v, uuid=%v", v.M3u8URL, v.UUID)
 
-	// Try to load artifact from redis. The final artifact is VoD HLS object.
 	if value, err := rdb.HGet(ctx, SRS_RECORD_M3U8_ARTIFACT, v.UUID).Result(); err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "hget %v %v", SRS_RECORD_M3U8_ARTIFACT, v.UUID)
 	} else if value != "" {
@@ -890,7 +851,6 @@ func (v *RecordM3u8Stream) Initialize(ctx context.Context, r *RecordWorker) erro
 		}
 	}
 
-	// Create a artifact if new.
 	if v.artifact == nil {
 		v.artifact = &M3u8VoDArtifact{
 			UUID:       v.UUID,
@@ -906,7 +866,6 @@ func (v *RecordM3u8Stream) Initialize(ctx context.Context, r *RecordWorker) erro
 	return nil
 }
 
-// Run to serve the current recording object.
 func (v *RecordM3u8Stream) Run(ctx context.Context) error {
 	parentCtx := logger.WithContext(ctx)
 	ctx, cancel := context.WithCancel(parentCtx)
@@ -919,9 +878,7 @@ func (v *RecordM3u8Stream) Run(ctx context.Context) error {
 		}
 
 		defer func() {
-			// Keep in mind that we should not use the ctx for this record task, as it will be canceled once the
-			// task is completed. Instead, we need to use the parent ctx, which is the function parameter representing
-			// the server context that remains active until the server is shut down.
+			// The task ctx is canceled when the record is done, so the end callback uses the server ctx.
 			ctx := parentCtx
 
 			if err := v.callbackEnd(ctx, message); err != nil {
@@ -931,7 +888,6 @@ func (v *RecordM3u8Stream) Run(ctx context.Context) error {
 	}
 
 	pfn := func() error {
-		// Process message and remove it.
 		msgs := v.copyMessages()
 		for _, msg := range msgs {
 			if err := v.serveMessage(ctx, msg); err != nil {
@@ -939,34 +895,28 @@ func (v *RecordM3u8Stream) Run(ctx context.Context) error {
 			}
 		}
 
-		// Refresh redis if got messages to serve.
 		if len(msgs) > 0 {
 			if err := v.saveObject(ctx); err != nil {
 				return errors.Wrapf(err, "save object %v", v.String())
 			}
 		}
 
-		// Ignore if still has messages to process.
 		if len(v.Messages) > 0 {
 			return nil
 		}
 
-		// Check whether expired.
 		if !v.expired(ctx) {
 			return nil
 		}
 
-		// Try to finish the object.
 		if err := v.finishM3u8(ctx); err != nil {
 			return errors.Wrapf(err, "finish m3u8")
 		}
 
-		// Do post processing.
 		if err := v.postProcessing(ctx); err != nil {
 			return errors.Wrapf(err, "post processing")
 		}
 
-		// Now HLS is done
 		logger.Tf(ctx, "Record is done, hls is %v, artifact is %v", v.String(), v.artifact.String())
 		cancel()
 
@@ -994,10 +944,8 @@ func (v *RecordM3u8Stream) Run(ctx context.Context) error {
 }
 
 func (v *RecordM3u8Stream) serveMessage(ctx context.Context, msg *SrsOnHlsObject) error {
-	// We always remove the msg from current object.
 	defer v.removeMessage(msg)
 
-	// Ignore file if not exists.
 	if _, err := os.Stat(msg.TsFile.File); err != nil {
 		return err
 	}
@@ -1014,7 +962,6 @@ func (v *RecordM3u8Stream) serveMessage(ctx context.Context, msg *SrsOnHlsObject
 		return errors.Wrapf(err, "rename %v to %v", msg.TsFile.File, key)
 	}
 
-	// Update the metadata for m3u8.
 	v.updateArtifact(ctx, v.artifact, msg)
 	if err := v.saveArtifact(ctx, v.artifact); err != nil {
 		return errors.Wrapf(err, "save artifact %v", v.artifact.String())
@@ -1047,16 +994,14 @@ func (v *RecordM3u8Stream) finishM3u8(ctx context.Context) error {
 	}
 	logger.Tf(ctx, "record to %v ok", mp4)
 
-	// Remove object from worker.
 	v.recordWorker.streams.Delete(v.M3u8URL)
 
-	// Update artifact after finally.
 	v.finishArtifact(ctx, v.artifact)
 	r0 := v.saveArtifact(ctx, v.artifact)
 	r1 := v.deleteObject(ctx)
 	logger.Tf(ctx, "record cleanup ok, r0=%v, r1=%v", r0, r1)
 
-	// Do final cleanup, because new messages might arrive while converting to mp4, which takes a long time.
+	// New messages may arrive during the mp4 conversion, which takes a long time.
 	files := v.copyMessages()
 	for _, file := range files {
 		r2 := os.Remove(file.TsFile.File)

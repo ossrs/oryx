@@ -17,12 +17,10 @@ import (
 	"sync"
 	"time"
 
-	// From ossrs.
 	"github.com/ossrs/go-oryx-lib/errors"
 	ohttp "github.com/ossrs/go-oryx-lib/http"
 	"github.com/ossrs/go-oryx-lib/logger"
 
-	// Use v8 because we use Go 1.16+, while v9 requires Go 1.18+
 	"github.com/go-redis/redis/v8"
 )
 
@@ -32,10 +30,8 @@ type CallbackWorker struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	// The ephemeral callback config.
 	ephemeralConfig CallbackConfig
-	// Whether update the config immediately.
-	updateConfig chan bool
+	updateConfig    chan bool
 
 	lock sync.Mutex
 }
@@ -129,7 +125,6 @@ func (v *CallbackWorker) Handle(ctx context.Context, handler *http.ServeMux) err
 				return errors.Wrapf(err, "hset %v all %v", SRS_HOOKS, config.All)
 			}
 
-			// Use the request host as the default host.
 			if config.Host == "" {
 				config.Host = fmt.Sprintf("http://%v", r.Host)
 				if r.TLS != nil {
@@ -140,7 +135,6 @@ func (v *CallbackWorker) Handle(ctx context.Context, handler *http.ServeMux) err
 				return errors.Wrapf(err, "hset %v host %v", SRS_HOOKS, config.Host)
 			}
 
-			// Notify the callback worker to update the config.
 			select {
 			case v.updateConfig <- true:
 			case <-ctx.Done():
@@ -260,21 +254,19 @@ func (v *CallbackWorker) OnStreamMessage(ctx context.Context, action SrsAction, 
 
 	req := &struct {
 		RequestID string `json:"request_id"`
-		// The callback parameters.
-		Action string `json:"action"`
-		Opaque string `json:"opaque"`
-		Vhost  string `json:"vhost,omitempty"`
-		App    string `json:"app,omitempty"`
-		Stream string `json:"stream,omitempty"`
-		Param  string `json:"param,omitempty"`
+		Action    string `json:"action"`
+		Opaque    string `json:"opaque"`
+		Vhost     string `json:"vhost,omitempty"`
+		App       string `json:"app,omitempty"`
+		Stream    string `json:"stream,omitempty"`
+		Param     string `json:"param,omitempty"`
 	}{
 		RequestID: uuid.NewString(),
-		// The callback parameters.
-		Action: string(action),
-		Opaque: config.Opaque,
-		Vhost:  streamObj.Vhost,
-		App:    streamObj.App,
-		Stream: streamObj.Stream,
+		Action:    string(action),
+		Opaque:    config.Opaque,
+		Vhost:     streamObj.Vhost,
+		App:       streamObj.App,
+		Stream:    streamObj.Stream,
 	}
 	if action == SrsActionOnPublish {
 		req.Param = streamObj.Param
@@ -394,8 +386,7 @@ func (v *CallbackWorker) OnRecordMessage(ctx context.Context, action SrsAction, 
 	}
 
 	req := &struct {
-		RequestID string `json:"request_id"`
-		// The callback parameters.
+		RequestID    string `json:"request_id"`
 		Action       string `json:"action"`
 		Opaque       string `json:"opaque"`
 		Vhost        string `json:"vhost,omitempty"`
@@ -407,13 +398,12 @@ func (v *CallbackWorker) OnRecordMessage(ctx context.Context, action SrsAction, 
 		ArtifactURL  string `json:"artifact_url,omitempty"`
 	}{
 		RequestID: uuid.NewString(),
-		// The callback parameters.
-		Action: string(action),
-		Opaque: config.Opaque,
-		UUID:   taskUUID,
-		Vhost:  message.Vhost,
-		App:    message.App,
-		Stream: message.Stream,
+		Action:    string(action),
+		Opaque:    config.Opaque,
+		UUID:      taskUUID,
+		Vhost:     message.Vhost,
+		App:       message.App,
+		Stream:    message.Stream,
 	}
 
 	if action == SrsActionOnRecordEnd {
@@ -538,32 +528,24 @@ func (v *CallbackWorker) OnOCR(ctx context.Context, action SrsAction, taskUUID s
 
 	req := &struct {
 		RequestID string `json:"request_id"`
-		// The callback parameters.
-		Action string `json:"action"`
-		Opaque string `json:"opaque"`
-		Vhost  string `json:"vhost,omitempty"`
-		App    string `json:"app,omitempty"`
-		Stream string `json:"stream,omitempty"`
-		// The OCR task UUID.
-		UUID string `json:"uuid,omitempty"`
-		// The OCR prompt.
-		Prompt string `json:"prompt,omitempty"`
-		// The OCR result.
-		Result string `json:"result,omitempty"`
+		Action    string `json:"action"`
+		Opaque    string `json:"opaque"`
+		Vhost     string `json:"vhost,omitempty"`
+		App       string `json:"app,omitempty"`
+		Stream    string `json:"stream,omitempty"`
+		UUID      string `json:"uuid,omitempty"`
+		Prompt    string `json:"prompt,omitempty"`
+		Result    string `json:"result,omitempty"`
 	}{
 		RequestID: uuid.NewString(),
-		// The callback parameters.
-		Action: string(action),
-		Opaque: config.Opaque,
-		Vhost:  message.Vhost,
-		App:    message.App,
-		Stream: message.Stream,
-		// The OCR task UUID.
-		UUID: taskUUID,
-		// The OCR prompt.
-		Prompt: prompt,
-		// The OCR result.
-		Result: result,
+		Action:    string(action),
+		Opaque:    config.Opaque,
+		Vhost:     message.Vhost,
+		App:       message.App,
+		Stream:    message.Stream,
+		UUID:      taskUUID,
+		Prompt:    prompt,
+		Result:    result,
 	}
 
 	pfn4 := func(b, b2 []byte, code int) error {
@@ -661,13 +643,12 @@ func (v *CallbackWorker) OnOCR(ctx context.Context, action SrsAction, taskUUID s
 }
 
 type CallbackConfig struct {
-	// The callback target.
 	Target string `json:"target"`
-	// The opaque string, for example, the token.
+	// For example, a token.
 	Opaque string `json:"opaque"`
-	// Whether to callback all streams.
+	// Whether to call back for all streams.
 	All bool `json:"all"`
-	// The full host to generate the full URl for callback.
+	// The scheme and host, used to build the full URL in a callback.
 	Host string `json:"host"`
 }
 

@@ -8,10 +8,8 @@ import "context"
 var fastCache *FastCache
 
 type FastCache struct {
-	// Whether delivery HLS in high performance mode.
 	HLSHighPerformance bool
-	// Whether deliver HLS in low latency mode.
-	HLSLowLatency bool
+	HLSLowLatency      bool
 }
 
 func NewFastCache() *FastCache {
