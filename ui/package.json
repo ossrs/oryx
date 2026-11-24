@@ -24,7 +24,7 @@
     "react-error-boundary": "^3.1.4",
     "react-i18next": "^11.16.2",
     "react-qr-code": "^2.0.3",
-    "react-router-dom": "^6.2.1",
+    "react-router-dom": "^7.18.7",
     "react-scripts": "5.0.0",
     "recharts": "^2.1.8",
     "semver": "^7.3.5",
