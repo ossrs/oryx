@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# Execute by: bash xxx.sh or bash zzz/yyy/xxx.sh or ./xxx.sh or ./zzz/yyy/xxx.sh source xxx.sh
+REALPATH=$(realpath ${BASH_SOURCE[0]})
+SCRIPT_DIR=$(cd $(dirname ${REALPATH}) && pwd)
+WORK_DIR=$(cd $(dirname ${REALPATH})/.. && pwd)
+echo "BASH_SOURCE=${BASH_SOURCE}, REALPATH=${REALPATH}, SCRIPT_DIR=${SCRIPT_DIR}, WORK_DIR=${WORK_DIR}"
+cd ${WORK_DIR}
+
+echo "Stop SRS origin cluster, WORK_DIR:${WORK_DIR}"
+
+
+if [[ -z $ORIGIN_SRS_NUMBER ]]; then
+    ORIGIN_SRS_NUMBER=2
+fi
+
+echo "Origin SRS instance number is ${ORIGIN_SRS_NUMBER}"
+
+for ((i=1; i<=$ORIGIN_SRS_NUMBER; i++))
+do
+    SRS_PID_FILE="./objs/origin${i}.pid"
+    if [[ -f $SRS_PID_FILE ]]; then
+    SRS_PID=`cat $SRS_PID_FILE`
+    echo "Stopping SRS, pid=$SRS_PID"
+    kill $SRS_PID 1>/dev/null 2>/dev/null
+
+    # See https://stackoverflow.com/a/41613532/17679565
+    timeout 10 tail --pid=$SRS_PID -f /dev/null
+    echo "Stopped SRS OK, pid=$SRS_PID"
+    fi
+done
+
+echo "stop srs-proxy?"
